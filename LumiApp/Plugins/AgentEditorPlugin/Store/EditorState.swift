@@ -229,24 +229,29 @@ final class EditorState: ObservableObject {
     /// 鼠标悬停 Hover 内容（Markdown 格式）
     @Published var mouseHoverContent: String?
 
-    /// 鼠标悬停位置（编辑器坐标系）
+    /// 鼠标悬停对应的 symbol 矩形（编辑器坐标系，原点在左上角，Y 向下增长）
+    /// 这个矩形精确覆盖 LSP 返回的 hover range 对应的文本区域
+    @Published var mouseHoverSymbolRect: CGRect = .zero
+
+    /// 鼠标悬停位置（编辑器坐标系，已废弃）
     @Published var mouseHoverPoint: CGPoint = .zero
 
-    /// 鼠标悬停的 LSP 行列
+    /// 鼠标悬停的 LSP 行列（已废弃）
     @Published var mouseHoverLine: Int = 0
     @Published var mouseHoverCharacter: Int = 0
 
-    /// 设置鼠标悬停状态
-    func setMouseHover(content: String, point: CGPoint, line: Int, character: Int) {
+    /// 设置鼠标悬停状态（使用 symbol 矩形定位）
+    func setMouseHover(content: String, symbolRect: CGRect) {
         mouseHoverContent = content
-        mouseHoverPoint = point
-        mouseHoverLine = line
-        mouseHoverCharacter = character
+        mouseHoverSymbolRect = symbolRect
+        // 兼容旧属性
+        mouseHoverPoint = CGPoint(x: symbolRect.midX, y: symbolRect.midY)
     }
 
     /// 清除鼠标悬停状态
     func clearMouseHover() {
         mouseHoverContent = nil
+        mouseHoverSymbolRect = .zero
     }
 
     /// 多光标编辑状态

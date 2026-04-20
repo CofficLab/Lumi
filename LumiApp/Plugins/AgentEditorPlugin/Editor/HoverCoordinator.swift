@@ -4,9 +4,10 @@ import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
 
-/// LSP 悬停协调器（轻量版）
-/// 不创建任何 NSView（避免 AppKit + SwiftUI 混合的 Layout 循环崩溃）
-/// 仅作为 hover 请求的集中管理器
+/// LSP 悬停协调器
+/// 监听鼠标位置，通过 `TextLayoutManager.textOffsetAtPoint` 获取鼠标下的文字偏移，
+/// 请求 LSP hover，然后利用 `layoutManager.rectForOffset` 将 LSP Range 转换为精确的
+/// 屏幕/视图坐标，供 SwiftUI overlay 在 symbol 上方显示 popover。
 @MainActor
 final class HoverEditorCoordinator: TextViewCoordinator {
     private static let defaultHoverDelayNs: UInt64 = 350_000_000
@@ -66,13 +67,7 @@ final class HoverEditorCoordinator: TextViewCoordinator {
     }
 
     nonisolated func textViewDidChangeSelection(controller: TextViewController) {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            let cursor = controller.cursorPositions.first?.start
-            let line = cursor.map { max($0.line - 1, 0) } ?? 0
-            let character = cursor.map { max($0.column - 1, 0) } ?? 0
-            triggerHover(for: line, character: character, point: state?.mouseHoverPoint ?? .zero)
-        }
+        // Hover 由鼠标驱动，不需要响应光标移动
     }
 
     nonisolated func destroy() {
@@ -89,8 +84,8 @@ final class HoverEditorCoordinator: TextViewCoordinator {
 
     // MARK: - 公共 API
 
-    /// 当光标移动时调用，触发 hover 请求
-    func triggerHover(for line: Int, character: Int, point: CGPoint) {
+    /// 当鼠标移动到新位置时调用，触发 hover 请求
+    func triggerHover(for line: Int, character: Int, symbolRect: CGRect) {
         refreshDocumentContextIfNeeded()
         let delay = hoverDelay(for: line, character: character)
         hoverTask?.cancel()
@@ -110,8 +105,12 @@ final class HoverEditorCoordinator: TextViewCoordinator {
                         content: cached.content,
                         state: state
                     )
+                    // 使用 LSP Range 重新计算精确的 symbol 矩形
+                    let preciseRect = self.rectForLSPRange(cachedRange) ?? symbolRect
+                    state.setMouseHover(content: cached.content, symbolRect: preciseRect)
+                } else {
+                    state.setMouseHover(content: cached.content, symbolRect: symbolRect)
                 }
-                state.setMouseHover(content: cached.content, point: point, line: line, character: character)
                 return
             }
 
@@ -126,10 +125,17 @@ final class HoverEditorCoordinator: TextViewCoordinator {
             }
 
             cacheHoverContent(content, range: hover.range, line: line, character: character, state: state)
-            if let range = hover.range {
-                setActiveHoverRange(range: range, content: content, state: state)
+
+            // 优先使用 LSP 返回的 Range 计算精确矩形
+            let finalRect: CGRect
+            if let lspRange = hover.range {
+                setActiveHoverRange(range: lspRange, content: content, state: state)
+                finalRect = self.rectForLSPRange(lspRange) ?? symbolRect
+            } else {
+                finalRect = symbolRect
             }
-            state.setMouseHover(content: content, point: point, line: line, character: character)
+
+            state.setMouseHover(content: content, symbolRect: finalRect)
         }
     }
 
@@ -139,6 +145,82 @@ final class HoverEditorCoordinator: TextViewCoordinator {
         lastHoverPosition = nil
         activeHoverRange = nil
         state?.clearMouseHover()
+    }
+
+    // MARK: - LSP Range → TextView Rect
+
+    /// 将 LSP Range 转换为 textView 坐标系中的矩形（原点在左上角，Y 向下增长）
+    /// 返回矩形覆盖整个 range 的第一行（用于 popover 锚定）
+    private func rectForLSPRange(_ lspRange: LSPRange) -> CGRect? {
+        guard let textView = textViewController?.textView,
+              let text = state?.content?.string else { return nil }
+
+        // LSP Range (line, character 是 UTF-16 偏移) → NSTextStorage UTF-16 offset
+        guard let startOffset = utf16OffsetForLSPPosition(lspRange.start, in: text),
+              let endOffset = utf16OffsetForLSPPosition(lspRange.end, in: text) else {
+            return nil
+        }
+
+        let nsRange = NSRange(location: startOffset, length: max(endOffset - startOffset, 0))
+
+        // 使用 layoutManager 获取 start offset 处的行位置矩形
+        guard let startRect = textView.layoutManager.rectForOffset(nsRange.location) else {
+            return nil
+        }
+
+        // 如果 range 跨多行或有 end offset，获取 end 位置来计算宽度
+        if nsRange.length > 0, let endRect = textView.layoutManager.rectForOffset(max(nsRange.max - 1, nsRange.location)) {
+            // 如果在同一行
+            if abs(startRect.minY - endRect.minY) < 1.0 {
+                return CGRect(
+                    x: startRect.minX,
+                    y: startRect.minY,
+                    width: endRect.maxX - startRect.minX,
+                    height: startRect.height
+                )
+            } else {
+                // 跨行：只取第一行的矩形
+                return startRect
+            }
+        }
+
+        return startRect
+    }
+
+    /// 将 LSP Position (line, character, UTF-16) 转换为 NSString 中的 UTF-16 offset
+    private func utf16OffsetForLSPPosition(_ position: Position, in text: String) -> Int? {
+        let utf16 = text.utf16
+        var currentLine = 0
+        var offset = 0
+
+        for (index, unit) in utf16.enumerated() {
+            if currentLine == position.line {
+                // 当前行，检查 character 是否在范围内
+                if offset == position.character {
+                    return index
+                }
+                if unit == 0x0A {
+                    // 到达行尾但 character 还没匹配，返回行末
+                    return index
+                }
+            }
+            if unit == 0x0A {
+                currentLine += 1
+                if currentLine > position.line {
+                    // 已经越过目标行，返回目标行的末尾
+                    return index
+                }
+                offset = 0
+            } else {
+                offset += 1
+            }
+        }
+
+        // 如果到达字符串末尾
+        if currentLine == position.line {
+            return utf16.count
+        }
+        return nil
     }
 
     // MARK: - Markdown 提取
@@ -236,52 +318,57 @@ final class HoverEditorCoordinator: TextViewCoordinator {
     private func handleMouseEvent(_ event: NSEvent) {
         guard let textView = textViewController?.textView else { return }
         refreshDocumentContextIfNeeded()
+
+        // 将鼠标位置转换到 textView 的本地坐标系
         let localPoint = textView.convert(event.locationInWindow, from: nil)
-        guard textView.bounds.contains(localPoint) else {
+
+        // 检查鼠标是否在 textView 的可见区域内
+        guard textView.visibleRect.contains(localPoint) else {
             cancelHover()
             lastHoverPosition = nil
             return
         }
 
-        let insertionIndex = textView.selectionManager.textSelections.first?.range.location ?? NSNotFound
-        guard insertionIndex != NSNotFound else {
+        // 使用 layoutManager 从鼠标位置获取文字偏移量（而不是用光标位置）
+        guard let characterOffset = textView.layoutManager.textOffsetAtPoint(localPoint) else {
             cancelHover()
             lastHoverPosition = nil
             return
         }
 
-        guard let position = lspPosition(forUTF16Offset: insertionIndex, in: textView.string) else {
+        // 转换为 LSP Position
+        guard let position = lspPosition(forUTF16Offset: characterOffset, in: textView.string) else {
             cancelHover()
             lastHoverPosition = nil
             return
         }
 
-        let pointFromTop = CGPoint(
-            x: max(localPoint.x, 0),
-            y: max(localPoint.y, 0)
-        )
+        // 获取鼠标下字符的矩形（用于 popover 定位）
+        let characterRect = textView.layoutManager.rectForOffset(characterOffset)
+            ?? CGRect(x: localPoint.x, y: localPoint.y, width: 0, height: 16)
 
+        // 如果鼠标在已有的 hover range 内，保持显示（但更新位置以跟随滚动）
         if let activeHover = activeHoverRange,
            isSameDocument(activeHover, state: state),
            contains(position: position, in: activeHover.range),
            !activeHover.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let preciseRect = rectForLSPRange(activeHover.range) ?? characterRect
             state?.setMouseHover(
                 content: activeHover.content,
-                point: pointFromTop,
-                line: position.line,
-                character: position.character
+                symbolRect: preciseRect
             )
             lastHoverPosition = (position.line, position.character)
             return
         }
 
+        // 如果位置没变，不重复请求
         if let lastHoverPosition,
            lastHoverPosition.line == position.line,
            lastHoverPosition.character == position.character {
             return
         }
 
-        triggerHover(for: position.line, character: position.character, point: pointFromTop)
+        triggerHover(for: position.line, character: position.character, symbolRect: characterRect)
     }
 
     private func lspPosition(forUTF16Offset offset: Int, in text: String) -> Position? {

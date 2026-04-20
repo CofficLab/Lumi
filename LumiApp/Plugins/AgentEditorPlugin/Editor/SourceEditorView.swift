@@ -11,9 +11,6 @@ struct SourceEditorView: View {
     @ObservedObject var state: EditorState
     
     /// 编辑器协调器（使用 @State 确保在 View 更新间保持同一实例）
-    /// 之前作为普通 let 属性，每次 View struct 重建时会创建新实例，
-    /// 导致旧实例被 ARC 释放，TextViewController 中的 WeakCoordinator 弱引用失效，
-    /// coordinator 回调不再被触发，自动保存失效。
     @State private var textCoordinator: EditorCoordinator?
     @State private var cursorCoordinator: CursorCoordinator?
     @State private var contextMenuCoordinator: ContextMenuCoordinator?
@@ -35,6 +32,9 @@ struct SourceEditorView: View {
     
     /// 缓存的配置
     @State private var cachedConfig: SourceEditorConfiguration?
+    
+    /// 缓存的 popover 高度，用于在上方定位时避免遮挡
+    @State private var hoverPopoverHeight: CGFloat = 100
     
     init(state: EditorState) {
         self._state = ObservedObject(wrappedValue: state)
@@ -63,7 +63,9 @@ struct SourceEditorView: View {
             }
     }
 
-    /// 编辑器主体内容（拆分为独立视图以减轻编译器类型推断负担）
+    // MARK: - Editor Content
+
+    /// 编辑器主体内容
     @ViewBuilder
     private var editorContent: some View {
         if let content = state.content,
@@ -102,6 +104,8 @@ struct SourceEditorView: View {
         }
     }
     
+    // MARK: - Overlays
+
     @ViewBuilder
     private var signatureHelpOverlay: some View {
         if let help = state.signatureHelpProvider.currentHelp {
@@ -156,63 +160,70 @@ struct SourceEditorView: View {
         }
     }
 
+    // MARK: - Hover Popover
+
     @ViewBuilder
     private func hoverPreview(in containerSize: CGSize) -> some View {
         if let hoverText = state.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines),
            !hoverText.isEmpty {
-            Text(hoverAttributedText(from: hoverText))
-                .font(.system(size: 12, design: .monospaced))
-                .textSelection(.enabled)
-                .lineLimit(10)
-                .multilineTextAlignment(.leading)
-                .padding(10)
+            HoverPopoverView(markdownText: hoverText)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: 440, alignment: .leading)
+                // 使用 GeometryReader 测量实际高度后调整位置
                 .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(nsColor: .controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 3)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 0.5)
-                        )
+                    GeometryReader { popoverGeo in
+                        Color.clear
+                            .onAppear {
+                                hoverPopoverHeight = popoverGeo.size.height
+                            }
+                            .onChange(of: popoverGeo.size.height) { _, newHeight in
+                                hoverPopoverHeight = newHeight
+                            }
+                    }
                 )
                 .offset(hoverOffset(in: containerSize))
                 .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .scale(scale: 0.98, anchor: .topLeading)),
+                    insertion: .opacity.combined(with: .scale(scale: 0.96, anchor: .bottomLeading)),
                     removal: .opacity
                 ))
                 .animation(.easeOut(duration: 0.14), value: state.mouseHoverContent)
-                .animation(.easeOut(duration: 0.12), value: state.mouseHoverPoint)
+                .animation(.easeOut(duration: 0.12), value: state.mouseHoverSymbolRect)
         }
     }
 
+    /// 计算 hover popover 的偏移量
+    /// 核心策略：popover 显示在 symbol 的正上方，左对齐 symbol 起点
     private func hoverOffset(in containerSize: CGSize) -> CGSize {
-        let preferredX = state.mouseHoverPoint.x + 12
-        let preferredY = state.mouseHoverPoint.y + 18
-        let maxWidth = max(containerSize.width - 460, 8)
-        let maxHeight = max(containerSize.height - 220, 8)
-        return CGSize(
-            width: min(max(preferredX, 8), maxWidth),
-            height: min(max(preferredY, 8), maxHeight)
-        )
+        let symbolRect = state.mouseHoverSymbolRect
+        let popoverEstimatedHeight = hoverPopoverHeight
+        let popoverMaxWidth: CGFloat = 440
+        let verticalGap: CGFloat = 4  // popover 与 symbol 之间的间距
+
+        // X: 左对齐 symbol 起点，但不超出容器
+        let preferredX = symbolRect.minX
+        let clampedX = max(4, min(preferredX, containerSize.width - popoverMaxWidth - 4))
+
+        // Y: 放在 symbol 上方
+        let preferredY = symbolRect.minY - popoverEstimatedHeight - verticalGap
+
+        // 如果上方空间不足，则放到 symbol 下方
+        let fallbackY = symbolRect.maxY + verticalGap
+        let clampedY: CGFloat
+        if preferredY >= 4 {
+            clampedY = preferredY
+        } else {
+            clampedY = min(fallbackY, max(containerSize.height - popoverEstimatedHeight - 4, 4))
+        }
+
+        return CGSize(width: clampedX, height: clampedY)
     }
 
-    private func hoverAttributedText(from markdown: String) -> AttributedString {
-        let options = AttributedString.MarkdownParsingOptions(
-            interpretedSyntax: .inlineOnlyPreservingWhitespace
-        )
-        if let attributed = try? AttributedString(markdown: markdown, options: options) {
-            return attributed
-        }
-        return AttributedString(markdown)
-    }
+    // MARK: - Initialization & Delegates
 
     /// 首次出现时初始化协调器和配置缓存
     private func initializeCoordinators() {
-        print("🔧 [AutoSave] initializeCoordinators | textCoordinator=\(textCoordinator != nil) | cursorCoordinator=\(cursorCoordinator != nil) | contextMenuCoordinator=\(contextMenuCoordinator != nil) | content=\(state.content != nil) | fileURL=\(state.currentFileURL?.lastPathComponent ?? "nil")")
         if textCoordinator == nil {
             textCoordinator = EditorCoordinator(state: state)
-            print("🔧 [AutoSave] 创建了新的 EditorCoordinator")
         }
         if cursorCoordinator == nil {
             cursorCoordinator = CursorCoordinator(state: state)
@@ -250,7 +261,6 @@ struct SourceEditorView: View {
         }
         state.jumpDelegate = jumpDelegate
         
-        // 将 jumpDelegate 注入 coordinator，供非隔离方法使用
         textCoordinator?.jumpDelegate = jumpDelegate
         
         completionDelegate.lspCoordinator = state.lspCoordinator
@@ -259,7 +269,6 @@ struct SourceEditorView: View {
     
     // MARK: - Configuration Management
     
-    /// 强制更新配置缓存
     private func updateConfigCache() {
         cachedConfig = buildConfiguration()
     }
@@ -291,59 +300,34 @@ struct SourceEditorView: View {
     }
     
     // MARK: - Configuration
-    
+
     /// 提供给 SourceEditor 的安全 Binding。
     ///
     /// ## 解决的问题
     ///
-    /// ### 1. 滚动位置反馈循环（"有人在抢滚动条"）
-    ///
-    /// 循环路径（修复前）：
-    ///   用户滚动 → boundsDidChange → Coordinator 回写 scrollPosition 到 @Binding
-    ///   → SwiftUI updateNSViewController → scrollView.scroll(to:) → 又触发 boundsDidChange
-    ///
-    /// 根因：Coordinator 通过 `updateState { $0.scrollPosition = ... }` 修改 `@Binding`，
-    /// SwiftUI 检测到 binding 变化后调用 updateNSViewController。
-    /// 正常情况下 `isUpdateFromTextView` 标志位能阻止循环，
-    /// 但 `EditorState.editorState` 是 `@Published`，binding 的 set 回调又通过
-    /// `DispatchQueue.main.async` 延迟写回了 scrollPosition，
-    /// 导致第二轮 updateNSViewController 时标志位已重置，scrollView 被强制滚回旧位置。
-    ///
-    /// 修复：**不在 get 中返回 scrollPosition**，始终返回 nil。
-    /// 这样 SourceEditor 的 updateControllerWithState 永远不会因为 binding 中的
-    /// scrollPosition 而强制设置滚动位置。NSScrollView 的滚动完全由用户操作控制。
-    /// 外部的滚动跳转（如跳转到定义）通过设置 cursorPositions 实现，
-    /// CodeEditSourceEditor 的 setCursorPositions 会自动滚动到光标位置。
+    /// ### 1. 滚动位置反馈循环
+    /// 修复：不在 get 中返回 scrollPosition，始终返回 nil。
     ///
     /// ### 2. Publishing changes from within view updates
-    ///
-    /// Binding 的 set 闭包可能在 updateNSViewController 调用栈中被触发。
     /// 修复：使用 DispatchQueue.main.async 延迟所有 @Published 属性修改。
     ///
     /// ### 3. 多光标模式下光标丢失
-    ///
-    /// updateCursorPosition() 可能跳过可见区域外的 selection，导致 cursorPositions
-    /// 数量少于 textSelections。修复：多光标模式下忽略 cursorPositions 回写。
+    /// 修复：多光标模式下忽略 cursorPositions 回写。
     private var multiCursorSafeBinding: Binding<SourceEditorState> {
         Binding<SourceEditorState>(
             get: {
-                // 关键：scrollPosition 始终返回 nil，切断滚动反馈循环。
-                // SourceEditor 的 updateControllerWithState 会因为 scrollPosition == nil
-                // 而跳过 scrollView.scroll(to:) 调用。
                 var result = state.editorState
                 result.scrollPosition = nil
                 return result
             },
             set: { newState in
                 if state.multiCursorState.all.count > 1 {
-                    // 多光标模式：不回写 scrollPosition 和 cursorPositions
                     DispatchQueue.main.async {
                         state.editorState.findText = newState.findText
                         state.editorState.replaceText = newState.replaceText
                         state.editorState.findPanelVisible = newState.findPanelVisible
                     }
                 } else {
-                    // 单光标模式：不回写 scrollPosition
                     DispatchQueue.main.async {
                         state.editorState.cursorPositions = newState.cursorPositions
                         state.editorState.findText = newState.findText
@@ -355,11 +339,10 @@ struct SourceEditorView: View {
         )
     }
 
-    /// 构建编辑器配置
     @MainActor
     private func buildConfiguration() -> SourceEditorConfiguration {
         let fontSize = CGFloat(state.fontSize)
-        let lineHeightMultiple = 1.2  // 使用稍大的行高，确保显示正常
+        let lineHeightMultiple = 1.2
         
         return SourceEditorConfiguration(
             appearance: .init(
@@ -382,7 +365,7 @@ struct SourceEditorView: View {
             layout: .init(
                 editorOverscroll: 0.1,
                 contentInsets: nil,
-                additionalTextInsets: nil  // 不使用额外的文本内边距
+                additionalTextInsets: nil
             ),
             peripherals: .init(
                 showGutter: state.showGutter,
@@ -391,5 +374,121 @@ struct SourceEditorView: View {
                 codeSuggestionTriggerCharacters: completionDelegate.completionTriggerCharacters()
             )
         )
+    }
+}
+
+// MARK: - Hover Popover View
+
+/// 悬浮提示气泡视图
+/// 渲染 Markdown 格式的 LSP hover 内容，支持代码块、分隔线等
+struct HoverPopoverView: View {
+    let markdownText: String
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                let sections = parseSections(from: markdownText)
+                ForEach(Array(sections.enumerated()), id: \.offset) { index, section in
+                    if index > 0 {
+                        Divider()
+                            .padding(.vertical, 6)
+                    }
+                    hoverSectionView(section)
+                }
+            }
+            .padding(10)
+        }
+        .frame(maxHeight: 300)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+                )
+        )
+    }
+
+    // MARK: - Section Parsing
+
+    private enum HoverSection {
+        case codeBlock(String, language: String)
+        case plainText(String)
+    }
+
+    private func parseSections(from text: String) -> [HoverSection] {
+        var sections: [HoverSection] = []
+        let components = text.components(separatedBy: "\n\n---\n\n")
+
+        for component in components {
+            let trimmed = component.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+
+            // 检查是否是围栏代码块
+            if trimmed.hasPrefix("```") {
+                let lines = trimmed.components(separatedBy: .newlines)
+                if lines.count >= 2 {
+                    let firstLine = lines[0]
+                    let language = String(firstLine.dropFirst(3).trimmingCharacters(in: .whitespaces))
+                    let codeLines = lines.dropFirst().dropLast()
+                    let code = codeLines.joined(separator: "\n")
+                    if !code.isEmpty {
+                        sections.append(.codeBlock(code, language: language))
+                        continue
+                    }
+                }
+            }
+
+            sections.append(.plainText(trimmed))
+        }
+
+        return sections
+    }
+
+    @ViewBuilder
+    private func hoverSectionView(_ section: HoverSection) -> some View {
+        switch section {
+        case .codeBlock(let code, let language):
+            codeBlockView(code: code, language: language)
+        case .plainText(let text):
+            plainTextView(text: text)
+        }
+    }
+
+    @ViewBuilder
+    private func codeBlockView(code: String, language: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if !language.isEmpty {
+                Text(language)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+            }
+            Text(code)
+                .font(.system(size: 12, design: .monospaced))
+                .textSelection(.enabled)
+                .lineLimit(8)
+                .multilineTextAlignment(.leading)
+        }
+    }
+
+    @ViewBuilder
+    private func plainTextView(text: String) -> some View {
+        let attributed = hoverAttributedText(from: text)
+        Text(attributed)
+            .font(.system(size: 12))
+            .textSelection(.enabled)
+            .lineLimit(10)
+            .multilineTextAlignment(.leading)
+    }
+
+    private func hoverAttributedText(from markdown: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(
+            interpretedSyntax: .inlineOnlyPreservingWhitespace
+        )
+        if let attributed = try? AttributedString(markdown: markdown, options: options) {
+            return attributed
+        }
+        return AttributedString(markdown)
     }
 }

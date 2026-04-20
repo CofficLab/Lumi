@@ -1,4 +1,4 @@
-import SwiftUI
+ManagedBufferimport SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
