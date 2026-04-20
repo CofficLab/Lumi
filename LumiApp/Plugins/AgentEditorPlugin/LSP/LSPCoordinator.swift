@@ -73,10 +73,16 @@ class LSPCoordinator: ObservableObject {
         return await lspService.requestCompletion(uri: uri, line: line, character: character)
     }
     
-    /// 请求悬停提示
+    /// 请求悬停提示（返回纯文本，已废弃）
     func requestHover(line: Int, character: Int) async -> String? {
         guard let uri = fileURI else { return nil }
         return await lspService.requestHover(uri: uri, line: line, character: character)
+    }
+
+    /// 请求悬停提示（返回原始 Hover 对象，支持 Markdown 解析）
+    func requestHoverRaw(line: Int, character: Int) async -> Hover? {
+        guard let uri = fileURI else { return nil }
+        return await lspService.requestHoverRaw(uri: uri, line: line, character: character)
     }
     
     /// 请求定义位置

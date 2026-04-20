@@ -225,6 +225,17 @@ final class LSPService: ObservableObject {
             return nil
         }
     }
+
+    /// 请求悬停提示（返回原始 Hover 对象，供调用方自行解析 Markdown）
+    func requestHoverRaw(uri: String, line: Int, character: Int) async -> Hover? {
+        guard let server else { return nil }
+        do {
+            return try await server.hover(uri: uri, line: line, character: character)
+        } catch {
+            logger.error("Hover raw failed: \(error)")
+            return nil
+        }
+    }
     
     func requestDefinition(uri: String, line: Int, character: Int) async -> Location? {
         guard let server else { return nil }

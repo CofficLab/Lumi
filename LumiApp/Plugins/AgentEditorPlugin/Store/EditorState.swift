@@ -221,8 +221,33 @@ final class EditorState: ObservableObject {
     /// 当前列号
     @Published var cursorColumn: Int = 1
 
-    /// 当前 LSP Hover 文本（用于提示展示）
+    // MARK: - Mouse Hover State
+
+    /// 当前 LSP Hover 文本（光标移动触发，已废弃，保留兼容）
     @Published var hoverText: String?
+
+    /// 鼠标悬停 Hover 内容（Markdown 格式）
+    @Published var mouseHoverContent: String?
+
+    /// 鼠标悬停位置（编辑器坐标系）
+    @Published var mouseHoverPoint: CGPoint = .zero
+
+    /// 鼠标悬停的 LSP 行列
+    @Published var mouseHoverLine: Int = 0
+    @Published var mouseHoverCharacter: Int = 0
+
+    /// 设置鼠标悬停状态
+    func setMouseHover(content: String, point: CGPoint, line: Int, character: Int) {
+        mouseHoverContent = content
+        mouseHoverPoint = point
+        mouseHoverLine = line
+        mouseHoverCharacter = character
+    }
+
+    /// 清除鼠标悬停状态
+    func clearMouseHover() {
+        mouseHoverContent = nil
+    }
 
     /// 多光标编辑状态
     @Published var multiCursorState = MultiCursorState()
@@ -476,6 +501,7 @@ final class EditorState: ObservableObject {
                     // 计算行数
                     self.totalLines = content.filter { $0 == "\n" }.count + 1
                     self.hoverText = nil
+                    self.mouseHoverContent = nil
                     self.inlayHintProvider.clear()
                     self.codeActionProvider.clear()
                     self.inlayHintRefreshTask?.cancel()
@@ -576,6 +602,7 @@ final class EditorState: ObservableObject {
         cursorColumn = 1
         totalLines = 0
         hoverText = nil
+        mouseHoverContent = nil
         referenceResults = []
         isReferencePanelPresented = false
         problemDiagnostics = []
@@ -629,6 +656,7 @@ final class EditorState: ObservableObject {
         cursorColumn = 1
         totalLines = 0
         hoverText = nil
+        mouseHoverContent = nil
         referenceResults = []
         isReferencePanelPresented = false
         problemDiagnostics = []

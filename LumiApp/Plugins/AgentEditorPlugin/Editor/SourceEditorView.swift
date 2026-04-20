@@ -21,6 +21,7 @@ struct SourceEditorView: View {
     @State private var documentHighlightProvider: DocumentHighlightHighlighter?
     @State private var signatureHelpProvider = SignatureHelpProvider()
     @State private var codeActionPanelPresented: Bool = false
+    @State private var hoverCoordinator: HoverEditorCoordinator?
     
     /// 跳转到定义代理（Cmd+Click / 右键跳转共用同一实例）
     @StateObject private var jumpDelegate: EditorJumpToDefinitionDelegate = {
@@ -84,8 +85,10 @@ struct SourceEditorView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 inlayHintsStrip
             }
-            .overlay(alignment: .topTrailing) {
-                hoverPreview
+            .overlay(alignment: .topLeading) {
+                GeometryReader { proxy in
+                    hoverPreview(in: proxy.size)
+                }
             }
             .overlay(alignment: .bottomLeading) {
                 signatureHelpOverlay
@@ -154,23 +157,54 @@ struct SourceEditorView: View {
     }
 
     @ViewBuilder
-    private var hoverPreview: some View {
-        if let hoverText = state.hoverText?.trimmingCharacters(in: .whitespacesAndNewlines),
+    private func hoverPreview(in containerSize: CGSize) -> some View {
+        if let hoverText = state.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines),
            !hoverText.isEmpty {
-            Text(hoverText)
-                .font(.system(size: 11, design: .monospaced))
-                .lineLimit(6)
+            Text(hoverAttributedText(from: hoverText))
+                .font(.system(size: 12, design: .monospaced))
+                .textSelection(.enabled)
+                .lineLimit(10)
                 .multilineTextAlignment(.leading)
-                .padding(8)
-                .frame(maxWidth: 420, alignment: .leading)
+                .padding(10)
+                .frame(maxWidth: 440, alignment: .leading)
                 .background(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: 8)
                         .fill(Color(nsColor: .controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 2)
+                        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 3)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 0.5)
+                        )
                 )
-                .padding(.top, 8)
-                .padding(.trailing, 8)
+                .offset(hoverOffset(in: containerSize))
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .scale(scale: 0.98, anchor: .topLeading)),
+                    removal: .opacity
+                ))
+                .animation(.easeOut(duration: 0.14), value: state.mouseHoverContent)
+                .animation(.easeOut(duration: 0.12), value: state.mouseHoverPoint)
         }
+    }
+
+    private func hoverOffset(in containerSize: CGSize) -> CGSize {
+        let preferredX = state.mouseHoverPoint.x + 12
+        let preferredY = state.mouseHoverPoint.y + 18
+        let maxWidth = max(containerSize.width - 460, 8)
+        let maxHeight = max(containerSize.height - 220, 8)
+        return CGSize(
+            width: min(max(preferredX, 8), maxWidth),
+            height: min(max(preferredY, 8), maxHeight)
+        )
+    }
+
+    private func hoverAttributedText(from markdown: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(
+            interpretedSyntax: .inlineOnlyPreservingWhitespace
+        )
+        if let attributed = try? AttributedString(markdown: markdown, options: options) {
+            return attributed
+        }
+        return AttributedString(markdown)
     }
 
     /// 首次出现时初始化协调器和配置缓存
@@ -198,6 +232,9 @@ struct SourceEditorView: View {
         }
         if cachedConfig == nil {
             updateConfigCache()
+        }
+        if hoverCoordinator == nil {
+            hoverCoordinator = HoverEditorCoordinator(state: state)
         }
     }
 
@@ -249,6 +286,7 @@ struct SourceEditorView: View {
         if let textCoordinator { result.append(textCoordinator) }
         if let cursorCoordinator { result.append(cursorCoordinator) }
         if let contextMenuCoordinator { result.append(contextMenuCoordinator) }
+        if let hoverCoordinator { result.append(hoverCoordinator) }
         return result
     }
     
