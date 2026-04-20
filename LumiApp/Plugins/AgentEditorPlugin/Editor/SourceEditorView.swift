@@ -292,32 +292,69 @@ struct SourceEditorView: View {
     
     // MARK: - Configuration
     
-    /// 在多光标模式下，拦截 cursorPositions 的回写，防止
-    /// CodeEditSourceEditor 的 updateCursorPosition() → Coordinator → SwiftUI → setCursorPositions
-    /// 反馈循环导致部分光标丢失。
+    /// 提供给 SourceEditor 的安全 Binding。
     ///
-    /// 根因：updateCursorPosition() 对每个 textSelection 调用 textLineForOffset，
-    /// 如果 layoutManager 尚未布局某个 offset（例如光标在可见区域外），
-    /// 该 selection 会被跳过，cursorPositions 数量少于 textSelections。
-    /// 然后 SwiftUI Binding 回写触发 setCursorPositions 把减少后的选区覆盖回 selectionManager。
+    /// ## 解决的问题
+    ///
+    /// ### 1. 滚动位置反馈循环（"有人在抢滚动条"）
+    ///
+    /// 循环路径（修复前）：
+    ///   用户滚动 → boundsDidChange → Coordinator 回写 scrollPosition 到 @Binding
+    ///   → SwiftUI updateNSViewController → scrollView.scroll(to:) → 又触发 boundsDidChange
+    ///
+    /// 根因：Coordinator 通过 `updateState { $0.scrollPosition = ... }` 修改 `@Binding`，
+    /// SwiftUI 检测到 binding 变化后调用 updateNSViewController。
+    /// 正常情况下 `isUpdateFromTextView` 标志位能阻止循环，
+    /// 但 `EditorState.editorState` 是 `@Published`，binding 的 set 回调又通过
+    /// `DispatchQueue.main.async` 延迟写回了 scrollPosition，
+    /// 导致第二轮 updateNSViewController 时标志位已重置，scrollView 被强制滚回旧位置。
+    ///
+    /// 修复：**不在 get 中返回 scrollPosition**，始终返回 nil。
+    /// 这样 SourceEditor 的 updateControllerWithState 永远不会因为 binding 中的
+    /// scrollPosition 而强制设置滚动位置。NSScrollView 的滚动完全由用户操作控制。
+    /// 外部的滚动跳转（如跳转到定义）通过设置 cursorPositions 实现，
+    /// CodeEditSourceEditor 的 setCursorPositions 会自动滚动到光标位置。
+    ///
+    /// ### 2. Publishing changes from within view updates
+    ///
+    /// Binding 的 set 闭包可能在 updateNSViewController 调用栈中被触发。
+    /// 修复：使用 DispatchQueue.main.async 延迟所有 @Published 属性修改。
+    ///
+    /// ### 3. 多光标模式下光标丢失
+    ///
+    /// updateCursorPosition() 可能跳过可见区域外的 selection，导致 cursorPositions
+    /// 数量少于 textSelections。修复：多光标模式下忽略 cursorPositions 回写。
     private var multiCursorSafeBinding: Binding<SourceEditorState> {
         Binding<SourceEditorState>(
-            get: { state.editorState },
+            get: {
+                // 关键：scrollPosition 始终返回 nil，切断滚动反馈循环。
+                // SourceEditor 的 updateControllerWithState 会因为 scrollPosition == nil
+                // 而跳过 scrollView.scroll(to:) 调用。
+                var result = state.editorState
+                result.scrollPosition = nil
+                return result
+            },
             set: { newState in
-                // 多光标模式下，忽略 cursorPositions 的回写，只保留其他状态字段
                 if state.multiCursorState.all.count > 1 {
-                    state.editorState.scrollPosition = newState.scrollPosition
-                    state.editorState.findText = newState.findText
-                    state.editorState.replaceText = newState.replaceText
-                    state.editorState.findPanelVisible = newState.findPanelVisible
-                    // 不更新 cursorPositions，避免不完整的选区覆盖编辑器
+                    // 多光标模式：不回写 scrollPosition 和 cursorPositions
+                    DispatchQueue.main.async {
+                        state.editorState.findText = newState.findText
+                        state.editorState.replaceText = newState.replaceText
+                        state.editorState.findPanelVisible = newState.findPanelVisible
+                    }
                 } else {
-                    state.editorState = newState
+                    // 单光标模式：不回写 scrollPosition
+                    DispatchQueue.main.async {
+                        state.editorState.cursorPositions = newState.cursorPositions
+                        state.editorState.findText = newState.findText
+                        state.editorState.replaceText = newState.replaceText
+                        state.editorState.findPanelVisible = newState.findPanelVisible
+                    }
                 }
             }
         )
     }
-    
+
     /// 构建编辑器配置
     @MainActor
     private func buildConfiguration() -> SourceEditorConfiguration {
