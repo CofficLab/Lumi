@@ -5,11 +5,14 @@ import CodeEditLanguages
 import LanguageServerProtocol
 import Combine
 import os
+import MagicKit
 
 /// 编辑器 LSP 协调器
 /// 负责将 LSP 服务与 CodeEditSourceEditor 集成
 @MainActor
-class LSPCoordinator: ObservableObject {
+class LSPCoordinator: ObservableObject, SuperLog {
+    nonisolated static let emoji = "😊 "
+    nonisolated static let verbose = true
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
     private let lspService = LSPService.shared
@@ -32,9 +35,9 @@ class LSPCoordinator: ObservableObject {
         self.fileURI = uri
         self.languageId = languageId
         self.version = 0
-        
+
         await lspService.openDocument(uri: uri, languageId: languageId, text: content)
-        logger.info("LSP: File opened \(uri)")
+        logger.info("\(Self.t)LSP: 已打开文件 \(uri)")
     }
     
     /// 关闭文件时调用
@@ -42,7 +45,7 @@ class LSPCoordinator: ObservableObject {
         guard let uri = fileURI else { return }
         lspService.closeDocument(uri: uri)
         fileURI = nil
-        logger.info("LSP: File closed")
+        logger.info("\(Self.t)LSP: 已关闭文件")
     }
     
     /// 文档内容变更
@@ -73,10 +76,16 @@ class LSPCoordinator: ObservableObject {
         return await lspService.requestCompletion(uri: uri, line: line, character: character)
     }
     
-    /// 请求悬停提示
+    /// 请求悬停提示（返回纯文本，已废弃）
     func requestHover(line: Int, character: Int) async -> String? {
         guard let uri = fileURI else { return nil }
         return await lspService.requestHover(uri: uri, line: line, character: character)
+    }
+
+    /// 请求悬停提示（返回原始 Hover 对象，支持 Markdown 解析）
+    func requestHoverRaw(line: Int, character: Int) async -> Hover? {
+        guard let uri = fileURI else { return nil }
+        return await lspService.requestHoverRaw(uri: uri, line: line, character: character)
     }
     
     /// 请求定义位置

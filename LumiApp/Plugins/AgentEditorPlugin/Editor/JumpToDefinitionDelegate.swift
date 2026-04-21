@@ -8,6 +8,7 @@ import CodeEditLanguages
 import SwiftTreeSitter
 import LanguageServerProtocol
 import os
+import MagicKit
 
 /// Jump-to-definition delegate
 /// 基于 Tree-Sitter AST 实现文件内跳转（Cmd+Click）
@@ -19,7 +20,8 @@ import os
 /// 4. 此方法通过 AST 或正则查找定义位置
 /// 5. 引擎自动执行跳转或显示多定义弹窗
 @preconcurrency
-final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDelegate {
+final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDelegate, SuperLog {
+    nonisolated static let emoji = "🔗"
     
     weak var treeSitterClient: TreeSitterClient?
     weak var textStorage: NSTextStorage?
@@ -27,7 +29,6 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
     weak var textViewController: TextViewController?
     var currentFileURLProvider: (() -> URL?)?
     var onOpenExternalDefinition: ((URL, CursorPosition) -> Void)?
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.jump-to-definition")
     
     // MARK: - JumpToDefinitionDelegate
     
@@ -43,7 +44,9 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             return nil
         }
         
-        logger.debug("🔍 JumpToDefinition: '\(word)' at \(range.location)")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(self.t)跳转到定义: '\(word)' 位置=\(range.location)")
+        }
 
         // 0. 优先：通过 LSP 查询定义（支持跨文件）
         if let link = await findDefinitionViaLSP(
@@ -51,7 +54,9 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             cursorRange: range,
             content: content
         ) {
-            logger.debug("✅ LSP matched: '\(word)'")
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(self.t)LSP 匹配: '\(word)'")
+            }
             return [link]
         }
         
@@ -62,7 +67,9 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             content: content
         ) {
             let position = CursorPosition(range: definitionRange)
-            logger.debug("✅ AST matched: '\(word)' -> \(definitionRange.location)")
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(self.t)AST 匹配: '\(word)' -> \(definitionRange.location)")
+            }
             return [createLink(for: word, targetRange: position, content: content)]
         }
         
@@ -73,17 +80,23 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             content: content
         ) {
             let position = CursorPosition(range: fallbackRange)
-            logger.debug("✅ Regex matched: '\(word)' -> \(fallbackRange.location)")
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(self.t)正则匹配: '\(word)' -> \(fallbackRange.location)")
+            }
             return [createLink(for: word, targetRange: position, content: content)]
         }
         
-        logger.debug("❌ No definition found for: '\(word)'")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(self.t)未找到定义: '\(word)'")
+        }
         return nil
     }
     
     /// 打开链接（本地跳转由引擎自动处理，这里仅记录日志）
     func openLink(link: JumpToDefinitionLink) {
-        logger.debug("📍 Opening link: \(link.label) -> \(link.url?.absoluteString ?? "local")")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(self.t)打开链接: \(link.label) -> \(link.url?.absoluteString ?? "本地")")
+        }
         guard let url = link.url else { return }
         onOpenExternalDefinition?(url, link.targetRange)
     }
@@ -367,7 +380,9 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
                 }
             }
         } catch {
-            logger.debug("⚠️ AST query failed: \(error)")
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(self.t)AST 查询失败: \(error)")
+            }
         }
         
         return nil

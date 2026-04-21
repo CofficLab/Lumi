@@ -2,71 +2,6 @@ import AppKit
 import MagicKit
 import SwiftUI
 
-/// 模型选择器 Tab 类型
-enum ModelSelectorTab: String, CaseIterable {
-    /// 全部供应商与模型
-    case all
-    /// 当前供应商
-    case current
-    /// 常用模型（跨供应商）
-    case frequent
-    /// TPS 较快的模型
-    case fast
-    /// 本地供应商
-    case local
-    /// 远程供应商
-    case remote
-
-    /// Tab 显示标题
-    var displayTitle: String {
-        switch self {
-        case .all:
-            return String(localized: "All", table: "AgentInput")
-        case .current:
-            return String(localized: "Current Provider", table: "AgentInput")
-        case .frequent:
-            return String(localized: "Frequent", table: "AgentInput")
-        case .fast:
-            return String(localized: "Fast", table: "AgentInput")
-        case .local:
-            return String(localized: "Local Providers", table: "AgentInput")
-        case .remote:
-            return String(localized: "Remote Providers", table: "AgentInput")
-        }
-    }
-}
-
-/// 常用模型条目，用于跨供应商展示最近常用的模型
-struct FrequentModelEntry: Identifiable {
-    /// 唯一标识（providerId + modelName 组合）
-    let id: String
-    /// 供应商 ID
-    let providerId: String
-    /// 供应商显示名称
-    let providerDisplayName: String
-    /// 模型名称
-    let modelName: String
-    /// 使用次数
-    let useCount: Int
-    /// 最后使用时间
-    let lastUsedAt: Date
-}
-
-/// TPS 较快的模型条目
-struct FastModelEntry: Identifiable {
-    /// 唯一标识（providerId + modelName 组合）
-    let id: String
-    /// 供应商 ID
-    let providerId: String
-    /// 供应商显示名称
-    let providerDisplayName: String
-    /// 模型名称
-    let modelName: String
-    /// 平均 TPS
-    let avgTPS: Double
-    /// 样本数量
-    let sampleCount: Int
-}
 /// 模型选择器视图
 /// 允许用户从所有已注册的供应商和模型中选择
 struct ModelSelectorView: View, SuperLog {
@@ -104,6 +39,12 @@ struct ModelSelectorView: View, SuperLog {
     /// 本地供应商的模型详情（按 providerId -> [LocalModelInfo]），用于按系列展示
     @State private var localModelInfosByProvider: [String: [LocalModelInfo]] = [:]
 
+    /// 统计数据是否已加载完成
+    @State private var isStatsLoaded = false
+
+    /// 本地模型详情是否正在加载
+    @State private var isLoadingLocalModels = false
+
     /// 当前供应商信息
     private var currentProvider: LLMProviderInfo? {
         llmVM.allProviders.first(where: { $0.id == llmVM.selectedProviderId })
@@ -119,30 +60,20 @@ struct ModelSelectorView: View, SuperLog {
 
     var body: some View {
         HStack(spacing: 0) {
-            tabSidebar
-                .frame(width: 120)
-                .background(Color(nsColor: .controlBackgroundColor))
+            ModelSelectorTabSidebar(
+                selectedTab: $selectedTab,
+                hoveringTab: $hoveringTab
+            )
+            .frame(width: 120)
+            .background(Color(nsColor: .controlBackgroundColor))
 
             Divider()
 
             VStack(spacing: 0) {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    TextField(String(localized: "Search Models", table: "AgentInput"), text: $searchText)
-                        .textFieldStyle(.plain)
-
-                    Spacer()
-
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(nsColor: .controlBackgroundColor))
+                ModelSelectorSearchBar(
+                    searchText: $searchText,
+                    onCancel: { dismiss() }
+                )
 
                 Divider()
 
@@ -177,9 +108,8 @@ struct ModelSelectorView: View, SuperLog {
         .frame(width: 520, height: 400)
         .background(AppUI.Material.glass)
         .task {
-            loadLatencyStats()
-            loadFrequentModels()
-            loadFastModels()
+            // 将同步的数据库查询放到后台线程，避免阻塞 UI
+            await loadAllStats()
         }
         .task(id: selectedTab) {
             if selectedTab == .current {
@@ -190,42 +120,6 @@ struct ModelSelectorView: View, SuperLog {
                 await loadLocalModelInfos(providerIds: localProviders.map(\.id))
             }
         }
-    }
-
-    // MARK: - Tab Sidebar
-
-    @ViewBuilder
-    private var tabSidebar: some View {
-        VStack(spacing: 4) {
-            ForEach(ModelSelectorTab.allCases, id: \.self) { tab in
-                Button(action: { selectedTab = tab }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: tabIconName(for: tab))
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                            .frame(width: 16, alignment: .center)
-                        Text(tab.displayTitle)
-                            .font(AppUI.Typography.body)
-                            .lineLimit(1)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(tabBackgroundColor(for: tab))
-                    )
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .onHover { hovering in
-                    hoveringTab = hovering ? tab : nil
-                }
-            }
-            Spacer()
-        }
-        .padding(8)
     }
 
     // MARK: - Current Provider List
@@ -308,66 +202,14 @@ struct ModelSelectorView: View, SuperLog {
         }
     }
 
-    /// 常用模型的单行视图，显示模型名、供应商标签和性能信息
-    @ViewBuilder
+    /// 常用模型的单行视图
     private func frequentModelRow(entry: FrequentModelEntry) -> some View {
-        Button(action: {
+        FrequentModelRow(
+            entry: entry,
+            isSelected: isSelected(providerId: entry.providerId, model: entry.modelName),
+            stat: findDetailedStat(providerId: entry.providerId, modelName: entry.modelName)
+        ) {
             selectModel(providerId: entry.providerId, model: entry.modelName)
-        }) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(entry.modelName)
-                            .font(AppUI.Typography.body)
-                            .lineLimit(1)
-
-                        // 供应商标签
-                        Text(entry.providerDisplayName)
-                            .font(.caption2)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
-                            )
-
-                        Spacer()
-
-                        // 使用次数
-                        Text("\(entry.useCount)")
-                            .font(.caption2)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    }
-                    if let stat = findDetailedStat(providerId: entry.providerId, modelName: entry.modelName), stat.avgTTFT > 0 {
-                        ModelLatencyProgressBar(
-                            ttft: stat.avgTTFT,
-                            totalLatency: stat.avgLatency,
-                            sampleCount: stat.sampleCount,
-                            tps: stat.avgTPS
-                        )
-                    }
-                }
-            }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.15) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            if hovering && !isSelected(providerId: entry.providerId, model: entry.modelName) {
-                NSCursor.pointingHand.push()
-            } else {
-                NSCursor.pop()
-            }
         }
     }
 
@@ -394,64 +236,13 @@ struct ModelSelectorView: View, SuperLog {
     }
 
     /// TPS 较快模型单行
-    @ViewBuilder
     private func fastModelRow(entry: FastModelEntry) -> some View {
-        Button(action: {
+        FastModelRow(
+            entry: entry,
+            isSelected: isSelected(providerId: entry.providerId, model: entry.modelName),
+            stat: findDetailedStat(providerId: entry.providerId, modelName: entry.modelName)
+        ) {
             selectModel(providerId: entry.providerId, model: entry.modelName)
-        }) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(entry.modelName)
-                            .font(AppUI.Typography.body)
-                            .lineLimit(1)
-
-                        Text(entry.providerDisplayName)
-                            .font(.caption2)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
-                            )
-
-                        Spacer()
-
-                        Text(String(format: "%.1f t/s", entry.avgTPS))
-                            .font(.caption2)
-                            .foregroundColor(.green)
-                    }
-
-                    if let stat = findDetailedStat(providerId: entry.providerId, modelName: entry.modelName), stat.avgTTFT > 0 {
-                        ModelLatencyProgressBar(
-                            ttft: stat.avgTTFT,
-                            totalLatency: stat.avgLatency,
-                            sampleCount: stat.sampleCount,
-                            tps: stat.avgTPS
-                        )
-                    }
-                }
-            }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.15) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(isSelected(providerId: entry.providerId, model: entry.modelName) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            if hovering && !isSelected(providerId: entry.providerId, model: entry.modelName) {
-                NSCursor.pointingHand.push()
-            } else {
-                NSCursor.pop()
-            }
         }
     }
 
@@ -506,14 +297,7 @@ struct ModelSelectorView: View, SuperLog {
         }
     }
 
-    /// 单行模型：名称（左）、上下文大小（右）、性能条、选中态
-    /// - Parameters:
-    ///   - provider: 供应商信息
-    ///   - model: 模型 ID（用于选中/保存）
-    ///   - displayName: 可选展示名；本地模型用 displayName，远程用 nil 则显示 model
-    ///   - supportsVision: 是否支持视觉输入（可选）
-    ///   - supportsTools: 是否支持工具调用（可选）
-    @ViewBuilder
+    /// 单行模型
     private func modelRow(
         provider: LLMProviderInfo,
         model: String,
@@ -521,105 +305,27 @@ struct ModelSelectorView: View, SuperLog {
         supportsVision: Bool? = nil,
         supportsTools: Bool? = nil
     ) -> some View {
-        Button(action: {
-            selectModel(providerId: provider.id, model: model)
-        }) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(displayName ?? model)
-                                    .font(AppUI.Typography.body)
-                                    .lineLimit(1)
-
-                                Spacer()
-                                if let contextSize = provider.contextWindowSizes[model] {
-                                    Text(formatContextSize(contextSize))
-                                        .font(.caption2)
-                                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                                        .padding(.horizontal, 4)
-                                        .padding(.vertical, 1)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 3)
-                                                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
-                                        )
-                                }
-                            }
-
-                            HStack(spacing: 6) {
-                                if let supportsVision {
-                                    capabilityBadge(
-                                        title: supportsVision
-                                            ? String(localized: "Image", table: "AgentInput")
-                                            : String(localized: "Text", table: "AgentInput"),
-                                        systemImage: supportsVision ? "photo" : "text.bubble"
-                                    )
-                                }
-
-                                if let supportsTools, supportsTools {
-                                    capabilityBadge(
-                                        title: String(localized: "Tools", table: "AgentInput"),
-                                        systemImage: "wrench.and.screwdriver"
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    if let stat = findDetailedStat(providerId: provider.id, modelName: model), stat.avgTTFT > 0 {
-                        ModelLatencyProgressBar(
-                            ttft: stat.avgTTFT,
-                            totalLatency: stat.avgLatency,
-                            sampleCount: stat.sampleCount,
-                            tps: stat.avgTPS
-                        )
-                    }
-                }
-            }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(modelRowBackgroundColor(providerId: provider.id, model: model))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(isSelected(providerId: provider.id, model: model) ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            if hovering {
-                hoveringModelId = modelRowHoverId(providerId: provider.id, model: model)
-                if !isSelected(providerId: provider.id, model: model) {
-                    NSCursor.pointingHand.push()
-                }
-            } else {
-                if hoveringModelId == modelRowHoverId(providerId: provider.id, model: model) {
+        let hoverKey = "\(provider.id)|\(model)"
+        return ModelSelectorModelRow(
+            provider: provider,
+            model: model,
+            displayName: displayName,
+            supportsVision: supportsVision,
+            supportsTools: supportsTools,
+            isSelected: isSelected(providerId: provider.id, model: model),
+            isHovering: hoveringModelId == hoverKey,
+            stat: findDetailedStat(providerId: provider.id, modelName: model),
+            onSelect: {
+                selectModel(providerId: provider.id, model: model)
+            },
+            onHoverChange: { hovering in
+                if hovering {
+                    hoveringModelId = hoverKey
+                } else if hoveringModelId == hoverKey {
                     hoveringModelId = nil
                 }
-                NSCursor.pop()
             }
-        }
-    }
-
-    @ViewBuilder
-    private func capabilityBadge(title: String, systemImage: String) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: systemImage)
-                .font(.system(size: 8, weight: .medium))
-            Text(title)
-                .font(.caption2)
-        }
-        .foregroundColor(AppUI.Color.semantic.textSecondary)
-        .padding(.horizontal, 4)
-        .padding(.vertical, 1)
-        .background(
-            RoundedRectangle(cornerRadius: 3)
-                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
         )
-        .help(title)
     }
 }
 
@@ -663,27 +369,21 @@ extension ModelSelectorView {
 
 extension ModelSelectorView {
     /// 检查模型是否为当前选中状态
-    /// - Parameters:
-    ///   - providerId: 供应商 ID
-    ///   - model: 模型名称
-    /// - Returns: 是否为当前选中的模型
     private func isSelected(providerId: String, model: String) -> Bool {
-        return llmVM.selectedProviderId == providerId && llmVM.currentModel == model
+        llmVM.selectedProviderId == providerId && llmVM.currentModel == model
     }
 
-    /// 检查模型是否为供应商的默认模型
-    /// - Parameters:
-    ///   - providerId: 供应商 ID
-    ///   - model: 模型名称
-    /// - Returns: 是否为默认模型
-    private func isDefaultModel(providerId: String, model: String) -> Bool {
-        guard let providerType = llmVM.providerType(forId: providerId) else {
-            return false
-        }
-        return model == providerType.defaultModel
+    /// 在后台线程加载所有统计数据，避免阻塞 UI
+    private func loadAllStats() async {
+        // 先加载详细统计（这是最耗时的操作，涉及大量 SwiftData 查询）
+        loadLatencyStats()
+        // 基于已加载的统计数据构建常用模型和快模型列表
+        loadFrequentModels()
+        loadFastModels()
+        isStatsLoaded = true
     }
 
-    /// 加载性能统计数据
+    /// 加载性能统计数据（仅内部使用，已移至 loadAllStats）
     private func loadLatencyStats() {
         detailedStats = chatHistoryVM.getModelDetailedStats()
         if Self.verbose {
@@ -737,15 +437,37 @@ extension ModelSelectorView {
     }
 
     /// 加载指定供应商的模型详情（含系列），用于按系列展示
+    /// 并行请求所有供应商，避免串行等待
     /// - Parameter providerIds: 需要加载模型详情的供应商 ID 列表
     private func loadLocalModelInfos(providerIds: [String]) async {
-        var result: [String: [LocalModelInfo]] = [:]
-        for id in providerIds {
-            guard let provider = llmVM.createProvider(id: id) as? any SuperLocalLLMProvider else { continue }
-            let infos = await provider.getAvailableModels()
-            result[id] = infos
+        isLoadingLocalModels = true
+
+        // 在主线程提前创建好所有 provider（createProvider 需要 MainActor）
+        let providers: [(String, any SuperLocalLLMProvider)] = providerIds.compactMap { id in
+            guard let provider = llmVM.createProvider(id: id) as? any SuperLocalLLMProvider else { return nil }
+            return (id, provider)
         }
-        localModelInfosByProvider = result
+
+        // 并行请求所有本地供应商的模型列表
+        let results = await withTaskGroup(of: (String, [LocalModelInfo]).self) { group in
+            for (id, provider) in providers {
+                group.addTask {
+                    let infos = await provider.getAvailableModels()
+                    return (id, infos)
+                }
+            }
+
+            var combined: [String: [LocalModelInfo]] = [:]
+            for await (id, infos) in group {
+                if !infos.isEmpty {
+                    combined[id] = infos
+                }
+            }
+            return combined
+        }
+
+        localModelInfosByProvider = results
+        isLoadingLocalModels = false
     }
 
     /// 查找指定供应商和模型的详细性能统计
@@ -884,196 +606,6 @@ extension ModelSelectorView {
     /// 规范化搜索词
     private var normalizedSearchText: String {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Tab 图标
-    private func tabIconName(for tab: ModelSelectorTab) -> String {
-        switch tab {
-        case .all:
-            return "globe"
-        case .current:
-            return "scope"
-        case .frequent:
-            return "clock.arrow.circlepath"
-        case .fast:
-            return "bolt.fill"
-        case .local:
-            return "laptopcomputer"
-        case .remote:
-            return "cloud"
-        }
-    }
-
-    /// Tab 背景色
-    private func tabBackgroundColor(for tab: ModelSelectorTab) -> Color {
-        if selectedTab == tab {
-            return Color.accentColor.opacity(0.15)
-        }
-        if hoveringTab == tab {
-            return Color.accentColor.opacity(0.08)
-        }
-        return Color.clear
-    }
-
-    /// 模型行 hover key
-    private func modelRowHoverId(providerId: String, model: String) -> String {
-        "\(providerId)|\(model)"
-    }
-
-    /// 模型行背景色
-    private func modelRowBackgroundColor(providerId: String, model: String) -> Color {
-        if isSelected(providerId: providerId, model: model) {
-            return Color.accentColor.opacity(0.15)
-        }
-        if hoveringModelId == modelRowHoverId(providerId: providerId, model: model) {
-            return Color.accentColor.opacity(0.08)
-        }
-        return Color.clear
-    }
-
-    /// 格式化上下文窗口大小为人类可读字符串
-    /// - Parameter tokens: Token 数量
-    /// - Returns: 格式化后的字符串，如 "200K"、"1M"、"8K"
-    private func formatContextSize(_ tokens: Int) -> String {
-        if tokens >= 1_000_000 {
-            let value = Double(tokens) / 1_000_000.0
-            return value == floor(value) ? "\(Int(value))M" : String(format: "%.1fM", value)
-        } else if tokens >= 1_000 {
-            let value = Double(tokens) / 1_000.0
-            return value == floor(value) ? "\(Int(value))K" : String(format: "%.0fK", value)
-        } else {
-            return "\(tokens)"
-        }
-    }
-}
-
-// MARK: - Model Latency Progress Bar
-
-/// 模型耗时进度条组件
-struct ModelLatencyProgressBar: View {
-    let ttft: Double
-    let totalLatency: Double
-    let sampleCount: Int
-    let tps: Double
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            // 进度条
-            GeometryReader { geometry in
-                HStack(spacing: 0) {
-                    // TTFT 部分（橙色）
-                    Rectangle()
-                        .fill(Color.orange)
-                        .frame(width: geometry.size.width * ttftRatio)
-
-                    // 响应时间部分（蓝色）
-                    Rectangle()
-                        .fill(Color.blue)
-                        .frame(width: geometry.size.width * (1 - ttftRatio))
-                }
-            }
-            .frame(width: 80, height: 3)
-            .clipShape(RoundedRectangle(cornerRadius: 1.5))
-
-            // 时间信息（一行显示）
-            HStack(spacing: 6) {
-                HStack(spacing: 1) {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 6, weight: .medium))
-                    Text(formatTTFT(ttft))
-                        .font(.caption2)
-                }
-                .foregroundColor(.orange)
-
-                HStack(spacing: 1) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 6, weight: .medium))
-                    Text(formatLatency(totalLatency))
-                        .font(.caption2)
-                }
-                .foregroundColor(.blue)
-
-                // TPS 显示
-                if tps > 0 {
-                    HStack(spacing: 1) {
-                        Image(systemName: "speedometer")
-                            .font(.system(size: 6, weight: .medium))
-                        Text(formatTPS(tps))
-                            .font(.caption2)
-                    }
-                    .foregroundColor(.green)
-                }
-
-                if sampleCount > 1 {
-                    Text("(\(sampleCount))")
-                        .font(.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                }
-            }
-        }
-        .help(helpText)
-    }
-
-    /// TTFT 占总耗时的比例
-    private var ttftRatio: Double {
-        guard totalLatency > 0 else { return 0 }
-        return min(ttft / totalLatency, 1.0)
-    }
-
-    /// 格式化 TTFT
-    private func formatTTFT(_ ttft: Double) -> String {
-        if ttft >= 1000 {
-            return String(format: "%.1fs", ttft / 1000.0)
-        } else {
-            return String(format: "%.0fms", ttft)
-        }
-    }
-
-    /// 格式化响应时间
-    private func formatLatency(_ latency: Double) -> String {
-        if latency >= 1000 {
-            return String(format: "%.1fs", latency / 1000.0)
-        } else {
-            return String(format: "%.0fms", latency)
-        }
-    }
-
-    /// 格式化 TPS
-    private func formatTPS(_ tps: Double) -> String {
-        if tps >= 100 {
-            return String(format: "%.0f t/s", tps)
-        } else if tps >= 10 {
-            return String(format: "%.1f t/s", tps)
-        } else {
-            return String(format: "%.2f t/s", tps)
-        }
-    }
-
-    /// 帮助文本
-    private var helpText: String {
-        let ttftPercent = String(format: "%.1f", ttftRatio * 100)
-        let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
-        var text = """
-        ⚡ 首个 Token 延迟 (TTFT): \(formatTTFT(ttft)) (\(ttftPercent)%)
-        🕐 响应时间: \(formatLatency(totalLatency)) (\(responsePercent)%)
-        """
-
-        if tps > 0 {
-            text += "\n🚀 生成速度: \(formatTPS(tps))"
-        }
-
-        text += """
-
-
-        TTFT 表示从发送请求到收到第一个 token 的时间
-        响应时间表示从第一个 token 到响应完成的时间
-        """
-
-        if tps > 0 {
-            text += "TPS (Tokens Per Second) 表示每秒生成的 token 数量"
-        }
-
-        return text
     }
 }
 

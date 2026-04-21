@@ -18,6 +18,10 @@ extension Notification.Name {
     /// Agent 模式：某对话一轮发送/处理已完成（`SendController.finishSendTurn`）
     /// object: UUID (对话 ID)
     static let agentConversationSendTurnFinished = Notification.Name("agentConversationSendTurnFinished")
+
+    /// Agent 模式：`AgentTurnService` 一轮循环已结束（包含正常结束、取消、错误、用户拒绝）
+    /// object: UUID (对话 ID)
+    static let agentTurnFinished = Notification.Name("agentTurnFinished")
 }
 
 // MARK: - NotificationCenter Extension
@@ -55,6 +59,14 @@ extension NotificationCenter {
     static func postAgentConversationSendTurnFinished(conversationId: UUID) {
         NotificationCenter.default.post(
             name: .agentConversationSendTurnFinished,
+            object: conversationId
+        )
+    }
+
+    /// `AgentTurnService` 一轮循环已结束
+    static func postAgentTurnFinished(conversationId: UUID) {
+        NotificationCenter.default.post(
+            name: .agentTurnFinished,
             object: conversationId
         )
     }
@@ -97,6 +109,15 @@ extension View {
     /// 监听某对话一轮发送/处理已完成
     func onAgentConversationSendTurnFinished(perform action: @escaping (UUID) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .agentConversationSendTurnFinished)) { notification in
+            if let conversationId = notification.object as? UUID {
+                action(conversationId)
+            }
+        }
+    }
+
+    /// 监听 `AgentTurnService` 一轮循环已结束
+    func onAgentTurnFinished(perform action: @escaping (UUID) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .agentTurnFinished)) { notification in
             if let conversationId = notification.object as? UUID {
                 action(conversationId)
             }

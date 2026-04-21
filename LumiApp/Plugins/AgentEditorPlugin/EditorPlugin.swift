@@ -17,7 +17,7 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     /// Whether to enable this plugin
     nonisolated static let enable: Bool = true
     /// Whether to enable verbose log output
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     /// Plugin unique identifier
     static let id: String = "LumiEditor"
 

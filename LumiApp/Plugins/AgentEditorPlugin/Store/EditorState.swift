@@ -7,6 +7,8 @@ import CodeEditTextView
 import CodeEditLanguages
 import LanguageServerProtocol
 import UniformTypeIdentifiers
+import MagicKit
+import os
 
 /// LSP 引用查询结果
 struct ReferenceResult: Identifiable, Equatable {
@@ -21,7 +23,12 @@ struct ReferenceResult: Identifiable, Equatable {
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
 @MainActor
-final class EditorState: ObservableObject {
+final class EditorState: ObservableObject, SuperLog {
+    nonisolated static let emoji = "📝"
+    nonisolated static let verbose = true
+
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.state")
+
     enum StatusLevel {
         case info
         case success
@@ -221,8 +228,44 @@ final class EditorState: ObservableObject {
     /// 当前列号
     @Published var cursorColumn: Int = 1
 
-    /// 当前 LSP Hover 文本（用于提示展示）
+    // MARK: - Mouse Hover State
+
+    /// 当前 LSP Hover 文本（光标移动触发，已废弃，保留兼容）
     @Published var hoverText: String?
+
+    /// 鼠标悬停 Hover 内容（Markdown 格式）
+    @Published var mouseHoverContent: String?
+
+    /// 鼠标悬停对应的 symbol 矩形（编辑器坐标系，原点在左上角，Y 向下增长）
+    /// 这个矩形精确覆盖 LSP 返回的 hover range 对应的文本区域
+    @Published var mouseHoverSymbolRect: CGRect = .zero
+
+    /// 鼠标悬停位置（编辑器坐标系，已废弃）
+    @Published var mouseHoverPoint: CGPoint = .zero
+
+    /// 鼠标悬停的 LSP 行列（已废弃）
+    @Published var mouseHoverLine: Int = 0
+    @Published var mouseHoverCharacter: Int = 0
+
+    /// 设置鼠标悬停状态（使用 symbol 矩形定位）
+    func setMouseHover(content: String, symbolRect: CGRect) {
+        if Self.verbose {
+            EditorPlugin.logger.debug("\(Self.t) 设置鼠标悬停: 内容长度=\(content.count) 矩形=\(String(describing: symbolRect))")
+        }
+        mouseHoverContent = content
+        mouseHoverSymbolRect = symbolRect
+        // 兼容旧属性
+        mouseHoverPoint = CGPoint(x: symbolRect.midX, y: symbolRect.midY)
+    }
+
+    /// 清除鼠标悬停状态
+    func clearMouseHover() {
+        if Self.verbose {
+            EditorPlugin.logger.debug("\(Self.t)🚫 清除鼠标悬停")
+        }
+        mouseHoverContent = nil
+        mouseHoverSymbolRect = .zero
+    }
 
     /// 多光标编辑状态
     @Published var multiCursorState = MultiCursorState()
@@ -476,6 +519,7 @@ final class EditorState: ObservableObject {
                     // 计算行数
                     self.totalLines = content.filter { $0 == "\n" }.count + 1
                     self.hoverText = nil
+                    self.mouseHoverContent = nil
                     self.inlayHintProvider.clear()
                     self.codeActionProvider.clear()
                     self.inlayHintRefreshTask?.cancel()
@@ -576,6 +620,7 @@ final class EditorState: ObservableObject {
         cursorColumn = 1
         totalLines = 0
         hoverText = nil
+        mouseHoverContent = nil
         referenceResults = []
         isReferencePanelPresented = false
         problemDiagnostics = []
@@ -629,6 +674,7 @@ final class EditorState: ObservableObject {
         cursorColumn = 1
         totalLines = 0
         hoverText = nil
+        mouseHoverContent = nil
         referenceResults = []
         isReferencePanelPresented = false
         problemDiagnostics = []
@@ -637,7 +683,9 @@ final class EditorState: ObservableObject {
         
         // 计算文件大小显示信息
         let sizeText = ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
-        print("📎 [Editor] 加载二进制文件: \(url.lastPathComponent), 大小: \(sizeText)")
+        if Self.verbose {
+            logger.info("\(Self.t)加载二进制文件: \(url.lastPathComponent), 大小: \(sizeText)")
+        }
     }
     
     // MARK: - Content Change Detection
@@ -645,7 +693,9 @@ final class EditorState: ObservableObject {
     /// 通知内容已变更（由 TextViewCoordinator 调用）
     func notifyContentChanged() {
         guard let content else {
-            print("⚠️ [AutoSave] notifyContentChanged: content is nil, 无法检测变更")
+            if Self.verbose {
+                logger.warning("\(Self.t)内容变更: content 为 nil，无法检测变更")
+            }
             return
         }
         
@@ -660,7 +710,9 @@ final class EditorState: ObservableObject {
             changed = false
         }
         
-        print("🔍 [AutoSave] notifyContentChanged | changed=\(changed) | snapshotExists=\(snapshotExists) | contentLen=\(contentString.count) | snapshotLen=\(persistedContentSnapshot?.count ?? -1) | fileURL=\(currentFileURL?.lastPathComponent ?? "nil")")
+        if Self.verbose {
+            logger.info("\(Self.t)内容变更检测: changed=\(changed), 内容长度=\(contentString.count), 快照长度=\(self.persistedContentSnapshot?.count ?? -1), 文件=\(self.currentFileURL?.lastPathComponent ?? "nil")")
+        }
         
         if changed {
             hasUnsavedChanges = true
@@ -877,18 +929,22 @@ final class EditorState: ObservableObject {
         
         let fileURL = currentFileURL
         
-        print("⏰ [AutoSave] scheduleAutoSave | hadPreviousTask=\(hadPreviousTask) | delay=\(Self.autoSaveDelay)s | contentLen=\(content.count) | fileURL=\(fileURL?.lastPathComponent ?? "nil")")
+        if Self.verbose {
+            logger.info("\(Self.t)自动保存调度: 已有任务=\(hadPreviousTask), 延迟=\(Self.autoSaveDelay)s, 内容长度=\(content.count), 文件=\(fileURL?.lastPathComponent ?? "nil")")
+        }
         
         saveTask = Task { [weak self] in
-            print("⏰ [AutoSave] scheduleAutoSave Task 开始等待 \(Self.autoSaveDelay)s...")
             try? await Task.sleep(for: .seconds(Self.autoSaveDelay))
-            print("⏰ [AutoSave] scheduleAutoSave Task 醒来 | cancelled=\(Task.isCancelled) | self=\(self != nil)")
             guard !Task.isCancelled else {
-                print("⏰ [AutoSave] scheduleAutoSave Task 被取消，跳过保存")
+                if Self.verbose {
+                    EditorPlugin.logger.debug("\(Self.t)自动保存任务已取消，跳过保存")
+                }
                 return
             }
             await MainActor.run {
-                print("⏰ [AutoSave] scheduleAutoSave Task 准备执行 performSave | self=\(self != nil) | fileURL=\(fileURL?.lastPathComponent ?? "nil")")
+                if Self.verbose {
+                    EditorPlugin.logger.debug("\(Self.t)自动保存任务执行保存: self=\(self != nil), 文件=\(fileURL?.lastPathComponent ?? "nil")")
+                }
                 self?.performSave(content: content, to: fileURL)
             }
         }
@@ -906,11 +962,15 @@ final class EditorState: ObservableObject {
     /// 执行保存
     private func performSave(content: String, to url: URL?) {
         guard let url else {
-            print("⚠️ [Editor] performSave: url is nil")
+            if Self.verbose {
+                logger.warning("\(Self.t)保存失败: url 为 nil")
+            }
             return
         }
         
-        print("💾 [Editor] performSave: saving to \(url.path), contentLength=\(content.count)")
+        if Self.verbose {
+            logger.info("\(Self.t)执行保存: 路径=\(url.path), 内容长度=\(content.count)")
+        }
         saveState = .saving
         
         // 使用普通 Task（继承 MainActor 隔离），文件 I/O 通过 withCheckedThrowingContinuation 移到后台线程
@@ -918,7 +978,7 @@ final class EditorState: ObservableObject {
         Task {
             do {
                 guard FileManager.default.fileExists(atPath: url.path) else {
-                    print("⚠️ [Editor] performSave: file not found at \(url.path)")
+                    logger.error("\(Self.t)保存失败: 文件不存在 at \(url.path)")
                     saveState = .error(String(localized: "File not found", table: "LumiEditor"))
                     scheduleSuccessClear()
                     return
@@ -937,13 +997,15 @@ final class EditorState: ObservableObject {
                     }
                 }
                 
-                print("✅ [Editor] performSave: saved successfully")
+                if Self.verbose {
+                    logger.info("\(Self.t)保存成功")
+                }
                 persistedContentSnapshot = content
                 hasUnsavedChanges = false
                 saveState = .saved
                 scheduleSuccessClear()
             } catch {
-                print("❌ [Editor] performSave: \(error)")
+                logger.error("\(Self.t)保存失败: \(error)")
                 saveState = .error(String(localized: "Save failed", table: "LumiEditor") + ": \(error.localizedDescription)")
                 scheduleSuccessClear()
             }
@@ -988,7 +1050,7 @@ final class EditorState: ObservableObject {
         RunLoop.main.add(timer, forMode: .common)
         pollTimer = timer
         
-        print("✏️ [Editor] 已启动文件轮询监听：\(url.lastPathComponent)")
+        logger.info("\(Self.t)已启动文件轮询监听：\(url.lastPathComponent)")
     }
     
     /// 停止文件监听
@@ -1040,7 +1102,9 @@ final class EditorState: ObservableObject {
                 
                 self.applyExternalContent(newContent, modificationDate: currentModDate)
             } catch {
-                print("⚠️ [Editor] 读取外部文件失败：\(error)")
+                if Self.verbose {
+                    logger.error("\(Self.t)读取外部文件失败：\(error)")
+                }
             }
         }
     }
@@ -1049,7 +1113,9 @@ final class EditorState: ObservableObject {
     private func applyExternalContent(_ newContent: String, modificationDate: Date) {
         guard !hasUnsavedChanges else { return }
         
-        print("🔄 [Editor] 检测到外部修改，重新加载：\(currentFileURL?.lastPathComponent ?? "")")
+        if Self.verbose {
+            logger.info("\(Self.t)检测到外部修改，重新加载：\(self.currentFileURL?.lastPathComponent ?? "")")
+        }
         
         // 关键：原地替换现有 NSTextStorage 的内容，而不是创建新对象
         // SourceEditor 持有的是旧 NSTextStorage 的引用，替换引用不会触发 UI 更新
@@ -1200,7 +1266,7 @@ final class EditorState: ObservableObject {
         }.joined(separator: ", ")
         let message = note.map { "\(action) | \($0) | stateCount=\(selections.count) | [\(summary)]" }
             ?? "\(action) | stateCount=\(selections.count) | [\(summary)]"
-        EditorPlugin.logger.info("[UI] | ✏️ EditorState             | multi-cursor state | \(message, privacy: .public)")
+        EditorPlugin.logger.info("[UI] | ✏️ 编辑器状态 | 多光标状态 | \(message, privacy: .public)")
     }
 
     func logMultiCursorInput(action: String, textViewSelections: [NSRange], note: String? = nil) {
@@ -1209,7 +1275,7 @@ final class EditorState: ObservableObject {
         }.joined(separator: ", ")
         let details = note.map { "\(action) | \($0) | textViewCount=\(textViewSelections.count) | [\(rendered)]" }
             ?? "\(action) | textViewCount=\(textViewSelections.count) | [\(rendered)]"
-        EditorPlugin.logger.info("[UI] | ✏️ EditorState             | multi-cursor input | \(details, privacy: .public)")
+        EditorPlugin.logger.info("[UI] | ✏️ 编辑器状态 | 多光标输入 | \(details, privacy: .public)")
         logMultiCursorState(action: "input-state-sync", note: action)
     }
 

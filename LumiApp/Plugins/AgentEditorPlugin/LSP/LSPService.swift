@@ -3,17 +3,18 @@ import SwiftUI
 import LanguageClient
 import LanguageServerProtocol
 import os
+import MagicKit
 import Combine
 
 /// LSP 服务管理器
 /// 基于 LanguageClient + LanguageServerProtocol + JSONRPC
 /// 完全参考 CodeEdit 的 LSPService 架构
 @MainActor
-final class LSPService: ObservableObject {
+final class LSPService: ObservableObject, SuperLog {
     
     static let shared = LSPService()
-    
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.service")
+    nonisolated static let emoji = "🔧"
+    nonisolated static let verbose = true
     
     // MARK: - Published State
     
@@ -45,7 +46,9 @@ final class LSPService: ObservableObject {
         if let languageId {
             let available = LSPConfig.findServer(for: languageId) != nil
             isAvailable = available
-            logger.info("LSP availability: \(languageId) = \(available ? "yes" : "no")")
+            if Self.verbose {
+                EditorPlugin.logger.info("\(Self.t)LSP 可用性: \(languageId) = \(available ? "是" : "否")")
+            }
             return
         }
 
@@ -53,24 +56,30 @@ final class LSPService: ObservableObject {
             LSPConfig.findServer(for: $0) != nil
         }
         isAvailable = available
-        logger.info("LSP availability(any) = \(available ? "yes" : "no")")
+        if Self.verbose {
+            EditorPlugin.logger.info("\(Self.t)LSP 可用性(任意语言) = \(available ? "是" : "否")")
+        }
     }
     
     // MARK: - Server Management
     
     func startServer(for languageId: String, projectPath: String) async {
         if let existing = server {
-            logger.info("Stopping existing server")
+            if Self.verbose {
+                EditorPlugin.logger.info("\(Self.t)正在停止现有服务器")
+            }
             try? await existing.shutdown()
             server = nil
         }
         
         guard let config = LSPConfig.defaultConfig(for: languageId) else {
-            logger.warning("No server config for \(languageId)")
+            EditorPlugin.logger.warning("\(Self.t)未找到 \(languageId) 的服务器配置")
             return
         }
         
-        logger.info("Starting server for \(languageId) at \(config.execPath)")
+        if Self.verbose {
+            EditorPlugin.logger.info("\(Self.t)启动 \(languageId) 服务器，路径: \(config.execPath)")
+        }
         isInitializing = true
         activeLanguageId = languageId
         projectRootPath = projectPath
@@ -96,9 +105,11 @@ final class LSPService: ObservableObject {
             
             server = newServer
             isInitializing = false
-            logger.info("Server initialized for \(languageId)")
+            if Self.verbose {
+                EditorPlugin.logger.info("\(Self.t)\(languageId) 服务器已初始化")
+            }
         } catch {
-            logger.error("Failed to start server: \(error.localizedDescription)")
+            EditorPlugin.logger.error("\(Self.t)启动服务器失败: \(error.localizedDescription)")
             isInitializing = false
             activeLanguageId = nil
         }
@@ -117,7 +128,7 @@ final class LSPService: ObservableObject {
             if let root = projectRootPath {
                 await startServer(for: languageId, projectPath: root)
             } else {
-                logger.warning("No project root")
+                EditorPlugin.logger.warning("\(Self.t)无项目根目录")
                 return
             }
         }
@@ -133,7 +144,7 @@ final class LSPService: ObservableObject {
         do {
             try await server.openDocument(uri: uri, languageId: languageId, text: text)
         } catch {
-            logger.error("Failed to open document: \(error)")
+            EditorPlugin.logger.error("\(Self.t)打开文档失败: \(error)")
         }
     }
     
@@ -149,7 +160,7 @@ final class LSPService: ObservableObject {
                     pendingChanges.removeAll()
                 }
             } catch {
-                logger.error("Failed to close document: \(error)")
+                EditorPlugin.logger.error("\(Self.t)关闭文档失败: \(error)")
             }
         }
     }
@@ -180,7 +191,7 @@ final class LSPService: ObservableObject {
             try await server.documentDidChange(uri: uri, changes: changes, fullText: snapshot)
             pendingChanges.removeAll()
         } catch {
-            logger.error("Failed to send change: \(error)")
+            EditorPlugin.logger.error("\(Self.t)发送变更失败: \(error)")
         }
     }
     
@@ -195,7 +206,7 @@ final class LSPService: ObservableObject {
             do {
                 try await server.documentDidChange(uri: uri, text: text)
             } catch {
-                logger.error("Failed to replace document text: \(error)")
+                EditorPlugin.logger.error("\(Self.t)替换文档失败: \(error)")
             }
         }
     }
@@ -208,7 +219,7 @@ final class LSPService: ObservableObject {
             let response: CompletionResponse = try await server.completion(uri: uri, line: line, character: character)
             return parseCompletionItems(response)
         } catch {
-            logger.error("Completion failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)补全请求失败: \(error)")
             return []
         }
     }
@@ -221,7 +232,18 @@ final class LSPService: ObservableObject {
             await MainActor.run { onHover?(content) }
             return content
         } catch {
-            logger.error("Hover failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)悬停请求失败: \(error)")
+            return nil
+        }
+    }
+
+    /// 请求悬停提示（返回原始 Hover 对象，供调用方自行解析 Markdown）
+    func requestHoverRaw(uri: String, line: Int, character: Int) async -> Hover? {
+        guard let server else { return nil }
+        do {
+            return try await server.hover(uri: uri, line: line, character: character)
+        } catch {
+            EditorPlugin.logger.error("\(Self.t)原始悬停请求失败: \(error)")
             return nil
         }
     }
@@ -232,7 +254,7 @@ final class LSPService: ObservableObject {
             let response: DefinitionResponse = try await server.definition(uri: uri, line: line, character: character)
             return parseDefinitionLocation(response)
         } catch {
-            logger.error("Definition failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)定义跳转失败: \(error)")
             return nil
         }
     }
@@ -242,7 +264,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.references(uri: uri, line: line, character: character)
         } catch {
-            logger.error("References failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)引用查找失败: \(error)")
             return []
         }
     }
@@ -252,7 +274,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.documentSymbols(uri: uri)
         } catch {
-            logger.error("Document symbols failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)文档符号请求失败: \(error)")
             return []
         }
     }
@@ -262,7 +284,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.rename(uri: uri, line: line, character: character, newName: newName)
         } catch {
-            logger.error("Rename failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)重命名失败: \(error)")
             return nil
         }
     }
@@ -272,7 +294,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.formatting(uri: uri, tabSize: tabSize, insertSpaces: insertSpaces)
         } catch {
-            logger.error("Formatting failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)格式化失败: \(error)")
             return nil
         }
     }
@@ -283,7 +305,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.signatureHelp(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Signature help failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)签名帮助失败: \(error)")
             return nil
         }
     }
@@ -294,7 +316,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.inlayHint(uri: uri, startLine: startLine, startCharacter: startCharacter, endLine: endLine, endCharacter: endCharacter)
         } catch {
-            logger.error("Inlay hint failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)内联提示失败: \(error)")
             return nil
         }
     }
@@ -305,7 +327,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.documentHighlight(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Document highlight failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)文档高亮失败: \(error)")
             return []
         }
     }
@@ -321,7 +343,7 @@ final class LSPService: ObservableObject {
             )
             return try await server.codeAction(uri: uri, range: range, context: context)
         } catch {
-            logger.error("Code action failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)代码操作失败: \(error)")
             return []
         }
     }
@@ -343,7 +365,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.codeActionResolve(action)
         } catch {
-            logger.error("codeAction/resolve failed: \(error.localizedDescription)")
+            EditorPlugin.logger.error("\(Self.t)代码操作解析失败: \(error.localizedDescription)")
             return nil
         }
     }
@@ -359,7 +381,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.semanticTokens(uri: uri)
         } catch {
-            logger.error("Semantic tokens failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)语义令牌失败: \(error)")
             return nil
         }
     }
@@ -369,7 +391,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.semanticTokensDelta(uri: uri, previousResultId: previousResultId)
         } catch {
-            logger.error("Semantic token delta failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)语义令牌增量失败: \(error)")
             return nil
         }
     }
@@ -380,7 +402,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.declaration(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Declaration failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)声明跳转失败: \(error)")
             return nil
         }
     }
@@ -391,7 +413,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.typeDefinition(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Type definition failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)类型定义跳转失败: \(error)")
             return nil
         }
     }
@@ -402,7 +424,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.implementation(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Implementation failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)实现查找失败: \(error)")
             return nil
         }
     }
@@ -426,7 +448,7 @@ final class LSPService: ObservableObject {
             let response = try await server.foldingRange(uri: uri)
             return response ?? []
         } catch {
-            logger.error("Folding range failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)折叠范围失败: \(error)")
             return []
         }
     }
@@ -438,7 +460,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.selectionRange(uri: uri, line: line, character: character) ?? []
         } catch {
-            logger.error("Selection range failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)选择范围失败: \(error)")
             return []
         }
     }
@@ -451,7 +473,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.documentLink(uri: uri) ?? []
         } catch {
-            logger.error("Document link failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)文档链接失败: \(error)")
             return []
         }
     }
@@ -467,7 +489,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.resolveDocumentLink(lspLink)
         } catch {
-            logger.error("Resolve document link failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)解析文档链接失败: \(error)")
             return nil
         }
     }
@@ -477,7 +499,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.resolveDocumentLink(link)
         } catch {
-            logger.error("Resolve document link failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)解析文档链接失败: \(error)")
             return nil
         }
     }
@@ -490,7 +512,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.documentColor(uri: uri)
         } catch {
-            logger.error("Document color failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)文档颜色请求失败: \(error)")
             return []
         }
     }
@@ -501,20 +523,21 @@ final class LSPService: ObservableObject {
         do {
             return try await server.colorPresentation(uri: uri, color: color, range: range)
         } catch {
-            logger.error("Color presentation failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)颜色展示请求失败: \(error)")
             return []
         }
     }
     
     // MARK: Call Hierarchy
     
+    @discardableResult
     func requestCallHierarchyPrepare(uri: String, line: Int, character: Int) async -> [CallHierarchyItem] {
         guard let server else { return [] }
         guard server.capabilities.callHierarchyProvider != nil else { return [] }
         do {
             return try await server.callHierarchyPrepare(uri: uri, line: line, character: character) ?? []
         } catch {
-            logger.error("Call hierarchy prepare failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)调用层级准备失败: \(error)")
             return []
         }
     }
@@ -524,7 +547,7 @@ final class LSPService: ObservableObject {
         do {
             return (try await server.callHierarchyIncomingCalls(item: item)) ?? []
         } catch {
-            logger.error("Call hierarchy incoming calls failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)调用层级(入向)失败: \(error)")
             return []
         }
     }
@@ -534,7 +557,7 @@ final class LSPService: ObservableObject {
         do {
             return (try await server.callHierarchyOutgoingCalls(item: item)) ?? []
         } catch {
-            logger.error("Call hierarchy outgoing calls failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)调用层级(出向)失败: \(error)")
             return []
         }
     }
@@ -546,7 +569,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.workspaceSymbol(query: query)
         } catch {
-            logger.error("Workspace symbol failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)工作区符号查找失败: \(error)")
             return nil
         }
     }
@@ -581,12 +604,12 @@ final class LSPService: ObservableObject {
         guard let server else { return nil }
         if let commands = server.capabilities.executeCommandProvider?.commands,
            !commands.contains(command) {
-            logger.warning("Command \(command) not listed in server capabilities; attempting anyway")
+            EditorPlugin.logger.warning("\(Self.t)命令 \(command) 不在服务器能力列表中，但仍尝试执行")
         }
         do {
             return try await server.executeCommand(command: command, arguments: arguments)
         } catch {
-            logger.error("Execute command failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)执行命令失败: \(error)")
             return nil
         }
     }

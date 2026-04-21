@@ -120,7 +120,7 @@ struct EditorRootView: View {
                 .clipped()
         } else if state.isBinaryFile, let fileURL = state.currentFileURL {
             // 二进制/非文本文件预览
-            NonTextFilePreviewView(fileURL: fileURL)
+            FilePreviewView(fileURL: fileURL)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if projectVM.isFileSelected {
             unsupportedFileView

@@ -37,6 +37,11 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
+    /// 根层包裹：有文件被选中时切换到文件树侧边栏（不依赖侧边栏内视图是否已挂载）
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(ProjectTreeRootOverlay(content: content()))
+    }
+
     /// Add sidebar view for Agent mode - 显示项目文件树
     /// - Returns: ProjectTreeView to be added to the sidebar
     @MainActor func addSidebarView() -> AnyView? {

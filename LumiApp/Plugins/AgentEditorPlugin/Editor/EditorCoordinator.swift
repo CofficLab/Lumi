@@ -4,6 +4,7 @@ import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI
 import LanguageServerProtocol
+import os
 
 /// 文本变更协调器
 /// 监听 CodeEditSourceEditor 的文本变更，通知 EditorState 触发自动保存
@@ -12,7 +13,6 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     /// 弱引用状态管理器
     private weak var state: EditorState?
     private var editedRange: LSPRange?
-    private var hoverTask: Task<Void, Never>?
     private weak var textViewController: TextViewController?
     /// 跳转定义代理（由外部注入）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
@@ -30,16 +30,17 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
         DispatchQueue.main.async {
             st?.focusedTextView = controller.textView
         }
-        print("🔧 [AutoSave] EditorCoordinator.prepareCoordinator | state=\(state != nil)")
     }
     
     nonisolated func textViewDidChangeText(controller: TextViewController) {
         let state = self.state
-        print("📝 [AutoSave] EditorCoordinator.textViewDidChangeText 触发 | state=\(state != nil) | textLen=\(controller.textView?.string.count ?? -1)")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.info("\(EditorState.t)文本变更: state=\(state != nil), 长度=\(controller.textView?.string.count ?? -1)")
+        }
         // 延迟到下一个 RunLoop，避免 "Modifying state during view update"
         DispatchQueue.main.async {
             if state == nil {
-                print("⚠️ [AutoSave] EditorCoordinator.textViewDidChangeText: state is nil! Coordinator 已被释放")
+                EditorPlugin.logger.warning("\(EditorState.t)Coordinator 已被释放，state 为 nil")
             }
             state?.notifyContentChanged()
             state?.scheduleInlayHintsRefreshIfNeeded(controller: controller)
@@ -50,15 +51,14 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
         let state = self.state
         let selectionRanges = controller.textView?.selectionManager.textSelections.map(\.range) ?? []
         let cursorPositions = controller.cursorPositions
-        hoverTask?.cancel()
-        hoverTask = Task { @MainActor [weak state] in
+        Task { @MainActor [weak state] in
             guard let state else { return }
             state.logMultiCursorInput(
                 action: "coordinator.selectionDidChange",
                 textViewSelections: selectionRanges,
                 note: "cursorPositions=\(cursorPositions.count)"
             )
-            
+
             // 多光标模式下，跳过 syncSelections 和 clearUnfocusedMultiCursorsIfNeeded。
             // 原因：CodeEditSourceEditor 的 updateCursorPosition() 会把 textSelections 转换为
             // cursorPositions（基于 line/column），如果 layoutManager 尚未布局某些 offset，
@@ -68,17 +68,16 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
             let cursorCount = controller.textView?.selectionManager.textSelections.count ?? 0
             let stateCount = state.multiCursorState.all.count
             let isMultiCursorSession = stateCount > 1 || cursorCount > 1
-            
+
             if !isMultiCursorSession {
                 Self.syncSelections(from: controller, to: state)
                 state.clearUnfocusedMultiCursorsIfNeeded()
             }
-            
+
             let cursor = controller.cursorPositions.first?.start
 
             guard let cursor else {
                 state.selectedProblemDiagnostic = nil
-                state.hoverText = nil
                 return
             }
 
@@ -104,20 +103,17 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
                 return true
             })
 
-            // 轻量防抖，避免快速移动光标时频繁请求 LSP
-            try? await Task.sleep(for: .milliseconds(220))
-            guard !Task.isCancelled else { return }
-
-            let line = max(cursor.line - 1, 0)
-            let character = max(cursor.column - 1, 0)
-            state.hoverText = await state.lspCoordinator.requestHover(line: line, character: character)
+            // Hover 请求已由 HoverEditorCoordinator 统一处理，此处不再重复请求
+            
+            let lspLine = max(cursor.line - 1, 0)
+            let lspCharacter = max(cursor.column - 1, 0)
             
             // 触发文档高亮（Symbol Highlight）
             if let fileURL = state.currentFileURL, let content = state.content {
                 await state.documentHighlightProvider.requestHighlight(
                     uri: fileURL.absoluteString,
-                    line: line,
-                    character: character,
+                    line: lspLine,
+                    character: lspCharacter,
                     content: content.string
                 )
             }
@@ -131,8 +127,8 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
                 if !diagnostics.isEmpty {
                     await state.codeActionProvider.requestCodeActionsForLine(
                         uri: fileURL.absoluteString,
-                        line: line,
-                        character: character,
+                        line: lspLine,
+                        character: lspCharacter,
                         diagnostics: diagnostics,
                         content: contentString
                     )
@@ -146,9 +142,9 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     }
     
     nonisolated func destroy() {
-        print("🗑️ [AutoSave] EditorCoordinator.destroy | state=\(state != nil)")
-        hoverTask?.cancel()
-        hoverTask = nil
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.info("\(EditorState.t)Coordinator 销毁: state=\(self.state != nil)")
+        }
         let st = state
         state = nil
         textViewController = nil

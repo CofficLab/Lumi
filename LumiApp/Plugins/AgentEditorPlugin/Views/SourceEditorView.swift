@@ -6,14 +6,13 @@ import MagicKit
 
 /// 代码编辑器主视图
 /// 基于 CodeEditSourceEditor 实现专业级编辑体验
-struct SourceEditorView: View {
+struct SourceEditorView: View, SuperLog {
+    nonisolated static let emoji = "📝"
+    nonisolated static let verbose: Bool = true
     
     @ObservedObject var state: EditorState
     
     /// 编辑器协调器（使用 @State 确保在 View 更新间保持同一实例）
-    /// 之前作为普通 let 属性，每次 View struct 重建时会创建新实例，
-    /// 导致旧实例被 ARC 释放，TextViewController 中的 WeakCoordinator 弱引用失效，
-    /// coordinator 回调不再被触发，自动保存失效。
     @State private var textCoordinator: EditorCoordinator?
     @State private var cursorCoordinator: CursorCoordinator?
     @State private var contextMenuCoordinator: ContextMenuCoordinator?
@@ -21,6 +20,7 @@ struct SourceEditorView: View {
     @State private var documentHighlightProvider: DocumentHighlightHighlighter?
     @State private var signatureHelpProvider = SignatureHelpProvider()
     @State private var codeActionPanelPresented: Bool = false
+    @State private var hoverCoordinator: HoverEditorCoordinator?
     
     /// 跳转到定义代理（Cmd+Click / 右键跳转共用同一实例）
     @StateObject private var jumpDelegate: EditorJumpToDefinitionDelegate = {
@@ -34,6 +34,9 @@ struct SourceEditorView: View {
     
     /// 缓存的配置
     @State private var cachedConfig: SourceEditorConfiguration?
+    
+    /// 缓存的 popover 高度，用于在上方定位时避免遮挡
+    @State private var hoverPopoverHeight: CGFloat = 100
     
     init(state: EditorState) {
         self._state = ObservedObject(wrappedValue: state)
@@ -62,7 +65,9 @@ struct SourceEditorView: View {
             }
     }
 
-    /// 编辑器主体内容（拆分为独立视图以减轻编译器类型推断负担）
+    // MARK: - Editor Content
+
+    /// 编辑器主体内容
     @ViewBuilder
     private var editorContent: some View {
         if let content = state.content,
@@ -84,8 +89,10 @@ struct SourceEditorView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 inlayHintsStrip
             }
-            .overlay(alignment: .topTrailing) {
-                hoverPreview
+            .overlay(alignment: .topLeading) {
+                GeometryReader { proxy in
+                    hoverPreview(in: proxy.size)
+                }
             }
             .overlay(alignment: .bottomLeading) {
                 signatureHelpOverlay
@@ -99,6 +106,8 @@ struct SourceEditorView: View {
         }
     }
     
+    // MARK: - Overlays
+
     @ViewBuilder
     private var signatureHelpOverlay: some View {
         if let help = state.signatureHelpProvider.currentHelp {
@@ -153,32 +162,76 @@ struct SourceEditorView: View {
         }
     }
 
+    // MARK: - Hover Popover
+
     @ViewBuilder
-    private var hoverPreview: some View {
-        if let hoverText = state.hoverText?.trimmingCharacters(in: .whitespacesAndNewlines),
+    private func hoverPreview(in containerSize: CGSize) -> some View {
+        if let hoverText = state.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines),
            !hoverText.isEmpty {
-            Text(hoverText)
-                .font(.system(size: 11, design: .monospaced))
-                .lineLimit(6)
-                .multilineTextAlignment(.leading)
-                .padding(8)
-                .frame(maxWidth: 420, alignment: .leading)
+            HoverPopoverView(markdownText: hoverText)
+                .onAppear {
+                    if EditorPlugin.verbose {
+                        EditorPlugin.logger.debug("\(Self.t)悬停预览: 内容长度=\(hoverText.count), 矩形=\(String(describing: self.state.mouseHoverSymbolRect))")
+                        EditorPlugin.logger.debug("\(Self.t)悬停预览: 原始内容=\n\(hoverText)")
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 440, alignment: .leading)
+                // 使用 GeometryReader 测量实际高度后调整位置
                 .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color(nsColor: .controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 2)
+                    GeometryReader { popoverGeo in
+                        Color.clear
+                            .onAppear {
+                                hoverPopoverHeight = popoverGeo.size.height
+                            }
+                            .onChange(of: popoverGeo.size.height) { _, newHeight in
+                                hoverPopoverHeight = newHeight
+                            }
+                    }
                 )
-                .padding(.top, 8)
-                .padding(.trailing, 8)
+                .offset(hoverOffset(in: containerSize))
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .scale(scale: 0.96, anchor: .bottomLeading)),
+                    removal: .opacity
+                ))
+                .animation(.easeOut(duration: 0.14), value: state.mouseHoverContent)
+                .animation(.easeOut(duration: 0.12), value: state.mouseHoverSymbolRect)
         }
     }
 
+    /// 计算 hover popover 的偏移量
+    /// 核心策略：popover 显示在 symbol 的正上方，左对齐 symbol 起点
+    private func hoverOffset(in containerSize: CGSize) -> CGSize {
+        let symbolRect = state.mouseHoverSymbolRect
+        let popoverEstimatedHeight = hoverPopoverHeight
+        let popoverMaxWidth: CGFloat = 440
+        let verticalGap: CGFloat = 4  // popover 与 symbol 之间的间距
+
+        // X: 左对齐 symbol 起点，但不超出容器
+        let preferredX = symbolRect.minX
+        let clampedX = max(4, min(preferredX, containerSize.width - popoverMaxWidth - 4))
+
+        // Y: 放在 symbol 上方
+        let preferredY = symbolRect.minY - popoverEstimatedHeight - verticalGap
+
+        // 如果上方空间不足，则放到 symbol 下方
+        let fallbackY = symbolRect.maxY + verticalGap
+        let clampedY: CGFloat
+        if preferredY >= 4 {
+            clampedY = preferredY
+        } else {
+            clampedY = min(fallbackY, max(containerSize.height - popoverEstimatedHeight - 4, 4))
+        }
+
+        return CGSize(width: clampedX, height: clampedY)
+    }
+
+    // MARK: - Initialization & Delegates
+
     /// 首次出现时初始化协调器和配置缓存
     private func initializeCoordinators() {
-        print("🔧 [AutoSave] initializeCoordinators | textCoordinator=\(textCoordinator != nil) | cursorCoordinator=\(cursorCoordinator != nil) | contextMenuCoordinator=\(contextMenuCoordinator != nil) | content=\(state.content != nil) | fileURL=\(state.currentFileURL?.lastPathComponent ?? "nil")")
         if textCoordinator == nil {
             textCoordinator = EditorCoordinator(state: state)
-            print("🔧 [AutoSave] 创建了新的 EditorCoordinator")
         }
         if cursorCoordinator == nil {
             cursorCoordinator = CursorCoordinator(state: state)
@@ -199,6 +252,9 @@ struct SourceEditorView: View {
         if cachedConfig == nil {
             updateConfigCache()
         }
+        if hoverCoordinator == nil {
+            hoverCoordinator = HoverEditorCoordinator(state: state)
+        }
     }
 
     private func wireDelegates() {
@@ -213,7 +269,6 @@ struct SourceEditorView: View {
         }
         state.jumpDelegate = jumpDelegate
         
-        // 将 jumpDelegate 注入 coordinator，供非隔离方法使用
         textCoordinator?.jumpDelegate = jumpDelegate
         
         completionDelegate.lspCoordinator = state.lspCoordinator
@@ -222,7 +277,6 @@ struct SourceEditorView: View {
     
     // MARK: - Configuration Management
     
-    /// 强制更新配置缓存
     private func updateConfigCache() {
         cachedConfig = buildConfiguration()
     }
@@ -249,42 +303,54 @@ struct SourceEditorView: View {
         if let textCoordinator { result.append(textCoordinator) }
         if let cursorCoordinator { result.append(cursorCoordinator) }
         if let contextMenuCoordinator { result.append(contextMenuCoordinator) }
+        if let hoverCoordinator { result.append(hoverCoordinator) }
         return result
     }
     
     // MARK: - Configuration
-    
-    /// 在多光标模式下，拦截 cursorPositions 的回写，防止
-    /// CodeEditSourceEditor 的 updateCursorPosition() → Coordinator → SwiftUI → setCursorPositions
-    /// 反馈循环导致部分光标丢失。
+
+    /// 提供给 SourceEditor 的安全 Binding。
     ///
-    /// 根因：updateCursorPosition() 对每个 textSelection 调用 textLineForOffset，
-    /// 如果 layoutManager 尚未布局某个 offset（例如光标在可见区域外），
-    /// 该 selection 会被跳过，cursorPositions 数量少于 textSelections。
-    /// 然后 SwiftUI Binding 回写触发 setCursorPositions 把减少后的选区覆盖回 selectionManager。
+    /// ## 解决的问题
+    ///
+    /// ### 1. 滚动位置反馈循环
+    /// 修复：不在 get 中返回 scrollPosition，始终返回 nil。
+    ///
+    /// ### 2. Publishing changes from within view updates
+    /// 修复：使用 DispatchQueue.main.async 延迟所有 @Published 属性修改。
+    ///
+    /// ### 3. 多光标模式下光标丢失
+    /// 修复：多光标模式下忽略 cursorPositions 回写。
     private var multiCursorSafeBinding: Binding<SourceEditorState> {
         Binding<SourceEditorState>(
-            get: { state.editorState },
+            get: {
+                var result = state.editorState
+                result.scrollPosition = nil
+                return result
+            },
             set: { newState in
-                // 多光标模式下，忽略 cursorPositions 的回写，只保留其他状态字段
                 if state.multiCursorState.all.count > 1 {
-                    state.editorState.scrollPosition = newState.scrollPosition
-                    state.editorState.findText = newState.findText
-                    state.editorState.replaceText = newState.replaceText
-                    state.editorState.findPanelVisible = newState.findPanelVisible
-                    // 不更新 cursorPositions，避免不完整的选区覆盖编辑器
+                    DispatchQueue.main.async {
+                        state.editorState.findText = newState.findText
+                        state.editorState.replaceText = newState.replaceText
+                        state.editorState.findPanelVisible = newState.findPanelVisible
+                    }
                 } else {
-                    state.editorState = newState
+                    DispatchQueue.main.async {
+                        state.editorState.cursorPositions = newState.cursorPositions
+                        state.editorState.findText = newState.findText
+                        state.editorState.replaceText = newState.replaceText
+                        state.editorState.findPanelVisible = newState.findPanelVisible
+                    }
                 }
             }
         )
     }
-    
-    /// 构建编辑器配置
+
     @MainActor
     private func buildConfiguration() -> SourceEditorConfiguration {
         let fontSize = CGFloat(state.fontSize)
-        let lineHeightMultiple = 1.2  // 使用稍大的行高，确保显示正常
+        let lineHeightMultiple = 1.2
         
         return SourceEditorConfiguration(
             appearance: .init(
@@ -307,7 +373,7 @@ struct SourceEditorView: View {
             layout: .init(
                 editorOverscroll: 0.1,
                 contentInsets: nil,
-                additionalTextInsets: nil  // 不使用额外的文本内边距
+                additionalTextInsets: nil
             ),
             peripherals: .init(
                 showGutter: state.showGutter,
