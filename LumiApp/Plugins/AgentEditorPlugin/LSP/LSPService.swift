@@ -530,6 +530,7 @@ final class LSPService: ObservableObject, SuperLog {
     
     // MARK: Call Hierarchy
     
+    @discardableResult
     func requestCallHierarchyPrepare(uri: String, line: Int, character: Int) async -> [CallHierarchyItem] {
         guard let server else { return [] }
         guard server.capabilities.callHierarchyProvider != nil else { return [] }

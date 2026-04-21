@@ -35,9 +35,9 @@ class LSPCoordinator: ObservableObject, SuperLog {
         self.fileURI = uri
         self.languageId = languageId
         self.version = 0
-        
+
         await lspService.openDocument(uri: uri, languageId: languageId, text: content)
-        logger.info("\(Self.t)LSP: File opened \(uri)")
+        logger.info("\(Self.t)LSP: 已打开文件 \(uri)")
     }
     
     /// 关闭文件时调用
@@ -45,7 +45,7 @@ class LSPCoordinator: ObservableObject, SuperLog {
         guard let uri = fileURI else { return }
         lspService.closeDocument(uri: uri)
         fileURI = nil
-        logger.info("\(Self.t)LSP: File closed")
+        logger.info("\(Self.t)LSP: 已关闭文件")
     }
     
     /// 文档内容变更
