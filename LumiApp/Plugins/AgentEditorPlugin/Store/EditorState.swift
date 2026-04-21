@@ -1266,7 +1266,7 @@ final class EditorState: ObservableObject, SuperLog {
         }.joined(separator: ", ")
         let message = note.map { "\(action) | \($0) | stateCount=\(selections.count) | [\(summary)]" }
             ?? "\(action) | stateCount=\(selections.count) | [\(summary)]"
-        EditorPlugin.logger.info("[UI] | ✏️ EditorState             | multi-cursor state | \(message, privacy: .public)")
+        EditorPlugin.logger.info("[UI] | ✏️ 编辑器状态 | 多光标状态 | \(message, privacy: .public)")
     }
 
     func logMultiCursorInput(action: String, textViewSelections: [NSRange], note: String? = nil) {
@@ -1275,7 +1275,7 @@ final class EditorState: ObservableObject, SuperLog {
         }.joined(separator: ", ")
         let details = note.map { "\(action) | \($0) | textViewCount=\(textViewSelections.count) | [\(rendered)]" }
             ?? "\(action) | textViewCount=\(textViewSelections.count) | [\(rendered)]"
-        EditorPlugin.logger.info("[UI] | ✏️ EditorState             | multi-cursor input | \(details, privacy: .public)")
+        EditorPlugin.logger.info("[UI] | ✏️ 编辑器状态 | 多光标输入 | \(details, privacy: .public)")
         logMultiCursorState(action: "input-state-sync", note: action)
     }
 

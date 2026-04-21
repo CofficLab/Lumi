@@ -43,6 +43,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     private weak var textViewController: TextViewController?
     private var hoverTask: Task<Void, Never>?
     private var mouseMonitor: Any?
+    private var globalMouseMonitor: Any?
     private var keyMonitor: Any?
     private var lastHoverPosition: (line: Int, character: Int)?
     private var lastHoverRequestAtNs: UInt64?
@@ -65,6 +66,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             self.textViewController = controller
             installScrollObserversIfNeeded()
             installMouseMonitorIfNeeded()
+            installGlobalMouseMonitorIfNeeded()
             installKeyMonitorIfNeeded()
         }
     }
@@ -77,6 +79,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         Task { @MainActor [weak self] in
             self?.hoverTask?.cancel()
             self?.removeMouseMonitor()
+            self?.removeGlobalMouseMonitor()
             self?.removeKeyMonitor()
             self?.removeScrollObservers()
             self?.lastHoverPosition = nil
@@ -154,21 +157,21 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
                     case .optionA(let marked):
                         switch marked {
                         case .optionA(let str):
-                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionA 内容: \(str)")
+                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)选项A 内容: \(str)")
                         case .optionB(let lsp):
-                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionA 内容: 语言=\(lsp.language.rawValue), 值=\(lsp.value)")
+                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)选项A 内容: 语言=\(lsp.language.rawValue), 值=\(lsp.value)")
                         }
                     case .optionB(let array):
                         for (index, marked) in array.enumerated() {
                             switch marked {
                             case .optionA(let str):
-                                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionB[\(index)] 内容: \(str)")
+                                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)选项B[\(index)] 内容: \(str)")
                             case .optionB(let lsp):
-                                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionB[\(index)] 内容: 语言=\(lsp.language.rawValue), 值=\(lsp.value.prefix(100))")
+                                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)选项B[\(index)] 内容: 语言=\(lsp.language.rawValue), 值=\(lsp.value.prefix(100))")
                             }
                         }
                     case .optionC(let markup):
-                        EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionC 内容 (种类=\(markup.kind.rawValue)): \(markup.value.prefix(300))")
+                        EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)选项C 内容 (种类=\(markup.kind.rawValue)): \(markup.value.prefix(300))")
                     }
 
                     if let content = self.extractMarkdown(from: hover) {
@@ -185,9 +188,10 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
             guard let hover, let content = self.extractMarkdown(from: hover), !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)悬停守卫失败: 清除鼠标悬停")
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)悬停守卫失败: LSP 返回空，保留已有悬停")
                 }
-                state.clearMouseHover()
+                // 不清空已有 hover：鼠标可能正在从单词移向 popover 的途中
+                // 已有 hover 会在鼠标真正离开 popover 区域时被 handleMouseEvent 中的 cancelHoverIfNeeded 清除
                 return
             }
 
@@ -207,6 +211,9 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     }
 
     func cancelHover() {
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🔴 取消悬停被调用")
+        }
         hoverTask?.cancel()
         hoverTask = nil
         lastHoverPosition = nil
@@ -349,12 +356,68 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         self.mouseMonitor = nil
     }
 
+    /// 安装全局鼠标监听器
+    /// 关键用途：当鼠标进入 SwiftUI popover overlay 时，addLocalMonitorForEvents 无法收到事件。
+    /// 全局监听器可以捕获所有鼠标移动事件，即使鼠标在 popover 上方。
+    private func installGlobalMouseMonitorIfNeeded() {
+        guard globalMouseMonitor == nil else { return }
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.mouseMoved, .leftMouseDragged, .leftMouseDown, .rightMouseDown]
+        ) { [weak self] event in
+            guard let self else { return }
+            self.handleGlobalMouseEvent(event)
+        }
+    }
+
+    private func removeGlobalMouseMonitor() {
+        guard let globalMouseMonitor else { return }
+        NSEvent.removeMonitor(globalMouseMonitor)
+        self.globalMouseMonitor = nil
+    }
+
+    /// 处理全局鼠标事件（当鼠标在窗口内但不在 textView 中时触发）
+    /// 主要用于检测鼠标是否在 popover 上方，以保持 hover 状态
+    private func handleGlobalMouseEvent(_ event: NSEvent) {
+        guard let textView = textViewController?.textView, let state else { return }
+
+        // 只在有活跃 hover 时处理全局事件
+        guard state.mouseHoverContent != nil else { return }
+
+        let localPoint = textView.convert(event.locationInWindow, from: nil)
+
+        // 如果鼠标在 popover 范围内，保持 hover
+        if isMouseInsideHoverPopover(at: localPoint, state: state) {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🌐 全局鼠标事件: 鼠标在弹窗内，保持悬停")
+            }
+            return
+        }
+
+        // 鼠标不在 popover 内，检查是否在 textView 内
+        let visibleRect = textView.visibleRect
+        let tolerance: CGFloat = 2.0
+        let expandedRect = visibleRect.insetBy(dx: -tolerance, dy: -tolerance)
+        if expandedRect.contains(localPoint) {
+            // 鼠标回到了 textView 内，让 local monitor 处理
+            return
+        }
+
+        // 鼠标既不在 popover 也不在 textView 内，取消 hover
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🌐 全局鼠标事件: 鼠标离开弹窗区域，取消悬停")
+        }
+        cancelHoverIfNeeded()
+    }
+
     private func installKeyMonitorIfNeeded() {
         guard keyMonitor == nil else { return }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
             guard let self else { return event }
             // Esc
             if event.keyCode == 53 {
+                if EditorPlugin.verbose {
+                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)⌨️ 检测到 Esc 键，取消悬停")
+                }
                 self.cancelHover()
             }
             return event
@@ -377,7 +440,18 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             object: clipView,
             queue: .main
         ) { [weak self] _ in
-            self?.cancelHover()
+            guard let self, let state else { return }
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)📜 剪辑视图 bounds 变化，检查是否需要取消悬停")
+            }
+            // 只有在没有活跃悬停或鼠标不在弹窗范围内时才取消
+            guard state.mouseHoverContent == nil || state.mouseHoverSymbolRect == .zero else {
+                if EditorPlugin.verbose {
+                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)📜 有活跃悬停，bounds 变化不取消")
+                }
+                return
+            }
+            self.cancelHover()
         }
 
         clipFrameObserver = NotificationCenter.default.addObserver(
@@ -385,7 +459,18 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             object: clipView,
             queue: .main
         ) { [weak self] _ in
-            self?.cancelHover()
+            guard let self, let state else { return }
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)📐 剪辑视图 frame 变化，检查是否需要取消悬停")
+            }
+            // 只有在没有活跃悬停或鼠标不在弹窗范围内时才取消
+            guard state.mouseHoverContent == nil || state.mouseHoverSymbolRect == .zero else {
+                if EditorPlugin.verbose {
+                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)📐 有活跃悬停，frame 变化不取消")
+                }
+                return
+            }
+            self.cancelHover()
         }
     }
 
@@ -430,28 +515,56 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             clampedY = min(fallbackY, max(containerSize.height - popoverHeight - 4, 4))
         }
 
-        return CGRect(
+        let rect = CGRect(
             x: symbolRect.minX - 16,
             y: clampedY - 12,
             width: Self.hoverPopoverMaxWidth + 32,
             height: popoverHeight + 24
         )
+
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)📐 估算弹框矩形: symbol=\(String(describing: symbolRect)) 弹框高度=\(popoverHeight) 矩形=\(String(describing: rect))")
+        }
+        return rect
     }
 
     /// 检查当前鼠标位置是否在 popover 的估算范围内（有 active hover 时）
     private func isMouseInsideHoverPopover(at localPoint: CGPoint, state: EditorState) -> Bool {
         guard let content = state.mouseHoverContent, !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🚫 弹窗检查: 鼠标悬停内容为空，不保持")
+            }
             return false
         }
         let symbolRect = state.mouseHoverSymbolRect
-        guard symbolRect != .zero else { return false }
+        guard symbolRect != .zero else {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🚫 弹窗检查: 符号矩形为 .zero，不保持")
+            }
+            return false
+        }
+
+        // 关键修复：将 textView 坐标系的 localPoint 转换为 overlay 坐标系
+        // state.mouseHoverSymbolRect 是 overlay 坐标（减去了 scrollOffset），
+        // 因此 localPoint 也需要减去 scrollOffset 才能在同一坐标系中比较
+        let scrollOffset = textViewController?.textView?.visibleRect.origin ?? .zero
+        let overlayPoint = CGPoint(
+            x: localPoint.x - scrollOffset.x,
+            y: localPoint.y - scrollOffset.y
+        )
 
         let estimatedRect = estimatedPopoverRect(symbolRect: symbolRect, contentHeight: Self.hoverPopoverDefaultHeight)
         guard let rect = estimatedRect else { return false }
 
         // 额外容差：覆盖 symbol 和 popover 之间的通道区域
         let extendedRect = rect.union(symbolRect.insetBy(dx: -8, dy: -8))
-        return extendedRect.contains(localPoint)
+        let isInside = extendedRect.contains(overlayPoint)
+
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🔍 弹窗检查: 鼠标 textView 坐标=\(String(describing: localPoint)) overlay 坐标=\(String(describing: overlayPoint)) 在范围内=\(isInside)")
+            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🔍 弹窗检查: 扩展矩形=\(String(describing: extendedRect)) scrollOffset=\(String(describing: scrollOffset))")
+        }
+        return isInside
     }
 
     private func handleMouseEvent(_ event: NSEvent) {
@@ -466,10 +579,19 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         let tolerance: CGFloat = 2.0
         let expandedRect = visibleRect.insetBy(dx: -tolerance, dy: -tolerance)
         guard expandedRect.contains(localPoint) else {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)⚠️ 鼠标事件: 鼠标坐标=\(String(describing: localPoint)) 在扩展矩形=\(String(describing: expandedRect)) 之外 可见矩形=\(String(describing: visibleRect))")
+            }
             // 鼠标移出了 textView 可见区域
             // 但如果有 active hover 且鼠标在 popover 范围内，则不取消
             if isMouseInsideHoverPopover(at: localPoint, state: state) {
+                if EditorPlugin.verbose {
+                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)✅ 鼠标事件: 鼠标在弹窗范围内，保持悬停")
+                }
                 return
+            }
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)❌ 鼠标事件: 鼠标既不在可见区域也不在弹窗内，取消悬停")
             }
             cancelHoverIfNeeded()
             return
@@ -477,12 +599,26 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
         // 使用 layoutManager 从鼠标位置获取文字偏移量（而不是用光标位置）
         guard let characterOffset = textView.layoutManager.textOffsetAtPoint(localPoint) else {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)⚠️ 鼠标事件: 文本偏移量获取返回 nil，鼠标坐标=\(String(describing: localPoint))")
+            }
+            // 关键修复：鼠标在空白区域时，先检查是否在 popover 范围内，不要立即取消
+            if isMouseInsideHoverPopover(at: localPoint, state: state) {
+                if EditorPlugin.verbose {
+                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)✅ 鼠标在空白区域但处于弹窗内，保持悬停")
+                }
+                return
+            }
             cancelHoverIfNeeded()
             return
         }
 
         // 转换为 LSP Position
         guard let position = lspPosition(forUTF16Offset: characterOffset, in: textView.string) else {
+            // 如果无法转换位置，先检查是否在 popover 范围内
+            if isMouseInsideHoverPopover(at: localPoint, state: state) {
+                return
+            }
             cancelHoverIfNeeded()
             return
         }
