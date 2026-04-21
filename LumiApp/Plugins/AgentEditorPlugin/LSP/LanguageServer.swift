@@ -47,7 +47,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         workspacePath: String
     ) async throws -> LanguageServer {
         if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(Self.t)Creating server for \(languageId)")
+            EditorPlugin.logger.info("\(Self.t)正在创建 \(languageId) 服务器")
         }
         
         let execParams = Process.ExecutionParameters(
@@ -59,7 +59,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         let (channel, process) = try DataChannel.localProcessChannel(
             parameters: execParams,
             terminationHandler: {
-                EditorPlugin.logger.error("\(LanguageServer.t)Data channel terminated unexpectedly")
+                EditorPlugin.logger.error("\(LanguageServer.t)数据通道意外终止")
             }
         )
         
@@ -72,7 +72,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         let initResult = try await initServer.initializeIfNeeded()
         
         if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(Self.t)Server initialized, PID: \(process.processIdentifier)")
+            EditorPlugin.logger.info("\(Self.t)服务器已初始化，PID: \(process.processIdentifier)")
         }
         
         let languageServer = LanguageServer(
@@ -208,7 +208,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         let doc = TextDocumentItem(uri: uri, languageId: languageId, version: 0, text: text)
         try await server.textDocumentDidOpen(DidOpenTextDocumentParams(textDocument: doc))
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(Self.t)Opened: \(uri)")
+            EditorPlugin.logger.debug("\(Self.t)已打开: \(uri)")
         }
     }
     
@@ -219,7 +219,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         
         try await server.textDocumentDidClose(DidCloseTextDocumentParams(textDocument: TextDocumentIdentifier(uri: uri)))
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(Self.t)Closed: \(uri)")
+            EditorPlugin.logger.debug("\(Self.t)已关闭: \(uri)")
         }
     }
     
@@ -516,13 +516,13 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     
     func shutdown() async throws {
         if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(Self.t)Shutting down server for \(self.languageId)")
+            EditorPlugin.logger.info("\(Self.t)正在关闭 \(self.languageId) 服务器")
         }
         eventTask?.cancel()
         eventTask = nil
         try await server.shutdownAndExit()
         if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(Self.t)Server shut down")
+            EditorPlugin.logger.info("\(Self.t)服务器已关闭")
         }
     }
     
@@ -554,7 +554,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
                         self.onProgressUpdate?(tokenStr, params.value)
                     case let .windowShowMessage(params):
                         if EditorPlugin.verbose {
-                            EditorPlugin.logger.info("\(LanguageServer.t)LSP Message [\(params.type.rawValue)]: \(params.message)")
+                            EditorPlugin.logger.info("\(LanguageServer.t)LSP 消息 [\(params.type.rawValue)]: \(params.message)")
                         }
                     default:
                         continue

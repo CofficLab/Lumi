@@ -14,7 +14,7 @@ struct InputAreaView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 待发送附件
     @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
 

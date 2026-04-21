@@ -89,8 +89,14 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
     /// 当鼠标移动到新位置时调用，触发 hover 请求
     func triggerHover(for line: Int, character: Int, symbolRect: CGRect) {
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)⚡ 触发悬停: 行=\(line) 字符=\(character) 矩形=\(String(describing: symbolRect))")
+        }
         refreshDocumentContextIfNeeded()
         let delay = hoverDelay(for: line, character: character)
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)⏱️ 悬停延迟=\(delay / 1_000_000)ms")
+        }
         hoverTask?.cancel()
         lastHoverPosition = (line, character)
         lastHoverRequestAtNs = DispatchTime.now().uptimeNanoseconds
@@ -98,10 +104,18 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             guard let self, let state else { return }
 
             try? await Task.sleep(nanoseconds: delay)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else {
+                if EditorPlugin.verbose {
+                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)❌ 悬停任务已取消")
+                }
+                return
+            }
 
             if let cached = cachedHover(line: line, character: character, state: state),
                !cached.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if EditorPlugin.verbose {
+                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)✅ 缓存命中: 行=\(line) 字符=\(character)")
+                }
                 if let cachedRange = cached.range {
                     setActiveHoverRange(
                         range: cachedRange,
@@ -131,7 +145,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
                 case .optionC(let markup): contentsType = "optionC(MarkupContent) kind=\(markup.kind)"
                 }
                 if EditorPlugin.verbose {
-                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)LSP hover response: contents type=\(contentsType), range=\(String(describing: hover.range))")
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)LSP 悬停响应: 内容类型=\(contentsType), 范围=\(String(describing: hover.range))")
                 }
 
                 // 打印原始内容以便调试
@@ -140,38 +154,38 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
                     case .optionA(let marked):
                         switch marked {
                         case .optionA(let str):
-                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionA content: \(str)")
+                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionA 内容: \(str)")
                         case .optionB(let lsp):
-                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionA content: language=\(lsp.language.rawValue), value=\(lsp.value)")
+                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionA 内容: 语言=\(lsp.language.rawValue), 值=\(lsp.value)")
                         }
                     case .optionB(let array):
                         for (index, marked) in array.enumerated() {
                             switch marked {
                             case .optionA(let str):
-                                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionB[\(index)] content: \(str)")
+                                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionB[\(index)] 内容: \(str)")
                             case .optionB(let lsp):
-                                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionB[\(index)] content: language=\(lsp.language.rawValue), value=\(lsp.value.prefix(100))")
+                                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionB[\(index)] 内容: 语言=\(lsp.language.rawValue), 值=\(lsp.value.prefix(100))")
                             }
                         }
                     case .optionC(let markup):
-                        EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionC content (kind=\(markup.kind.rawValue)): \(markup.value.prefix(300))")
+                        EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)optionC 内容 (种类=\(markup.kind.rawValue)): \(markup.value.prefix(300))")
                     }
 
                     if let content = self.extractMarkdown(from: hover) {
-                        EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)extracted markdown (\(content.count) chars): \(content.prefix(200))")
+                        EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)提取的 Markdown (\(content.count) 字符): \(content.prefix(200))")
                     } else {
-                        EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)extractMarkdown returned nil for hover")
+                        EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)悬停内容提取返回 nil")
                     }
                 }
             } else {
                 if EditorPlugin.verbose {
-                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)LSP hover returned nil for line=\(line) char=\(character)")
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)LSP 悬停返回 nil，行=\(line) 字符=\(character)")
                 }
             }
 
             guard let hover, let content = self.extractMarkdown(from: hover), !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 if EditorPlugin.verbose {
-                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)hover guard failed: clearing mouse hover")
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)悬停守卫失败: 清除鼠标悬停")
                 }
                 state.clearMouseHover()
                 return
@@ -377,6 +391,9 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
         // 检查鼠标是否在 textView 的可见区域内
         guard textView.visibleRect.contains(localPoint) else {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)鼠标移出可见区域，取消悬停")
+            }
             cancelHover()
             lastHoverPosition = nil
             return
@@ -384,6 +401,9 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
         // 使用 layoutManager 从鼠标位置获取文字偏移量（而不是用光标位置）
         guard let characterOffset = textView.layoutManager.textOffsetAtPoint(localPoint) else {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)鼠标位置无文本偏移，取消悬停")
+            }
             cancelHover()
             lastHoverPosition = nil
             return
@@ -391,6 +411,9 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
         // 转换为 LSP Position
         guard let position = lspPosition(forUTF16Offset: characterOffset, in: textView.string) else {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)偏移量转 LSP 位置失败: 偏移量=\(characterOffset)")
+            }
             cancelHover()
             lastHoverPosition = nil
             return
@@ -422,7 +445,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         }
 
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)hover triggered at line=\(position.line) char=\(position.character)")
+            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)悬停触发: 行=\(position.line) 字符=\(position.character)")
         }
         triggerHover(for: position.line, character: position.character, symbolRect: characterRect)
     }

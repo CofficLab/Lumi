@@ -45,7 +45,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         }
         
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(self.t)JumpToDefinition: '\(word)' at \(range.location)")
+            EditorPlugin.logger.debug("\(self.t)跳转到定义: '\(word)' 位置=\(range.location)")
         }
 
         // 0. 优先：通过 LSP 查询定义（支持跨文件）
@@ -55,7 +55,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             content: content
         ) {
             if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(self.t)LSP matched: '\(word)'")
+                EditorPlugin.logger.debug("\(self.t)LSP 匹配: '\(word)'")
             }
             return [link]
         }
@@ -68,7 +68,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         ) {
             let position = CursorPosition(range: definitionRange)
             if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(self.t)AST matched: '\(word)' -> \(definitionRange.location)")
+                EditorPlugin.logger.debug("\(self.t)AST 匹配: '\(word)' -> \(definitionRange.location)")
             }
             return [createLink(for: word, targetRange: position, content: content)]
         }
@@ -81,13 +81,13 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         ) {
             let position = CursorPosition(range: fallbackRange)
             if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(self.t)Regex matched: '\(word)' -> \(fallbackRange.location)")
+                EditorPlugin.logger.debug("\(self.t)正则匹配: '\(word)' -> \(fallbackRange.location)")
             }
             return [createLink(for: word, targetRange: position, content: content)]
         }
         
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(self.t)No definition found for: '\(word)'")
+            EditorPlugin.logger.debug("\(self.t)未找到定义: '\(word)'")
         }
         return nil
     }
@@ -95,7 +95,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
     /// 打开链接（本地跳转由引擎自动处理，这里仅记录日志）
     func openLink(link: JumpToDefinitionLink) {
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(self.t)Opening link: \(link.label) -> \(link.url?.absoluteString ?? "local")")
+            EditorPlugin.logger.debug("\(self.t)打开链接: \(link.label) -> \(link.url?.absoluteString ?? "本地")")
         }
         guard let url = link.url else { return }
         onOpenExternalDefinition?(url, link.targetRange)
@@ -381,7 +381,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             }
         } catch {
             if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(self.t)AST query failed: \(error)")
+                EditorPlugin.logger.debug("\(self.t)AST 查询失败: \(error)")
             }
         }
         

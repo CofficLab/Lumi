@@ -249,6 +249,9 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 设置鼠标悬停状态（使用 symbol 矩形定位）
     func setMouseHover(content: String, symbolRect: CGRect) {
+        if Self.verbose {
+            EditorPlugin.logger.debug("\(Self.t) 设置鼠标悬停: 内容长度=\(content.count) 矩形=\(String(describing: symbolRect))")
+        }
         mouseHoverContent = content
         mouseHoverSymbolRect = symbolRect
         // 兼容旧属性
@@ -257,6 +260,9 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 清除鼠标悬停状态
     func clearMouseHover() {
+        if Self.verbose {
+            EditorPlugin.logger.debug("\(Self.t)🚫 清除鼠标悬停")
+        }
         mouseHoverContent = nil
         mouseHoverSymbolRect = .zero
     }

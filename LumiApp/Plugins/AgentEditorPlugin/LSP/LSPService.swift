@@ -47,7 +47,7 @@ final class LSPService: ObservableObject, SuperLog {
             let available = LSPConfig.findServer(for: languageId) != nil
             isAvailable = available
             if Self.verbose {
-                EditorPlugin.logger.info("\(Self.t)LSP availability: \(languageId) = \(available ? "yes" : "no")")
+                EditorPlugin.logger.info("\(Self.t)LSP 可用性: \(languageId) = \(available ? "是" : "否")")
             }
             return
         }
@@ -57,7 +57,7 @@ final class LSPService: ObservableObject, SuperLog {
         }
         isAvailable = available
         if Self.verbose {
-            EditorPlugin.logger.info("\(Self.t)LSP availability(any) = \(available ? "yes" : "no")")
+            EditorPlugin.logger.info("\(Self.t)LSP 可用性(任意语言) = \(available ? "是" : "否")")
         }
     }
     
@@ -66,19 +66,19 @@ final class LSPService: ObservableObject, SuperLog {
     func startServer(for languageId: String, projectPath: String) async {
         if let existing = server {
             if Self.verbose {
-                EditorPlugin.logger.info("\(Self.t)Stopping existing server")
+                EditorPlugin.logger.info("\(Self.t)正在停止现有服务器")
             }
             try? await existing.shutdown()
             server = nil
         }
         
         guard let config = LSPConfig.defaultConfig(for: languageId) else {
-            EditorPlugin.logger.warning("\(Self.t)No server config for \(languageId)")
+            EditorPlugin.logger.warning("\(Self.t)未找到 \(languageId) 的服务器配置")
             return
         }
         
         if Self.verbose {
-            EditorPlugin.logger.info("\(Self.t)Starting server for \(languageId) at \(config.execPath)")
+            EditorPlugin.logger.info("\(Self.t)启动 \(languageId) 服务器，路径: \(config.execPath)")
         }
         isInitializing = true
         activeLanguageId = languageId
@@ -106,10 +106,10 @@ final class LSPService: ObservableObject, SuperLog {
             server = newServer
             isInitializing = false
             if Self.verbose {
-                EditorPlugin.logger.info("\(Self.t)Server initialized for \(languageId)")
+                EditorPlugin.logger.info("\(Self.t)\(languageId) 服务器已初始化")
             }
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Failed to start server: \(error.localizedDescription)")
+            EditorPlugin.logger.error("\(Self.t)启动服务器失败: \(error.localizedDescription)")
             isInitializing = false
             activeLanguageId = nil
         }
@@ -128,7 +128,7 @@ final class LSPService: ObservableObject, SuperLog {
             if let root = projectRootPath {
                 await startServer(for: languageId, projectPath: root)
             } else {
-                EditorPlugin.logger.warning("\(Self.t)No project root")
+                EditorPlugin.logger.warning("\(Self.t)无项目根目录")
                 return
             }
         }
@@ -144,7 +144,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             try await server.openDocument(uri: uri, languageId: languageId, text: text)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Failed to open document: \(error)")
+            EditorPlugin.logger.error("\(Self.t)打开文档失败: \(error)")
         }
     }
     
@@ -160,7 +160,7 @@ final class LSPService: ObservableObject, SuperLog {
                     pendingChanges.removeAll()
                 }
             } catch {
-                EditorPlugin.logger.error("\(Self.t)Failed to close document: \(error)")
+                EditorPlugin.logger.error("\(Self.t)关闭文档失败: \(error)")
             }
         }
     }
@@ -191,7 +191,7 @@ final class LSPService: ObservableObject, SuperLog {
             try await server.documentDidChange(uri: uri, changes: changes, fullText: snapshot)
             pendingChanges.removeAll()
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Failed to send change: \(error)")
+            EditorPlugin.logger.error("\(Self.t)发送变更失败: \(error)")
         }
     }
     
@@ -206,7 +206,7 @@ final class LSPService: ObservableObject, SuperLog {
             do {
                 try await server.documentDidChange(uri: uri, text: text)
             } catch {
-                EditorPlugin.logger.error("\(Self.t)Failed to replace document text: \(error)")
+                EditorPlugin.logger.error("\(Self.t)替换文档失败: \(error)")
             }
         }
     }
@@ -219,7 +219,7 @@ final class LSPService: ObservableObject, SuperLog {
             let response: CompletionResponse = try await server.completion(uri: uri, line: line, character: character)
             return parseCompletionItems(response)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Completion failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)补全请求失败: \(error)")
             return []
         }
     }
@@ -232,7 +232,7 @@ final class LSPService: ObservableObject, SuperLog {
             await MainActor.run { onHover?(content) }
             return content
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Hover failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)悬停请求失败: \(error)")
             return nil
         }
     }
@@ -243,7 +243,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.hover(uri: uri, line: line, character: character)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Hover raw failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)原始悬停请求失败: \(error)")
             return nil
         }
     }
@@ -254,7 +254,7 @@ final class LSPService: ObservableObject, SuperLog {
             let response: DefinitionResponse = try await server.definition(uri: uri, line: line, character: character)
             return parseDefinitionLocation(response)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Definition failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)定义跳转失败: \(error)")
             return nil
         }
     }
@@ -264,7 +264,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.references(uri: uri, line: line, character: character)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)References failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)引用查找失败: \(error)")
             return []
         }
     }
@@ -274,7 +274,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.documentSymbols(uri: uri)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Document symbols failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)文档符号请求失败: \(error)")
             return []
         }
     }
@@ -284,7 +284,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.rename(uri: uri, line: line, character: character, newName: newName)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Rename failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)重命名失败: \(error)")
             return nil
         }
     }
@@ -294,7 +294,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.formatting(uri: uri, tabSize: tabSize, insertSpaces: insertSpaces)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Formatting failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)格式化失败: \(error)")
             return nil
         }
     }
@@ -305,7 +305,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.signatureHelp(uri: uri, line: line, character: character)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Signature help failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)签名帮助失败: \(error)")
             return nil
         }
     }
@@ -316,7 +316,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.inlayHint(uri: uri, startLine: startLine, startCharacter: startCharacter, endLine: endLine, endCharacter: endCharacter)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Inlay hint failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)内联提示失败: \(error)")
             return nil
         }
     }
@@ -327,7 +327,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.documentHighlight(uri: uri, line: line, character: character)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Document highlight failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)文档高亮失败: \(error)")
             return []
         }
     }
@@ -343,7 +343,7 @@ final class LSPService: ObservableObject, SuperLog {
             )
             return try await server.codeAction(uri: uri, range: range, context: context)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Code action failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)代码操作失败: \(error)")
             return []
         }
     }
@@ -365,7 +365,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.codeActionResolve(action)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)codeAction/resolve failed: \(error.localizedDescription)")
+            EditorPlugin.logger.error("\(Self.t)代码操作解析失败: \(error.localizedDescription)")
             return nil
         }
     }
@@ -381,7 +381,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.semanticTokens(uri: uri)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Semantic tokens failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)语义令牌失败: \(error)")
             return nil
         }
     }
@@ -391,7 +391,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.semanticTokensDelta(uri: uri, previousResultId: previousResultId)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Semantic token delta failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)语义令牌增量失败: \(error)")
             return nil
         }
     }
@@ -402,7 +402,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.declaration(uri: uri, line: line, character: character)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Declaration failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)声明跳转失败: \(error)")
             return nil
         }
     }
@@ -413,7 +413,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.typeDefinition(uri: uri, line: line, character: character)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Type definition failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)类型定义跳转失败: \(error)")
             return nil
         }
     }
@@ -424,7 +424,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.implementation(uri: uri, line: line, character: character)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Implementation failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)实现查找失败: \(error)")
             return nil
         }
     }
@@ -448,7 +448,7 @@ final class LSPService: ObservableObject, SuperLog {
             let response = try await server.foldingRange(uri: uri)
             return response ?? []
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Folding range failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)折叠范围失败: \(error)")
             return []
         }
     }
@@ -460,7 +460,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.selectionRange(uri: uri, line: line, character: character) ?? []
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Selection range failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)选择范围失败: \(error)")
             return []
         }
     }
@@ -473,7 +473,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.documentLink(uri: uri) ?? []
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Document link failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)文档链接失败: \(error)")
             return []
         }
     }
@@ -489,7 +489,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.resolveDocumentLink(lspLink)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Resolve document link failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)解析文档链接失败: \(error)")
             return nil
         }
     }
@@ -499,7 +499,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.resolveDocumentLink(link)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Resolve document link failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)解析文档链接失败: \(error)")
             return nil
         }
     }
@@ -512,7 +512,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.documentColor(uri: uri)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Document color failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)文档颜色请求失败: \(error)")
             return []
         }
     }
@@ -523,7 +523,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.colorPresentation(uri: uri, color: color, range: range)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Color presentation failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)颜色展示请求失败: \(error)")
             return []
         }
     }
@@ -537,7 +537,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.callHierarchyPrepare(uri: uri, line: line, character: character) ?? []
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Call hierarchy prepare failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)调用层级准备失败: \(error)")
             return []
         }
     }
@@ -547,7 +547,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return (try await server.callHierarchyIncomingCalls(item: item)) ?? []
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Call hierarchy incoming calls failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)调用层级(入向)失败: \(error)")
             return []
         }
     }
@@ -557,7 +557,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return (try await server.callHierarchyOutgoingCalls(item: item)) ?? []
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Call hierarchy outgoing calls failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)调用层级(出向)失败: \(error)")
             return []
         }
     }
@@ -569,7 +569,7 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.workspaceSymbol(query: query)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Workspace symbol failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)工作区符号查找失败: \(error)")
             return nil
         }
     }
@@ -604,12 +604,12 @@ final class LSPService: ObservableObject, SuperLog {
         guard let server else { return nil }
         if let commands = server.capabilities.executeCommandProvider?.commands,
            !commands.contains(command) {
-            EditorPlugin.logger.warning("\(Self.t)Command \(command) not listed in server capabilities; attempting anyway")
+            EditorPlugin.logger.warning("\(Self.t)命令 \(command) 不在服务器能力列表中，但仍尝试执行")
         }
         do {
             return try await server.executeCommand(command: command, arguments: arguments)
         } catch {
-            EditorPlugin.logger.error("\(Self.t)Execute command failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)执行命令失败: \(error)")
             return nil
         }
     }

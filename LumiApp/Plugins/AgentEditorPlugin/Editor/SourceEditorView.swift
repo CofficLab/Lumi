@@ -167,6 +167,11 @@ struct SourceEditorView: View {
         if let hoverText = state.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines),
            !hoverText.isEmpty {
             HoverPopoverView(markdownText: hoverText)
+                .onAppear {
+                    if EditorPlugin.verbose {
+                        EditorPlugin.logger.debug("[UI] | 🖼️ 源代码编辑器视图 | 悬停预览: 显示弹出框，内容长度=\(hoverText.count), 矩形=\(String(describing: state.mouseHoverSymbolRect))")
+                    }
+                }
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: 440, alignment: .leading)
                 // 使用 GeometryReader 测量实际高度后调整位置
