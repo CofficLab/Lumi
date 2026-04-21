@@ -382,6 +382,13 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         }
     }
 
+    // MARK: - 取消防抖
+
+    /// 上次取消悬停的时间戳，用于防止边界抖动导致的反复取消
+    private var lastCancelHoverAtNs: UInt64 = 0
+    /// 取消防抖间隔（纳秒），低于此间隔的取消请求会被忽略
+    private static let cancelDebounceIntervalNs: UInt64 = 100_000_000  // 100ms
+
     private func handleMouseEvent(_ event: NSEvent) {
         guard let textView = textViewController?.textView else { return }
         refreshDocumentContextIfNeeded()
@@ -389,33 +396,24 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         // 将鼠标位置转换到 textView 的本地坐标系
         let localPoint = textView.convert(event.locationInWindow, from: nil)
 
-        // 检查鼠标是否在 textView 的可见区域内
-        guard textView.visibleRect.contains(localPoint) else {
-            if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)鼠标移出可见区域，取消悬停")
-            }
-            cancelHover()
-            lastHoverPosition = nil
+        // 检查鼠标是否在 textView 的可见区域内（增加容差避免边界抖动）
+        let visibleRect = textView.visibleRect
+        let tolerance: CGFloat = 2.0
+        let expandedRect = visibleRect.insetBy(dx: -tolerance, dy: -tolerance)
+        guard expandedRect.contains(localPoint) else {
+            cancelHoverIfNeeded()
             return
         }
 
         // 使用 layoutManager 从鼠标位置获取文字偏移量（而不是用光标位置）
         guard let characterOffset = textView.layoutManager.textOffsetAtPoint(localPoint) else {
-            if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)鼠标位置无文本偏移，取消悬停")
-            }
-            cancelHover()
-            lastHoverPosition = nil
+            cancelHoverIfNeeded()
             return
         }
 
         // 转换为 LSP Position
         guard let position = lspPosition(forUTF16Offset: characterOffset, in: textView.string) else {
-            if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)偏移量转 LSP 位置失败: 偏移量=\(characterOffset)")
-            }
-            cancelHover()
-            lastHoverPosition = nil
+            cancelHoverIfNeeded()
             return
         }
 
@@ -448,6 +446,17 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)悬停触发: 行=\(position.line) 字符=\(position.character)")
         }
         triggerHover(for: position.line, character: position.character, symbolRect: characterRect)
+    }
+
+    /// 防抖取消：避免边界抖动导致的反复取消
+    private func cancelHoverIfNeeded() {
+        let now = DispatchTime.now().uptimeNanoseconds
+        guard now &- lastCancelHoverAtNs >= Self.cancelDebounceIntervalNs else { return }
+        lastCancelHoverAtNs = now
+        cancelHover()
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)鼠标移出可见区域，取消悬停")
+        }
     }
 
     private func lspPosition(forUTF16Offset offset: Int, in text: String) -> Position? {
