@@ -6,7 +6,9 @@ import MagicKit
 
 /// 代码编辑器主视图
 /// 基于 CodeEditSourceEditor 实现专业级编辑体验
-struct SourceEditorView: View {
+struct SourceEditorView: View, SuperLog {
+    nonisolated static let emoji = "📝"
+    nonisolated static let verbose: Bool = true
     
     @ObservedObject var state: EditorState
     
