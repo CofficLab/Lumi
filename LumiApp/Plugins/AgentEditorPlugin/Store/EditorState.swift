@@ -25,7 +25,7 @@ struct ReferenceResult: Identifiable, Equatable {
 @MainActor
 final class EditorState: ObservableObject, SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.state")
 
