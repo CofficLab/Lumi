@@ -122,8 +122,8 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
                         content: cached.content,
                         state: state
                     )
-                    // 使用 LSP Range 重新计算精确的 symbol 矩形
-                    let preciseRect = self.rectForLSPRange(cachedRange) ?? symbolRect
+                    // 使用 visibleSymbolRect 减去滚动偏移，得到 overlay 坐标系中的位置
+                    let preciseRect = self.visibleSymbolRect(for: cachedRange) ?? symbolRect
                     state.setMouseHover(content: cached.content, symbolRect: preciseRect)
                 } else {
                     state.setMouseHover(content: cached.content, symbolRect: symbolRect)
@@ -197,7 +197,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             let finalRect: CGRect
             if let lspRange = hover.range {
                 setActiveHoverRange(range: lspRange, content: content, state: state)
-                finalRect = self.rectForLSPRange(lspRange) ?? symbolRect
+                finalRect = self.visibleSymbolRect(for: lspRange) ?? symbolRect
             } else {
                 finalRect = symbolRect
             }
@@ -252,6 +252,24 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         }
 
         return startRect
+    }
+
+    /// 获取相对于可见区域的 symbol 矩形（减去滚动偏移）
+    /// 这是 overlay 坐标系所需的格式
+    private func visibleSymbolRect(for lspRange: LSPRange) -> CGRect? {
+        guard let contentRect = rectForLSPRange(lspRange),
+              let textView = textViewController?.textView else {
+            return nil
+        }
+
+        // 减去滚动偏移，得到相对于可见区域原点的坐标
+        let scrollOffset = textView.visibleRect.origin
+        return CGRect(
+            x: contentRect.origin.x - scrollOffset.x,
+            y: contentRect.origin.y - scrollOffset.y,
+            width: contentRect.width,
+            height: contentRect.height
+        )
     }
 
     /// 将 LSP Position (line, character, UTF-16) 转换为 NSString 中的 UTF-16 offset
@@ -388,9 +406,56 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     private var lastCancelHoverAtNs: UInt64 = 0
     /// 取消防抖间隔（纳秒），低于此间隔的取消请求会被忽略
     private static let cancelDebounceIntervalNs: UInt64 = 100_000_000  // 100ms
+    /// Popover 最大宽度（与 SourceEditorView 中一致）
+    private static let hoverPopoverMaxWidth: CGFloat = 440
+    /// Popover 默认高度估算值
+    private static let hoverPopoverDefaultHeight: CGFloat = 280
+    /// Popover 与 symbol 之间的间距
+    private static let hoverPopoverVerticalGap: CGFloat = 4
+
+    /// 计算 popover 的估算范围（textView 本地坐标系）
+    /// 当鼠标在该范围内时，不取消 hover（模拟 VS Code 的 hover 保持行为）
+    private func estimatedPopoverRect(symbolRect: CGRect, contentHeight: CGFloat) -> CGRect? {
+        guard let textView = textViewController?.textView else { return nil }
+        let containerSize = textView.visibleRect.size
+        let popoverHeight = max(contentHeight, 60)
+
+        // 复现 SourceEditorView.hoverOffset 的 Y 计算逻辑
+        let preferredY = symbolRect.minY - popoverHeight - Self.hoverPopoverVerticalGap
+        let fallbackY = symbolRect.maxY + Self.hoverPopoverVerticalGap
+        let clampedY: CGFloat
+        if preferredY >= 4 {
+            clampedY = preferredY
+        } else {
+            clampedY = min(fallbackY, max(containerSize.height - popoverHeight - 4, 4))
+        }
+
+        return CGRect(
+            x: symbolRect.minX - 16,
+            y: clampedY - 12,
+            width: Self.hoverPopoverMaxWidth + 32,
+            height: popoverHeight + 24
+        )
+    }
+
+    /// 检查当前鼠标位置是否在 popover 的估算范围内（有 active hover 时）
+    private func isMouseInsideHoverPopover(at localPoint: CGPoint, state: EditorState) -> Bool {
+        guard let content = state.mouseHoverContent, !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+        let symbolRect = state.mouseHoverSymbolRect
+        guard symbolRect != .zero else { return false }
+
+        let estimatedRect = estimatedPopoverRect(symbolRect: symbolRect, contentHeight: Self.hoverPopoverDefaultHeight)
+        guard let rect = estimatedRect else { return false }
+
+        // 额外容差：覆盖 symbol 和 popover 之间的通道区域
+        let extendedRect = rect.union(symbolRect.insetBy(dx: -8, dy: -8))
+        return extendedRect.contains(localPoint)
+    }
 
     private func handleMouseEvent(_ event: NSEvent) {
-        guard let textView = textViewController?.textView else { return }
+        guard let textView = textViewController?.textView, let state else { return }
         refreshDocumentContextIfNeeded()
 
         // 将鼠标位置转换到 textView 的本地坐标系
@@ -401,6 +466,11 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         let tolerance: CGFloat = 2.0
         let expandedRect = visibleRect.insetBy(dx: -tolerance, dy: -tolerance)
         guard expandedRect.contains(localPoint) else {
+            // 鼠标移出了 textView 可见区域
+            // 但如果有 active hover 且鼠标在 popover 范围内，则不取消
+            if isMouseInsideHoverPopover(at: localPoint, state: state) {
+                return
+            }
             cancelHoverIfNeeded()
             return
         }
@@ -418,16 +488,25 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         }
 
         // 获取鼠标下字符的矩形（用于 popover 定位）
-        let characterRect = textView.layoutManager.rectForOffset(characterOffset)
+        // 需要减去滚动偏移，得到 overlay 坐标系中的位置
+        let contentRect = textView.layoutManager.rectForOffset(characterOffset)
             ?? CGRect(x: localPoint.x, y: localPoint.y, width: 0, height: 16)
+        let scrollOffset = textView.visibleRect.origin
+        let characterRect = CGRect(
+            x: contentRect.origin.x - scrollOffset.x,
+            y: contentRect.origin.y - scrollOffset.y,
+            width: contentRect.width,
+            height: contentRect.height
+        )
 
         // 如果鼠标在已有的 hover range 内，保持显示（但更新位置以跟随滚动）
         if let activeHover = activeHoverRange,
            isSameDocument(activeHover, state: state),
            contains(position: position, in: activeHover.range),
            !activeHover.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let preciseRect = rectForLSPRange(activeHover.range) ?? characterRect
-            state?.setMouseHover(
+            // 使用 visibleSymbolRect 减去滚动偏移，得到 overlay 坐标系中的位置
+            let preciseRect = visibleSymbolRect(for: activeHover.range) ?? characterRect
+            state.setMouseHover(
                 content: activeHover.content,
                 symbolRect: preciseRect
             )
