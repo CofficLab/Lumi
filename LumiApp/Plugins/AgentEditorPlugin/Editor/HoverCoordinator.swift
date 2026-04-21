@@ -3,6 +3,7 @@ import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
+import os
 
 /// LSP 悬停协调器
 /// 监听鼠标位置，通过 `TextLayoutManager.textOffsetAtPoint` 获取鼠标下的文字偏移，
@@ -10,6 +11,7 @@ import LanguageServerProtocol
 /// 屏幕/视图坐标，供 SwiftUI overlay 在 symbol 上方显示 popover。
 @MainActor
 final class HoverEditorCoordinator: TextViewCoordinator {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "hover.coordinator")
     private static let defaultHoverDelayNs: UInt64 = 350_000_000
     private static let fastHoverDelayNs: UInt64 = 120_000_000
     private static let fastHoverWindowNs: UInt64 = 1_200_000_000
@@ -119,7 +121,19 @@ final class HoverEditorCoordinator: TextViewCoordinator {
                 character: character
             )
 
+            if let hover {
+                Self.logger.debug("📡 LSP hover response: contents type=\(String(describing: hover.contents)), range=\(String(describing: hover.range))")
+                if let content = self.extractMarkdown(from: hover) {
+                    Self.logger.debug("📄 hover content (\(content.count) chars): \(content.prefix(200))")
+                } else {
+                    Self.logger.debug("⚠️ extractMarkdown returned nil for hover")
+                }
+            } else {
+                Self.logger.debug("⚠️ LSP hover returned nil for line=\(line) char=\(character)")
+            }
+
             guard let hover, let content = self.extractMarkdown(from: hover), !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                Self.logger.debug("⚠️ hover guard failed: clearing mouse hover")
                 state.clearMouseHover()
                 return
             }
@@ -368,6 +382,7 @@ final class HoverEditorCoordinator: TextViewCoordinator {
             return
         }
 
+        Self.logger.debug("🖱️ hover triggered at line=\(position.line) char=\(position.character)")
         triggerHover(for: position.line, character: position.character, symbolRect: characterRect)
     }
 
