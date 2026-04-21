@@ -34,11 +34,13 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     
     nonisolated func textViewDidChangeText(controller: TextViewController) {
         let state = self.state
-        print("📝 [AutoSave] EditorCoordinator.textViewDidChangeText 触发 | state=\(state != nil) | textLen=\(controller.textView?.string.count ?? -1)")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.info("\(EditorState.t)文本变更: state=\(state != nil), 长度=\(controller.textView?.string.count ?? -1)")
+        }
         // 延迟到下一个 RunLoop，避免 "Modifying state during view update"
         DispatchQueue.main.async {
             if state == nil {
-                print("⚠️ [AutoSave] EditorCoordinator.textViewDidChangeText: state is nil! Coordinator 已被释放")
+                EditorPlugin.logger.warning("\(EditorState.t)Coordinator 已被释放，state 为 nil")
             }
             state?.notifyContentChanged()
             state?.scheduleInlayHintsRefreshIfNeeded(controller: controller)
@@ -140,7 +142,9 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     }
     
     nonisolated func destroy() {
-        print("🗑️ [AutoSave] EditorCoordinator.destroy | state=\(state != nil)")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.info("\(EditorState.t)Coordinator 销毁: state=\(self.state != nil)")
+        }
         let st = state
         state = nil
         textViewController = nil

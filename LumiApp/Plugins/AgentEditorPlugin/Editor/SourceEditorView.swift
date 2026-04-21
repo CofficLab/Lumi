@@ -169,7 +169,7 @@ struct SourceEditorView: View {
             HoverPopoverView(markdownText: hoverText)
                 .onAppear {
                     if EditorPlugin.verbose {
-                        EditorPlugin.logger.debug("[UI] | 🖼️ 源代码编辑器视图 | 悬停预览: 显示弹出框，内容长度=\(hoverText.count), 矩形=\(String(describing: state.mouseHoverSymbolRect))")
+                        EditorPlugin.logger.debug("[UI] | 🖼️ 源代码编辑器视图 | 悬停预览: 显示弹出框，内容长度=\(hoverText.count), 矩形=\(String(describing: self.state.mouseHoverSymbolRect))")
                     }
                 }
                 .fixedSize(horizontal: false, vertical: true)
