@@ -5,7 +5,7 @@ import MagicKit
 /// 监听 `AgentTurnService` turn 结束事件并发出系统通知的 Overlay 视图
 struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { "🔔" }
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
 
     let content: Content
 
