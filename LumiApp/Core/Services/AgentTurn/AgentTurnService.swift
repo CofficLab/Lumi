@@ -95,11 +95,13 @@ final class AgentTurnService: SuperLog {
 
                 case .cancelled:
                     turnFinalizer.finishTurnByCancellation(conversationId: conversationId)
+                    NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
                     return
 
                 case let .failed(error):
                     let providerId = llmRequester.currentProviderId(for: conversationId)
                     turnFinalizer.finishTurnWithError(error, conversationId: conversationId, providerId: providerId)
+                    NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
                     return
                 }
 
@@ -119,6 +121,7 @@ final class AgentTurnService: SuperLog {
 
                     if hadUserRejection {
                         turnFinalizer.finishTurnByUserRejection(conversationId: conversationId)
+                        NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
                         return
                     }
 
@@ -126,6 +129,7 @@ final class AgentTurnService: SuperLog {
                 } else {
                     // 助手消息没有工具调用 → 对话回合正常结束
                     turnFinalizer.finishTurn(conversationId: conversationId)
+                    NotificationCenter.postAgentTurnFinished(conversationId: conversationId)
                     return
                 }
 
