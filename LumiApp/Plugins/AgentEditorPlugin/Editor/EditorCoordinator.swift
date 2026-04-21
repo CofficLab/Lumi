@@ -4,6 +4,7 @@ import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI
 import LanguageServerProtocol
+import os
 
 /// 文本变更协调器
 /// 监听 CodeEditSourceEditor 的文本变更，通知 EditorState 触发自动保存
@@ -29,7 +30,6 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
         DispatchQueue.main.async {
             st?.focusedTextView = controller.textView
         }
-        print("🔧 [AutoSave] EditorCoordinator.prepareCoordinator | state=\(state != nil)")
     }
     
     nonisolated func textViewDidChangeText(controller: TextViewController) {

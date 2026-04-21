@@ -3,13 +3,14 @@ import JSONRPC
 import LanguageClient
 import LanguageServerProtocol
 import os
+import MagicKit
 
 /// 语言服务器包装器
 /// 注意：不使用 @MainActor，让调用方自行处理并发
-final class LanguageServer: @unchecked Sendable {
-    
-    static let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.server")
-    
+final class LanguageServer: @unchecked Sendable, SuperLog {
+    static var emoji: String { "🌐" }
+    static var verbose: Bool { false }
+
     let languageId: String
     let config: LSPConfig.ServerConfig
     private(set) var server: InitializingServer
@@ -45,7 +46,9 @@ final class LanguageServer: @unchecked Sendable {
         config: LSPConfig.ServerConfig,
         workspacePath: String
     ) async throws -> LanguageServer {
-        Self.logger.info("Creating server for \(languageId)")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.info("\(Self.t)Creating server for \(languageId)")
+        }
         
         let execParams = Process.ExecutionParameters(
             path: config.execPath,
@@ -56,8 +59,7 @@ final class LanguageServer: @unchecked Sendable {
         let (channel, process) = try DataChannel.localProcessChannel(
             parameters: execParams,
             terminationHandler: {
-                // Can't reference @MainActor logger from Sendable closure
-                print("LSP: Data channel terminated unexpectedly")
+                EditorPlugin.logger.error("\(LanguageServer.t)Data channel terminated unexpectedly")
             }
         )
         
@@ -69,7 +71,9 @@ final class LanguageServer: @unchecked Sendable {
         
         let initResult = try await initServer.initializeIfNeeded()
         
-        Self.logger.info("Server initialized, PID: \(process.processIdentifier)")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.info("\(Self.t)Server initialized, PID: \(process.processIdentifier)")
+        }
         
         let languageServer = LanguageServer(
             languageId: languageId,
@@ -93,7 +97,7 @@ final class LanguageServer: @unchecked Sendable {
                     completionItem: CompletionClientCapabilities.CompletionItem(
                         snippetSupport: true,
                         commitCharactersSupport: true,
-                        documentationFormat: [MarkupKind.plaintext],
+                        documentationFormat: [MarkupKind.markdown, MarkupKind.plaintext],
                         deprecatedSupport: true,
                         preselectSupport: true,
                         tagSupport: ValueSet(valueSet: [CompletionItemTag.deprecated]),
@@ -203,7 +207,9 @@ final class LanguageServer: @unchecked Sendable {
         
         let doc = TextDocumentItem(uri: uri, languageId: languageId, version: 0, text: text)
         try await server.textDocumentDidOpen(DidOpenTextDocumentParams(textDocument: doc))
-        Self.logger.debug("Opened: \(uri)")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(Self.t)Opened: \(uri)")
+        }
     }
     
     func closeDocument(uri: String) async throws {
@@ -212,7 +218,9 @@ final class LanguageServer: @unchecked Sendable {
         documentContents.removeValue(forKey: uri)
         
         try await server.textDocumentDidClose(DidCloseTextDocumentParams(textDocument: TextDocumentIdentifier(uri: uri)))
-        Self.logger.debug("Closed: \(uri)")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(Self.t)Closed: \(uri)")
+        }
     }
     
     func documentDidChange(uri: String, text: String) async throws {
@@ -507,11 +515,15 @@ final class LanguageServer: @unchecked Sendable {
     // MARK: Shutdown
     
     func shutdown() async throws {
-        Self.logger.info("Shutting down server for \(self.languageId)")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.info("\(Self.t)Shutting down server for \(self.languageId)")
+        }
         eventTask?.cancel()
         eventTask = nil
         try await server.shutdownAndExit()
-        Self.logger.info("Server shut down")
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.info("\(Self.t)Server shut down")
+        }
     }
     
     deinit {
@@ -541,7 +553,9 @@ final class LanguageServer: @unchecked Sendable {
                         }
                         self.onProgressUpdate?(tokenStr, params.value)
                     case let .windowShowMessage(params):
-                        Self.logger.info("LSP Message [\(params.type.rawValue)]: \(params.message)")
+                        if EditorPlugin.verbose {
+                            EditorPlugin.logger.info("\(LanguageServer.t)LSP Message [\(params.type.rawValue)]: \(params.message)")
+                        }
                     default:
                         continue
                     }

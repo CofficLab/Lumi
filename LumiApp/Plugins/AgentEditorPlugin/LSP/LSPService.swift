@@ -3,17 +3,18 @@ import SwiftUI
 import LanguageClient
 import LanguageServerProtocol
 import os
+import MagicKit
 import Combine
 
 /// LSP 服务管理器
 /// 基于 LanguageClient + LanguageServerProtocol + JSONRPC
 /// 完全参考 CodeEdit 的 LSPService 架构
 @MainActor
-final class LSPService: ObservableObject {
+final class LSPService: ObservableObject, SuperLog {
     
     static let shared = LSPService()
-    
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.service")
+    nonisolated static let emoji = "🔧"
+    nonisolated static let verbose = false
     
     // MARK: - Published State
     
@@ -45,7 +46,9 @@ final class LSPService: ObservableObject {
         if let languageId {
             let available = LSPConfig.findServer(for: languageId) != nil
             isAvailable = available
-            logger.info("LSP availability: \(languageId) = \(available ? "yes" : "no")")
+            if Self.verbose {
+                EditorPlugin.logger.info("\(Self.t)LSP availability: \(languageId) = \(available ? "yes" : "no")")
+            }
             return
         }
 
@@ -53,24 +56,30 @@ final class LSPService: ObservableObject {
             LSPConfig.findServer(for: $0) != nil
         }
         isAvailable = available
-        logger.info("LSP availability(any) = \(available ? "yes" : "no")")
+        if Self.verbose {
+            EditorPlugin.logger.info("\(Self.t)LSP availability(any) = \(available ? "yes" : "no")")
+        }
     }
     
     // MARK: - Server Management
     
     func startServer(for languageId: String, projectPath: String) async {
         if let existing = server {
-            logger.info("Stopping existing server")
+            if Self.verbose {
+                EditorPlugin.logger.info("\(Self.t)Stopping existing server")
+            }
             try? await existing.shutdown()
             server = nil
         }
         
         guard let config = LSPConfig.defaultConfig(for: languageId) else {
-            logger.warning("No server config for \(languageId)")
+            EditorPlugin.logger.warning("\(Self.t)No server config for \(languageId)")
             return
         }
         
-        logger.info("Starting server for \(languageId) at \(config.execPath)")
+        if Self.verbose {
+            EditorPlugin.logger.info("\(Self.t)Starting server for \(languageId) at \(config.execPath)")
+        }
         isInitializing = true
         activeLanguageId = languageId
         projectRootPath = projectPath
@@ -96,9 +105,11 @@ final class LSPService: ObservableObject {
             
             server = newServer
             isInitializing = false
-            logger.info("Server initialized for \(languageId)")
+            if Self.verbose {
+                EditorPlugin.logger.info("\(Self.t)Server initialized for \(languageId)")
+            }
         } catch {
-            logger.error("Failed to start server: \(error.localizedDescription)")
+            EditorPlugin.logger.error("\(Self.t)Failed to start server: \(error.localizedDescription)")
             isInitializing = false
             activeLanguageId = nil
         }
@@ -117,7 +128,7 @@ final class LSPService: ObservableObject {
             if let root = projectRootPath {
                 await startServer(for: languageId, projectPath: root)
             } else {
-                logger.warning("No project root")
+                EditorPlugin.logger.warning("\(Self.t)No project root")
                 return
             }
         }
@@ -133,7 +144,7 @@ final class LSPService: ObservableObject {
         do {
             try await server.openDocument(uri: uri, languageId: languageId, text: text)
         } catch {
-            logger.error("Failed to open document: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Failed to open document: \(error)")
         }
     }
     
@@ -149,7 +160,7 @@ final class LSPService: ObservableObject {
                     pendingChanges.removeAll()
                 }
             } catch {
-                logger.error("Failed to close document: \(error)")
+                EditorPlugin.logger.error("\(Self.t)Failed to close document: \(error)")
             }
         }
     }
@@ -180,7 +191,7 @@ final class LSPService: ObservableObject {
             try await server.documentDidChange(uri: uri, changes: changes, fullText: snapshot)
             pendingChanges.removeAll()
         } catch {
-            logger.error("Failed to send change: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Failed to send change: \(error)")
         }
     }
     
@@ -195,7 +206,7 @@ final class LSPService: ObservableObject {
             do {
                 try await server.documentDidChange(uri: uri, text: text)
             } catch {
-                logger.error("Failed to replace document text: \(error)")
+                EditorPlugin.logger.error("\(Self.t)Failed to replace document text: \(error)")
             }
         }
     }
@@ -208,7 +219,7 @@ final class LSPService: ObservableObject {
             let response: CompletionResponse = try await server.completion(uri: uri, line: line, character: character)
             return parseCompletionItems(response)
         } catch {
-            logger.error("Completion failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Completion failed: \(error)")
             return []
         }
     }
@@ -221,7 +232,7 @@ final class LSPService: ObservableObject {
             await MainActor.run { onHover?(content) }
             return content
         } catch {
-            logger.error("Hover failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Hover failed: \(error)")
             return nil
         }
     }
@@ -232,7 +243,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.hover(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Hover raw failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Hover raw failed: \(error)")
             return nil
         }
     }
@@ -243,7 +254,7 @@ final class LSPService: ObservableObject {
             let response: DefinitionResponse = try await server.definition(uri: uri, line: line, character: character)
             return parseDefinitionLocation(response)
         } catch {
-            logger.error("Definition failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Definition failed: \(error)")
             return nil
         }
     }
@@ -253,7 +264,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.references(uri: uri, line: line, character: character)
         } catch {
-            logger.error("References failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)References failed: \(error)")
             return []
         }
     }
@@ -263,7 +274,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.documentSymbols(uri: uri)
         } catch {
-            logger.error("Document symbols failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Document symbols failed: \(error)")
             return []
         }
     }
@@ -273,7 +284,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.rename(uri: uri, line: line, character: character, newName: newName)
         } catch {
-            logger.error("Rename failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Rename failed: \(error)")
             return nil
         }
     }
@@ -283,7 +294,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.formatting(uri: uri, tabSize: tabSize, insertSpaces: insertSpaces)
         } catch {
-            logger.error("Formatting failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Formatting failed: \(error)")
             return nil
         }
     }
@@ -294,7 +305,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.signatureHelp(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Signature help failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Signature help failed: \(error)")
             return nil
         }
     }
@@ -305,7 +316,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.inlayHint(uri: uri, startLine: startLine, startCharacter: startCharacter, endLine: endLine, endCharacter: endCharacter)
         } catch {
-            logger.error("Inlay hint failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Inlay hint failed: \(error)")
             return nil
         }
     }
@@ -316,7 +327,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.documentHighlight(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Document highlight failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Document highlight failed: \(error)")
             return []
         }
     }
@@ -332,7 +343,7 @@ final class LSPService: ObservableObject {
             )
             return try await server.codeAction(uri: uri, range: range, context: context)
         } catch {
-            logger.error("Code action failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Code action failed: \(error)")
             return []
         }
     }
@@ -354,7 +365,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.codeActionResolve(action)
         } catch {
-            logger.error("codeAction/resolve failed: \(error.localizedDescription)")
+            EditorPlugin.logger.error("\(Self.t)codeAction/resolve failed: \(error.localizedDescription)")
             return nil
         }
     }
@@ -370,7 +381,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.semanticTokens(uri: uri)
         } catch {
-            logger.error("Semantic tokens failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Semantic tokens failed: \(error)")
             return nil
         }
     }
@@ -380,7 +391,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.semanticTokensDelta(uri: uri, previousResultId: previousResultId)
         } catch {
-            logger.error("Semantic token delta failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Semantic token delta failed: \(error)")
             return nil
         }
     }
@@ -391,7 +402,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.declaration(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Declaration failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Declaration failed: \(error)")
             return nil
         }
     }
@@ -402,7 +413,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.typeDefinition(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Type definition failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Type definition failed: \(error)")
             return nil
         }
     }
@@ -413,7 +424,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.implementation(uri: uri, line: line, character: character)
         } catch {
-            logger.error("Implementation failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Implementation failed: \(error)")
             return nil
         }
     }
@@ -437,7 +448,7 @@ final class LSPService: ObservableObject {
             let response = try await server.foldingRange(uri: uri)
             return response ?? []
         } catch {
-            logger.error("Folding range failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Folding range failed: \(error)")
             return []
         }
     }
@@ -449,7 +460,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.selectionRange(uri: uri, line: line, character: character) ?? []
         } catch {
-            logger.error("Selection range failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Selection range failed: \(error)")
             return []
         }
     }
@@ -462,7 +473,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.documentLink(uri: uri) ?? []
         } catch {
-            logger.error("Document link failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Document link failed: \(error)")
             return []
         }
     }
@@ -478,7 +489,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.resolveDocumentLink(lspLink)
         } catch {
-            logger.error("Resolve document link failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Resolve document link failed: \(error)")
             return nil
         }
     }
@@ -488,7 +499,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.resolveDocumentLink(link)
         } catch {
-            logger.error("Resolve document link failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Resolve document link failed: \(error)")
             return nil
         }
     }
@@ -501,7 +512,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.documentColor(uri: uri)
         } catch {
-            logger.error("Document color failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Document color failed: \(error)")
             return []
         }
     }
@@ -512,7 +523,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.colorPresentation(uri: uri, color: color, range: range)
         } catch {
-            logger.error("Color presentation failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Color presentation failed: \(error)")
             return []
         }
     }
@@ -525,7 +536,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.callHierarchyPrepare(uri: uri, line: line, character: character) ?? []
         } catch {
-            logger.error("Call hierarchy prepare failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Call hierarchy prepare failed: \(error)")
             return []
         }
     }
@@ -535,7 +546,7 @@ final class LSPService: ObservableObject {
         do {
             return (try await server.callHierarchyIncomingCalls(item: item)) ?? []
         } catch {
-            logger.error("Call hierarchy incoming calls failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Call hierarchy incoming calls failed: \(error)")
             return []
         }
     }
@@ -545,7 +556,7 @@ final class LSPService: ObservableObject {
         do {
             return (try await server.callHierarchyOutgoingCalls(item: item)) ?? []
         } catch {
-            logger.error("Call hierarchy outgoing calls failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Call hierarchy outgoing calls failed: \(error)")
             return []
         }
     }
@@ -557,7 +568,7 @@ final class LSPService: ObservableObject {
         do {
             return try await server.workspaceSymbol(query: query)
         } catch {
-            logger.error("Workspace symbol failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Workspace symbol failed: \(error)")
             return nil
         }
     }
@@ -592,12 +603,12 @@ final class LSPService: ObservableObject {
         guard let server else { return nil }
         if let commands = server.capabilities.executeCommandProvider?.commands,
            !commands.contains(command) {
-            logger.warning("Command \(command) not listed in server capabilities; attempting anyway")
+            EditorPlugin.logger.warning("\(Self.t)Command \(command) not listed in server capabilities; attempting anyway")
         }
         do {
             return try await server.executeCommand(command: command, arguments: arguments)
         } catch {
-            logger.error("Execute command failed: \(error)")
+            EditorPlugin.logger.error("\(Self.t)Execute command failed: \(error)")
             return nil
         }
     }

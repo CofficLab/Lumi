@@ -7,6 +7,8 @@ import CodeEditTextView
 import CodeEditLanguages
 import LanguageServerProtocol
 import UniformTypeIdentifiers
+import MagicKit
+import os
 
 /// LSP 引用查询结果
 struct ReferenceResult: Identifiable, Equatable {
@@ -21,7 +23,12 @@ struct ReferenceResult: Identifiable, Equatable {
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
 @MainActor
-final class EditorState: ObservableObject {
+final class EditorState: ObservableObject, SuperLog {
+    nonisolated static let emoji = "📝"
+    nonisolated static let verbose = false
+
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.state")
+
     enum StatusLevel {
         case info
         case success
@@ -1021,7 +1028,7 @@ final class EditorState: ObservableObject {
         RunLoop.main.add(timer, forMode: .common)
         pollTimer = timer
         
-        print("✏️ [Editor] 已启动文件轮询监听：\(url.lastPathComponent)")
+        logger.info("\(Self.t)已启动文件轮询监听：\(url.lastPathComponent)")
     }
     
     /// 停止文件监听

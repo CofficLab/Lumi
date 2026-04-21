@@ -5,11 +5,14 @@ import CodeEditLanguages
 import LanguageServerProtocol
 import Combine
 import os
+import MagicKit
 
 /// 编辑器 LSP 协调器
 /// 负责将 LSP 服务与 CodeEditSourceEditor 集成
 @MainActor
-class LSPCoordinator: ObservableObject {
+class LSPCoordinator: ObservableObject, SuperLog {
+    nonisolated static let emoji = "😊 "
+    nonisolated static let verbose = false
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
     private let lspService = LSPService.shared
@@ -34,7 +37,7 @@ class LSPCoordinator: ObservableObject {
         self.version = 0
         
         await lspService.openDocument(uri: uri, languageId: languageId, text: content)
-        logger.info("LSP: File opened \(uri)")
+        logger.info("\(Self.t)LSP: File opened \(uri)")
     }
     
     /// 关闭文件时调用
@@ -42,7 +45,7 @@ class LSPCoordinator: ObservableObject {
         guard let uri = fileURI else { return }
         lspService.closeDocument(uri: uri)
         fileURI = nil
-        logger.info("LSP: File closed")
+        logger.info("\(Self.t)LSP: File closed")
     }
     
     /// 文档内容变更

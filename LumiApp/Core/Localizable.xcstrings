@@ -1281,6 +1281,9 @@
         }
       }
     },
+    "Cannot preview image" : {
+
+    },
     "Cask" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7890,9 +7893,6 @@
           }
         }
       }
-    },
-    "正在打开 %@..." : {
-
     },
     "正在扫描 Xcode 缓存" : {
       "localizations" : {
