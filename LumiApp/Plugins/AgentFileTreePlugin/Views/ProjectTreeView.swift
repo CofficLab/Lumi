@@ -7,6 +7,13 @@ struct ProjectTreeView: View {
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject var layoutVM: LayoutVM
 
+    // MARK: - Logging Configuration
+
+    /// 日志详细程度控制
+    nonisolated static let verbose: Bool = false
+    /// 使用插件的 logger
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.view")
+
     /// 刷新协调器，管理文件系统监听和刷新令牌
     @StateObject private var coordinator = ProjectTreeRefreshCoordinator()
 
@@ -60,6 +67,9 @@ struct ProjectTreeView: View {
         // 项目路径变化时，更新协调器并递增刷新令牌
         coordinator.setProjectRootPath(projectVM.currentProjectPath)
         rootRefreshToken += 1
+        if Self.verbose {
+            Self.logger.info("🌳 项目路径变化，更新协调器并递增刷新令牌")
+        }
     }
 
     private func onSelectedFileChanged() {
@@ -68,21 +78,32 @@ struct ProjectTreeView: View {
 
     private func onDisappear() {
         coordinator.stop()
+        if Self.verbose {
+            Self.logger.info("🌳 视图消失，停止协调器监听")
+        }
     }
 
     /// 协调器检测到文件系统变化时，递增根刷新令牌驱动整棵树刷新
     private func onCoordinatorRefresh(_ newToken: Int) {
         guard newToken > 0 else { return }
         rootRefreshToken += 1
-        ProjectTreeRefreshCoordinator.logger.info("🌳 协调器驱动刷新，令牌：\(rootRefreshToken)")
+        if Self.verbose {
+            Self.logger.info("🌳 协调器驱动刷新，令牌：\(rootRefreshToken)")
+        }
     }
 
     /// 子节点展开/折叠时通知协调器更新监听列表
     private func handleExpansionChange(relativePath: String, isExpanded: Bool) {
         if isExpanded {
             coordinator.addExpandedPath(relativePath)
+            if Self.verbose {
+                Self.logger.info("🌳 节点展开：\(relativePath)")
+            }
         } else {
             coordinator.removeExpandedPath(relativePath)
+            if Self.verbose {
+                Self.logger.info("🌳 节点折叠：\(relativePath)")
+            }
         }
     }
 }

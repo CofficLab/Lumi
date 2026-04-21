@@ -55,6 +55,9 @@ struct MessageListView: View {
                 keepLatestUserMessageAtTop = false
                 setFollowNewMessages(true)
                 timelineViewModel.handleOnAppear()
+                DispatchQueue.main.async {
+                    scrollToBottom(proxy: proxy, animated: false)
+                }
             }
             .onChange(of: timelineViewModel.selectedConversationId) { _, _ in
                 historyWindowLimit = Self.defaultHistoryWindowLimit

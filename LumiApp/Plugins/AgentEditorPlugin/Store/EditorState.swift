@@ -515,7 +515,20 @@ final class EditorState: ObservableObject, SuperLog {
                         prefixBuffer: content.getFirstLines(5),
                         suffixBuffer: content.getLastLines(5)
                     )
-                    
+
+                    // 语言 fallback：将不支持的语言映射到相近的语言
+                    if self.detectedLanguage == nil || self.detectedLanguage?.id == .plainText {
+                        let fallbackMap: [String: CodeLanguage] = [
+                            "astro": .tsx,
+                            "vue": .tsx,
+                            "svelte": .tsx,
+                            "astro-component": .tsx,
+                        ]
+                        if let fallback = fallbackMap[self.fileExtension] {
+                            self.detectedLanguage = fallback
+                        }
+                    }
+
                     // 计算行数
                     self.totalLines = content.filter { $0 == "\n" }.count + 1
                     self.hoverText = nil
@@ -1186,6 +1199,9 @@ final class EditorState: ObservableObject, SuperLog {
             "ts": "typescript",
             "jsx": "javascript",
             "tsx": "typescript",
+            "astro": "typescript",  // Astro 映射到 TypeScript
+            "vue": "typescript",   // Vue 映射到 TypeScript
+            "svelte": "typescript", // Svelte 映射到 TypeScript
             "rs": "rust",
             "go": "go",
             "c": "c",
