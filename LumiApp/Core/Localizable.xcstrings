@@ -849,6 +849,9 @@
         }
       }
     },
+    "Agent 回合已结束" : {
+
+    },
     "Agent 模式不可用" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2959,6 +2962,9 @@
           }
         }
       }
+    },
+    "Lumi Agent" : {
+
     },
     "Lumi uses the Sparkle framework for automatic updates. When a new version is available, the app will automatically prompt you to update." : {
       "extractionState" : "stale",

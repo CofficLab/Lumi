@@ -1,11 +1,11 @@
 import SwiftUI
 import UserNotifications
-import os
+import MagicKit
 
 /// 监听 `AgentTurnService` turn 结束事件并发出系统通知的 Overlay 视图
 struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
-    nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.turn-notification-overlay")
+    nonisolated static var emoji: String { "🔔" }
+    nonisolated static var verbose: Bool { false }
 
     let content: Content
 
@@ -21,7 +21,10 @@ struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
 
 /// 实际执行通知发送逻辑的 Handler
 @MainActor
-final class AgentTurnNotificationHandler: ObservableObject {
+final class AgentTurnNotificationHandler: ObservableObject, SuperLog {
+    nonisolated static var emoji: String { "🔔" }
+    nonisolated static var verbose: Bool { false }
+
     private let center = UNUserNotificationCenter.current()
 
     func postTurnFinishedNotification(conversationId: UUID) {
@@ -67,7 +70,9 @@ final class AgentTurnNotificationHandler: ObservableObject {
 
         do {
             try await center.add(request)
-            AppLogger.core.info("已发送 turn 结束通知: \(conversationId)")
+            if Self.verbose {
+                AppLogger.core.info("已发送 turn 结束通知: \(conversationId)")
+            }
         } catch {
             AppLogger.core.error("发送 turn 结束通知失败: \(error)")
         }
