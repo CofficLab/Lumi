@@ -5,6 +5,12 @@ import CodeEditTextView
 import LanguageServerProtocol
 import MagicKit
 
+private protocol ApplicableCompletionEntry: CodeEditSourceEditor.CodeSuggestionEntry {
+    var replacementText: String { get }
+    var replaceRange: LSPRange? { get }
+    var additionalTextEdits: [TextEdit]? { get }
+}
+
 @MainActor
 final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
     nonisolated static let emoji = "💡"
@@ -18,6 +24,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
     private var activeRequestID: Int?
     private var requestSequence = 0
     private var lastMoveDebugSignature: String?
+    private var activeFallbackTypeItems: [LocalTypeSuggestionEntry] = []
 
     func completionTriggerCharacters() -> Set<String> {
         let characters = lspCoordinator?.completionTriggerCharacters() ?? []
@@ -54,7 +61,22 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP返回: \(entries.count) 项")
         }
         guard !entries.isEmpty else {
+            if context.isTypeContext {
+                let fallback = Self.fallbackTypeEntries(prefix: context.prefix)
+                if !fallback.isEmpty {
+                    if EditorPlugin.verbose {
+                        let preview = fallback.prefix(5).map(\.label).joined(separator: ", ")
+                        EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP空返回，启用类型兜底: \(fallback.count) 项，Top=\(preview)")
+                    }
+                    requestAnchor = cursorPosition
+                    requestAnchorOffset = Self.utf16Offset(for: cursorPosition.start, in: content)
+                    activeItems.removeAll()
+                    activeFallbackTypeItems = fallback
+                    return (cursorPosition, fallback.map { $0 })
+                }
+            }
             activeItems.removeAll()
+            activeFallbackTypeItems.removeAll()
             requestAnchor = nil
             requestAnchorOffset = nil
             if EditorPlugin.verbose {
@@ -76,7 +98,19 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         requestAnchor = cursorPosition
         requestAnchorOffset = Self.utf16Offset(for: cursorPosition.start, in: content)
         activeItems = entries
+        activeFallbackTypeItems.removeAll()
         if activeItems.isEmpty {
+            if context.isTypeContext {
+                let fallback = Self.fallbackTypeEntries(prefix: context.prefix)
+                if !fallback.isEmpty {
+                    if EditorPlugin.verbose {
+                        let preview = fallback.prefix(5).map(\.label).joined(separator: ", ")
+                        EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 过滤为空，启用类型兜底: \(fallback.count) 项，Top=\(preview)")
+                    }
+                    activeFallbackTypeItems = fallback
+                    return (cursorPosition, fallback.map { $0 })
+                }
+            }
             if EditorPlugin.verbose {
                 EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 过滤后为空，不展示补全窗")
             }
@@ -89,7 +123,6 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) -> [any CodeEditSourceEditor.CodeSuggestionEntry]? {
-        guard !activeItems.isEmpty else { return nil }
         guard let anchor = requestAnchor else { return nil }
         guard let editorTextView = textView.textView else { return nil }
         if cursorPosition.start.line != anchor.start.line ||
@@ -101,6 +134,21 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             Self.utf16Offset(for: cursorPosition.start, in: editorTextView.string) ??
             editorTextView.string.utf16.count
         let context = Self.completionContext(atOffset: cursorOffset, in: editorTextView.string)
+        if !activeFallbackTypeItems.isEmpty {
+            let filtered = Self.fallbackTypeEntries(prefix: context.prefix)
+            if EditorPlugin.verbose {
+                    let requestID = activeRequestID ?? -1
+                    let signature = "fallback|\(requestID)|\(context.prefix)|\(filtered.count)"
+                    if signature != lastMoveDebugSignature {
+                        let preview = filtered.prefix(5).map(\.label).joined(separator: ", ")
+                        EditorPlugin.logger.debug("\(Self.t)补全重筛[\(requestID)](兜底) 前缀='\(context.prefix)' \(self.activeFallbackTypeItems.count)->\(filtered.count)，Top=\(preview)")
+                        lastMoveDebugSignature = signature
+                    }
+                }
+            activeFallbackTypeItems = filtered
+            return filtered.isEmpty ? nil : filtered.map { $0 }
+        }
+        guard !activeItems.isEmpty else { return nil }
         let sourceCount = activeItems.count
         let filtered = Self.filterAndRank(
             entries: activeItems,
@@ -125,6 +173,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             EditorPlugin.logger.debug("\(Self.t)补全窗口关闭[\(requestID)]")
         }
         activeItems.removeAll()
+        activeFallbackTypeItems.removeAll()
         requestAnchor = nil
         requestAnchorOffset = nil
         activeRequestID = nil
@@ -136,7 +185,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         textView: TextViewController,
         cursorPosition: CursorPosition?
     ) {
-        guard let item = item as? EditorCodeSuggestionEntry else { return }
+        guard let item = item as? any ApplicableCompletionEntry else { return }
         guard let view = textView.textView else { return }
         if EditorPlugin.verbose {
             let requestID = activeRequestID ?? -1
@@ -548,9 +597,23 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         ]
         return map[typeName]
     }
+
+    private static func fallbackTypeEntries(prefix: String) -> [LocalTypeSuggestionEntry] {
+        let orderedTypes: [String] = [
+            "Int", "Int8", "Int16", "Int32", "Int64",
+            "UInt", "UInt8", "UInt16", "UInt32", "UInt64",
+            "Double", "Float", "CGFloat", "Bool", "String",
+            "Character", "Any", "AnyObject"
+        ]
+        let lowerPrefix = prefix.lowercased()
+        let filtered = orderedTypes.filter { candidate in
+            lowerPrefix.isEmpty || candidate.lowercased().hasPrefix(lowerPrefix)
+        }
+        return filtered.map { LocalTypeSuggestionEntry(label: $0) }
+    }
 }
 
-private struct EditorCodeSuggestionEntry: CodeEditSourceEditor.CodeSuggestionEntry {
+private struct EditorCodeSuggestionEntry: ApplicableCompletionEntry {
     let item: CompletionItem
 
     var label: String { item.label }
@@ -621,4 +684,20 @@ private struct EditorCodeSuggestionEntry: CodeEditSourceEditor.CodeSuggestionEnt
         default: return SwiftUI.Color(NSColor.secondaryLabelColor)
         }
     }
+}
+
+private struct LocalTypeSuggestionEntry: ApplicableCompletionEntry {
+    let label: String
+
+    var detail: String? { "Swift Type" }
+    var documentation: String? { nil }
+    var pathComponents: [String]? { nil }
+    var targetPosition: CursorPosition? { nil }
+    var sourcePreview: String? { detail }
+    var image: Image { Image(systemName: "text.bubble") }
+    var imageColor: SwiftUI.Color { SwiftUI.Color(NSColor.secondaryLabelColor) }
+    var deprecated: Bool { false }
+    var replacementText: String { label }
+    var replaceRange: LSPRange? { nil }
+    var additionalTextEdits: [TextEdit]? { nil }
 }
