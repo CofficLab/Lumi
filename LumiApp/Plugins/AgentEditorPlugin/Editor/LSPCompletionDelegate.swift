@@ -26,14 +26,18 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         guard let coordinator = lspCoordinator else { return nil }
         guard let editorTextView = textView.textView else { return nil }
 
-        let line = max(cursorPosition.start.line - 1, 0)
-        let character = max(cursorPosition.start.column - 1, 0)
+        let content = editorTextView.string
+        let cursorOffset = Self.currentCursorOffset(in: editorTextView) ??
+            Self.utf16Offset(for: cursorPosition.start, in: content) ??
+            content.utf16.count
+        let lspPosition = Self.lspPosition(fromUTF16Offset: cursorOffset, in: content)
+        let line = lspPosition.line
+        let character = lspPosition.character
         let completionItems = await coordinator.requestCompletion(line: line, character: character)
         var entries = completionItems.map(EditorCodeSuggestionEntry.init(item:))
         guard !entries.isEmpty else { return nil }
 
-        let content = editorTextView.string
-        let context = Self.completionContext(at: cursorPosition.start, in: content)
+        let context = Self.completionContext(atOffset: cursorOffset, in: content)
         entries = Self.filterAndRank(
             entries: entries,
             prefix: context.prefix,
@@ -57,7 +61,10 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
             return nil
         }
 
-        let context = Self.completionContext(at: cursorPosition.start, in: editorTextView.string)
+        let cursorOffset = Self.currentCursorOffset(in: editorTextView) ??
+            Self.utf16Offset(for: cursorPosition.start, in: editorTextView.string) ??
+            editorTextView.string.utf16.count
+        let context = Self.completionContext(atOffset: cursorOffset, in: editorTextView.string)
         let filtered = Self.filterAndRank(
             entries: activeItems,
             prefix: context.prefix,
@@ -181,10 +188,8 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         let isTypeContext: Bool
     }
 
-    private static func completionContext(at position: CursorPosition.Position, in content: String) -> CompletionContext {
-        guard let cursorOffset = utf16Offset(for: position, in: content) else {
-            return CompletionContext(prefix: "", isTypeContext: false)
-        }
+    private static func completionContext(atOffset rawOffset: Int, in content: String) -> CompletionContext {
+        let cursorOffset = min(max(rawOffset, 0), content.utf16.count)
         let ns = content as NSString
         var tokenStart = cursorOffset
         while tokenStart > 0 {
@@ -204,6 +209,33 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
             return CompletionContext(prefix: prefix, isTypeContext: unit == 0x3A) // ":"
         }
         return CompletionContext(prefix: prefix, isTypeContext: false)
+    }
+
+    private static func currentCursorOffset(in textView: NSTextView) -> Int? {
+        let selection = textView.selectedRange()
+        guard selection.location != NSNotFound else { return nil }
+        return min(selection.location, textView.string.utf16.count)
+    }
+
+    private static func lspPosition(fromUTF16Offset rawOffset: Int, in content: String) -> Position {
+        let offset = min(max(rawOffset, 0), content.utf16.count)
+        let ns = content as NSString
+        var line = 0
+        var character = 0
+        var index = 0
+
+        while index < offset {
+            let unit = ns.character(at: index)
+            if unit == 0x0A {
+                line += 1
+                character = 0
+            } else {
+                character += 1
+            }
+            index += 1
+        }
+
+        return Position(line: line, character: character)
     }
 
     private static func isIdentifierScalar(_ scalar: unichar) -> Bool {
