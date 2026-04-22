@@ -736,9 +736,12 @@ final class EditorState: ObservableObject, SuperLog {
         }
         
         if changed {
+            // 用户要求：编辑过程中不自动保存，仅在失焦时保存。
+            // 这里主动取消可能存在的旧自动保存任务，避免在编辑器仍聚焦时触发保存。
+            saveTask?.cancel()
+            saveTask = nil
             hasUnsavedChanges = true
             saveState = .editing
-            scheduleAutoSave(content: contentString)
             lspCoordinator.updateDocumentSnapshot(contentString)
         } else {
             hasUnsavedChanges = false
