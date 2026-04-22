@@ -211,7 +211,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         return CompletionContext(prefix: prefix, isTypeContext: false)
     }
 
-    private static func currentCursorOffset(in textView: NSTextView) -> Int? {
+    private static func currentCursorOffset(in textView: TextView) -> Int? {
         let selection = textView.selectedRange()
         guard selection.location != NSNotFound else { return nil }
         return min(selection.location, textView.string.utf16.count)
