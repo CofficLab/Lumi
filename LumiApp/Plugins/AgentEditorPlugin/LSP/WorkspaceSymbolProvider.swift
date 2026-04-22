@@ -118,6 +118,7 @@ struct WorkspaceSymbolItemSearchView: View {
     @ObservedObject var provider: WorkspaceSymbolProvider
     @State private var query: String = ""
     @State private var selectedIndex: Int = 0
+    @State private var searchTask: Task<Void, Never>?
     let onSelect: (WorkspaceSymbolItem) -> Void
     
     var filteredSymbols: [WorkspaceSymbolItem] {
@@ -131,9 +132,26 @@ struct WorkspaceSymbolItemSearchView: View {
                 TextField("搜索符号...", text: $query)
                     .textFieldStyle(PlainTextFieldStyle())
                     .onSubmit {
-                        if !filteredSymbols.isEmpty { onSelect(filteredSymbols[selectedIndex]) }
+                        guard !filteredSymbols.isEmpty else { return }
+                        let index = min(max(selectedIndex, 0), filteredSymbols.count - 1)
+                        onSelect(filteredSymbols[index])
                     }
-                    .onChange(of: query) { _ in selectedIndex = 0 }
+                    .onChange(of: query) { _, newValue in
+                        selectedIndex = 0
+                        searchTask?.cancel()
+
+                        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmed.isEmpty else {
+                            provider.clear()
+                            return
+                        }
+
+                        searchTask = Task {
+                            try? await Task.sleep(for: .milliseconds(220))
+                            guard !Task.isCancelled else { return }
+                            await provider.searchSymbols(query: trimmed)
+                        }
+                    }
                 if provider.isSearching { ProgressView().scaleEffect(0.7) }
             }
             .padding(8).background(Color(nsColor: .textBackgroundColor))
@@ -152,6 +170,9 @@ struct WorkspaceSymbolItemSearchView: View {
             }
         }
         .frame(minWidth: 400, minHeight: 300, idealHeight: 500)
+        .onDisappear {
+            searchTask?.cancel()
+        }
     }
 }
 

@@ -23,8 +23,17 @@ struct EditorCommand: Commands, SuperLog {
                 NotificationCenter.postLumiEditorRenameSymbol()
             }
             .keyboardShortcut("r", modifiers: [.command, .shift])
+
+            Button("工作区符号搜索") {
+                NotificationCenter.postLumiEditorWorkspaceSymbols()
+            }
+            .keyboardShortcut("o", modifiers: [.command, .shift])
+
+            Button("调用层级") {
+                NotificationCenter.postLumiEditorCallHierarchy()
+            }
+            .keyboardShortcut("h", modifiers: [.command, .option])
         }
         #endif
     }
 }
-

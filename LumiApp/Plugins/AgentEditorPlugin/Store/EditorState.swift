@@ -139,6 +139,10 @@ final class EditorState: ObservableObject, SuperLog {
     let documentHighlightProvider = DocumentHighlightProvider()
     /// 代码动作提供者
     let codeActionProvider = CodeActionProvider()
+    /// 工作区符号搜索提供者
+    let workspaceSymbolProvider = WorkspaceSymbolProvider()
+    /// 调用层级提供者
+    let callHierarchyProvider = CallHierarchyProvider()
     
     /// 跳转定义代理（右键和 Cmd+Click 共享）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
@@ -275,6 +279,10 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 是否展示 References 面板
     @Published var isReferencePanelPresented: Bool = false
+    /// 是否展示工作区符号搜索面板
+    @Published var isWorkspaceSymbolSearchPresented: Bool = false
+    /// 是否展示调用层级面板
+    @Published var isCallHierarchyPresented: Bool = false
 
     /// 总行数
     @Published var totalLines: Int = 0
@@ -861,6 +869,77 @@ final class EditorState: ObservableObject, SuperLog {
         case .error:
             alert_error(message, duration: max(safeDuration, 2.0), autoDismiss: true)
         }
+    }
+
+    func openWorkspaceSymbolSearch() {
+        guard canPreview else { return }
+        workspaceSymbolProvider.clear()
+        isWorkspaceSymbolSearchPresented = true
+    }
+
+    func closeWorkspaceSymbolSearch() {
+        isWorkspaceSymbolSearchPresented = false
+    }
+
+    func openWorkspaceSymbol(_ symbol: WorkspaceSymbolItem) {
+        guard let url = URL(string: symbol.location.uri), url.isFileURL else {
+            showStatusToast(
+                "无法打开符号位置",
+                level: .warning
+            )
+            return
+        }
+
+        let start = symbol.location.range.start
+        let target = CursorPosition(
+            start: .init(
+                line: Int(start.line) + 1,
+                column: Int(start.character) + 1
+            ),
+            end: nil
+        )
+        openDefinitionLocation(url: url, target: target)
+        isWorkspaceSymbolSearchPresented = false
+    }
+
+    func openCallHierarchy() async {
+        guard let fileURL = currentFileURL else { return }
+        let line = max(cursorLine - 1, 0)
+        let character = max(cursorColumn - 1, 0)
+
+        await callHierarchyProvider.prepareCallHierarchy(
+            uri: fileURL.absoluteString,
+            line: line,
+            character: character
+        )
+
+        guard callHierarchyProvider.rootItem != nil else {
+            showStatusToast("未找到调用层级信息", level: .warning)
+            return
+        }
+
+        isCallHierarchyPresented = true
+    }
+
+    func closeCallHierarchy() {
+        isCallHierarchyPresented = false
+    }
+
+    func openCallHierarchyItem(_ item: EditorCallHierarchyItem) {
+        guard let url = URL(string: item.uri), url.isFileURL else {
+            showStatusToast("无法打开调用层级目标", level: .warning)
+            return
+        }
+
+        let start = item.selectionRange.start
+        let target = CursorPosition(
+            start: .init(
+                line: Int(start.line) + 1,
+                column: Int(start.character) + 1
+            ),
+            end: nil
+        )
+        openDefinitionLocation(url: url, target: target)
     }
 
     /// 触发重命名（先弹框输入新名称，再请求 LSP rename）
@@ -1511,9 +1590,18 @@ final class EditorState: ObservableObject, SuperLog {
                 } else if let url = URL(string: uri), url.isFileURL, applyTextEdits(edits, toFile: url) {
                     changedFiles += 1
                 }
-            case .createFile, .renameFile, .deleteFile:
-                // 资源操作（创建/重命名/删除）暂不在当前轮支持
-                continue
+            case .createFile(let operation):
+                if WorkspaceEditFileOperations.applyCreateFile(operation) {
+                    changedFiles += 1
+                }
+            case .renameFile(let operation):
+                if WorkspaceEditFileOperations.applyRenameFile(operation) {
+                    changedFiles += 1
+                }
+            case .deleteFile(let operation):
+                if WorkspaceEditFileOperations.applyDeleteFile(operation) {
+                    changedFiles += 1
+                }
             }
         }
 

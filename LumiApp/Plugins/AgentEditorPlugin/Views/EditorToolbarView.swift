@@ -281,6 +281,26 @@ struct EditorToolbarView: View {
                     systemImage: "pencil.and.list.clipboard"
                 )
             }
+
+            Button {
+                state.openWorkspaceSymbolSearch()
+            } label: {
+                Label(
+                    "Workspace Symbols",
+                    systemImage: "magnifyingglass.circle"
+                )
+            }
+
+            Button {
+                Task { @MainActor in
+                    await state.openCallHierarchy()
+                }
+            } label: {
+                Label(
+                    "Call Hierarchy",
+                    systemImage: "arrow.triangle.branch"
+                )
+            }
         } label: {
             Image(systemName: "wand.and.stars")
                 .font(.system(size: 10))

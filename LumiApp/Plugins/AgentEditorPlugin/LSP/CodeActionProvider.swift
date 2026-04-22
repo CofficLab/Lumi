@@ -87,11 +87,12 @@ final class CodeActionProvider: ObservableObject {
         }
 
         if let edit = resolved.edit {
-            guard let textView else {
-                onFailureMessage(String(localized: "Editor is not ready", table: "LumiEditor"))
-                return
-            }
-            applyWorkspaceEdit(edit, textView: textView, documentURL: documentURL, onFailureMessage: onFailureMessage)
+            applyWorkspaceEdit(
+                edit,
+                textView: textView,
+                documentURL: documentURL,
+                onFailureMessage: onFailureMessage
+            )
             return
         }
 
@@ -117,12 +118,12 @@ final class CodeActionProvider: ObservableObject {
 
     private func applyWorkspaceEdit(
         _ edit: WorkspaceEdit,
-        textView: TextView,
+        textView: TextView?,
         documentURL: URL?,
         onFailureMessage: (String) -> Void
     ) {
         var applied = false
-        if let changes = edit.changes {
+        if let changes = edit.changes, let textView {
             for (uri, textEdits) in changes where Self.uriMatchesDocument(uri, documentURL: documentURL) {
                 applyTextEdits(textEdits, to: textView)
                 applied = true
@@ -147,7 +148,7 @@ final class CodeActionProvider: ObservableObject {
     @discardableResult
     private func applyDocumentChangesReturningApplied(
         _ changes: [WorkspaceEditDocumentChange],
-        textView: TextView,
+        textView: TextView?,
         documentURL: URL?
     ) -> Bool {
         var applied = false
@@ -155,10 +156,21 @@ final class CodeActionProvider: ObservableObject {
             switch change {
             case .textDocumentEdit(let docEdit):
                 guard Self.uriMatchesDocument(docEdit.textDocument.uri, documentURL: documentURL) else { continue }
+                guard let textView else { continue }
                 applyTextEdits(docEdit.edits, to: textView)
                 applied = true
-            case .createFile, .renameFile, .deleteFile:
-                break
+            case .createFile(let operation):
+                if WorkspaceEditFileOperations.applyCreateFile(operation) {
+                    applied = true
+                }
+            case .renameFile(let operation):
+                if WorkspaceEditFileOperations.applyRenameFile(operation) {
+                    applied = true
+                }
+            case .deleteFile(let operation):
+                if WorkspaceEditFileOperations.applyDeleteFile(operation) {
+                    applied = true
+                }
             }
         }
         return applied

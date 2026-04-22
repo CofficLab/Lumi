@@ -73,6 +73,24 @@ struct EditorRootView: View {
             guard projectVM.isFileSelected else { return }
             state.promptRenameSymbol()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorWorkspaceSymbols)) { _ in
+            guard projectVM.isFileSelected else { return }
+            state.openWorkspaceSymbolSearch()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorCallHierarchy)) { _ in
+            guard projectVM.isFileSelected else { return }
+            Task { @MainActor in
+                await state.openCallHierarchy()
+            }
+        }
+        .sheet(isPresented: $state.isWorkspaceSymbolSearchPresented) {
+            WorkspaceSymbolItemSearchView(provider: state.workspaceSymbolProvider) { symbol in
+                state.openWorkspaceSymbol(symbol)
+            }
+        }
+        .sheet(isPresented: $state.isCallHierarchyPresented) {
+            CallHierarchySheetView(state: state)
+        }
     }
 
     // MARK: - Header Area
