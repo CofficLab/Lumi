@@ -3,9 +3,11 @@ import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
+import MagicKit
 
 @MainActor
-final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
+final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
+    nonisolated static let emoji = "💡"
 
     weak var lspCoordinator: LSPCoordinator?
     weak var editorState: EditorState?
@@ -13,6 +15,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
     private var activeItems: [EditorCodeSuggestionEntry] = []
     private var requestAnchor: CursorPosition?
     private var requestAnchorOffset: Int?
+    private var activeRequestID: Int?
+    private var requestSequence = 0
+    private var lastMoveDebugSignature: String?
 
     func completionTriggerCharacters() -> Set<String> {
         let characters = lspCoordinator?.completionTriggerCharacters() ?? []
@@ -33,19 +38,50 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         let lspPosition = Self.lspPosition(fromUTF16Offset: cursorOffset, in: content)
         let line = lspPosition.line
         let character = lspPosition.character
+        let context = Self.completionContext(atOffset: cursorOffset, in: content)
+
+        requestSequence += 1
+        let requestID = requestSequence
+        activeRequestID = requestID
+        lastMoveDebugSignature = nil
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 发起: 事件行列=\(cursorPosition.start.line):\(cursorPosition.start.column), 实时offset=\(cursorOffset), LSP行列=\(line):\(character), 前缀='\(context.prefix)', 类型上下文=\(context.isTypeContext)")
+        }
+
         let completionItems = await coordinator.requestCompletion(line: line, character: character)
         var entries = completionItems.map(EditorCodeSuggestionEntry.init(item:))
-        guard !entries.isEmpty else { return nil }
+        if EditorPlugin.verbose {
+            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP返回: \(entries.count) 项")
+        }
+        guard !entries.isEmpty else {
+            activeItems.removeAll()
+            requestAnchor = nil
+            requestAnchorOffset = nil
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 无返回项，结束")
+            }
+            return nil
+        }
 
-        let context = Self.completionContext(atOffset: cursorOffset, in: content)
+        let beforeFilterCount = entries.count
         entries = Self.filterAndRank(
             entries: entries,
             prefix: context.prefix,
             typeContext: context.isTypeContext
         )
+        if EditorPlugin.verbose {
+            let preview = entries.prefix(5).map(\.label).joined(separator: ", ")
+            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 本地过滤排序: \(beforeFilterCount) -> \(entries.count)，Top=\(preview)")
+        }
         requestAnchor = cursorPosition
         requestAnchorOffset = Self.utf16Offset(for: cursorPosition.start, in: content)
         activeItems = entries
+        if activeItems.isEmpty {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 过滤后为空，不展示补全窗")
+            }
+            return nil
+        }
         return (cursorPosition, entries.map { $0 })
     }
 
@@ -65,18 +101,34 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
             Self.utf16Offset(for: cursorPosition.start, in: editorTextView.string) ??
             editorTextView.string.utf16.count
         let context = Self.completionContext(atOffset: cursorOffset, in: editorTextView.string)
+        let sourceCount = activeItems.count
         let filtered = Self.filterAndRank(
             entries: activeItems,
             prefix: context.prefix,
             typeContext: context.isTypeContext
         )
+        if EditorPlugin.verbose {
+            let requestID = activeRequestID ?? -1
+            let signature = "\(requestID)|\(context.prefix)|\(sourceCount)|\(filtered.count)|\(context.isTypeContext)"
+            if signature != lastMoveDebugSignature {
+                let preview = filtered.prefix(5).map(\.label).joined(separator: ", ")
+                EditorPlugin.logger.debug("\(Self.t)补全重筛[\(requestID)] 前缀='\(context.prefix)' 类型上下文=\(context.isTypeContext) \(sourceCount)->\(filtered.count)，Top=\(preview)")
+                lastMoveDebugSignature = signature
+            }
+        }
         return filtered.isEmpty ? nil : filtered.map { $0 }
     }
 
     func completionWindowDidClose() {
+        if EditorPlugin.verbose {
+            let requestID = activeRequestID ?? -1
+            EditorPlugin.logger.debug("\(Self.t)补全窗口关闭[\(requestID)]")
+        }
         activeItems.removeAll()
         requestAnchor = nil
         requestAnchorOffset = nil
+        activeRequestID = nil
+        lastMoveDebugSignature = nil
     }
 
     func completionWindowApplyCompletion(
@@ -86,6 +138,10 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
     ) {
         guard let item = item as? EditorCodeSuggestionEntry else { return }
         guard let view = textView.textView else { return }
+        if EditorPlugin.verbose {
+            let requestID = activeRequestID ?? -1
+            EditorPlugin.logger.debug("\(Self.t)应用补全[\(requestID)] label='\(item.label)' replacement='\(item.replacementText)'")
+        }
 
         let replacementRange: NSRange
         if let textEditRange = item.replaceRange,

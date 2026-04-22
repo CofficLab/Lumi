@@ -220,6 +220,18 @@ final class LSPService: ObservableObject, SuperLog {
             return parseCompletionItems(response)
         } catch {
             EditorPlugin.logger.error("\(Self.t)补全请求失败: \(error)")
+            if await recoverServerIfNeeded(after: error) {
+                guard let recoveredServer = server else { return [] }
+                do {
+                    let response: CompletionResponse = try await recoveredServer.completion(uri: uri, line: line, character: character)
+                    if Self.verbose {
+                        EditorPlugin.logger.info("\(Self.t)补全请求重试成功")
+                    }
+                    return parseCompletionItems(response)
+                } catch {
+                    EditorPlugin.logger.error("\(Self.t)补全请求重试失败: \(error)")
+                }
+            }
             return []
         }
     }
@@ -617,6 +629,53 @@ final class LSPService: ObservableObject, SuperLog {
     // MARK: - Progress Notifications
     
     let progressProvider = LSPProgressProvider()
+
+    // MARK: - Recovery
+
+    private func recoverServerIfNeeded(after error: Error) async -> Bool {
+        guard isTransportClosedError(error) else { return false }
+        guard let languageId = activeLanguageId,
+              let projectRootPath else {
+            return false
+        }
+        if Self.verbose {
+            EditorPlugin.logger.warning("\(Self.t)检测到 LSP 通道断开，尝试自动恢复")
+        }
+
+        await startServer(for: languageId, projectPath: projectRootPath)
+        guard let restartedServer = server else {
+            EditorPlugin.logger.error("\(Self.t)LSP 自动恢复失败：重启后服务器为空")
+            return false
+        }
+
+        guard let currentURI, let latestDocumentSnapshot else {
+            if Self.verbose {
+                EditorPlugin.logger.info("\(Self.t)LSP 自动恢复完成（无活跃文档）")
+            }
+            return true
+        }
+
+        do {
+            try await restartedServer.openDocument(
+                uri: currentURI,
+                languageId: languageId,
+                text: latestDocumentSnapshot
+            )
+            pendingChanges.removeAll()
+            if Self.verbose {
+                EditorPlugin.logger.info("\(Self.t)LSP 自动恢复完成并重新打开文档")
+            }
+            return true
+        } catch {
+            EditorPlugin.logger.error("\(Self.t)LSP 自动恢复后打开文档失败: \(error)")
+            return false
+        }
+    }
+
+    private func isTransportClosedError(_ error: Error) -> Bool {
+        let description = String(describing: error)
+        return description.contains("ProtocolTransportError.dataStreamClosed")
+    }
     
     // MARK: - Cleanup
     
