@@ -34,7 +34,11 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
 
         let content = editorTextView.string
         let context = Self.completionContext(at: cursorPosition.start, in: content)
-        entries = Self.rank(entries: entries, prefix: context.prefix, typeContext: context.isTypeContext)
+        entries = Self.filterAndRank(
+            entries: entries,
+            prefix: context.prefix,
+            typeContext: context.isTypeContext
+        )
         requestAnchor = cursorPosition
         requestAnchorOffset = Self.utf16Offset(for: cursorPosition.start, in: content)
         activeItems = entries
@@ -213,11 +217,19 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         prefix: String,
         typeContext: Bool
     ) -> [EditorCodeSuggestionEntry] {
+        let typeFiltered: [EditorCodeSuggestionEntry]
+        if typeContext {
+            let onlyTypeLike = entries.filter(isTypeLike)
+            typeFiltered = onlyTypeLike.isEmpty ? entries : onlyTypeLike
+        } else {
+            typeFiltered = entries
+        }
+
         guard !prefix.isEmpty else {
-            return rank(entries: entries, prefix: prefix, typeContext: typeContext)
+            return rank(entries: typeFiltered, prefix: prefix, typeContext: typeContext)
         }
         let lowerPrefix = prefix.lowercased()
-        let filtered = entries.filter { entry in
+        let filtered = typeFiltered.filter { entry in
             entry.label.lowercased().hasPrefix(lowerPrefix) ||
                 entry.filterText?.lowercased().hasPrefix(lowerPrefix) == true
         }
@@ -278,12 +290,16 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
 
         if typeContext {
             if preferredTypes.contains(label) { result += 4_000 }
+            if isLikelyLiteral(label) { result -= 2_200 }
             switch entry.item.kind {
             case .class, .struct, .enum, .interface, .typeParameter:
                 result += 1_400
+            case .keyword:
+                result -= 1_800
             default:
                 break
             }
+            if isLowercaseKeywordLike(label) { result -= 1_200 }
         }
 
         switch entry.item.kind {
@@ -295,6 +311,57 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         }
 
         return result
+    }
+
+    private static func isTypeLike(_ entry: EditorCodeSuggestionEntry) -> Bool {
+        let label = entry.label
+        if label.isEmpty { return false }
+        if isLikelyLiteral(label) { return false }
+        if isLowercaseKeywordLike(label) { return false }
+
+        switch entry.item.kind {
+        case .class, .struct, .enum, .interface, .typeParameter, .module:
+            return true
+        case .keyword:
+            return label.first?.isUppercase == true
+        default:
+            break
+        }
+
+        if label.first?.isUppercase == true {
+            return true
+        }
+
+        if let detail = entry.detail?.lowercased() {
+            if detail.contains("typealias") ||
+                detail.contains("protocol") ||
+                detail.contains("struct") ||
+                detail.contains("class") ||
+                detail.contains("enum") ||
+                detail.contains("actor") {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private static func isLowercaseKeywordLike(_ label: String) -> Bool {
+        let keywords: Set<String> = [
+            "if", "else", "switch", "case", "default", "for", "while", "repeat",
+            "do", "try", "catch", "throw", "return", "break", "continue",
+            "let", "var", "func", "class", "struct", "enum", "protocol",
+            "extension", "import", "nil", "true", "false", "guard", "defer",
+            "where", "as", "is", "in"
+        ]
+        return keywords.contains(label.lowercased())
+    }
+
+    private static func isLikelyLiteral(_ label: String) -> Bool {
+        guard !label.isEmpty else { return false }
+        if label.first?.isNumber == true { return true }
+        if label.hasPrefix("\"") || label.hasPrefix("'") { return true }
+        return false
     }
 }
 
