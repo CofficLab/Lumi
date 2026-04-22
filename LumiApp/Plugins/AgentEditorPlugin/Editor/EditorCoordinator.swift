@@ -7,7 +7,7 @@ import LanguageServerProtocol
 import os
 
 /// 文本变更协调器
-/// 监听 CodeEditSourceEditor 的文本变更，通知 EditorState 触发自动保存
+/// 监听 CodeEditSourceEditor 的文本与焦点事件，通知 EditorState 更新脏状态并在失焦时保存
 final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     
     /// 弱引用状态管理器
@@ -182,7 +182,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
             state?.notifyLSPIncrementalChange(range: lspRange, text: string)
             // 关键：CodeEditSourceEditor 对实现了 TextViewDelegate 的 coordinator
             // 只调用 textView(_:didReplaceContentsIn:with:)，不会调用 textViewDidChangeText(controller:)。
-            // 因此自动保存逻辑必须在这里触发。
+            // 因此脏状态更新逻辑必须在这里触发。
             state?.notifyContentChanged()
         }
     }

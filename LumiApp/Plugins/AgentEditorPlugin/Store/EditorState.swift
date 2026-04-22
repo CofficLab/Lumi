@@ -332,14 +332,8 @@ final class EditorState: ObservableObject, SuperLog {
     /// 保存状态
     @Published var saveState: SaveState = .idle
     
-    /// 防抖保存任务
-    private var saveTask: Task<Void, Never>?
-    
     /// 成功状态清除任务
     private var successClearTask: Task<Void, Never>?
-
-    /// 自动保存延迟（秒）
-    static let autoSaveDelay: TimeInterval = 1.5
     
     /// 成功状态显示时间（秒）
     static let successDisplayDuration: TimeInterval = 2.0
@@ -463,8 +457,6 @@ final class EditorState: ObservableObject, SuperLog {
     /// 加载指定文件
     func loadFile(from url: URL?) {
         // 清理旧状态
-        saveTask?.cancel()
-        saveTask = nil
         successClearTask?.cancel()
         successClearTask = nil
         
@@ -664,8 +656,6 @@ final class EditorState: ObservableObject, SuperLog {
     /// 不尝试解析内容，只设置文件元数据，供 QuickLook 预览使用
     func loadBinaryFile(from url: URL) {
         // 清理旧状态
-        saveTask?.cancel()
-        saveTask = nil
         successClearTask?.cancel()
         successClearTask = nil
         cleanupFileWatcher()
@@ -721,7 +711,6 @@ final class EditorState: ObservableObject, SuperLog {
         }
         
         let contentString = content.string
-        let snapshotExists = persistedContentSnapshot != nil
         let changed: Bool
         if let snapshot = persistedContentSnapshot {
             // 使用精确字符串比较，而非 hashValue（存在哈希碰撞风险）
@@ -736,10 +725,6 @@ final class EditorState: ObservableObject, SuperLog {
         }
         
         if changed {
-            // 用户要求：编辑过程中不自动保存，仅在失焦时保存。
-            // 这里主动取消可能存在的旧自动保存任务，避免在编辑器仍聚焦时触发保存。
-            saveTask?.cancel()
-            saveTask = nil
             hasUnsavedChanges = true
             saveState = .editing
             lspCoordinator.updateDocumentSnapshot(contentString)
@@ -1015,41 +1000,10 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
     
-    // MARK: - Auto Save
-    
-    /// 安排自动保存
-    private func scheduleAutoSave(content: String) {
-        let hadPreviousTask = saveTask != nil
-        saveTask?.cancel()
-        
-        let fileURL = currentFileURL
-        
-        if Self.verbose {
-            logger.info("\(Self.t)自动保存调度: 已有任务=\(hadPreviousTask), 延迟=\(Self.autoSaveDelay)s, 内容长度=\(content.count), 文件=\(fileURL?.lastPathComponent ?? "nil")")
-        }
-        
-        saveTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(Self.autoSaveDelay))
-            guard !Task.isCancelled else {
-                if Self.verbose {
-                    EditorPlugin.logger.debug("\(Self.t)自动保存任务已取消，跳过保存")
-                }
-                return
-            }
-            await MainActor.run {
-                if Self.verbose {
-                    EditorPlugin.logger.debug("\(Self.t)自动保存任务执行保存: self=\(self != nil), 文件=\(fileURL?.lastPathComponent ?? "nil")")
-                }
-                self?.performSave(content: content, to: fileURL)
-            }
-        }
-    }
+    // MARK: - Save
     
     /// 立即保存
     func saveNow() {
-        saveTask?.cancel()
-        saveTask = nil
-        
         guard let content = content?.string, let fileURL = currentFileURL else { return }
         performSave(content: content, to: fileURL)
     }
