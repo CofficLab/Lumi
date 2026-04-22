@@ -10,7 +10,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
     weak var lspCoordinator: LSPCoordinator?
     weak var editorState: EditorState?
 
-    private var activeItems: [any CodeEditSourceEditor.CodeSuggestionEntry] = []
+    private var activeItems: [EditorCodeSuggestionEntry] = []
     private var requestAnchor: CursorPosition?
     private var requestAnchorOffset: Int?
 
@@ -29,14 +29,16 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         let line = max(cursorPosition.start.line - 1, 0)
         let character = max(cursorPosition.start.column - 1, 0)
         let completionItems = await coordinator.requestCompletion(line: line, character: character)
-        let entries = completionItems.map(EditorCodeSuggestionEntry.init(item:))
+        var entries = completionItems.map(EditorCodeSuggestionEntry.init(item:))
         guard !entries.isEmpty else { return nil }
 
         let content = editorTextView.string
+        let context = Self.completionContext(at: cursorPosition.start, in: content)
+        entries = Self.rank(entries: entries, prefix: context.prefix, typeContext: context.isTypeContext)
         requestAnchor = cursorPosition
         requestAnchorOffset = Self.utf16Offset(for: cursorPosition.start, in: content)
         activeItems = entries
-        return (cursorPosition, entries)
+        return (cursorPosition, entries.map { $0 })
     }
 
     func completionOnCursorMove(
@@ -51,24 +53,13 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
             return nil
         }
 
-        guard let anchorOffset = requestAnchorOffset,
-              let cursorOffset = Self.utf16Offset(for: cursorPosition.start, in: editorTextView.string),
-              cursorOffset >= anchorOffset else {
-            return activeItems
-        }
-
-        let content = editorTextView.string as NSString
-        let prefixLength = cursorOffset - anchorOffset
-        guard prefixLength > 0 else { return activeItems }
-        let prefix = content.substring(with: NSRange(location: anchorOffset, length: prefixLength)).lowercased()
-
-        let filtered = activeItems.compactMap { item -> (any CodeEditSourceEditor.CodeSuggestionEntry)? in
-            guard let entry = item as? EditorCodeSuggestionEntry else { return item }
-            let matches = entry.label.lowercased().hasPrefix(prefix) ||
-                entry.filterText?.lowercased().hasPrefix(prefix) == true
-            return matches ? item : nil
-        }
-        return filtered.isEmpty ? nil : filtered
+        let context = Self.completionContext(at: cursorPosition.start, in: editorTextView.string)
+        let filtered = Self.filterAndRank(
+            entries: activeItems,
+            prefix: context.prefix,
+            typeContext: context.isTypeContext
+        )
+        return filtered.isEmpty ? nil : filtered.map { $0 }
     }
 
     func completionWindowDidClose() {
@@ -179,6 +170,131 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         }
         guard line == position.line else { return nil }
         return min(lineStartOffset + position.character, content.utf16.count)
+    }
+
+    private struct CompletionContext {
+        let prefix: String
+        let isTypeContext: Bool
+    }
+
+    private static func completionContext(at position: CursorPosition.Position, in content: String) -> CompletionContext {
+        guard let cursorOffset = utf16Offset(for: position, in: content) else {
+            return CompletionContext(prefix: "", isTypeContext: false)
+        }
+        let ns = content as NSString
+        var tokenStart = cursorOffset
+        while tokenStart > 0 {
+            let unit = ns.character(at: tokenStart - 1)
+            guard isIdentifierScalar(unit) else { break }
+            tokenStart -= 1
+        }
+        let prefix = ns.substring(with: NSRange(location: tokenStart, length: cursorOffset - tokenStart))
+        var check = tokenStart
+        while check > 0 {
+            let unit = ns.character(at: check - 1)
+            if let scalar = UnicodeScalar(unit),
+               CharacterSet.whitespacesAndNewlines.contains(scalar) {
+                check -= 1
+                continue
+            }
+            return CompletionContext(prefix: prefix, isTypeContext: unit == 0x3A) // ":"
+        }
+        return CompletionContext(prefix: prefix, isTypeContext: false)
+    }
+
+    private static func isIdentifierScalar(_ scalar: unichar) -> Bool {
+        if scalar == 0x5F { return true } // "_"
+        guard let u = UnicodeScalar(scalar) else { return false }
+        return CharacterSet.alphanumerics.contains(u)
+    }
+
+    private static func filterAndRank(
+        entries: [EditorCodeSuggestionEntry],
+        prefix: String,
+        typeContext: Bool
+    ) -> [EditorCodeSuggestionEntry] {
+        guard !prefix.isEmpty else {
+            return rank(entries: entries, prefix: prefix, typeContext: typeContext)
+        }
+        let lowerPrefix = prefix.lowercased()
+        let filtered = entries.filter { entry in
+            entry.label.lowercased().hasPrefix(lowerPrefix) ||
+                entry.filterText?.lowercased().hasPrefix(lowerPrefix) == true
+        }
+        guard !filtered.isEmpty else { return [] }
+        return rank(entries: filtered, prefix: prefix, typeContext: typeContext)
+    }
+
+    private static func rank(
+        entries: [EditorCodeSuggestionEntry],
+        prefix: String,
+        typeContext: Bool
+    ) -> [EditorCodeSuggestionEntry] {
+        let preferredTypes: Set<String> = [
+            "Int", "Int8", "Int16", "Int32", "Int64",
+            "UInt", "UInt8", "UInt16", "UInt32", "UInt64",
+            "Float", "Double", "Bool", "String"
+        ]
+        let lowerPrefix = prefix.lowercased()
+
+        return entries.sorted { lhs, rhs in
+            let l = score(
+                for: lhs,
+                prefix: lowerPrefix,
+                typeContext: typeContext,
+                preferredTypes: preferredTypes
+            )
+            let r = score(
+                for: rhs,
+                prefix: lowerPrefix,
+                typeContext: typeContext,
+                preferredTypes: preferredTypes
+            )
+            if l != r { return l > r }
+            if lhs.label.count != rhs.label.count { return lhs.label.count < rhs.label.count }
+            return lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
+        }
+    }
+
+    private static func score(
+        for entry: EditorCodeSuggestionEntry,
+        prefix: String,
+        typeContext: Bool,
+        preferredTypes: Set<String>
+    ) -> Int {
+        var result = 0
+        let label = entry.label
+        let lowerLabel = label.lowercased()
+        let lowerFilter = entry.filterText?.lowercased()
+
+        if !prefix.isEmpty {
+            if lowerLabel == prefix { result += 5_000 }
+            if lowerLabel.hasPrefix(prefix) { result += 3_000 }
+            if lowerFilter?.hasPrefix(prefix) == true { result += 2_500 }
+        }
+
+        if entry.item.preselect == true { result += 250 }
+        if entry.deprecated { result -= 800 }
+
+        if typeContext {
+            if preferredTypes.contains(label) { result += 4_000 }
+            switch entry.item.kind {
+            case .class, .struct, .enum, .interface, .typeParameter:
+                result += 1_400
+            default:
+                break
+            }
+        }
+
+        switch entry.item.kind {
+        case .keyword: result += 180
+        case .class, .struct, .enum, .interface: result += 150
+        case .typeParameter: result += 140
+        case .module, .file, .folder: result -= 60
+        default: break
+        }
+
+        return result
     }
 }
 

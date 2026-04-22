@@ -103,17 +103,15 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
                         tagSupport: ValueSet(valueSet: [CompletionItemTag.deprecated]),
                         insertReplaceSupport: true,
                         resolveSupport: CompletionClientCapabilities.CompletionItem.ResolveSupport(
-                            properties: ["documentation", "details"]
+                            properties: ["documentation", "detail"]
                         ),
                         insertTextModeSupport: ValueSet(valueSet: [InsertTextMode.adjustIndentation]),
                         labelDetailsSupport: true
                     ),
-                    completionItemKind: ValueSet(valueSet: [CompletionItemKind.text, CompletionItemKind.method]),
+                    completionItemKind: nil,
                     contextSupport: true,
                     insertTextMode: InsertTextMode.asIs,
-                    completionList: CompletionClientCapabilities.CompletionList(
-                        itemDefaults: ["default1", "default2"]
-                    )
+                    completionList: nil
                 ),
                 codeAction: CodeActionClientCapabilities(
                     dynamicRegistration: true,
