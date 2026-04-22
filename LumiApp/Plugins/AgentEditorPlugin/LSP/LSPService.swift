@@ -215,13 +215,21 @@ final class LSPService: ObservableObject, SuperLog {
     
     func requestCompletion(uri: String, line: Int, character: Int) async -> [CompletionItem] {
         guard let server else { return [] }
+        if uri == currentURI, !self.pendingChanges.isEmpty {
+            self.changeDebounceTimer?.invalidate()
+            self.changeDebounceTimer = nil
+            if Self.verbose {
+                EditorPlugin.logger.debug("\(Self.t)补全前同步待发送变更: \(self.pendingChanges.count) 条")
+            }
+            await self.flushChange(uri: uri)
+        }
         do {
             let response: CompletionResponse = try await server.completion(uri: uri, line: line, character: character)
             return parseCompletionItems(response)
         } catch {
             EditorPlugin.logger.error("\(Self.t)补全请求失败: \(error)")
             if await recoverServerIfNeeded(after: error) {
-                guard let recoveredServer = server else { return [] }
+                guard let recoveredServer = self.server else { return [] }
                 do {
                     let response: CompletionResponse = try await recoveredServer.completion(uri: uri, line: line, character: character)
                     if Self.verbose {
@@ -633,13 +641,26 @@ final class LSPService: ObservableObject, SuperLog {
     // MARK: - Recovery
 
     private func recoverServerIfNeeded(after error: Error) async -> Bool {
-        guard isTransportClosedError(error) else { return false }
-        guard let languageId = activeLanguageId,
-              let projectRootPath else {
+        guard isTransportClosedError(error) else {
+            if Self.verbose {
+                EditorPlugin.logger.debug("\(Self.t)跳过自动恢复：错误非断链类型 -> \(String(describing: error))")
+            }
+            return false
+        }
+        guard let languageId = activeLanguageId else {
+            if Self.verbose {
+                EditorPlugin.logger.warning("\(Self.t)跳过自动恢复：activeLanguageId 为空")
+            }
+            return false
+        }
+        guard let projectRootPath else {
+            if Self.verbose {
+                EditorPlugin.logger.warning("\(Self.t)跳过自动恢复：projectRootPath 为空")
+            }
             return false
         }
         if Self.verbose {
-            EditorPlugin.logger.warning("\(Self.t)检测到 LSP 通道断开，尝试自动恢复")
+            EditorPlugin.logger.warning("\(Self.t)检测到 LSP 通道断开，尝试自动恢复: language=\(languageId), root=\(projectRootPath)")
         }
 
         await startServer(for: languageId, projectPath: projectRootPath)
@@ -673,8 +694,10 @@ final class LSPService: ObservableObject, SuperLog {
     }
 
     private func isTransportClosedError(_ error: Error) -> Bool {
-        let description = String(describing: error)
-        return description.contains("ProtocolTransportError.dataStreamClosed")
+        let description = String(describing: error).lowercased()
+        return description.contains("datastreamclosed") ||
+            description.contains("protocoltransporterror") ||
+            description.contains("streamclosed")
     }
     
     // MARK: - Cleanup
