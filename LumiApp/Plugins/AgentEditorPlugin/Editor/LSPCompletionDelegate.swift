@@ -318,8 +318,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         }
         let lowerPrefix = prefix.lowercased()
         let filtered = typeFiltered.filter { entry in
-            entry.label.lowercased().hasPrefix(lowerPrefix) ||
-                entry.filterText?.lowercased().hasPrefix(lowerPrefix) == true
+            matchesPrefix(entry: entry, lowerPrefix: lowerPrefix)
         }
         guard !filtered.isEmpty else { return [] }
         return rank(entries: filtered, prefix: prefix, typeContext: typeContext)
@@ -381,10 +380,13 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         let label = entry.label
         let lowerLabel = label.lowercased()
         let lowerFilter = entry.filterText?.lowercased()
+        let canonical = canonicalCompletionLabel(from: label).lowercased()
 
         if !prefix.isEmpty {
             if lowerLabel == prefix { result += 5_000 }
+            if canonical == prefix { result += 4_500 }
             if lowerLabel.hasPrefix(prefix) { result += 3_000 }
+            if canonical.hasPrefix(prefix) { result += 2_800 }
             if lowerFilter?.hasPrefix(prefix) == true { result += 2_500 }
         }
 
@@ -392,7 +394,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         if entry.deprecated { result -= 800 }
 
         if typeContext {
-            if preferredTypes.contains(label) { result += 4_000 }
+            let canonicalLabel = canonicalCompletionLabel(from: label)
+            if preferredTypes.contains(canonicalLabel) { result += 4_000 }
+            if isCTypeAlias(canonicalLabel) { result -= 3_200 }
             if isLikelyLiteral(label) { result -= 2_200 }
             switch entry.item.kind {
             case .class, .struct, .enum, .interface, .typeParameter:
@@ -416,6 +420,37 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         return result
     }
 
+    private static func matchesPrefix(entry: EditorCodeSuggestionEntry, lowerPrefix: String) -> Bool {
+        if entry.label.lowercased().hasPrefix(lowerPrefix) { return true }
+        if entry.filterText?.lowercased().hasPrefix(lowerPrefix) == true { return true }
+
+        let canonical = canonicalCompletionLabel(from: entry.label).lowercased()
+        if canonical.hasPrefix(lowerPrefix) { return true }
+
+        if let detail = entry.detail?.lowercased(), detail.hasPrefix(lowerPrefix) {
+            return true
+        }
+
+        let tokens = tokenizeCompletionLabel(entry.label)
+        return tokens.contains { $0.lowercased().hasPrefix(lowerPrefix) }
+    }
+
+    private static func canonicalCompletionLabel(from label: String) -> String {
+        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let droppedNumericPrefix = trimmed.replacingOccurrences(
+            of: #"^\d+\s+"#,
+            with: "",
+            options: .regularExpression
+        )
+        return droppedNumericPrefix
+    }
+
+    private static func tokenizeCompletionLabel(_ label: String) -> [String] {
+        let canonical = canonicalCompletionLabel(from: label)
+        return canonical.components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+    }
+
     private static func pinnedTypeOrder(
         for entry: EditorCodeSuggestionEntry,
         prefix: String,
@@ -429,9 +464,17 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             "Double", "Float", "CGFloat", "Bool", "String",
             "Character", "Any", "AnyObject"
         ]
-        guard let index = orderedTypes.firstIndex(of: entry.label) else { return nil }
-        guard prefix.isEmpty || entry.label.lowercased().hasPrefix(prefix) else { return nil }
-        return index
+        guard prefix.isEmpty || matchesPrefix(entry: entry, lowerPrefix: prefix) else { return nil }
+
+        let canonicalLabel = canonicalCompletionLabel(from: entry.label)
+        if let index = orderedTypes.firstIndex(of: canonicalLabel) {
+            return index
+        }
+        if let bridgedSwiftType = bridgedSwiftType(forCTypeAlias: canonicalLabel),
+           let index = orderedTypes.firstIndex(of: bridgedSwiftType) {
+            return orderedTypes.count + index
+        }
+        return nil
     }
 
     private static func isTypeLike(_ entry: EditorCodeSuggestionEntry) -> Bool {
@@ -483,6 +526,27 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         if label.first?.isNumber == true { return true }
         if label.hasPrefix("\"") || label.hasPrefix("'") { return true }
         return false
+    }
+
+    private static func isCTypeAlias(_ typeName: String) -> Bool {
+        bridgedSwiftType(forCTypeAlias: typeName) != nil
+    }
+
+    private static func bridgedSwiftType(forCTypeAlias typeName: String) -> String? {
+        let map: [String: String] = [
+            "CChar": "Int8",
+            "CSignedChar": "Int8",
+            "CUnsignedChar": "UInt8",
+            "CShort": "Int16",
+            "CUnsignedShort": "UInt16",
+            "CInt": "Int32",
+            "CUnsignedInt": "UInt32",
+            "CLong": "Int",
+            "CUnsignedLong": "UInt",
+            "CLongLong": "Int64",
+            "CUnsignedLongLong": "UInt64"
+        ]
+        return map[typeName]
     }
 }
 
