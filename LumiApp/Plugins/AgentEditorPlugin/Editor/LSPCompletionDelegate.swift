@@ -250,6 +250,21 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         let lowerPrefix = prefix.lowercased()
 
         return entries.sorted { lhs, rhs in
+            let lPinned = pinnedTypeOrder(for: lhs, prefix: lowerPrefix, typeContext: typeContext)
+            let rPinned = pinnedTypeOrder(for: rhs, prefix: lowerPrefix, typeContext: typeContext)
+            if lPinned != rPinned {
+                switch (lPinned, rPinned) {
+                case let (.some(l), .some(r)):
+                    return l < r
+                case (.some, .none):
+                    return true
+                case (.none, .some):
+                    return false
+                case (.none, .none):
+                    break
+                }
+            }
+
             let l = score(
                 for: lhs,
                 prefix: lowerPrefix,
@@ -311,6 +326,24 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate {
         }
 
         return result
+    }
+
+    private static func pinnedTypeOrder(
+        for entry: EditorCodeSuggestionEntry,
+        prefix: String,
+        typeContext: Bool
+    ) -> Int? {
+        guard typeContext else { return nil }
+
+        let orderedTypes: [String] = [
+            "Int", "Int8", "Int16", "Int32", "Int64",
+            "UInt", "UInt8", "UInt16", "UInt32", "UInt64",
+            "Double", "Float", "CGFloat", "Bool", "String",
+            "Character", "Any", "AnyObject"
+        ]
+        guard let index = orderedTypes.firstIndex(of: entry.label) else { return nil }
+        guard prefix.isEmpty || entry.label.lowercased().hasPrefix(prefix) else { return nil }
+        return index
     }
 
     private static func isTypeLike(_ entry: EditorCodeSuggestionEntry) -> Bool {
