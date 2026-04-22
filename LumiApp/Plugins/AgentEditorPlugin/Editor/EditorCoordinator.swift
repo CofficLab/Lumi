@@ -14,6 +14,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     private weak var state: EditorState?
     private var editedRange: LSPRange?
     private weak var textViewController: TextViewController?
+    private var endEditingObserver: NSObjectProtocol?
     /// 跳转定义代理（由外部注入）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
     
@@ -24,11 +25,23 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     // MARK: - TextViewCoordinator
     
     nonisolated func prepareCoordinator(controller: TextViewController) {
+        if let endEditingObserver {
+            NotificationCenter.default.removeObserver(endEditingObserver)
+            self.endEditingObserver = nil
+        }
         textViewController = controller
         jumpDelegate?.textViewController = controller
         let st = state
         DispatchQueue.main.async {
             st?.focusedTextView = controller.textView
+        }
+
+        endEditingObserver = NotificationCenter.default.addObserver(
+            forName: NSText.didEndEditingNotification,
+            object: controller.textView,
+            queue: .main
+        ) { [weak st] _ in
+            st?.saveNowIfNeeded(reason: "editor_focus_lost")
         }
     }
     
@@ -144,6 +157,10 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     nonisolated func destroy() {
         if EditorPlugin.verbose {
             EditorPlugin.logger.info("\(EditorState.t)Coordinator 销毁: state=\(self.state != nil)")
+        }
+        if let endEditingObserver {
+            NotificationCenter.default.removeObserver(endEditingObserver)
+            self.endEditingObserver = nil
         }
         let st = state
         state = nil

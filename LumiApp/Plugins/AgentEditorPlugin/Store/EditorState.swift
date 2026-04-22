@@ -1050,6 +1050,15 @@ final class EditorState: ObservableObject, SuperLog {
         guard let content = content?.string, let fileURL = currentFileURL else { return }
         performSave(content: content, to: fileURL)
     }
+
+    /// 仅在存在未保存改动时立即保存（用于失焦等场景）
+    func saveNowIfNeeded(reason: String) {
+        guard hasUnsavedChanges else { return }
+        if Self.verbose {
+            logger.info("\(Self.t)触发立即保存: 原因=\(reason), 文件=\(self.currentFileURL?.lastPathComponent ?? "nil")")
+        }
+        saveNow()
+    }
     
     /// 执行保存
     private func performSave(content: String, to url: URL?) {

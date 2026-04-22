@@ -157,6 +157,7 @@ struct EditorBreadcrumbView: View {
 
             // 右侧：保存状态 + Markdown 预览按钮 + 语言标签（固定宽度，不被路径挤压）
             HStack(spacing: 6) {
+                unsavedChangesIndicator
                 saveStateIndicator
 
                 // Markdown 预览按钮（仅 md 文件显示）
@@ -263,6 +264,28 @@ struct EditorBreadcrumbView: View {
     static let crumbHeight: CGFloat = 28.0
 
     // MARK: - Save State Indicator
+
+    @ViewBuilder
+    private var unsavedChangesIndicator: some View {
+        if state.hasUnsavedChanges {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(AppUI.Color.semantic.warning)
+                    .frame(width: 6, height: 6)
+                Text("Unsaved")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.warning)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(AppUI.Color.semantic.warning.opacity(0.12))
+            )
+            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            .animation(.easeInOut(duration: 0.15), value: state.hasUnsavedChanges)
+        }
+    }
 
     @ViewBuilder
     private var saveStateIndicator: some View {
