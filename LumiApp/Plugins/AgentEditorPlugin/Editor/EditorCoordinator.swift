@@ -470,6 +470,9 @@ final class ContextMenuHelper: NSObject {
     }
 
     /// 在右键菜单中注入自定义项
+    ///
+    /// 所有功能菜单项均由编辑器子插件通过 `EditorCommandContributor` 注册，
+    /// 此处仅负责从注册中心聚合命令并注入到右键菜单中。
     func injectCustomItems(into menu: NSMenu) {
         // 先清除之前注入的项（防止重复）
         menu.items
@@ -483,7 +486,6 @@ final class ContextMenuHelper: NSObject {
 
         guard let textView, let state else { return }
 
-        let hasSelection = textView.selectionManager.textSelections.contains { !$0.range.isEmpty }
         currentTargets.removeAll()
 
         // 插入分隔符到顶部
@@ -491,7 +493,9 @@ final class ContextMenuHelper: NSObject {
         topSeparator.tag = injectedSeparatorTag
         menu.insertItem(topSeparator, at: 0)
 
+        // 从插件注册中心获取所有命令（包括多光标、Chat 集成、LSP 命令等）
         let (line, character) = Self.cursorLSPLineCharacter(textView: textView, state: state)
+        let hasSelection = textView.selectionManager.textSelections.contains { !$0.range.isEmpty }
         let commandContext = EditorCommandContext(
             languageId: state.detectedLanguage?.tsName ?? "swift",
             hasSelection: hasSelection,
@@ -511,61 +515,6 @@ final class ContextMenuHelper: NSObject {
             )
             commandItem.isEnabled = command.isEnabled
             menu.insertItem(commandItem, at: 0)
-        }
-
-        let addNextOccurrenceItem = buildInjectedItem(
-            title: String(localized: "Add Next Occurrence", table: "LumiEditor"),
-            image: "plus.magnifyingglass"
-        ) {
-            let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
-            if let ranges = state.addNextOccurrence(from: currentSelection) {
-                textView.selectionManager.setSelectedRanges(ranges)
-            }
-        }
-        addNextOccurrenceItem.isEnabled = hasSelection
-        menu.insertItem(addNextOccurrenceItem, at: 0)
-
-        let selectAllOccurrencesItem = buildInjectedItem(
-            title: String(localized: "Select All Occurrences", table: "LumiEditor"),
-            image: "text.magnifyingglass"
-        ) {
-            let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
-            if let ranges = state.addAllOccurrences(from: currentSelection) {
-                textView.selectionManager.setSelectedRanges(ranges)
-            }
-        }
-        selectAllOccurrencesItem.isEnabled = hasSelection
-        menu.insertItem(selectAllOccurrencesItem, at: 0)
-
-        let clearCursorsItem = buildInjectedItem(
-            title: String(localized: "Clear Additional Cursors", table: "LumiEditor"),
-            image: "cursorarrow.motionlines"
-        ) {
-            state.clearMultiCursors()
-        }
-        clearCursorsItem.isEnabled = state.multiCursorState.isEnabled
-        menu.insertItem(clearCursorsItem, at: 0)
-
-        let middleSeparator = NSMenuItem.separator()
-        middleSeparator.tag = injectedSeparatorTag
-        menu.insertItem(middleSeparator, at: 0)
-
-        let addLocationItem = buildInjectedItem(
-            title: String(localized: "Add Location to Chat", table: "LumiEditor"),
-            image: "mappin.and.ellipse"
-        ) {
-            Self.performAddLocationToChat(textView: textView, state: state)
-        }
-        menu.insertItem(addLocationItem, at: 0)
-
-        if hasSelection {
-            let addSelectionItem = buildInjectedItem(
-                title: String(localized: "Add Selection to Chat", table: "LumiEditor"),
-                image: "bubble.left.and.text.bubble.right"
-            ) {
-                Self.performAddSelectionToChat(textView: textView, state: state)
-            }
-            menu.insertItem(addSelectionItem, at: 0)
         }
     }
 
@@ -588,68 +537,6 @@ final class ContextMenuHelper: NSObject {
         return item
     }
 
-    // MARK: - Add to Chat Action
-
-    private static func performAddSelectionToChat(textView: TextView, state: EditorState) {
-        let selections = textView.selectionManager.textSelections
-        guard let firstSelection = selections.first, !firstSelection.range.isEmpty else { return }
-        let fullText = textView.string as NSString
-        let range = firstSelection.range
-        guard range.location != NSNotFound, NSMaxRange(range) <= fullText.length else { return }
-        let selectedText = fullText.substring(with: range)
-        guard !selectedText.isEmpty else { return }
-        let locationText = selectionLocationText(range: range, fullText: fullText, state: state)
-        let languageHint = state.fileExtension
-
-        let payload = """
-        \(locationText)
-        ```\(languageHint)
-        \(selectedText)
-        ```
-        """
-        NotificationCenter.postAddToChat(text: payload)
-    }
-
-    private static func performAddLocationToChat(textView: TextView, state: EditorState) {
-        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        let fullText = textView.string as NSString
-        guard selection.location != NSNotFound else { return }
-        let safeSelection = NSRange(
-            location: min(max(selection.location, 0), fullText.length),
-            length: min(max(selection.length, 0), max(0, fullText.length - min(max(selection.location, 0), fullText.length)))
-        )
-        let locationText = selectionLocationText(range: safeSelection, fullText: fullText, state: state)
-        NotificationCenter.postAddToChat(text: locationText)
-    }
-
-    private static func performGoToDefinition(textView: TextView, state: EditorState) {
-        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        Task { @MainActor in
-            await state.goToDefinition(for: selection)
-        }
-    }
-
-    private static func performGoToDeclaration(textView: TextView, state: EditorState) {
-        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        Task { @MainActor in
-            await state.goToDeclaration(for: selection)
-        }
-    }
-
-    private static func performGoToTypeDefinition(textView: TextView, state: EditorState) {
-        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        Task { @MainActor in
-            await state.goToTypeDefinition(for: selection)
-        }
-    }
-
-    private static func performGoToImplementation(textView: TextView, state: EditorState) {
-        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        Task { @MainActor in
-            await state.goToImplementation(for: selection)
-        }
-    }
-
     private static func cursorLSPLineCharacter(textView: TextView, state: EditorState) -> (Int, Int) {
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         let offset = max(selection.location, 0)
@@ -657,60 +544,6 @@ final class ContextMenuHelper: NSObject {
             return (max(state.cursorLine - 1, 0), max(state.cursorColumn - 1, 0))
         }
         return (Int(position.line), Int(position.character))
-    }
-
-    private static func interactionContext(
-        controller: TextViewController,
-        state: EditorState,
-        typedCharacter: String?
-    ) -> EditorInteractionContext {
-        let textView = controller.textView
-        let text = textView?.string ?? ""
-        let selection = textView?.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        let offset = max(selection.location, 0)
-        let position = lspPosition(utf16Offset: offset, in: text) ?? Position(line: max(state.cursorLine - 1, 0), character: max(state.cursorColumn - 1, 0))
-
-        return EditorInteractionContext(
-            languageId: state.detectedLanguage?.tsName ?? "swift",
-            line: Int(position.line),
-            character: Int(position.character),
-            typedCharacter: typedCharacter
-        )
-    }
-
-    private static func lastTypedCharacter(in controller: TextViewController) -> String? {
-        guard let textView = controller.textView else { return nil }
-        let text = textView.string as NSString
-        guard let selection = textView.selectionManager.textSelections.first else { return nil }
-        let location = selection.range.location
-        guard location != NSNotFound, location > 0, location <= text.length else { return nil }
-        return text.substring(with: NSRange(location: location - 1, length: 1))
-    }
-
-    private static func selectionLocationText(range: NSRange, fullText: NSString, state: EditorState) -> String {
-        let startOffset = max(0, min(range.location, fullText.length))
-        let endOffset = max(startOffset, min(NSMaxRange(range), fullText.length))
-
-        let textBeforeStart = fullText.substring(with: NSRange(location: 0, length: startOffset))
-        let textBeforeEnd = fullText.substring(with: NSRange(location: 0, length: endOffset))
-
-        let startLine = textBeforeStart.filter { $0 == "\n" }.count + 1
-        let startColumn = computeColumn(in: textBeforeStart)
-        let endLine = textBeforeEnd.filter { $0 == "\n" }.count + 1
-        let endColumn = computeColumn(in: textBeforeEnd)
-        let filePath = state.relativeFilePath
-
-        if startLine == endLine && startColumn == endColumn {
-            return "\(filePath):\(startLine):\(startColumn)"
-        }
-        return "\(filePath):\(startLine):\(startColumn)-\(endLine):\(endColumn)"
-    }
-
-    private static func computeColumn(in text: String) -> Int {
-        if let lastNL = text.lastIndex(of: "\n") {
-            return text.distance(from: text.index(after: lastNL), to: text.endIndex) + 1
-        }
-        return text.count + 1
     }
 
     private static func lspPosition(utf16Offset: Int, in text: String) -> Position? {
@@ -734,73 +567,6 @@ final class ContextMenuHelper: NSObject {
         }
 
         return Position(line: line, character: character)
-    }
-
-    private static func nsRange(from lspRange: LSPRange, in content: String) -> NSRange? {
-        guard let start = utf16Offset(for: lspRange.start, in: content),
-              let end = utf16Offset(for: lspRange.end, in: content),
-              end >= start else {
-            return nil
-        }
-        return NSRange(location: start, length: end - start)
-    }
-
-    private static func utf16Offset(for position: Position, in content: String) -> Int? {
-        var line = 0
-        var utf16Offset = 0
-        var lineStartOffset = 0
-
-        for scalar in content.unicodeScalars {
-            if line == position.line {
-                break
-            }
-            utf16Offset += scalar.utf16.count
-            if scalar == "\n" {
-                line += 1
-                lineStartOffset = utf16Offset
-            }
-        }
-
-        guard line == position.line else { return nil }
-        return min(lineStartOffset + position.character, content.utf16.count)
-    }
-
-    private static func expandedWordRange(at utf16Offset: Int, in content: String) -> NSRange? {
-        let ns = content as NSString
-        guard utf16Offset >= 0, utf16Offset <= ns.length else { return nil }
-        guard ns.length > 0 else { return NSRange(location: 0, length: 0) }
-
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
-
-        let pivot: Int = {
-            if utf16Offset < ns.length { return utf16Offset }
-            return max(ns.length - 1, 0)
-        }()
-
-        func isAllowed(_ index: Int) -> Bool {
-            guard index >= 0, index < ns.length else { return false }
-            let c = ns.substring(with: NSRange(location: index, length: 1)).unicodeScalars.first
-            return c.map { allowed.contains($0) } ?? false
-        }
-
-        var start = pivot
-        var end = pivot
-
-        if !isAllowed(pivot), utf16Offset > 0, isAllowed(utf16Offset - 1) {
-            start = utf16Offset - 1
-            end = utf16Offset - 1
-        }
-
-        guard isAllowed(start) else { return NSRange(location: utf16Offset, length: 0) }
-
-        while start > 0, isAllowed(start - 1) {
-            start -= 1
-        }
-        while end + 1 < ns.length, isAllowed(end + 1) {
-            end += 1
-        }
-
-        return NSRange(location: start, length: end - start + 1)
     }
 }
 
