@@ -46,8 +46,8 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         config: LSPConfig.ServerConfig,
         workspacePath: String
     ) async throws -> LanguageServer {
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(Self.t)正在创建 \(languageId) 服务器")
+        if LSPService.verbose {
+            LSPService.logger.info("\(Self.t)正在创建 \(languageId) 服务器")
         }
         
         let execParams = Process.ExecutionParameters(
@@ -59,7 +59,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         let (channel, process) = try DataChannel.localProcessChannel(
             parameters: execParams,
             terminationHandler: {
-                EditorPlugin.logger.error("\(LanguageServer.t)数据通道意外终止")
+                LSPService.logger.error("\(LanguageServer.t)数据通道意外终止")
             }
         )
         
@@ -71,8 +71,8 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         
         let initResult = try await initServer.initializeIfNeeded()
         
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(Self.t)服务器已初始化，PID: \(process.processIdentifier)")
+        if LSPService.verbose {
+            LSPService.logger.info("\(Self.t)服务器已初始化，PID: \(process.processIdentifier)")
         }
         
         let languageServer = LanguageServer(
@@ -205,8 +205,8 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         
         let doc = TextDocumentItem(uri: uri, languageId: languageId, version: 0, text: text)
         try await server.textDocumentDidOpen(DidOpenTextDocumentParams(textDocument: doc))
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(Self.t)已打开: \(uri)")
+        if LSPService.verbose {
+            LSPService.logger.debug("\(Self.t)已打开: \(uri)")
         }
     }
     
@@ -216,8 +216,8 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         documentContents.removeValue(forKey: uri)
         
         try await server.textDocumentDidClose(DidCloseTextDocumentParams(textDocument: TextDocumentIdentifier(uri: uri)))
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(Self.t)已关闭: \(uri)")
+        if LSPService.verbose {
+            LSPService.logger.debug("\(Self.t)已关闭: \(uri)")
         }
     }
     
@@ -513,14 +513,14 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     // MARK: Shutdown
     
     func shutdown() async throws {
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(Self.t)正在关闭 \(self.languageId) 服务器")
+        if LSPService.verbose {
+            LSPService.logger.info("\(Self.t)正在关闭 \(self.languageId) 服务器")
         }
         eventTask?.cancel()
         eventTask = nil
         try await server.shutdownAndExit()
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(Self.t)服务器已关闭")
+        if LSPService.verbose {
+            LSPService.logger.info("\(Self.t)服务器已关闭")
         }
     }
     
@@ -551,8 +551,8 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
                         }
                         self.onProgressUpdate?(tokenStr, params.value)
                     case let .windowShowMessage(params):
-                        if EditorPlugin.verbose {
-                            EditorPlugin.logger.info("\(LanguageServer.t)LSP 消息 [\(params.type.rawValue)]: \(params.message)")
+                        if LSPService.verbose {
+                            LSPService.logger.info("\(LanguageServer.t)LSP 消息 [\(params.type.rawValue)]: \(params.message)")
                         }
                     default:
                         continue
