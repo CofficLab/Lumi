@@ -2174,9 +2174,6 @@
         }
       }
     },
-    "Editor Plugins" : {
-
-    },
     "Empty files in the trash" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2918,9 +2915,6 @@
         }
       }
     },
-    "Loaded %lld plugin(s)" : {
-
-    },
     "Local IP" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3351,9 +3345,6 @@
       }
     },
     "No content to preview" : {
-
-    },
-    "No editor plugins loaded" : {
 
     },
     "No Listening Ports" : {

@@ -40,9 +40,6 @@ struct EditorRootView: View {
             state.loadFile(from: newURL)
         }
         .onAppear {
-            // 激活左侧栏的 ProjectTree 插件
-            layoutVM.selectAgentSidebarTab(ProjectTreePlugin.id, reason: "Editor appeared")
-
             // 初始加载
             state.projectRootPath = projectVM.currentProject?.path
             if projectVM.isFileSelected {

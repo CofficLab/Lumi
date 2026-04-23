@@ -1,0 +1,55 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Adds diagnostics, progress, and quick action items to the editor toolbar.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Adds diagnostics, progress, and quick action items to the editor toolbar." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "在编辑器工具栏中添加诊断、进度和快捷操作项。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "在編輯器工具欄中添加診斷、進度和快捷操作項。" } }
+      }
+    },
+    "LSP Actions": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Actions" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 操作" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 操作" } }
+      }
+    },
+    "LSP Toolbar": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Toolbar" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 工具栏" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 工具欄" } }
+      }
+    },
+    "LSP active": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP active" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 已激活" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 已啟用" } }
+      }
+    },
+    "LSP initializing...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP initializing..." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 初始化中..." } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 初始化中..." } }
+      }
+    },
+    "LSP not available": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP not available" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 不可用" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 不可用" } }
+      }
+    },
+    "Toggle Problems": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Toggle Problems" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "切换问题面板" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "切換問題面板" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

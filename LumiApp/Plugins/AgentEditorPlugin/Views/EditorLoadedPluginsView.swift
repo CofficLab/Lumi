@@ -1,6 +1,7 @@
+import MagicKit
 import SwiftUI
 
-private struct EditorLoadedPluginsStatusBarView: View {
+struct EditorLoadedPluginsStatusBarView: View {
     var body: some View {
         StatusBarHoverContainer(
             detailView: EditorLoadedPluginsDetailView(),
@@ -18,13 +19,21 @@ private struct EditorLoadedPluginsStatusBarView: View {
 }
 
 struct EditorLoadedPluginsDetailView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var viewModel = EditorLoadedPluginsViewModel()
+
+    private var rowBackground: Color {
+        colorScheme == .light
+            ? DesignTokens.Color.semantic.primary.opacity(0.06)
+            : DesignTokens.Color.semantic.primary.opacity(0.14)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Editor Plugins")
+                Text(String(localized: "Editor Plugins", table: "LumiEditor"))
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
                 Spacer()
 
@@ -33,39 +42,59 @@ struct EditorLoadedPluginsDetailView: View {
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 .buttonStyle(.plain)
-                .help("Refresh")
+                .help(String(localized: "Refresh", table: "LumiEditor"))
             }
 
-            Text("Loaded \(viewModel.enabledPlugins.count) plugin(s)")
+            Text(
+                String(
+                    format: String(localized: "Loaded %lld plugin(s)", table: "LumiEditor"),
+                    Int64(viewModel.enabledPlugins.count)
+                )
+            )
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             if viewModel.enabledPlugins.isEmpty {
-                Text("No editor plugins loaded")
+                Text(String(localized: "No editor plugins loaded", table: "LumiEditor"))
                     .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .padding(.vertical, 8)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(viewModel.enabledPlugins) { plugin in
-                            HStack(spacing: 8) {
+                            HStack(alignment: .top, spacing: 8) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 11))
-                                    .foregroundStyle(.green)
-                                Text(plugin.displayName)
-                                    .font(.system(size: 12, weight: .medium))
-                                Spacer()
-                                Text(plugin.id)
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                                    .padding(.top, 2)
+
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(plugin.displayName)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                    Text(plugin.description)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                        .lineLimit(2)
+                                    Text(plugin.id)
+                                        .font(.system(size: 10))
+                                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                                        .lineLimit(1)
+                                }
+                                Spacer(minLength: 0)
                             }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(rowBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
                         }
                     }
                 }
-                .frame(maxHeight: 240)
+                .frame(minHeight: 300)
             }
         }
         .onAppear {

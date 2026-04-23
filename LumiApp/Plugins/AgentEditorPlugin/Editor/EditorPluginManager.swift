@@ -9,6 +9,7 @@ final class EditorPluginManager: ObservableObject {
     struct PluginInfo: Identifiable, Equatable {
         let id: String
         let displayName: String
+        let description: String
         let order: Int
         let isConfigurable: Bool
         let isEnabled: Bool
@@ -58,9 +59,12 @@ final class EditorPluginManager: ObservableObject {
     /// 自动发现并注册编辑器内部插件。
     ///
     /// 扫描规则：
-    /// 1. 类名位于 `Lumi.` 命名空间
-    /// 2. 类名以 `EditorPlugin` 结尾
-    /// 3. 能实例化并实现 `EditorFeaturePlugin`
+    /// 1. 类名（去掉命名空间后）以 `EditorPlugin` 结尾
+    /// 2. 能实例化并实现 `EditorFeaturePlugin`
+    ///
+    /// 说明：编辑器子插件普遍使用了 `@objc(LumiXXXEditorPlugin)`。
+    /// 这会让运行时类名变成 `LumiXXXEditorPlugin`（无 `Lumi.` 命名空间），
+    /// 因此不能依赖 `Lumi.` 前缀过滤。
     func autoDiscoverAndRegisterPlugins() {
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
@@ -71,7 +75,8 @@ final class EditorPluginManager: ObservableObject {
 
         for cls in classes {
             let className = NSStringFromClass(cls)
-            guard className.hasPrefix("Lumi."), className.hasSuffix("EditorPlugin") else { continue }
+            let shortClassName = className.split(separator: ".").last.map(String.init) ?? className
+            guard shortClassName.hasSuffix("EditorPlugin") else { continue }
             guard let object = createInstance(of: cls) else { continue }
             guard let plugin = object as? any EditorFeaturePlugin else { continue }
             discovered.append(plugin)
@@ -97,6 +102,7 @@ final class EditorPluginManager: ObservableObject {
                 PluginInfo(
                     id: plugin.id,
                     displayName: plugin.displayName,
+                    description: plugin.description,
                     order: plugin.order,
                     isConfigurable: plugin.isConfigurable,
                     isEnabled: enabled

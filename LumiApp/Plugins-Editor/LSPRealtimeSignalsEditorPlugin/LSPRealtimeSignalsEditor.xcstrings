@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LSP Realtime Signals": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Realtime Signals" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 实时信号" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 實時信號" } }
+      }
+    },
+    "Triggers realtime LSP updates for highlights, hints, and signature help.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Triggers realtime LSP updates for highlights, hints, and signature help." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "触发高亮、提示和签名帮助等 LSP 实时更新。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "觸發高亮、提示和簽名幫助等 LSP 實時更新。" } }
+      }
+    }
+  },
+  "version": "1.1"
+}
