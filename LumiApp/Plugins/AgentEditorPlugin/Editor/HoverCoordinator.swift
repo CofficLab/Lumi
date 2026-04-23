@@ -149,7 +149,8 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
                 character: character,
                 symbol: symbol
             )
-            let pluginHover = await state.editorExtensions.hoverSuggestions(for: hoverContext).first
+            // 使用后台聚合：并行请求所有 hover contributor + 后台去重
+            let pluginHover = await state.editorExtensionResolver.resolveHover(context: hoverContext).first
             guard !Task.isCancelled else { return }
             guard self.isRequestStillValid(
                 generation: requestGeneration,

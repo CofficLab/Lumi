@@ -22,12 +22,33 @@ struct ReferenceResult: Identifiable, Equatable {
 
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
+///
+/// ## 状态拆分（P2.1）
+/// - `uiState` — UI 配置（字体、主题、显示选项）
+/// - `fileState` — 文件元数据与内容
+/// - `panelState` — 面板显示状态（problems、references、hover 等）
+/// - `editorState` — 编辑器底层状态（光标、滚动、查找）
+///
+/// 所有 `@Published` 属性保留向后兼容，同时通过组合子状态容器实现关注点分离。
 @MainActor
 final class EditorState: ObservableObject, SuperLog {
     nonisolated static let emoji = "📝"
     nonisolated static let verbose = true
 
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.state")
+
+    // MARK: - 组合子状态容器（P2.1）
+    // 所有 @Published 属性通过 computed properties 桥接到子状态容器，
+    // 保持向后兼容的同时实现关注点分离。
+
+    /// UI 状态 — 字体、主题、显示选项、光标位置
+    let uiState = EditorUIState()
+
+    /// 文件状态 — 文件元数据、内容、语言检测、保存状态
+    let fileState = EditorFileState()
+
+    /// 面板状态 — Problems、References、Hover、符号搜索、调用层级
+    let panelState = EditorPanelState()
 
     enum StatusLevel {
         case info
@@ -139,6 +160,8 @@ final class EditorState: ObservableObject, SuperLog {
     let editorPluginManager: EditorPluginManager
     /// 兼容旧调用：编辑器扩展注册中心
     var editorExtensions: EditorExtensionRegistry { editorPluginManager.registry }
+    /// 后台扩展点解析器（异步聚合，去重/排序在后台线程执行）
+    let editorExtensionResolver = ExtensionResolver.shared
     /// 已发现的编辑器内部插件（含禁用项）
     var editorFeaturePlugins: [EditorPluginManager.PluginInfo] { editorPluginManager.discoveredPluginInfos }
     

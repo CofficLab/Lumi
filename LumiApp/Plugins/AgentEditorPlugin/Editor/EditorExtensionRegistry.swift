@@ -5,6 +5,13 @@ import SwiftUI
 
 /// 编辑器扩展注册中心
 /// 目前先开放补全扩展点，后续可继续添加 hover/code action/toolbar 等扩展点。
+///
+/// ## 线程说明
+/// - 注册/注销：@MainActor（与 View 生命周期一致）
+/// - 同步查询（command/sidePanel/sheet/toolbar）：@MainActor
+/// - 异步查询（completion/hover/codeAction）：委托给 `ExtensionResolver`（后台 actor）执行，
+///   但保留当前同步版本以确保向后兼容。调用方可选择使用 `resolveCompletionAsync` 等方法
+///   将聚合和去重放到后台线程。
 @MainActor
 final class EditorExtensionRegistry: ObservableObject {
     private var completionContributors: [any EditorCompletionContributor] = []

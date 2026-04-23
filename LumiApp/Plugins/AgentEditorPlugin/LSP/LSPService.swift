@@ -40,6 +40,11 @@ final class LSPService: ObservableObject, SuperLog {
         checkAvailability()
     }
     
+    // MARK: - Debouncer (后台防抖)
+
+    /// LSP 请求防抖器 — 避免快速连续触发导致主线程阻塞
+    private let debouncer = LSPDebouncer()
+
     // MARK: - Availability
     
     func checkAvailability(for languageId: String? = nil) {

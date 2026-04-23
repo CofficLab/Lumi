@@ -17,6 +17,9 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
     private let lspService: LSPService
     
+    /// LSP 请求防抖器 — 避免快速连续请求导致主线程阻塞
+    private let debouncer = LSPDebouncer()
+
     /// 当前文件 URI
     var fileURI: String?
     /// 语言标识
@@ -74,12 +77,32 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     
     // MARK: - LSP Features
     
-    /// 请求代码补全
+    /// 请求代码补全（防抖版 — 50ms延迟，新请求取消旧请求）
+    func requestCompletionDebounced(line: Int, character: Int) async -> [CompletionItem] {
+        guard let uri = fileURI else { return [] }
+        let key = "completion_\(uri)_\(line)_\(character)"
+        return await debouncer.debounce(key: key, delay: 50_000_000) { [weak self] in
+            guard let self else { return [] }
+            return await self.lspService.requestCompletion(uri: uri, line: line, character: character)
+        } ?? []
+    }
+
+    /// 请求代码补全（直接版）
     func requestCompletion(line: Int, character: Int) async -> [CompletionItem] {
         guard let uri = fileURI else { return [] }
         return await lspService.requestCompletion(uri: uri, line: line, character: character)
     }
     
+    /// 请求悬停提示（防抖版 — 200ms延迟，鼠标需静止才请求）
+    func requestHoverRawDebounced(line: Int, character: Int) async -> Hover? {
+        guard let uri = fileURI else { return nil }
+        let key = "hover_\(uri)_\(line)_\(character)"
+        return await debouncer.debounce(key: key, delay: 200_000_000) { [weak self] in
+            guard let self else { return nil }
+            return await self.lspService.requestHoverRaw(uri: uri, line: line, character: character)
+        }
+    }
+
     /// 请求悬停提示（返回纯文本，已废弃）
     func requestHover(line: Int, character: Int) async -> String? {
         guard let uri = fileURI else { return nil }
@@ -92,6 +115,16 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
         return await lspService.requestHoverRaw(uri: uri, line: line, character: character)
     }
     
+    /// 请求文档高亮（节流版 — 250ms最小间隔）
+    func requestDocumentHighlightThrottled(line: Int, character: Int) async -> [DocumentHighlight] {
+        guard let uri = fileURI else { return [] }
+        let key = "highlight_\(uri)"
+        return await debouncer.throttle(key: key, interval: 250_000_000) { [weak self] in
+            guard let self else { return [] }
+            return await self.lspService.requestDocumentHighlight(uri: uri, line: line, character: character)
+        } ?? []
+    }
+
     /// 请求定义位置
     func requestDefinition(line: Int, character: Int) async -> Location? {
         guard let uri = fileURI else { return nil }
@@ -169,6 +202,46 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
 
     func completionTriggerCharacters() -> Set<String> {
         lspService.completionTriggerCharacters
+    }
+    
+    /// 请求代码动作（防抖版 — 300ms延迟，与诊断同步）
+    func requestCodeActionDebounced(range: LSPRange, diagnostics: [Diagnostic], triggerKinds: [CodeActionKind]? = nil) async -> [CodeAction] {
+        guard let uri = fileURI else { return [] }
+        let key = "codeaction_\(uri)_\(range.start.line)_\(range.start.character)"
+        return await debouncer.debounce(key: key, delay: 300_000_000) { [weak self] in
+            guard let self else { return [] }
+            return await self.lspService.requestCodeAction(uri: uri, range: range, diagnostics: diagnostics, triggerKinds: triggerKinds)
+        } ?? []
+    }
+
+    /// 请求签名帮助（防抖版 — 150ms延迟）
+    func requestSignatureHelpDebounced(line: Int, character: Int) async -> SignatureHelp? {
+        guard let uri = fileURI else { return nil }
+        let key = "signature_\(uri)_\(line)_\(character)"
+        return await debouncer.debounce(key: key, delay: 150_000_000) { [weak self] in
+            guard let self else { return nil }
+            return await self.lspService.requestSignatureHelp(uri: uri, line: line, character: character)
+        }
+    }
+
+    /// 请求内联提示（节流版 — 500ms间隔）
+    func requestInlayHintThrottled(startLine: Int, startCharacter: Int, endLine: Int, endCharacter: Int) async -> [InlayHint]? {
+        guard let uri = fileURI else { return nil }
+        let key = "inlayhint_\(uri)"
+        return await debouncer.throttle(key: key, interval: 500_000_000) { [weak self] in
+            guard let self else { return nil }
+            return await self.lspService.requestInlayHint(uri: uri, startLine: startLine, startCharacter: startCharacter, endLine: endLine, endCharacter: endCharacter)
+        }
+    }
+
+    /// 请求折叠范围（防抖版 — 1s延迟，打开文件时请求）
+    func requestFoldingRangeDebounced() async -> [FoldingRange] {
+        guard let uri = fileURI else { return [] }
+        let key = "folding_\(uri)"
+        return await debouncer.debounce(key: key, delay: 1_000_000_000) { [weak self] in
+            guard let self else { return [] }
+            return await self.lspService.requestFoldingRange(uri: uri)
+        } ?? []
     }
     
     // MARK: - New LSP Features
@@ -387,8 +460,8 @@ struct LSPHoverTooltip: View {
 // MARK: - Semantic Tokens
 
 struct SemanticTokenMap: Sendable {
-    private let tokenTypeMap: [CaptureName?]
-    private let modifierMap: [CaptureModifier?]
+    fileprivate let tokenTypeMap: [CaptureName?]
+    fileprivate let modifierMap: [CaptureModifier?]
     
     init(semanticCapability: TwoTypeOption<SemanticTokensOptions, SemanticTokensRegistrationOptions>?) {
         guard let semanticCapability else {
@@ -423,6 +496,72 @@ struct SemanticTokenMap: Sendable {
             let typeIndex = Int(token.type)
             let capture = tokenTypeMap.indices.contains(typeIndex) ? tokenTypeMap[typeIndex] : nil
             let modifiers = decodeModifier(token.modifiers)
+            
+            return HighlightRange(range: range, capture: capture, modifiers: modifiers)
+        }
+    }
+    
+    /// 在后台线程解码语义 Token（P1.6 优化）
+    /// 纯计算操作，不阻塞主线程
+    /// 使用 DispatchQueue.global 执行解码，避免 Sendable 兼容性问题
+    func decodeInBackground(tokens: [SemanticToken], content: String) async -> [HighlightRange] {
+        let tokenTypeMap = self.tokenTypeMap
+        let modifierMap = self.modifierMap
+        
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let result = tokens.compactMap { token -> HighlightRange? in
+                    guard let range = SemanticTokenMap.nsRange(
+                        line: Int(token.line),
+                        character: Int(token.char),
+                        length: Int(token.length),
+                        in: content
+                    ) else {
+                        return nil
+                    }
+                    
+                    let typeIndex = Int(token.type)
+                    let capture = tokenTypeMap.indices.contains(typeIndex) ? tokenTypeMap[typeIndex] : nil
+                    var modifiers: CaptureModifierSet = []
+                    var raw = token.modifiers
+                    while raw > 0 {
+                        let idx = raw.trailingZeroBitCount
+                        raw &= ~(1 << idx)
+                        if modifierMap.indices.contains(idx), let modifier = modifierMap[idx] {
+                            modifiers.insert(modifier)
+                        }
+                    }
+                    
+                    return HighlightRange(range: range, capture: capture, modifiers: modifiers)
+                }
+                continuation.resume(returning: result)
+            }
+        }
+    }
+    
+    /// 同步解码语义 Token（在已隔离的后台上下文中使用）
+    func decodeSync(tokens: [SemanticToken], content: String) -> [HighlightRange] {
+        tokens.compactMap { token -> HighlightRange? in
+            guard let range = Self.nsRange(
+                line: Int(token.line),
+                character: Int(token.char),
+                length: Int(token.length),
+                in: content
+            ) else {
+                return nil
+            }
+            
+            let typeIndex = Int(token.type)
+            let capture = tokenTypeMap.indices.contains(typeIndex) ? tokenTypeMap[typeIndex] : nil
+            var modifiers: CaptureModifierSet = []
+            var raw = token.modifiers
+            while raw > 0 {
+                let idx = raw.trailingZeroBitCount
+                raw &= ~(1 << idx)
+                if modifierMap.indices.contains(idx), let modifier = modifierMap[idx] {
+                    modifiers.insert(modifier)
+                }
+            }
             
             return HighlightRange(range: range, capture: capture, modifiers: modifiers)
         }
@@ -669,7 +808,31 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
                 return
             }
             
-            let decoded = map.decode(tokens: storage.tokens, content: textView.string)
+            // Token 解码（P1.6 优化）
+            // 此代码已在 Task（非 MainActor）中执行，不会阻塞主线程
+            // 直接同步解码，避免 Sendable 兼容性问题
+            let localTokens = self.storage.tokens
+            let localContent = textView.string
+            let decoded: [HighlightRange] = localTokens.compactMap { token -> HighlightRange? in
+                guard let range = SemanticTokenMap.nsRange(
+                    line: Int(token.line),
+                    character: Int(token.char),
+                    length: Int(token.length),
+                    in: localContent
+                ) else { return nil }
+                let typeIndex = Int(token.type)
+                let capture = map.tokenTypeMap.indices.contains(typeIndex) ? map.tokenTypeMap[typeIndex] : nil
+                var modifiers: CaptureModifierSet = []
+                var raw = token.modifiers
+                while raw > 0 {
+                    let idx = raw.trailingZeroBitCount
+                    raw &= ~(1 << idx)
+                    if map.modifierMap.indices.contains(idx), let modifier = map.modifierMap[idx] {
+                        modifiers.insert(modifier)
+                    }
+                }
+                return HighlightRange(range: range, capture: capture, modifiers: modifiers)
+            }
             await MainActor.run {
                 self.highlights = decoded
                 self.completePendingEdit(using: invalidatedRanges, documentRange: textView.documentRange)
