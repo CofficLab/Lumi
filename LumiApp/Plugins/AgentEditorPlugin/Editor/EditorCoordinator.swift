@@ -133,13 +133,18 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
             let lspLine = max(cursor.line - 1, 0)
             let lspCharacter = max(cursor.column - 1, 0)
 
-            // 触发代码动作（如果有诊断）
+            // ✅ Code Action 请求放入独立 Task，不阻塞后续光标/插件操作
             if let fileURL = state.currentFileURL {
                 let diagnostics = state.problemDiagnostics.filter { diag in
                     Int(diag.range.start.line) + 1 == cursor.line ||
                     (Int(diag.range.start.line) + 1 < cursor.line && Int(diag.range.end.line) + 1 >= cursor.line)
                 }
-                let selectedText: String? = {
+                let caURI = fileURL.absoluteString
+                let caDiags = diagnostics
+                let caLine = lspLine
+                let caChar = lspCharacter
+                let caLangId = state.detectedLanguage?.tsName ?? "swift"
+                let caSelectedText: String? = {
                     guard let textView = controller.textView,
                           let selection = textView.selectionManager.textSelections.first else { return nil }
                     let range = selection.range
@@ -147,14 +152,16 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
                           let swiftRange = Range(range, in: textView.string) else { return nil }
                     return String(textView.string[swiftRange])
                 }()
-                await state.codeActionProvider.requestCodeActionsForLine(
-                    uri: fileURL.absoluteString,
-                    line: lspLine,
-                    character: lspCharacter,
-                    diagnostics: diagnostics,
-                    languageId: state.detectedLanguage?.tsName ?? "swift",
-                    selectedText: selectedText
-                )
+                Task { @MainActor in
+                    await state.codeActionProvider.requestCodeActionsForLine(
+                        uri: caURI,
+                        line: caLine,
+                        character: caChar,
+                        diagnostics: caDiags,
+                        languageId: caLangId,
+                        selectedText: caSelectedText
+                    )
+                }
             }
 
             let context = Self.interactionContext(

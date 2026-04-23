@@ -316,8 +316,14 @@ final class DiagnosticsManager: ObservableObject {
     }
     
     private func updateCounts() {
-        errorCount = diagnostics.filter { $0.severity == .error }.count
-        warningCount = diagnostics.filter { $0.severity == .warning }.count
+        // 单次遍历替代两次 filter
+        var errors = 0, warnings = 0
+        for diag in diagnostics {
+            if diag.severity == .error { errors += 1 }
+            else if diag.severity == .warning { warnings += 1 }
+        }
+        errorCount = errors
+        warningCount = warnings
     }
     
     /// 获取指定行的诊断
@@ -482,6 +488,24 @@ struct SemanticTokenMap: Sendable {
         modifierMap = legend.tokenModifiers.map { CaptureModifier.fromString($0) }
     }
     
+    /// 使用 LineOffsetTable 优化的快速解码（O(n) + O(m)，替代 O(n×m)）
+    func decodeWithTable(tokens: [SemanticToken], table: LineOffsetTable) -> [HighlightRange] {
+        tokens.compactMap { token in
+            let line = Int(token.line)
+            let char = Int(token.char)
+            let length = Int(token.length)
+            guard let start = table.utf16Offset(line: line, character: char) else { return nil }
+            let end = start + length
+            guard end <= table.totalUTF16Length else { return nil }
+
+            let typeIndex = Int(token.type)
+            let capture = tokenTypeMap.indices.contains(typeIndex) ? tokenTypeMap[typeIndex] : nil
+            let modifiers = decodeModifier(token.modifiers)
+
+            return HighlightRange(range: NSRange(location: start, length: length), capture: capture, modifiers: modifiers)
+        }
+    }
+
     func decode(tokens: [SemanticToken], content: String) -> [HighlightRange] {
         tokens.compactMap { token in
             guard let range = Self.nsRange(
@@ -691,6 +715,8 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
     private var pendingEditCallback: ((Result<IndexSet, Error>) -> Void)?
     private var pendingFallbackRange: NSRange?
     private var viewportRefreshTask: Task<Void, Never>?
+    /// applyEdit 防抖任务：快速连续按键时延迟 refresh，避免每次按键都触发 LSP 请求
+    private var editDebounceTask: Task<Void, Never>?
     private var scrollBoundsObserver: NSObjectProtocol?
     private var scrollFrameObserver: NSObjectProtocol?
     
@@ -734,7 +760,14 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
             delta: delta,
             documentLength: textView.documentRange.length
         )
-        refreshSemanticTokens()
+        // ✅ 防抖：先立即用 fallback range 回调编辑器（保证文本不丢），
+        // 然后延迟 80ms 再请求 LSP refresh。连续快速按键时只触发最后一次。
+        editDebounceTask?.cancel()
+        editDebounceTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 80_000_000)
+            guard !Task.isCancelled else { return }
+            self?.refreshSemanticTokens()
+        }
     }
     
     func queryHighlightsFor(
@@ -785,13 +818,13 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
                     invalidatedRanges = [textView.documentRange]
                 case .optionB(let delta):
                     let changed = storage.applyDelta(delta)
-                    invalidatedRanges = changed.compactMap {
-                        SemanticTokenMap.nsRange(
-                            line: Int($0.line),
-                            character: Int($0.char),
-                            length: Int($0.length),
-                            in: textView.string
-                        )
+                    // 使用 LineOffsetTable 快速计算 invalidated ranges
+                    let deltaTable = LineOffsetTable(content: textView.string)
+                    invalidatedRanges = changed.compactMap { token in
+                        guard let start = deltaTable.utf16Offset(line: Int(token.line), character: Int(token.char)) else { return nil }
+                        let length = Int(token.length)
+                        guard start + length <= deltaTable.totalUTF16Length else { return nil }
+                        return NSRange(location: start, length: length)
                     }
                 case .none:
                     if let full = await lspService.requestSemanticTokens(uri: uri) {
@@ -808,31 +841,11 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
                 return
             }
             
-            // Token 解码（P1.6 优化）
-            // 此代码已在 Task（非 MainActor）中执行，不会阻塞主线程
-            // 直接同步解码，避免 Sendable 兼容性问题
+            // Token 解码优化：使用 LineOffsetTable 将 O(n×m) 降至 O(n)+m
             let localTokens = self.storage.tokens
             let localContent = textView.string
-            let decoded: [HighlightRange] = localTokens.compactMap { token -> HighlightRange? in
-                guard let range = SemanticTokenMap.nsRange(
-                    line: Int(token.line),
-                    character: Int(token.char),
-                    length: Int(token.length),
-                    in: localContent
-                ) else { return nil }
-                let typeIndex = Int(token.type)
-                let capture = map.tokenTypeMap.indices.contains(typeIndex) ? map.tokenTypeMap[typeIndex] : nil
-                var modifiers: CaptureModifierSet = []
-                var raw = token.modifiers
-                while raw > 0 {
-                    let idx = raw.trailingZeroBitCount
-                    raw &= ~(1 << idx)
-                    if map.modifierMap.indices.contains(idx), let modifier = map.modifierMap[idx] {
-                        modifiers.insert(modifier)
-                    }
-                }
-                return HighlightRange(range: range, capture: capture, modifiers: modifiers)
-            }
+            let table = LineOffsetTable(content: localContent)
+            let decoded = map.decodeWithTable(tokens: localTokens, table: table)
             await MainActor.run {
                 self.highlights = decoded
                 self.completePendingEdit(using: invalidatedRanges, documentRange: textView.documentRange)
@@ -910,5 +923,6 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
     
     deinit {
         viewportRefreshTask?.cancel()
+        editDebounceTask?.cancel()
     }
 }

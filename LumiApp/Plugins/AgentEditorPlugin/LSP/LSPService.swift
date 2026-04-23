@@ -37,7 +37,11 @@ final class LSPService: ObservableObject, SuperLog {
     var onHover: ((String?) -> Void)?
     
     init() {
-        checkAvailability()
+        // 异步预热 LSP 配置缓存，不阻塞主线程
+        // 首次 loadFile 时仍会通过 openDocument → checkAvailability(for:) 做精确检测
+        Task {
+            await LSPConfig.warmUpCacheInBackground()
+        }
     }
     
     // MARK: - Debouncer (后台防抖)
@@ -47,6 +51,7 @@ final class LSPService: ObservableObject, SuperLog {
 
     // MARK: - Availability
     
+    /// 检查 LSP 可用性（使用缓存路径，不会 fork 进程）
     func checkAvailability(for languageId: String? = nil) {
         if let languageId {
             let available = LSPConfig.findServer(for: languageId) != nil
@@ -57,6 +62,8 @@ final class LSPService: ObservableObject, SuperLog {
             return
         }
 
+        // 不指定语言时，只做 O(1) 的缓存查找，不再遍历所有语言 fork 进程
+        // 完整扫描由 init 中的 warmUpCacheInBackground() 异步完成
         let available = LSPConfig.supportedLanguageIds.contains {
             LSPConfig.findServer(for: $0) != nil
         }
