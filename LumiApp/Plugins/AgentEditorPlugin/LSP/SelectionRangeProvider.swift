@@ -5,7 +5,11 @@ import LanguageServerProtocol
 @MainActor
 final class SelectionRangeProvider: ObservableObject {
     
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
+
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+    }
     
     @Published var rangeChain: [EditorSelectionRange] = []
     @Published var currentLevel: Int = -1

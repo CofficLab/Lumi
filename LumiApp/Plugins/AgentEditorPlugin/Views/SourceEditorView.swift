@@ -240,9 +240,12 @@ struct SourceEditorView: View, SuperLog {
             contextMenuCoordinator = ContextMenuCoordinator(state: state)
         }
         if semanticTokenProvider == nil {
-            semanticTokenProvider = SemanticTokenHighlightProvider(uriProvider: { [weak state] in
-                state?.currentFileURL?.absoluteString
-            })
+            semanticTokenProvider = SemanticTokenHighlightProvider(
+                lspService: state.lspServiceInstance,
+                uriProvider: { [weak state] in
+                    state?.currentFileURL?.absoluteString
+                }
+            )
         }
         if documentHighlightProvider == nil {
             documentHighlightProvider = DocumentHighlightHighlighter(
@@ -260,7 +263,7 @@ struct SourceEditorView: View, SuperLog {
     private func wireDelegates() {
         jumpDelegate.textStorage = state.content
         jumpDelegate.treeSitterClient = treeSitterClient
-        jumpDelegate.lspCoordinator = state.lspCoordinator
+        jumpDelegate.lspClient = state.lspClient
         jumpDelegate.currentFileURLProvider = { [weak state] in
             state?.currentFileURL
         }
@@ -271,7 +274,8 @@ struct SourceEditorView: View, SuperLog {
         
         textCoordinator?.jumpDelegate = jumpDelegate
         
-        completionDelegate.lspCoordinator = state.lspCoordinator
+        completionDelegate.lspClient = state.lspClient
+        completionDelegate.editorExtensionRegistry = state.editorExtensions
         completionDelegate.editorState = state
     }
     

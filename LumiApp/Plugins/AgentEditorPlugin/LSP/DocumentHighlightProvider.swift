@@ -9,7 +9,11 @@ import Foundation
 @MainActor
 final class DocumentHighlightProvider: ObservableObject {
     
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
+
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+    }
     
     /// 当前高亮的范围（NSRange 集合，用于编辑器高亮）
     @Published var highlightRanges: [NSRange] = []

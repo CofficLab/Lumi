@@ -25,7 +25,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
     
     weak var treeSitterClient: TreeSitterClient?
     weak var textStorage: NSTextStorage?
-    weak var lspCoordinator: LSPCoordinator?
+    weak var lspClient: (any EditorLSPClient)?
     weak var textViewController: TextViewController?
     var currentFileURLProvider: (() -> URL?)?
     var onOpenExternalDefinition: ((URL, CursorPosition) -> Void)?
@@ -272,13 +272,14 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         }
     }
 
+    @MainActor
     private func findLocationViaLSP(
         kind: LSPNavigationKind,
         word: String,
         cursorRange: NSRange,
         content: String
     ) async -> JumpToDefinitionLink? {
-        guard let coordinator = lspCoordinator else { return nil }
+        guard let lspClient else { return nil }
 
         guard let lspPosition = Self.lspPosition(utf16Offset: cursorRange.location, in: content) else {
             return nil
@@ -287,22 +288,22 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         let location: Location?
         switch kind {
         case .definition:
-            location = await coordinator.requestDefinition(
+            location = await lspClient.requestDefinition(
                 line: lspPosition.line,
                 character: lspPosition.character
             )
         case .declaration:
-            location = await coordinator.requestDeclaration(
+            location = await lspClient.requestDeclaration(
                 line: lspPosition.line,
                 character: lspPosition.character
             )
         case .typeDefinition:
-            location = await coordinator.requestTypeDefinition(
+            location = await lspClient.requestTypeDefinition(
                 line: lspPosition.line,
                 character: lspPosition.character
             )
         case .implementation:
-            location = await coordinator.requestImplementation(
+            location = await lspClient.requestImplementation(
                 line: lspPosition.line,
                 character: lspPosition.character
             )

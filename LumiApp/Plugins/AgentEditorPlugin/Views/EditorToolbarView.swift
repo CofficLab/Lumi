@@ -7,7 +7,10 @@ import CodeEditTextView
 struct EditorToolbarView: View {
     
     @ObservedObject var state: EditorState
-    @ObservedObject private var lspService = LSPService.shared
+
+    init(state: EditorState) {
+        self._state = ObservedObject(wrappedValue: state)
+    }
     
     var body: some View {
         HStack(spacing: 6) {
@@ -24,19 +27,16 @@ struct EditorToolbarView: View {
             
             // 中间：切换开关（可压缩）
             toggleButtons
-            
-            // LSP 状态指示器
-            lspStatusIndicator
 
-            if !lspService.progressProvider.activeTasks.isEmpty {
-                LSPProgressIndicatorView(provider: lspService.progressProvider)
-                    .frame(maxWidth: 200)
+            ForEach(centerToolbarItems) { item in
+                item.content(state)
             }
 
-            // LSP 动作菜单
-            lspActionsMenu
-
             Spacer(minLength: 0)
+
+            ForEach(trailingToolbarItems) { item in
+                item.content(state)
+            }
             
             // 右侧：主题选择
             themePicker
@@ -44,6 +44,14 @@ struct EditorToolbarView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
+    }
+
+    private var centerToolbarItems: [EditorToolbarItemSuggestion] {
+        state.editorToolbarItems().filter { $0.placement == .center }
+    }
+
+    private var trailingToolbarItems: [EditorToolbarItemSuggestion] {
+        state.editorToolbarItems().filter { $0.placement == .trailing }
     }
     
     // MARK: - Font Sizer
@@ -168,59 +176,6 @@ struct EditorToolbarView: View {
         }
     }
     
-    // MARK: - LSP Status Indicator
-    
-    @StateObject private var diagnosticsManager = DiagnosticsManager()
-    
-    private var lspStatusIndicator: some View {
-        Button {
-            state.toggleProblemsPanel()
-        } label: {
-            HStack(spacing: 8) {
-                if diagnosticsManager.errorCount > 0 {
-                    HStack(spacing: 3) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.error)
-                        Text("\(diagnosticsManager.errorCount)")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundColor(AppUI.Color.semantic.error)
-                    }
-                }
-
-                if diagnosticsManager.warningCount > 0 {
-                    HStack(spacing: 3) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
-                        Text("\(diagnosticsManager.warningCount)")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundColor(AppUI.Color.semantic.warning)
-                    }
-                }
-
-                if !LSPService.shared.isAvailable {
-                    Image(systemName: "circle")
-                        .font(.system(size: 6))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
-                        .help(String(localized: "LSP not available", table: "LumiEditor"))
-                } else if LSPService.shared.isInitializing {
-                    ProgressView()
-                        .scaleEffect(0.5)
-                        .help(String(localized: "LSP initializing...", table: "LumiEditor"))
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 9))
-                        .foregroundColor(AppUI.Color.semantic.success)
-                        .help(String(localized: "LSP active", table: "LumiEditor"))
-                }
-            }
-            .opacity(diagnosticsManager.errorCount > 0 || diagnosticsManager.warningCount > 0 || !LSPService.shared.isAvailable ? 1 : 0.5)
-        }
-        .buttonStyle(.plain)
-        .help(String(localized: "Toggle Problems", table: "LumiEditor"))
-    }
-    
     // MARK: - Theme Picker
     
     private var themePicker: some View {
@@ -245,71 +200,6 @@ struct EditorToolbarView: View {
         }
         .menuStyle(.borderlessButton)
         .frame(height: 20)
-    }
-
-    // MARK: - LSP Actions
-
-    private var lspActionsMenu: some View {
-        Menu {
-            Button {
-                Task { @MainActor in
-                    await state.formatDocumentWithLSP()
-                }
-            } label: {
-                Label(
-                    String(localized: "Format Document", table: "LumiEditor"),
-                    systemImage: "text.alignleft"
-                )
-            }
-
-            Button {
-                Task { @MainActor in
-                    await state.showReferencesFromCurrentCursor()
-                }
-            } label: {
-                Label(
-                    String(localized: "Find References", table: "LumiEditor"),
-                    systemImage: "link"
-                )
-            }
-
-            Button {
-                state.promptRenameSymbol()
-            } label: {
-                Label(
-                    String(localized: "Rename Symbol", table: "LumiEditor"),
-                    systemImage: "pencil.and.list.clipboard"
-                )
-            }
-
-            Button {
-                state.openWorkspaceSymbolSearch()
-            } label: {
-                Label(
-                    "Workspace Symbols",
-                    systemImage: "magnifyingglass.circle"
-                )
-            }
-
-            Button {
-                Task { @MainActor in
-                    await state.openCallHierarchy()
-                }
-            } label: {
-                Label(
-                    "Call Hierarchy",
-                    systemImage: "arrow.triangle.branch"
-                )
-            }
-        } label: {
-            Image(systemName: "wand.and.stars")
-                .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                .frame(width: 22, height: 22)
-        }
-        .menuStyle(.borderlessButton)
-        .frame(height: 20)
-        .help(String(localized: "LSP Actions", table: "LumiEditor"))
     }
 
     private func syncSelectionsToFocusedTextView() {

@@ -1268,9 +1268,6 @@
         }
       }
     },
-    "Call Hierarchy" : {
-
-    },
     "Cancel" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2177,6 +2174,9 @@
         }
       }
     },
+    "Editor Plugins" : {
+
+    },
     "Empty files in the trash" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2918,6 +2918,9 @@
         }
       }
     },
+    "Loaded %lld plugin(s)" : {
+
+    },
     "Local IP" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3348,6 +3351,9 @@
       }
     },
     "No content to preview" : {
+
+    },
+    "No editor plugins loaded" : {
 
     },
     "No Listening Ports" : {
@@ -5011,6 +5017,9 @@
         }
       }
     },
+    "Unsaved" : {
+
+    },
     "Up" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5206,9 +5215,6 @@
           }
         }
       }
-    },
-    "Workspace Symbols" : {
-
     },
     "Xcode" : {
 

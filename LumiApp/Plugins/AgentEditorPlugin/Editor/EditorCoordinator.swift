@@ -56,7 +56,19 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
                 EditorPlugin.logger.warning("\(EditorState.t)Coordinator 已被释放，state 为 nil")
             }
             state?.notifyContentChanged()
-            state?.scheduleInlayHintsRefreshIfNeeded(controller: controller)
+            guard let state else { return }
+            Task { @MainActor in
+                let context = Self.interactionContext(
+                    controller: controller,
+                    state: state,
+                    typedCharacter: Self.lastTypedCharacter(in: controller)
+                )
+                await state.editorExtensions.runInteractionTextDidChange(
+                    context: context,
+                    state: state,
+                    controller: controller
+                )
+            }
         }
     }
     
@@ -117,40 +129,44 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
             })
 
             // Hover 请求已由 HoverEditorCoordinator 统一处理，此处不再重复请求
-            
+
             let lspLine = max(cursor.line - 1, 0)
             let lspCharacter = max(cursor.column - 1, 0)
-            
-            // 触发文档高亮（Symbol Highlight）
-            if let fileURL = state.currentFileURL, let content = state.content {
-                await state.documentHighlightProvider.requestHighlight(
-                    uri: fileURL.absoluteString,
-                    line: lspLine,
-                    character: lspCharacter,
-                    content: content.string
-                )
-            }
-            
+
             // 触发代码动作（如果有诊断）
-            if let fileURL = state.currentFileURL, let contentString = state.content?.string {
+            if let fileURL = state.currentFileURL {
                 let diagnostics = state.problemDiagnostics.filter { diag in
                     Int(diag.range.start.line) + 1 == cursor.line ||
                     (Int(diag.range.start.line) + 1 < cursor.line && Int(diag.range.end.line) + 1 >= cursor.line)
                 }
-                if !diagnostics.isEmpty {
-                    await state.codeActionProvider.requestCodeActionsForLine(
-                        uri: fileURL.absoluteString,
-                        line: lspLine,
-                        character: lspCharacter,
-                        diagnostics: diagnostics,
-                        content: contentString
-                    )
-                } else {
-                    state.codeActionProvider.clear()
-                }
+                let selectedText: String? = {
+                    guard let textView = controller.textView,
+                          let selection = textView.selectionManager.textSelections.first else { return nil }
+                    let range = selection.range
+                    guard range.location != NSNotFound, range.length > 0,
+                          let swiftRange = Range(range, in: textView.string) else { return nil }
+                    return String(textView.string[swiftRange])
+                }()
+                await state.codeActionProvider.requestCodeActionsForLine(
+                    uri: fileURL.absoluteString,
+                    line: lspLine,
+                    character: lspCharacter,
+                    diagnostics: diagnostics,
+                    languageId: state.detectedLanguage?.tsName ?? "swift",
+                    selectedText: selectedText
+                )
             }
 
-            state.scheduleInlayHintsRefreshIfNeeded(controller: controller)
+            let context = Self.interactionContext(
+                controller: controller,
+                state: state,
+                typedCharacter: nil
+            )
+            await state.editorExtensions.runInteractionSelectionDidChange(
+                context: context,
+                state: state,
+                controller: controller
+            )
         }
     }
     
@@ -244,6 +260,37 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
         }
 
         state.setSelections(mapped)
+    }
+
+    @MainActor
+    private static func interactionContext(
+        controller: TextViewController,
+        state: EditorState,
+        typedCharacter: String?
+    ) -> EditorInteractionContext {
+        let textView = controller.textView
+        let text = textView?.string ?? ""
+        let selection = textView?.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
+        let offset = max(selection.location, 0)
+        let position = lspPosition(utf16Offset: offset, in: text)
+            ?? Position(line: max(state.cursorLine - 1, 0), character: max(state.cursorColumn - 1, 0))
+
+        return EditorInteractionContext(
+            languageId: state.detectedLanguage?.tsName ?? "swift",
+            line: Int(position.line),
+            character: Int(position.character),
+            typedCharacter: typedCharacter
+        )
+    }
+
+    @MainActor
+    private static func lastTypedCharacter(in controller: TextViewController) -> String? {
+        guard let textView = controller.textView else { return nil }
+        let text = textView.string as NSString
+        guard let selection = textView.selectionManager.textSelections.first else { return nil }
+        let location = selection.range.location
+        guard location != NSNotFound, location > 0, location <= text.length else { return nil }
+        return text.substring(with: NSRange(location: location - 1, length: 1))
     }
 }
 
@@ -437,66 +484,27 @@ final class ContextMenuHelper: NSObject {
         topSeparator.tag = injectedSeparatorTag
         menu.insertItem(topSeparator, at: 0)
 
-        // LSP / Chat actions
-        let renameItem = buildInjectedItem(
-            title: String(localized: "Rename Symbol", table: "LumiEditor"),
-            image: "pencil.and.list.clipboard"
-        ) {
-            state.promptRenameSymbol()
+        let (line, character) = Self.cursorLSPLineCharacter(textView: textView, state: state)
+        let commandContext = EditorCommandContext(
+            languageId: state.detectedLanguage?.tsName ?? "swift",
+            hasSelection: hasSelection,
+            line: line,
+            character: character
+        )
+        let pluginCommands = state.editorExtensions.commandSuggestions(
+            for: commandContext,
+            state: state,
+            textView: textView
+        )
+        for command in pluginCommands.reversed() {
+            let commandItem = buildInjectedItem(
+                title: command.title,
+                image: command.systemImage,
+                action: command.action
+            )
+            commandItem.isEnabled = command.isEnabled
+            menu.insertItem(commandItem, at: 0)
         }
-        menu.insertItem(renameItem, at: 0)
-
-        let goToDefinitionItem = buildInjectedItem(
-            title: String(localized: "Go to Definition", table: "LumiEditor"),
-            image: "arrow.right.square"
-        ) {
-            Self.performGoToDefinition(textView: textView, state: state)
-        }
-        menu.insertItem(goToDefinitionItem, at: 0)
-
-        let goToDeclarationItem = buildInjectedItem(
-            title: String(localized: "Go to Declaration", table: "LumiEditor"),
-            image: "doc.badge.plus"
-        ) {
-            Self.performGoToDeclaration(textView: textView, state: state)
-        }
-        menu.insertItem(goToDeclarationItem, at: 0)
-
-        let goToTypeDefinitionItem = buildInjectedItem(
-            title: String(localized: "Go to Type Definition", table: "LumiEditor"),
-            image: "square.on.square"
-        ) {
-            Self.performGoToTypeDefinition(textView: textView, state: state)
-        }
-        menu.insertItem(goToTypeDefinitionItem, at: 0)
-
-        let goToImplementationItem = buildInjectedItem(
-            title: String(localized: "Go to Implementation", table: "LumiEditor"),
-            image: "arrowtriangle.right"
-        ) {
-            Self.performGoToImplementation(textView: textView, state: state)
-        }
-        menu.insertItem(goToImplementationItem, at: 0)
-
-        let referencesItem = buildInjectedItem(
-            title: String(localized: "Find References", table: "LumiEditor"),
-            image: "link"
-        ) {
-            Task { @MainActor in
-                await state.showReferencesFromCurrentCursor()
-            }
-        }
-        menu.insertItem(referencesItem, at: 0)
-
-        let formatItem = buildInjectedItem(
-            title: String(localized: "Format Document", table: "LumiEditor"),
-            image: "text.alignleft"
-        ) {
-            Task { @MainActor in
-                await state.formatDocumentWithLSP()
-            }
-        }
-        menu.insertItem(formatItem, at: 0)
 
         let addNextOccurrenceItem = buildInjectedItem(
             title: String(localized: "Add Next Occurrence", table: "LumiEditor"),
@@ -608,65 +616,68 @@ final class ContextMenuHelper: NSObject {
     }
 
     private static func performGoToDefinition(textView: TextView, state: EditorState) {
-        // 获取当前选区作为跳转起点
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        guard selection.location != NSNotFound else { return }
-        
-        // 通过 delegate 复用 Cmd+Click 同一套跳转流程
         Task { @MainActor in
-            state.showStatusToast(
-                String(localized: "Finding definition...", table: "LumiEditor"),
-                level: .info,
-                duration: 1.2
-            )
-            
-            await state.jumpDelegate?.performGoToDefinition(forRange: selection)
+            await state.goToDefinition(for: selection)
         }
     }
 
     private static func performGoToDeclaration(textView: TextView, state: EditorState) {
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        guard selection.location != NSNotFound else { return }
-        
         Task { @MainActor in
-            state.showStatusToast(
-                String(localized: "Finding declaration...", table: "LumiEditor"),
-                level: .info,
-                duration: 1.2
-            )
-            
-            await state.jumpDelegate?.performGoToDeclaration(forRange: selection)
+            await state.goToDeclaration(for: selection)
         }
     }
 
     private static func performGoToTypeDefinition(textView: TextView, state: EditorState) {
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        guard selection.location != NSNotFound else { return }
-        
         Task { @MainActor in
-            state.showStatusToast(
-                String(localized: "Finding type definition...", table: "LumiEditor"),
-                level: .info,
-                duration: 1.2
-            )
-            
-            await state.jumpDelegate?.performGoToTypeDefinition(forRange: selection)
+            await state.goToTypeDefinition(for: selection)
         }
     }
 
     private static func performGoToImplementation(textView: TextView, state: EditorState) {
         let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        guard selection.location != NSNotFound else { return }
-        
         Task { @MainActor in
-            state.showStatusToast(
-                String(localized: "Finding implementation...", table: "LumiEditor"),
-                level: .info,
-                duration: 1.2
-            )
-            
-            await state.jumpDelegate?.performGoToImplementation(forRange: selection)
+            await state.goToImplementation(for: selection)
         }
+    }
+
+    private static func cursorLSPLineCharacter(textView: TextView, state: EditorState) -> (Int, Int) {
+        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
+        let offset = max(selection.location, 0)
+        guard let position = lspPosition(utf16Offset: offset, in: textView.string) else {
+            return (max(state.cursorLine - 1, 0), max(state.cursorColumn - 1, 0))
+        }
+        return (Int(position.line), Int(position.character))
+    }
+
+    private static func interactionContext(
+        controller: TextViewController,
+        state: EditorState,
+        typedCharacter: String?
+    ) -> EditorInteractionContext {
+        let textView = controller.textView
+        let text = textView?.string ?? ""
+        let selection = textView?.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
+        let offset = max(selection.location, 0)
+        let position = lspPosition(utf16Offset: offset, in: text) ?? Position(line: max(state.cursorLine - 1, 0), character: max(state.cursorColumn - 1, 0))
+
+        return EditorInteractionContext(
+            languageId: state.detectedLanguage?.tsName ?? "swift",
+            line: Int(position.line),
+            character: Int(position.character),
+            typedCharacter: typedCharacter
+        )
+    }
+
+    private static func lastTypedCharacter(in controller: TextViewController) -> String? {
+        guard let textView = controller.textView else { return nil }
+        let text = textView.string as NSString
+        guard let selection = textView.selectionManager.textSelections.first else { return nil }
+        let location = selection.range.location
+        guard location != NSNotFound, location > 0, location <= text.length else { return nil }
+        return text.substring(with: NSRange(location: location - 1, length: 1))
     }
 
     private static func selectionLocationText(range: NSRange, fullText: NSString, state: EditorState) -> String {

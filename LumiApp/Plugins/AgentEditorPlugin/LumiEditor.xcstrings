@@ -531,6 +531,9 @@
     "Go to Type Definition" : {
 
     },
+    "Invalid selection" : {
+
+    },
     "Jumped to definition" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -689,6 +692,9 @@
         }
       }
     },
+    "No active editor" : {
+
+    },
     "No applicable edits for this file" : {
 
     },
@@ -827,6 +833,9 @@
           }
         }
       }
+    },
+    "No selection to transform" : {
+
     },
     "OK" : {
       "localizations" : {
@@ -1207,6 +1216,9 @@
 
     },
     "Toggle Problems" : {
+
+    },
+    "Unsupported editor plugin action" : {
 
     },
     "Unsupported File" : {

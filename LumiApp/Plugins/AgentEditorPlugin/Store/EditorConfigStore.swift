@@ -27,6 +27,7 @@ enum EditorConfigStore {
     static let showFoldingRibbonKey = "showFoldingRibbon"
     static let themeNameKey = "themeName"
     static let sidePanelWidthKey = "sidePanelWidth"
+    private static let editorPluginEnabledPrefix = "editorPluginEnabled."
 
     // MARK: - Load / Save
 
@@ -78,5 +79,13 @@ enum EditorConfigStore {
         var dict = loadDict()
         dict[key] = value
         saveDict(dict)
+    }
+
+    static func loadEditorPluginEnabled(_ pluginID: String) -> Bool? {
+        loadBool(forKey: editorPluginEnabledPrefix + pluginID)
+    }
+
+    static func saveEditorPluginEnabled(_ pluginID: String, enabled: Bool) {
+        saveValue(enabled, forKey: editorPluginEnabledPrefix + pluginID)
     }
 }

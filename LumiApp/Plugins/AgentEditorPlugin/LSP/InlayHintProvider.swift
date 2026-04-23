@@ -8,7 +8,11 @@ import LanguageServerProtocol
 @MainActor
 final class InlayHintProvider: ObservableObject {
     
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
+
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+    }
     
     /// 当前可见范围内的 inlay hints
     @Published var hints: [InlayHintItem] = []
@@ -170,4 +174,3 @@ enum EditorInlayHintLayout {
         return (line, column)
     }
 }
-

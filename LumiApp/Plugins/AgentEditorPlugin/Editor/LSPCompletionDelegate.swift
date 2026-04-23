@@ -15,7 +15,8 @@ private protocol ApplicableCompletionEntry: CodeEditSourceEditor.CodeSuggestionE
 final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
     nonisolated static let emoji = "💡"
 
-    weak var lspCoordinator: LSPCoordinator?
+    weak var lspClient: (any EditorLSPClient)?
+    weak var editorExtensionRegistry: EditorExtensionRegistry?
     weak var editorState: EditorState?
 
     private var activeItems: [EditorCodeSuggestionEntry] = []
@@ -24,10 +25,11 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
     private var activeRequestID: Int?
     private var requestSequence = 0
     private var lastMoveDebugSignature: String?
+    private var activePluginItems: [EditorPluginSuggestionEntry] = []
     private var activeFallbackTypeItems: [LocalTypeSuggestionEntry] = []
 
     func completionTriggerCharacters() -> Set<String> {
-        let characters = lspCoordinator?.completionTriggerCharacters() ?? []
+        let characters = lspClient?.completionTriggerCharacters() ?? []
         return characters.isEmpty ? ["."] : characters
     }
 
@@ -35,7 +37,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [any CodeEditSourceEditor.CodeSuggestionEntry])? {
-        guard let coordinator = lspCoordinator else { return nil }
+        guard let lspClient else { return nil }
         guard let editorTextView = textView.textView else { return nil }
 
         let content = editorTextView.string
@@ -55,12 +57,34 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 发起: 事件行列=\(cursorPosition.start.line):\(cursorPosition.start.column), 实时offset=\(cursorOffset), LSP行列=\(line):\(character), 前缀='\(context.prefix)', 类型上下文=\(context.isTypeContext)")
         }
 
-        let completionItems = await coordinator.requestCompletion(line: line, character: character)
+        let completionItems = await lspClient.requestCompletion(line: line, character: character)
         var entries = completionItems.map(EditorCodeSuggestionEntry.init(item:))
+        let extensionContext = EditorCompletionContext(
+            languageId: editorState?.detectedLanguage?.tsName ?? "swift",
+            line: line,
+            character: character,
+            prefix: context.prefix,
+            isTypeContext: context.isTypeContext
+        )
+        let extensionSuggestions = await editorExtensionRegistry?.completionSuggestions(for: extensionContext) ?? []
+        let extensionEntries = extensionSuggestions.map(EditorPluginSuggestionEntry.init)
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP返回: \(entries.count) 项")
+            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP返回: \(entries.count) 项，扩展=\(extensionEntries.count) 项")
         }
         guard !entries.isEmpty else {
+            if !extensionEntries.isEmpty {
+                requestAnchor = cursorPosition
+                requestAnchorOffset = Self.utf16Offset(for: cursorPosition.start, in: content)
+                activeItems.removeAll()
+                activePluginItems = extensionEntries
+                activeFallbackTypeItems.removeAll()
+                let combined = Self.combineSuggestions(
+                    lsp: [],
+                    plugin: extensionEntries,
+                    prioritizePlugin: context.isTypeContext
+                )
+                return (cursorPosition, combined.map { $0 })
+            }
             if context.isTypeContext {
                 let fallback = Self.fallbackTypeEntries(prefix: context.prefix)
                 if !fallback.isEmpty {
@@ -76,6 +100,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
                 }
             }
             activeItems.removeAll()
+            activePluginItems.removeAll()
             activeFallbackTypeItems.removeAll()
             requestAnchor = nil
             requestAnchorOffset = nil
@@ -98,8 +123,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         requestAnchor = cursorPosition
         requestAnchorOffset = Self.utf16Offset(for: cursorPosition.start, in: content)
         activeItems = entries
+        activePluginItems = extensionEntries
         activeFallbackTypeItems.removeAll()
-        if activeItems.isEmpty {
+        if activeItems.isEmpty && activePluginItems.isEmpty {
             if context.isTypeContext {
                 let fallback = Self.fallbackTypeEntries(prefix: context.prefix)
                 if !fallback.isEmpty {
@@ -116,7 +142,12 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             }
             return nil
         }
-        return (cursorPosition, entries.map { $0 })
+        let combined = Self.combineSuggestions(
+            lsp: activeItems,
+            plugin: activePluginItems,
+            prioritizePlugin: context.isTypeContext
+        )
+        return (cursorPosition, combined.map { $0 })
     }
 
     func completionOnCursorMove(
@@ -148,23 +179,33 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             activeFallbackTypeItems = filtered
             return filtered.isEmpty ? nil : filtered.map { $0 }
         }
-        guard !activeItems.isEmpty else { return nil }
+        guard !activeItems.isEmpty || !activePluginItems.isEmpty else { return nil }
         let sourceCount = activeItems.count
         let filtered = Self.filterAndRank(
             entries: activeItems,
             prefix: context.prefix,
             typeContext: context.isTypeContext
         )
+        let pluginFiltered = Self.filterPluginEntries(entries: activePluginItems, prefix: context.prefix)
         if EditorPlugin.verbose {
             let requestID = activeRequestID ?? -1
-            let signature = "\(requestID)|\(context.prefix)|\(sourceCount)|\(filtered.count)|\(context.isTypeContext)"
+            let signature = "\(requestID)|\(context.prefix)|\(sourceCount)|\(filtered.count)|\(pluginFiltered.count)|\(context.isTypeContext)"
             if signature != lastMoveDebugSignature {
-                let preview = filtered.prefix(5).map(\.label).joined(separator: ", ")
-                EditorPlugin.logger.debug("\(Self.t)补全重筛[\(requestID)] 前缀='\(context.prefix)' 类型上下文=\(context.isTypeContext) \(sourceCount)->\(filtered.count)，Top=\(preview)")
+                let combinedPreview = Self.combineSuggestions(
+                    lsp: filtered,
+                    plugin: pluginFiltered,
+                    prioritizePlugin: context.isTypeContext
+                ).prefix(5).map(\.label).joined(separator: ", ")
+                EditorPlugin.logger.debug("\(Self.t)补全重筛[\(requestID)] 前缀='\(context.prefix)' 类型上下文=\(context.isTypeContext) LSP \(sourceCount)->\(filtered.count), 扩展=\(pluginFiltered.count)，Top=\(combinedPreview)")
                 lastMoveDebugSignature = signature
             }
         }
-        return filtered.isEmpty ? nil : filtered.map { $0 }
+        let combined = Self.combineSuggestions(
+            lsp: filtered,
+            plugin: pluginFiltered,
+            prioritizePlugin: context.isTypeContext
+        )
+        return combined.isEmpty ? nil : combined.map { $0 }
     }
 
     func completionWindowDidClose() {
@@ -173,6 +214,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             EditorPlugin.logger.debug("\(Self.t)补全窗口关闭[\(requestID)]")
         }
         activeItems.removeAll()
+        activePluginItems.removeAll()
         activeFallbackTypeItems.removeAll()
         requestAnchor = nil
         requestAnchorOffset = nil
@@ -611,6 +653,49 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         }
         return filtered.map { LocalTypeSuggestionEntry(label: $0) }
     }
+
+    private static func filterPluginEntries(
+        entries: [EditorPluginSuggestionEntry],
+        prefix: String
+    ) -> [EditorPluginSuggestionEntry] {
+        guard !prefix.isEmpty else {
+            return entries.sorted { lhs, rhs in
+                if lhs.priority != rhs.priority { return lhs.priority > rhs.priority }
+                return lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
+            }
+        }
+        let lowerPrefix = prefix.lowercased()
+        return entries.filter { $0.label.lowercased().hasPrefix(lowerPrefix) }
+            .sorted { lhs, rhs in
+                if lhs.priority != rhs.priority { return lhs.priority > rhs.priority }
+                return lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
+            }
+    }
+
+    private static func combineSuggestions(
+        lsp: [EditorCodeSuggestionEntry],
+        plugin: [EditorPluginSuggestionEntry],
+        prioritizePlugin: Bool
+    ) -> [any ApplicableCompletionEntry] {
+        var seen: Set<String> = []
+        var merged: [any ApplicableCompletionEntry] = []
+
+        let appendItem: (any ApplicableCompletionEntry) -> Void = { item in
+            let key = item.label.lowercased()
+            guard !seen.contains(key) else { return }
+            seen.insert(key)
+            merged.append(item)
+        }
+
+        if prioritizePlugin {
+            plugin.forEach(appendItem)
+            lsp.forEach(appendItem)
+        } else {
+            lsp.forEach(appendItem)
+            plugin.forEach(appendItem)
+        }
+        return merged
+    }
 }
 
 private struct EditorCodeSuggestionEntry: ApplicableCompletionEntry {
@@ -684,6 +769,28 @@ private struct EditorCodeSuggestionEntry: ApplicableCompletionEntry {
         default: return SwiftUI.Color(NSColor.secondaryLabelColor)
         }
     }
+}
+
+private struct EditorPluginSuggestionEntry: ApplicableCompletionEntry {
+    let suggestion: EditorCompletionSuggestion
+
+    init(_ suggestion: EditorCompletionSuggestion) {
+        self.suggestion = suggestion
+    }
+
+    var label: String { suggestion.label }
+    var detail: String? { suggestion.detail }
+    var documentation: String? { nil }
+    var pathComponents: [String]? { nil }
+    var targetPosition: CursorPosition? { nil }
+    var sourcePreview: String? { detail ?? label }
+    var image: Image { Image(systemName: "puzzlepiece.extension") }
+    var imageColor: SwiftUI.Color { SwiftUI.Color(NSColor.systemIndigo) }
+    var deprecated: Bool { false }
+    var replacementText: String { suggestion.insertText }
+    var replaceRange: LSPRange? { nil }
+    var additionalTextEdits: [TextEdit]? { nil }
+    var priority: Int { suggestion.priority }
 }
 
 private struct LocalTypeSuggestionEntry: ApplicableCompletionEntry {

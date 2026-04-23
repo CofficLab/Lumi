@@ -6,7 +6,11 @@ import LanguageServerProtocol
 @MainActor
 final class CallHierarchyProvider: ObservableObject {
     
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
+
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+    }
     
     @Published var rootItem: EditorCallHierarchyItem?
     @Published var incomingCalls: [EditorCallHierarchyCall] = []

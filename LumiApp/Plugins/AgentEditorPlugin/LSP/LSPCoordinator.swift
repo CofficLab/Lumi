@@ -7,15 +7,28 @@ import Combine
 import os
 import MagicKit
 
+/// 编辑器侧 LSP 客户端抽象
+/// 作为 Editor 与具体 LSP 实现之间的解耦边界，便于后续独立 Plugin 化。
+@MainActor
+protocol EditorLSPClient: AnyObject {
+    func requestCompletion(line: Int, character: Int) async -> [CompletionItem]
+    func requestHoverRaw(line: Int, character: Int) async -> Hover?
+    func requestDefinition(line: Int, character: Int) async -> Location?
+    func requestDeclaration(line: Int, character: Int) async -> Location?
+    func requestTypeDefinition(line: Int, character: Int) async -> Location?
+    func requestImplementation(line: Int, character: Int) async -> Location?
+    func completionTriggerCharacters() -> Set<String>
+}
+
 /// 编辑器 LSP 协调器
 /// 负责将 LSP 服务与 CodeEditSourceEditor 集成
 @MainActor
-class LSPCoordinator: ObservableObject, SuperLog {
+class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     nonisolated static let emoji = "😊 "
     nonisolated static let verbose = true
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
     
     /// 当前文件 URI
     var fileURI: String?
@@ -23,6 +36,10 @@ class LSPCoordinator: ObservableObject, SuperLog {
     var languageId: String = "swift"
     /// 文档版本计数器
     private var version = 0
+
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+    }
     
     // MARK: - Lifecycle
     
@@ -217,7 +234,7 @@ class LSPCoordinator: ObservableObject, SuperLog {
 @MainActor
 final class DiagnosticsManager: ObservableObject {
     
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
     
     /// 当前诊断列表（使用 LSP 标准类型）
     @Published var diagnostics: [Diagnostic] = []
@@ -228,7 +245,8 @@ final class DiagnosticsManager: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     
-    init() {
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
         lspService.$currentDiagnostics
             .sink { [weak self] newDiagnostics in
                 self?.diagnostics = newDiagnostics
@@ -267,10 +285,14 @@ final class DiagnosticsManager: ObservableObject {
 @MainActor
 final class CompletionProvider: ObservableObject {
     
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
     
     @Published var completionItems: [CompletionItem] = []
     @Published var isLoading: Bool = false
+
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+    }
     
     /// 补全类型映射
     static func completionKindString(_ kind: CompletionItemKind?) -> String {
@@ -533,7 +555,7 @@ private final class SemanticTokenStorage {
 
 @MainActor
 final class SemanticTokenHighlightProvider: HighlightProviding {
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
     private let uriProvider: () -> String?
     private var textView: TextView?
     private var highlights: [HighlightRange] = []
@@ -546,7 +568,11 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
     private var scrollBoundsObserver: NSObjectProtocol?
     private var scrollFrameObserver: NSObjectProtocol?
     
-    init(uriProvider: @escaping () -> String?) {
+    init(
+        lspService: LSPService = .shared,
+        uriProvider: @escaping () -> String?
+    ) {
+        self.lspService = lspService
         self.uriProvider = uriProvider
     }
     

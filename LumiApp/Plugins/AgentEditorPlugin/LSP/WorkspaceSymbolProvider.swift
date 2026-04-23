@@ -6,7 +6,11 @@ import LanguageServerProtocol
 @MainActor
 final class WorkspaceSymbolProvider: ObservableObject {
     
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
+
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+    }
     
     @Published var symbols: [WorkspaceSymbolItem] = []
     @Published var isSearching: Bool = false

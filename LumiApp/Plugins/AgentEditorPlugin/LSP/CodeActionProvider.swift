@@ -2,13 +2,19 @@ import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
+import AppKit
 
 /// Code Action 提供者
 /// 为诊断问题提供快速修复建议（灯泡图标）
 @MainActor
 final class CodeActionProvider: ObservableObject {
 
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
+    weak var editorExtensionRegistry: EditorExtensionRegistry?
+
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+    }
 
     /// 当前可用的代码动作
     @Published var actions: [CodeActionItem] = []
@@ -33,15 +39,11 @@ final class CodeActionProvider: ObservableObject {
             return CodeActionItem(
                 title: action.title,
                 kind: action.kind ?? "",
-                action: action,
+                payload: .lsp(action),
                 isPreferred: action.isPreferred == true
             )
         }
-
-        actions.sort { a, b in
-            if a.isPreferred != b.isPreferred { return a.isPreferred }
-            return a.title < b.title
-        }
+        actions = sortCodeActionItems(actions)
 
         isVisible = !actions.isEmpty
     }
@@ -52,27 +54,80 @@ final class CodeActionProvider: ObservableObject {
         line: Int,
         character: Int,
         diagnostics: [Diagnostic],
-        content: String
+        languageId: String,
+        selectedText: String?
     ) async {
         let lineDiagnostics = diagnostics.filter { diag in
             Int(diag.range.start.line) <= line && Int(diag.range.end.line) >= line
         }
 
-        guard !lineDiagnostics.isEmpty else {
-            clear()
-            return
+        var lspItems: [CodeActionItem] = []
+        if !lineDiagnostics.isEmpty, let firstDiag = lineDiagnostics.first {
+            isLoading = true
+            let codeActions = await lspService.requestCodeAction(
+                uri: uri,
+                range: firstDiag.range,
+                diagnostics: lineDiagnostics
+            )
+            isLoading = false
+
+            lspItems = codeActions.compactMap { action -> CodeActionItem? in
+                guard action.disabled == nil else { return nil }
+                return CodeActionItem(
+                    title: action.title,
+                    kind: action.kind ?? "",
+                    payload: .lsp(action),
+                    isPreferred: action.isPreferred == true
+                )
+            }
         }
 
-        guard let firstDiag = lineDiagnostics.first else {
-            clear()
-            return
+        let pluginContext = EditorCodeActionContext(
+            languageId: languageId,
+            line: line,
+            character: character,
+            selectedText: selectedText
+        )
+        let pluginSuggestions = await editorExtensionRegistry?.codeActionSuggestions(for: pluginContext) ?? []
+        let pluginItems = pluginSuggestions.map { suggestion in
+            CodeActionItem(
+                title: suggestion.title,
+                kind: "plugin",
+                payload: .plugin(suggestion),
+                isPreferred: false
+            )
         }
 
-        await requestCodeActions(uri: uri, range: firstDiag.range, diagnostics: lineDiagnostics)
+        let merged = sortCodeActionItems(lspItems + pluginItems)
+        actions = merged
+        isVisible = !merged.isEmpty
     }
 
     /// 执行代码动作（解析 lazy `edit`、应用 `WorkspaceEdit`、执行 `workspace/executeCommand`）
     func performAction(
+        _ item: CodeActionItem,
+        textView: TextView?,
+        documentURL: URL?,
+        onFailureMessage: (String) -> Void
+    ) async {
+        switch item.payload {
+        case .lsp(let action):
+            await performLSPAction(
+                action,
+                textView: textView,
+                documentURL: documentURL,
+                onFailureMessage: onFailureMessage
+            )
+        case .plugin(let pluginAction):
+            performPluginAction(
+                pluginAction,
+                textView: textView,
+                onFailureMessage: onFailureMessage
+            )
+        }
+    }
+
+    private func performLSPAction(
         _ action: CodeAction,
         textView: TextView?,
         documentURL: URL?,
@@ -112,6 +167,55 @@ final class CodeActionProvider: ObservableObject {
     func clear() {
         actions.removeAll()
         isVisible = false
+    }
+
+    private func sortCodeActionItems(_ items: [CodeActionItem]) -> [CodeActionItem] {
+        items.sorted { a, b in
+            if a.isPreferred != b.isPreferred { return a.isPreferred }
+            return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
+        }
+    }
+
+    private func performPluginAction(
+        _ action: EditorCodeActionSuggestion,
+        textView: TextView?,
+        onFailureMessage: (String) -> Void
+    ) {
+        guard let textView else {
+            onFailureMessage(String(localized: "No active editor", table: "LumiEditor"))
+            return
+        }
+        guard let selection = textView.selectionManager.textSelections.first else {
+            onFailureMessage(String(localized: "No selection to transform", table: "LumiEditor"))
+            return
+        }
+        let range = selection.range
+        guard range.location != NSNotFound, range.length > 0 else {
+            onFailureMessage(String(localized: "No selection to transform", table: "LumiEditor"))
+            return
+        }
+        guard let textRange = Range(range, in: textView.string) else {
+            onFailureMessage(String(localized: "Invalid selection", table: "LumiEditor"))
+            return
+        }
+        let selectedText = String(textView.string[textRange])
+
+        let replacement: String
+        switch action.command {
+        case "builtin.swift.wrap-print":
+            replacement = "print(\(selectedText))"
+        case "builtin.swift.wrap-debug":
+            replacement = """
+            #if DEBUG
+            \(selectedText)
+            #endif
+            """
+        default:
+            onFailureMessage(String(localized: "Unsupported editor plugin action", table: "LumiEditor"))
+            return
+        }
+
+        textView.replaceCharacters(in: range, with: replacement)
     }
 
     // MARK: - WorkspaceEdit 应用
@@ -249,13 +353,21 @@ final class CodeActionProvider: ObservableObject {
 
 /// Code Action 数据模型
 struct CodeActionItem: Identifiable {
+    enum Payload {
+        case lsp(CodeAction)
+        case plugin(EditorCodeActionSuggestion)
+    }
+
     let id = UUID()
     let title: String
     let kind: String
-    let action: CodeAction
+    let payload: Payload
     let isPreferred: Bool
 
     var icon: String {
+        if kind == "plugin" {
+            return "puzzlepiece.extension"
+        }
         if kind.contains("quickfix") {
             return "lightbulb"
         } else if kind.contains("refactor") {
@@ -273,7 +385,7 @@ struct CodeActionItem: Identifiable {
 struct CodeActionPanel: View {
 
     let actions: [CodeActionItem]
-    let onActionSelected: (CodeAction) -> Void
+    let onActionSelected: (CodeActionItem) -> Void
 
     @State private var selectedIndex: Int = 0
 
@@ -303,7 +415,7 @@ struct CodeActionPanel: View {
                             isSelected: index == selectedIndex,
                             onTap: {
                                 selectedIndex = index
-                                onActionSelected(action.action)
+                                onActionSelected(action)
                             }
                         )
 

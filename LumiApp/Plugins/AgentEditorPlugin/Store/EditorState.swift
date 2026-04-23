@@ -58,7 +58,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     private func bindDiagnostics() {
         diagnosticsCancellable?.cancel()
-        diagnosticsCancellable = LSPService.shared.$currentDiagnostics
+        diagnosticsCancellable = lspService.$currentDiagnostics
             .receive(on: RunLoop.main)
             .sink { [weak self] diags in
                 self?.problemDiagnostics = diags
@@ -125,24 +125,37 @@ final class EditorState: ObservableObject, SuperLog {
     /// 使用完整字符串存储而非 hashValue，因为 hashValue 存在哈希碰撞，
     /// 可能导致编辑后的内容被误判为"未变更"，从而跳过自动保存。
     private var persistedContentSnapshot: String?
+
+    /// LSP 服务实例（支持依赖注入，默认仍使用共享实例）
+    private let lspService: LSPService
     
     /// LSP 协调器（用于语言服务器集成）
-    let lspCoordinator = LSPCoordinator()
+    let lspCoordinator: LSPCoordinator
+    /// 编辑器可消费的 LSP 抽象客户端（用于解耦具体实现）
+    var lspClient: any EditorLSPClient { lspCoordinator }
+    /// 当前编辑器链路绑定的 LSP 服务实例（供视图层注入）
+    var lspServiceInstance: LSPService { lspService }
+    /// 编辑器子插件管理器（负责补全/悬停/code action 等扩展点）
+    let editorPluginManager: EditorPluginManager
+    /// 兼容旧调用：编辑器扩展注册中心
+    var editorExtensions: EditorExtensionRegistry { editorPluginManager.registry }
+    /// 已发现的编辑器内部插件（含禁用项）
+    var editorFeaturePlugins: [EditorPluginManager.PluginInfo] { editorPluginManager.discoveredPluginInfos }
     
     // MARK: - New LSP Providers
     
     /// 签名帮助提供者
-    let signatureHelpProvider = SignatureHelpProvider()
+    let signatureHelpProvider: SignatureHelpProvider
     /// 内联提示提供者
-    let inlayHintProvider = InlayHintProvider()
+    let inlayHintProvider: InlayHintProvider
     /// 文档高亮提供者
-    let documentHighlightProvider = DocumentHighlightProvider()
+    let documentHighlightProvider: DocumentHighlightProvider
     /// 代码动作提供者
-    let codeActionProvider = CodeActionProvider()
+    let codeActionProvider: CodeActionProvider
     /// 工作区符号搜索提供者
-    let workspaceSymbolProvider = WorkspaceSymbolProvider()
+    let workspaceSymbolProvider: WorkspaceSymbolProvider
     /// 调用层级提供者
-    let callHierarchyProvider = CallHierarchyProvider()
+    let callHierarchyProvider: CallHierarchyProvider
     
     /// 跳转定义代理（右键和 Cmd+Click 共享）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
@@ -155,7 +168,7 @@ final class EditorState: ObservableObject, SuperLog {
     /// 在光标稳定后刷新可见区域内的 Inlay Hints
     func scheduleInlayHintsRefreshIfNeeded(controller: TextViewController) {
         inlayHintRefreshTask?.cancel()
-        guard LSPService.shared.supportsInlayHints else { return }
+        guard lspService.supportsInlayHints else { return }
         guard currentFileURL != nil else { return }
         let uriSnapshot = currentFileURL?.absoluteString
         inlayHintRefreshTask = Task { @MainActor [weak self, weak controller] in
@@ -253,9 +266,16 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 设置鼠标悬停状态（使用 symbol 矩形定位）
     func setMouseHover(content: String, symbolRect: CGRect) {
-        if Self.verbose {
-            EditorPlugin.logger.debug("\(Self.t) 设置鼠标悬停: 内容长度=\(content.count) 矩形=\(String(describing: symbolRect))")
-        }
+        let currentContent = mouseHoverContent ?? ""
+        let currentRect = mouseHoverSymbolRect
+        let epsilon: CGFloat = 0.75
+        let isSameContent = currentContent == content
+        let isCloseRect = abs(currentRect.minX - symbolRect.minX) <= epsilon &&
+            abs(currentRect.minY - symbolRect.minY) <= epsilon &&
+            abs(currentRect.width - symbolRect.width) <= epsilon &&
+            abs(currentRect.height - symbolRect.height) <= epsilon
+        if isSameContent && isCloseRect { return }
+
         mouseHoverContent = content
         mouseHoverSymbolRect = symbolRect
         // 兼容旧属性
@@ -264,6 +284,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 清除鼠标悬停状态
     func clearMouseHover() {
+        guard mouseHoverContent != nil || mouseHoverSymbolRect != .zero else { return }
         if Self.verbose {
             EditorPlugin.logger.debug("\(Self.t)🚫 清除鼠标悬停")
         }
@@ -384,9 +405,51 @@ final class EditorState: ObservableObject, SuperLog {
     
     // MARK: - Init
     
-    init() {
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+        self.lspCoordinator = LSPCoordinator(lspService: lspService)
+        self.editorPluginManager = EditorPluginManager()
+        self.signatureHelpProvider = SignatureHelpProvider(lspService: lspService)
+        self.inlayHintProvider = InlayHintProvider(lspService: lspService)
+        self.documentHighlightProvider = DocumentHighlightProvider(lspService: lspService)
+        self.codeActionProvider = CodeActionProvider(lspService: lspService)
+        self.workspaceSymbolProvider = WorkspaceSymbolProvider(lspService: lspService)
+        self.callHierarchyProvider = CallHierarchyProvider(lspService: lspService)
+        self.editorPluginManager.autoDiscoverAndRegisterPlugins()
+        self.codeActionProvider.editorExtensionRegistry = self.editorExtensions
         bindDiagnostics()
         restoreConfig()
+    }
+
+    func setEditorFeaturePluginEnabled(_ pluginID: String, enabled: Bool) {
+        editorPluginManager.setPluginEnabled(pluginID, enabled: enabled)
+    }
+
+    func editorCommandSuggestions() -> [EditorCommandSuggestion] {
+        let line = max(cursorLine - 1, 0)
+        let character = max(cursorColumn - 1, 0)
+        let hasSelection = focusedTextView?.selectionManager.textSelections.contains(where: { !$0.range.isEmpty }) ?? false
+        let context = EditorCommandContext(
+            languageId: detectedLanguage?.tsName ?? "swift",
+            hasSelection: hasSelection,
+            line: line,
+            character: character
+        )
+        return editorExtensions.commandSuggestions(
+            for: context,
+            state: self,
+            textView: focusedTextView
+        )
+    }
+
+    func performEditorCommand(id: String) {
+        guard let command = editorCommandSuggestions().first(where: { $0.id == id }) else { return }
+        guard command.isEnabled else { return }
+        command.action()
+    }
+
+    func editorToolbarItems() -> [EditorToolbarItemSuggestion] {
+        editorExtensions.toolbarItemSuggestions(state: self)
     }
 
     // MARK: - Config Persistence
@@ -819,6 +882,46 @@ final class EditorState: ObservableObject, SuperLog {
             String(localized: "Found references:", table: "LumiEditor") + " \(referenceResults.count)",
             level: .success
         )
+    }
+
+    func goToDefinition(for selection: NSRange) async {
+        guard selection.location != NSNotFound else { return }
+        showStatusToast(
+            String(localized: "Finding definition...", table: "LumiEditor"),
+            level: .info,
+            duration: 1.2
+        )
+        await jumpDelegate?.performGoToDefinition(forRange: selection)
+    }
+
+    func goToDeclaration(for selection: NSRange) async {
+        guard selection.location != NSNotFound else { return }
+        showStatusToast(
+            String(localized: "Finding declaration...", table: "LumiEditor"),
+            level: .info,
+            duration: 1.2
+        )
+        await jumpDelegate?.performGoToDeclaration(forRange: selection)
+    }
+
+    func goToTypeDefinition(for selection: NSRange) async {
+        guard selection.location != NSNotFound else { return }
+        showStatusToast(
+            String(localized: "Finding type definition...", table: "LumiEditor"),
+            level: .info,
+            duration: 1.2
+        )
+        await jumpDelegate?.performGoToTypeDefinition(forRange: selection)
+    }
+
+    func goToImplementation(for selection: NSRange) async {
+        guard selection.location != NSNotFound else { return }
+        showStatusToast(
+            String(localized: "Finding implementation...", table: "LumiEditor"),
+            level: .info,
+            duration: 1.2
+        )
+        await jumpDelegate?.performGoToImplementation(forRange: selection)
     }
 
     func closeReferencePanel() {

@@ -8,7 +8,11 @@ import LanguageServerProtocol
 @MainActor
 final class SignatureHelpProvider: ObservableObject {
     
-    private let lspService = LSPService.shared
+    private let lspService: LSPService
+
+    init(lspService: LSPService = .shared) {
+        self.lspService = lspService
+    }
     
     /// 当前签名帮助信息
     @Published var currentHelp: SignatureHelpItem?

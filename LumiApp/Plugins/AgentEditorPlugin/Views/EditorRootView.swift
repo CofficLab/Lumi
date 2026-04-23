@@ -29,10 +29,8 @@ struct EditorRootView: View {
                 }
             }
 
-            if state.isReferencePanelPresented {
-                EditorReferencesPanelView(state: state)
-            } else if state.isProblemsPanelPresented {
-                ProblemsPanelView(state: state)
+            if let panel = activeSidePanel {
+                panel.content(state)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -59,37 +57,51 @@ struct EditorRootView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFormatDocument)) { _ in
             guard projectVM.isFileSelected else { return }
-            Task { @MainActor in
-                await state.formatDocumentWithLSP()
-            }
+            state.performEditorCommand(id: "builtin.format-document")
         }
         .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindReferences)) { _ in
             guard projectVM.isFileSelected else { return }
-            Task { @MainActor in
-                await state.showReferencesFromCurrentCursor()
-            }
+            state.performEditorCommand(id: "builtin.find-references")
         }
         .onReceive(NotificationCenter.default.publisher(for: .lumiEditorRenameSymbol)) { _ in
             guard projectVM.isFileSelected else { return }
-            state.promptRenameSymbol()
+            state.performEditorCommand(id: "builtin.rename-symbol")
         }
         .onReceive(NotificationCenter.default.publisher(for: .lumiEditorWorkspaceSymbols)) { _ in
             guard projectVM.isFileSelected else { return }
-            state.openWorkspaceSymbolSearch()
+            state.performEditorCommand(id: "builtin.workspace-symbols")
         }
         .onReceive(NotificationCenter.default.publisher(for: .lumiEditorCallHierarchy)) { _ in
             guard projectVM.isFileSelected else { return }
-            Task { @MainActor in
-                await state.openCallHierarchy()
-            }
+            state.performEditorCommand(id: "builtin.call-hierarchy")
         }
-        .sheet(isPresented: $state.isWorkspaceSymbolSearchPresented) {
-            WorkspaceSymbolItemSearchView(provider: state.workspaceSymbolProvider) { symbol in
-                state.openWorkspaceSymbol(symbol)
+        .background(editorSheetHosts)
+    }
+
+    private var activeSidePanel: EditorSidePanelSuggestion? {
+        state.editorExtensions
+            .sidePanelSuggestions(state: state)
+            .first(where: { $0.isPresented(state) })
+    }
+
+    private var editorSheetHosts: some View {
+        let sheets = state.editorExtensions.sheetSuggestions(state: state)
+        return ZStack {
+            ForEach(sheets) { sheet in
+                EmptyView()
+                    .sheet(
+                        isPresented: Binding(
+                            get: { sheet.isPresented(state) },
+                            set: { presented in
+                                if !presented {
+                                    sheet.onDismiss(state)
+                                }
+                            }
+                        )
+                    ) {
+                        sheet.content(state)
+                    }
             }
-        }
-        .sheet(isPresented: $state.isCallHierarchyPresented) {
-            CallHierarchySheetView(state: state)
         }
     }
 
