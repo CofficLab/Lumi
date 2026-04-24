@@ -37,9 +37,6 @@ struct EditorToolbarView: View {
             ForEach(trailingToolbarItems) { item in
                 item.content(state)
             }
-            
-            // 右侧：主题选择
-            themePicker
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
@@ -176,35 +173,6 @@ struct EditorToolbarView: View {
         }
     }
     
-    // MARK: - Theme Picker
-    
-    private var themePicker: some View {
-        Menu {
-            ForEach(state.availableThemes(), id: \.id) { theme in
-                Button {
-                    state.setTheme(theme.id)
-                } label: {
-                    HStack {
-                        if let icon = theme.icon {
-                            Image(systemName: icon)
-                        }
-                        Text(theme.displayName)
-                        if state.currentThemeId == theme.id {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            Image(systemName: "paintbrush")
-                .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                .frame(width: 22, height: 22)
-        }
-        .menuStyle(.borderlessButton)
-        .frame(height: 20)
-    }
-
     private func syncSelectionsToFocusedTextView() {
         guard let responder = NSApp.keyWindow?.firstResponder else { return }
         guard let textView = responder as? TextView else { return }

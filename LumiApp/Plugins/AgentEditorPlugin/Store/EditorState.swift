@@ -442,6 +442,7 @@ final class EditorState: ObservableObject, SuperLog {
         self.codeActionProvider.editorExtensionRegistry = self.editorExtensions
         bindDiagnostics()
         restoreConfig()
+        observeThemeChanges()
     }
 
     func setEditorFeaturePluginEnabled(_ pluginID: String, enabled: Bool) {
@@ -550,6 +551,24 @@ final class EditorState: ObservableObject, SuperLog {
         }
         // Fallback：插件系统未加载时使用默认 Xcode Dark 主题
         return EditorThemeAdapter.fallbackTheme()
+    }
+
+    /// 监听全局主题变更通知（来自底部状态栏的主题切换）
+    private func observeThemeChanges() {
+        NotificationCenter.default.addObserver(
+            forName: .lumiEditorThemeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let themeId = notification.userInfo?["themeId"] as? String else { return }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                // 只有当外部来源的变更与当前不同时才更新，避免循环
+                guard self.currentThemeId != themeId else { return }
+                self.currentThemeId = themeId
+                self.currentTheme = self.resolveTheme(for: themeId)
+            }
+        }
     }
     
     // MARK: - File Loading

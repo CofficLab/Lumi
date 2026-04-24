@@ -289,6 +289,9 @@
         }
       }
     },
+    "Editor Theme" : {
+
+    },
     "Empty workspace edit" : {
 
     },
@@ -945,6 +948,9 @@
       }
     },
     "No selection to transform" : {
+
+    },
+    "No themes available" : {
 
     },
     "OK" : {
