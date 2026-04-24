@@ -142,19 +142,19 @@ struct GitCommitHistorySidebarView: View {
             // 文本
             VStack(alignment: .leading, spacing: 2) {
                 if uncommittedFileCount == 0 {
-                    Text("工作区干净")
+                    Text(String(localized: "Clean working tree", table: "GitCommitHistory"))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(AppUI.Color.semantic.textPrimary)
 
-                    Text("所有更改已提交")
+                    Text(String(localized: "All changes committed", table: "GitCommitHistory"))
                         .font(.system(size: 10))
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
                 } else {
-                    Text("当前状态")
+                    Text(String(localized: "Current status", table: "GitCommitHistory"))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(AppUI.Color.semantic.textPrimary)
 
-                    Text("\(uncommittedFileCount) 个文件未提交")
+                    Text(String(localized: "Uncommitted files: \(uncommittedFileCount)", table: "GitCommitHistory"))
                         .font(.system(size: 10))
                         .foregroundColor(.orange)
                 }
@@ -186,7 +186,7 @@ struct GitCommitHistorySidebarView: View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.regular)
-            Text("正在加载...")
+            Text(String(localized: "Loading...", table: "GitCommitHistory"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
@@ -200,7 +200,7 @@ struct GitCommitHistorySidebarView: View {
             Image(systemName: "folder.badge.questionmark")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text("请先选择一个项目")
+            Text(String(localized: "Please select a project first", table: "GitCommitHistory"))
                 .font(.system(size: 11))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
@@ -404,7 +404,7 @@ struct GitCommitRow: View {
                             Image(systemName: "arrow.up.circle.fill")
                                 .font(.system(size: 11))
                                 .foregroundColor(.orange)
-                                .help("未推送到远程仓库")
+                                .help(String(localized: "Not pushed to remote repository", table: "GitCommitHistory"))
                         }
                     }
 
@@ -486,22 +486,22 @@ extension Date {
         let interval = now.timeIntervalSince(self)
 
         if interval < 60 {
-            return "刚刚"
+            return String(localized: "Just now", table: "GitCommitHistory")
         } else if interval < 3600 {
             let minutes = Int(interval / 60)
-            return "\(minutes)分钟前"
+            return String(localized: "\(minutes) minutes ago", table: "GitCommitHistory")
         } else if interval < 86400 {
             let hours = Int(interval / 3600)
-            return "\(hours)小时前"
+            return String(localized: "\(hours) hours ago", table: "GitCommitHistory")
         } else if interval < 2592000 {
             let days = Int(interval / 86400)
-            return "\(days)天前"
+            return String(localized: "\(days) days ago", table: "GitCommitHistory")
         } else if interval < 31536000 {
             let months = Int(interval / 2592000)
-            return "\(months)个月前"
+            return String(localized: "\(months) months ago", table: "GitCommitHistory")
         } else {
             let years = Int(interval / 31536000)
-            return "\(years)年前"
+            return String(localized: "\(years) years ago", table: "GitCommitHistory")
         }
     }
 }
