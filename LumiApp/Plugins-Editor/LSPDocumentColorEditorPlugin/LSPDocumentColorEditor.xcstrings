@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Displays color swatches for color literals from the language server.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Displays color swatches for color literals from the language server." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "显示来自语言服务器的颜色字面量的色块。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "顯示來自語言伺服器的顏色字面量的色塊。" } }
+      }
+    },
+    "LSP Document Colors": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Document Colors" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 文档颜色" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 文件顏色" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LSP Service": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Service" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 服务" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 服務" } }
+      }
+    },
+    "Provides the core Language Server Protocol integration including completion, hover, and diagnostics.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provides the core Language Server Protocol integration including completion, hover, and diagnostics." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "提供核心语言服务器协议集成，包括补全、悬停和诊断。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "提供核心語言伺服器協議整合，包括補全、懸停和診斷。" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

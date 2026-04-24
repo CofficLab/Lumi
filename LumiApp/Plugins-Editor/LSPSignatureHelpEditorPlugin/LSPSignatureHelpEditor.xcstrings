@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LSP Signature Help": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Signature Help" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 签名帮助" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 簽名幫助" } }
+      }
+    },
+    "Shows function signature hints when typing parameters.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Shows function signature hints when typing parameters." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "在输入参数时显示函数签名提示。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "在輸入參數時顯示函數簽名提示。" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

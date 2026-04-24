@@ -1,0 +1,27 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Deep dark blue color scheme": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Deep dark blue color scheme" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "深邃暗蓝配色方案" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "深邃暗藍配色方案" } }
+      }
+    },
+    "Midnight": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Midnight" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "午夜" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "午夜" } }
+      }
+    },
+    "Midnight Theme": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Midnight Theme" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "午夜主题" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "午夜主題" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

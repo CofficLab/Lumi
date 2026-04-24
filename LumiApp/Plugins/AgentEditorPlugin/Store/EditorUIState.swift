@@ -54,8 +54,8 @@ final class EditorUIState: ObservableObject {
 
     // MARK: - 主题
 
-    /// 当前主题预设
-    @Published var themePreset: EditorThemeAdapter.PresetTheme = .xcodeDark
+    /// 当前主题 ID（与 EditorThemeContributor.id 对应）
+    @Published var currentThemeId: String = "xcode-dark"
 
     /// 当前主题（缓存，避免每次重建）
     @Published var currentTheme: EditorTheme?
@@ -76,7 +76,7 @@ final class EditorUIState: ObservableObject {
     // MARK: - 初始化
 
     init() {
-        currentTheme = EditorThemeAdapter.theme(from: themePreset)
+        currentTheme = EditorThemeAdapter.fallbackTheme()
     }
 
     // MARK: - 重置
@@ -89,8 +89,8 @@ final class EditorUIState: ObservableObject {
         showMinimap = true
         showGutter = true
         showFoldingRibbon = true
-        themePreset = .xcodeDark
-        currentTheme = EditorThemeAdapter.theme(from: .xcodeDark)
+        currentThemeId = "xcode-dark"
+        currentTheme = EditorThemeAdapter.fallbackTheme()
         cursorLine = 1
         cursorColumn = 1
         multiCursorState = MultiCursorState()

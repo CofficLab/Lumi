@@ -1,25 +1,16 @@
-import SwiftUI
+import Foundation
 import CodeEditSourceEditor
+import AppKit
 
-/// 主题适配器（Fallback）
-/// 仅在插件系统未加载任何主题时提供默认主题。
-/// 正常情况下所有主题由 Plugins-Editor 中的主题插件提供。
-enum EditorThemeAdapter {
+/// Xcode Dark 主题配色方案
+@MainActor
+final class ThemeXcodeDarkContributor: EditorThemeContributor {
+    let id: String = "xcode-dark"
+    let displayName: String = String(localized: "Xcode Dark", table: "ThemeXcodeDarkEditor")
+    let icon: String? = "moon.fill"
+    let isDark: Bool = true
 
-    /// 便捷构造 Attribute
-    private static func attr(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat, _ a: CGFloat = 1.0) -> EditorTheme.Attribute {
-        EditorTheme.Attribute(color: NSColor(red: r, green: g, blue: b, alpha: a))
-    }
-
-    /// 便捷构造 NSColor
-    private static func color(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat, _ a: CGFloat = 1.0) -> NSColor {
-        NSColor(red: r, green: g, blue: b, alpha: a)
-    }
-
-    /// Fallback 主题（Xcode Dark 配色）
-    /// 当插件系统未注册任何主题时使用
-    @MainActor
-    static func fallbackTheme() -> EditorTheme {
+    func createTheme() -> EditorTheme {
         EditorTheme(
             text: attr(1.0, 1.0, 1.0),
             insertionPoint: color(1.0, 1.0, 1.0),
@@ -38,5 +29,13 @@ enum EditorThemeAdapter {
             characters: attr(1.0, 0.416, 0.337),
             comments: attr(0.459, 0.498, 0.545)
         )
+    }
+
+    private func attr(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat, _ a: CGFloat = 1.0) -> EditorTheme.Attribute {
+        EditorTheme.Attribute(color: NSColor(red: r, green: g, blue: b, alpha: a))
+    }
+
+    private func color(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat, _ a: CGFloat = 1.0) -> NSColor {
+        NSColor(red: r, green: g, blue: b, alpha: a)
     }
 }

@@ -44,15 +44,16 @@ enum TerminalThemeAdapter {
 
     // MARK: - Theme Mapping
 
-    /// 根据编辑器主题获取终端颜色
-    static func colors(for themeName: EditorThemeAdapter.PresetTheme) -> TerminalColors {
-        switch themeName {
-        case .xcodeDark:      return xcodeDarkColors()
-        case .xcodeLight:     return xcodeLightColors()
-        case .midnight:       return midnightColors()
-        case .solarizedDark:  return solarizedDarkColors()
-        case .solarizedLight: return solarizedLightColors()
-        case .highContrast:   return highContrastColors()
+    /// 根据编辑器主题 ID 获取终端颜色
+    static func colors(for themeId: String) -> TerminalColors {
+        switch themeId {
+        case "xcode-dark":       return xcodeDarkColors()
+        case "xcode-light":      return xcodeLightColors()
+        case "midnight":         return midnightColors()
+        case "solarized-dark":   return solarizedDarkColors()
+        case "solarized-light":  return solarizedLightColors()
+        case "high-contrast":    return highContrastColors()
+        default:                 return defaultColors(isDark: true)
         }
     }
 

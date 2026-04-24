@@ -22,6 +22,7 @@ final class EditorExtensionRegistry: ObservableObject {
     private var sidePanelContributors: [any EditorSidePanelContributor] = []
     private var sheetContributors: [any EditorSheetContributor] = []
     private var toolbarContributors: [any EditorToolbarContributor] = []
+    private var themeContributors: [any EditorThemeContributor] = []
 
     func reset() {
         completionContributors.removeAll()
@@ -32,6 +33,7 @@ final class EditorExtensionRegistry: ObservableObject {
         sidePanelContributors.removeAll()
         sheetContributors.removeAll()
         toolbarContributors.removeAll()
+        themeContributors.removeAll()
     }
 
     func registerCompletionContributor(_ contributor: any EditorCompletionContributor) {
@@ -88,6 +90,26 @@ final class EditorExtensionRegistry: ObservableObject {
             return
         }
         toolbarContributors.append(contributor)
+    }
+
+    // MARK: - Theme
+
+    func registerThemeContributor(_ contributor: any EditorThemeContributor) {
+        if themeContributors.contains(where: { $0.id == contributor.id }) {
+            return
+        }
+        themeContributors.append(contributor)
+        themeContributors.sort { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+    }
+
+    /// 所有已注册的主题（按 displayName 排序）
+    func allThemes() -> [any EditorThemeContributor] {
+        themeContributors
+    }
+
+    /// 按 ID 查找主题
+    func theme(for id: String) -> (any EditorThemeContributor)? {
+        themeContributors.first { $0.id == id }
     }
 
     func completionSuggestions(for context: EditorCompletionContext) async -> [EditorCompletionSuggestion] {

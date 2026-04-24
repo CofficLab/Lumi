@@ -336,8 +336,8 @@ final class EditorState: ObservableObject, SuperLog {
     
     // MARK: - Theme
     
-    /// 当前主题预设
-    @Published var themePreset: EditorThemeAdapter.PresetTheme = .xcodeDark
+    /// 当前主题 ID（与 EditorThemeContributor.id 对应）
+    @Published var currentThemeId: String = "xcode-dark"
     
     /// 当前主题（缓存，避免每次重建）
     @Published private(set) var currentTheme: EditorTheme?
@@ -504,11 +504,10 @@ final class EditorState: ObservableObject, SuperLog {
             sidePanelWidth = clampedSidePanelWidth(panelWidth)
         }
         // 恢复主题
-        if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey),
-           let preset = EditorThemeAdapter.PresetTheme(rawValue: themeRaw) {
-            themePreset = preset
+        if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey) {
+            currentThemeId = themeRaw
         }
-        currentTheme = EditorThemeAdapter.theme(from: themePreset)
+        currentTheme = resolveTheme(for: currentThemeId)
     }
     
     /// 持久化当前配置
@@ -520,22 +519,37 @@ final class EditorState: ObservableObject, SuperLog {
         EditorConfigStore.saveValue(showMinimap, forKey: EditorConfigStore.showMinimapKey)
         EditorConfigStore.saveValue(showGutter, forKey: EditorConfigStore.showGutterKey)
         EditorConfigStore.saveValue(showFoldingRibbon, forKey: EditorConfigStore.showFoldingRibbonKey)
-        EditorConfigStore.saveValue(themePreset.rawValue, forKey: EditorConfigStore.themeNameKey)
+        EditorConfigStore.saveValue(currentThemeId, forKey: EditorConfigStore.themeNameKey)
         EditorConfigStore.saveValue(sidePanelWidth, forKey: EditorConfigStore.sidePanelWidthKey)
     }
     
     /// 切换主题
-    func setTheme(_ preset: EditorThemeAdapter.PresetTheme) {
-        themePreset = preset
-        currentTheme = EditorThemeAdapter.theme(from: preset)
+    func setTheme(_ themeId: String) {
+        currentThemeId = themeId
+        currentTheme = resolveTheme(for: themeId)
         persistConfig()
 
         // 通知终端插件同步更新颜色
         NotificationCenter.default.post(
             name: .lumiEditorThemeDidChange,
             object: nil,
-            userInfo: ["theme": preset]
+            userInfo: ["themeId": themeId]
         )
+    }
+
+    /// 获取所有可用主题
+    func availableThemes() -> [any EditorThemeContributor] {
+        editorExtensions.allThemes()
+    }
+
+    /// 根据主题 ID 解析 EditorTheme
+    /// 优先从插件系统获取，fallback 到 EditorThemeAdapter 默认主题
+    private func resolveTheme(for id: String) -> EditorTheme {
+        if let contributor = editorExtensions.theme(for: id) {
+            return contributor.createTheme()
+        }
+        // Fallback：插件系统未加载时使用默认 Xcode Dark 主题
+        return EditorThemeAdapter.fallbackTheme()
     }
     
     // MARK: - File Loading

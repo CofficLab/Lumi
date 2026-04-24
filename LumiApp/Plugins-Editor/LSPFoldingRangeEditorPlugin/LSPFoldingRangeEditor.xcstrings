@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LSP Folding Ranges": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Folding Ranges" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 折叠范围" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 折疊範圍" } }
+      }
+    },
+    "Provides code folding ranges from the language server.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provides code folding ranges from the language server." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "提供来自语言服务器的代码折叠范围。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "提供來自語言伺服器的代碼折疊範圍。" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

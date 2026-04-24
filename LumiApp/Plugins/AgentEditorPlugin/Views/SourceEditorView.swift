@@ -55,7 +55,7 @@ struct SourceEditorView: View, SuperLog {
             .onChange(of: state.showFoldingRibbon) { _, _ in updateConfigCache() }
             .onChange(of: state.tabWidth) { _, _ in updateConfigCache() }
             .onChange(of: state.useSpaces) { _, _ in updateConfigCache() }
-            .onChange(of: state.themePreset) { _, _ in updateConfigCache() }
+            .onChange(of: state.currentThemeId) { _, _ in updateConfigCache() }
             .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
             .onChange(of: state.content) { _, newContent in
                 jumpDelegate.textStorage = newContent
@@ -358,7 +358,7 @@ struct SourceEditorView: View, SuperLog {
         
         return SourceEditorConfiguration(
             appearance: .init(
-                theme: state.currentTheme ?? EditorThemeAdapter.theme(from: .xcodeDark),
+                theme: state.currentTheme ?? EditorThemeAdapter.fallbackTheme(),
                 useThemeBackground: true,
                 font: NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular),
                 lineHeightMultiple: lineHeightMultiple,

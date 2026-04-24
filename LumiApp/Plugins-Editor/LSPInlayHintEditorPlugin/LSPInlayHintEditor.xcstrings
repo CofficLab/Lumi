@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Displays type inference and parameter name hints inline.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Displays type inference and parameter name hints inline." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "在行内显示类型推断和参数名提示。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "在行內顯示類型推斷和參數名提示。" } }
+      }
+    },
+    "LSP Inlay Hints": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Inlay Hints" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 内联提示" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 內聯提示" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

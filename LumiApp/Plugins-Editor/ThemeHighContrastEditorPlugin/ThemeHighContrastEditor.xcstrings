@@ -1,0 +1,27 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "High Contrast": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "High Contrast" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "高对比度" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "高對比度" } }
+      }
+    },
+    "High contrast dark color scheme for accessibility": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "High contrast dark color scheme for accessibility" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "高对比度深色配色方案，增强可访问性" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "高對比度深色配色方案，增強可訪問性" } }
+      }
+    },
+    "High Contrast Theme": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "High Contrast Theme" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "高对比度主题" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "高對比度主題" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

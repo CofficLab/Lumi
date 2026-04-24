@@ -180,13 +180,16 @@ struct EditorToolbarView: View {
     
     private var themePicker: some View {
         Menu {
-            ForEach(EditorThemeAdapter.PresetTheme.allCases, id: \.rawValue) { preset in
+            ForEach(state.availableThemes(), id: \.id) { theme in
                 Button {
-                    state.setTheme(preset)
+                    state.setTheme(theme.id)
                 } label: {
                     HStack {
-                        Text(preset.displayName)
-                        if state.themePreset == preset {
+                        if let icon = theme.icon {
+                            Image(systemName: icon)
+                        }
+                        Text(theme.displayName)
+                        if state.currentThemeId == theme.id {
                             Image(systemName: "checkmark")
                         }
                     }
