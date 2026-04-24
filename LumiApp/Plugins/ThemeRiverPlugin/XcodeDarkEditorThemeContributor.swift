@@ -2,11 +2,11 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// Xcode Dark 主题配色方案
+/// Xcode Dark 编辑器主题配色方案
 @MainActor
-final class ThemeXcodeDarkContributor: EditorThemeContributor {
+final class XcodeDarkEditorThemeContributor: EditorThemeContributor {
     let id: String = "xcode-dark"
-    let displayName: String = String(localized: "Xcode Dark", table: "ThemeXcodeDarkEditor")
+    let displayName: String = "Xcode Dark"
     let icon: String? = "moon.fill"
     let isDark: Bool = true
 

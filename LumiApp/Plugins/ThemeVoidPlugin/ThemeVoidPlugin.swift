@@ -15,7 +15,12 @@ actor ThemeVoidPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: VoidTheme(), editorThemeId: "high-contrast", order: 40)
+            LumiThemeContribution(
+                appTheme: VoidTheme(),
+                editorThemeId: "high-contrast",
+                editorThemeContributor: HighContrastEditorThemeContributor(),
+                order: 40
+            )
         ]
     }
 }

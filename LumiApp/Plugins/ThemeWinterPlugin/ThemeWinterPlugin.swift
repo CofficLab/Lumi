@@ -15,7 +15,12 @@ actor ThemeWinterPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: WinterTheme(), editorThemeId: "solarized-dark", order: 80)
+            LumiThemeContribution(
+                appTheme: WinterTheme(),
+                editorThemeId: "solarized-dark",
+                editorThemeContributor: SolarizedDarkEditorThemeContributor(),
+                order: 80
+            )
         ]
     }
 }

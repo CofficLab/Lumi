@@ -15,7 +15,12 @@ actor ThemeSummerPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: SummerTheme(), editorThemeId: "xcode-light", order: 60)
+            LumiThemeContribution(
+                appTheme: SummerTheme(),
+                editorThemeId: "xcode-light",
+                editorThemeContributor: XcodeLightEditorThemeContributor(),
+                order: 60
+            )
         ]
     }
 }

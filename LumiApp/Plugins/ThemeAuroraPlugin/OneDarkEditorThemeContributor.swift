@@ -2,12 +2,12 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// One Dark Pro 主题配色方案
+/// One Dark Pro 编辑器主题配色方案
 /// 灵感来自 Atom 编辑器的标志性暗色主题
 @MainActor
-final class ThemeOneDarkContributor: EditorThemeContributor {
+final class OneDarkEditorThemeContributor: EditorThemeContributor {
     let id: String = "one-dark"
-    let displayName: String = String(localized: "One Dark", table: "ThemeOneDarkEditor")
+    let displayName: String = "One Dark"
     let icon: String? = "circle.lefthalf.filled.inverse"
     let isDark: Bool = true
 

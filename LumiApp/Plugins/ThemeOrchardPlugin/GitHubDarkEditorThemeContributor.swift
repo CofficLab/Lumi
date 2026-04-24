@@ -2,12 +2,12 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// GitHub Dark 主题配色方案
+/// GitHub Dark 编辑器主题配色方案
 /// 灵感来自 GitHub 官方暗色主题
 @MainActor
-final class ThemeGitHubDarkContributor: EditorThemeContributor {
+final class GitHubDarkEditorThemeContributor: EditorThemeContributor {
     let id: String = "github-dark"
-    let displayName: String = String(localized: "GitHub Dark", table: "ThemeGitHubDarkEditor")
+    let displayName: String = "GitHub Dark"
     let icon: String? = "chevron.left.forwardslash.chevron.right"
     let isDark: Bool = true
 

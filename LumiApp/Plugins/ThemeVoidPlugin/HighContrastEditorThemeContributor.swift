@@ -2,11 +2,11 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// High Contrast 主题配色方案
+/// High Contrast 编辑器主题配色方案
 @MainActor
-final class ThemeHighContrastContributor: EditorThemeContributor {
+final class HighContrastEditorThemeContributor: EditorThemeContributor {
     let id: String = "high-contrast"
-    let displayName: String = String(localized: "High Contrast", table: "ThemeHighContrastEditor")
+    let displayName: String = "High Contrast"
     let icon: String? = "circle.fill"
     let isDark: Bool = true
 

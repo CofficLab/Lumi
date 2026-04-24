@@ -15,7 +15,12 @@ actor ThemeSpringPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: SpringTheme(), editorThemeId: "solarized-light", order: 50)
+            LumiThemeContribution(
+                appTheme: SpringTheme(),
+                editorThemeId: "solarized-light",
+                editorThemeContributor: SolarizedLightEditorThemeContributor(),
+                order: 50
+            )
         ]
     }
 }

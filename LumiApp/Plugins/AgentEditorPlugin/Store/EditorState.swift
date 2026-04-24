@@ -565,8 +565,18 @@ final class EditorState: ObservableObject, SuperLog {
             let editorThemeId = (notification.userInfo?["editorThemeId"] as? String)
                 ?? (notification.userInfo?["themeId"] as? String).map { ThemeManager.editorThemeID(for: $0) }
                 ?? "xcode-dark"
+
             Task { @MainActor [weak self] in
                 guard let self else { return }
+
+                // 注册所有主题插件提供的编辑器 contributor
+                let allContributions = PluginVM.shared.getThemeContributions()
+                for contribution in allContributions {
+                    if let c = contribution.editorThemeContributor as? any EditorThemeContributor {
+                        self.editorExtensions.registerThemeContributor(c)
+                    }
+                }
+
                 guard self.currentThemeId != editorThemeId else { return }
                 self.currentThemeId = editorThemeId
                 self.currentTheme = self.resolveTheme(for: editorThemeId)

@@ -15,7 +15,12 @@ actor ThemeMountainPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: MountainTheme(), editorThemeId: "nord", order: 100)
+            LumiThemeContribution(
+                appTheme: MountainTheme(),
+                editorThemeId: "nord",
+                editorThemeContributor: NordEditorThemeContributor(),
+                order: 100
+            )
         ]
     }
 }

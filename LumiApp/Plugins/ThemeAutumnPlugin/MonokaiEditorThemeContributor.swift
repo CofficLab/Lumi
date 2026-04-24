@@ -2,12 +2,12 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// Monokai 主题配色方案
+/// Monokai 编辑器主题配色方案
 /// 经典 Sublime Text 暗色主题，以鲜明的黄绿橙红著称
 @MainActor
-final class ThemeMonokaiContributor: EditorThemeContributor {
+final class MonokaiEditorThemeContributor: EditorThemeContributor {
     let id: String = "monokai"
-    let displayName: String = String(localized: "Monokai", table: "ThemeMonokaiEditor")
+    let displayName: String = "Monokai"
     let icon: String? = "flame.fill"
     let isDark: Bool = true
 

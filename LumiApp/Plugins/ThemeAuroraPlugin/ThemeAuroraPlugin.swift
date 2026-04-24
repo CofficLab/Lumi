@@ -15,7 +15,12 @@ actor ThemeAuroraPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: AuroraTheme(), editorThemeId: "one-dark", order: 20)
+            LumiThemeContribution(
+                appTheme: AuroraTheme(),
+                editorThemeId: "one-dark",
+                editorThemeContributor: OneDarkEditorThemeContributor(),
+                order: 20
+            )
         ]
     }
 }

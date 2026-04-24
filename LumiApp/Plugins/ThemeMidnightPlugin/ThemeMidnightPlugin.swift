@@ -15,7 +15,12 @@ actor ThemeMidnightPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: MidnightTheme(), editorThemeId: "midnight", order: 10)
+            LumiThemeContribution(
+                appTheme: MidnightTheme(),
+                editorThemeId: "midnight",
+                editorThemeContributor: MidnightEditorThemeContributor(),
+                order: 10
+            )
         ]
     }
 }

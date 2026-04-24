@@ -2,11 +2,11 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// Midnight 主题配色方案
+/// Midnight 编辑器主题配色方案
 @MainActor
-final class ThemeMidnightContributor: EditorThemeContributor {
+final class MidnightEditorThemeContributor: EditorThemeContributor {
     let id: String = "midnight"
-    let displayName: String = String(localized: "Midnight", table: "ThemeMidnightEditor")
+    let displayName: String = "Midnight"
     let icon: String? = "moon.stars.fill"
     let isDark: Bool = true
 

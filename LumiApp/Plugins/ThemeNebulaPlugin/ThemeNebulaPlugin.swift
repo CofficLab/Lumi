@@ -15,7 +15,12 @@ actor ThemeNebulaPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: NebulaTheme(), editorThemeId: "dracula", order: 30)
+            LumiThemeContribution(
+                appTheme: NebulaTheme(),
+                editorThemeId: "dracula",
+                editorThemeContributor: DraculaEditorThemeContributor(),
+                order: 30
+            )
         ]
     }
 }

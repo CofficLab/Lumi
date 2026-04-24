@@ -2,11 +2,11 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// Xcode Light 主题配色方案
+/// Xcode Light 编辑器主题配色方案
 @MainActor
-final class ThemeXcodeLightContributor: EditorThemeContributor {
+final class XcodeLightEditorThemeContributor: EditorThemeContributor {
     let id: String = "xcode-light"
-    let displayName: String = String(localized: "Xcode Light", table: "ThemeXcodeLightEditor")
+    let displayName: String = "Xcode Light"
     let icon: String? = "sun.max.fill"
     let isDark: Bool = false
 

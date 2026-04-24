@@ -2,12 +2,12 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// Dracula 主题配色方案
+/// Dracula 编辑器主题配色方案
 /// 灵感来自 Dracula Theme (https://draculatheme.com)
 @MainActor
-final class ThemeDraculaContributor: EditorThemeContributor {
+final class DraculaEditorThemeContributor: EditorThemeContributor {
     let id: String = "dracula"
-    let displayName: String = String(localized: "Dracula", table: "ThemeDraculaEditor")
+    let displayName: String = "Dracula"
     let icon: String? = "bathtub.fill"
     let isDark: Bool = true
 

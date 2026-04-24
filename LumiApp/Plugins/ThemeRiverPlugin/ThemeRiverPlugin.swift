@@ -15,7 +15,12 @@ actor ThemeRiverPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: RiverTheme(), editorThemeId: "xcode-dark", order: 110)
+            LumiThemeContribution(
+                appTheme: RiverTheme(),
+                editorThemeId: "xcode-dark",
+                editorThemeContributor: XcodeDarkEditorThemeContributor(),
+                order: 110
+            )
         ]
     }
 }

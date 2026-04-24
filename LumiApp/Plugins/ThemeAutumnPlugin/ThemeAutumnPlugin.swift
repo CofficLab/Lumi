@@ -15,7 +15,12 @@ actor ThemeAutumnPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: AutumnTheme(), editorThemeId: "monokai", order: 70)
+            LumiThemeContribution(
+                appTheme: AutumnTheme(),
+                editorThemeId: "monokai",
+                editorThemeContributor: MonokaiEditorThemeContributor(),
+                order: 70
+            )
         ]
     }
 }

@@ -1,11 +1,3 @@
-//
-//  AuroraTheme.swift
-//  Lumi
-//
-//  Created by Design System on 2025-02-11.
-//  极光紫主题
-//
-
 import SwiftUI
 
 // MARK: - 极光紫主题

@@ -2,12 +2,12 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// Nord 主题配色方案
+/// Nord 编辑器主题配色方案
 /// 灵感来自北极日落的柔和冷色调 (https://www.nordtheme.com)
 @MainActor
-final class ThemeNordContributor: EditorThemeContributor {
+final class NordEditorThemeContributor: EditorThemeContributor {
     let id: String = "nord"
-    let displayName: String = String(localized: "Nord", table: "ThemeNordEditor")
+    let displayName: String = "Nord"
     let icon: String? = "snowflake"
     let isDark: Bool = true
 

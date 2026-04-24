@@ -15,7 +15,12 @@ actor ThemeOrchardPlugin: SuperPlugin {
     @MainActor
     func addThemeContributions() -> [LumiThemeContribution] {
         [
-            LumiThemeContribution(appTheme: OrchardTheme(), editorThemeId: "github-dark", order: 90)
+            LumiThemeContribution(
+                appTheme: OrchardTheme(),
+                editorThemeId: "github-dark",
+                editorThemeContributor: GitHubDarkEditorThemeContributor(),
+                order: 90
+            )
         ]
     }
 }

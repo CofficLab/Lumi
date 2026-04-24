@@ -2,11 +2,11 @@ import Foundation
 import CodeEditSourceEditor
 import AppKit
 
-/// Solarized Light 主题配色方案
+/// Solarized Light 编辑器主题配色方案
 @MainActor
-final class ThemeSolarizedLightContributor: EditorThemeContributor {
+final class SolarizedLightEditorThemeContributor: EditorThemeContributor {
     let id: String = "solarized-light"
-    let displayName: String = String(localized: "Solarized Light", table: "ThemeSolarizedLightEditor")
+    let displayName: String = "Solarized Light"
     let icon: String? = "sun.and.horizon.fill"
     let isDark: Bool = false
 
