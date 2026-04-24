@@ -31,6 +31,8 @@ final class CodeServerManager: ObservableObject {
     private static let defaultSettings: [String: Any] = [
         // 隐藏左侧活动栏
         "workbench.activityBar.visible": false,
+        // 隐藏左侧侧边栏（资源管理器）
+        "workbench.sideBar.visible": false,
         // 隐藏底部状态栏
         "workbench.statusBar.visible": false,
         // 隐藏面包屑导航
