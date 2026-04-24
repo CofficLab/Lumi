@@ -1,41 +1,70 @@
 import SwiftUI
-import WebKit
 
-/// Code Server WebView 视图
+/// Code Server 主视图
 ///
-/// 使用 WKWebView 加载 code-server (localhost:8080)，提供完整的 VS Code 编辑体验。
+/// 负责状态管理和启动逻辑，按需展示 WebView 或状态视图。
 struct CodeServerView: View {
+    @StateObject private var manager = CodeServerManager.shared
+    @State private var isLoading = true
+    @State private var serverReady = false
+
     var body: some View {
-        CodeServerWebView()
-    }
-}
-
-/// WKWebView 的 SwiftUI 包装器
-struct CodeServerWebView: NSViewRepresentable {
-    /// code-server 地址
-    let serverURL = URL(string: "http://localhost:8080")!
-
-    func makeNSView(context: Context) -> WKWebView {
-        let configuration = WKWebViewConfiguration()
-
-        // 允许本地文件访问和混合内容
-        configuration.preferences.javaScriptEnabled = true
-        configuration.preferences.plugInsEnabled = false
-
-        let webView = WKWebView(frame: .zero, configuration: configuration)
-
-        // 自动调整大小
-        webView.autoresizingMask = [.width, .height]
-        webView.allowsBackForwardNavigationGestures = true
-
-        // 加载 code-server
-        let request = URLRequest(url: serverURL)
-        webView.load(request)
-
-        return webView
+        ZStack {
+            if serverReady {
+                CodeServerWebView(url: URL(string: "http://127.0.0.1:\(manager.port)")!)
+            } else {
+                CodeServerStatusView(
+                    isRunning: manager.isRunning,
+                    errorMessage: manager.errorMessage,
+                    isLoading: isLoading
+                )
+                .onAppear {
+                    startServerIfNeeded()
+                }
+            }
+        }
     }
 
-    func updateNSView(_ nsView: WKWebView, context: Context) {
-        // 无需更新
+    // MARK: - Private
+
+    private func startServerIfNeeded() {
+        Task { @MainActor in
+            isLoading = true
+
+            // 先检查是否已经可访问
+            if await manager.isServerReachable() {
+                serverReady = true
+                isLoading = false
+                return
+            }
+
+            // 未运行则启动
+            if !manager.isRunning {
+                manager.start(port: 8080)
+            }
+
+            // 轮询等待服务就绪（最多 15 秒）
+            var attempts = 0
+            let maxAttempts = 30
+            while attempts < maxAttempts {
+                try? await Task.sleep(for: .milliseconds(500))
+                if await manager.isServerReachable() {
+                    await MainActor.run {
+                        serverReady = true
+                        isLoading = false
+                    }
+                    return
+                }
+                attempts += 1
+            }
+
+            // 超时
+            await MainActor.run {
+                isLoading = false
+                if manager.errorMessage == nil && !manager.isRunning {
+                    manager.errorMessage = "code-server 启动超时，请确认已安装"
+                }
+            }
+        }
     }
 }
