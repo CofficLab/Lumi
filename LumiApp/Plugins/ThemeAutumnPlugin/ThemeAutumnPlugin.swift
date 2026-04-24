@@ -17,8 +17,8 @@ actor ThemeAutumnPlugin: SuperPlugin {
         [
             LumiThemeContribution(
                 appTheme: AutumnTheme(),
-                editorThemeId: "monokai",
-                editorThemeContributor: MonokaiEditorThemeContributor(),
+                editorThemeId: "autumn",
+                editorThemeContributor: AutumnEditorThemeContributor(),
                 order: 70
             )
         ]

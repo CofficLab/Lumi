@@ -17,8 +17,8 @@ actor ThemeAuroraPlugin: SuperPlugin {
         [
             LumiThemeContribution(
                 appTheme: AuroraTheme(),
-                editorThemeId: "one-dark",
-                editorThemeContributor: OneDarkEditorThemeContributor(),
+                editorThemeId: "aurora",
+                editorThemeContributor: AuroraEditorThemeContributor(),
                 order: 20
             )
         ]

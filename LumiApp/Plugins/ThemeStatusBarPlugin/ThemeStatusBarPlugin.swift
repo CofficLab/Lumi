@@ -3,9 +3,8 @@ import SwiftUI
 import Foundation
 import os
 
-/// 编辑器主题状态栏插件：
-/// 将编辑器主题切换入口独立为 Lumi 顶层插件，避免耦合在 AgentEditorPlugin 内。
-actor EditorThemeStatusBarPlugin: SuperPlugin, SuperLog {
+/// 主题状态栏插件
+actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-theme-status")
     nonisolated static let emoji = "🎨"
     nonisolated static let enable: Bool = true
@@ -19,10 +18,10 @@ actor EditorThemeStatusBarPlugin: SuperPlugin, SuperLog {
     static var order: Int { 76 }
 
     nonisolated var instanceLabel: String { Self.id }
-    static let shared = EditorThemeStatusBarPlugin()
+    static let shared = ThemeStatusBarPlugin()
 
     @MainActor
     func addStatusBarTrailingView() -> AnyView? {
-        AnyView(EditorThemeStatusBarView())
+        AnyView(ThemeStatusBarView())
     }
 }

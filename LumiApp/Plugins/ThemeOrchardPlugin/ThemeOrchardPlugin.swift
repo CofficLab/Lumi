@@ -17,8 +17,8 @@ actor ThemeOrchardPlugin: SuperPlugin {
         [
             LumiThemeContribution(
                 appTheme: OrchardTheme(),
-                editorThemeId: "github-dark",
-                editorThemeContributor: GitHubDarkEditorThemeContributor(),
+                editorThemeId: "orchard",
+                editorThemeContributor: OrchardEditorThemeContributor(),
                 order: 90
             )
         ]

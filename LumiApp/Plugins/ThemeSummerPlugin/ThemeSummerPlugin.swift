@@ -17,8 +17,8 @@ actor ThemeSummerPlugin: SuperPlugin {
         [
             LumiThemeContribution(
                 appTheme: SummerTheme(),
-                editorThemeId: "xcode-light",
-                editorThemeContributor: XcodeLightEditorThemeContributor(),
+                editorThemeId: "summer",
+                editorThemeContributor: SummerEditorThemeContributor(),
                 order: 60
             )
         ]

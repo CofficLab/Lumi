@@ -3,9 +3,9 @@ import MagicKit
 
 actor ThemeVoidPlugin: SuperPlugin {
     static let id: String = "void"
-    static let displayName: String = "Void"
-    static let description: String = "Void deep dark app theme"
-    static let iconName: String = "moonphase.new.moon"
+    static let displayName: String = "虚空深黑"
+    static let description: String = "纯粹的虚空黑，深邃而神秘"
+    static let iconName: String = "circle.fill"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
     static var order: Int { 123 }
@@ -17,8 +17,8 @@ actor ThemeVoidPlugin: SuperPlugin {
         [
             LumiThemeContribution(
                 appTheme: VoidTheme(),
-                editorThemeId: "high-contrast",
-                editorThemeContributor: HighContrastEditorThemeContributor(),
+                editorThemeId: "void",
+                editorThemeContributor: VoidEditorThemeContributor(),
                 order: 40
             )
         ]

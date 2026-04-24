@@ -17,8 +17,8 @@ actor ThemeWinterPlugin: SuperPlugin {
         [
             LumiThemeContribution(
                 appTheme: WinterTheme(),
-                editorThemeId: "solarized-dark",
-                editorThemeContributor: SolarizedDarkEditorThemeContributor(),
+                editorThemeId: "winter",
+                editorThemeContributor: WinterEditorThemeContributor(),
                 order: 80
             )
         ]

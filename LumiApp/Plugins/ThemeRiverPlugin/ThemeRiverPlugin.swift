@@ -17,8 +17,8 @@ actor ThemeRiverPlugin: SuperPlugin {
         [
             LumiThemeContribution(
                 appTheme: RiverTheme(),
-                editorThemeId: "xcode-dark",
-                editorThemeContributor: XcodeDarkEditorThemeContributor(),
+                editorThemeId: "river",
+                editorThemeContributor: RiverEditorThemeContributor(),
                 order: 110
             )
         ]

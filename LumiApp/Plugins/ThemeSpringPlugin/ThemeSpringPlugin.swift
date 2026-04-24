@@ -17,8 +17,8 @@ actor ThemeSpringPlugin: SuperPlugin {
         [
             LumiThemeContribution(
                 appTheme: SpringTheme(),
-                editorThemeId: "solarized-light",
-                editorThemeContributor: SolarizedLightEditorThemeContributor(),
+                editorThemeId: "spring",
+                editorThemeContributor: SpringEditorThemeContributor(),
                 order: 50
             )
         ]

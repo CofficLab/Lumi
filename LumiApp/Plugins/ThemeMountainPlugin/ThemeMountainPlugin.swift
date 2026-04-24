@@ -17,8 +17,8 @@ actor ThemeMountainPlugin: SuperPlugin {
         [
             LumiThemeContribution(
                 appTheme: MountainTheme(),
-                editorThemeId: "nord",
-                editorThemeContributor: NordEditorThemeContributor(),
+                editorThemeId: "mountain",
+                editorThemeContributor: MountainEditorThemeContributor(),
                 order: 100
             )
         ]
