@@ -504,8 +504,10 @@ final class EditorState: ObservableObject, SuperLog {
         if let panelWidth = EditorConfigStore.loadDouble(forKey: EditorConfigStore.sidePanelWidthKey) {
             sidePanelWidth = clampedSidePanelWidth(panelWidth)
         }
-        // 恢复主题
-        if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey) {
+        // 恢复主题：优先读取全局主题，再兼容旧编辑器独立主题键
+        if let appThemeId = ThemeManager.loadSavedThemeId() {
+            currentThemeId = ThemeManager.editorThemeID(for: appThemeId)
+        } else if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey) {
             currentThemeId = themeRaw
         }
         currentTheme = resolveTheme(for: currentThemeId)
@@ -555,6 +557,22 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 监听全局主题变更通知（来自底部状态栏的主题切换）
     private func observeThemeChanges() {
+        NotificationCenter.default.addObserver(
+            forName: .lumiThemeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            let editorThemeId = (notification.userInfo?["editorThemeId"] as? String)
+                ?? (notification.userInfo?["themeId"] as? String).map { ThemeManager.editorThemeID(for: $0) }
+                ?? "xcode-dark"
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                guard self.currentThemeId != editorThemeId else { return }
+                self.currentThemeId = editorThemeId
+                self.currentTheme = self.resolveTheme(for: editorThemeId)
+            }
+        }
+
         NotificationCenter.default.addObserver(
             forName: .lumiEditorThemeDidChange,
             object: nil,

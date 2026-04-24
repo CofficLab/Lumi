@@ -3427,6 +3427,9 @@
         }
       }
     },
+    "No themes available" : {
+
+    },
     "Node.js" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4796,6 +4799,9 @@
           }
         }
       }
+    },
+    "Theme" : {
+
     },
     "This action will force terminate the process, which may lead to data loss." : {
       "localizations" : {

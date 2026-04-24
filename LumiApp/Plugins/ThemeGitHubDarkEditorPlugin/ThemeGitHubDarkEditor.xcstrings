@@ -1,0 +1,27 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "GitHub Dark": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "GitHub Dark" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "GitHub 深色" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "GitHub 深色" } }
+      }
+    },
+    "GitHub Dark Theme": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "GitHub Dark Theme" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "GitHub 深色主题" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "GitHub 深色主題" } }
+      }
+    },
+    "GitHub's official dark color scheme": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "GitHub's official dark color scheme" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "GitHub 官方深色配色方案" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "GitHub 官方深色配色方案" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

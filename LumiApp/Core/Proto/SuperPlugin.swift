@@ -165,6 +165,9 @@ protocol SuperPlugin: Actor {
     /// 添加状态栏右侧视图（用于 Agent 模式底部状态栏）
     @MainActor func addStatusBarTrailingView() -> AnyView?
 
+    /// 提供主题贡献（App + Editor 一体化主题）。
+    @MainActor func addThemeContributions() -> [LumiThemeContribution]
+
     // MARK: - Agent Tools Hooks
 
     /// 提供 Agent 工具列表。

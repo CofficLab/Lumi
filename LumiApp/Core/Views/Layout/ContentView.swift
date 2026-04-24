@@ -376,7 +376,7 @@ struct ContentViewBody<Content: View>: View {
             .onOpenPluginSettings(perform: openPluginSettings)
             .background {
                 GeometryReader { proxy in
-                    themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
+                    themeManager.activeAppTheme.makeGlobalBackground(proxy: proxy)
                 }
                 .ignoresSafeArea()
             }

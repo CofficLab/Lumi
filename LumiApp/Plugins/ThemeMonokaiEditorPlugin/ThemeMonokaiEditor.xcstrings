@@ -1,0 +1,27 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Classic dark theme with vibrant warm colors": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Classic dark theme with vibrant warm colors" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "以鲜明暖色调著称的经典深色主题" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "以鮮明暖色調著稱的經典深色主題" } }
+      }
+    },
+    "Monokai": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Monokai" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Monokai" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Monokai" } }
+      }
+    },
+    "Monokai Theme": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Monokai Theme" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Monokai 主题" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Monokai 主題" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

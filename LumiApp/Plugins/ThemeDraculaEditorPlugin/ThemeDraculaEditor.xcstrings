@@ -1,0 +1,27 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Dark theme with vibrant pink, purple and cyan accents": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Dark theme with vibrant pink, purple and cyan accents" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "以粉红、紫色和青色为亮点的深色主题" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "以粉紅、紫色和青色為亮點的深色主題" } }
+      }
+    },
+    "Dracula": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Dracula" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Dracula" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Dracula" } }
+      }
+    },
+    "Dracula Theme": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Dracula Theme" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Dracula 主题" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Dracula 主題" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

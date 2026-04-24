@@ -59,4 +59,7 @@ extension SuperPlugin {
 
     /// 默认实现：不提供状态栏内容视图
     @MainActor func addStatusBarContentView() -> AnyView? { nil }
+
+    /// 默认实现：不提供主题贡献
+    @MainActor func addThemeContributions() -> [LumiThemeContribution] { [] }
 }

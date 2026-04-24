@@ -21,9 +21,9 @@ final class TerminalSession: ObservableObject, Identifiable {
         self.initialWorkingDirectory = workingDirectory
         self.terminalView = LumiTerminalView(frame: .zero)
 
-        // 读取当前编辑器主题
-        if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey) {
-            self.currentThemeId = themeRaw
+        // 读取当前统一主题并映射为编辑器主题
+        if let savedThemeId = ThemeManager.loadSavedThemeId() {
+            self.currentThemeId = ThemeManager.editorThemeID(for: savedThemeId)
         } else {
             self.currentThemeId = "xcode-dark"
         }
@@ -49,6 +49,17 @@ final class TerminalSession: ObservableObject, Identifiable {
         }
 
         // 监听编辑器主题变化
+        NotificationCenter.default.addObserver(
+            forName: .lumiThemeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let editorThemeId = notification.userInfo?["editorThemeId"] as? String else { return }
+            self?.currentThemeId = editorThemeId
+            self?.applyThemeColors()
+        }
+
+        // 兼容旧通知链路
         NotificationCenter.default.addObserver(
             forName: .lumiEditorThemeDidChange,
             object: nil,
@@ -155,11 +166,4 @@ extension TerminalSession: LocalProcessTerminalViewDelegate {
             self?.isConnected = false
         }
     }
-}
-
-// MARK: - Notification Name
-
-extension Notification.Name {
-    /// 编辑器主题变更通知
-    static let lumiEditorThemeDidChange = Notification.Name("lumiEditorThemeDidChange")
 }
