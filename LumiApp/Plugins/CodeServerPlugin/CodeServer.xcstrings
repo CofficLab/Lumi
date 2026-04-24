@@ -1,0 +1,40 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Code Server" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code Server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代码服务器"
+          }
+        }
+      }
+    },
+    "在 Lumi 中通过 code-server 使用完整的 VS Code 编辑体验" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use full VS Code editing experience via code-server in Lumi"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Lumi 中通过 code-server 使用完整的 VS Code 编辑体验"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
