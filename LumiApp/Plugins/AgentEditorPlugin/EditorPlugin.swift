@@ -58,13 +58,8 @@ actor EditorPlugin: SuperPlugin, SuperLog {
         AnyView(EditorRootView())
     }
 
-    /// 在全局状态栏右侧显示 Editor 插件入口 + 主题选择器
+    /// 在全局状态栏右侧显示 Editor 插件入口
     @MainActor func addStatusBarTrailingView() -> AnyView? {
-        AnyView(
-            HStack(spacing: 0) {
-                EditorThemeStatusBarView()
-                EditorLoadedPluginsStatusBarView()
-            }
-        )
+        AnyView(EditorLoadedPluginsStatusBarView())
     }
 }
