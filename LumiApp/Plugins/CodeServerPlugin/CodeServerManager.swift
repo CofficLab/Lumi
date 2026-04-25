@@ -26,30 +26,7 @@ final class CodeServerManager: ObservableObject {
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "code-server")
 
     /// 默认写入 settings.json 的配置项
-    ///
-    /// 用于隐藏不必要的 UI 元素，提供沉浸式编辑体验。
-    private static let defaultSettings: [String: Any] = [
-        // 隐藏左侧活动栏
-        "workbench.activityBar.visible": false,
-        // 隐藏左侧侧边栏（资源管理器）
-        "workbench.sideBar.visible": false,
-        // 隐藏底部状态栏
-        "workbench.statusBar.visible": false,
-        // 隐藏面包屑导航
-        "breadcrumbs.enabled": false,
-        // 隐藏小地图
-        "editor.minimap.enabled": false,
-        // 隐藏顶部菜单栏
-        "window.menuBarVisibility": "hidden",
-        // 启动时不显示欢迎页
-        "workbench.startupEditor": "none",
-        // 关闭自动更新检查
-        "update.mode": "none",
-        // 关闭遥测
-        "telemetry.telemetryLevel": "off",
-        // 使用浅色标题栏（可选，与 Lumi 风格匹配）
-        "window.titleBarStyle": "custom",
-    ]
+    private static let defaultSettings: [String: Any] = CodeServerDefaultSettings.values
 
     private init() {}
 
