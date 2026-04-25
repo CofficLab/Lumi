@@ -11,23 +11,21 @@ enum CodeServerDefaultSettings {
     /// 因为该属性是 `let` 常量（不可变），在初始化后不存在数据竞争，
     /// 因此在多个 Actor 间共享是安全的，尽管其类型 `[String: Any]` 不是 `Sendable`。
     nonisolated(unsafe) static let values: [String: Any] = [
-        // 隐藏左侧活动栏
+        // 左侧活动栏
         "workbench.activityBar.visible": true,
-        // 隐藏底部状态栏
-        "workbench.statusBar.visible": false,
-        // 隐藏面包屑导航
-        "breadcrumbs.enabled": false,
+        // 底部状态栏
+        "workbench.statusBar.visible": true,
+        // 面包屑导航
+        "breadcrumbs.enabled": true,
         // 隐藏小地图
         "editor.minimap.enabled": false,
         // 隐藏顶部菜单栏
-        "window.menuBarVisibility": "hidden",
-        // 启动时不显示欢迎页
+        "window.menuBarVisibility": "auto",
+        // 启动时欢迎页
         "workbench.startupEditor": "none",
-        // 关闭自动更新检查
+        // 自动更新检查
         "update.mode": "none",
-        // 关闭遥测
+        // 遥测
         "telemetry.telemetryLevel": "off",
-        // 使用浅色标题栏（可选，与 Lumi 风格匹配）
-        "window.titleBarStyle": "custom",
     ]
 }
