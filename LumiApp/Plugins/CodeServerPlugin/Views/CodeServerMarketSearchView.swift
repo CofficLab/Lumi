@@ -84,6 +84,7 @@ struct MarketSearchView: View {
                 SearchPlaceholderView()
             }
         }
+        .frame(maxHeight: .infinity)
     }
 }
 

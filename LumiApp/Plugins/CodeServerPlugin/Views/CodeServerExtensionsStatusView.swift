@@ -171,8 +171,6 @@ struct ExtensionsManagerDetailView: View {
                 }
             }
         }
-        .padding()
-        .frame(width: 400, height: 450)
     }
 }
 
