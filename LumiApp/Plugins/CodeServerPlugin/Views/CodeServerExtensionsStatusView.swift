@@ -117,14 +117,18 @@ struct ExtensionsManagerDetailView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             // Tab 切换
-            HStack(spacing: 0) {
-                ForEach(ExtensionTab.allCases, id: \.self) { tab in
-                    TabButton(
-                        title: tab.rawValue,
-                        isSelected: selectedTab == tab,
-                        action: { selectedTab = tab }
-                    )
+            HStack(spacing: 4) {
+                HStack(spacing: 0) {
+                    ForEach(ExtensionTab.allCases, id: \.self) { tab in
+                        TabButton(
+                            title: tab.rawValue,
+                            isSelected: selectedTab == tab,
+                            action: { selectedTab = tab }
+                        )
+                    }
                 }
+
+                Spacer()
 
                 // 刷新按钮
                 Button(action: {
@@ -212,5 +216,3 @@ struct ErrorBanner: View {
         .cornerRadius(6)
     }
 }
-
-
