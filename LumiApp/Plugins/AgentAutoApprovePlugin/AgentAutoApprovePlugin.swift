@@ -2,6 +2,11 @@ import MagicKit
 import SwiftUI
 
 /// 自动批准开关插件
+///
+/// 注意：自动批准开关（AutoApproveToggle）和持久化覆盖层
+/// （AutoApprovePersistenceOverlay）已整合到 EditorPlugin 的聊天栏中。
+/// 本插件保留仅用于维护自动批准相关的持久化存储逻辑。
+/// 实际 UI 渲染和根视图包裹由 EditorPlugin 负责。
 actor AgentAutoApprovePlugin: SuperPlugin {
     nonisolated static let emoji = "✅"
     nonisolated static let verbose: Bool = false
@@ -21,17 +26,4 @@ actor AgentAutoApprovePlugin: SuperPlugin {
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
-
-    @MainActor
-    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(AutoApprovePersistenceOverlay(content: content()))
-    }
-
-    @MainActor
-    func addRightHeaderLeadingView() -> AnyView? { nil }
-
-    @MainActor
-    func addRightHeaderTrailingItems() -> [AnyView] {
-        [AnyView(AutoApproveToggle())]
-    }
 }

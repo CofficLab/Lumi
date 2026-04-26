@@ -3,6 +3,10 @@ import SwiftUI
 import os
 
 /// Agent 输入插件 - 负责显示输入区域（编辑器、工具栏等）
+///
+/// 注意：输入区域（InputView）已整合到 EditorPlugin 的右侧聊天栏中。
+/// 本插件保留仅用于维护输入相关的 ViewModel、模型选择器等组件。
+/// 实际 UI 渲染由 EditorPlugin 的 ChatSidebarView 负责。
 actor AgentInputPlugin: SuperPlugin {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input")
@@ -29,13 +33,6 @@ actor AgentInputPlugin: SuperPlugin {
 
     nonisolated func onDisable() {
         // Cleanup
-    }
-
-    // MARK: - UI
-
-    @MainActor
-    func addRightBottomView() -> AnyView? {
-        return AnyView(InputView())
     }
 }
 

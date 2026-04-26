@@ -16,9 +16,7 @@ import Foundation
 /// ## 插件类型
 ///
 /// Lumi 支持以下类型的插件扩展点：
-/// - 侧边栏视图（Tab 切换）
-/// - 中间栏 Detail 视图
-/// - 右侧栏视图（Header / 消息列表 / 输入区）
+/// - 面板视图（活动栏入口，插件自行决定布局）
 /// - 状态栏视图
 /// - 工具栏视图
 /// - 设置视图
@@ -133,18 +131,6 @@ protocol SuperPlugin: Actor {
 
     /// 添加状态栏内容视图
     @MainActor func addStatusBarContentView() -> AnyView?
-
-    /// 添加右侧栏头部左侧视图（与 trailing 组合成单一 header）
-    @MainActor func addRightHeaderLeadingView() -> AnyView?
-
-    /// 添加右侧栏头部右侧小功能视图列表（用于 Agent 模式，多个插件可各自注入）
-    @MainActor func addRightHeaderTrailingItems() -> [AnyView]
-
-    /// 添加右侧栏中间视图（用于 Agent 模式）
-    @MainActor func addRightMiddleView() -> AnyView?
-
-    /// 添加右侧栏底部视图（用于 Agent 模式）
-    @MainActor func addRightBottomView() -> AnyView?
 
     /// 添加状态栏左侧视图（用于 Agent 模式底部状态栏）
     @MainActor func addStatusBarLeadingView() -> AnyView?

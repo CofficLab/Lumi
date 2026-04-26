@@ -4,8 +4,8 @@ import SwiftUI
 
 /// 主内容视图，管理应用的整体布局和导航结构
 ///
-/// 统一使用三栏布局：左侧栏 + 中间栏（Detail）+ 右侧栏（对话区）。
-/// 不再区分 Agent/App 模式。
+/// 布局完全由各插件自行决定，核心只提供活动栏 + 面板内容区。
+/// 不再有全局右侧栏，右侧栏由各插件在自己的面板视图内自行管理。
 struct ContentView: View, SuperLog {
     nonisolated static let emoji = "📱"
     nonisolated static let verbose: Bool = false
@@ -68,7 +68,7 @@ struct ContentView: View, SuperLog {
 
     // MARK: - Main Content
 
-    /// 主内容区域：活动栏 + 面板 + 对话区
+    /// 主内容区域：活动栏 + 面板
     @ViewBuilder
     private var mainContent: some View {
         Group {
@@ -82,9 +82,6 @@ struct ContentView: View, SuperLog {
 
                     // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                     PanelContentView()
-
-                    // 右侧对话区
-                    RightColumn()
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
             }

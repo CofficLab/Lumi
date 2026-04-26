@@ -449,67 +449,6 @@ final class PluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addStatusBarContentView() }
     }
 
-    /// 获取右侧栏头部左侧视图（首个提供该视图的插件）
-    ///
-    /// 用于与 trailing 小功能项组合成单一 header，便于拆分为多插件（如项目管理、语言切换）。
-    func getRightHeaderLeadingView() -> AnyView? {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addRightHeaderLeadingView() }
-            .first
-    }
-
-    /// 获取所有插件提供的右侧栏头部右侧小功能项（扁平合并）
-    ///
-    /// 多个插件可各自注入小功能（如项目按钮、语言选择器），在 header 内水平排列。
-    func getRightHeaderTrailingItems() -> [AnyView] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .flatMap { $0.addRightHeaderTrailingItems() }
-    }
-
-    /// 获取所有插件提供的右侧栏中间视图（用于 Agent 模式）
-    ///
-    /// 收集所有启用插件提供的右侧栏中间视图。
-    /// 右侧栏中间位于右侧栏中部，用于显示消息列表等内容。
-    /// 多个插件的中间视图会从上到下垂直堆叠显示。
-    ///
-    /// - Returns: 右侧栏中间视图数组
-    func getRightMiddleViews() -> [AnyView] {
-        let views = plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addRightMiddleView() }
-
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            AppLogger.core.info("\(self.t) getRightMiddleViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏中间视图数量=\(views.count)")
-        }
-
-        return views
-    }
-
-    /// 获取所有插件提供的右侧栏底部视图（用于 Agent 模式）
-    ///
-    /// 收集所有启用插件提供的右侧栏底部视图。
-    /// 右侧栏底部位于右侧栏底部，用于显示输入区域等内容。
-    /// 多个插件的底部视图会从上到下垂直堆叠显示。
-    ///
-    /// - Returns: 右侧栏底部视图数组
-    func getRightBottomViews() -> [AnyView] {
-        let views = plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addRightBottomView() }
-
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            AppLogger.core.info("\(self.t) getRightBottomViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏底部视图数量=\(views.count)")
-        }
-
-        return views
-    }
-
     /// 获取所有插件提供的状态栏左侧视图（用于 Agent 模式底部状态栏）
     ///
     /// 收集所有启用插件提供的状态栏左侧视图。

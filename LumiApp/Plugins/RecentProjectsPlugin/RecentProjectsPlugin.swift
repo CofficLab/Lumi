@@ -3,7 +3,11 @@ import os
 import SwiftUI
 
 /// 最近项目插件
-/// 负责保存和恢复最近使用的项目列表，提供当前项目管理工具，在侧边栏显示最近项目，以及在头部显示项目选择器
+/// 负责保存和恢复最近使用的项目列表，提供当前项目管理工具，在侧边栏显示最近项目
+///
+/// 注意：项目选择器头部（ChatHeaderLeadingView）和项目按钮（ProjectButton）
+/// 已整合到 EditorPlugin 的聊天栏头部。
+/// 本插件保留用于维护最近项目列表的持久化和 Agent 工具。
 actor RecentProjectsPlugin: SuperPlugin {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.recent-projects")
@@ -29,16 +33,6 @@ actor RecentProjectsPlugin: SuperPlugin {
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
         AnyView(RecentProjectsPersistenceOverlay(content: content()))
-    }
-
-    @MainActor
-    func addRightHeaderLeadingView() -> AnyView? {
-        AnyView(ChatHeaderLeadingView())
-    }
-
-    @MainActor
-    func addRightHeaderTrailingItems() -> [AnyView] {
-        [AnyView(ProjectButton())]
     }
 
     @MainActor

@@ -2,6 +2,10 @@ import MagicKit
 import SwiftUI
 
 /// 可用工具插件
+///
+/// 注意：可用工具按钮（AvailableToolsButton）已整合到 EditorPlugin 的聊天栏头部。
+/// 本插件保留仅用于维护工具列表相关的逻辑。
+/// 实际 UI 渲染由 EditorPlugin 的 ChatSidebarView 负责。
 actor AgentAvailableToolsPlugin: SuperPlugin {
     nonisolated static let emoji = "🧰"
     nonisolated static let verbose: Bool = false
@@ -21,12 +25,4 @@ actor AgentAvailableToolsPlugin: SuperPlugin {
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
-
-    @MainActor
-    func addRightHeaderLeadingView() -> AnyView? { nil }
-
-    @MainActor
-    func addRightHeaderTrailingItems() -> [AnyView] {
-        [AnyView(AvailableToolsButton())]
-    }
 }
