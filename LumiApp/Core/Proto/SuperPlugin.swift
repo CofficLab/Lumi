@@ -17,6 +17,7 @@ import Foundation
 ///
 /// Lumi 支持以下类型的插件扩展点：
 /// - 面板视图（活动栏入口，插件自行决定布局）
+/// - 右侧栏视图（窗口右侧独立区域，可多插件堆叠）
 /// - 状态栏视图
 /// - 工具栏视图
 /// - 设置视图
@@ -112,6 +113,15 @@ protocol SuperPlugin: Actor {
     /// 例如只读列表、可交互的管理界面、或者编辑器等。
     /// 点击活动栏图标后，该视图会在左侧面板或中间栏中展示。
     @MainActor func addPanelView() -> AnyView?
+
+    /// 添加右侧栏视图
+    ///
+    /// 提供一个在窗口右侧显示的侧边栏视图。多个插件提供的侧边栏视图
+    /// 会被水平堆叠，按插件的 `order` 升序排列（order 小的在左，大的在右）。
+    /// 右侧栏与面板内容区之间支持拖拽调整宽度。
+    ///
+    /// 典型用例：聊天栏、预览面板、属性检查器等。
+    @MainActor func addSidebarView() -> AnyView?
 
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?

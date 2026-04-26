@@ -88,7 +88,7 @@ struct ContentView: View, SuperLog {
 
     // MARK: - Main Content
 
-    /// 主内容区域：活动栏 + 面板
+    /// 主内容区域：活动栏 + 面板 + 右侧栏
     @ViewBuilder
     private var mainContent: some View {
         Group {
@@ -96,14 +96,31 @@ struct ContentView: View, SuperLog {
                 ActivityBar()
                 AgentModeUnavailableGuideView()
             } else {
-                HSplitView {
-                    // 图标栏（固定 48px）
-                    ActivityBar()
+                let sidebarViews = pluginProvider.getSidebarViews()
+                let hasSidebars = !sidebarViews.isEmpty
 
-                    // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
-                    PanelContentView()
+                if hasSidebars {
+                    HSplitView {
+                        // 图标栏（固定 48px）
+                        ActivityBar()
+
+                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
+                        PanelContentView()
+
+                        // 右侧栏：聚合所有插件提供的侧边栏视图
+                        RightSidebarContainerView(views: sidebarViews)
+                    }
+                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                } else {
+                    HSplitView {
+                        // 图标栏（固定 48px）
+                        ActivityBar()
+
+                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
+                        PanelContentView()
+                    }
+                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
                 }
-                .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

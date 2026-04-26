@@ -387,7 +387,7 @@ extension ModelSelectorView {
     private func loadLatencyStats() {
         detailedStats = chatHistoryVM.getModelDetailedStats()
         if Self.verbose {
-            AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
+            AgentChatPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
         }
     }
 
@@ -432,7 +432,7 @@ extension ModelSelectorView {
         frequentModels = Array(entries.prefix(10))
 
         if Self.verbose {
-            AgentInputPlugin.logger.info("\(Self.t)📊 加载到 \(frequentModels.count) 个常用模型")
+            AgentChatPlugin.logger.info("\(Self.t)📊 加载到 \(frequentModels.count) 个常用模型")
         }
     }
 
@@ -492,7 +492,7 @@ extension ModelSelectorView {
         }
 
         guard let caps = provider.modelCapabilities[model] else {
-            AgentInputPlugin.logger.error("\(Self.t) 远程模型缺少能力声明: provider=\(provider.id), model=\(model)")
+            AgentChatPlugin.logger.error("\(Self.t) 远程模型缺少能力声明: provider=\(provider.id), model=\(model)")
             return (nil, nil)
         }
 
@@ -572,7 +572,7 @@ extension ModelSelectorView {
         fastModels = Array(entries.prefix(10))
 
         if Self.verbose {
-            AgentInputPlugin.logger.info("\(Self.t)⚡️ 加载到 \(fastModels.count) 个较快模型")
+            AgentChatPlugin.logger.info("\(Self.t)⚡️ 加载到 \(fastModels.count) 个较快模型")
         }
     }
 

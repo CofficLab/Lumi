@@ -84,6 +84,7 @@ final class PluginVM: ObservableObject, SuperLog {
     private var cancellables = Set<AnyCancellable>()
     private var sidebarViewsCache: [AnyView]?
     private var sidebarViewsCacheKey: String?
+    private var rightSidebarViewsCache: [AnyView]?
 
     // MARK: - Tools Cache
 
@@ -110,6 +111,7 @@ final class PluginVM: ObservableObject, SuperLog {
             .sink { [weak self] _ in
                 self?.sidebarViewsCache = nil
                 self?.sidebarViewsCacheKey = nil
+                self?.rightSidebarViewsCache = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
                 self?.cachedSendMiddlewares = nil
@@ -227,6 +229,7 @@ final class PluginVM: ObservableObject, SuperLog {
     @objc private func handleFileSelectionChanged(_ notification: Notification) {
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
+        rightSidebarViewsCache = nil
         objectWillChange.send()
     }
 
@@ -248,6 +251,7 @@ final class PluginVM: ObservableObject, SuperLog {
         // 插件列表将被重建，相关缓存一并清空
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
+        rightSidebarViewsCache = nil
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
         cachedSendMiddlewares = nil
@@ -434,6 +438,25 @@ final class PluginVM: ObservableObject, SuperLog {
         plugins
             .filter { isPluginEnabled($0) }
             .contains { $0.addPanelView() != nil }
+    }
+
+    /// 获取所有插件提供的右侧栏视图
+    ///
+    /// 收集所有启用插件提供的右侧栏视图。
+    /// 多个右侧栏会水平堆叠，按插件 order 升序排列。
+    ///
+    /// - Returns: 右侧栏视图数组
+    func getSidebarViews() -> [AnyView] {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addSidebarView() }
+    }
+
+    /// 当前是否有右侧栏视图
+    func hasSidebars() -> Bool {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .contains { $0.addSidebarView() != nil }
     }
 
     /// 获取所有插件提供的状态栏弹窗视图
