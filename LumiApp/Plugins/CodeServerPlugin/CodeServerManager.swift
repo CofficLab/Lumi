@@ -17,6 +17,20 @@ struct CodeServerExtension: Identifiable, Equatable, Hashable {
 ///
 /// 负责 code-server 进程的启动、停止、配置写入和状态监控。
 /// 使用单例模式，确保全局只有一个 code-server 实例。
+///
+/// ## 数据存储
+/// 所有数据（扩展、配置、缓存）存储在插件专属目录：
+/// `AppConfig.getPluginDBFolderURL(pluginName: "CodeServerPlugin")/code-server/`
+/// 避免污染用户目录。
+///
+/// 目录结构：
+/// ```
+/// AppConfig.getPluginDBFolderURL(pluginName: "CodeServerPlugin")/
+/// └── code-server/
+///     ├── User/
+///     │   └── settings.json    # 用户配置
+///     └── extensions/          # 已安装的扩展
+/// ```
 @MainActor
 final class CodeServerManager: ObservableObject {
     static let shared = CodeServerManager()
@@ -40,6 +54,24 @@ final class CodeServerManager: ObservableObject {
 
     /// 扩展操作错误信息
     @Published var extensionError: String?
+
+    // MARK: - Data Directory
+
+    /// code-server 数据根目录
+    ///
+    /// 路径：`AppConfig.getPluginDBFolderURL(pluginName: "CodeServerPlugin")/code-server/`
+    private lazy var dataDirectory: URL = {
+        let pluginDir = AppConfig.getPluginDBFolderURL(pluginName: "CodeServerPlugin")
+        let csDir = pluginDir.appendingPathComponent("code-server", isDirectory: true)
+        try? FileManager.default.createDirectory(at: csDir, withIntermediateDirectories: true)
+        return csDir
+    }()
+
+    /// code-server 用户数据目录（--user-data-dir）
+    private var userDataURL: URL { dataDirectory }
+
+    /// code-server 扩展目录（--extensions-dir）
+    private var extensionsDirURL: URL { dataDirectory.appendingPathComponent("extensions", isDirectory: true) }
 
     // MARK: - Private
 
@@ -72,6 +104,9 @@ final class CodeServerManager: ObservableObject {
         // 1. 写入默认配置
         ensureDefaultSettings()
 
+        // 确保扩展目录存在
+        try? FileManager.default.createDirectory(at: extensionsDirURL, withIntermediateDirectories: true)
+
         // 2. 启动进程
         let task = Process()
         task.executableURL = URL(fileURLWithPath: codeServerPath)
@@ -80,7 +115,9 @@ final class CodeServerManager: ObservableObject {
             "--port", "\(port)",
             "--bind-addr", "127.0.0.1:\(port)",
             "--disable-telemetry",
-            "--disable-update-check"
+            "--disable-update-check",
+            "--user-data-dir", userDataURL.path,
+            "--extensions-dir", extensionsDirURL.path,
         ]
         task.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
 
@@ -118,7 +155,7 @@ final class CodeServerManager: ObservableObject {
             process = task
             isRunning = true
             errorMessage = nil
-            logger.info("code-server 已启动，端口: \(port)")
+            logger.info("code-server 已启动，端口: \(port)，数据目录: \(self.dataDirectory.path)")
         } catch {
             errorMessage = "启动 code-server 失败: \(error.localizedDescription)"
             logger.error("启动失败: \(error.localizedDescription)")
@@ -207,14 +244,22 @@ final class CodeServerManager: ObservableObject {
 
     /// 获取 code-server settings.json 路径
     ///
-    /// 路径: ~/.local/share/code-server/User/settings.json
+    /// 路径: `{pluginDataDir}/code-server/User/settings.json`
     private func settingsFileURL() -> URL {
-        URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent(".local")
-            .appendingPathComponent("share")
-            .appendingPathComponent("code-server")
+        userDataURL
             .appendingPathComponent("User")
             .appendingPathComponent("settings.json")
+    }
+
+    /// 构建 code-server CLI 命令的通用参数
+    ///
+    /// 包含 `--user-data-dir` 和 `--extensions-dir`，
+    /// 确保 CLI 操作（安装/卸载扩展、列出扩展）使用正确的数据目录。
+    private func cliDataArgs() -> [String] {
+        [
+            "--user-data-dir", userDataURL.path,
+            "--extensions-dir", extensionsDirURL.path,
+        ]
     }
 
     // MARK: - Extension Management (CLI-based)
@@ -230,10 +275,12 @@ final class CodeServerManager: ObservableObject {
         isLoadingExtensions = true
         extensionError = nil
 
+        let cliArgs = cliDataArgs()
+
         Task.detached { [weak self] in
             let task = Process()
             task.executableURL = URL(fileURLWithPath: codeServerPath)
-            task.arguments = ["--list-extensions", "--show-versions"]
+            task.arguments = ["--list-extensions", "--show-versions"] + cliArgs
             let pipe = Pipe()
             task.standardOutput = pipe
             task.standardError = pipe
@@ -283,10 +330,12 @@ final class CodeServerManager: ObservableObject {
 
         extensionError = nil
 
+        let cliArgs = cliDataArgs()
+
         return await withCheckedContinuation { continuation in
             let task = Process()
             task.executableURL = URL(fileURLWithPath: codeServerPath)
-            task.arguments = ["--install-extension", extensionId]
+            task.arguments = ["--install-extension", extensionId] + cliArgs
             let outPipe = Pipe()
             let errPipe = Pipe()
             task.standardOutput = outPipe
@@ -339,10 +388,12 @@ final class CodeServerManager: ObservableObject {
 
         extensionError = nil
 
+        let cliArgs = cliDataArgs()
+
         return await withCheckedContinuation { continuation in
             let task = Process()
             task.executableURL = URL(fileURLWithPath: codeServerPath)
-            task.arguments = ["--uninstall-extension", extensionId]
+            task.arguments = ["--uninstall-extension", extensionId] + cliArgs
             let outPipe = Pipe()
             let errPipe = Pipe()
             task.standardOutput = outPipe
@@ -374,6 +425,39 @@ final class CodeServerManager: ObservableObject {
                 continuation.resume(returning: false)
             }
         }
+    }
+
+    // MARK: - Data Management
+
+    /// 清除所有 code-server 数据（扩展、配置、缓存）
+    ///
+    /// ⚠️ 此操作不可逆，会删除所有已安装的扩展和配置。
+    func clearAllData() {
+        stop()
+        try? FileManager.default.removeItem(at: dataDirectory)
+        try? FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
+        logger.info("🗑️ 已清除所有 code-server 数据")
+    }
+
+    /// 获取数据目录占用的磁盘空间（字节）
+    func dataSize() -> Int64 {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: dataDirectory.path) else { return 0 }
+
+        var totalSize: Int64 = 0
+        if let enumerator = fileManager.enumerator(at: dataDirectory, includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey]) {
+            for case let url as URL in enumerator {
+                if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize {
+                    totalSize += Int64(size)
+                }
+            }
+        }
+        return totalSize
+    }
+
+    /// 获取格式化的数据目录大小
+    var dataSizeFormatted: String {
+        ByteCountFormatter.string(fromByteCount: dataSize(), countStyle: .file)
     }
 
     // MARK: - Private Helpers
