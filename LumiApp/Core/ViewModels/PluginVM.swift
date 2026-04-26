@@ -385,6 +385,18 @@ final class PluginVM: ObservableObject, SuperLog {
         return wrapped
     }
 
+    /// 获取所有插件的工具栏前导视图
+    ///
+    /// 收集所有启用插件提供的工具栏左侧视图。
+    /// 这些视图将在工具栏左侧水平排列显示。
+    ///
+    /// - Returns: 工具栏前导视图数组
+    func getToolbarLeadingViews() -> [AnyView] {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addToolBarLeadingView() }
+    }
+
     /// 获取所有插件的工具栏右侧视图
     ///
     /// 收集所有启用插件提供的工具栏右侧视图。

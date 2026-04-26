@@ -3,10 +3,8 @@ import SwiftUI
 
 /// 自动批准开关插件
 ///
-/// 注意：自动批准开关（AutoApproveToggle）和持久化覆盖层
-/// （AutoApprovePersistenceOverlay）已整合到 EditorPlugin 的聊天栏中。
-/// 本插件保留仅用于维护自动批准相关的持久化存储逻辑。
-/// 实际 UI 渲染和根视图包裹由 EditorPlugin 负责。
+/// 在工具栏右侧提供自动批准开关（AutoApproveToggle），
+/// 持久化覆盖层（AutoApprovePersistenceOverlay）通过 addRootView 提供。
 actor AgentAutoApprovePlugin: SuperPlugin {
     nonisolated static let emoji = "✅"
     nonisolated static let verbose: Bool = false
@@ -26,4 +24,12 @@ actor AgentAutoApprovePlugin: SuperPlugin {
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
+
+    // MARK: - Toolbar Views
+
+    /// 工具栏右侧：自动批准开关
+    @MainActor
+    func addToolBarTrailingView() -> AnyView? {
+        AnyView(AutoApproveToggle())
+    }
 }

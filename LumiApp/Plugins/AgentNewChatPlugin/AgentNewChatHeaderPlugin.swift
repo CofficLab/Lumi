@@ -3,9 +3,7 @@ import SwiftUI
 
 /// 新建对话头部插件
 ///
-/// 注意：新建对话按钮（NewChatButton）已整合到 EditorPlugin 的聊天栏头部。
-/// 本插件保留仅用于维护新建对话相关的逻辑。
-/// 实际 UI 渲染由 EditorPlugin 的 ChatSidebarView 负责。
+/// 在工具栏右侧提供新建对话按钮（NewChatButton）。
 actor AgentNewChatHeaderPlugin: SuperPlugin {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose: Bool = false
@@ -25,4 +23,12 @@ actor AgentNewChatHeaderPlugin: SuperPlugin {
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
+
+    // MARK: - Toolbar Views
+
+    /// 工具栏右侧：新建对话按钮
+    @MainActor
+    func addToolBarTrailingView() -> AnyView? {
+        AnyView(NewChatButton())
+    }
 }

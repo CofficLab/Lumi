@@ -2,34 +2,30 @@ import SwiftUI
 
 /// 应用顶部工具栏
 ///
-/// 所有按钮统一放在工具栏最右侧。
-/// 包含：项目名选择器、自动批准开关、语言选择器、工具按钮、项目管理、新建对话、会话列表。
+/// 动态收集所有插件通过 `addToolBarLeadingView()` 和
+/// `addToolBarTrailingView()` 注册的工具栏组件。
+/// 插件按 `order` 排序，确保工具栏项的显示顺序稳定。
 struct AppToolbar: ToolbarContent {
+    @EnvironmentObject var pluginProvider: PluginVM
+
     var body: some ToolbarContent {
-        // 占位：让 primaryAction 区域被推到最右
-        ToolbarItemGroup(placement: .primaryAction) {
+        let leadingViews = pluginProvider.getToolbarLeadingViews()
+        let trailingViews = pluginProvider.getToolbarTrailingViews()
+
+        ToolbarItemGroup(placement: .status) {
+            // 左侧视图（按插件 order 排列）
+            ForEach(leadingViews.indices, id: \.self) { index in
+                leadingViews[index]
+                    .id("toolbar_leading_\(index)")
+            }
+
             Spacer()
 
-            // 项目名选择器
-            ChatHeaderLeadingView()
-
-            // 自动批准开关
-            AutoApproveToggle()
-
-            // 语言选择器
-            LanguageSelector()
-
-            // 可用工具
-            AvailableToolsButton()
-
-            // 项目管理
-            ProjectButton()
-
-            // 新建对话
-            NewChatButton()
-
-            // 会话列表
-            ConversationListPopoverButton()
+            // 右侧视图（按插件 order 排列）
+            ForEach(trailingViews.indices, id: \.self) { index in
+                trailingViews[index]
+                    .id("toolbar_trailing_\(index)")
+            }
         }
     }
 }

@@ -5,9 +5,7 @@ import SwiftUI
 
 /// Conversation List Plugin: 对话历史列表
 ///
-/// 注意：会话列表视图（ConversationListView）已整合到 EditorPlugin 的工具栏
-/// Popover 入口（ConversationListPopoverButton）中。
-/// 本插件保留用于维护会话列表相关的本地存储逻辑。
+/// 在工具栏右侧提供会话列表入口（ConversationListPopoverButton）。
 actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
@@ -28,4 +26,12 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
     static let shared = ConversationListPlugin()
 
     init() {}
+
+    // MARK: - Toolbar Views
+
+    /// 工具栏右侧：会话列表按钮
+    @MainActor
+    func addToolBarTrailingView() -> AnyView? {
+        AnyView(ConversationListPopoverButton())
+    }
 }
