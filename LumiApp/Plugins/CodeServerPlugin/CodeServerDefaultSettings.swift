@@ -12,20 +12,34 @@ enum CodeServerDefaultSettings {
     /// 因此在多个 Actor 间共享是安全的，尽管其类型 `[String: Any]` 不是 `Sendable`。
     nonisolated(unsafe) static let values: [String: Any] = [
         // 左侧活动栏
-        "workbench.activityBar.visible": true,
+        "workbench.activityBar.location": "hidden",
         // 底部状态栏
-        "workbench.statusBar.visible": true,
+        "workbench.statusBar.visible": false,
+        // 命令中心
+        "window.commandCenter": false,
         // 面包屑导航
-        "breadcrumbs.enabled": true,
+        "breadcrumbs.enabled": false,
+        // 布局控件
+        "workbench.layoutControl.enabled": false,
         // 隐藏小地图
         "editor.minimap.enabled": false,
         // 隐藏顶部菜单栏
         "window.menuBarVisibility": "auto",
         // 启动时欢迎页
         "workbench.startupEditor": "none",
+        // 侧边栏
+        "workbench.sideBar.visible": false,
+        // 编辑器标签页
+        "workbench.editor.showTabs": "single",
+        // 颜色主题
+        "workbench.colorTheme": "Default Dark+",
         // 自动更新检查
         "update.mode": "none",
         // 遥测
         "telemetry.telemetryLevel": "off",
+        // 图标主题
+        "workbench.iconTheme": "material-icon-theme",
+        // 标题栏样式
+        "window.titleBarStyle": "custom",
     ]
 }
