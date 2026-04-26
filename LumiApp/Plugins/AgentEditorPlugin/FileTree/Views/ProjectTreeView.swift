@@ -5,7 +5,6 @@ import SwiftUI
 /// 项目文件树视图
 struct ProjectTreeView: View {
     @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject var layoutVM: LayoutVM
 
     // MARK: - Logging Configuration
 
@@ -51,8 +50,7 @@ struct ProjectTreeView: View {
             onCoordinatorRefresh(newToken)
         }
         .onAppear {
-            // 激活中间栏的代码编辑器 Detail 视图
-            layoutVM.selectAgentDetail(EditorPlugin.id)
+            // 文件树出现在面板中，确保编辑器也可见
         }
     }
 

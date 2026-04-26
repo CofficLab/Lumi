@@ -223,6 +223,9 @@
         }
       }
     },
+    "Code editor with file tree" : {
+
+    },
     "Document formatted" : {
       "localizations" : {
         "en" : {
@@ -1021,6 +1024,7 @@
 
     },
     "Professional code editor with syntax highlighting, code folding, minimap, and find/replace" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
