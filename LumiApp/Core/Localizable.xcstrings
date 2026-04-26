@@ -8967,6 +8967,7 @@
       }
     },
     "选择项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

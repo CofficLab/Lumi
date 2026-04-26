@@ -1,22 +1,18 @@
 import SwiftUI
 
-/// 应用顶部工具栏视图
+/// 应用顶部工具栏
 ///
-/// 将原聊天栏头部的小功能项注入到 macOS 原生工具栏中。
-/// 包含：项目名选择器、自动批准开关、语言选择器、工具按钮、项目管理、新建对话。
-struct AppToolbarLeading: ToolbarContent {
+/// 所有按钮统一放在工具栏最右侧。
+/// 包含：项目名选择器、自动批准开关、语言选择器、工具按钮、项目管理、新建对话、会话列表。
+struct AppToolbar: ToolbarContent {
     var body: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigation) {
+        // 占位：让 primaryAction 区域被推到最右
+        ToolbarItemGroup(placement: .primaryAction) {
+            Spacer()
+
             // 项目名选择器
             ChatHeaderLeadingView()
-                .help("选择项目")
-        }
-    }
-}
 
-struct AppToolbarTrailing: ToolbarContent {
-    var body: some ToolbarContent {
-        ToolbarItemGroup(placement: .primaryAction) {
             // 自动批准开关
             AutoApproveToggle()
 
@@ -45,14 +41,13 @@ struct AppToolbarModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .toolbar {
-                AppToolbarLeading()
-                AppToolbarTrailing()
+                AppToolbar()
             }
     }
 }
 
 extension View {
-    /// 添加应用级别的工具栏（项目选择器、自动批准、语言、工具、新建对话等）
+    /// 添加应用级别的工具栏
     func withAppToolbar() -> some View {
         modifier(AppToolbarModifier())
     }
