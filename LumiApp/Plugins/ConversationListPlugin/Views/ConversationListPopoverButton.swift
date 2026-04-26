@@ -16,12 +16,9 @@ struct ConversationListPopoverButton: View {
         } label: {
             Image(systemName: "message.fill")
                 .font(.system(size: iconSize))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .frame(width: iconButtonSize, height: iconButtonSize)
-                .background(Color.black.opacity(0.05))
                 .clipShape(Circle())
         }
-        .buttonStyle(.plain)
         .help("会话列表")
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             ConversationListView()
