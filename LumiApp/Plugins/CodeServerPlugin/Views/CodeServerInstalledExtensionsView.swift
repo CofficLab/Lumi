@@ -58,6 +58,12 @@ struct ExtensionRowView: View {
         return lowercasedId.contains("icon-theme") || lowercasedId.contains("icons")
     }
 
+    /// 是否为颜色主题扩展
+    private var isColorTheme: Bool {
+        let lowercasedId = ext.id.lowercased()
+        return lowercasedId.contains("theme") && !isIconTheme
+    }
+
     var body: some View {
         HStack(spacing: 8) {
             // 图标 + 名称
@@ -82,7 +88,7 @@ struct ExtensionRowView: View {
                     manager.applyIconTheme(ext.id)
                 }) {
                     HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle")
+                        Image(systemName: "paintbrush.pointed")
                             .font(.system(size: 10))
                         Text("应用")
                             .font(.system(size: 10, weight: .medium))
@@ -95,6 +101,27 @@ struct ExtensionRowView: View {
                 .buttonStyle(.plain)
                 .foregroundColor(.blue)
                 .help("应用此图标主题")
+            }
+
+            // 颜色主题扩展显示「应用」按钮
+            if isColorTheme {
+                Button(action: {
+                    manager.applyColorTheme(ext.id)
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "circle.lefthalf.filled")
+                            .font(.system(size: 10))
+                        Text("应用")
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.purple.opacity(0.15))
+                    .cornerRadius(4)
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(.purple)
+                .help("应用此颜色主题")
             }
 
             // 卸载按钮

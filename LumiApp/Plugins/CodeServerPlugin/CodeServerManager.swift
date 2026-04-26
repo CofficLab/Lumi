@@ -486,25 +486,93 @@ final class CodeServerManager: ObservableObject {
         }
     }
 
-    /// 如果安装的是图标主题，自动更新 settings.json 启用该主题
+    /// 如果安装的是主题扩展（颜色主题或图标主题），自动更新 settings.json 启用该主题
     ///
-    /// 通过解析扩展 ID 名称，判断是否可能是图标主题，
-    /// 如果是则将其写入 `workbench.iconTheme` 配置。
+    /// 通过解析扩展目录下的 `package.json`，读取 `contributes.themes`（颜色主题）
+    /// 或 `contributes.iconThemes`（图标主题），自动应用第一个主题。
     private func applyThemeIfApplicable(_ extensionId: String) {
-        // 从扩展 ID 中提取名称部分（如 "pkief.material-icon-theme" -> "material-icon-theme"）
-        let parts = extensionId.split(separator: ".")
-        guard parts.count >= 2 else { return }
-        let themeName = String(parts.dropFirst().joined(separator: "."))
+        // 查找扩展目录下的 package.json
+        guard let packageURL = findExtensionPackageJSON(extensionId) else {
+            logger.debug("未找到扩展 \(extensionId) 的 package.json，跳过自动应用主题")
+            return
+        }
 
-        // 判断是否为图标主题（名称包含 icon-theme 或 icons）
-        let lowercasedName = themeName.lowercased()
-        let isIconTheme = lowercasedName.contains("icon-theme") || lowercasedName.contains("icons")
+        do {
+            let data = try Data(contentsOf: packageURL)
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let contributes = json["contributes"] as? [String: Any] else {
+                return
+            }
 
-        guard isIconTheme else { return }
+            // 优先处理图标主题
+            if let iconThemes = contributes["iconThemes"] as? [[String: Any]],
+               let firstTheme = iconThemes.first,
+               let themeId = firstTheme["id"] as? String ?? firstTheme["label"] as? String {
+                updateSetting(key: "workbench.iconTheme", value: themeId)
+                logger.info("🎨 已自动启用图标主题: \(themeId)")
+            }
 
-        // 更新 settings.json
-        updateSetting(key: "workbench.iconTheme", value: themeName)
-        logger.info("🎨 已自动启用图标主题: \(themeName)")
+            // 处理颜色主题
+            if let colorThemes = contributes["themes"] as? [[String: Any]],
+               let firstTheme = colorThemes.first,
+               let themeLabel = firstTheme["label"] as? String {
+                // 优先选择 Dark 主题
+                var selectedTheme = themeLabel
+                for theme in colorThemes {
+                    if let label = theme["label"] as? String,
+                       label.lowercased().contains("dark default") {
+                        selectedTheme = label
+                        break
+                    }
+                }
+                updateSetting(key: "workbench.colorTheme", value: selectedTheme)
+                logger.info("🎨 已自动启用颜色主题: \(selectedTheme)")
+            }
+        } catch {
+            logger.warning("⚠️ 解析扩展 package.json 失败: \(error.localizedDescription)")
+        }
+    }
+
+    /// 查找扩展目录下的 package.json 文件
+    ///
+    /// 扩展安装后的目录名格式为：`{publisher}.{name}-{version}-universal`
+    /// 例如：`github.github-vscode-theme-6.3.5-universal`
+    ///
+    /// 目录结构可能是：
+    /// - `{extensions-dir}/{dir}/package.json`
+    /// - `{extensions-dir}/{dir}/extension/package.json`
+    private func findExtensionPackageJSON(_ extensionId: String) -> URL? {
+        let extDir = extensionsDirURL
+        let fileManager = FileManager.default
+
+        guard let contents = try? fileManager.contentsOfDirectory(at: extDir, includingPropertiesForKeys: nil) else {
+            return nil
+        }
+
+        // 使用完整的扩展 ID 匹配目录名（全部小写比较）
+        // 扩展 ID "GitHub.github-vscode-theme" 对应目录 "github.github-vscode-theme-6.3.5-universal"
+        let lowercasedId = extensionId.lowercased()
+
+        for dirURL in contents {
+            let dirName = dirURL.lastPathComponent.lowercased()
+
+            // 目录名以 "{publisher}.{name}-" 开头即为匹配（后面是版本号）
+            guard dirName.hasPrefix(lowercasedId + "-") else { continue }
+
+            // 检查 package.json 是否直接在目录下
+            let packageURL = dirURL.appendingPathComponent("package.json")
+            if fileManager.fileExists(atPath: packageURL.path) {
+                return packageURL
+            }
+
+            // 检查 extension/ 子目录下
+            let nestedPackageURL = dirURL.appendingPathComponent("extension/package.json")
+            if fileManager.fileExists(atPath: nestedPackageURL.path) {
+                return nestedPackageURL
+            }
+        }
+
+        return nil
     }
 
     /// 更新 settings.json 中的单个配置项
@@ -864,18 +932,23 @@ final class CodeServerManager: ObservableObject {
         }
     }
 
-    /// 应用已安装的图标主题
+    /// 应用已安装的主题扩展（颜色主题或图标主题）
     ///
-    /// 将指定扩展设置为当前的图标主题，并触发 WebView 重载使其立即生效。
+    /// 解析扩展的 package.json 获取实际的主题名称，并更新 settings.json。
     /// - Parameter extensionId: 扩展 ID，如 "pkief.material-icon-theme"
     func applyIconTheme(_ extensionId: String) {
-        let parts = extensionId.split(separator: ".")
-        guard parts.count >= 2 else { return }
-        let themeName = String(parts.dropFirst().joined(separator: "."))
+        applyThemeIfApplicable(extensionId)
 
-        // 更新 settings.json
-        updateSetting(key: "workbench.iconTheme", value: themeName)
-        logger.info("🎨 已应用图标主题: \(themeName)")
+        // 触发 WebView 重载使主题立即生效
+        reloadServer()
+    }
+
+    /// 应用已安装的颜色主题扩展
+    ///
+    /// 解析扩展的 package.json 获取实际的主题名称，并更新 settings.json。
+    /// - Parameter extensionId: 扩展 ID，如 "GitHub.github-vscode-theme"
+    func applyColorTheme(_ extensionId: String) {
+        applyThemeIfApplicable(extensionId)
 
         // 触发 WebView 重载使主题立即生效
         reloadServer()
