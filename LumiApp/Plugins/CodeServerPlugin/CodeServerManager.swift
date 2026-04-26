@@ -13,6 +13,69 @@ struct CodeServerExtension: Identifiable, Equatable, Hashable {
     }
 }
 
+/// Open VSX 市场扩展信息
+struct OpenVSXExtension: Identifiable, Equatable, Hashable {
+    let id: String
+    let name: String
+    let displayName: String
+    let description: String?
+    let version: String
+    let iconUrl: String?
+    let downloadCount: Int?
+    let averageRating: Double?
+    let publisher: String?
+
+    var formattedDownloads: String {
+        guard let count = downloadCount else { return "" }
+        if count >= 1_000_000 {
+            return String(format: "%.1fM", Double(count) / 1_000_000)
+        } else if count >= 1_000 {
+            return String(format: "%.1fK", Double(count) / 1_000)
+        }
+        return "\(count)"
+    }
+
+    var ratingStars: String {
+        guard let rating = averageRating else { return "" }
+        let fullStars = Int(rating / 2)
+        return String(repeating: "★", count: fullStars) + String(repeating: "☆", count: 5 - fullStars)
+    }
+}
+
+/// Open VSX 扩展分类
+enum ExtensionCategory: String, CaseIterable {
+    case all = "全部"
+    case programmingLanguages = "编程语言"
+    case snippets = "代码片段"
+    case linters = "代码检查"
+    case themes = "主题"
+    case debuggers = "调试器"
+    case formatters = "格式化工具"
+    case machineLearning = "机器学习"
+    case notebooks = "笔记本"
+    case testing = "测试"
+    case other = "其他"
+
+    var displayName: String { rawValue }
+
+    /// API 查询参数值
+    var apiQuery: String? {
+        switch self {
+        case .all: return nil
+        case .programmingLanguages: return "Programming Languages"
+        case .snippets: return "Snippets"
+        case .linters: return "Linters"
+        case .themes: return "Themes"
+        case .debuggers: return "Debuggers"
+        case .formatters: return "Formatters"
+        case .machineLearning: return "Machine Learning"
+        case .notebooks: return "Notebooks"
+        case .testing: return "Testing"
+        case .other: return "Other"
+        }
+    }
+}
+
 /// Code Server 管理器
 ///
 /// 负责 code-server 进程的启动、停止、配置写入和状态监控。
@@ -54,6 +117,19 @@ final class CodeServerManager: ObservableObject {
 
     /// 扩展操作错误信息
     @Published var extensionError: String?
+
+    // MARK: - Open VSX Market
+
+    /// Open VSX 搜索关键词
+    @Published var searchQuery: String = ""
+    /// 搜索结果列表
+    @Published var searchResults: [OpenVSXExtension] = []
+    /// 是否正在搜索
+    @Published var isSearching: Bool = false
+    /// 搜索错误信息
+    @Published var searchError: String?
+    /// 选中的分类
+    @Published var selectedCategory: ExtensionCategory = .all
 
     // MARK: - Data Directory
 
@@ -545,5 +621,116 @@ final class CodeServerManager: ObservableObject {
         }
 
         return nil
+    }
+
+    // MARK: - Open VSX Market Search
+
+    /// 搜索 Open VSX 扩展市场
+    /// - Parameters:
+    ///   - query: 搜索关键词
+    ///   - category: 分类过滤
+    ///   - size: 返回结果数量（默认 20）
+    func searchMarket(query: String, category: ExtensionCategory = .all, size: Int = 20) {
+        guard !query.isEmpty else {
+            searchResults = []
+            return
+        }
+
+        isSearching = true
+        searchError = nil
+
+        Task.detached { [weak self] in
+            guard let self = self else { return }
+
+            // 构建 API URL
+            var components = URLComponents(string: "https://open-vsx.org/api/-/search")!
+            var queryItems: [URLQueryItem] = [
+                URLQueryItem(name: "query", value: query),
+                URLQueryItem(name: "size", value: "\(size)")
+            ]
+
+            // 添加分类过滤
+            if let categoryQuery = category.apiQuery {
+                queryItems.append(URLQueryItem(name: "category", value: categoryQuery))
+            }
+
+            components.queryItems = queryItems
+
+            guard let url = components.url else {
+                await MainActor.run { [weak self] in
+                    self?.searchError = "构建搜索 URL 失败"
+                    self?.isSearching = false
+                }
+                return
+            }
+
+            do {
+                let (data, response) = try await URLSession.shared.data(from: url)
+
+                guard let httpResponse = response as? HTTPURLResponse,
+                      httpResponse.statusCode == 200 else {
+                    await MainActor.run { [weak self] in
+                        self?.searchError = "搜索请求失败"
+                        self?.isSearching = false
+                    }
+                    return
+                }
+
+                // 解析 JSON 响应
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let extensions = json["extensions"] as? [[String: Any]] {
+
+                    let results: [OpenVSXExtension] = extensions.compactMap { ext in
+                        guard let namespace = ext["namespace"] as? String,
+                              let name = ext["name"] as? String else { return nil }
+
+                        let id = "\(namespace).\(name)"
+
+                        // 直接从根级别获取数据
+                        let version = ext["version"] as? String ?? "unknown"
+                        let downloadCount = ext["downloadCount"] as? Int
+                        let averageRating = ext["averageRating"] as? Double
+                        
+                        // 从 files 获取图标 URL
+                        var iconUrl: String? = nil
+                        if let files = ext["files"] as? [String: String] {
+                            iconUrl = files["icon"]
+                        }
+
+                        return OpenVSXExtension(
+                            id: id,
+                            name: name,
+                            displayName: ext["displayName"] as? String ?? name,
+                            description: ext["description"] as? String,
+                            version: version,
+                            iconUrl: iconUrl,
+                            downloadCount: downloadCount,
+                            averageRating: averageRating,
+                            publisher: namespace
+                        )
+                    }
+
+                    await MainActor.run { [weak self] in
+                        self?.searchResults = results
+                        self?.isSearching = false
+                    }
+                } else {
+                    await MainActor.run { [weak self] in
+                        self?.searchResults = []
+                        self?.isSearching = false
+                    }
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.searchError = "搜索失败: \(error.localizedDescription)"
+                    self?.isSearching = false
+                }
+            }
+        }
+    }
+
+    /// 检查扩展是否已安装
+    func isExtensionInstalled(_ extensionId: String) -> Bool {
+        installedExtensions.contains { $0.id == extensionId }
     }
 }
