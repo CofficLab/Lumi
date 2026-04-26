@@ -63,6 +63,7 @@ struct ContentView: View, SuperLog {
             onAppear: onAppear,
             onChangeColumnVisibility: onChangeColumnVisibility
         )
+        .withAppToolbar()
         .environment(\.windowState, windowState)
     }
 
@@ -155,11 +156,8 @@ extension ContentView {
         // 注册窗口到 WindowManager
         WindowManager.shared.registerWindow(windowState)
 
-        // 配置窗口样式
+        // 配置窗口标题
         if let window = NSApplication.shared.keyWindow ?? NSApplication.shared.windows.last {
-            window.titlebarAppearsTransparent = true
-            window.styleMask.insert(.fullSizeContentView)
-
             WindowManager.shared.associateWindow(window, with: windowState.id)
             window.title = windowState.title
         }

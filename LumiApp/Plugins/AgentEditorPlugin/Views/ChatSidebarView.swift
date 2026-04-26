@@ -2,18 +2,11 @@ import SwiftUI
 
 /// 编辑器右侧聊天栏
 ///
-/// 整合 Header（项目名、新建对话、语言、自动批准、工具、项目按钮）
-/// + 消息列表 + 输入区，作为 EditorPlugin 面板视图的右侧部分。
+/// 纯粹的消息列表 + 输入区，不包含头部功能按钮。
+/// 功能按钮（项目名、自动批准、语言、工具、新建对话等）已提升到窗口工具栏。
 struct ChatSidebarView: View {
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject var pluginProvider: PluginVM
-
     var body: some View {
         VStack(spacing: 0) {
-            chatHeader
-
-            GlassDivider()
-
             ChatMessagesView()
 
             GlassDivider()
@@ -22,29 +15,6 @@ struct ChatSidebarView: View {
         }
         .frame(maxHeight: .infinity)
         .frame(minWidth: 320, idealWidth: 400)
-    }
-
-    // MARK: - Header
-
-    private var chatHeader: some View {
-        HStack(spacing: 0) {
-            // 左侧：项目名
-            ChatHeaderLeadingView()
-
-            Spacer()
-
-            // 右侧：功能按钮
-            HStack(spacing: 12) {
-                AutoApproveToggle()
-                LanguageSelector()
-                AvailableToolsButton()
-                ProjectButton()
-                NewChatButton()
-            }
-        }
-        .padding(.horizontal, 12)
-        .frame(minHeight: AppConfig.headerHeight)
-        .zIndex(100)
     }
 }
 
