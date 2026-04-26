@@ -1514,6 +1514,9 @@
     "Code Actions" : {
 
     },
+    "code-server 未运行，扩展管理不可用" : {
+
+    },
     "Collecting data..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2365,6 +2368,9 @@
           }
         }
       }
+    },
+    "Extensions" : {
+
     },
     "Failed to kill process: \\(error.localizedDescription)" : {
       "extractionState" : "manual",
@@ -5743,6 +5749,9 @@
     "刷新全部状态" : {
 
     },
+    "刷新扩展列表" : {
+
+    },
     "功能特性：" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5806,6 +5815,9 @@
           }
         }
       }
+    },
+    "加载扩展列表..." : {
+
     },
     "加载更早消息" : {
       "localizations" : {
@@ -5875,6 +5887,9 @@
           }
         }
       }
+    },
+    "卸载扩展" : {
+
     },
     "双击切换 LLM 供应商" : {
       "localizations" : {
@@ -6303,6 +6318,9 @@
           }
         }
       }
+    },
+    "安装扩展" : {
+
     },
     "对话历史" : {
       "extractionState" : "stale",
@@ -6944,6 +6962,9 @@
           }
         }
       }
+    },
+    "扩展管理" : {
+
     },
     "扫描 Xcode" : {
       "localizations" : {
@@ -7622,6 +7643,9 @@
         }
       }
     },
+    "未安装任何扩展" : {
+
+    },
     "未找到匹配文件" : {
 
     },
@@ -8132,6 +8156,9 @@
         }
       }
     },
+    "点击下方按钮安装扩展" : {
+
+    },
     "点击开始分析，查看目录占用与结构。" : {
       "localizations" : {
         "zh-Hans" : {
@@ -8420,6 +8447,9 @@
         }
       }
     },
+    "管理 code-server 扩展" : {
+
+    },
     "管理应用启动行为" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8594,6 +8624,9 @@
           }
         }
       }
+    },
+    "请先启动 code-server 以管理扩展" : {
+
     },
     "请先选择或添加项目，RAG 才能建立与展示索引。" : {
 
@@ -8784,6 +8817,9 @@
           }
         }
       }
+    },
+    "输入扩展 ID" : {
+
     },
     "输入问题或命令，按 Command + 回车发送，Shift + 回车换行" : {
       "extractionState" : "stale",

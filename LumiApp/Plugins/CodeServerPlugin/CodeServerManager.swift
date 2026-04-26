@@ -1,6 +1,18 @@
 import Foundation
 import os
 
+/// Code Server 扩展信息
+struct CodeServerExtension: Identifiable, Equatable, Hashable {
+    let id: String          // 扩展 ID，如 "ms-python.python"
+    let name: String        // 扩展名称（从 ID 推导）
+    var version: String?    // 版本号（可选）
+
+    var displayName: String {
+        // 将 ID 转换为可读名称，如 "ms-python.python" -> "Python"
+        name.capitalized
+    }
+}
+
 /// Code Server 管理器
 ///
 /// 负责 code-server 进程的启动、停止、配置写入和状态监控。
@@ -19,6 +31,15 @@ final class CodeServerManager: ObservableObject {
 
     /// 错误信息
     @Published var errorMessage: String?
+
+    /// 已安装的扩展列表
+    @Published var installedExtensions: [CodeServerExtension] = []
+
+    /// 是否正在加载扩展列表
+    @Published var isLoadingExtensions: Bool = false
+
+    /// 扩展操作错误信息
+    @Published var extensionError: String?
 
     // MARK: - Private
 
@@ -194,6 +215,165 @@ final class CodeServerManager: ObservableObject {
             .appendingPathComponent("code-server")
             .appendingPathComponent("User")
             .appendingPathComponent("settings.json")
+    }
+
+    // MARK: - Extension Management (CLI-based)
+
+    /// 获取已安装的扩展列表
+    /// 使用 `code-server --list-extensions` CLI 命令
+    func loadInstalledExtensions() {
+        guard let codeServerPath = findCodeServer() else {
+            extensionError = "未找到 code-server"
+            return
+        }
+
+        isLoadingExtensions = true
+        extensionError = nil
+
+        Task.detached { [weak self] in
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: codeServerPath)
+            task.arguments = ["--list-extensions", "--show-versions"]
+            let pipe = Pipe()
+            task.standardOutput = pipe
+            task.standardError = pipe
+
+            do {
+                try task.run()
+                task.waitUntilExit()
+
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let output = String(data: data, encoding: .utf8) ?? ""
+
+                let extensions = output
+                    .split(separator: "\n")
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+                    .map { id in
+                        // 有些输出格式是 "publisher.name@version"，只取 ID 部分
+                        let parts = id.split(separator: "@")
+                        let extId = String(parts[0])
+                        let version = parts.count > 1 ? String(parts[1]) : nil
+                        return CodeServerExtension(id: extId, name: extId, version: version)
+                    }
+
+                await MainActor.run { [weak self] in
+                    self?.installedExtensions = extensions
+                    self?.isLoadingExtensions = false
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.extensionError = "获取扩展列表失败: \(error.localizedDescription)"
+                    self?.isLoadingExtensions = false
+                }
+            }
+        }
+    }
+
+    /// 安装扩展
+    /// 使用 `code-server --install-extension <id>` CLI 命令
+    /// - Parameter extensionId: 扩展 ID，如 "ms-python.python"
+    /// - Returns: 是否成功
+    @discardableResult
+    func installExtension(_ extensionId: String) async -> Bool {
+        guard let codeServerPath = findCodeServer() else {
+            extensionError = "未找到 code-server"
+            return false
+        }
+
+        extensionError = nil
+
+        return await withCheckedContinuation { continuation in
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: codeServerPath)
+            task.arguments = ["--install-extension", extensionId]
+            let outPipe = Pipe()
+            let errPipe = Pipe()
+            task.standardOutput = outPipe
+            task.standardError = errPipe
+
+            task.terminationHandler = { [weak self] _ in
+                // 读取输出
+                let outData = outPipe.fileHandleForReading.readDataToEndOfFile()
+                let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+                let outText = String(data: outData, encoding: .utf8) ?? ""
+                let errText = String(data: errData, encoding: .utf8) ?? ""
+
+                // 检查是否成功
+                let success = outText.contains("Extension") || !errText.contains("Failed")
+
+                Task { @MainActor [weak self] in
+                    if !success {
+                        self?.extensionError = "安装扩展失败: \(errText)"
+                        self?.logger.error("安装扩展失败: \(errText)")
+                    } else {
+                        self?.logger.info("✅ 已安装扩展: \(extensionId)")
+                        // 刷新列表
+                        self?.loadInstalledExtensions()
+                    }
+                }
+                continuation.resume(returning: success)
+            }
+
+            do {
+                try task.run()
+            } catch {
+                Task { @MainActor [weak self] in
+                    self?.extensionError = "安装扩展失败: \(error.localizedDescription)"
+                }
+                continuation.resume(returning: false)
+            }
+        }
+    }
+
+    /// 卸载扩展
+    /// 使用 `code-server --uninstall-extension <id>` CLI 命令
+    /// - Parameter extensionId: 扩展 ID
+    /// - Returns: 是否成功
+    @discardableResult
+    func uninstallExtension(_ extensionId: String) async -> Bool {
+        guard let codeServerPath = findCodeServer() else {
+            extensionError = "未找到 code-server"
+            return false
+        }
+
+        extensionError = nil
+
+        return await withCheckedContinuation { continuation in
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: codeServerPath)
+            task.arguments = ["--uninstall-extension", extensionId]
+            let outPipe = Pipe()
+            let errPipe = Pipe()
+            task.standardOutput = outPipe
+            task.standardError = errPipe
+
+            task.terminationHandler = { [weak self] _ in
+                let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+                let errText = String(data: errData, encoding: .utf8) ?? ""
+                let success = !errText.contains("Failed")
+
+                Task { @MainActor [weak self] in
+                    if !success {
+                        self?.extensionError = "卸载扩展失败: \(errText)"
+                        self?.logger.error("卸载扩展失败: \(errText)")
+                    } else {
+                        self?.logger.info("✅ 已卸载扩展: \(extensionId)")
+                        self?.loadInstalledExtensions()
+                    }
+                }
+                continuation.resume(returning: success)
+            }
+
+            do {
+                try task.run()
+            } catch {
+                Task { @MainActor [weak self] in
+                    self?.extensionError = "卸载扩展失败: \(error.localizedDescription)"
+                }
+                continuation.resume(returning: false)
+            }
+        }
     }
 
     // MARK: - Private Helpers

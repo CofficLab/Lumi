@@ -34,4 +34,11 @@ actor CodeServerPlugin: SuperPlugin, SuperLog {
     func addPanelView() -> AnyView? {
         AnyView(CodeServerView())
     }
+
+    // MARK: - Status Bar
+
+    @MainActor
+    func addStatusBarTrailingView() -> AnyView? {
+        AnyView(CodeServerExtensionsStatusView())
+    }
 }
