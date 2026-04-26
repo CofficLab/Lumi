@@ -86,8 +86,10 @@ final class CodeServerManager: ObservableObject {
     // MARK: - Public
 
     /// 启动 code-server
-    /// - Parameter port: 监听端口，默认 8080
-    func start(port: Int = 8080) {
+    /// - Parameters:
+    ///   - port: 监听端口，默认 8080
+    ///   - openPath: 启动后自动打开的项目路径（可选）
+    func start(port: Int = 8080, openPath: String? = nil) {
         guard !isRunning else {
             logger.info("code-server 已在运行中")
             return
@@ -107,10 +109,8 @@ final class CodeServerManager: ObservableObject {
         // 确保扩展目录存在
         try? FileManager.default.createDirectory(at: extensionsDirURL, withIntermediateDirectories: true)
 
-        // 2. 启动进程
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: codeServerPath)
-        task.arguments = [
+        // 2. 构建启动参数
+        var arguments: [String] = [
             "--auth", "none",
             "--port", "\(port)",
             "--bind-addr", "127.0.0.1:\(port)",
@@ -119,6 +119,17 @@ final class CodeServerManager: ObservableObject {
             "--user-data-dir", userDataURL.path,
             "--extensions-dir", extensionsDirURL.path,
         ]
+
+        // 添加要打开的项目路径
+        if let openPath, FileManager.default.fileExists(atPath: openPath) {
+            arguments.append(openPath)
+            logger.info("📂 启动时自动打开项目: \(openPath)")
+        }
+
+        // 3. 启动进程
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: codeServerPath)
+        task.arguments = arguments
         task.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
 
         // 捕获输出
@@ -428,6 +439,41 @@ final class CodeServerManager: ObservableObject {
     }
 
     // MARK: - Data Management
+
+    /// 在新窗口中打开指定路径
+    ///
+    /// 使用 `code-server --new-window <path>` 在已运行的 code-server 中打开新项目。
+    /// - Parameter path: 项目路径
+    func openInNewWindow(path: String) {
+        guard let codeServerPath = findCodeServer() else {
+            logger.error("未找到 code-server")
+            return
+        }
+
+        guard FileManager.default.fileExists(atPath: path) else {
+            logger.warning("项目路径不存在: \(path)")
+            return
+        }
+
+        // 启动新进程打开项目，使用 --reuse-window 会在当前窗口打开，--new-window 会打开新窗口
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: codeServerPath)
+        task.arguments = [
+            "--new-window",
+            path,
+            "--user-data-dir", userDataURL.path,
+            "--extensions-dir", extensionsDirURL.path,
+            "--auth", "none",
+        ]
+        task.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
+
+        do {
+            try task.run()
+            logger.info("📂 已在新窗口打开项目: \(path)")
+        } catch {
+            logger.error("打开项目失败: \(error.localizedDescription)")
+        }
+    }
 
     /// 清除所有 code-server 数据（扩展、配置、缓存）
     ///

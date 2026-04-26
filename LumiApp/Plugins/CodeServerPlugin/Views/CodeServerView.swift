@@ -5,8 +5,10 @@ import SwiftUI
 /// 负责状态管理和启动逻辑，按需展示 WebView 或状态视图。
 struct CodeServerView: View {
     @StateObject private var manager = CodeServerManager.shared
+    @EnvironmentObject private var projectVM: ProjectVM
     @State private var isLoading = true
     @State private var serverReady = false
+    @State private var didAttemptStart = false
 
     var body: some View {
         ZStack {
@@ -22,12 +24,22 @@ struct CodeServerView: View {
                     startServerIfNeeded()
                 }
             }
-        }.frame(minWidth: 800)
+        }
+        .onChange(of: projectVM.currentProjectPath) { _, newProjectPath in
+            // 项目切换后，如果 server 正在运行，用 --new-window 打开新项目
+            if manager.isRunning, !newProjectPath.isEmpty {
+                manager.openInNewWindow(path: newProjectPath)
+            }
+        }
+        .frame(minWidth: 800)
     }
 
     // MARK: - Private
 
     private func startServerIfNeeded() {
+        guard !didAttemptStart else { return }
+        didAttemptStart = true
+
         Task { @MainActor in
             isLoading = true
 
@@ -38,9 +50,10 @@ struct CodeServerView: View {
                 return
             }
 
-            // 未运行则启动
+            // 未运行则启动，自动打开当前项目
             if !manager.isRunning {
-                manager.start(port: 8080)
+                let projectPath = projectVM.currentProjectPath.isEmpty ? nil : projectVM.currentProjectPath
+                manager.start(port: 8080, openPath: projectPath)
             }
 
             // 轮询等待服务就绪（最多 15 秒）
