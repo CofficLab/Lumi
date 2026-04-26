@@ -303,9 +303,30 @@ struct MarketExtensionRowView: View {
 
             // 安装/已安装按钮
             if manager.isExtensionInstalled(ext.id) {
-                Label("已安装", systemImage: "checkmark")
-                    .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.success)
+                let isIconTheme = ext.id.lowercased().contains("icon-theme") || ext.id.lowercased().contains("icons")
+                if isIconTheme {
+                    // 已安装的图标主题，显示「应用」按钮
+                    Button(action: {
+                        manager.applyIconTheme(ext.id)
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 10))
+                            Text("应用")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.blue)
+                    .background(Color.blue.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+                    .help("应用此图标主题")
+                } else {
+                    Label("已安装", systemImage: "checkmark")
+                        .font(.system(size: 10))
+                        .foregroundColor(DesignTokens.Color.semantic.success)
+                }
             } else {
                 Button(action: {
                     install()

@@ -6648,6 +6648,12 @@
         }
       }
     },
+    "应用" : {
+
+    },
+    "应用此图标主题" : {
+
+    },
     "开启新会话" : {
       "extractionState" : "stale",
       "localizations" : {
