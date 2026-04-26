@@ -182,19 +182,30 @@ struct TabButton: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
+    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? DesignTokens.Color.semantic.primary : DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(
+                    isSelected ? DesignTokens.Color.semantic.primary :
+                        isHovered ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+                .background(
+                    isSelected ? Color.gray.opacity(0.2) :
+                        isHovered ? Color.gray.opacity(0.1) : Color.clear
+                )
+                .cornerRadius(4)
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .background(isSelected ? Color.gray.opacity(0.2) : Color.clear)
-        .cornerRadius(4)
-        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
     }
 }
 
