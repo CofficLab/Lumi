@@ -12,7 +12,7 @@ enum CodeServerDefaultSettings {
     /// 因此在多个 Actor 间共享是安全的，尽管其类型 `[String: Any]` 不是 `Sendable`。
     nonisolated(unsafe) static let values: [String: Any] = [
         // 左侧活动栏（可选值："default", "top", "hidden"）
-        "workbench.activityBar.location": "default",
+        "workbench.activityBar.location": "hidden",
         // 底部状态栏（可选值：true, false）
         "workbench.statusBar.visible": true,
         // 命令中心（可选值：true, false）
@@ -31,14 +31,10 @@ enum CodeServerDefaultSettings {
         "workbench.sideBar.visible": false,
         // 编辑器标签页（可选值："multiple", "single", "none"）
         "workbench.editor.showTabs": "single",
-        // 颜色主题（可选值：任意已安装的主题名称，如 "Default Dark+", "Default Light+", "Monokai" 等）
-        "workbench.colorTheme": "Default Dark+",
         // 自动更新检查（可选值："none", "manual", "start", "default"）
         "update.mode": "none",
         // 遥测（可选值："all", "error", "crash", "off"）
         "telemetry.telemetryLevel": "off",
-        // 图标主题（可选值：null, "vs-minimal", "vs-seti" 或扩展提供的主题如 "material-icon-theme" 等）
-        "workbench.iconTheme": "material-icon-theme",
         // 标题栏样式（可选值："native", "custom"）
         "window.titleBarStyle": "custom",
     ]
