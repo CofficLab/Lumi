@@ -52,15 +52,9 @@ actor RecentProjectsPlugin: SuperPlugin {
 
     // MARK: - Toolbar Views
 
-    /// 工具栏左侧：项目名选择器
-    @MainActor
-    func addToolBarLeadingView() -> AnyView? {
-        AnyView(ChatHeaderLeadingView())
-    }
-
-    /// 工具栏右侧：项目管理 + 最近项目按钮
+    /// 工具栏右侧：整合项目名 + 最近项目管理
     @MainActor
     func addToolBarTrailingView() -> AnyView? {
-        AnyView(RecentProjectsPopoverButton())
+        AnyView(ProjectControlView())
     }
 }
