@@ -61,12 +61,6 @@ actor RecentProjectsPlugin: SuperPlugin {
     /// 工具栏右侧：项目管理 + 最近项目按钮
     @MainActor
     func addToolBarTrailingView() -> AnyView? {
-        AnyView(
-            HStack(spacing: 4) {
-                ProjectButton()
-                RecentProjectsPopoverButton()
-            }
-        )
+        AnyView(RecentProjectsPopoverButton())
     }
-
 }

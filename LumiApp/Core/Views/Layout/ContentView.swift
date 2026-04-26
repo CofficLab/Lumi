@@ -63,7 +63,22 @@ struct ContentView: View, SuperLog {
             onAppear: onAppear,
             onChangeColumnVisibility: onChangeColumnVisibility
         )
-        .withAppToolbar()
+        .toolbar {
+            let leadingViews = pluginProvider.getToolbarLeadingViews()
+            let trailingViews = pluginProvider.getToolbarTrailingViews()
+
+            ToolbarItemGroup(placement: .cancellationAction) {
+                ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
+                    view
+                }
+            }
+
+            ToolbarItemGroup(placement: .confirmationAction) {
+                ForEach(Array(trailingViews.enumerated()), id: \.offset) { _, view in
+                    view
+                }
+            }
+        }
         .environment(\.windowState, windowState)
     }
 
