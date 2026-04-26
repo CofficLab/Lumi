@@ -42,6 +42,9 @@ actor EditorPlugin: SuperPlugin, SuperLog {
         AnyView(EditorPanelView())
     }
 
+    /// 编辑器面板需要右侧栏（聊天）
+    nonisolated var panelNeedsSidebar: Bool { true }
+
     /// 在全局状态栏右侧显示 Editor 插件入口
     @MainActor func addStatusBarTrailingView() -> AnyView? {
         AnyView(EditorLoadedPluginsStatusBarView())

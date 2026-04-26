@@ -14,6 +14,7 @@ struct ContentView: View, SuperLog {
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var providerRegistry: LLMProviderRegistry
+    @EnvironmentObject var layoutVM: LayoutVM
 
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
@@ -88,7 +89,15 @@ struct ContentView: View, SuperLog {
 
     // MARK: - Main Content
 
-    /// 主内容区域：活动栏 + 面板 + 右侧栏
+    /// 当前选中的面板是否需要右侧栏
+    private var currentPanelNeedsSidebar: Bool {
+        let panelItems = pluginProvider.getPanelItems()
+        let selectedId = layoutVM.selectedAgentSidebarTabId
+        let selected = panelItems.first(where: { $0.id == selectedId }) ?? panelItems.first
+        return selected?.panelNeedsSidebar ?? true
+    }
+
+    /// 主内容区域：活动栏 + 面板 + 右侧栏（按当前面板需求动态显示）
     @ViewBuilder
     private var mainContent: some View {
         Group {
@@ -97,9 +106,9 @@ struct ContentView: View, SuperLog {
                 AgentModeUnavailableGuideView()
             } else {
                 let sidebarViews = pluginProvider.getSidebarViews()
-                let hasSidebars = !sidebarViews.isEmpty
+                let shouldShowSidebar = !sidebarViews.isEmpty && currentPanelNeedsSidebar
 
-                if hasSidebars {
+                if shouldShowSidebar {
                     HSplitView {
                         // 图标栏（固定 48px）
                         ActivityBar()
