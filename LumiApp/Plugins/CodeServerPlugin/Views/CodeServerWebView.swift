@@ -10,6 +10,9 @@ struct CodeServerWebView: NSViewRepresentable {
     
     /// 是否注入自定义 CSS，默认为 true
     var injectCSS: Bool = false
+    
+    /// 是否需要重新加载
+    var reloadTrigger: Bool = false
 
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -38,6 +41,10 @@ struct CodeServerWebView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
-        // 无需更新
+        // 当 reloadTrigger 发生变化时重新加载页面
+        if reloadTrigger {
+            let request = URLRequest(url: url)
+            nsView.load(request)
+        }
     }
 }

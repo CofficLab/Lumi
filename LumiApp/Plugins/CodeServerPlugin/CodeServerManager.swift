@@ -109,6 +109,9 @@ final class CodeServerManager: ObservableObject {
     /// 错误信息
     @Published var errorMessage: String?
 
+    /// 通知 WebView 需要重新加载
+    @Published var shouldReloadWebView: Bool = false
+
     /// 已安装的扩展列表
     @Published var installedExtensions: [CodeServerExtension] = []
 
@@ -404,6 +407,23 @@ final class CodeServerManager: ObservableObject {
         }
     }
 
+    /// 重载 code-server（使新安装的扩展立即生效）
+    ///
+    /// 通过更新 `shouldReloadWebView` 标志通知 WKWebView 重新加载页面。
+    private func reloadServer() {
+        guard isRunning else { return }
+        
+        // 设置重载标志，触发 WKWebView 重新加载
+        shouldReloadWebView = true
+        logger.info("🔄 已触发 code-server 重载，扩展将立即生效")
+        
+        // 延迟重置标志，以便下次安装时能再次触发
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            self?.shouldReloadWebView = false
+        }
+    }
+
     /// 安装扩展
     /// 使用 `code-server --install-extension <id>` CLI 命令
     /// - Parameter extensionId: 扩展 ID，如 "ms-python.python"
@@ -444,6 +464,10 @@ final class CodeServerManager: ObservableObject {
                         self?.logger.error("安装扩展失败: \(errText)")
                     } else {
                         self?.logger.info("✅ 已安装扩展: \(extensionId)")
+                        // 如果是图标主题扩展，自动启用
+                        self?.applyThemeIfApplicable(extensionId)
+                        // 触发 code-server 重载，使扩展立即生效
+                        self?.reloadServer()
                         // 刷新列表
                         self?.loadInstalledExtensions()
                     }
@@ -459,6 +483,56 @@ final class CodeServerManager: ObservableObject {
                 }
                 continuation.resume(returning: false)
             }
+        }
+    }
+
+    /// 如果安装的是图标主题，自动更新 settings.json 启用该主题
+    ///
+    /// 通过解析扩展 ID 名称，判断是否可能是图标主题，
+    /// 如果是则将其写入 `workbench.iconTheme` 配置。
+    private func applyThemeIfApplicable(_ extensionId: String) {
+        // 从扩展 ID 中提取名称部分（如 "pkief.material-icon-theme" -> "material-icon-theme"）
+        let parts = extensionId.split(separator: ".")
+        guard parts.count >= 2 else { return }
+        let themeName = String(parts.dropFirst().joined(separator: "."))
+
+        // 判断是否为图标主题（名称包含 icon-theme 或 icons）
+        let lowercasedName = themeName.lowercased()
+        let isIconTheme = lowercasedName.contains("icon-theme") || lowercasedName.contains("icons")
+
+        guard isIconTheme else { return }
+
+        // 更新 settings.json
+        updateSetting(key: "workbench.iconTheme", value: themeName)
+        logger.info("🎨 已自动启用图标主题: \(themeName)")
+    }
+
+    /// 更新 settings.json 中的单个配置项
+    ///
+    /// 读取现有配置，更新指定键值后写回文件。
+    /// - Parameters:
+    ///   - key: 配置键名
+    ///   - value: 配置值
+    private func updateSetting(key: String, value: Any) {
+        let settingsURL = settingsFileURL()
+
+        do {
+            var settings: [String: Any] = [:]
+
+            // 读取现有配置
+            if FileManager.default.fileExists(atPath: settingsURL.path) {
+                let data = try Data(contentsOf: settingsURL)
+                settings = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+            }
+
+            // 更新指定键值
+            settings[key] = value
+
+            // 写回文件
+            let newData = try JSONSerialization.data(withJSONObject: settings, options: .prettyPrinted)
+            try newData.write(to: settingsURL)
+        } catch {
+            logger.warning("⚠️ 更新 code-server 配置失败 [\(key)]: \(error.localizedDescription)")
         }
     }
 
@@ -623,6 +697,11 @@ final class CodeServerManager: ObservableObject {
         return nil
     }
 
+    /// 检查扩展是否已安装
+    func isExtensionInstalled(_ extensionId: String) -> Bool {
+        installedExtensions.contains { $0.id == extensionId }
+    }
+
     // MARK: - Open VSX Market Search
 
     /// 搜索 Open VSX 扩展市场
@@ -729,8 +808,28 @@ final class CodeServerManager: ObservableObject {
         }
     }
 
-    /// 检查扩展是否已安装
-    func isExtensionInstalled(_ extensionId: String) -> Bool {
-        installedExtensions.contains { $0.id == extensionId }
+    /// 应用已安装的图标主题
+    ///
+    /// 将指定扩展设置为当前的图标主题，并触发 WebView 重载使其立即生效。
+    /// - Parameter extensionId: 扩展 ID，如 "pkief.material-icon-theme"
+    func applyIconTheme(_ extensionId: String) {
+        let parts = extensionId.split(separator: ".")
+        guard parts.count >= 2 else { return }
+        let themeName = String(parts.dropFirst().joined(separator: "."))
+
+        // 更新 settings.json
+        updateSetting(key: "workbench.iconTheme", value: themeName)
+        logger.info("🎨 已应用图标主题: \(themeName)")
+
+        // 触发 WebView 重载使主题立即生效
+        reloadServer()
+    }
+
+    /// 获取所有已安装的图标主题扩展
+    var installedIconThemes: [CodeServerExtension] {
+        installedExtensions.filter { ext in
+            let lowercasedId = ext.id.lowercased()
+            return lowercasedId.contains("icon-theme") || lowercasedId.contains("icons")
+        }
     }
 }

@@ -865,6 +865,9 @@
         }
       }
     },
+    "AI Commit" : {
+
+    },
     "All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6322,9 +6325,6 @@
         }
       }
     },
-    "安装扩展" : {
-
-    },
     "对话历史" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6561,6 +6561,9 @@
           }
         }
       }
+    },
+    "已提交: %@" : {
+
     },
     "已用" : {
       "localizations" : {
@@ -8020,6 +8023,9 @@
     "正在检查索引状态..." : {
 
     },
+    "正在生成并提交..." : {
+
+    },
     "正在索引..." : {
 
     },
@@ -8841,9 +8847,6 @@
           }
         }
       }
-    },
-    "输入扩展 ID (如: ms-python.python)" : {
-
     },
     "输入问题或命令，按 Command + 回车发送，Shift + 回车换行" : {
       "extractionState" : "stale",

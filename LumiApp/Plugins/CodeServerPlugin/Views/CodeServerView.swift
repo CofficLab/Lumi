@@ -13,7 +13,10 @@ struct CodeServerView: View {
     var body: some View {
         ZStack {
             if serverReady {
-                CodeServerWebView(url: URL(string: "http://127.0.0.1:\(manager.port)")!)
+                CodeServerWebView(
+                    url: URL(string: "http://127.0.0.1:\(manager.port)")!,
+                    reloadTrigger: manager.shouldReloadWebView
+                )
             } else {
                 CodeServerStatusView(
                     isRunning: manager.isRunning,

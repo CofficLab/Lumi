@@ -108,8 +108,6 @@ struct ExtensionsInactiveDetailView: View {
 struct ExtensionsManagerDetailView: View {
     @StateObject private var manager = CodeServerManager.shared
     @State private var selectedTab: ExtensionTab = .market
-    @State private var newExtensionId = ""
-    @State private var isInstalling = false
 
     enum ExtensionTab: String, CaseIterable {
         case market = "市场"
@@ -169,10 +167,7 @@ struct ExtensionsManagerDetailView: View {
                 case .market:
                     MarketSearchView()
                 case .installed:
-                    InstalledExtensionsView(
-                        newExtensionId: $newExtensionId,
-                        isInstalling: $isInstalling
-                    )
+                    InstalledExtensionsView()
                 }
             }
         }
@@ -565,88 +560,42 @@ struct MarketExtensionRowView: View {
 
 struct InstalledExtensionsView: View {
     @StateObject private var manager = CodeServerManager.shared
-    @Binding var newExtensionId: String
-    @Binding var isInstalling: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            // 扩展列表
-            if manager.isLoadingExtensions {
-                VStack(spacing: 8) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("加载扩展列表...")
-                        .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-                }
-                .frame(maxWidth: .infinity, minHeight: 150)
-            } else if manager.installedExtensions.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "puzzlepiece.extension")
-                        .font(.system(size: 24))
-                        .foregroundColor(DesignTokens.Color.semantic.textDisabled)
-
-                    Text("未安装任何扩展")
-                        .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
-
-                    Text("点击上方「市场」标签搜索安装扩展")
-                        .font(.system(size: 11))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
-                }
-                .frame(maxWidth: .infinity, minHeight: 150)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(manager.installedExtensions) { ext in
-                            ExtensionRowView(ext: ext)
-                                .padding(.vertical, 6)
-                        }
-                    }
-                }
-                .frame(maxHeight: .infinity)
-            }
-
-            Divider()
-
-            // 安装新扩展
-            HStack(spacing: 8) {
-                TextField("输入扩展 ID (如: ms-python.python)", text: $newExtensionId)
-                    .textFieldStyle(.roundedBorder)
+        if manager.isLoadingExtensions {
+            VStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("加载扩展列表...")
                     .font(.system(size: 12))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 150)
+        } else if manager.installedExtensions.isEmpty {
+            VStack(spacing: 8) {
+                Image(systemName: "puzzlepiece.extension")
+                    .font(.system(size: 24))
+                    .foregroundColor(DesignTokens.Color.semantic.textDisabled)
 
-                Button(action: {
-                    installNewExtension()
-                }) {
-                    if isInstalling {
-                        ProgressView()
-                            .scaleEffect(0.6)
-                            .frame(width: 12, height: 12)
-                    } else {
-                        Image(systemName: "plus")
-                            .font(.system(size: 12))
+                Text("未安装任何扩展")
+                    .font(.system(size: 12))
+                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                Text("点击上方「市场」标签搜索安装扩展")
+                    .font(.system(size: 11))
+                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 150)
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(manager.installedExtensions) { ext in
+                        ExtensionRowView(ext: ext)
+                            .padding(.vertical, 6)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(newExtensionId.isEmpty || isInstalling)
-                .help("安装扩展")
             }
-        }
-    }
-
-    private func installNewExtension() {
-        guard !newExtensionId.isEmpty else { return }
-        isInstalling = true
-
-        Task {
-            let success = await manager.installExtension(newExtensionId)
-            if success {
-                newExtensionId = ""
-            } else {
-                await MainActor.run {
-                    isInstalling = false
-                }
-            }
+            .frame(maxHeight: .infinity)
         }
     }
 }
