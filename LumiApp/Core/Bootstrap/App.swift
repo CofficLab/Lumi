@@ -46,8 +46,8 @@ struct CoreApp: App {
                 .ignoresSafeArea()
                 .inRootView()
         }
-        .windowStyle(.titleBar)
-        .windowToolbarStyle(.unified(showsTitle: false))
+        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unifiedCompact)
         .commands {
             DebugCommand()
             SettingsCommand()
