@@ -31,7 +31,7 @@ actor CodeServerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI
 
     /// 该面板不需要右侧栏
-    nonisolated var panelNeedsSidebar: Bool { false }
+    nonisolated var panelNeedsSidebar: Bool { true }
 
     @MainActor
     func addPanelView() -> AnyView? {
