@@ -25,17 +25,8 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                HostsManagerView()
-            },
-        ]
+    @MainActor func addPanelView() -> AnyView? {
+        AnyView(HostsManagerView())
     }
 }
 
@@ -43,8 +34,6 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(HostsManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

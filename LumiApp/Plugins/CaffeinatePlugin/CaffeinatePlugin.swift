@@ -43,8 +43,6 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(CaffeinatePlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

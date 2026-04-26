@@ -48,17 +48,8 @@ actor ClipboardManagerPlugin: SuperPlugin {
     // MARK: - UI
 
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                ClipboardHistoryView()
-            },
-        ]
+    func addPanelView() -> AnyView? {
+        AnyView(ClipboardHistoryView())
     }
 }
 
@@ -66,8 +57,6 @@ actor ClipboardManagerPlugin: SuperPlugin {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(ClipboardManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

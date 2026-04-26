@@ -65,7 +65,6 @@ struct XcodeCleanerView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

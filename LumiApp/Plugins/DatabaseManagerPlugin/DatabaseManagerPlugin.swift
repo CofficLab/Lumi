@@ -23,24 +23,13 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                DatabaseMainView()
-            },
-        ]
+    @MainActor func addPanelView() -> AnyView? {
+        AnyView(DatabaseMainView())
     }
 }
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(DatabaseManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

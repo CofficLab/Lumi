@@ -22,7 +22,7 @@ struct CodeServerView: View {
                     startServerIfNeeded()
                 }
             }
-        }
+        }.frame(minWidth: 800)
     }
 
     // MARK: - Private

@@ -195,8 +195,6 @@ struct DeviceInfoCard<Content: View>: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(DeviceInfoPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

@@ -61,7 +61,7 @@ actor RecentProjectsPlugin: SuperPlugin {
     // MARK: - Sidebar View
 
     @MainActor
-    func addSidebarView() -> AnyView? {
+    func addPanelView() -> AnyView? {
         return AnyView(RecentProjectsSidebarView())
     }
 }

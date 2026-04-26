@@ -145,8 +145,6 @@ final class PortScanner: Sendable, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(PortManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

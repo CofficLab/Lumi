@@ -32,18 +32,9 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 提供导航入口（用于侧边栏导航）
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        [
-            NavigationEntry(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id,
-                contentProvider: { AnyView(MenuBarSettingsView()) }
-            ),
-        ]
+    func addPanelView() -> AnyView? {
+        AnyView(MenuBarSettingsView())
     }
 
     /// 添加状态栏弹窗视图
@@ -58,8 +49,6 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(MenuBarManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

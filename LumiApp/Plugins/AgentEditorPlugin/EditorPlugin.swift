@@ -54,7 +54,7 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     }
 
     /// Add detail view - 显示代码编辑器（内含状态栏）
-    @MainActor func addDetailView() -> AnyView? {
+    @MainActor func addPanelView() -> AnyView? {
         AnyView(EditorRootView())
     }
 

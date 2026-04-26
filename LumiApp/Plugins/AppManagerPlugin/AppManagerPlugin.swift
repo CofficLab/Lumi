@@ -27,21 +27,8 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI
 
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        if Self.verbose {
-            Self.logger.info("\(self.t)注册应用管理导航入口")
-        }
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id,
-                isDefault: false
-            ) {
-                AnyView(AppManagerView())
-            }
-        ]
+    func addPanelView() -> AnyView? {
+        AnyView(AppManagerView())
     }
 }
 
@@ -49,8 +36,6 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

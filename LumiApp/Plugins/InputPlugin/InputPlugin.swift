@@ -30,17 +30,8 @@ actor InputPlugin: SuperPlugin, SuperLog {
     }
     
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                InputSettingsView()
-            }
-        ]
+    func addPanelView() -> AnyView? {
+        AnyView(InputSettingsView())
     }
 }
 
@@ -48,8 +39,6 @@ actor InputPlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(InputPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

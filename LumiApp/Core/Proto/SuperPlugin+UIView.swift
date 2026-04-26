@@ -36,14 +36,11 @@ extension SuperPlugin {
     /// 默认实现：不提供工具栏右侧视图
     @MainActor func addToolBarTrailingView() -> AnyView? { nil }
 
-    /// 默认实现：不提供详情视图
-    @MainActor func addDetailView() -> AnyView? { nil }
+    /// 默认实现：不提供面板视图
+    @MainActor func addPanelView() -> AnyView? { nil }
 
     /// 默认实现：不提供设置视图
     @MainActor func addSettingsView() -> AnyView? { nil }
-
-    /// 默认实现：不提供导航入口
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? { nil }
 
     /// 默认实现：不提供弹窗视图列表（兼容旧版 `addStatusBarPopupView`）
     @MainActor func addStatusBarPopupViews() -> [AnyView] {

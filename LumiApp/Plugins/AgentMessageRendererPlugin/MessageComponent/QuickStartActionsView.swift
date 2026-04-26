@@ -34,14 +34,6 @@ struct QuickStartActionsView: View {
     }
 
     private var recommendedPrompts: [String] {
-        if app.selectedMode == .app {
-            return [
-                "我想快速完成一个常见操作，先推荐我该用哪个功能",
-                "请给我一个 3 步上手路径，告诉我先点哪里",
-                "我现在不知道从哪里开始，给我一个最短操作建议"
-            ]
-        }
-
         switch llmVM.chatMode {
         case .chat:
             if projectVM.isProjectSelected {

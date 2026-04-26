@@ -11,17 +11,19 @@ import Foundation
 ///
 /// 1. **注册阶段**: 插件被自动发现并实例化，调用 `onRegister()`
 /// 2. **启用阶段**: 插件被添加到 UI 树，调用 `onEnable()`
-/// 3. **禁用阶段**: 插件从 UI 移除，调用 `onDisable()`
+/// 3. **禁用阶段**: 插件从 UI 树移除，调用 `onDisable()`
 ///
 /// ## 插件类型
 ///
 /// Lumi 支持以下类型的插件扩展点：
-/// - 侧边栏导航项
-/// - 工具栏视图（前后导区域）
-/// - 详情视图
+/// - 侧边栏视图（Tab 切换）
+/// - 中间栏 Detail 视图
+/// - 右侧栏视图（Header / 消息列表 / 输入区）
+/// - 状态栏视图
+/// - 工具栏视图
 /// - 设置视图
-/// - 状态栏视图（弹窗和内容）
-/// - Agent 模式专用视图（侧边栏、中间栏、详情栏头部/中间/底部）
+/// - Agent 工具与中间件
+/// - 主题贡献
 ///
 /// ## 使用示例
 ///
@@ -32,20 +34,7 @@ import Foundation
 ///     static let iconName = "star.fill"
 ///     static let enable = true
 ///     static let order = 100
-///
 ///     static var isConfigurable: Bool { true }
-///
-///     @MainActor
-///     func addNavigationEntries() -> [NavigationEntry]? {
-///         [
-///             NavigationEntry(
-///                 id: "my-plugin",
-///                 title: "我的插件",
-///                 icon: "star.fill",
-///                 contentProvider: { AnyView(MyPluginView()) }
-///             )
-///         ]
-///     }
 /// }
 /// ```
 protocol SuperPlugin: Actor {
@@ -119,14 +108,15 @@ protocol SuperPlugin: Actor {
     /// 添加工具栏右侧视图
     @MainActor func addToolBarTrailingView() -> AnyView?
 
-    /// 添加详情视图
-    @MainActor func addDetailView() -> AnyView?
+    /// 添加面板视图
+    ///
+    /// 提供一个在左侧活动栏中注册的视图入口。插件自行决定视图的布局方式，
+    /// 例如只读列表、可交互的管理界面、或者编辑器等。
+    /// 点击活动栏图标后，该视图会在左侧面板或中间栏中展示。
+    @MainActor func addPanelView() -> AnyView?
 
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?
-
-    /// 提供导航入口（用于侧边栏导航）
-    @MainActor func addNavigationEntries() -> [NavigationEntry]?
 
     /// 添加状态栏弹窗视图列表
     ///
@@ -144,10 +134,7 @@ protocol SuperPlugin: Actor {
     /// 添加状态栏内容视图
     @MainActor func addStatusBarContentView() -> AnyView?
 
-    /// 添加侧边栏视图（用于 Agent 模式）
-    @MainActor func addSidebarView() -> AnyView?
-
-    /// 添加右侧栏头部左侧视图（用于 Agent 模式，与 trailing 组合成单一 header）
+    /// 添加右侧栏头部左侧视图（与 trailing 组合成单一 header）
     @MainActor func addRightHeaderLeadingView() -> AnyView?
 
     /// 添加右侧栏头部右侧小功能视图列表（用于 Agent 模式，多个插件可各自注入）

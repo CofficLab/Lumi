@@ -26,20 +26,8 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        if Self.verbose {
-            Self.logger.info("\(self.t)注册磁盘管理导航入口")
-        }
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                DiskManagerView()
-            },
-        ]
+    @MainActor func addPanelView() -> AnyView? {
+        AnyView(DiskManagerView())
     }
 }
 
@@ -47,8 +35,6 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(DiskManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

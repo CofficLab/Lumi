@@ -44,7 +44,7 @@ actor ProjectTreePlugin: SuperPlugin, SuperLog {
 
     /// Add sidebar view for Agent mode - 显示项目文件树
     /// - Returns: ProjectTreeView to be added to the sidebar
-    @MainActor func addSidebarView() -> AnyView? {
+    @MainActor func addPanelView() -> AnyView? {
         AnyView(ProjectTreeView())
     }
 }

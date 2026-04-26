@@ -22,16 +22,7 @@ actor NettoPlugin: SuperPlugin, SuperLog {
     
     // MARK: - UI Contributions
     
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                NettoDashboardView()
-            }
-        ]
+    @MainActor func addPanelView() -> AnyView? {
+        AnyView(NettoDashboardView())
     }
 }

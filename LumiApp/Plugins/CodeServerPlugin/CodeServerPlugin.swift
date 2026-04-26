@@ -31,21 +31,7 @@ actor CodeServerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI
 
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                CodeServerView()
-            }
-        ]
-    }
-
-    @MainActor
-    func addDetailView() -> AnyView? {
+    func addPanelView() -> AnyView? {
         AnyView(CodeServerView())
     }
 }

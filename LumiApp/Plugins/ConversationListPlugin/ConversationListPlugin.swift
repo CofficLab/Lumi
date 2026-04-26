@@ -52,7 +52,7 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
 
     /// Add sidebar view for Agent mode - 显示对话列表
     /// - Returns: ConversationListView to be added to the sidebar
-    @MainActor func addSidebarView() -> AnyView? {
+    @MainActor func addPanelView() -> AnyView? {
         if Self.verbose {
             Self.logger.info("\(self.t) 提供 ConversationListView")
         }

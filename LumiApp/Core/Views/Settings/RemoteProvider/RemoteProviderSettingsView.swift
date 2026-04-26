@@ -346,6 +346,5 @@ extension RemoteProviderSettingsView {
 
 #Preview("Remote Provider Settings - Full App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
 }

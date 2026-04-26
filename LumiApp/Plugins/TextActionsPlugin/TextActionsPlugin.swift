@@ -84,17 +84,8 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     // MARK: - UI
     
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.id,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                TextActionsSettingsView()
-            }
-        ]
+    func addPanelView() -> AnyView? {
+        AnyView(TextActionsSettingsView())
     }
 }
 
@@ -102,8 +93,6 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(TextActionsPlugin.id)
         .inRootView()
         .withDebugBar()
 }

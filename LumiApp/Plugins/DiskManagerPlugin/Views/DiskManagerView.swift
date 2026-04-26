@@ -154,8 +154,6 @@ struct ViewModeButton: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(DiskManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

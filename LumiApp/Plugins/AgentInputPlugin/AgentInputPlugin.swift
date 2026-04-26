@@ -41,8 +41,6 @@ actor AgentInputPlugin: SuperPlugin {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation("dev_assistant")
         .inRootView()
         .withDebugBar()
 }

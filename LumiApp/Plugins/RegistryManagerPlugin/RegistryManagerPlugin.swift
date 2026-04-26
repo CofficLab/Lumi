@@ -23,17 +23,8 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI
 
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                AnyView(RegistryManagerView())
-            }
-        ]
+    func addPanelView() -> AnyView? {
+        AnyView(RegistryManagerView())
     }
 }
 
@@ -41,8 +32,6 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(RegistryManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

@@ -184,8 +184,6 @@ struct RClickSettingsView: View {
 
 #Preview("App") {
     ContentLayout()
-        .withNavigation(RClickPlugin.id)
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

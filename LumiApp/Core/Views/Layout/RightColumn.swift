@@ -1,40 +1,28 @@
 import SwiftUI
 
-/// 右侧栏视图：Agent 模式显示头/中/底，App 模式显示导航内容
+/// 右侧栏视图：始终显示 Header + 消息列表 + 输入区
 struct RightColumn: View {
-    @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
 
     var body: some View {
-        Group {
-            if app.selectedMode == .agent {
-                agentRightColumn
-            } else {
-                Color.clear
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+        VStack(spacing: 0) {
+            rightHeaderContent()
+
+            GlassDivider()
+
+            rightMiddleContent()
+
+            GlassDivider()
+
+            rightBottomContent()
         }
         .frame(maxHeight: .infinity)
         .frame(maxWidth: .infinity)
         .ignoresSafeArea()
     }
 
-    private var agentRightColumn: some View {
-        VStack(spacing: 0) {
-            agentRightHeaderContent()
-
-            GlassDivider()
-
-            agentRightMiddleContent()
-
-            GlassDivider()
-
-            agentRightBottomContent()
-        }
-    }
-
     @ViewBuilder
-    private func agentRightHeaderContent() -> some View {
+    private func rightHeaderContent() -> some View {
         let leadingView = pluginProvider.getRightHeaderLeadingView()
         let trailingItems = pluginProvider.getRightHeaderTrailingItems()
 
@@ -44,7 +32,7 @@ struct RightColumn: View {
     }
 
     @ViewBuilder
-    private func agentRightMiddleContent() -> some View {
+    private func rightMiddleContent() -> some View {
         let middleViews = pluginProvider.getRightMiddleViews()
         Group {
             if middleViews.isEmpty {
@@ -61,7 +49,7 @@ struct RightColumn: View {
     }
 
     @ViewBuilder
-    private func agentRightBottomContent() -> some View {
+    private func rightBottomContent() -> some View {
         let bottomViews = pluginProvider.getRightBottomViews()
         Group {
             if bottomViews.isEmpty {
@@ -76,15 +64,12 @@ struct RightColumn: View {
             }
         }
     }
-
 }
 
-// MARK: - Agent Right Header (inline)
+// MARK: - Header (inline)
 
 private struct HeaderView: View {
-    /// 左侧视图（可选，无时显示默认标题）
     let leadingView: AnyView?
-    /// 右侧小功能项（多插件扁平列表）
     let trailingItems: [AnyView]
 
     private let iconSize: CGFloat = 14

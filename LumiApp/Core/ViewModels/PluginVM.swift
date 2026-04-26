@@ -27,35 +27,26 @@ import Combine
 /// ## 使用示例
 ///
 /// ```swift
-/// // 获取侧边栏视图
-/// let sidebarViews = PluginVM.shared.getSidebarViews()
+/// // 获取面板视图
+/// let panels = PluginVM.shared.getPanelItems()
 ///
 /// // 检查插件是否启用
 /// let isEnabled = PluginVM.shared.isPluginEnabled(somePlugin)
 /// ```
 @MainActor
 final class PluginVM: ObservableObject, SuperLog {
-    struct SidebarTabItem: Identifiable, Equatable {
+    /// 面板视图项（用于左侧活动栏注册的统一入口）
+    struct PanelItem: Identifiable, Equatable {
         let id: String
         let title: String
         let icon: String
         let view: AnyView
         
-        static func == (lhs: SidebarTabItem, rhs: SidebarTabItem) -> Bool {
+        static func == (lhs: PanelItem, rhs: PanelItem) -> Bool {
             lhs.id == rhs.id
         }
     }
 
-    struct AgentDetailEntry: Identifiable, Equatable {
-        let id: String
-        let title: String
-        let icon: String
-        let view: AnyView
-        
-        static func == (lhs: AgentDetailEntry, rhs: AgentDetailEntry) -> Bool {
-            lhs.id == rhs.id
-        }
-    }
     /// 全局单例
     ///
     /// 整个应用共享同一个 PluginVM 实例。
@@ -406,43 +397,31 @@ final class PluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addToolBarTrailingView() }
     }
 
-    /// 获取所有插件的详情视图
+    /// 获取所有面板视图项（用于左侧活动栏）
     ///
-    /// 收集所有启用插件提供的详情视图。
-    /// 这些视图将显示在主内容区域。
-    ///
-    /// - Returns: 详情视图数组
-    func getDetailViews() -> [AnyView] {
+    /// 每个提供 `addPanelView()` 的插件都会生成一个活动栏图标入口。
+    func getPanelItems() -> [PanelItem] {
         plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addDetailView() }
-    }
-
-    /// 获取 Agent 模式中栏详情项（包含元信息）
-    ///
-    /// 用于中栏顶部切换器展示 title/icon，并渲染对应视图。
-    func getAgentDetailEntries() -> [AgentDetailEntry] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { plugin -> AgentDetailEntry? in
-                guard let detailView = plugin.addDetailView() else { return nil }
+            .compactMap { plugin -> PanelItem? in
+                guard let view = plugin.addPanelView() else { return nil }
                 let pluginType = type(of: plugin)
-                return AgentDetailEntry(
+                return PanelItem(
                     id: plugin.instanceLabel,
                     title: pluginType.displayName,
                     icon: pluginType.iconName,
-                    view: detailView
+                    view: view
                 )
             }
     }
 
-    /// 当前是否有 detail 视图
+    /// 当前是否有面板视图
     ///
-    /// 用于布局决策：有 detail 时使用 MiddleColumn + RightColumn 分栏，无时仅显示 RightColumn。
-    func hasDetailViews() -> Bool {
+    /// 用于布局决策：有面板时使用中间栏 + 右侧栏分栏，无时仅显示右侧栏。
+    func hasPanels() -> Bool {
         plugins
             .filter { isPluginEnabled($0) }
-            .contains { $0.addDetailView() != nil }
+            .contains { $0.addPanelView() != nil }
     }
 
     /// 获取所有插件提供的状态栏弹窗视图
@@ -468,51 +447,6 @@ final class PluginVM: ObservableObject, SuperLog {
         plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarContentView() }
-    }
-
-    /// 获取所有插件提供的侧边栏视图（用于 Agent 模式）
-    ///
-    /// 收集所有启用插件提供的侧边栏视图。
-    /// 多个插件的侧边栏会从上到下垂直堆叠显示。
-    ///
-    /// - Returns: 侧边栏视图数组
-    func getSidebarViews() -> [AnyView] {
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        let cacheKey = enabledPlugins.map(\.instanceLabel).joined(separator: "|")
-
-        if let sidebarViewsCache, sidebarViewsCacheKey == cacheKey {
-            return sidebarViewsCache
-        }
-
-        let views = enabledPlugins.compactMap { $0.addSidebarView() }
-        sidebarViewsCache = views
-        sidebarViewsCacheKey = cacheKey
-
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            AppLogger.core.info("\(self.t) getSidebarViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 侧边栏视图数量=\(views.count)")
-        }
-
-        return views
-    }
-
-    /// 获取 Agent 模式侧边栏 Tab 项（包含元信息）
-    ///
-    /// 用于左侧栏顶部 Tab 切换展示。
-    func getSidebarTabItems() -> [SidebarTabItem] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { plugin -> SidebarTabItem? in
-                guard let sidebarView = plugin.addSidebarView() else { return nil }
-                let pluginType = type(of: plugin)
-                return SidebarTabItem(
-                    id: plugin.instanceLabel,
-                    title: pluginType.displayName,
-                    icon: pluginType.iconName,
-                    view: sidebarView
-                )
-            }
     }
 
     /// 获取右侧栏头部左侧视图（首个提供该视图的插件）
@@ -634,29 +568,6 @@ final class PluginVM: ObservableObject, SuperLog {
             }
     }
 
-    /// 获取所有插件提供的导航入口
-    ///
-    /// 收集所有启用插件提供的导航入口。
-    /// 用于在侧边栏显示导航项。
-    ///
-    /// - Returns: 导航入口数组
-    func getNavigationEntries() -> [NavigationEntry] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addNavigationEntries() }
-            .flatMap { $0 }
-    }
-
-    /// 获取指定模式下的导航入口
-    ///
-    /// 过滤出指定应用模式（App 或 Agent）下的导航入口。
-    ///
-    /// - Parameter mode: 应用模式
-    /// - Returns: 导航入口数组
-    func getNavigationEntries(for mode: AppMode) -> [NavigationEntry] {
-        getNavigationEntries().filter { $0.mode == mode }
-    }
-
     /// 获取所有启用插件提供的主题贡献（按插件顺序和主题顺序稳定排序）
     @MainActor
     func getThemeContributions() -> [LumiThemeContribution] {
@@ -691,14 +602,12 @@ final class PluginVM: ObservableObject, SuperLog {
 
 #Preview("App - Small Screen") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .frame(width: 800, height: 600)
 }
 
 #Preview("App - Big Screen") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .frame(width: 1200, height: 1200)
 }

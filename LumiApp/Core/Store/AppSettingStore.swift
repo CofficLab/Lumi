@@ -69,53 +69,27 @@ enum AppSettingStore {
         }
     }
 
-    // MARK: - Mode
+    // MARK: - Layout
 
-    private static let modeKey = "App_SelectedMode"
-
-    /// 加载当前模式
-    static func loadMode() -> AppMode? {
-        guard let raw = object(forKey: modeKey) as? String else { return nil }
-        return AppMode(rawValue: raw)
-    }
-
-    /// 保存模式
-    static func saveMode(_ mode: AppMode) {
-        set(mode.rawValue, forKey: modeKey)
-    }
-
-    // MARK: - Navigation
-
-    private static let selectedNavigationIdKey = "App_SelectedNavigationId"
     private static let selectedAgentSidebarTabIdKey = "App_SelectedAgentSidebarTabId"
     private static let selectedAgentDetailIdKey = "App_SelectedAgentDetailId"
 
-    /// 加载 App 模式下的上次选中导航入口 ID
-    static func loadSelectedNavigationId() -> String? {
-        object(forKey: selectedNavigationIdKey) as? String
-    }
-
-    /// 保存 App 模式下的上次选中导航入口 ID
-    static func saveSelectedNavigationId(_ id: String?) {
-        set(id, forKey: selectedNavigationIdKey)
-    }
-
-    /// 加载 Agent 模式下上次选中的侧边栏 Tab ID
+    /// 加载上次选中的侧边栏 Tab ID
     static func loadSelectedAgentSidebarTabId() -> String? {
         object(forKey: selectedAgentSidebarTabIdKey) as? String
     }
 
-    /// 保存 Agent 模式下选中的侧边栏 Tab ID
+    /// 保存选中的侧边栏 Tab ID
     static func saveSelectedAgentSidebarTabId(_ id: String?) {
         set(id, forKey: selectedAgentSidebarTabIdKey)
     }
 
-    /// 加载 Agent 模式下上次选中的 Detail ID
+    /// 加载上次选中的 Detail ID
     static func loadSelectedAgentDetailId() -> String? {
         object(forKey: selectedAgentDetailIdKey) as? String
     }
 
-    /// 保存 Agent 模式下选中的 Detail ID
+    /// 保存选中的 Detail ID
     static func saveSelectedAgentDetailId(_ id: String?) {
         set(id, forKey: selectedAgentDetailIdKey)
     }

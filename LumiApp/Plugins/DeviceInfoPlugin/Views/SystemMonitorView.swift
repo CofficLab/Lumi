@@ -86,7 +86,6 @@ struct MonitorCard<Content: View>: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

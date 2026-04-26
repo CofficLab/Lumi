@@ -40,8 +40,6 @@ struct RelatedFile: Identifiable, Hashable, Sendable {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

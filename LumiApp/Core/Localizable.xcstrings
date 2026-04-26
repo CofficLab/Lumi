@@ -7824,6 +7824,7 @@
       }
     },
     "模式" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8580,6 +8581,7 @@
       }
     },
     "请从左侧栏选择一个功能" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8880,6 +8882,7 @@
       }
     },
     "选择一项开始使用" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

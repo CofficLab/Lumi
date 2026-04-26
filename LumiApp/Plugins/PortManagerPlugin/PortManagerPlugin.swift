@@ -25,17 +25,8 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                PortManagerView()
-            },
-        ]
+    @MainActor func addPanelView() -> AnyView? {
+        AnyView(PortManagerView())
     }
 }
 
@@ -43,8 +34,6 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(PortManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

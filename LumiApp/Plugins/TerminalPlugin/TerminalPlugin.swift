@@ -28,23 +28,9 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     nonisolated func onDisable() {}
     
     // MARK: - UI
-    
-    @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                TerminalMainView()
-            }
-        ]
-    }
 
     @MainActor
-    func addDetailView() -> AnyView? {
+    func addPanelView() -> AnyView? {
         AnyView(TerminalMainView())
     }
 }

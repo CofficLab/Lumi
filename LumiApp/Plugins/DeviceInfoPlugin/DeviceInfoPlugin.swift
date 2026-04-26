@@ -48,17 +48,8 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: String(localized: "Overview", table: "DeviceInfo"),
-                icon: "macbook.and.iphone",
-                pluginId: Self.id
-            ) {
-                DeviceInfoView()
-            },
-        ]
+    func addPanelView() -> AnyView? {
+        AnyView(DeviceInfoView())
     }
 }
 
@@ -66,8 +57,6 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(DeviceInfoPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

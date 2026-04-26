@@ -36,24 +36,13 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
         AnyView(NetworkStatusBarContentView())
     }
 
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                NetworkDashboardView()
-            },
-        ]
+    @MainActor func addPanelView() -> AnyView? {
+        AnyView(NetworkDashboardView())
     }
 }
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(NetworkManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

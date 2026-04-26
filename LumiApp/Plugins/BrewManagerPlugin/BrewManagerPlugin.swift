@@ -23,24 +23,13 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     
     // MARK: - UI Contributions
     
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                BrewManagerView()
-            }
-        ]
+    @MainActor func addPanelView() -> AnyView? {
+        AnyView(BrewManagerView())
     }
 }
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(BrewManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }
