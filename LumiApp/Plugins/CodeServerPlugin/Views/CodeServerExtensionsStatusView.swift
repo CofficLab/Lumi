@@ -99,7 +99,6 @@ struct ExtensionsInactiveDetailView: View {
                 .multilineTextAlignment(.center)
         }
         .padding()
-        .frame(width: 300)
     }
 }
 
@@ -219,7 +218,6 @@ struct ExtensionsManagerDetailView: View {
             }
         }
         .padding()
-        .frame(width: 300)
         .task(id: manager.installedExtensions) {
             // 当扩展列表变化时隐藏安装进度
             if !isInstalling { return }
