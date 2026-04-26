@@ -31,6 +31,9 @@ struct AppToolbarTrailing: ToolbarContent {
 
             // 新建对话
             NewChatButton()
+
+            // 会话列表
+            ConversationListPopoverButton()
         }
     }
 }

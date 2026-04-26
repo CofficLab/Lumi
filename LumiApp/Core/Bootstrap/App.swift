@@ -47,7 +47,7 @@ struct CoreApp: App {
                 .inRootView()
         }
         .windowStyle(.titleBar)
-        .windowToolbarStyle(.unified(showsTitle: true))
+        .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             DebugCommand()
             SettingsCommand()
