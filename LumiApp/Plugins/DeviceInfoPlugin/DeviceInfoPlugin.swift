@@ -51,6 +51,9 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     func addPanelView() -> AnyView? {
         AnyView(DeviceInfoView())
     }
+
+    /// 该面板不需要右侧栏
+    nonisolated var panelNeedsSidebar: Bool { false }
 }
 
 // MARK: - Preview
