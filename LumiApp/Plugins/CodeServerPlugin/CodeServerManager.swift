@@ -704,19 +704,46 @@ final class CodeServerManager: ObservableObject {
 
     // MARK: - Open VSX Market Search
 
+    /// 热门扩展列表
+    @Published var popularExtensions: [OpenVSXExtension] = []
+    /// 是否正在加载热门扩展
+    @Published var isLoadingPopular: Bool = false
+    /// 热门扩展加载错误
+    @Published var popularError: String?
+
     /// 搜索 Open VSX 扩展市场
     /// - Parameters:
     ///   - query: 搜索关键词
     ///   - category: 分类过滤
     ///   - size: 返回结果数量（默认 20）
-    func searchMarket(query: String, category: ExtensionCategory = .all, size: Int = 20) {
-        guard !query.isEmpty else {
-            searchResults = []
-            return
-        }
+    ///   - sortBy: 排序方式（默认按相关性）
+    func searchMarket(query: String, category: ExtensionCategory = .all, size: Int = 20, sortBy: String = "relevance") {
+        fetchMarketResults(query: query, category: category, size: size, sortBy: sortBy, isSearch: true)
+    }
 
-        isSearching = true
-        searchError = nil
+    /// 加载热门扩展（按下载量排序）
+    /// - Parameters:
+    ///   - size: 返回结果数量（默认 30）
+    ///   - category: 分类过滤
+    func loadPopularExtensions(size: Int = 30, category: ExtensionCategory = .all) {
+        guard popularExtensions.isEmpty else { return }
+        isLoadingPopular = true
+        popularError = nil
+        fetchMarketResults(query: "", category: category, size: size, sortBy: "downloadCount", isSearch: false)
+    }
+
+    /// 通用市场数据请求
+    /// - Parameters:
+    ///   - query: 搜索关键词（空表示热门列表）
+    ///   - category: 分类过滤
+    ///   - size: 返回数量
+    ///   - sortBy: 排序方式
+    ///   - isSearch: true=搜索结果，false=热门列表
+    private func fetchMarketResults(query: String, category: ExtensionCategory, size: Int, sortBy: String, isSearch: Bool) {
+        if isSearch {
+            isSearching = true
+            searchError = nil
+        }
 
         Task.detached { [weak self] in
             guard let self = self else { return }
@@ -724,9 +751,16 @@ final class CodeServerManager: ObservableObject {
             // 构建 API URL
             var components = URLComponents(string: "https://open-vsx.org/api/-/search")!
             var queryItems: [URLQueryItem] = [
-                URLQueryItem(name: "query", value: query),
                 URLQueryItem(name: "size", value: "\(size)")
             ]
+
+            // 搜索关键词
+            if !query.isEmpty {
+                queryItems.append(URLQueryItem(name: "query", value: query))
+            }
+
+            // 排序
+            queryItems.append(URLQueryItem(name: "sortBy", value: sortBy))
 
             // 添加分类过滤
             if let categoryQuery = category.apiQuery {
@@ -737,8 +771,13 @@ final class CodeServerManager: ObservableObject {
 
             guard let url = components.url else {
                 await MainActor.run { [weak self] in
-                    self?.searchError = "构建搜索 URL 失败"
-                    self?.isSearching = false
+                    if isSearch {
+                        self?.searchError = "构建搜索 URL 失败"
+                        self?.isSearching = false
+                    } else {
+                        self?.popularError = "构建热门扩展 URL 失败"
+                        self?.isLoadingPopular = false
+                    }
                 }
                 return
             }
@@ -749,8 +788,13 @@ final class CodeServerManager: ObservableObject {
                 guard let httpResponse = response as? HTTPURLResponse,
                       httpResponse.statusCode == 200 else {
                     await MainActor.run { [weak self] in
-                        self?.searchError = "搜索请求失败"
-                        self?.isSearching = false
+                        if isSearch {
+                            self?.searchError = "搜索请求失败"
+                            self?.isSearching = false
+                        } else {
+                            self?.popularError = "加载热门扩展失败"
+                            self?.isLoadingPopular = false
+                        }
                     }
                     return
                 }
@@ -764,13 +808,10 @@ final class CodeServerManager: ObservableObject {
                               let name = ext["name"] as? String else { return nil }
 
                         let id = "\(namespace).\(name)"
-
-                        // 直接从根级别获取数据
                         let version = ext["version"] as? String ?? "unknown"
                         let downloadCount = ext["downloadCount"] as? Int
                         let averageRating = ext["averageRating"] as? Double
-                        
-                        // 从 files 获取图标 URL
+
                         var iconUrl: String? = nil
                         if let files = ext["files"] as? [String: String] {
                             iconUrl = files["icon"]
@@ -790,19 +831,34 @@ final class CodeServerManager: ObservableObject {
                     }
 
                     await MainActor.run { [weak self] in
-                        self?.searchResults = results
-                        self?.isSearching = false
+                        if isSearch {
+                            self?.searchResults = results
+                            self?.isSearching = false
+                        } else {
+                            self?.popularExtensions = results
+                            self?.isLoadingPopular = false
+                        }
                     }
                 } else {
                     await MainActor.run { [weak self] in
-                        self?.searchResults = []
-                        self?.isSearching = false
+                        if isSearch {
+                            self?.searchResults = []
+                            self?.isSearching = false
+                        } else {
+                            self?.popularExtensions = []
+                            self?.isLoadingPopular = false
+                        }
                     }
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.searchError = "搜索失败: \(error.localizedDescription)"
-                    self?.isSearching = false
+                    if isSearch {
+                        self?.searchError = "搜索失败: \(error.localizedDescription)"
+                        self?.isSearching = false
+                    } else {
+                        self?.popularError = "加载失败: \(error.localizedDescription)"
+                        self?.isLoadingPopular = false
+                    }
                 }
             }
         }

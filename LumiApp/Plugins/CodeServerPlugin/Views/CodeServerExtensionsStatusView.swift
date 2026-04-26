@@ -116,17 +116,15 @@ struct ExtensionsManagerDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            // 标题栏
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "puzzlepiece.extension")
-                    .font(.system(size: 14))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
-
-                Text("扩展管理")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-
-                Spacer()
+            // Tab 切换
+            HStack(spacing: 0) {
+                ForEach(ExtensionTab.allCases, id: \.self) { tab in
+                    TabButton(
+                        title: tab.rawValue,
+                        isSelected: selectedTab == tab,
+                        action: { selectedTab = tab }
+                    )
+                }
 
                 // 刷新按钮
                 Button(action: {
@@ -140,19 +138,6 @@ struct ExtensionsManagerDetailView: View {
                 .help("刷新扩展列表")
                 .disabled(manager.isLoadingExtensions)
             }
-
-            // Tab 切换
-            HStack(spacing: 0) {
-                ForEach(ExtensionTab.allCases, id: \.self) { tab in
-                    TabButton(
-                        title: tab.rawValue,
-                        isSelected: selectedTab == tab,
-                        action: { selectedTab = tab }
-                    )
-                }
-            }
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(6)
 
             Divider()
 

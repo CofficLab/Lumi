@@ -63,6 +63,9 @@ struct MarketSearchView: View {
                                 manager.selectedCategory = category
                                 if !localSearchQuery.isEmpty {
                                     manager.searchMarket(query: localSearchQuery, category: category)
+                                } else {
+                                    manager.popularExtensions = []
+                                    manager.loadPopularExtensions(category: category)
                                 }
                             }
                         )
@@ -71,7 +74,7 @@ struct MarketSearchView: View {
                 .padding(.horizontal, 2)
             }
 
-            // 搜索结果
+            // 搜索结果 / 热门扩展
             if manager.isSearching {
                 SearchLoadingView()
             } else if let error = manager.searchError {
@@ -80,8 +83,17 @@ struct MarketSearchView: View {
                 SearchEmptyView()
             } else if !manager.searchResults.isEmpty {
                 SearchResultsList(results: manager.searchResults)
+            } else if manager.isLoadingPopular {
+                PopularLoadingView()
+            } else if let error = manager.popularError {
+                SearchErrorView(message: error)
+            } else if !manager.popularExtensions.isEmpty {
+                PopularExtensionsList(results: manager.popularExtensions)
             } else {
                 SearchPlaceholderView()
+                    .onAppear {
+                        manager.loadPopularExtensions()
+                    }
             }
         }
         .frame(maxHeight: .infinity)
@@ -198,9 +210,44 @@ struct SearchPlaceholderView: View {
     }
 }
 
+// MARK: - Popular Loading View
+
+struct PopularLoadingView: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+            Text("正在加载热门扩展...")
+                .font(.system(size: 12))
+                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 200)
+    }
+}
+
+// MARK: - Popular Extensions List
+
+struct PopularExtensionsList: View {
+    let results: [OpenVSXExtension]
+
+    var body: some View {
+        ExtensionsList(results: results)
+    }
+}
+
 // MARK: - Search Results List
 
 struct SearchResultsList: View {
+    let results: [OpenVSXExtension]
+
+    var body: some View {
+        ExtensionsList(results: results)
+    }
+}
+
+// MARK: - Extensions List (shared)
+
+struct ExtensionsList: View {
     let results: [OpenVSXExtension]
 
     var body: some View {
