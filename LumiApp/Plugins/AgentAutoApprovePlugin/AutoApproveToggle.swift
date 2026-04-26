@@ -6,26 +6,15 @@ struct AutoApproveToggle: View {
     @EnvironmentObject var projectVM: ProjectVM
 
     var body: some View {
-        HStack(spacing: 6) {
-            Text(String(localized: "Auto", table: "AgentAutoApproveHeader"))
-                .font(AppUI.Typography.caption2)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-
-            Toggle("", isOn: Binding(
-                get: { projectVM.autoApproveRisk },
-                set: { newValue in
-                    projectVM.setAutoApproveRisk(newValue)
-                    handleToggleChange(newValue)
-                }
-            ))
-            .toggleStyle(.switch)
-            .controlSize(.mini)
-            .labelsHidden()
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.black.opacity(0.05))
-        .cornerRadius(6)
+        Toggle("Auto", isOn: Binding(
+            get: { projectVM.autoApproveRisk },
+            set: { newValue in
+                projectVM.setAutoApproveRisk(newValue)
+                handleToggleChange(newValue)
+            }
+        ))
+        .toggleStyle(.switch)
+        .controlSize(.mini)
         .help(String(localized: "Auto-approve high-risk commands", table: "AgentAutoApproveHeader"))
     }
 }

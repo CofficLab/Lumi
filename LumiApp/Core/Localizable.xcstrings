@@ -1201,7 +1201,6 @@
       }
     },
     "Auto" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

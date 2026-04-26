@@ -27,14 +27,7 @@ struct LanguageSelector: View {
                 Image(systemName: "globe")
                     .font(.system(size: iconSize))
                 Text(projectVM.languagePreference.displayName)
-                    .font(AppUI.Typography.caption2)
-                    .fontWeight(.medium)
             }
-            .foregroundColor(AppUI.Color.semantic.textSecondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.black.opacity(0.05))
-            .cornerRadius(6)
         }
         .menuStyle(.borderlessButton)
         .frame(width: 70)
