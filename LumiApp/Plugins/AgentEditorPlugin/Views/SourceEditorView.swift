@@ -340,7 +340,8 @@ struct SourceEditorView: View, SuperLog {
             set: { newState in
                 let update = EditorSourceEditorBindingController.update(
                     from: newState,
-                    multiCursorSelectionCount: state.multiCursorState.all.count
+                    multiCursorSelectionCount: state.multiCursorState.all.count,
+                    currentFindReplaceState: state.activeSession.findReplaceState
                 )
 
                 DispatchQueue.main.async {

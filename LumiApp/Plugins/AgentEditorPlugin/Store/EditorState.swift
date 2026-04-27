@@ -70,6 +70,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 当前激活会话（Phase 2 起逐步替代散落的会话级状态）
     @Published private(set) var activeSession = EditorSession()
+    @Published private(set) var findMatches: [EditorFindMatch] = []
 
     var onActiveSessionChanged: ((EditorSession) -> Void)?
 
@@ -791,6 +792,71 @@ final class EditorState: ObservableObject, SuperLog {
         syncActiveSessionState(
             scrollStateOverride: resolved.scrollState
         )
+
+        if resolved.bridgeState?.findReplaceState != nil {
+            refreshFindMatches()
+        }
+    }
+
+    func updateFindReplaceOptions(_ transform: (inout EditorFindReplaceOptions) -> Void) {
+        var state = activeSession.findReplaceState
+        transform(&state.options)
+        applyFindReplaceObservation(state)
+    }
+
+    func refreshFindMatches() {
+        guard let text = content?.string else {
+            applyFindMatchesResult(
+                EditorFindMatchesResult(matches: [], selectedMatchIndex: nil, selectedMatchRange: nil)
+            )
+            return
+        }
+
+        let currentState = activeSession.findReplaceState
+        let selections = multiCursorState.all.map {
+            EditorSelection(range: EditorRange(location: $0.location, length: $0.length))
+        }
+        let result = EditorFindReplaceController.matches(
+            in: text,
+            state: currentState,
+            selections: selections,
+            primarySelection: selections.first
+        )
+        applyFindMatchesResult(result)
+    }
+
+    func selectNextFindMatch() {
+        guard let nextIndex = EditorFindReplaceController.nextMatchIndex(
+            in: findMatches,
+            selectedMatchIndex: activeSession.findReplaceState.selectedMatchIndex
+        ) else { return }
+        selectFindMatch(at: nextIndex)
+    }
+
+    func selectPreviousFindMatch() {
+        guard let previousIndex = EditorFindReplaceController.previousMatchIndex(
+            in: findMatches,
+            selectedMatchIndex: activeSession.findReplaceState.selectedMatchIndex
+        ) else { return }
+        selectFindMatch(at: previousIndex)
+    }
+
+    func replaceCurrentFindMatch() {
+        guard let transaction = EditorFindReplaceTransactionBuilder.replaceCurrent(
+            state: activeSession.findReplaceState,
+            matches: findMatches
+        ) else { return }
+        applyEditorTransaction(transaction, reason: "find_replace_current")
+        refreshFindMatches()
+    }
+
+    func replaceAllFindMatches() {
+        guard let transaction = EditorFindReplaceTransactionBuilder.replaceAll(
+            state: activeSession.findReplaceState,
+            matches: findMatches
+        ) else { return }
+        applyEditorTransaction(transaction, reason: "find_replace_all")
+        refreshFindMatches()
     }
 
     func performPanelCommand(_ command: EditorPanelCommand) {
@@ -1071,6 +1137,7 @@ final class EditorState: ObservableObject, SuperLog {
             hasUnsavedChanges = false
             saveState = .idle
         }
+        refreshFindMatches()
         syncActiveSessionState()
     }
     
@@ -1510,6 +1577,7 @@ final class EditorState: ObservableObject, SuperLog {
         hasUnsavedChanges = false
         saveState = .idle
         totalLines = newContent.filter { $0 == "\n" }.count + 1
+        refreshFindMatches()
         
         // 通知 LSP 文档内容已替换
         lspCoordinator.replaceDocument(newContent)
@@ -2130,8 +2198,44 @@ final class EditorState: ObservableObject, SuperLog {
         EditorBridgeStateController.state(
             from: editorState,
             cursorLine: cursorLine,
-            cursorColumn: cursorColumn
+            cursorColumn: cursorColumn,
+            currentFindReplaceState: activeSession.findReplaceState
         )
+    }
+
+    private func applyFindMatchesResult(_ result: EditorFindMatchesResult) {
+        findMatches = result.matches
+
+        var state = activeSession.findReplaceState
+        state.resultCount = result.matches.count
+        state.selectedMatchIndex = result.selectedMatchIndex
+        state.selectedMatchRange = result.selectedMatchRange
+        applyFindReplaceState(state)
+        activeSession.findReplaceState = state
+    }
+
+    private func selectFindMatch(at index: Int) {
+        guard findMatches.indices.contains(index),
+              let text = content?.string else { return }
+
+        let match = findMatches[index]
+        let selection = MultiCursorSelection(location: match.range.location, length: match.range.length)
+        applyMultiCursorSelections([selection])
+
+        let cursorPositions = EditorViewStateController.positions(
+            from: [selection],
+            text: text,
+            fallbackLine: max(cursorLine, 1),
+            fallbackColumn: max(cursorColumn, 1),
+            positionResolver: editorPosition(utf16Offset:in:)
+        ).cursorPositions
+        navigateToCursorPositions(cursorPositions)
+
+        var state = activeSession.findReplaceState
+        state.selectedMatchIndex = index
+        state.selectedMatchRange = match.range
+        applyFindReplaceState(state)
+        syncActiveSessionState()
     }
 
     private func withoutSessionSync(_ operation: () -> Void) {

@@ -66,14 +66,16 @@ enum EditorBridgeStateController {
     static func state(
         from editorState: SourceEditorState,
         cursorLine: Int,
-        cursorColumn: Int
+        cursorColumn: Int,
+        currentFindReplaceState: EditorFindReplaceState? = nil
     ) -> EditorBridgeState {
         state(
             cursorPositions: editorState.cursorPositions ?? [],
             findReplaceState: EditorFindReplaceStateController.state(
                 findText: editorState.findText ?? "",
                 replaceText: editorState.replaceText ?? "",
-                isFindPanelVisible: editorState.findPanelVisible ?? false
+                isFindPanelVisible: editorState.findPanelVisible ?? false,
+                preserving: currentFindReplaceState
             ),
             fallbackLine: max(cursorLine, 1),
             fallbackColumn: max(cursorColumn, 1)

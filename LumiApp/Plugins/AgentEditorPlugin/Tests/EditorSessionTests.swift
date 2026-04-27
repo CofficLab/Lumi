@@ -267,7 +267,8 @@ final class EditorSessionTests: XCTestCase {
 
         let update = EditorSourceEditorBindingController.update(
             from: sourceState,
-            multiCursorSelectionCount: 2
+            multiCursorSelectionCount: 2,
+            currentFindReplaceState: .init()
         )
 
         XCTAssertNil(update.viewState)
@@ -284,7 +285,8 @@ final class EditorSessionTests: XCTestCase {
 
         let update = EditorSourceEditorBindingController.update(
             from: sourceState,
-            multiCursorSelectionCount: 1
+            multiCursorSelectionCount: 1,
+            currentFindReplaceState: .init()
         )
 
         XCTAssertEqual(update.viewState?.primaryCursorLine, 6)
@@ -722,7 +724,16 @@ final class EditorSessionTests: XCTestCase {
         let bridgeState = EditorBridgeStateController.state(
             from: sourceState,
             cursorLine: 3,
-            cursorColumn: 2
+            cursorColumn: 2,
+            currentFindReplaceState: .init(
+                findText: "existing",
+                replaceText: "replace",
+                isFindPanelVisible: true,
+                options: .init(matchesWholeWord: true),
+                resultCount: 4,
+                selectedMatchIndex: 1,
+                selectedMatchRange: .init(location: 10, length: 4)
+            )
         )
 
         XCTAssertEqual(bridgeState.viewState.primaryCursorLine, 11)
@@ -731,6 +742,9 @@ final class EditorSessionTests: XCTestCase {
         XCTAssertEqual(bridgeState.findReplaceState?.findText, "find")
         XCTAssertEqual(bridgeState.findReplaceState?.replaceText, "replace")
         XCTAssertTrue(bridgeState.findReplaceState?.isFindPanelVisible == true)
+        XCTAssertTrue(bridgeState.findReplaceState?.options.matchesWholeWord == true)
+        XCTAssertEqual(bridgeState.findReplaceState?.resultCount, 4)
+        XCTAssertEqual(bridgeState.findReplaceState?.selectedMatchIndex, 1)
     }
 
     func testSessionSnapshotBuilderAcceptsBridgeState() {
