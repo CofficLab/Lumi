@@ -1166,7 +1166,7 @@ final class EditorState: ObservableObject, SuperLog {
             )
             return
         }
-        applyEditsToCurrentDocument(edits, reason: "lsp_format_document")
+        applyTextEditsToCurrentDocument(edits, reason: "lsp_format_document")
         showStatusToast(
             String(localized: "Document formatted", table: "LumiEditor"),
             level: .success
@@ -1372,8 +1372,11 @@ final class EditorState: ObservableObject, SuperLog {
         }
 
         var changedFiles = 0
-        changedFiles += applyWorkspaceChanges(edit.changes, currentURI: currentURI)
-        changedFiles += applyDocumentChanges(edit.documentChanges, currentURI: currentURI)
+        changedFiles += applyWorkspaceEditChanges(
+            edit.changes,
+            documentChanges: edit.documentChanges,
+            currentURI: currentURI
+        )
 
         if changedFiles == 0 {
             showStatusToast(
@@ -1923,64 +1926,83 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    private func applyEditsToCurrentDocument(_ edits: [TextEdit], reason: String = "text_edits") {
+    // MARK: - Text Edit Application (Transaction-First)
+    //
+    // 所有文本编辑应用最终都通过 documentController 的 transaction 路径落地，
+    // 然后统一进入 commitDocumentEditResult 进行后处理（selection 同步、LSP 通知、行数更新等）。
+
+    /// 将 LSP TextEdits 应用到当前文档，走 transaction 路径。
+    /// 这是 Phase 1 "format / rename / code action 走 transaction" 的核心入口。
+    private func applyTextEditsToCurrentDocument(_ edits: [TextEdit], reason: String = "text_edits") {
         guard let result = documentController.applyTextEdits(edits) else { return }
         commitDocumentEditResult(result, reason: reason)
     }
 
-    private func applyWorkspaceChanges(
+    /// Code Action 的 WorkspaceEdit 统一入口。
+    /// 当前文件的 edits 走 transaction；其他文件直接写磁盘。
+    /// 这是 Phase 1 "code action text edits 走 transaction" 的落地方法。
+    func applyCodeActionWorkspaceEdit(_ edit: WorkspaceEdit) {
+        let currentURI = currentFileURL?.absoluteString
+        _ = applyWorkspaceEditChanges(
+            edit.changes,
+            documentChanges: edit.documentChanges,
+            currentURI: currentURI ?? ""
+        )
+    }
+
+    /// 应用 workspace changes（rename 等场景）。
+    /// 当前文件的 edits 走 transaction；其他文件直接写入磁盘。
+    @discardableResult
+    private func applyWorkspaceEditChanges(
         _ changes: [String: [TextEdit]]?,
+        documentChanges: [WorkspaceEditDocumentChange]?,
         currentURI: String
     ) -> Int {
-        guard let changes, !changes.isEmpty else { return 0 }
         var changedFiles = 0
 
-        for (uri, textEdits) in changes {
-            guard !textEdits.isEmpty else { continue }
-            if uri == currentURI {
-                applyEditsToCurrentDocument(textEdits, reason: "lsp_workspace_edit")
-                changedFiles += 1
-                continue
-            }
-            guard let url = URL(string: uri), url.isFileURL else { continue }
-            if applyTextEdits(textEdits, toFile: url) {
-                changedFiles += 1
-            }
-        }
-        return changedFiles
-    }
-
-    private func applyDocumentChanges(
-        _ documentChanges: [WorkspaceEditDocumentChange]?,
-        currentURI: String
-    ) -> Int {
-        guard let documentChanges else { return 0 }
-        var changedFiles = 0
-
-        for change in documentChanges {
-            switch change {
-            case .textDocumentEdit(let item):
-                let uri = item.textDocument.uri
-                let edits = item.edits
-                guard !edits.isEmpty else { continue }
-
+        // 处理 changes 字典
+        if let changes, !changes.isEmpty {
+            for (uri, textEdits) in changes {
+                guard !textEdits.isEmpty else { continue }
                 if uri == currentURI {
-                    applyEditsToCurrentDocument(edits, reason: "lsp_document_edit")
+                    applyTextEditsToCurrentDocument(textEdits, reason: "lsp_workspace_edit")
                     changedFiles += 1
-                } else if let url = URL(string: uri), url.isFileURL, applyTextEdits(edits, toFile: url) {
+                    continue
+                }
+                guard let url = URL(string: uri), url.isFileURL else { continue }
+                if applyTextEditsToFile(textEdits, url: url) {
                     changedFiles += 1
                 }
-            case .createFile(let operation):
-                if WorkspaceEditFileOperations.applyCreateFile(operation) {
-                    changedFiles += 1
-                }
-            case .renameFile(let operation):
-                if WorkspaceEditFileOperations.applyRenameFile(operation) {
-                    changedFiles += 1
-                }
-            case .deleteFile(let operation):
-                if WorkspaceEditFileOperations.applyDeleteFile(operation) {
-                    changedFiles += 1
+            }
+        }
+
+        // 处理 documentChanges 数组（优先级更高，LSP 3.16+）
+        if let documentChanges {
+            for change in documentChanges {
+                switch change {
+                case .textDocumentEdit(let item):
+                    let uri = item.textDocument.uri
+                    let edits = item.edits
+                    guard !edits.isEmpty else { continue }
+
+                    if uri == currentURI {
+                        applyTextEditsToCurrentDocument(edits, reason: "lsp_document_edit")
+                        changedFiles += 1
+                    } else if let url = URL(string: uri), url.isFileURL, applyTextEditsToFile(edits, url: url) {
+                        changedFiles += 1
+                    }
+                case .createFile(let operation):
+                    if WorkspaceEditFileOperations.applyCreateFile(operation) {
+                        changedFiles += 1
+                    }
+                case .renameFile(let operation):
+                    if WorkspaceEditFileOperations.applyRenameFile(operation) {
+                        changedFiles += 1
+                    }
+                case .deleteFile(let operation):
+                    if WorkspaceEditFileOperations.applyDeleteFile(operation) {
+                        changedFiles += 1
+                    }
                 }
             }
         }
@@ -1988,7 +2010,8 @@ final class EditorState: ObservableObject, SuperLog {
         return changedFiles
     }
 
-    private func applyTextEdits(_ edits: [TextEdit], toFile url: URL) -> Bool {
+    /// 将 TextEdits 应用到非当前文件（直接写磁盘）。
+    private func applyTextEditsToFile(_ edits: [TextEdit], url: URL) -> Bool {
         do {
             let original = try String(contentsOf: url, encoding: .utf8)
             guard let updated = TextEditApplier.apply(edits: edits, to: original), updated != original else {
@@ -2031,6 +2054,29 @@ final class EditorState: ObservableObject, SuperLog {
 
     // MARK: - Kernel Phase 1
 
+    // MARK: - Canonical Selection (Phase 2)
+
+    /// 内核 canonical selection set。
+    /// 这是选区的最终真相来源，原生 TextView 的选区只是它的渲染镜像。
+    /// 由 EditorSelectionMapper 负责双向转换。
+    private(set) var canonicalSelectionSet: EditorSelectionSet = .initial
+
+    /// 接受从原生视图转换来的 canonical selection 更新。
+    /// 由 EditorCoordinator 通过 EditorSelectionMapper.toCanonical 调用。
+    func applyCanonicalSelectionSet(_ selectionSet: EditorSelectionSet) {
+        canonicalSelectionSet = selectionSet
+        // 同步到外部 multiCursorState（向后兼容）
+        let mcSelections = selectionSet.toMultiCursorSelections()
+        applyMultiCursorSelections(mcSelections)
+    }
+
+    /// 将内核 canonical selection 应用到原生 TextView（canonical → view 方向）。
+    /// 在事务应用后、选区恢复等场景调用。
+    func pushCanonicalSelectionToView() {
+        guard let textView = focusedTextView else { return }
+        EditorSelectionMapper.applyToView(canonicalSelectionSet, textView: textView)
+    }
+
     private func applyEditorTransaction(_ transaction: EditorTransaction, reason: String) {
         guard let result = documentController.apply(transaction: transaction) else { return }
         commitDocumentEditResult(result, reason: reason)
@@ -2040,6 +2086,8 @@ final class EditorState: ObservableObject, SuperLog {
         content = documentController.textStorage
         totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
         if let selections = result.selections {
+            // Phase 2: 同时更新 canonical selection set 和外部 multiCursorState
+            canonicalSelectionSet = EditorSelectionSet(selections: selections)
             setSelections(multiCursorSelections(from: selections))
         }
         lspCoordinator.replaceDocument(result.snapshot.text)

@@ -230,22 +230,27 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     }
 
     @MainActor
-    private static func syncSelections(from controller: TextViewController, to state: EditorState) {
-        let selections = controller.textView?.selectionManager.textSelections ?? []
-        let mapped = selections
-            .map { $0.range }
-            .filter { $0.location != NSNotFound }
-            .map { MultiCursorSelection(location: $0.location, length: $0.length) }
+    private static func syncSelections(
+        from controller: TextViewController,
+        to state: EditorState
+    ) {
+        guard let textView = controller.textView else { return }
 
-        guard !mapped.isEmpty else { return }
+        // Phase 2: 通过 EditorSelectionMapper 进行 view → canonical 转换
+        let currentCanonical = state.canonicalSelectionSet
 
-        // 如果当前正在进行多光标会话，且编辑器回传的选区数量少于 state 中的数量，
-        // 不覆盖 state，避免 setSelectedRanges 的 Set 去重导致选区丢失
-        if state.multiCursorState.all.count > mapped.count {
-            return
-        }
+        guard let viewSelectionSet = EditorSelectionMapper.toCanonical(
+            from: textView,
+            currentState: currentCanonical
+        ) else { return }
 
-        state.setSelections(mapped)
+        // 多光标保护：原生回传选区数量减少时，拒绝覆盖内核（可能是 CodeEdit 内部丢失）
+        guard EditorSelectionMapper.shouldAcceptCanonicalUpdate(
+            viewSelections: viewSelectionSet,
+            currentState: currentCanonical
+        ) else { return }
+
+        state.applyCanonicalSelectionSet(viewSelectionSet)
     }
 
     @MainActor

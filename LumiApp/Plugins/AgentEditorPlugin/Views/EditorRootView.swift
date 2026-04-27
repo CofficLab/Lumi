@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import Combine
 
 /// 编辑器主视图（根入口）
 /// 组合面包屑、工具栏、编辑器、状态栏
@@ -139,6 +140,7 @@ struct EditorRootView: View {
 
     // MARK: - Editor Content
 
+    /// 编辑器主体（Phase 3: session 驱动，不再依赖 .id(fileURL) 重建）
     @ViewBuilder
     private var editorContent: some View {
         if state.isMarkdownFile {
@@ -147,17 +149,10 @@ struct EditorRootView: View {
                 markdownPreviewContent
             } else {
                 // 源码模式
-                SourceEditorView(state: state)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .id(state.currentFileURL)
-                    .clipped()
+                sourceEditorContent
             }
         } else if state.canPreview {
-            SourceEditorView(state: state)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .id(state.currentFileURL)  // 文件切换时重建编辑器
-                // 关键：裁剪溢出的内容，防止行号延伸到 header
-                .clipped()
+            sourceEditorContent
         } else if state.isBinaryFile, let fileURL = state.currentFileURL {
             // 二进制/非文本文件预览
             FilePreviewView(fileURL: fileURL)
@@ -165,6 +160,16 @@ struct EditorRootView: View {
         } else if projectVM.isFileSelected {
             unsupportedFileView
         }
+    }
+
+    /// 源码编辑器（Phase 3: 基于 session 驱动）
+    @ViewBuilder
+    private var sourceEditorContent: some View {
+        // 关键改进：不再使用 .id(state.currentFileURL) 强制重建编辑器实例
+        // 编辑器现在是稳定的容器，内容由 session 切换驱动
+        SourceEditorView(state: state)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
     }
 
     /// Markdown 渲染预览（内联替换编辑器）
@@ -332,17 +337,38 @@ struct EditorRootView: View {
         sessionStore.togglePinned(sessionID: tab.sessionID)
     }
 
+    /// 从 session 恢复交互状态（光标、滚动、查找、面板等）
+    /// Phase 3 改进：不再轮询等待，而是监听 `onActiveSessionChanged` 在 `loadFile` 完成后触发
     private func restoreInteractionState(for session: EditorSession) {
         guard session.fileURL != nil else { return }
-        Task { @MainActor in
-            for _ in 0..<30 {
-                if state.currentFileURL == session.fileURL, state.content != nil, state.focusedTextView != nil {
-                    state.applySessionRestore(session)
-                    return
-                }
-                try? await Task.sleep(for: .milliseconds(25))
-            }
+
+        // 快速路径：如果编辑器已经加载了同一个文件，立即恢复
+        if state.currentFileURL == session.fileURL,
+           state.content != nil,
+           state.focusedTextView != nil {
+            state.applySessionRestore(session)
+            return
         }
+
+        // 加载新文件时，在 `onActiveSessionChanged` 回调中完成恢复
+        // 这确保 content / textStorage / textView 都已就绪
+        let sessionID = session.id
+        var restoreToken: AnyCancellable?
+        restoreToken = state.$activeSession
+            .dropFirst()
+            .first(where: { _ in true })  // 只要 activeSession 更新一次
+            .sink { [weak state] _ in
+                guard let state else { return }
+                if state.currentFileURL == session.fileURL, state.content != nil {
+                    // 再等一个 runloop 确保 textView 就绪
+                    DispatchQueue.main.async {
+                        if state.focusedTextView != nil {
+                            state.applySessionRestore(session)
+                        }
+                    }
+                }
+                restoreToken?.cancel()
+            }
     }
 
 }

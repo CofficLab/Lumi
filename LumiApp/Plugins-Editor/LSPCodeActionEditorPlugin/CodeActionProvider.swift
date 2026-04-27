@@ -108,6 +108,7 @@ final class CodeActionProvider: ObservableObject {
         _ item: CodeActionItem,
         textView: TextView?,
         documentURL: URL?,
+        applyWorkspaceEditViaTransaction: ((WorkspaceEdit) -> Void)? = nil,
         onFailureMessage: (String) -> Void
     ) async {
         switch item.payload {
@@ -116,6 +117,7 @@ final class CodeActionProvider: ObservableObject {
                 action,
                 textView: textView,
                 documentURL: documentURL,
+                applyWorkspaceEditViaTransaction: applyWorkspaceEditViaTransaction,
                 onFailureMessage: onFailureMessage
             )
         case .plugin(let pluginAction):
@@ -131,6 +133,7 @@ final class CodeActionProvider: ObservableObject {
         _ action: CodeAction,
         textView: TextView?,
         documentURL: URL?,
+        applyWorkspaceEditViaTransaction: ((WorkspaceEdit) -> Void)? = nil,
         onFailureMessage: (String) -> Void
     ) async {
         var resolved = action
@@ -142,12 +145,18 @@ final class CodeActionProvider: ObservableObject {
         }
 
         if let edit = resolved.edit {
-            applyWorkspaceEdit(
-                edit,
-                textView: textView,
-                documentURL: documentURL,
-                onFailureMessage: onFailureMessage
-            )
+            // 优先走 transaction 路径（由 EditorState 提供），
+            // 确保所有编辑行为走统一的 commitDocumentEditResult 后处理。
+            if let applyViaTransaction = applyWorkspaceEditViaTransaction {
+                applyViaTransaction(edit)
+            } else {
+                applyWorkspaceEdit(
+                    edit,
+                    textView: textView,
+                    documentURL: documentURL,
+                    onFailureMessage: onFailureMessage
+                )
+            }
             return
         }
 

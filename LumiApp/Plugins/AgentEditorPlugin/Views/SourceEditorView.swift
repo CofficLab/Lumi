@@ -128,7 +128,10 @@ struct SourceEditorView: View, SuperLog {
                     await state.codeActionProvider.performAction(
                         action,
                         textView: state.focusedTextView,
-                        documentURL: state.currentFileURL
+                        documentURL: state.currentFileURL,
+                        applyWorkspaceEditViaTransaction: { [weak state] edit in
+                            state?.applyCodeActionWorkspaceEdit(edit)
+                        }
                     ) { message in
                         state.showStatusToast(message, level: .warning)
                     }
