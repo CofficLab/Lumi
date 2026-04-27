@@ -104,24 +104,16 @@ struct EditorRootView: View {
 
     // MARK: - Header Area
 
-    /// Header 区域：包含面包屑和工具栏，带背景色覆盖编辑器内容
+    /// Header 区域：包含工具栏，带背景色覆盖编辑器内容
     private var headerArea: some View {
-        VStack(spacing: 0) {
-            // 面包屑导航
-            EditorBreadcrumbView(state: state)
-
-            GlassDivider()
-
-            // 工具栏（紧凑模式）
-            EditorToolbarView(state: state)
-        }
-        // 关键：添加背景色，确保覆盖下方的编辑器内容（如行号）
-        .background(
-            Color(nsColor: .textBackgroundColor)
-                .ignoresSafeArea()
-        )
-        // 使用 zIndex 确保 header 在编辑器上层
-        .zIndex(1)
+        EditorToolbarView(state: state)
+            // 关键：添加背景色，确保覆盖下方的编辑器内容（如行号）
+            .background(
+                Color(nsColor: .textBackgroundColor)
+                    .ignoresSafeArea()
+            )
+            // 使用 zIndex 确保 header 在编辑器上层
+            .zIndex(1)
     }
 
     // MARK: - Editor Content

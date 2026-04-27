@@ -995,9 +995,6 @@
         }
       }
     },
-    "Preview Markdown" : {
-
-    },
     "Preview Truncated for Large File" : {
       "localizations" : {
         "en" : {
@@ -1389,9 +1386,6 @@
       }
     },
     "Select text before selecting all occurrences" : {
-
-    },
-    "Show Source" : {
 
     },
     "Shows inline hover documentation for common Swift keywords." : {

@@ -67,15 +67,15 @@ struct ContentView: View, SuperLog {
         .toolbar {
             let leadingViews = pluginProvider.getToolbarLeadingViews()
             let trailingViews = pluginProvider.getToolbarTrailingViews()
-            
-            ToolbarItemGroup(placement: .principal) {
-                Spacer()
-            }
 
             ToolbarItemGroup(placement: .principal) {
-                ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
-                    view
+                HStack(spacing: 0) {
+                    ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
+                        view
+                    }
+                    Spacer(minLength: 0)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             ToolbarItemGroup(placement: .cancellationAction) {
