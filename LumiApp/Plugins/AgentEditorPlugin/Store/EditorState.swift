@@ -472,6 +472,7 @@ final class EditorState: ObservableObject, SuperLog {
         self.callHierarchyProvider = CallHierarchyProvider(lspService: lspService)
         self.editorPluginManager.autoDiscoverAndRegisterPlugins()
         self.codeActionProvider.editorExtensionRegistry = self.editorExtensions
+        CoreCommandRegistrations.registerAll(in: self)
         bindPanelState()
         bindDiagnostics()
         restoreConfig()

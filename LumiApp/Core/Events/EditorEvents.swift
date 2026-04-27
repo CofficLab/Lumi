@@ -17,6 +17,12 @@ extension Notification.Name {
 
     /// 请求执行「调用层级」
     static let lumiEditorCallHierarchy = Notification.Name("LumiEditorCallHierarchy")
+
+    /// 请求触发补全
+    static let lumiEditorTriggerCompletion = Notification.Name("LumiEditorTriggerCompletion")
+
+    /// 请求触发参数提示
+    static let lumiEditorTriggerSignatureHelp = Notification.Name("LumiEditorTriggerSignatureHelp")
 }
 
 // MARK: - NotificationCenter Helpers

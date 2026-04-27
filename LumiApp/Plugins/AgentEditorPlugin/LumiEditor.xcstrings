@@ -364,6 +364,18 @@
         }
       }
     },
+    "Find" : {
+
+    },
+    "Find All References" : {
+
+    },
+    "Find Next" : {
+
+    },
+    "Find Previous" : {
+
+    },
     "Find References" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -441,7 +453,6 @@
 
     },
     "Format Document" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -529,6 +540,9 @@
           }
         }
       }
+    },
+    "Go to Symbol in Workspace" : {
+
     },
     "Invalid selection" : {
 
@@ -880,6 +894,9 @@
           }
         }
       }
+    },
+    "No file open" : {
+
     },
     "No formatting changes" : {
       "localizations" : {
@@ -1297,6 +1314,9 @@
         }
       }
     },
+    "Save" : {
+
+    },
     "Save failed" : {
 
     },
@@ -1394,6 +1414,9 @@
     "Select text before selecting all occurrences" : {
 
     },
+    "Show Call Hierarchy" : {
+
+    },
     "Shows inline hover documentation for common Swift keywords." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1487,6 +1510,12 @@
       }
     },
     "This code action has no edit or command" : {
+
+    },
+    "Trigger Completion" : {
+
+    },
+    "Trigger Parameter Hints" : {
 
     },
     "Triggers realtime LSP updates for highlights, hints, and signature help." : {
