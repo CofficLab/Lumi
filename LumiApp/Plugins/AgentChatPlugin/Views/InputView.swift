@@ -35,14 +35,6 @@ struct InputView: View, SuperLog {
                 isInputFocused: $isInputFocused,
                 isModelSelectorPresented: $isModelSelectorPresented
             )
-
-            // 快捷输入视图（仅在有项目选中时显示）
-            QuickInputView(inputViewModel: inputViewModel)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 8)
-                .allowsHitTesting(canChat)
-                .opacity(canChat ? 1 : 0.6)
-                .background(.background.opacity(0.8))
         }
         .onAppear(perform: onAppear)
         .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {

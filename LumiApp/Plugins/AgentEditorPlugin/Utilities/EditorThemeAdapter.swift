@@ -3,7 +3,7 @@ import CodeEditSourceEditor
 
 /// 主题适配器（Fallback）
 /// 仅在插件系统未加载任何主题时提供默认主题。
-/// 正常情况下所有主题由 Plugins-Editor 中的主题插件提供。
+/// 正常情况下所有主题由主题插件提供。
 enum EditorThemeAdapter {
 
     /// 便捷构造 Attribute

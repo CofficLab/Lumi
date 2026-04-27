@@ -57,72 +57,102 @@ final class EditorState: ObservableObject, SuperLog {
         case error
     }
 
-    private struct MultiCursorSearchSession {
-        let query: String
-        let baseSelection: MultiCursorSelection
-        var history: [MultiCursorSelection]
-    }
-
     // MARK: - Problems
 
     /// 当前文件的诊断列表（Problems 面板数据源）
-    @Published var problemDiagnostics: [Diagnostic] = []
+    @Published private(set) var problemDiagnostics: [Diagnostic] = []
 
     /// 当前选中的问题，用于列表高亮与编辑器同步
-    @Published var selectedProblemDiagnostic: Diagnostic?
+    @Published private(set) var selectedProblemDiagnostic: Diagnostic?
 
     /// 是否展示 Problems 面板
-    @Published var isProblemsPanelPresented: Bool = false
+    @Published private(set) var isProblemsPanelPresented: Bool = false
+
+    /// 当前激活会话（Phase 2 起逐步替代散落的会话级状态）
+    @Published private(set) var activeSession = EditorSession()
+
+    var onActiveSessionChanged: ((EditorSession) -> Void)?
 
     private var diagnosticsCancellable: AnyCancellable?
-    private var multiCursorSearchSession: MultiCursorSearchSession?
+    private var panelBindings = Set<AnyCancellable>()
+    private var multiCursorSearchSession: EditorMultiCursorSearchSession?
+    private var isSessionSyncSuspended = false
 
     private func bindDiagnostics() {
         diagnosticsCancellable?.cancel()
         diagnosticsCancellable = lspService.$currentDiagnostics
             .receive(on: RunLoop.main)
             .sink { [weak self] diags in
-                self?.problemDiagnostics = diags
-                if let selected = self?.selectedProblemDiagnostic,
+                self?.setProblemDiagnostics(diags)
+                if let selected = self?.panelState.selectedProblemDiagnostic,
                    diags.contains(where: { $0 == selected }) == false {
-                    self?.selectedProblemDiagnostic = nil
+                    self?.setSelectedProblemDiagnostic(nil)
                 }
+                self?.syncActiveSessionState()
                 // 面板打开时保持打开；面板关闭时不强制弹出
             }
     }
 
-    func toggleProblemsPanel() {
-        if isProblemsPanelPresented {
-            isProblemsPanelPresented = false
-        } else {
-            // 打开 problems 时优先关闭 references，避免右侧面板冲突
-            isReferencePanelPresented = false
-            isProblemsPanelPresented = true
-        }
+    private func bindPanelState() {
+        panelBindings.removeAll()
+
+        panelState.$problemDiagnostics
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        panelState.$selectedProblemDiagnostic
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        panelState.$isProblemsPanelPresented
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        panelState.$referenceResults
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        panelState.$isReferencePanelPresented
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        panelState.$isWorkspaceSymbolSearchPresented
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        panelState.$isCallHierarchyPresented
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        panelState.$mouseHoverContent
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        panelState.$mouseHoverSymbolRect
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        syncPublishedPanelDataFromPanelState()
     }
 
-    func closeProblemsPanel() {
-        isProblemsPanelPresented = false
-    }
-
-    func openProblem(_ diag: Diagnostic) {
-        selectedProblemDiagnostic = diag
-        let line = Int(diag.range.start.line) + 1
-        let column = Int(diag.range.start.character) + 1
-        let endLine = Int(diag.range.end.line) + 1
-        let endColumn = Int(diag.range.end.character) + 1
-        let hasSelection = endLine > line || endColumn > column
-
-        editorState.cursorPositions = [
-            CursorPosition(
-                start: .init(line: line, column: column),
-                end: hasSelection
-                    ? .init(line: endLine, column: endColumn)
-                    : nil
-            )
-        ]
-    }
-    
     // MARK: - External File Watching
     
     /// 轮询定时器
@@ -141,6 +171,9 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 当前文件内容（NSTextStorage，CodeEditSourceEditor 要求）
     @Published var content: NSTextStorage?
+
+    /// Phase 1: 文档文本控制器，逐步收拢 buffer/textStorage 同步与事务应用
+    private let documentController = EditorDocumentController()
     
     /// 上次持久化的内容快照（用于检测变更）
     /// 使用完整字符串存储而非 hashValue，因为 hashValue 存在哈希碰撞，
@@ -271,26 +304,26 @@ final class EditorState: ObservableObject, SuperLog {
     // MARK: - Mouse Hover State
 
     /// 当前 LSP Hover 文本（光标移动触发，已废弃，保留兼容）
-    @Published var hoverText: String?
+    @Published private(set) var hoverText: String?
 
     /// 鼠标悬停 Hover 内容（Markdown 格式）
-    @Published var mouseHoverContent: String?
+    @Published private(set) var mouseHoverContent: String?
 
     /// 鼠标悬停对应的 symbol 矩形（编辑器坐标系，原点在左上角，Y 向下增长）
     /// 这个矩形精确覆盖 LSP 返回的 hover range 对应的文本区域
-    @Published var mouseHoverSymbolRect: CGRect = .zero
+    @Published private(set) var mouseHoverSymbolRect: CGRect = .zero
 
     /// 鼠标悬停位置（编辑器坐标系，已废弃）
-    @Published var mouseHoverPoint: CGPoint = .zero
+    @Published private(set) var mouseHoverPoint: CGPoint = .zero
 
     /// 鼠标悬停的 LSP 行列（已废弃）
-    @Published var mouseHoverLine: Int = 0
-    @Published var mouseHoverCharacter: Int = 0
+    @Published private(set) var mouseHoverLine: Int = 0
+    @Published private(set) var mouseHoverCharacter: Int = 0
 
     /// 设置鼠标悬停状态（使用 symbol 矩形定位）
     func setMouseHover(content: String, symbolRect: CGRect) {
-        let currentContent = mouseHoverContent ?? ""
-        let currentRect = mouseHoverSymbolRect
+        let currentContent = panelState.mouseHoverContent ?? ""
+        let currentRect = panelState.mouseHoverSymbolRect
         let epsilon: CGFloat = 0.75
         let isSameContent = currentContent == content
         let isCloseRect = abs(currentRect.minX - symbolRect.minX) <= epsilon &&
@@ -299,34 +332,32 @@ final class EditorState: ObservableObject, SuperLog {
             abs(currentRect.height - symbolRect.height) <= epsilon
         if isSameContent && isCloseRect { return }
 
-        mouseHoverContent = content
-        mouseHoverSymbolRect = symbolRect
-        // 兼容旧属性
-        mouseHoverPoint = CGPoint(x: symbolRect.midX, y: symbolRect.midY)
+        panelState.setMouseHover(content: content, symbolRect: symbolRect)
+        syncActiveSessionState()
     }
 
     /// 清除鼠标悬停状态
     func clearMouseHover() {
-        guard mouseHoverContent != nil || mouseHoverSymbolRect != .zero else { return }
+        guard panelState.hasActiveHover else { return }
         if Self.verbose {
             EditorPlugin.logger.debug("\(Self.t)🚫 清除鼠标悬停")
         }
-        mouseHoverContent = nil
-        mouseHoverSymbolRect = .zero
+        panelState.clearMouseHover()
+        syncActiveSessionState()
     }
 
     /// 多光标编辑状态
     @Published var multiCursorState = MultiCursorState()
 
     /// References 结果列表（右侧面板）
-    @Published var referenceResults: [ReferenceResult] = []
+    @Published private(set) var referenceResults: [ReferenceResult] = []
 
     /// 是否展示 References 面板
-    @Published var isReferencePanelPresented: Bool = false
+    @Published private(set) var isReferencePanelPresented: Bool = false
     /// 是否展示工作区符号搜索面板
-    @Published var isWorkspaceSymbolSearchPresented: Bool = false
+    @Published private(set) var isWorkspaceSymbolSearchPresented: Bool = false
     /// 是否展示调用层级面板
-    @Published var isCallHierarchyPresented: Bool = false
+    @Published private(set) var isCallHierarchyPresented: Bool = false
 
     /// 总行数
     @Published var totalLines: Int = 0
@@ -440,6 +471,7 @@ final class EditorState: ObservableObject, SuperLog {
         self.callHierarchyProvider = CallHierarchyProvider(lspService: lspService)
         self.editorPluginManager.autoDiscoverAndRegisterPlugins()
         self.codeActionProvider.editorExtensionRegistry = self.editorExtensions
+        bindPanelState()
         bindDiagnostics()
         restoreConfig()
         observeThemeChanges()
@@ -644,50 +676,51 @@ final class EditorState: ObservableObject, SuperLog {
                 
                 await MainActor.run { [weak self] in
                     guard let self, self.currentFileURL != loadingURL || self.content == nil else { return }
-                    
-                    self.currentFileURL = loadingURL
-                    self.content = NSTextStorage(string: content)
-                    self.persistedContentSnapshot = content
-                    self.canPreview = true
-                    self.isEditable = !shouldReadOnly
-                    self.isTruncated = shouldTruncate
-                    self.fileExtension = loadingURL.pathExtension.lowercased()
-                    self.fileName = loadingURL.lastPathComponent
-                    self.hasUnsavedChanges = false
-                    self.saveState = .idle
-                    
-                    // 检测语言
-                    self.detectedLanguage = CodeLanguage.detectLanguageFrom(
-                        url: loadingURL,
-                        prefixBuffer: content.getFirstLines(5),
-                        suffixBuffer: content.getLastLines(5)
-                    )
+                    self.withoutSessionSync {
+                        self.currentFileURL = loadingURL
+                        _ = self.documentController.load(text: content)
+                        self.content = self.documentController.textStorage
+                        self.persistedContentSnapshot = content
+                        self.canPreview = true
+                        self.isEditable = !shouldReadOnly
+                        self.isTruncated = shouldTruncate
+                        self.fileExtension = loadingURL.pathExtension.lowercased()
+                        self.fileName = loadingURL.lastPathComponent
+                        self.hasUnsavedChanges = false
+                        self.saveState = .idle
 
-                    // 语言 fallback：将不支持的语言映射到相近的语言
-                    if self.detectedLanguage == nil || self.detectedLanguage?.id == .plainText {
-                        let fallbackMap: [String: CodeLanguage] = [
-                            "astro": .tsx,
-                            "vue": .tsx,
-                            "svelte": .tsx,
-                            "astro-component": .tsx,
-                        ]
-                        if let fallback = fallbackMap[self.fileExtension] {
-                            self.detectedLanguage = fallback
+                        // 检测语言
+                        self.detectedLanguage = CodeLanguage.detectLanguageFrom(
+                            url: loadingURL,
+                            prefixBuffer: content.getFirstLines(5),
+                            suffixBuffer: content.getLastLines(5)
+                        )
+
+                        // 语言 fallback：将不支持的语言映射到相近的语言
+                        if self.detectedLanguage == nil || self.detectedLanguage?.id == .plainText {
+                            let fallbackMap: [String: CodeLanguage] = [
+                                "astro": .tsx,
+                                "vue": .tsx,
+                                "svelte": .tsx,
+                                "astro-component": .tsx,
+                            ]
+                            if let fallback = fallbackMap[self.fileExtension] {
+                                self.detectedLanguage = fallback
+                            }
                         }
-                    }
 
-                    // 计算行数
-                    self.totalLines = content.filter { $0 == "\n" }.count + 1
-                    self.hoverText = nil
-                    self.mouseHoverContent = nil
-                    self.inlayHintProvider.clear()
-                    self.codeActionProvider.clear()
-                    self.inlayHintRefreshTask?.cancel()
-                    self.inlayHintRefreshTask = nil
-                    self.referenceResults = []
-                    self.isReferencePanelPresented = false
-                    self.selectedProblemDiagnostic = nil
-                    self.isProblemsPanelPresented = false
+                        // 计算行数
+                        self.totalLines = content.filter { $0 == "\n" }.count + 1
+                        self.inlayHintProvider.clear()
+                        self.codeActionProvider.clear()
+                        self.inlayHintRefreshTask?.cancel()
+                        self.inlayHintRefreshTask = nil
+                        self.clearPanelData(
+                            closeProblems: false,
+                            closeReferences: false
+                        )
+                    }
+                    self.syncActiveSessionState()
                     
                     // 启动文件变化监听器（检测外部编辑器的修改）
                     self.setupFileWatcher(for: loadingURL)
@@ -714,89 +747,241 @@ final class EditorState: ObservableObject, SuperLog {
         }
     }
 
-    /// 从跳转定义入口打开文件并移动光标
-    func openDefinitionLocation(url: URL, target: CursorPosition, highlightLine: Bool = false) {
-        loadFile(from: url)
+    func applySessionRestore(_ session: EditorSession) {
+        let fallbackCursorPositions = multiCursorCursorPositions(from: session.multiCursorState.all)
+        let restore = EditorSessionRestoreController.restoreResult(
+            from: session,
+            fallbackCursorPositions: fallbackCursorPositions
+        )
+
+        multiCursorState = session.multiCursorState
+        restorePanelState(from: session)
+        applyInteractionUpdate(.sessionRestore(restore))
+        restoreScrollState(restore.scrollState)
+    }
+
+    func applyFindReplaceObservation(_ state: EditorFindReplaceState) {
+        applyInteractionUpdate(
+            .findReplace(state)
+        )
+    }
+
+    func applySourceEditorBindingUpdate(_ update: EditorSourceEditorBindingUpdate) {
+        applyInteractionUpdate(
+            .sourceEditorBinding(update)
+        )
+    }
+
+    func applyScrollObservation(viewportOrigin: CGPoint) {
+        applyInteractionUpdate(
+            .scroll(EditorScrollState(viewportOrigin: viewportOrigin))
+        )
+    }
+
+    private func applyInteractionUpdate(_ update: EditorInteractionUpdate) {
+        let resolved = EditorInteractionUpdateController.resolve(
+            update,
+            currentViewState: currentBridgeState().viewState
+        )
+
+        if let bridgeState = resolved.bridgeState {
+            applyBridgeState(bridgeState)
+        }
+
+        syncActiveSessionState(
+            scrollStateOverride: resolved.scrollState
+        )
+    }
+
+    func performPanelCommand(_ command: EditorPanelCommand) {
+        let updated = EditorPanelCommandController.apply(command, to: currentPanelSnapshot())
+        applyPanelSnapshot(updated)
+        syncActiveSessionState()
+    }
+
+    func updateSelectedProblemDiagnostic(for cursor: CursorPosition?) {
+        guard let cursor else {
+            setSelectedProblemDiagnostic(nil)
+            return
+        }
+
+        let matchingDiagnostic = panelState.problemDiagnostics.first { diag in
+            let startLine = Int(diag.range.start.line) + 1
+            let endLine = Int(diag.range.end.line) + 1
+            let startColumn = Int(diag.range.start.character) + 1
+            let endColumn = Int(diag.range.end.character) + 1
+
+            if cursor.start.line < startLine || cursor.start.line > endLine {
+                return false
+            }
+            if startLine == endLine {
+                let upperBound = max(endColumn, startColumn)
+                return cursor.start.column >= startColumn && cursor.start.column <= upperBound
+            }
+            if cursor.start.line == startLine {
+                return cursor.start.column >= startColumn
+            }
+            if cursor.start.line == endLine {
+                return cursor.start.column <= max(endColumn, 1)
+            }
+            return true
+        }
+
+        setSelectedProblemDiagnostic(matchingDiagnostic)
+    }
+
+    func applyCursorObservation(_ positions: [CursorPosition]) {
+        applyInteractionUpdate(
+            .cursor(
+                .observedPositions(
+                    positions,
+                    fallbackLine: max(cursorLine, 1),
+                    fallbackColumn: max(cursorColumn, 1)
+                )
+            )
+        )
+    }
+
+    func applyPrimaryCursorObservation(line: Int, column: Int) {
+        updatePrimaryCursorPosition(
+            line: line,
+            column: column,
+            preserveCursorSelection: true
+        )
+    }
+
+    func navigateToCursorPositions(_ positions: [CursorPosition]) {
+        applyInteractionUpdate(
+            .cursor(
+                .explicitPositions(
+                    positions,
+                    fallbackLine: EditorViewState.initial.primaryCursorLine,
+                    fallbackColumn: EditorViewState.initial.primaryCursorColumn
+                )
+            )
+        )
+    }
+
+    private func updatePrimaryCursorPosition(
+        line: Int,
+        column: Int,
+        preserveCursorSelection: Bool = true
+    ) {
+        applyInteractionUpdate(
+            .cursor(
+                .primary(
+                    line: line,
+                    column: column,
+                    existingPositions: editorState.cursorPositions ?? [],
+                    preserveCursorSelection: preserveCursorSelection
+                )
+            )
+        )
+    }
+
+    func resetPrimaryCursorPosition() {
+        editorState.cursorPositions = []
+        updatePrimaryCursorPosition(
+            line: EditorViewState.initial.primaryCursorLine,
+            column: EditorViewState.initial.primaryCursorColumn,
+            preserveCursorSelection: false
+        )
+    }
+
+    /// 执行导航请求并在目标文件/位置落点
+    func performNavigation(_ request: EditorNavigationRequest) {
+        let resolved = EditorNavigationController.resolve(request)
+        loadFile(from: resolved.url)
         Task { @MainActor [weak self] in
             guard let self else { return }
             for _ in 0..<40 {
-                if self.currentFileURL == url, self.content != nil {
-                    let finalTarget = highlightLine
-                        ? self.lineHighlightCursorPosition(from: target)
-                        : target
-                    self.editorState.cursorPositions = [finalTarget]
+                if self.currentFileURL == resolved.url, self.content != nil {
+                    let finalTarget = EditorNavigationController.resolvedDefinitionTarget(
+                        from: resolved.target,
+                        highlightLine: resolved.highlightLine,
+                        content: self.content?.string
+                    )
+                    self.navigateToCursorPositions([finalTarget])
                     return
                 }
                 try? await Task.sleep(for: .milliseconds(50))
             }
-            let finalTarget = highlightLine
-                ? self.lineHighlightCursorPosition(from: target)
-                : target
-            self.editorState.cursorPositions = [finalTarget]
+            let finalTarget = EditorNavigationController.resolvedDefinitionTarget(
+                from: resolved.target,
+                highlightLine: resolved.highlightLine,
+                content: self.content?.string
+            )
+            self.navigateToCursorPositions([finalTarget])
         }
     }
 
-    private func lineHighlightCursorPosition(from target: CursorPosition) -> CursorPosition {
-        let line = max(target.start.line, 1)
-        guard let content else {
-            return CursorPosition(
-                start: .init(line: line, column: 1),
-                end: .init(line: line, column: max(target.start.column, 1))
-            )
+    func performOpenItem(_ command: EditorOpenItemCommand) {
+        guard let resolved = EditorOpenItemCommandController.resolve(command) else {
+            switch command {
+            case .workspaceSymbol:
+                showStatusToast("无法打开符号位置", level: .warning)
+            case .callHierarchyItem:
+                showStatusToast("无法打开调用层级目标", level: .warning)
+            case .problem, .reference:
+                break
+            }
+            return
         }
 
-        let lines = content.string.components(separatedBy: .newlines)
-        let index = line - 1
-        guard lines.indices.contains(index) else {
-            return CursorPosition(
-                start: .init(line: line, column: 1),
-                end: .init(line: line, column: max(target.start.column, 1))
-            )
+        if let diagnostic = resolved.selectedProblemDiagnostic {
+            setSelectedProblemDiagnostic(diagnostic)
         }
-
-        let lineText = lines[index]
-        let endColumn = max(lineText.count + 1, target.start.column)
-        return CursorPosition(
-            start: .init(line: line, column: 1),
-            end: .init(line: line, column: endColumn)
-        )
+        if !resolved.cursorPositions.isEmpty {
+            navigateToCursorPositions(resolved.cursorPositions)
+        }
+        if resolved.closeWorkspaceSymbolSearch {
+            performPanelCommand(.closeWorkspaceSymbolSearch)
+        }
+        if let navigationRequest = resolved.navigationRequest {
+            performNavigation(navigationRequest)
+        }
     }
     
     /// 重置状态
     private func resetState() {
-        currentFileURL = nil
-        content = nil
-        persistedContentSnapshot = nil
-        canPreview = false
-        isBinaryFile = false
-        isEditable = true
-        isTruncated = false
-        fileExtension = ""
-        fileName = ""
-        hasUnsavedChanges = false
-        saveState = .idle
-        detectedLanguage = nil
-        cursorLine = 1
-        cursorColumn = 1
-        totalLines = 0
-        hoverText = nil
-        mouseHoverContent = nil
-        referenceResults = []
-        isReferencePanelPresented = false
-        problemDiagnostics = []
-        selectedProblemDiagnostic = nil
-        isProblemsPanelPresented = false
-        inlayHintProvider.clear()
-        codeActionProvider.clear()
-        inlayHintRefreshTask?.cancel()
-        inlayHintRefreshTask = nil
-        focusedTextView = nil
+        withoutSessionSync {
+            currentFileURL = nil
+            content = nil
+            documentController.clear()
+            content = documentController.textStorage
+            activeSession.reset()
+            persistedContentSnapshot = nil
+            canPreview = false
+            isBinaryFile = false
+            isEditable = true
+            isTruncated = false
+            fileExtension = ""
+            fileName = ""
+            hasUnsavedChanges = false
+            saveState = .idle
+            detectedLanguage = nil
+            resetPrimaryCursorPosition()
+            totalLines = 0
+            clearPanelData(
+                clearDiagnostics: true,
+                closeProblems: false,
+                closeReferences: false,
+                closeWorkspaceSymbols: false,
+                closeCallHierarchy: false
+            )
+            inlayHintProvider.clear()
+            codeActionProvider.clear()
+            inlayHintRefreshTask?.cancel()
+            inlayHintRefreshTask = nil
+            focusedTextView = nil
+        }
         
         // 清理文件监听器
         cleanupFileWatcher()
         
         // 关闭 LSP 文档
         lspCoordinator.closeFile()
+        syncActiveSessionState()
     }
     
     /// 加载二进制/非文本文件进行预览
@@ -816,48 +1001,55 @@ final class EditorState: ObservableObject, SuperLog {
         
         let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         
-        currentFileURL = url
-        content = nil
-        persistedContentSnapshot = nil
-        canPreview = false
-        isBinaryFile = true
-        isEditable = false
-        isTruncated = false
-        fileExtension = url.pathExtension.lowercased()
-        fileName = url.lastPathComponent
-        hasUnsavedChanges = false
-        saveState = .idle
-        detectedLanguage = nil
-        cursorLine = 1
-        cursorColumn = 1
-        totalLines = 0
-        hoverText = nil
-        mouseHoverContent = nil
-        referenceResults = []
-        isReferencePanelPresented = false
-        problemDiagnostics = []
-        selectedProblemDiagnostic = nil
-        isProblemsPanelPresented = false
+        withoutSessionSync {
+            currentFileURL = url
+            documentController.clear()
+            content = documentController.textStorage
+            persistedContentSnapshot = nil
+            canPreview = false
+            isBinaryFile = true
+            isEditable = false
+            isTruncated = false
+            fileExtension = url.pathExtension.lowercased()
+            fileName = url.lastPathComponent
+            hasUnsavedChanges = false
+            saveState = .idle
+            detectedLanguage = nil
+            resetPrimaryCursorPosition()
+            totalLines = 0
+            clearPanelData(
+                clearDiagnostics: true,
+                closeProblems: false,
+                closeReferences: false,
+                closeWorkspaceSymbols: false,
+                closeCallHierarchy: false
+            )
+        }
         
         // 计算文件大小显示信息
         let sizeText = ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
         if Self.verbose {
             logger.info("\(Self.t)加载二进制文件: \(url.lastPathComponent), 大小: \(sizeText)")
         }
+        syncActiveSessionState()
     }
     
     // MARK: - Content Change Detection
     
     /// 通知内容已变更（由 TextViewCoordinator 调用）
     func notifyContentChanged() {
-        guard let content else {
+        guard let textStorage = content else {
             if Self.verbose {
                 logger.warning("\(Self.t)内容变更: content 为 nil，无法检测变更")
             }
             return
         }
         
-        let contentString = content.string
+        let contentString = textStorage.string
+        if let result = documentController.syncBufferFromTextStorageIfNeeded() {
+            content = documentController.textStorage
+            totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+        }
         let changed: Bool
         if let snapshot = persistedContentSnapshot {
             // 使用精确字符串比较，而非 hashValue（存在哈希碰撞风险）
@@ -879,6 +1071,7 @@ final class EditorState: ObservableObject, SuperLog {
             hasUnsavedChanges = false
             saveState = .idle
         }
+        syncActiveSessionState()
     }
     
     /// 通知 LSP 发生增量文本变更（由编辑器 coordinator 转发）
@@ -906,7 +1099,7 @@ final class EditorState: ObservableObject, SuperLog {
             )
             return
         }
-        applyEditsToCurrentDocument(edits)
+        applyEditsToCurrentDocument(edits, reason: "lsp_format_document")
         showStatusToast(
             String(localized: "Document formatted", table: "LumiEditor"),
             level: .success
@@ -927,8 +1120,10 @@ final class EditorState: ObservableObject, SuperLog {
             character: position.character
         )
         guard !references.isEmpty else {
-            referenceResults = []
-            isReferencePanelPresented = false
+            clearPanelData(
+                closeReferences: false
+            )
+            syncActiveSessionState()
             showStatusToast(
                 String(localized: "No references found", table: "LumiEditor"),
                 level: .warning
@@ -956,14 +1151,18 @@ final class EditorState: ObservableObject, SuperLog {
             )
         }
 
-        referenceResults = items.sorted {
+        let sortedItems = items.sorted {
             if $0.path != $1.path { return $0.path < $1.path }
             if $0.line != $1.line { return $0.line < $1.line }
             return $0.column < $1.column
         }
-        isReferencePanelPresented = !referenceResults.isEmpty
+        setReferenceResults(sortedItems)
+        applyPanelSnapshot(
+            updatedPanelSnapshot(references: !sortedItems.isEmpty)
+        )
+        syncActiveSessionState()
         showStatusToast(
-            String(localized: "Found references:", table: "LumiEditor") + " \(referenceResults.count)",
+            String(localized: "Found references:", table: "LumiEditor") + " \(sortedItems.count)",
             level: .success
         )
     }
@@ -1008,10 +1207,6 @@ final class EditorState: ObservableObject, SuperLog {
         await jumpDelegate?.performGoToImplementation(forRange: selection)
     }
 
-    func closeReferencePanel() {
-        isReferencePanelPresented = false
-    }
-
     func updateSidePanelWidth(by delta: CGFloat) {
         sidePanelWidth = clampedSidePanelWidth(sidePanelWidth + delta)
     }
@@ -1022,14 +1217,6 @@ final class EditorState: ObservableObject, SuperLog {
 
     func persistSidePanelWidth() {
         EditorConfigStore.saveValue(sidePanelWidth, forKey: EditorConfigStore.sidePanelWidthKey)
-    }
-
-    func openReference(_ reference: ReferenceResult) {
-        let target = CursorPosition(
-            start: CursorPosition.Position(line: reference.line, column: reference.column),
-            end: nil
-        )
-        openDefinitionLocation(url: reference.url, target: target)
     }
 
     func showStatusToast(_ message: String, level: StatusLevel, duration: TimeInterval = 1.8) {
@@ -1044,37 +1231,6 @@ final class EditorState: ObservableObject, SuperLog {
         case .error:
             alert_error(message, duration: max(safeDuration, 2.0), autoDismiss: true)
         }
-    }
-
-    func openWorkspaceSymbolSearch() {
-        guard canPreview else { return }
-        workspaceSymbolProvider.clear()
-        isWorkspaceSymbolSearchPresented = true
-    }
-
-    func closeWorkspaceSymbolSearch() {
-        isWorkspaceSymbolSearchPresented = false
-    }
-
-    func openWorkspaceSymbol(_ symbol: WorkspaceSymbolItem) {
-        guard let url = URL(string: symbol.location.uri), url.isFileURL else {
-            showStatusToast(
-                "无法打开符号位置",
-                level: .warning
-            )
-            return
-        }
-
-        let start = symbol.location.range.start
-        let target = CursorPosition(
-            start: .init(
-                line: Int(start.line) + 1,
-                column: Int(start.character) + 1
-            ),
-            end: nil
-        )
-        openDefinitionLocation(url: url, target: target)
-        isWorkspaceSymbolSearchPresented = false
     }
 
     func openCallHierarchy() async {
@@ -1093,28 +1249,7 @@ final class EditorState: ObservableObject, SuperLog {
             return
         }
 
-        isCallHierarchyPresented = true
-    }
-
-    func closeCallHierarchy() {
-        isCallHierarchyPresented = false
-    }
-
-    func openCallHierarchyItem(_ item: EditorCallHierarchyItem) {
-        guard let url = URL(string: item.uri), url.isFileURL else {
-            showStatusToast("无法打开调用层级目标", level: .warning)
-            return
-        }
-
-        let start = item.selectionRange.start
-        let target = CursorPosition(
-            start: .init(
-                line: Int(start.line) + 1,
-                column: Int(start.character) + 1
-            ),
-            end: nil
-        )
-        openDefinitionLocation(url: url, target: target)
+        performPanelCommand(.openCallHierarchy)
     }
 
     /// 触发重命名（先弹框输入新名称，再请求 LSP rename）
@@ -1191,7 +1326,7 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 立即保存
     func saveNow() {
-        guard let content = content?.string, let fileURL = currentFileURL else { return }
+        guard let content = documentController.currentText ?? content?.string, let fileURL = currentFileURL else { return }
         performSave(content: content, to: fileURL)
     }
 
@@ -1248,10 +1383,12 @@ final class EditorState: ObservableObject, SuperLog {
                 persistedContentSnapshot = content
                 hasUnsavedChanges = false
                 saveState = .saved
+                syncActiveSessionState()
                 scheduleSuccessClear()
             } catch {
                 logger.error("\(Self.t)保存失败: \(error)")
                 saveState = .error(String(localized: "Save failed", table: "LumiEditor") + ": \(error.localizedDescription)")
+                syncActiveSessionState()
                 scheduleSuccessClear()
             }
         }
@@ -1364,11 +1501,9 @@ final class EditorState: ObservableObject, SuperLog {
         
         // 关键：原地替换现有 NSTextStorage 的内容，而不是创建新对象
         // SourceEditor 持有的是旧 NSTextStorage 的引用，替换引用不会触发 UI 更新
-        if let existingContent = content {
-            existingContent.mutableString.setString(newContent)
-        } else {
-            content = NSTextStorage(string: newContent)
-        }
+        let result = documentController.replaceText(newContent)
+        content = documentController.textStorage
+        totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
         
         persistedContentSnapshot = newContent
         lastKnownModificationDate = modificationDate
@@ -1463,7 +1598,7 @@ final class EditorState: ObservableObject, SuperLog {
     // MARK: - LSP Edit Utilities
 
     func clearMultiCursors() {
-        multiCursorState.clearSecondary()
+        applyMultiCursorState(EditorMultiCursorStateController.clearSecondary(from: multiCursorState))
         logMultiCursorState(action: "clearMultiCursors")
         endMultiCursorSearchSession()
     }
@@ -1471,12 +1606,14 @@ final class EditorState: ObservableObject, SuperLog {
     func clearUnfocusedMultiCursorsIfNeeded() {
         guard multiCursorState.isEnabled else { return }
         guard multiCursorState.all.count <= 1 else { return }
-        multiCursorState.clearSecondary()
+        applyMultiCursorState(EditorMultiCursorStateController.clearSecondary(from: multiCursorState))
         endMultiCursorSearchSession()
     }
 
     func setPrimarySelection(_ selection: MultiCursorSelection) {
-        multiCursorState.setPrimary(selection)
+        applyMultiCursorState(
+            EditorMultiCursorStateController.replacingPrimary(in: multiCursorState, with: selection)
+        )
         logMultiCursorState(action: "setPrimarySelection")
     }
 
@@ -1485,18 +1622,20 @@ final class EditorState: ObservableObject, SuperLog {
             clearMultiCursors()
             return
         }
-        multiCursorState.primary = first
-        multiCursorState.secondary = Array(selections.dropFirst())
+        applyMultiCursorSelections(selections)
         logMultiCursorState(action: "setSelections", note: "incomingCount=\(selections.count)")
 
         if selections.count != 1 {
             return
         }
 
-        if let session = multiCursorSearchSession,
-           session.baseSelection == first,
-           selectionText(for: first) == session.query {
-            multiCursorSearchSession?.history = [first]
+        if let text = currentEditorTextStorageString(),
+           let session = EditorMultiCursorSearchController.collapsedSession(
+                from: multiCursorSearchSession,
+                singleSelection: first,
+                in: text
+           ) {
+            multiCursorSearchSession = session
             return
         }
 
@@ -1505,6 +1644,36 @@ final class EditorState: ObservableObject, SuperLog {
 
     func currentSelectionsAsNSRanges() -> [NSRange] {
         multiCursorState.all.map { NSRange(location: $0.location, length: $0.length) }
+    }
+
+    private func applyMultiCursorSelections(_ selections: [MultiCursorSelection]) {
+        applyMultiCursorState(EditorMultiCursorStateController.state(from: selections))
+    }
+
+    private func applyMultiCursorState(_ state: MultiCursorState) {
+        multiCursorState = state
+        let selections = state.all
+        if selections.isEmpty {
+            navigateToCursorPositions([])
+            return
+        }
+        syncEditorCursorPositionsFromSelections(selections)
+    }
+
+    private func syncEditorCursorPositionsFromSelections(_ selections: [MultiCursorSelection]) {
+        guard let text = content?.string else {
+            navigateToCursorPositions([])
+            return
+        }
+
+        let viewState = EditorViewStateController.positions(
+            from: selections,
+            text: text,
+            fallbackLine: max(cursorLine, 1),
+            fallbackColumn: max(cursorColumn, 1),
+            positionResolver: editorPosition(utf16Offset:in:)
+        )
+        navigateToCursorPositions(viewState.cursorPositions)
     }
 
     func logMultiCursorState(action: String, note: String? = nil) {
@@ -1537,68 +1706,50 @@ final class EditorState: ObservableObject, SuperLog {
 
     @discardableResult
     func addNextOccurrence(from range: NSRange) -> [NSRange]? {
-        guard let content else { return nil }
-        let text = content.string as NSString
-        let normalizedRange = normalizedRange(range, in: text)
+        guard let text = currentEditorTextStorageString() else { return nil }
+        let normalizedRange = EditorMultiCursorMatcher.normalizedRange(range, in: text)
         guard normalizedRange.location != NSNotFound else { return nil }
-
-        let baseSelection: MultiCursorSelection
-        let query: String
-
-        // 检查当前选区的文本是否与旧 session 的 query 匹配
-        // 只有当前选区文本和旧 session 的 query 一致时才复用 session
-        let currentSelectionText: String? = {
-            if normalizedRange.length > 0 {
-                return text.substring(with: normalizedRange)
-            }
-            return nil
-        }()
-
-        if let session = multiCursorSearchSession,
-           selectionText(for: session.baseSelection) == session.query,
-           currentSelectionText == session.query {
-            baseSelection = session.baseSelection
-            query = session.query
-        } else {
-            guard let resolvedSelection = resolvedBaseSelection(from: normalizedRange, in: text) else {
-                showStatusToast(
-                    String(localized: "Select text before adding next occurrence", table: "LumiEditor"),
-                    level: .warning
-                )
-                return nil
-            }
-
-            let resolvedQuery = text.substring(with: nsRange(from: resolvedSelection))
-            guard !resolvedQuery.isEmpty else { return nil }
-
-            baseSelection = resolvedSelection
-            query = resolvedQuery
-
-            multiCursorSearchSession = MultiCursorSearchSession(
-                query: query,
-                baseSelection: baseSelection,
-                history: [baseSelection]
+        guard let resolved = EditorMultiCursorSearchController.resolvedContext(
+            from: normalizedRange,
+            in: text,
+            existingSession: multiCursorSearchSession
+        ) else {
+            showStatusToast(
+                String(localized: "Select text before adding next occurrence", table: "LumiEditor"),
+                level: .warning
             )
-            multiCursorState.replaceAll([baseSelection])
-            logMultiCursorState(action: "addNextOccurrence.sessionStarted", note: "query=\(query)")
+            return nil
         }
 
-        let allMatches = ranges(of: query, in: text)
-        let selectedSet = Set(multiCursorState.all)
-        let anchorIndex = allMatches.firstIndex(of: baseSelection)
-            ?? allMatches.firstIndex(of: multiCursorState.primary)
-            ?? 0
+        let context = resolved.context
+        if resolved.shouldStartSession {
+            multiCursorSearchSession = EditorMultiCursorSearchController.session(for: context)
+            applyMultiCursorState(EditorMultiCursorStateController.state(from: [context.baseSelection]))
+            logMultiCursorState(action: "addNextOccurrence.sessionStarted", note: "query=\(context.query)")
+        }
+
+        let allMatches = EditorMultiCursorMatcher.ranges(of: context.query, in: text)
 
         guard !allMatches.isEmpty else { return currentSelectionsAsNSRanges() }
 
-        for step in 1...allMatches.count {
-            let candidate = allMatches[(anchorIndex + step) % allMatches.count]
-            if !selectedSet.contains(candidate) {
-                multiCursorState.addSecondary(candidate)
-                multiCursorSearchSession?.history.append(candidate)
-                logMultiCursorState(action: "addNextOccurrence.added", note: "query=\(query)")
-                return currentSelectionsAsNSRanges()
-            }
+        guard let session = multiCursorSearchSession else {
+            return currentSelectionsAsNSRanges()
+        }
+
+        if let candidate = EditorMultiCursorSearchController.nextSelection(
+            in: allMatches,
+            currentState: multiCursorState,
+            session: session
+        ) {
+            applyMultiCursorState(
+                EditorMultiCursorStateController.addingSelection(candidate, to: multiCursorState)
+            )
+            multiCursorSearchSession = EditorMultiCursorSearchController.appending(
+                candidate,
+                to: session
+            )
+            logMultiCursorState(action: "addNextOccurrence.added", note: "query=\(context.query)")
+            return currentSelectionsAsNSRanges()
         }
 
         showStatusToast(
@@ -1609,13 +1760,11 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func addAllOccurrences(from range: NSRange) -> [NSRange]? {
-        guard let content else { return nil }
-        let text = content.string as NSString
-        let normalizedRange = normalizedRange(range, in: text)
+        guard let text = currentEditorTextStorageString() else { return nil }
+        let normalizedRange = EditorMultiCursorMatcher.normalizedRange(range, in: text)
         guard normalizedRange.location != NSNotFound else { return nil }
 
-        let baseSelection = resolvedBaseSelection(from: normalizedRange, in: text)
-        guard let baseSelection else {
+        guard let context = EditorMultiCursorMatcher.searchContext(from: normalizedRange, in: text) else {
             showStatusToast(
                 String(localized: "Select text before selecting all occurrences", table: "LumiEditor"),
                 level: .warning
@@ -1623,36 +1772,31 @@ final class EditorState: ObservableObject, SuperLog {
             return nil
         }
 
-        let query = text.substring(with: nsRange(from: baseSelection))
-        guard !query.isEmpty else { return nil }
-
-        let matches = ranges(of: query, in: text)
+        let matches = EditorMultiCursorMatcher.ranges(of: context.query, in: text)
         guard !matches.isEmpty else { return nil }
 
-        multiCursorSearchSession = MultiCursorSearchSession(
-            query: query,
-            baseSelection: baseSelection,
-            history: matches
+        multiCursorSearchSession = EditorMultiCursorSearchController.session(
+            for: context,
+            matches: matches
         )
-        multiCursorState.replaceAll(matches)
-        logMultiCursorState(action: "addAllOccurrences", note: "query=\(query)")
+        applyMultiCursorSelections(matches)
+        logMultiCursorState(action: "addAllOccurrences", note: "query=\(context.query)")
         return currentSelectionsAsNSRanges()
     }
 
     func removeLastOccurrenceSelection() -> [NSRange]? {
         guard multiCursorState.isEnabled else { return nil }
-        guard var session = multiCursorSearchSession else {
+        guard let session = multiCursorSearchSession else {
             clearMultiCursors()
             return currentSelectionsAsNSRanges()
         }
-        guard session.history.count > 1 else {
+        guard let updatedSession = EditorMultiCursorSearchController.removingLast(from: session) else {
             clearMultiCursors()
             return currentSelectionsAsNSRanges()
         }
 
-        session.history.removeLast()
-        multiCursorSearchSession = session
-        multiCursorState.replaceAll(session.history)
+        multiCursorSearchSession = updatedSession
+        applyMultiCursorSelections(updatedSession.history)
         logMultiCursorState(action: "removeLastOccurrenceSelection")
         return currentSelectionsAsNSRanges()
     }
@@ -1664,22 +1808,43 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func applyMultiCursorReplacement(_ replacement: String) -> [MultiCursorSelection]? {
-        guard let existing = content else { return nil }
+        guard let text = documentController.buffer?.text ?? content?.string else { return nil }
         let selections = multiCursorState.all
         guard selections.count > 1 else { return nil }
 
         let result = MultiCursorEditEngine.apply(
-            text: existing.string,
+            text: text,
             selections: selections,
             operation: .replaceSelection(replacement)
         )
 
-        existing.mutableString.setString(result.text)
-        totalLines = result.text.filter { $0 == "\n" }.count + 1
-        setSelections(result.selections)
-        lspCoordinator.replaceDocument(result.text)
-        notifyContentChanged()
+        let transaction = MultiCursorTransactionBuilder.makeTransaction(
+            operation: .replaceSelection(replacement),
+            selections: selections,
+            updatedSelections: result.selections
+        )
+        applyEditorTransaction(transaction, reason: "multi_cursor_replace")
         endMultiCursorSearchSession()
+        return result.selections
+    }
+
+    func applyMultiCursorOperation(_ operation: MultiCursorOperation) -> [MultiCursorSelection]? {
+        guard let text = documentController.buffer?.text ?? content?.string else { return nil }
+        let selections = multiCursorState.all
+        guard selections.count > 1 else { return nil }
+
+        let result = MultiCursorEditEngine.apply(
+            text: text,
+            selections: selections,
+            operation: operation
+        )
+
+        let transaction = MultiCursorTransactionBuilder.makeTransaction(
+            operation: operation,
+            selections: selections,
+            updatedSelections: result.selections
+        )
+        applyEditorTransaction(transaction, reason: "multi_cursor_operation")
         return result.selections
     }
 
@@ -1690,15 +1855,9 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    private func applyEditsToCurrentDocument(_ edits: [TextEdit]) {
-        guard let existing = content else { return }
-        let original = existing.string
-        guard let updated = Self.applyingTextEdits(edits, to: original), updated != original else { return }
-
-        existing.mutableString.setString(updated)
-        totalLines = updated.filter { $0 == "\n" }.count + 1
-        lspCoordinator.replaceDocument(updated)
-        notifyContentChanged()
+    private func applyEditsToCurrentDocument(_ edits: [TextEdit], reason: String = "text_edits") {
+        guard let result = documentController.applyTextEdits(edits) else { return }
+        commitDocumentEditResult(result, reason: reason)
     }
 
     private func applyWorkspaceChanges(
@@ -1711,7 +1870,7 @@ final class EditorState: ObservableObject, SuperLog {
         for (uri, textEdits) in changes {
             guard !textEdits.isEmpty else { continue }
             if uri == currentURI {
-                applyEditsToCurrentDocument(textEdits)
+                applyEditsToCurrentDocument(textEdits, reason: "lsp_workspace_edit")
                 changedFiles += 1
                 continue
             }
@@ -1738,7 +1897,7 @@ final class EditorState: ObservableObject, SuperLog {
                 guard !edits.isEmpty else { continue }
 
                 if uri == currentURI {
-                    applyEditsToCurrentDocument(edits)
+                    applyEditsToCurrentDocument(edits, reason: "lsp_document_edit")
                     changedFiles += 1
                 } else if let url = URL(string: uri), url.isFileURL, applyTextEdits(edits, toFile: url) {
                     changedFiles += 1
@@ -1764,7 +1923,7 @@ final class EditorState: ObservableObject, SuperLog {
     private func applyTextEdits(_ edits: [TextEdit], toFile url: URL) -> Bool {
         do {
             let original = try String(contentsOf: url, encoding: .utf8)
-            guard let updated = Self.applyingTextEdits(edits, to: original), updated != original else {
+            guard let updated = TextEditApplier.apply(edits: edits, to: original), updated != original else {
                 return false
             }
             try updated.write(to: url, atomically: true, encoding: .utf8)
@@ -1772,54 +1931,6 @@ final class EditorState: ObservableObject, SuperLog {
         } catch {
             return false
         }
-    }
-
-    private static func applyingTextEdits(_ edits: [TextEdit], to content: String) -> String? {
-        let sorted = edits.sorted { lhs, rhs in
-            if lhs.range.start.line != rhs.range.start.line {
-                return lhs.range.start.line > rhs.range.start.line
-            }
-            return lhs.range.start.character > rhs.range.start.character
-        }
-
-        var result = content
-        for edit in sorted {
-            guard let nsRange = nsRange(from: edit.range, in: result),
-                  let swiftRange = Range(nsRange, in: result) else {
-                return nil
-            }
-            result.replaceSubrange(swiftRange, with: edit.newText)
-        }
-        return result
-    }
-
-    private static func nsRange(from lspRange: LSPRange, in content: String) -> NSRange? {
-        guard let start = utf16Offset(for: lspRange.start, in: content),
-              let end = utf16Offset(for: lspRange.end, in: content),
-              end >= start else {
-            return nil
-        }
-        return NSRange(location: start, length: end - start)
-    }
-
-    private static func utf16Offset(for position: Position, in content: String) -> Int? {
-        var line = 0
-        var utf16Offset = 0
-        var lineStartOffset = 0
-
-        for scalar in content.unicodeScalars {
-            if line == position.line {
-                break
-            }
-            utf16Offset += scalar.utf16.count
-            if scalar == "\n" {
-                line += 1
-                lineStartOffset = utf16Offset
-            }
-        }
-
-        guard line == position.line else { return nil }
-        return min(lineStartOffset + position.character, content.utf16.count)
     }
 
     private func displayPathForURL(_ url: URL) -> String {
@@ -1850,111 +1961,249 @@ final class EditorState: ObservableObject, SuperLog {
         return lines[lineNumber - 1].trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    // MARK: - Kernel Phase 1
+
+    private func applyEditorTransaction(_ transaction: EditorTransaction, reason: String) {
+        guard let result = documentController.apply(transaction: transaction) else { return }
+        commitDocumentEditResult(result, reason: reason)
+    }
+
+    private func commitDocumentEditResult(_ result: EditorEditResult, reason: String) {
+        content = documentController.textStorage
+        totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+        if let selections = result.selections {
+            setSelections(multiCursorSelections(from: selections))
+        }
+        lspCoordinator.replaceDocument(result.snapshot.text)
+        notifyContentChanged()
+
+        if Self.verbose {
+            logger.info("\(Self.t)应用编辑事务: reason=\(reason), version=\(result.snapshot.version), length=\(result.snapshot.text.count)")
+        }
+    }
+
+    private func multiCursorSelections(from selections: [EditorSelection]) -> [MultiCursorSelection] {
+        selections.map {
+            MultiCursorSelection(location: $0.range.location, length: $0.range.length)
+        }
+    }
+
+    private func syncActiveSessionState(
+        scrollStateOverride: EditorScrollState? = nil
+    ) {
+        guard !isSessionSyncSuspended else { return }
+
+        let bridgeState = currentBridgeState()
+        let scrollState = scrollStateOverride ?? focusedTextView.map { textView in
+            EditorScrollState(viewportOrigin: textView.visibleRect.origin)
+        } ?? activeSession.scrollState
+
+        let snapshot = EditorSessionSnapshotBuilder.snapshot(
+            preserving: activeSession.id,
+            fileURL: currentFileURL,
+            multiCursorState: multiCursorState,
+            panelState: panelState.sessionState,
+            isDirty: hasUnsavedChanges,
+            bridgeState: bridgeState,
+            scrollState: scrollState
+        )
+        activeSession.applySnapshot(from: snapshot)
+        onActiveSessionChanged?(activeSession)
+    }
+
+    private func applyFindReplaceState(_ state: EditorFindReplaceState) {
+        EditorFindReplaceStateController.apply(state, to: &editorState)
+    }
+
+    private func applyBridgeState(_ state: EditorBridgeState) {
+        editorState.cursorPositions = state.viewState.cursorPositions
+        cursorLine = state.viewState.primaryCursorLine
+        cursorColumn = state.viewState.primaryCursorColumn
+
+        if let findReplaceState = state.findReplaceState {
+            applyFindReplaceState(findReplaceState)
+        }
+    }
+
+    private func applyBridgeStateAndSync(_ state: EditorBridgeState) {
+        applyBridgeState(state)
+        syncActiveSessionState()
+    }
+
+    private func currentPanelSnapshot() -> EditorPanelSnapshot {
+        panelState.snapshot
+    }
+
+    private func clearPanelData(
+        clearDiagnostics: Bool = false,
+        closeProblems: Bool? = nil,
+        closeReferences: Bool? = nil,
+        closeWorkspaceSymbols: Bool? = nil,
+        closeCallHierarchy: Bool? = nil
+    ) {
+        panelState.clearMouseHover()
+        setReferenceResults([])
+        if clearDiagnostics {
+            setProblemDiagnostics([])
+        }
+        setSelectedProblemDiagnostic(nil)
+        applyPanelSnapshot(
+            updatedPanelSnapshot(
+                problems: closeProblems,
+                references: closeReferences,
+                workspaceSymbols: closeWorkspaceSymbols,
+                callHierarchy: closeCallHierarchy
+            )
+        )
+    }
+
+    private func updatedPanelSnapshot(
+        problems: Bool? = nil,
+        references: Bool? = nil,
+        workspaceSymbols: Bool? = nil,
+        callHierarchy: Bool? = nil
+    ) -> EditorPanelSnapshot {
+        let snapshot = currentPanelSnapshot()
+        return EditorPanelSnapshot(
+            isProblemsPanelPresented: problems ?? snapshot.isProblemsPanelPresented,
+            isReferencePanelPresented: references ?? snapshot.isReferencePanelPresented,
+            isWorkspaceSymbolSearchPresented: workspaceSymbols ?? snapshot.isWorkspaceSymbolSearchPresented,
+            isCallHierarchyPresented: callHierarchy ?? snapshot.isCallHierarchyPresented
+        )
+    }
+
+    private func applyPanelSnapshot(_ snapshot: EditorPanelSnapshot) {
+        panelState.apply(snapshot)
+    }
+
+    private func setProblemDiagnostics(_ diagnostics: [Diagnostic]) {
+        panelState.problemDiagnostics = diagnostics
+    }
+
+    private func setSelectedProblemDiagnostic(_ diagnostic: Diagnostic?) {
+        panelState.selectedProblemDiagnostic = diagnostic
+    }
+
+    private func setReferenceResults(_ results: [ReferenceResult]) {
+        panelState.referenceResults = results.map(Self.editorReferenceResult(from:))
+    }
+
+    private func syncPublishedPanelDataFromPanelState() {
+        problemDiagnostics = panelState.problemDiagnostics
+        selectedProblemDiagnostic = panelState.selectedProblemDiagnostic
+        isProblemsPanelPresented = panelState.isProblemsPanelPresented
+        referenceResults = panelState.referenceResults.map(Self.referenceResult(from:))
+        isReferencePanelPresented = panelState.isReferencePanelPresented
+        isWorkspaceSymbolSearchPresented = panelState.isWorkspaceSymbolSearchPresented
+        isCallHierarchyPresented = panelState.isCallHierarchyPresented
+        hoverText = panelState.mouseHoverContent
+        mouseHoverContent = panelState.mouseHoverContent
+        mouseHoverSymbolRect = panelState.mouseHoverSymbolRect
+        mouseHoverPoint = mouseHoverSymbolRect == .zero
+            ? .zero
+            : CGPoint(x: mouseHoverSymbolRect.midX, y: mouseHoverSymbolRect.midY)
+        mouseHoverLine = 0
+        mouseHoverCharacter = 0
+    }
+
+    private static func editorReferenceResult(from result: ReferenceResult) -> EditorReferenceResult {
+        EditorReferenceResult(
+            url: result.url,
+            line: result.line,
+            column: result.column,
+            path: result.path,
+            preview: result.preview
+        )
+    }
+
+    private static func referenceResult(from result: EditorReferenceResult) -> ReferenceResult {
+        ReferenceResult(
+            url: result.url,
+            line: result.line,
+            column: result.column,
+            path: result.path,
+            preview: result.preview
+        )
+    }
+
+    private func currentBridgeState() -> EditorBridgeState {
+        EditorBridgeStateController.state(
+            from: editorState,
+            cursorLine: cursorLine,
+            cursorColumn: cursorColumn
+        )
+    }
+
+    private func withoutSessionSync(_ operation: () -> Void) {
+        let previousValue = isSessionSyncSuspended
+        isSessionSyncSuspended = true
+        operation()
+        isSessionSyncSuspended = previousValue
+    }
+
+    private func restoreScrollState(_ state: EditorScrollState) {
+        guard let textView = focusedTextView,
+              let scrollView = textView.enclosingScrollView else { return }
+        let clipView = scrollView.contentView
+        clipView.scroll(to: state.viewportOrigin)
+        scrollView.reflectScrolledClipView(clipView)
+    }
+
+    private func restorePanelState(from session: EditorSession) {
+        let sessionPanelState = session.panelState
+        panelState.restore(from: sessionPanelState)
+        applyPanelSnapshot(
+            updatedPanelSnapshot(
+                problems: session.panelSnapshot.isProblemsPanelPresented,
+                references: session.panelSnapshot.isReferencePanelPresented,
+                workspaceSymbols: session.panelSnapshot.isWorkspaceSymbolSearchPresented,
+                callHierarchy: session.panelSnapshot.isCallHierarchyPresented
+            )
+        )
+    }
+
+    private func multiCursorCursorPositions(from selections: [MultiCursorSelection]) -> [CursorPosition] {
+        guard let text = content?.string else { return [] }
+        let viewState = EditorViewStateController.positions(
+            from: selections,
+            text: text,
+            fallbackLine: max(cursorLine, 1),
+            fallbackColumn: max(cursorColumn, 1),
+            positionResolver: editorPosition(utf16Offset:in:)
+        )
+        return viewState.cursorPositions
+    }
+
+    private func editorPosition(utf16Offset: Int, in text: String) -> Position? {
+        guard utf16Offset >= 0, utf16Offset <= text.utf16.count else { return nil }
+
+        var consumed = 0
+        var line = 0
+        var character = 0
+
+        for unit in text.utf16 {
+            if consumed == utf16Offset {
+                break
+            }
+            if unit == 0x0A {
+                line += 1
+                character = 0
+            } else {
+                character += 1
+            }
+            consumed += 1
+        }
+
+        return Position(line: line, character: character)
+    }
+
     private func endMultiCursorSearchSession() {
         multiCursorSearchSession = nil
     }
 
-    private func selectionText(for selection: MultiCursorSelection) -> String? {
+    private func currentEditorTextStorageString() -> NSString? {
         guard let content else { return nil }
-        let text = content.string as NSString
-        let range = nsRange(from: selection)
-        guard range.location != NSNotFound, NSMaxRange(range) <= text.length else { return nil }
-        return text.substring(with: range)
-    }
-
-    private func normalizedRange(_ range: NSRange, in text: NSString) -> NSRange {
-        guard range.location != NSNotFound else { return NSRange(location: NSNotFound, length: 0) }
-        let location = min(max(range.location, 0), text.length)
-        let length = min(max(range.length, 0), max(0, text.length - location))
-        return NSRange(location: location, length: length)
-    }
-
-    private func resolvedBaseSelection(from range: NSRange, in text: NSString) -> MultiCursorSelection? {
-        if range.length > 0 {
-            return MultiCursorSelection(location: range.location, length: range.length)
-        }
-
-        guard let wordRange = wordRange(at: range.location, in: text) else {
-            return nil
-        }
-        guard wordRange.length > 0 else { return nil }
-        return MultiCursorSelection(location: wordRange.location, length: wordRange.length)
-    }
-
-    private func wordRange(at location: Int, in text: NSString) -> NSRange? {
-        guard text.length > 0 else { return nil }
-        let clampedLocation = min(max(location, 0), text.length)
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
-
-        func isWordCharacter(at index: Int) -> Bool {
-            guard index >= 0, index < text.length else { return false }
-            let scalar = text.substring(with: NSRange(location: index, length: 1)).unicodeScalars.first
-            return scalar.map { allowed.contains($0) } ?? false
-        }
-
-        var pivot = clampedLocation
-        if pivot == text.length {
-            pivot = max(text.length - 1, 0)
-        }
-        if !isWordCharacter(at: pivot), clampedLocation > 0, isWordCharacter(at: clampedLocation - 1) {
-            pivot = clampedLocation - 1
-        }
-        guard isWordCharacter(at: pivot) else { return nil }
-
-        var start = pivot
-        var end = pivot
-        while start > 0, isWordCharacter(at: start - 1) {
-            start -= 1
-        }
-        while end + 1 < text.length, isWordCharacter(at: end + 1) {
-            end += 1
-        }
-        return NSRange(location: start, length: end - start + 1)
-    }
-
-    private func ranges(of needle: String, in text: NSString) -> [MultiCursorSelection] {
-        guard !needle.isEmpty else { return [] }
-        var result: [MultiCursorSelection] = []
-        var searchLocation = 0
-        let needleLength = (needle as NSString).length
-        let shouldMatchWholeWord = isWholeWordSelection(needle)
-
-        while searchLocation <= text.length - needleLength {
-            let searchRange = NSRange(location: searchLocation, length: text.length - searchLocation)
-            let found = text.range(of: needle, options: [], range: searchRange)
-            guard found.location != NSNotFound else { break }
-
-            let selection = MultiCursorSelection(location: found.location, length: found.length)
-            if !shouldMatchWholeWord || isWholeWordMatch(selection, in: text) {
-                result.append(selection)
-            }
-
-            searchLocation = found.location + max(found.length, 1)
-        }
-
-        return result
-    }
-
-    private func isWholeWordSelection(_ text: String) -> Bool {
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
-        return text.unicodeScalars.allSatisfy { allowed.contains($0) }
-    }
-
-    private func isWholeWordMatch(_ selection: MultiCursorSelection, in text: NSString) -> Bool {
-        let lowerIndex = selection.location - 1
-        let upperIndex = selection.upperBound
-        return !isWordCharacter(at: lowerIndex, in: text) && !isWordCharacter(at: upperIndex, in: text)
-    }
-
-    private func isWordCharacter(at index: Int, in text: NSString) -> Bool {
-        guard index >= 0, index < text.length else { return false }
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
-        let scalar = text.substring(with: NSRange(location: index, length: 1)).unicodeScalars.first
-        return scalar.map { allowed.contains($0) } ?? false
-    }
-
-    private func nsRange(from selection: MultiCursorSelection) -> NSRange {
-        NSRange(location: selection.location, length: selection.length)
+        return content.string as NSString
     }
 }
 

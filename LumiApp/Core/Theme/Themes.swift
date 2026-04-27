@@ -19,6 +19,11 @@ enum Themes {
         case orchard    // 果园红
         case mountain   // 山岚灰
         case river      // 河流青
+        case github     // GitHub
+        case vscodeDark  // VS Code 深色
+        case vscodeLight // VS Code 亮色
+        case oneDark     // One Dark
+        case dracula     // Dracula
 
         /// 获取主题实例
         var theme: ThemeProtocol {
@@ -34,6 +39,11 @@ enum Themes {
             case .orchard: return OrchardTheme()
             case .mountain: return MountainTheme()
             case .river: return RiverTheme()
+            case .github: return GitHubTheme()
+            case .vscodeDark: return VscodeDarkTheme()
+            case .vscodeLight: return VscodeLightTheme()
+            case .oneDark: return OneDarkTheme()
+            case .dracula: return DraculaTheme()
             }
         }
 
@@ -310,5 +320,10 @@ private func variantName(for variant: Themes.Variant) -> String {
     case .orchard: return "果园红"
     case .mountain: return "山岚灰"
     case .river: return "河流青"
+    case .github: return "GitHub"
+    case .vscodeDark: return "VS Code 深色"
+    case .vscodeLight: return "VS Code 亮色"
+    case .oneDark: return "One Dark"
+    case .dracula: return "Dracula"
     }
 }

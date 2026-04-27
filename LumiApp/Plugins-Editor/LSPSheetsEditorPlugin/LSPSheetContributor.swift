@@ -10,12 +10,12 @@ final class LSPSheetContributor: EditorSheetContributor {
             .init(
                 id: "builtin.workspace-symbol-sheet",
                 order: 10,
-                isPresented: { $0.isWorkspaceSymbolSearchPresented },
-                onDismiss: { $0.closeWorkspaceSymbolSearch() },
+                isPresented: { $0.panelState.isWorkspaceSymbolSearchPresented },
+                onDismiss: { $0.performPanelCommand(.closeWorkspaceSymbolSearch) },
                 content: { state in
                     AnyView(
                         WorkspaceSymbolItemSearchView(provider: state.workspaceSymbolProvider) { symbol in
-                            state.openWorkspaceSymbol(symbol)
+                            state.performOpenItem(.workspaceSymbol(symbol))
                         }
                     )
                 }
@@ -23,8 +23,8 @@ final class LSPSheetContributor: EditorSheetContributor {
             .init(
                 id: "builtin.call-hierarchy-sheet",
                 order: 20,
-                isPresented: { $0.isCallHierarchyPresented },
-                onDismiss: { $0.closeCallHierarchy() },
+                isPresented: { $0.panelState.isCallHierarchyPresented },
+                onDismiss: { $0.performPanelCommand(.closeCallHierarchy) },
                 content: { state in
                     AnyView(CallHierarchySheetView(state: state))
                 }

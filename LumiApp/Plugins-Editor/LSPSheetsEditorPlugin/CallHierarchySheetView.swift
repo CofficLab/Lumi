@@ -29,7 +29,7 @@ struct CallHierarchySheetView: View {
             }
             Spacer()
             Button("关闭") {
-                state.closeCallHierarchy()
+                state.performPanelCommand(.closeCallHierarchy)
             }
         }
         .padding(.horizontal, 14)
@@ -62,14 +62,14 @@ struct CallHierarchySheetView: View {
                     calls: state.callHierarchyProvider.incomingCalls,
                     direction: .incoming
                 ) { item in
-                    state.openCallHierarchyItem(item)
+                    state.performOpenItem(.callHierarchyItem(item))
                 }
                 Divider()
                 CallHierarchyTreeView(
                     calls: state.callHierarchyProvider.outgoingCalls,
                     direction: .outgoing
                 ) { item in
-                    state.openCallHierarchyItem(item)
+                    state.performOpenItem(.callHierarchyItem(item))
                 }
             }
         }

@@ -201,6 +201,9 @@
         }
       }
     },
+    "Close Others" : {
+
+    },
     "Code Editor" : {
       "localizations" : {
         "en" : {
@@ -972,6 +975,9 @@
         }
       }
     },
+    "Pin Tab" : {
+
+    },
     "Presents LSP sheets such as workspace symbols and call hierarchy." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1505,6 +1511,9 @@
           }
         }
       }
+    },
+    "Unpin Tab" : {
+
     },
     "Unsupported editor plugin action" : {
 

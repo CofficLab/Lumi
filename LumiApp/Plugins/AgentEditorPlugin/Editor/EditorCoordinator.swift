@@ -99,45 +99,24 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
                 state.clearUnfocusedMultiCursorsIfNeeded()
             }
 
-            let cursor = controller.cursorPositions.first?.start
+            let cursor = controller.cursorPositions.first
+
+            state.updateSelectedProblemDiagnostic(for: cursor)
 
             guard let cursor else {
-                state.selectedProblemDiagnostic = nil
                 return
             }
 
-            state.selectedProblemDiagnostic = state.problemDiagnostics.first(where: { diag in
-                let startLine = Int(diag.range.start.line) + 1
-                let endLine = Int(diag.range.end.line) + 1
-                let startColumn = Int(diag.range.start.character) + 1
-                let endColumn = Int(diag.range.end.character) + 1
-
-                if cursor.line < startLine || cursor.line > endLine {
-                    return false
-                }
-                if startLine == endLine {
-                    let upperBound = max(endColumn, startColumn)
-                    return cursor.column >= startColumn && cursor.column <= upperBound
-                }
-                if cursor.line == startLine {
-                    return cursor.column >= startColumn
-                }
-                if cursor.line == endLine {
-                    return cursor.column <= max(endColumn, 1)
-                }
-                return true
-            })
-
             // Hover 请求已由 HoverEditorCoordinator 统一处理，此处不再重复请求
 
-            let lspLine = max(cursor.line - 1, 0)
-            let lspCharacter = max(cursor.column - 1, 0)
+            let lspLine = max(cursor.start.line - 1, 0)
+            let lspCharacter = max(cursor.start.column - 1, 0)
 
             // ✅ Code Action 请求放入独立 Task，不阻塞后续光标/插件操作
             if let fileURL = state.currentFileURL {
                 let diagnostics = state.problemDiagnostics.filter { diag in
-                    Int(diag.range.start.line) + 1 == cursor.line ||
-                    (Int(diag.range.start.line) + 1 < cursor.line && Int(diag.range.end.line) + 1 >= cursor.line)
+                    Int(diag.range.start.line) + 1 == cursor.start.line ||
+                    (Int(diag.range.start.line) + 1 < cursor.start.line && Int(diag.range.end.line) + 1 >= cursor.start.line)
                 }
                 let caURI = fileURL.absoluteString
                 let caDiags = diagnostics
@@ -316,17 +295,17 @@ final class CursorCoordinator: TextViewCoordinator {
     nonisolated func textViewDidChangeSelection(controller: TextViewController) {
         let state = self.state
         let positions = controller.cursorPositions
-        var line = 1
-        var column = 1
-        if let first = positions.first {
-            line = first.start.line
-            column = first.start.column
-        }
         
         // 延迟到下一个 RunLoop，避免 "Modifying state during view update"
         DispatchQueue.main.async {
-            state?.cursorLine = line
-            state?.cursorColumn = column
+            if let first = positions.first {
+                state?.applyPrimaryCursorObservation(
+                    line: first.start.line,
+                    column: first.start.column
+                )
+            } else {
+                state?.applyCursorObservation(positions)
+            }
         }
     }
     

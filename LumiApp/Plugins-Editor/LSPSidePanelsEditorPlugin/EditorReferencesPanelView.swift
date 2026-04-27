@@ -32,14 +32,14 @@ struct EditorReferencesPanelView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text(String(localized: "References", table: "LumiEditor") + " (\(state.referenceResults.count))")
+            Text(String(localized: "References", table: "LumiEditor") + " (\(state.panelState.referenceResults.count))")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
 
             Spacer(minLength: 0)
 
             Button {
-                state.closeReferencePanel()
+                state.performPanelCommand(.closeReferences)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
@@ -57,9 +57,19 @@ struct EditorReferencesPanelView: View {
     private var content: some View {
         ScrollView {
             LazyVStack(spacing: 6) {
-                ForEach(state.referenceResults) { item in
+                ForEach(state.panelState.referenceResults) { item in
                     Button {
-                        state.openReference(item)
+                        state.performOpenItem(
+                            .reference(
+                                .init(
+                                    url: item.url,
+                                    line: item.line,
+                                    column: item.column,
+                                    path: item.path,
+                                    preview: item.preview
+                                )
+                            )
+                        )
                     } label: {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(String(localized: "Location", table: "LumiEditor") + ": \(item.path):\(item.line):\(item.column)")

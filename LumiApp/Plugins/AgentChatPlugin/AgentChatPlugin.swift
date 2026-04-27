@@ -2,15 +2,7 @@ import MagicKit
 import SwiftUI
 import os
 
-/// Agent 聊天插件 - 整合消息列表和输入区域
-///
-/// 由原来的 AgentInputPlugin 和 AgentMessagesPlugin 合并而成，
-/// 通过 `addSidebarView()` 提供右侧聊天栏。
-///
-/// ## 包含功能
-/// - 消息列表（ChatMessagesView / MessageListView）
-/// - 输入区域（InputView / InputAreaView / ModelSelectorView）
-/// - 输入相关的 ViewModel 和 Models
+/// Agent 聊天插件
 actor AgentChatPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-chat")

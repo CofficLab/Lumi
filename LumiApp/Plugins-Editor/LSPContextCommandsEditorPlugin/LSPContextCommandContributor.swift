@@ -102,7 +102,7 @@ final class LSPContextCommandContributor: EditorCommandContributor {
                 order: 80,
                 isEnabled: state.canPreview,
                 action: {
-                    state.openWorkspaceSymbolSearch()
+                    state.performPanelCommand(.openWorkspaceSymbolSearch)
                 }
             ),
             .init(
@@ -124,7 +124,7 @@ final class LSPContextCommandContributor: EditorCommandContributor {
                 order: 100,
                 isEnabled: true,
                 action: {
-                    state.toggleProblemsPanel()
+                    state.performPanelCommand(.toggleProblems)
                 }
             )
         ]

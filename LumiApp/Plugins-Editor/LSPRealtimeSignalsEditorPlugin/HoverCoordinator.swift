@@ -188,7 +188,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     }
 
     func cancelHover() {
-        let hasActiveHoverState = (state?.mouseHoverContent?.isEmpty == false) || (state?.mouseHoverSymbolRect != .zero)
+        let hasActiveHoverState = state?.panelState.hasActiveHover == true
         let hasPendingWork = hoverTask != nil || activeHoverRange != nil || lastHoverPosition != nil
         guard hasActiveHoverState || hasPendingWork else { return }
         _ = nextHoverRequestGeneration()
@@ -214,8 +214,8 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     }
 
     private func updateHoverDisplayIfNeeded(content: String, symbolRect: CGRect, state: EditorState) {
-        let currentContent = state.mouseHoverContent ?? ""
-        let currentRect = state.mouseHoverSymbolRect
+        let currentContent = state.panelState.mouseHoverContent ?? ""
+        let currentRect = state.panelState.mouseHoverSymbolRect
         let isSameContent = currentContent == content
         let isCloseRect = abs(currentRect.minX - symbolRect.minX) <= Self.hoverRectUpdateEpsilon &&
             abs(currentRect.minY - symbolRect.minY) <= Self.hoverRectUpdateEpsilon &&
@@ -406,7 +406,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         guard let textView = textViewController?.textView, let state else { return }
 
         // 只在有活跃 hover 时处理全局事件
-        guard state.mouseHoverContent != nil else { return }
+        guard state.panelState.mouseHoverContent != nil else { return }
         let now = DispatchTime.now().uptimeNanoseconds
         guard now &- lastGlobalMouseEventHandledAtNs >= Self.globalMouseEventMinIntervalNs else { return }
         lastGlobalMouseEventHandledAtNs = now
@@ -588,10 +588,10 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
     /// 检查当前鼠标位置是否在 popover 的估算范围内（有 active hover 时）
     private func isMouseInsideHoverPopover(at localPoint: CGPoint, state: EditorState) -> Bool {
-        guard let content = state.mouseHoverContent, !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard let content = state.panelState.mouseHoverContent, !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return false
         }
-        let symbolRect = state.mouseHoverSymbolRect
+        let symbolRect = state.panelState.mouseHoverSymbolRect
         guard symbolRect != .zero else { return false }
 
         // 关键修复：将 textView 坐标系的 localPoint 转换为 overlay 坐标系
@@ -631,7 +631,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         let tolerance: CGFloat = 2.0
         let expandedRect = visibleRect.insetBy(dx: -tolerance, dy: -tolerance)
         guard expandedRect.contains(localPoint) else {
-            let hasActiveHover = state.mouseHoverContent?.isEmpty == false || state.mouseHoverSymbolRect != .zero
+            let hasActiveHover = state.panelState.hasActiveHover
             guard hasActiveHover else { return }
 
             if EditorPlugin.verbose {
@@ -706,7 +706,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
     /// 防抖取消：避免边界抖动导致的反复取消
     private func cancelHoverIfNeeded() {
-        let hasActiveHoverState = (state?.mouseHoverContent?.isEmpty == false) || (state?.mouseHoverSymbolRect != .zero)
+        let hasActiveHoverState = state?.panelState.hasActiveHover == true
         let hasPendingWork = hoverTask != nil || activeHoverRange != nil || lastHoverPosition != nil
         guard hasActiveHoverState || hasPendingWork else { return }
 
@@ -738,7 +738,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
     private func hoverDelay(for line: Int, character: Int) -> UInt64 {
         guard let state else { return Self.defaultHoverDelayNs }
-        guard state.mouseHoverContent?.isEmpty == false else { return Self.defaultHoverDelayNs }
+        guard state.panelState.mouseHoverContent?.isEmpty == false else { return Self.defaultHoverDelayNs }
         guard let lastHoverPosition, let lastHoverRequestAtNs else { return Self.defaultHoverDelayNs }
 
         let now = DispatchTime.now().uptimeNanoseconds

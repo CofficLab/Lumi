@@ -33,14 +33,14 @@ struct ProblemsPanelView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text(String(localized: "Problems", table: "LumiEditor") + " (\(state.problemDiagnostics.count))")
+            Text(String(localized: "Problems", table: "LumiEditor") + " (\(state.panelState.problemDiagnostics.count))")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
 
             Spacer(minLength: 0)
 
             Button {
-                state.closeProblemsPanel()
+                state.performPanelCommand(.closeProblems)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
@@ -59,12 +59,12 @@ struct ProblemsPanelView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 6) {
-                    if state.problemDiagnostics.isEmpty {
+                    if state.panelState.problemDiagnostics.isEmpty {
                         emptyState
                     } else {
-                        ForEach(Array(state.problemDiagnostics.enumerated()), id: \.offset) { index, diag in
+                        ForEach(Array(state.panelState.problemDiagnostics.enumerated()), id: \.offset) { index, diag in
                             Button {
-                                state.openProblem(diag)
+                                state.performOpenItem(.problem(diag))
                             } label: {
                                 row(for: diag)
                             }
@@ -78,7 +78,7 @@ struct ProblemsPanelView: View {
             .onAppear {
                 scrollToSelectedProblem(with: proxy)
             }
-            .onChange(of: state.selectedProblemDiagnostic) { _, _ in
+            .onChange(of: state.panelState.selectedProblemDiagnostic) { _, _ in
                 scrollToSelectedProblem(with: proxy)
             }
         }
@@ -145,7 +145,7 @@ struct ProblemsPanelView: View {
         let (icon, color) = iconAndColor(for: diag.severity)
         let line = Int(diag.range.start.line) + 1
         let column = Int(diag.range.start.character) + 1
-        let isSelected = state.selectedProblemDiagnostic == diag
+        let isSelected = state.panelState.selectedProblemDiagnostic == diag
 
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
@@ -196,8 +196,8 @@ struct ProblemsPanelView: View {
     }
 
     private func scrollToSelectedProblem(with proxy: ScrollViewProxy) {
-        guard let selected = state.selectedProblemDiagnostic,
-              let index = state.problemDiagnostics.firstIndex(of: selected) else {
+        guard let selected = state.panelState.selectedProblemDiagnostic,
+              let index = state.panelState.problemDiagnostics.firstIndex(of: selected) else {
             return
         }
 

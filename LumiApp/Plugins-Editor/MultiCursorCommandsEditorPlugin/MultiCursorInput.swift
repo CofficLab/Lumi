@@ -166,30 +166,20 @@ final class MultiCursorInputHelper: NSObject {
         isApplyingMultiCursorEdit = true
         defer { isApplyingMultiCursorEdit = false }
 
-        let selections = state.multiCursorState.all
         state.logMultiCursorInput(
             action: "insertText.before",
             textViewSelections: textView.selectionManager.textSelections.map(\.range),
             note: "replacementRange=\(NSStringFromRange(replacementRange)) textLength=\((text as NSString).length)"
         )
-        let result = MultiCursorEditEngine.apply(
-            text: textView.string,
-            selections: selections,
-            operation: .replaceSelection(text)
-        )
-
-        textView.textStorage?.setAttributedString(NSAttributedString(string: result.text))
-        state.content?.mutableString.setString(result.text)
-        state.totalLines = result.text.filter { $0 == "\n" }.count + 1
-        state.setSelections(result.selections)
+        guard let resultSelections = state.applyMultiCursorOperation(.replaceSelection(text)) else {
+            return false
+        }
         textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
         state.logMultiCursorInput(
             action: "insertText.after",
             textViewSelections: textView.selectionManager.textSelections.map(\.range),
-            note: "resultSelectionCount=\(result.selections.count)"
+            note: "resultSelectionCount=\(resultSelections.count)"
         )
-        state.lspCoordinator.replaceDocument(result.text)
-        state.notifyContentChanged()
         return true
     }
 
@@ -201,29 +191,19 @@ final class MultiCursorInputHelper: NSObject {
         isApplyingMultiCursorEdit = true
         defer { isApplyingMultiCursorEdit = false }
 
-        let selections = state.multiCursorState.all
         state.logMultiCursorInput(
             action: "deleteBackward.before",
             textViewSelections: textView.selectionManager.textSelections.map(\.range)
         )
-        let result = MultiCursorEditEngine.apply(
-            text: textView.string,
-            selections: selections,
-            operation: .deleteBackward
-        )
-
-        textView.textStorage?.setAttributedString(NSAttributedString(string: result.text))
-        state.content?.mutableString.setString(result.text)
-        state.totalLines = result.text.filter { $0 == "\n" }.count + 1
-        state.setSelections(result.selections)
+        guard let resultSelections = state.applyMultiCursorOperation(.deleteBackward) else {
+            return false
+        }
         textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
         state.logMultiCursorInput(
             action: "deleteBackward.after",
             textViewSelections: textView.selectionManager.textSelections.map(\.range),
-            note: "resultSelectionCount=\(result.selections.count)"
+            note: "resultSelectionCount=\(resultSelections.count)"
         )
-        state.lspCoordinator.replaceDocument(result.text)
-        state.notifyContentChanged()
         return true
     }
 

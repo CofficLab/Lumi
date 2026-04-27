@@ -10,6 +10,7 @@ struct EditorRootView: View {
 
     /// 编辑器状态
     @StateObject private var state = EditorState()
+    @StateObject private var sessionStore = EditorSessionStore()
 
     var body: some View {
         HStack(spacing: 0) {
@@ -36,14 +37,16 @@ struct EditorRootView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: .textBackgroundColor))
         .onChange(of: projectVM.selectedFileURL) { _, newURL in
-            state.projectRootPath = projectVM.currentProject?.path
-            state.loadFile(from: newURL)
+            openOrActivateSession(for: newURL)
         }
         .onAppear {
             // 初始加载
             state.projectRootPath = projectVM.currentProject?.path
+            state.onActiveSessionChanged = { snapshot in
+                sessionStore.syncActiveSession(from: snapshot)
+            }
             if projectVM.isFileSelected {
-                state.loadFile(from: projectVM.selectedFileURL)
+                openOrActivateSession(for: projectVM.selectedFileURL)
             }
         }
         .onDisappear {
@@ -51,6 +54,7 @@ struct EditorRootView: View {
             if state.hasUnsavedChanges {
                 state.saveNow()
             }
+            state.onActiveSessionChanged = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFormatDocument)) { _ in
             guard projectVM.isFileSelected else { return }
@@ -106,14 +110,31 @@ struct EditorRootView: View {
 
     /// Header 区域：包含工具栏，带背景色覆盖编辑器内容
     private var headerArea: some View {
-        EditorToolbarView(state: state)
-            // 关键：添加背景色，确保覆盖下方的编辑器内容（如行号）
-            .background(
-                Color(nsColor: .textBackgroundColor)
-                    .ignoresSafeArea()
-            )
-            // 使用 zIndex 确保 header 在编辑器上层
-            .zIndex(1)
+        VStack(spacing: 0) {
+            if !sessionStore.sessions.isEmpty {
+                EditorTabStripView(
+                    tabs: sessionStore.tabs,
+                    activeSessionID: sessionStore.activeSessionID,
+                    canNavigateBack: sessionStore.canNavigateBack,
+                    canNavigateForward: sessionStore.canNavigateForward,
+                    onNavigateBack: navigateBack,
+                    onNavigateForward: navigateForward,
+                    onSelect: activateSession,
+                    onClose: closeSession,
+                    onCloseOthers: closeOtherSessions,
+                    onTogglePinned: togglePinned
+                )
+            }
+
+            EditorToolbarView(state: state)
+        }
+        // 关键：添加背景色，确保覆盖下方的编辑器内容（如行号）
+        .background(
+            Color(nsColor: .textBackgroundColor)
+                .ignoresSafeArea()
+        )
+        // 使用 zIndex 确保 header 在编辑器上层
+        .zIndex(1)
     }
 
     // MARK: - Editor Content
@@ -243,6 +264,85 @@ struct EditorRootView: View {
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func openOrActivateSession(for fileURL: URL?) {
+        state.projectRootPath = projectVM.currentProject?.path
+        guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
+            state.loadFile(from: nil)
+            return
+        }
+
+        state.loadFile(from: session.fileURL)
+        restoreInteractionState(for: session)
+    }
+
+    private func activateSession(_ tab: EditorTab) {
+        guard let session = sessionStore.session(for: tab.sessionID),
+              let fileURL = session.fileURL else { return }
+        guard session.id != sessionStore.activeSessionID || projectVM.selectedFileURL != fileURL else { return }
+        _ = sessionStore.activate(sessionID: session.id)
+        projectVM.selectFile(at: fileURL)
+    }
+
+    private func closeSession(_ tab: EditorTab) {
+        guard let session = sessionStore.session(for: tab.sessionID) else { return }
+        let wasActive = session.id == sessionStore.activeSessionID
+        if wasActive, state.hasUnsavedChanges {
+            state.saveNow()
+        }
+
+        let nextSession = sessionStore.close(sessionID: session.id)
+        guard wasActive else { return }
+
+        if let nextFileURL = nextSession?.fileURL {
+            projectVM.selectFile(at: nextFileURL)
+        } else {
+            projectVM.clearFileSelection()
+        }
+    }
+
+    private func closeOtherSessions(_ tab: EditorTab) {
+        guard let session = sessionStore.session(for: tab.sessionID) else { return }
+        if state.currentFileURL != session.fileURL, state.hasUnsavedChanges {
+            state.saveNow()
+        }
+
+        let keptSession = sessionStore.closeOthers(keeping: session.id)
+        if let fileURL = keptSession?.fileURL {
+            projectVM.selectFile(at: fileURL)
+        } else {
+            projectVM.clearFileSelection()
+        }
+    }
+
+    private func navigateBack() {
+        guard let session = sessionStore.goBack(),
+              let fileURL = session.fileURL else { return }
+        projectVM.selectFile(at: fileURL)
+    }
+
+    private func navigateForward() {
+        guard let session = sessionStore.goForward(),
+              let fileURL = session.fileURL else { return }
+        projectVM.selectFile(at: fileURL)
+    }
+
+    private func togglePinned(_ tab: EditorTab) {
+        sessionStore.togglePinned(sessionID: tab.sessionID)
+    }
+
+    private func restoreInteractionState(for session: EditorSession) {
+        guard session.fileURL != nil else { return }
+        Task { @MainActor in
+            for _ in 0..<30 {
+                if state.currentFileURL == session.fileURL, state.content != nil, state.focusedTextView != nil {
+                    state.applySessionRestore(session)
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(25))
+            }
+        }
     }
 
 }

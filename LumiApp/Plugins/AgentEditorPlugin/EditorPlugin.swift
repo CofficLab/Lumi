@@ -5,9 +5,6 @@ import MagicKit
 import Combine
 
 /// Editor Plugin: 代码编辑器 + 文件树
-///
-/// 提供文件树（ProjectTree）和代码编辑器（LumiEditor）作为面板视图。
-/// 右侧聊天栏由 AgentChatPlugin 通过 addSidebarView() 独立提供。
 actor EditorPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
@@ -27,12 +24,11 @@ actor EditorPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 包裹 RootView：确保文件选中监听、编辑器初始化生效，
-    /// 以及自动批准设置的持久化（按项目隔离）
+    /// 包裹 RootView：确保文件选中监听、编辑器初始化生效
     @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
         AnyView(
             EditorRootOverlay(
-                content: AutoApprovePersistenceOverlay(content: content())
+                content: content()
             )
         )
     }

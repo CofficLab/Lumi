@@ -15,6 +15,7 @@ struct SourceEditorView: View, SuperLog {
     /// 编辑器协调器（使用 @State 确保在 View 更新间保持同一实例）
     @State private var textCoordinator: EditorCoordinator?
     @State private var cursorCoordinator: CursorCoordinator?
+    @State private var scrollCoordinator: ScrollCoordinator?
     @State private var contextMenuCoordinator: ContextMenuCoordinator?
     @State private var semanticTokenProvider: SemanticTokenHighlightProvider?
     @State private var documentHighlightProvider: DocumentHighlightHighlighter?
@@ -166,12 +167,12 @@ struct SourceEditorView: View, SuperLog {
 
     @ViewBuilder
     private func hoverPreview(in containerSize: CGSize) -> some View {
-        if let hoverText = state.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines),
+        if let hoverText = state.panelState.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines),
            !hoverText.isEmpty {
             HoverPopoverView(markdownText: hoverText)
                 .onAppear {
                     if EditorPlugin.verbose {
-                        EditorPlugin.logger.debug("\(Self.t)悬停预览: 内容长度=\(hoverText.count), 矩形=\(String(describing: self.state.mouseHoverSymbolRect))")
+                        EditorPlugin.logger.debug("\(Self.t)悬停预览: 内容长度=\(hoverText.count), 矩形=\(String(describing: self.state.panelState.mouseHoverSymbolRect))")
                         EditorPlugin.logger.debug("\(Self.t)悬停预览: 原始内容=\n\(hoverText)")
                     }
                 }
@@ -194,15 +195,15 @@ struct SourceEditorView: View, SuperLog {
                     insertion: .opacity.combined(with: .scale(scale: 0.96, anchor: .bottomLeading)),
                     removal: .opacity
                 ))
-                .animation(.easeOut(duration: 0.14), value: state.mouseHoverContent)
-                .animation(.easeOut(duration: 0.12), value: state.mouseHoverSymbolRect)
+                .animation(.easeOut(duration: 0.14), value: state.panelState.mouseHoverContent)
+                .animation(.easeOut(duration: 0.12), value: state.panelState.mouseHoverSymbolRect)
         }
     }
 
     /// 计算 hover popover 的偏移量
     /// 核心策略：popover 显示在 symbol 的正上方，左对齐 symbol 起点
     private func hoverOffset(in containerSize: CGSize) -> CGSize {
-        let symbolRect = state.mouseHoverSymbolRect
+        let symbolRect = state.panelState.mouseHoverSymbolRect
         let popoverEstimatedHeight = hoverPopoverHeight
         let popoverMaxWidth: CGFloat = 440
         let verticalGap: CGFloat = 4  // popover 与 symbol 之间的间距
@@ -236,6 +237,9 @@ struct SourceEditorView: View, SuperLog {
         if cursorCoordinator == nil {
             cursorCoordinator = CursorCoordinator(state: state)
         }
+        if scrollCoordinator == nil {
+            scrollCoordinator = ScrollCoordinator(state: state)
+        }
         if contextMenuCoordinator == nil {
             contextMenuCoordinator = ContextMenuCoordinator(state: state)
         }
@@ -268,7 +272,7 @@ struct SourceEditorView: View, SuperLog {
             state?.currentFileURL
         }
         jumpDelegate.onOpenExternalDefinition = { [weak state] url, target in
-            state?.openDefinitionLocation(url: url, target: target)
+            state?.performNavigation(.definition(url, target, highlightLine: false))
         }
         state.jumpDelegate = jumpDelegate
         
@@ -306,6 +310,7 @@ struct SourceEditorView: View, SuperLog {
         var result: [TextViewCoordinator] = []
         if let textCoordinator { result.append(textCoordinator) }
         if let cursorCoordinator { result.append(cursorCoordinator) }
+        if let scrollCoordinator { result.append(scrollCoordinator) }
         if let contextMenuCoordinator { result.append(contextMenuCoordinator) }
         if let hoverCoordinator { result.append(hoverCoordinator) }
         return result
@@ -333,19 +338,13 @@ struct SourceEditorView: View, SuperLog {
                 return result
             },
             set: { newState in
-                if state.multiCursorState.all.count > 1 {
-                    DispatchQueue.main.async {
-                        state.editorState.findText = newState.findText
-                        state.editorState.replaceText = newState.replaceText
-                        state.editorState.findPanelVisible = newState.findPanelVisible
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        state.editorState.cursorPositions = newState.cursorPositions
-                        state.editorState.findText = newState.findText
-                        state.editorState.replaceText = newState.replaceText
-                        state.editorState.findPanelVisible = newState.findPanelVisible
-                    }
+                let update = EditorSourceEditorBindingController.update(
+                    from: newState,
+                    multiCursorSelectionCount: state.multiCursorState.all.count
+                )
+
+                DispatchQueue.main.async {
+                    state.applySourceEditorBindingUpdate(update)
                 }
             }
         )
