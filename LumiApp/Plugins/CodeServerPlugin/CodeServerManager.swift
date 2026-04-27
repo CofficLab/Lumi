@@ -1,4 +1,5 @@
 import Foundation
+import MagicKit
 import os
 
 /// Code Server 扩展信息
@@ -95,7 +96,8 @@ enum ExtensionCategory: String, CaseIterable {
 ///     └── extensions/          # 已安装的扩展
 /// ```
 @MainActor
-final class CodeServerManager: ObservableObject {
+final class CodeServerManager: ObservableObject, SuperLog {
+    nonisolated static let emoji = "🖥️"
     static let shared = CodeServerManager()
 
     // MARK: - Published State
@@ -173,7 +175,6 @@ final class CodeServerManager: ObservableObject {
     // MARK: - Private
 
     private var process: Process?
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "code-server")
 
     /// 默认写入 settings.json 的配置项
     private static let defaultSettings: [String: Any] = CodeServerDefaultSettings.values
@@ -185,6 +186,8 @@ final class CodeServerManager: ObservableObject {
         "workbench.statusBar.visible",
         "window.commandCenter",
         "workbench.commandCenter",
+        "chat.disableAIFeatures",
+        "chat.commandCenter.enabled",
         "breadcrumbs.enabled",
         "workbench.layoutControl.enabled",
         "editor.minimap.enabled",
@@ -216,7 +219,7 @@ final class CodeServerManager: ObservableObject {
     ///   - openPath: 启动后自动打开的项目路径（可选）
     func start(port: Int = 8080, openPath: String? = nil) {
         guard !isRunning else {
-            logger.info("code-server 已在运行中")
+            CodeServerPlugin.logger.info("\(self.t)已在运行中")
             return
         }
 
@@ -224,7 +227,7 @@ final class CodeServerManager: ObservableObject {
 
         guard let codeServerPath = findCodeServer() else {
             errorMessage = "未找到 code-server，请先安装：brew install code-server"
-            logger.error("code-server 未安装")
+            CodeServerPlugin.logger.error("\(self.t)未找到 code-server 可执行文件")
             return
         }
 
@@ -248,7 +251,7 @@ final class CodeServerManager: ObservableObject {
         // 添加要打开的项目路径
         if let openPath, FileManager.default.fileExists(atPath: openPath) {
             arguments.append(openPath)
-            logger.info("📂 启动时自动打开项目: \(openPath)")
+            CodeServerPlugin.logger.info("\(self.t)启动时自动打开项目：\(openPath)")
         }
 
         // 3. 启动进程
@@ -268,7 +271,7 @@ final class CodeServerManager: ObservableObject {
         outHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             if let line = String(data: data, encoding: .utf8), !line.isEmpty {
-                self?.logger.debug("code-server: \(line.trimmingCharacters(in: .newlines))")
+                CodeServerPlugin.logger.debug("\(CodeServerManager.t)\(line.trimmingCharacters(in: .newlines))")
             }
         }
 
@@ -276,7 +279,7 @@ final class CodeServerManager: ObservableObject {
         errHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             if let line = String(data: data, encoding: .utf8), !line.isEmpty {
-                self?.logger.error("code-server error: \(line.trimmingCharacters(in: .newlines))")
+                CodeServerPlugin.logger.error("\(CodeServerManager.t)code-server 错误：\(line.trimmingCharacters(in: .newlines))")
             }
         }
 
@@ -292,10 +295,10 @@ final class CodeServerManager: ObservableObject {
             process = task
             isRunning = true
             errorMessage = nil
-            logger.info("code-server 已启动，端口: \(port)，数据目录: \(self.dataDirectory.path)")
+            CodeServerPlugin.logger.info("\(self.t)已启动，端口：\(port)，数据目录：\(self.dataDirectory.path)")
         } catch {
             errorMessage = "启动 code-server 失败: \(error.localizedDescription)"
-            logger.error("启动失败: \(error.localizedDescription)")
+            CodeServerPlugin.logger.error("\(self.t)启动失败：\(error.localizedDescription)")
         }
     }
 
@@ -307,7 +310,7 @@ final class CodeServerManager: ObservableObject {
         process?.waitUntilExit()
         process = nil
         isRunning = false
-        logger.info("code-server 已停止")
+        CodeServerPlugin.logger.info("\(self.t)已停止")
     }
 
     /// 检查 code-server 是否可访问
@@ -354,10 +357,10 @@ final class CodeServerManager: ObservableObject {
 
             let data = try JSONSerialization.data(withJSONObject: Self.defaultSettings, options: .prettyPrinted)
             try data.write(to: url)
-            logger.info("✅ 已创建 code-server 默认配置: \(url.path)")
+            CodeServerPlugin.logger.info("\(self.t)已创建默认配置：\(url.path)")
             return true
         } catch {
-            logger.warning("⚠️ 写入 code-server 配置失败: \(error.localizedDescription)")
+            CodeServerPlugin.logger.warning("\(self.t)写入配置失败：\(error.localizedDescription)")
             return false
         }
     }
@@ -382,10 +385,10 @@ final class CodeServerManager: ObservableObject {
                 return false
             }
             try newData.write(to: url)
-            logger.info("✅ 已合并 code-server 默认配置: \(url.path)")
+            CodeServerPlugin.logger.info("\(self.t)已合并默认配置：\(url.path)")
             return true
         } catch {
-            logger.warning("⚠️ 合并 code-server 配置失败: \(error.localizedDescription)")
+            CodeServerPlugin.logger.warning("\(self.t)合并配置失败：\(error.localizedDescription)")
             return false
         }
     }
@@ -509,7 +512,7 @@ final class CodeServerManager: ObservableObject {
     private func reloadServer() {
         // 设置重载标志，触发 WKWebView 重新加载
         shouldReloadWebView = true
-        logger.info("🔄 已触发 code-server 重载，扩展将立即生效")
+        CodeServerPlugin.logger.info("\(self.t)已触发重载，扩展将立即生效")
         
         // 延迟重置标志，以便下次安装时能再次触发
         Task { @MainActor [weak self] in
@@ -571,9 +574,9 @@ final class CodeServerManager: ObservableObject {
                 Task { @MainActor [weak self] in
                     if !success {
                         self?.extensionError = "安装扩展失败: \(errText)"
-                        self?.logger.error("安装扩展失败: \(errText)")
+                        CodeServerPlugin.logger.error("\(CodeServerManager.t)安装扩展失败：\(errText)")
                     } else {
-                        self?.logger.info("✅ 已安装扩展: \(extensionId)")
+                        CodeServerPlugin.logger.info("\(CodeServerManager.t)已安装扩展：\(extensionId)")
                         // 如果是图标主题扩展，自动启用
                         self?.applyThemeIfApplicable(extensionId)
                         // 触发 code-server 重载，使扩展立即生效
@@ -603,7 +606,7 @@ final class CodeServerManager: ObservableObject {
     private func applyThemeIfApplicable(_ extensionId: String) {
         // 查找扩展目录下的 package.json
         guard let packageURL = findExtensionPackageJSON(extensionId) else {
-            logger.debug("未找到扩展 \(extensionId) 的 package.json，跳过自动应用主题")
+            CodeServerPlugin.logger.debug("\(self.t)未找到扩展 \(extensionId) 的 package.json，跳过自动应用主题")
             return
         }
 
@@ -619,7 +622,7 @@ final class CodeServerManager: ObservableObject {
                let firstTheme = iconThemes.first,
                let themeId = firstTheme["id"] as? String ?? firstTheme["label"] as? String {
                 updateSetting(key: "workbench.iconTheme", value: themeId)
-                logger.info("🎨 已自动启用图标主题: \(themeId)")
+                CodeServerPlugin.logger.info("\(self.t)已自动启用图标主题：\(themeId)")
             }
 
             // 处理颜色主题
@@ -636,10 +639,10 @@ final class CodeServerManager: ObservableObject {
                     }
                 }
                 updateSetting(key: "workbench.colorTheme", value: selectedTheme)
-                logger.info("🎨 已自动启用颜色主题: \(selectedTheme)")
+                CodeServerPlugin.logger.info("\(self.t)已自动启用颜色主题：\(selectedTheme)")
             }
         } catch {
-            logger.warning("⚠️ 解析扩展 package.json 失败: \(error.localizedDescription)")
+            CodeServerPlugin.logger.warning("\(self.t)解析扩展 package.json 失败：\(error.localizedDescription)")
         }
     }
 
@@ -710,7 +713,7 @@ final class CodeServerManager: ObservableObject {
             let newData = try JSONSerialization.data(withJSONObject: settings, options: .prettyPrinted)
             try newData.write(to: settingsURL)
         } catch {
-            logger.warning("⚠️ 更新 code-server 配置失败 [\(key)]: \(error.localizedDescription)")
+            CodeServerPlugin.logger.warning("\(self.t)更新配置失败 [\(key)]：\(error.localizedDescription)")
         }
     }
 
@@ -750,9 +753,9 @@ final class CodeServerManager: ObservableObject {
                 Task { @MainActor [weak self] in
                     if !success {
                         self?.extensionError = "卸载扩展失败: \(errText)"
-                        self?.logger.error("卸载扩展失败: \(errText)")
+                        CodeServerPlugin.logger.error("\(CodeServerManager.t)卸载扩展失败：\(errText)")
                     } else {
-                        self?.logger.info("✅ 已卸载扩展: \(extensionId)")
+                        CodeServerPlugin.logger.info("\(CodeServerManager.t)已卸载扩展：\(extensionId)")
                         self?.loadInstalledExtensions()
                     }
                 }
@@ -778,12 +781,12 @@ final class CodeServerManager: ObservableObject {
     /// - Parameter path: 项目路径
     func openInNewWindow(path: String) {
         guard let codeServerPath = findCodeServer() else {
-            logger.error("未找到 code-server")
+            CodeServerPlugin.logger.error("\(self.t)未找到 code-server 可执行文件")
             return
         }
 
         guard FileManager.default.fileExists(atPath: path) else {
-            logger.warning("项目路径不存在: \(path)")
+            CodeServerPlugin.logger.warning("\(self.t)项目路径不存在：\(path)")
             return
         }
 
@@ -802,9 +805,9 @@ final class CodeServerManager: ObservableObject {
 
         do {
             try task.run()
-            logger.info("📂 已在新窗口打开项目: \(path)")
+            CodeServerPlugin.logger.info("\(self.t)已在新窗口打开项目：\(path)")
         } catch {
-            logger.error("打开项目失败: \(error.localizedDescription)")
+            CodeServerPlugin.logger.error("\(self.t)打开项目失败：\(error.localizedDescription)")
         }
     }
 
@@ -815,7 +818,7 @@ final class CodeServerManager: ObservableObject {
         stop()
         try? FileManager.default.removeItem(at: dataDirectory)
         try? FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
-        logger.info("🗑️ 已清除所有 code-server 数据")
+        CodeServerPlugin.logger.info("\(self.t)已清除所有数据")
     }
 
     /// 获取数据目录占用的磁盘空间（字节）

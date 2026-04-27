@@ -1,10 +1,12 @@
 import MagicKit
+import os
 import SwiftUI
 
 /// Code Server 插件
 ///
 /// 通过 WKWebView 内嵌 code-server (localhost:8080) 提供完整 VS Code 编辑体验。
 actor CodeServerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.code-server")
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🖥️"

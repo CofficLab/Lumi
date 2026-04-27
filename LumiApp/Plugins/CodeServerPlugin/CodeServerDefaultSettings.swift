@@ -21,6 +21,10 @@ enum CodeServerDefaultSettings {
         "window.commandCenter": false,
         // 兼容新版键：命令中心
         "workbench.commandCenter": false,
+        // 关闭并隐藏内建 AI 功能（Chat / Inline Suggestions / Copilot 扩展入口）
+        "chat.disableAIFeatures": true,
+        // 隐藏标题栏 Chat 菜单
+        "chat.commandCenter.enabled": false,
         // 面包屑导航（可选值：true, false）
         "breadcrumbs.enabled": false,
         // 布局控件（可选值：true, false）
