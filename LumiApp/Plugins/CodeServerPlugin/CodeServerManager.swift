@@ -152,6 +152,24 @@ final class CodeServerManager: ObservableObject {
     /// code-server 扩展目录（--extensions-dir）
     private var extensionsDirURL: URL { dataDirectory.appendingPathComponent("extensions", isDirectory: true) }
 
+    /// code-server 进程隔离使用的 HOME 目录
+    private var processHomeURL: URL { dataDirectory.appendingPathComponent("home", isDirectory: true) }
+
+    /// code-server 进程隔离使用的 XDG 配置目录
+    private var xdgConfigHomeURL: URL { dataDirectory.appendingPathComponent("xdg/config", isDirectory: true) }
+
+    /// code-server 进程隔离使用的 XDG 数据目录
+    private var xdgDataHomeURL: URL { dataDirectory.appendingPathComponent("xdg/data", isDirectory: true) }
+
+    /// code-server 进程隔离使用的 XDG 缓存目录
+    private var xdgCacheHomeURL: URL { dataDirectory.appendingPathComponent("xdg/cache", isDirectory: true) }
+
+    /// code-server 进程隔离使用的运行时目录
+    private var xdgRuntimeDirURL: URL { dataDirectory.appendingPathComponent("xdg/runtime", isDirectory: true) }
+
+    /// code-server 进程隔离使用的临时目录
+    private var temporaryDirectoryURL: URL { dataDirectory.appendingPathComponent("tmp", isDirectory: true) }
+
     // MARK: - Private
 
     private var process: Process?
@@ -237,7 +255,8 @@ final class CodeServerManager: ObservableObject {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: codeServerPath)
         task.arguments = arguments
-        task.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
+        task.currentDirectoryURL = dataDirectory
+        task.environment = codeServerEnvironment()
 
         // 捕获输出
         let outPipe = Pipe()
@@ -312,19 +331,21 @@ final class CodeServerManager: ObservableObject {
     // MARK: - Settings
 
     /// 确保默认配置已写入 settings.json
-    private func ensureDefaultSettings() {
+    @discardableResult
+    private func ensureDefaultSettings() -> Bool {
         let settingsURL = settingsFileURL()
 
         // 如果 settings.json 已存在，合并默认值（不覆盖已有配置）
         if FileManager.default.fileExists(atPath: settingsURL.path) {
-            mergeDefaultSettings(into: settingsURL)
+            return mergeDefaultSettings(into: settingsURL)
         } else {
-            writeDefaultSettings(to: settingsURL)
+            return writeDefaultSettings(to: settingsURL)
         }
     }
 
     /// 写入默认 settings.json
-    private func writeDefaultSettings(to url: URL) {
+    @discardableResult
+    private func writeDefaultSettings(to url: URL) -> Bool {
         do {
             let parentDir = url.deletingLastPathComponent()
             if !FileManager.default.fileExists(atPath: parentDir.path) {
@@ -334,16 +355,20 @@ final class CodeServerManager: ObservableObject {
             let data = try JSONSerialization.data(withJSONObject: Self.defaultSettings, options: .prettyPrinted)
             try data.write(to: url)
             logger.info("✅ 已创建 code-server 默认配置: \(url.path)")
+            return true
         } catch {
             logger.warning("⚠️ 写入 code-server 配置失败: \(error.localizedDescription)")
+            return false
         }
     }
 
     /// 将默认配置合并到已有 settings.json（不覆盖已有值）
-    private func mergeDefaultSettings(into url: URL) {
+    @discardableResult
+    private func mergeDefaultSettings(into url: URL) -> Bool {
         do {
             let data = try Data(contentsOf: url)
             var existing = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+            let originalData = data
 
             // 仅写入不存在的键；对强制策略键始终覆盖
             for (key, value) in Self.defaultSettings {
@@ -353,10 +378,15 @@ final class CodeServerManager: ObservableObject {
             }
 
             let newData = try JSONSerialization.data(withJSONObject: existing, options: .prettyPrinted)
+            guard newData != originalData else {
+                return false
+            }
             try newData.write(to: url)
             logger.info("✅ 已合并 code-server 默认配置: \(url.path)")
+            return true
         } catch {
             logger.warning("⚠️ 合并 code-server 配置失败: \(error.localizedDescription)")
+            return false
         }
     }
 
@@ -380,6 +410,40 @@ final class CodeServerManager: ObservableObject {
         ]
     }
 
+    /// 确保 code-server 的隔离目录存在，避免回落写入用户全局目录。
+    private func ensureSandboxDirectories() {
+        let fileManager = FileManager.default
+        let directories = [
+            dataDirectory,
+            userDataURL,
+            extensionsDirURL,
+            processHomeURL,
+            xdgConfigHomeURL,
+            xdgDataHomeURL,
+            xdgCacheHomeURL,
+            xdgRuntimeDirURL,
+            temporaryDirectoryURL,
+        ]
+
+        for directory in directories where !fileManager.fileExists(atPath: directory.path) {
+            try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+    }
+
+    /// 构建 code-server 进程环境变量，强制将配置、缓存和临时文件落到插件私有目录。
+    private func codeServerEnvironment() -> [String: String] {
+        ensureSandboxDirectories()
+
+        var environment = ProcessInfo.processInfo.environment
+        environment["HOME"] = processHomeURL.path
+        environment["XDG_CONFIG_HOME"] = xdgConfigHomeURL.path
+        environment["XDG_DATA_HOME"] = xdgDataHomeURL.path
+        environment["XDG_CACHE_HOME"] = xdgCacheHomeURL.path
+        environment["XDG_RUNTIME_DIR"] = xdgRuntimeDirURL.path
+        environment["TMPDIR"] = temporaryDirectoryURL.path
+        return environment
+    }
+
     // MARK: - Extension Management (CLI-based)
 
     /// 获取已安装的扩展列表
@@ -394,11 +458,15 @@ final class CodeServerManager: ObservableObject {
         extensionError = nil
 
         let cliArgs = cliDataArgs()
+        let workingDirectory = dataDirectory
+        let environment = codeServerEnvironment()
 
         Task.detached { [weak self] in
             let task = Process()
             task.executableURL = URL(fileURLWithPath: codeServerPath)
             task.arguments = ["--list-extensions", "--show-versions"] + cliArgs
+            task.currentDirectoryURL = workingDirectory
+            task.environment = environment
             let pipe = Pipe()
             task.standardOutput = pipe
             task.standardError = pipe
@@ -452,8 +520,14 @@ final class CodeServerManager: ObservableObject {
 
     /// 同步默认设置并触发 WebView 重载（用于已运行实例的热更新）
     func syncDefaultSettingsAndReloadWebView() {
-        ensureDefaultSettings()
+        let didChange = ensureDefaultSettings()
+        guard didChange else { return }
         reloadServer()
+    }
+
+    /// 同步默认设置，但不主动触发 WebView 重载。
+    func syncDefaultSettingsIfNeeded() {
+        _ = ensureDefaultSettings()
     }
 
     /// 安装扩展
@@ -470,11 +544,15 @@ final class CodeServerManager: ObservableObject {
         extensionError = nil
 
         let cliArgs = cliDataArgs()
+        let workingDirectory = dataDirectory
+        let environment = codeServerEnvironment()
 
         return await withCheckedContinuation { continuation in
             let task = Process()
             task.executableURL = URL(fileURLWithPath: codeServerPath)
             task.arguments = ["--install-extension", extensionId] + cliArgs
+            task.currentDirectoryURL = workingDirectory
+            task.environment = environment
             let outPipe = Pipe()
             let errPipe = Pipe()
             task.standardOutput = outPipe
@@ -650,11 +728,15 @@ final class CodeServerManager: ObservableObject {
         extensionError = nil
 
         let cliArgs = cliDataArgs()
+        let workingDirectory = dataDirectory
+        let environment = codeServerEnvironment()
 
         return await withCheckedContinuation { continuation in
             let task = Process()
             task.executableURL = URL(fileURLWithPath: codeServerPath)
             task.arguments = ["--uninstall-extension", extensionId] + cliArgs
+            task.currentDirectoryURL = workingDirectory
+            task.environment = environment
             let outPipe = Pipe()
             let errPipe = Pipe()
             task.standardOutput = outPipe
@@ -715,7 +797,8 @@ final class CodeServerManager: ObservableObject {
             "--extensions-dir", extensionsDirURL.path,
             "--auth", "none",
         ]
-        task.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
+        task.currentDirectoryURL = dataDirectory
+        task.environment = codeServerEnvironment()
 
         do {
             try task.run()

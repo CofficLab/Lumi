@@ -67,7 +67,7 @@ struct CodeServerView: View {
             }
 
             if await manager.isServerReachable() {
-                manager.syncDefaultSettingsAndReloadWebView()
+                manager.syncDefaultSettingsIfNeeded()
                 serverReady = true
                 isLoading = false
                 didAttemptStart = true
@@ -90,7 +90,7 @@ struct CodeServerView: View {
 
             // 先检查是否已经可访问
             if await manager.isServerReachable() {
-                manager.syncDefaultSettingsAndReloadWebView()
+                manager.syncDefaultSettingsIfNeeded()
                 serverReady = true
                 isLoading = false
                 return
@@ -140,7 +140,7 @@ struct CodeServerView: View {
 
         // 先检查是否已经可访问（可能用户已安装）
         if await manager.isServerReachable() {
-            manager.syncDefaultSettingsAndReloadWebView()
+            manager.syncDefaultSettingsIfNeeded()
             serverReady = true
             isLoading = false
             return

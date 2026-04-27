@@ -64,12 +64,19 @@ struct CodeServerWebView: NSViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate {
         var lastRequestedURL: URL?
         var lastReloadTrigger: Bool = false
+        private var retryCount = 0
+        private let maxRetryCount = 2
 
         override init() {}
 
         // WebContent 进程异常终止时自动恢复，避免页面长期空白
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            retryCount = 0
             webView.reload()
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            retryCount = 0
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -86,9 +93,28 @@ struct CodeServerWebView: NSViewRepresentable {
             if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
                 return
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                webView.reload()
+
+            guard shouldRetry(for: nsError), retryCount < maxRetryCount else {
+                return
             }
+
+            retryCount += 1
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                webView.reloadFromOrigin()
+            }
+        }
+
+        private func shouldRetry(for error: NSError) -> Bool {
+            guard error.domain == NSURLErrorDomain else { return false }
+            let retryableCodes: Set<Int> = [
+                NSURLErrorTimedOut,
+                NSURLErrorCannotFindHost,
+                NSURLErrorCannotConnectToHost,
+                NSURLErrorNetworkConnectionLost,
+                NSURLErrorDNSLookupFailed,
+                NSURLErrorNotConnectedToInternet,
+            ]
+            return retryableCodes.contains(error.code)
         }
     }
 }
