@@ -159,6 +159,16 @@ final class CodeServerManager: ObservableObject {
 
     /// 默认写入 settings.json 的配置项
     private static let defaultSettings: [String: Any] = CodeServerDefaultSettings.values
+    
+    /// 启动时需要强制覆盖的配置项（用于关闭干扰性弹窗）
+    private static let enforcedSettingsKeys: Set<String> = [
+        "security.workspace.trust.enabled",
+        "security.workspace.trust.untrustedFiles",
+        "security.workspace.trust.startupPrompt",
+        "security.workspace.trust.banner",
+        "extensions.ignoreRecommendations",
+        "extensions.showRecommendationsOnlyOnDemand",
+    ]
 
     private init() {}
 
@@ -317,9 +327,9 @@ final class CodeServerManager: ObservableObject {
             let data = try Data(contentsOf: url)
             var existing = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
 
-            // 仅写入不存在的键
+            // 仅写入不存在的键；对强制策略键始终覆盖
             for (key, value) in Self.defaultSettings {
-                if existing[key] == nil {
+                if existing[key] == nil || Self.enforcedSettingsKeys.contains(key) {
                     existing[key] = value
                 }
             }

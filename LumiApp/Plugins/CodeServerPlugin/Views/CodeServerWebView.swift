@@ -13,6 +13,10 @@ struct CodeServerWebView: NSViewRepresentable {
     
     /// 是否需要重新加载
     var reloadTrigger: Bool = false
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
 
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -33,7 +37,10 @@ struct CodeServerWebView: NSViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.autoresizingMask = [.width, .height]
         webView.allowsBackForwardNavigationGestures = true
+        webView.navigationDelegate = context.coordinator
 
+        context.coordinator.lastRequestedURL = url
+        context.coordinator.lastReloadTrigger = reloadTrigger
         let request = URLRequest(url: url)
         webView.load(request)
 
@@ -41,10 +48,47 @@ struct CodeServerWebView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
-        // 当 reloadTrigger 发生变化时重新加载页面
-        if reloadTrigger {
+        let shouldReloadForURLChange = context.coordinator.lastRequestedURL != url
+        let shouldReloadForTrigger = reloadTrigger && !context.coordinator.lastReloadTrigger
+
+        context.coordinator.lastRequestedURL = url
+        context.coordinator.lastReloadTrigger = reloadTrigger
+
+        // URL 变化或收到重载信号（上升沿）时触发 reload
+        if shouldReloadForURLChange || shouldReloadForTrigger {
             let request = URLRequest(url: url)
             nsView.load(request)
+        }
+    }
+
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        var lastRequestedURL: URL?
+        var lastReloadTrigger: Bool = false
+
+        override init() {}
+
+        // WebContent 进程异常终止时自动恢复，避免页面长期空白
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            webView.reload()
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            reloadAfterFailure(webView, error: error)
+        }
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            reloadAfterFailure(webView, error: error)
+        }
+
+        private func reloadAfterFailure(_ webView: WKWebView, error: Error) {
+            let nsError = error as NSError
+            // 忽略用户主动取消（例如新请求覆盖旧请求）的错误
+            if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
+                return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                webView.reload()
+            }
         }
     }
 }

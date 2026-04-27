@@ -31,10 +31,10 @@ struct CodeServerView: View {
                         }
                     }
                 )
-                .onAppear {
-                    startServerIfNeeded()
-                }
             }
+        }
+        .onAppear {
+            verifyServerAndStartIfNeeded()
         }
         .onChange(of: projectVM.currentProjectPath) { _, newProjectPath in
             // 项目切换后，在现有 WebView 中导航到新项目
@@ -56,6 +56,27 @@ struct CodeServerView: View {
         var components = URLComponents(string: "http://127.0.0.1:\(manager.port)")!
         components.queryItems = [URLQueryItem(name: "folder", value: currentFolder)]
         return components.url!
+    }
+
+    /// 视图出现时先做健康检查，避免状态残留导致直接显示空白 WebView
+    private func verifyServerAndStartIfNeeded() {
+        Task { @MainActor in
+            if !projectVM.currentProjectPath.isEmpty {
+                currentFolder = projectVM.currentProjectPath
+            }
+
+            if await manager.isServerReachable() {
+                serverReady = true
+                isLoading = false
+                didAttemptStart = true
+                return
+            }
+
+            // 如果进程状态和实际可达性不一致，优先重置状态并走统一启动流程
+            serverReady = false
+            didAttemptStart = false
+            startServerIfNeeded()
+        }
     }
 
     private func startServerIfNeeded() {

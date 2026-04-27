@@ -197,8 +197,8 @@ final class LLMRequester: SuperLog {
     ) -> @Sendable (RequestMetadata) async -> Void {
         let statusVM = self.statusVM
         return { metadata in
-            Task { await metadataHolder.set(metadata) }
-            Task { @MainActor in
+            await metadataHolder.set(metadata)
+            await MainActor.run {
                 statusVM.setStatus(conversationId: conversationId, content: "正在发送消息，大小：\(metadata.formattedBodySize)")
             }
         }

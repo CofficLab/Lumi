@@ -39,5 +39,17 @@ enum CodeServerDefaultSettings {
         "telemetry.telemetryLevel": "off",
         // 标题栏样式（可选值："native", "custom"）
         "window.titleBarStyle": "custom",
+        // 关闭 Workspace Trust，首次打开项目不再弹信任确认框
+        "security.workspace.trust.enabled": false,
+        // 未受信文件直接打开，不再弹出提示（可选值："prompt", "open", "newWindow"）
+        "security.workspace.trust.untrustedFiles": "open",
+        // 启动时不显示 trust 提示（可选值："always", "once", "never"）
+        "security.workspace.trust.startupPrompt": "never",
+        // 不显示 trust 横幅（可选值："always", "untilDismissed", "never"）
+        "security.workspace.trust.banner": "never",
+        // 禁用扩展推荐，避免首次打开项目弹出“安装推荐扩展”
+        "extensions.ignoreRecommendations": true,
+        // 仅在用户主动触发时显示推荐
+        "extensions.showRecommendationsOnlyOnDemand": true,
     ]
 }
