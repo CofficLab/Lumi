@@ -14,7 +14,7 @@ enum CodeServerDefaultSettings {
         // 左侧活动栏（可选值："default", "top", "hidden"）
         "workbench.activityBar.location": "hidden",
         // 底部状态栏（可选值：true, false）
-        "workbench.statusBar.visible": true,
+        "workbench.statusBar.visible": false,
         // 命令中心（可选值：true, false）
         "window.commandCenter": false,
         // 面包屑导航（可选值：true, false）
