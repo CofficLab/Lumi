@@ -29,6 +29,8 @@ enum CodeServerDefaultSettings {
         "workbench.startupEditor": "none",
         // 侧边栏（可选值：true, false）
         "workbench.sideBar.visible": false,
+        // 辅助侧边栏默认隐藏（可选值："default", "hidden"）
+        "workbench.secondarySideBar.defaultVisibility": "hidden",
         // 编辑器标签页（可选值："multiple", "single", "none"）
         "workbench.editor.showTabs": "single",
         // 自动更新检查（可选值："none", "manual", "start", "default"）

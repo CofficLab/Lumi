@@ -10,11 +10,14 @@ struct CodeServerView: View {
     @State private var serverReady = false
     @State private var didAttemptStart = false
 
+    /// 当前加载的项目路径（用于切换项目时更新 WebView URL）
+    @State private var currentFolder: String = ""
+
     var body: some View {
         ZStack {
             if serverReady {
                 CodeServerWebView(
-                    url: URL(string: "http://127.0.0.1:\(manager.port)")!,
+                    url: buildCodeServerURL(),
                     reloadTrigger: manager.shouldReloadWebView
                 )
             } else {
@@ -34,15 +37,26 @@ struct CodeServerView: View {
             }
         }
         .onChange(of: projectVM.currentProjectPath) { _, newProjectPath in
-            // 项目切换后，如果 server 正在运行，用 --new-window 打开新项目
+            // 项目切换后，在现有 WebView 中导航到新项目
             if manager.isRunning, !newProjectPath.isEmpty {
-                manager.openInNewWindow(path: newProjectPath)
+                currentFolder = newProjectPath
             }
         }
         .frame(minWidth: 800)
     }
 
     // MARK: - Private
+
+    /// 构建 code-server URL，包含当前项目路径参数
+    private func buildCodeServerURL() -> URL {
+        guard !currentFolder.isEmpty else {
+            return URL(string: "http://127.0.0.1:\(manager.port)")!
+        }
+        // code-server 支持 ?folder= 参数打开指定目录
+        var components = URLComponents(string: "http://127.0.0.1:\(manager.port)")!
+        components.queryItems = [URLQueryItem(name: "folder", value: currentFolder)]
+        return components.url!
+    }
 
     private func startServerIfNeeded() {
         guard !didAttemptStart else { return }
@@ -61,6 +75,9 @@ struct CodeServerView: View {
             // 未运行则启动，自动打开当前项目
             if !manager.isRunning {
                 let projectPath = projectVM.currentProjectPath.isEmpty ? nil : projectVM.currentProjectPath
+                if let path = projectPath {
+                    currentFolder = path
+                }
                 manager.start(port: 8080, openPath: projectPath)
             }
 
