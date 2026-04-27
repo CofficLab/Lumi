@@ -21,7 +21,12 @@ struct CodeServerView: View {
                 CodeServerStatusView(
                     isRunning: manager.isRunning,
                     errorMessage: manager.errorMessage,
-                    isLoading: isLoading
+                    isLoading: isLoading,
+                    onRetry: {
+                        Task { @MainActor in
+                            await retryConnection()
+                        }
+                    }
                 )
                 .onAppear {
                     startServerIfNeeded()
@@ -81,6 +86,48 @@ struct CodeServerView: View {
                     manager.errorMessage = "code-server 启动超时，请确认已安装"
                 }
             }
+        }
+    }
+
+    /// 重试连接（用户点击重试按钮时调用）
+    private func retryConnection() async {
+        // 重置状态
+        didAttemptStart = false
+        serverReady = false
+        isLoading = true
+        manager.errorMessage = nil
+
+        // 先检查是否已经可访问（可能用户已安装）
+        if await manager.isServerReachable() {
+            serverReady = true
+            isLoading = false
+            return
+        }
+
+        // 停止旧的进程（如果存在）
+        manager.stop()
+
+        // 重新启动
+        let projectPath = projectVM.currentProjectPath.isEmpty ? nil : projectVM.currentProjectPath
+        manager.start(port: 8080, openPath: projectPath)
+
+        // 轮询等待服务就绪（最多 15 秒）
+        var attempts = 0
+        let maxAttempts = 30
+        while attempts < maxAttempts {
+            try? await Task.sleep(for: .milliseconds(500))
+            if await manager.isServerReachable() {
+                serverReady = true
+                isLoading = false
+                return
+            }
+            attempts += 1
+        }
+
+        // 超时
+        isLoading = false
+        if manager.errorMessage == nil && !manager.isRunning {
+            manager.errorMessage = "code-server 启动超时，请确认已安装"
         }
     }
 }

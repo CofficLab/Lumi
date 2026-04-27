@@ -7,13 +7,14 @@ struct CodeServerStatusView: View {
     let isRunning: Bool
     let errorMessage: String?
     let isLoading: Bool
+    var onRetry: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 16) {
             if isLoading {
                 CodeServerLoadingIndicatorView(isRunning: isRunning)
             } else if let error = errorMessage {
-                CodeServerErrorView(errorMessage: error)
+                CodeServerErrorView(errorMessage: error, onRetry: onRetry)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
