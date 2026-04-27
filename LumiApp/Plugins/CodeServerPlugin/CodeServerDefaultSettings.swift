@@ -13,10 +13,14 @@ enum CodeServerDefaultSettings {
     nonisolated(unsafe) static let values: [String: Any] = [
         // 左侧活动栏（可选值："default", "top", "hidden"）
         "workbench.activityBar.location": "hidden",
+        // 兼容旧版键：隐藏活动栏
+        "workbench.activityBar.visible": false,
         // 底部状态栏（可选值：true, false）
         "workbench.statusBar.visible": false,
         // 命令中心（可选值：true, false）
         "window.commandCenter": false,
+        // 兼容新版键：命令中心
+        "workbench.commandCenter": false,
         // 面包屑导航（可选值：true, false）
         "breadcrumbs.enabled": false,
         // 布局控件（可选值：true, false）
@@ -28,11 +32,20 @@ enum CodeServerDefaultSettings {
         // 启动时欢迎页（可选值："none", "welcomePage", "readme", "newUntitledFile", "terminal", "welcomePageInEmptyWorkbench"）
         "workbench.startupEditor": "none",
         // 侧边栏（可选值：true, false）
-        "workbench.sideBar.visible": false,
+        "workbench.sideBar.visible": true,
         // 辅助侧边栏默认隐藏（可选值："default", "hidden"）
         "workbench.secondarySideBar.defaultVisibility": "hidden",
         // 编辑器标签页（可选值："multiple", "single", "none"）
-        "workbench.editor.showTabs": "single",
+        "workbench.editor.showTabs": "none",
+        // 隐藏编辑器右上角操作区（更多菜单/布局按钮）
+        "workbench.editor.editorActionsLocation": "hidden",
+        // 关闭编辑器居中布局，避免左右大留白
+        "workbench.editor.centeredLayout": false,
+        // 关闭居中布局的自适应与固定宽度，避免编辑区出现左右大留白
+        "workbench.editor.centeredLayoutAutoResize": false,
+        "workbench.editor.centeredLayoutFixedWidth": false,
+        // 关闭 Zen Mode 的居中布局联动
+        "zenMode.centerLayout": false,
         // 自动更新检查（可选值："none", "manual", "start", "default"）
         "update.mode": "none",
         // 遥测（可选值："all", "error", "crash", "off"）

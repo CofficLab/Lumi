@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Add New Project" : {
+
+    },
     "Browse" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -8,7 +8,7 @@ struct CodeServerWebView: NSViewRepresentable {
     /// 要加载的 URL
     let url: URL
     
-    /// 是否注入自定义 CSS，默认为 true
+    /// 是否注入自定义 CSS，默认为 false（优先使用 settings.json）
     var injectCSS: Bool = false
     
     /// 是否需要重新加载

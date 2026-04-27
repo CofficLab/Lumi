@@ -18,6 +18,7 @@ struct CodeServerView: View {
             if serverReady {
                 CodeServerWebView(
                     url: buildCodeServerURL(),
+                    injectCSS: false,
                     reloadTrigger: manager.shouldReloadWebView
                 )
             } else {
@@ -66,6 +67,7 @@ struct CodeServerView: View {
             }
 
             if await manager.isServerReachable() {
+                manager.syncDefaultSettingsAndReloadWebView()
                 serverReady = true
                 isLoading = false
                 didAttemptStart = true
@@ -88,6 +90,7 @@ struct CodeServerView: View {
 
             // 先检查是否已经可访问
             if await manager.isServerReachable() {
+                manager.syncDefaultSettingsAndReloadWebView()
                 serverReady = true
                 isLoading = false
                 return
@@ -137,6 +140,7 @@ struct CodeServerView: View {
 
         // 先检查是否已经可访问（可能用户已安装）
         if await manager.isServerReachable() {
+            manager.syncDefaultSettingsAndReloadWebView()
             serverReady = true
             isLoading = false
             return

@@ -162,6 +162,24 @@ final class CodeServerManager: ObservableObject {
     
     /// 启动时需要强制覆盖的配置项（用于关闭干扰性弹窗）
     private static let enforcedSettingsKeys: Set<String> = [
+        "workbench.activityBar.location",
+        "workbench.activityBar.visible",
+        "workbench.statusBar.visible",
+        "window.commandCenter",
+        "workbench.commandCenter",
+        "breadcrumbs.enabled",
+        "workbench.layoutControl.enabled",
+        "editor.minimap.enabled",
+        "window.menuBarVisibility",
+        "workbench.startupEditor",
+        "workbench.sideBar.visible",
+        "workbench.secondarySideBar.defaultVisibility",
+        "workbench.editor.showTabs",
+        "workbench.editor.editorActionsLocation",
+        "workbench.editor.centeredLayout",
+        "workbench.editor.centeredLayoutAutoResize",
+        "workbench.editor.centeredLayoutFixedWidth",
+        "zenMode.centerLayout",
         "security.workspace.trust.enabled",
         "security.workspace.trust.untrustedFiles",
         "security.workspace.trust.startupPrompt",
@@ -421,8 +439,6 @@ final class CodeServerManager: ObservableObject {
     ///
     /// 通过更新 `shouldReloadWebView` 标志通知 WKWebView 重新加载页面。
     private func reloadServer() {
-        guard isRunning else { return }
-        
         // 设置重载标志，触发 WKWebView 重新加载
         shouldReloadWebView = true
         logger.info("🔄 已触发 code-server 重载，扩展将立即生效")
@@ -432,6 +448,12 @@ final class CodeServerManager: ObservableObject {
             try? await Task.sleep(for: .seconds(2))
             self?.shouldReloadWebView = false
         }
+    }
+
+    /// 同步默认设置并触发 WebView 重载（用于已运行实例的热更新）
+    func syncDefaultSettingsAndReloadWebView() {
+        ensureDefaultSettings()
+        reloadServer()
     }
 
     /// 安装扩展

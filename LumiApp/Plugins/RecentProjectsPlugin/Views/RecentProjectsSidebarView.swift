@@ -1,12 +1,10 @@
 import SwiftUI
 import MagicKit
-import UniformTypeIdentifiers
 
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {
     @EnvironmentObject var projectVM: ProjectVM
     @State private var isFileImporterPresented = false
-    @State private var isDropTargeted = false
 
     private let store = RecentProjectsStore()
 
@@ -26,27 +24,8 @@ struct RecentProjectsSidebarView: View {
                 .padding(.vertical, 8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .dropDestination(
-            for: URL.self,
-            action: { urls, _ in
-                handleProjectFolderDrop(urls: urls)
-            },
-            isTargeted: { targeted in
-                isDropTargeted = targeted
-            }
-        )
-        .overlay {
-            if isDropTargeted {
-                DropOverlayCard(
-                    title: "松开即可添加项目",
-                    subtitle: "将项目文件夹拖到侧边栏，自动加入最近项目并切换"
-                )
-                .transition(.opacity)
-                .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
-            }
-        }
     }
-    
+
     // MARK: - Recent Projects List
 
     private var recentProjectsList: some View {
@@ -60,7 +39,7 @@ struct RecentProjectsSidebarView: View {
             .padding(.vertical, 4)
         }
     }
-    
+
     // MARK: - Project Row
 
     private func projectRow(_ project: Project) -> some View {
@@ -70,23 +49,23 @@ struct RecentProjectsSidebarView: View {
             Image(systemName: isSelected ? "folder.fill" : "folder")
                 .font(.system(size: 14))
                 .foregroundColor(isSelected ? .accentColor : .secondary)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(project.name)
                     .font(.system(size: 12))
                     .fontWeight(isSelected ? .semibold : .regular)
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
                     .lineLimit(1)
-                
+
                 Text(project.path)
                     .font(.system(size: 9))
                     .foregroundColor(.secondary.opacity(0.7))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-            
+
             Spacer()
-            
+
             if isSelected {
                 Image(systemName: "checkmark")
                     .font(.system(size: 10, weight: .semibold))
@@ -111,7 +90,7 @@ struct RecentProjectsSidebarView: View {
             DragPreview(fileURL: URL(fileURLWithPath: project.path))
         }
     }
-    
+
     // MARK: - Empty View
 
     private var emptyView: some View {
@@ -126,59 +105,30 @@ struct RecentProjectsSidebarView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 20)
     }
-    
+
     // MARK: - Computed Properties
-    
+
     private var recentProjects: [Project] {
         projectVM.recentProjects
     }
 
     private var tipsCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        Button(action: { isFileImporterPresented = true }) {
             HStack(spacing: 6) {
-                Image(systemName: "folder.badge.plus")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.accentColor)
-                Text("添加项目")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 11))
+                Text(String(localized: "Add New Project", table: "RecentProjects"))
+                    .font(.system(size: 11, weight: .medium))
             }
-
-            Text("将项目目录拖动到这里来添加，或者点击下方按钮选择。")
-                .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Button(action: { isFileImporterPresented = true }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 11))
-                    Text(String(localized: "Select New Project", table: "RecentProjects"))
-                        .font(.system(size: 11, weight: .medium))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
-            }
-            .buttonStyle(.plain)
-            .foregroundColor(.white)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(AppUI.Color.semantic.primary)
-            )
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
         }
-        .padding(10)
+        .buttonStyle(.plain)
+        .foregroundColor(.white)
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.white.opacity(0.04))
+            RoundedRectangle(cornerRadius: 6)
+                .fill(AppUI.Color.semantic.primary)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(
-                    isDropTargeted ? Color.accentColor.opacity(0.65) : Color.white.opacity(0.14),
-                    style: StrokeStyle(lineWidth: isDropTargeted ? 1.5 : 1, dash: [6, 4])
-                )
-        )
-        .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
         .fileImporter(
             isPresented: $isFileImporterPresented,
             allowedContentTypes: [.folder],
@@ -187,9 +137,9 @@ struct RecentProjectsSidebarView: View {
             handleFileImport(result)
         }
     }
-    
+
     // MARK: - Actions
-    
+
     private func switchToProject(_ project: Project) {
         projectVM.switchProject(to: project)
     }
@@ -204,15 +154,6 @@ struct RecentProjectsSidebarView: View {
         }
     }
 
-    private func handleProjectFolderDrop(urls: [URL]) -> Bool {
-        let normalizedURLs = urls.map(\.standardizedFileURL)
-        guard let folderURL = normalizedURLs.first(where: { isDirectory($0) }) else {
-            return false
-        }
-        addProjectAndSwitch(to: folderURL)
-        return true
-    }
-
     private func addProjectAndSwitch(to folderURL: URL) {
         let project = Project(
             name: folderURL.lastPathComponent,
@@ -223,10 +164,6 @@ struct RecentProjectsSidebarView: View {
         store.addProject(name: project.name, path: project.path)
         projectVM.setRecentProjects(store.loadProjects())
         projectVM.switchProject(to: project)
-    }
-
-    private func isDirectory(_ url: URL) -> Bool {
-        (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
     }
 }
 
