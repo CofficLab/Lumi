@@ -2183,6 +2183,9 @@
         }
       }
     },
+    "Editing disabled for truncated preview" : {
+
+    },
     "Empty files in the trash" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2445,6 +2448,9 @@
 
     },
     "Fix All on Save" : {
+
+    },
+    "Folding ribbon disabled" : {
 
     },
     "Format on Save" : {
@@ -2710,6 +2716,9 @@
       }
     },
     "In Selection" : {
+
+    },
+    "Inlay hints disabled" : {
 
     },
     "Input Manager" : {
@@ -2986,6 +2995,16 @@
         }
       }
     },
+    "Long line: L%lld · %lld chars" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Long line: L%1$lld · %2$lld chars"
+          }
+        }
+      }
+    },
     "Lumi" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3154,6 +3173,9 @@
       }
     },
     "Mermaid render failed" : {
+
+    },
+    "Minimap disabled" : {
 
     },
     "More" : {
@@ -4326,6 +4348,9 @@
         }
       }
     },
+    "Semantic tokens disabled" : {
+
+    },
     "Show in Finder" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4637,6 +4662,9 @@
           }
         }
       }
+    },
+    "Syntax highlighting limit: first %@ lines" : {
+
     },
     "System" : {
       "extractionState" : "stale",

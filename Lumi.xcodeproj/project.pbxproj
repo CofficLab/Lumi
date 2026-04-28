@@ -153,7 +153,6 @@
 				"Plugins-Editor/HTMLEditorPlugin/HTMLEditorPlugin.README.md",
 				"Plugins-Editor/JSEditorPlugin/JSEditorPlugin.README.md",
 				"Plugins-Editor/VueEditorPlugin/VueEditorPlugin.README.md",
-				Plugins/AgentEditorPlugin/.agent/rules/EDITOR_MARKDOWN_HIGHLIGHT_PLAN.md,
 				Plugins/AgentEditorPlugin/EDITOR_MARKDOWN_HIGHLIGHT_PLAN.md,
 				Plugins/ConversationTimelinePlugin/ConversationTimelinePlugin.README.md,
 			);

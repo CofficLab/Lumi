@@ -238,10 +238,19 @@
     "Command Palette" : {
 
     },
+    "Copy Line Down" : {
+
+    },
+    "Copy Line Up" : {
+
+    },
     "Current Group" : {
 
     },
     "Current Group (%lld)" : {
+
+    },
+    "Delete Line" : {
 
     },
     "Document formatted" : {
@@ -581,6 +590,12 @@
         }
       }
     },
+    "Insert Line Above" : {
+
+    },
+    "Insert Line Below" : {
+
+    },
     "Invalid selection" : {
 
     },
@@ -842,6 +857,12 @@
 
     },
     "Move Editor to Previous Group" : {
+
+    },
+    "Move Line Down" : {
+
+    },
+    "Move Line Up" : {
 
     },
     "Navigate" : {
@@ -1519,6 +1540,12 @@
         }
       }
     },
+    "Sort Lines Ascending" : {
+
+    },
+    "Sort Lines Descending" : {
+
+    },
     "Split Editor Down" : {
 
     },
@@ -1595,6 +1622,12 @@
       }
     },
     "This code action has no edit or command" : {
+
+    },
+    "Toggle Line Comment" : {
+
+    },
+    "Transpose Characters" : {
 
     },
     "Trigger Completion" : {

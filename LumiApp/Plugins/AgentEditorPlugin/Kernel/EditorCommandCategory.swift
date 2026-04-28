@@ -1,6 +1,7 @@
 import Foundation
 
 enum EditorCommandCategory: String, CaseIterable {
+    case edit
     case find
     case navigation
     case workbench
@@ -13,6 +14,8 @@ enum EditorCommandCategory: String, CaseIterable {
 
     var displayTitle: String {
         switch self {
+        case .edit:
+            return "Edit"
         case .find:
             return "Find"
         case .navigation:
@@ -35,6 +38,7 @@ enum EditorCommandCategory: String, CaseIterable {
     }
 
     static let orderedCases: [EditorCommandCategory] = [
+        .edit,
         .find,
         .navigation,
         .workbench,

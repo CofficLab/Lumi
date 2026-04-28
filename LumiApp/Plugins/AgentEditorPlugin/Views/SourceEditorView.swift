@@ -98,6 +98,9 @@ struct SourceEditorView: View, SuperLog {
                 findMatchesOverlay
             }
             .overlay(alignment: .topLeading) {
+                bracketMatchOverlay
+            }
+            .overlay(alignment: .topLeading) {
                 GeometryReader { proxy in
                     hoverPreview(in: proxy.size)
                 }
@@ -194,6 +197,57 @@ struct SourceEditorView: View, SuperLog {
                 }
             }
             .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder
+    private var bracketMatchOverlay: some View {
+        if let textView = state.focusedTextView,
+           let match = state.bracketMatchResult,
+           let openRect = textView.layoutManager.rectForOffset(match.openOffset),
+           let closeRect = textView.layoutManager.rectForOffset(match.closeOffset) {
+            
+            let visibleRect = textView.visibleRect
+            let openOverlayRect = CGRect(
+                x: openRect.origin.x - visibleRect.origin.x,
+                y: openRect.origin.y - visibleRect.origin.y,
+                width: max(openRect.width, 3),
+                height: max(openRect.height, 2)
+            )
+            let closeOverlayRect = CGRect(
+                x: closeRect.origin.x - visibleRect.origin.x,
+                y: closeRect.origin.y - visibleRect.origin.y,
+                width: max(closeRect.width, 3),
+                height: max(closeRect.height, 2)
+            )
+
+            let expandedVisibleRect = visibleRect.offsetBy(dx: -visibleRect.origin.x, dy: -visibleRect.origin.y)
+                .insetBy(dx: -4, dy: -4)
+            if openOverlayRect.intersects(expandedVisibleRect) ||
+               closeOverlayRect.intersects(expandedVisibleRect) {
+                
+                let bracketColor = AppUI.Color.semantic.primary
+                ZStack(alignment: .topLeading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(bracketColor.opacity(0.2))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 2)
+                                .stroke(bracketColor.opacity(0.6), lineWidth: 1)
+                        )
+                        .frame(width: openOverlayRect.width, height: openOverlayRect.height)
+                        .offset(x: openOverlayRect.minX, y: openOverlayRect.minY)
+
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(bracketColor.opacity(0.2))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 2)
+                                .stroke(bracketColor.opacity(0.6), lineWidth: 1)
+                        )
+                        .frame(width: closeOverlayRect.width, height: closeOverlayRect.height)
+                        .offset(x: closeOverlayRect.minX, y: closeOverlayRect.minY)
+                }
+                .allowsHitTesting(false)
+            }
         }
     }
 

@@ -437,6 +437,56 @@ final class EditorState: ObservableObject, SuperLog {
         syncActiveSessionState()
     }
 
+    // MARK: - Bracket Matching
+
+    /// 当前匹配的括号对位置（UTF-16 offset）。nil 表示光标不在括号旁边。
+    @Published private(set) var bracketMatchResult: BracketMatchResult?
+
+    /// 括号匹配结果
+    struct BracketMatchResult: Equatable {
+        let openOffset: Int
+        let closeOffset: Int
+
+        var ranges: [NSRange] {
+            [
+                NSRange(location: openOffset, length: 1),
+                NSRange(location: closeOffset, length: 1),
+            ]
+        }
+    }
+
+    /// 根据当前光标位置计算括号匹配
+    func updateBracketMatch() {
+        guard let text = content?.string else {
+            bracketMatchResult = nil
+            return
+        }
+
+        let cursorOffset: Int
+        if multiCursorState.all.count == 1 {
+            cursorOffset = multiCursorState.all.first?.location ?? 0
+        } else if let focusedTextView,
+                  let selection = focusedTextView.selectionManager.textSelections.first {
+            cursorOffset = selection.range.location
+        } else {
+            cursorOffset = 0
+        }
+
+        let languageId = detectedLanguage?.tsName ?? "swift"
+        let config = BracketPairsConfig.defaultForLanguage(languageId)
+
+        if let match = BracketMatcher.findMatchingBracket(
+            in: text, at: cursorOffset, config: config
+        ) {
+            bracketMatchResult = BracketMatchResult(
+                openOffset: match.openPosition,
+                closeOffset: match.closePosition
+            )
+        } else {
+            bracketMatchResult = nil
+        }
+    }
+
     /// 多光标编辑状态
     @Published var multiCursorState = MultiCursorState()
 
@@ -1189,6 +1239,7 @@ final class EditorState: ObservableObject, SuperLog {
                 )
             )
         )
+        updateBracketMatch()
     }
 
     func applyPrimaryCursorObservation(line: Int, column: Int) {
@@ -1433,6 +1484,7 @@ final class EditorState: ObservableObject, SuperLog {
         }
         refreshFindMatches()
         syncActiveSessionState()
+        updateBracketMatch()
     }
     
     /// 通知 LSP 发生增量文本变更（由编辑器 coordinator 转发）
@@ -2591,6 +2643,93 @@ final class EditorState: ObservableObject, SuperLog {
             selectedRanges: selectedRanges,
             reason: reason
         )
+    }
+
+    // MARK: - Line Editing (Phase 9)
+
+    /// 行编辑命令类型
+    enum LineEditKind {
+        case deleteLine
+        case copyLineUp
+        case copyLineDown
+        case moveLineUp
+        case moveLineDown
+        case insertLineBelow
+        case insertLineAbove
+        case sortLinesAscending
+        case sortLinesDescending
+        case toggleLineComment
+        case transpose
+    }
+
+    /// 执行行编辑命令
+    func performLineEdit(_ kind: LineEditKind) {
+        guard let text = content?.string, !text.isEmpty else { return }
+
+        let selections = multiCursorState.all.count > 1
+            ? multiCursorState.all.map { NSRange(location: $0.location, length: $0.length) }
+            : focusedTextView?.selectionManager.textSelections.map(\.range)
+                ?? [NSRange(location: 0, length: 0)]
+
+        let result: LineEditResult?
+        switch kind {
+        case .deleteLine:
+            result = LineEditingController.deleteLine(in: text, selections: selections)
+        case .copyLineUp:
+            result = LineEditingController.copyLineUp(in: text, selections: selections)
+        case .copyLineDown:
+            result = LineEditingController.copyLineDown(in: text, selections: selections)
+        case .moveLineUp:
+            result = LineEditingController.moveLineUp(in: text, selections: selections)
+        case .moveLineDown:
+            result = LineEditingController.moveLineDown(in: text, selections: selections)
+        case .insertLineBelow:
+            result = LineEditingController.insertLineBelow(in: text, selections: selections)
+        case .insertLineAbove:
+            result = LineEditingController.insertLineAbove(in: text, selections: selections)
+        case .sortLinesAscending:
+            result = LineEditingController.sortLines(in: text, selections: selections, descending: false)
+        case .sortLinesDescending:
+            result = LineEditingController.sortLines(in: text, selections: selections, descending: true)
+        case .toggleLineComment:
+            let commentPrefix = commentPrefixForLanguage(detectedLanguage?.tsName ?? "swift")
+            result = LineEditingController.toggleLineComment(
+                in: text, selections: selections, commentPrefix: commentPrefix
+            )
+        case .transpose:
+            result = LineEditingController.transpose(in: text, selections: selections)
+        }
+
+        guard let lineEditResult = result else { return }
+
+        let applied = applyInputEdit(
+            replacementRange: lineEditResult.replacementRange,
+            replacementText: lineEditResult.replacementText,
+            selectedRanges: lineEditResult.selectedRanges,
+            reason: "line_edit_\(kind)"
+        )
+
+        if applied {
+            focusedTextView?.selectionManager.setSelectedRanges(currentSelectionsAsNSRanges())
+        }
+    }
+
+    /// 根据语言获取行注释前缀
+    private func commentPrefixForLanguage(_ languageId: String) -> String {
+        switch languageId {
+        case "swift", "java", "javascript", "typescript", "go", "rust", "kotlin", "c", "cpp":
+            return "//"
+        case "python", "ruby", "perl", "r", "bash", "shell", "yaml", "toml":
+            return "#"
+        case "html", "xml", "svg":
+            return "<!--"
+        case "css", "scss", "less":
+            return "/*"
+        case "lua", "sql":
+            return "--"
+        default:
+            return "//"
+        }
     }
 
     private func applyInputEdit(

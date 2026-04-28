@@ -51,4 +51,16 @@ enum EditorCommandBindings {
     static let renameSymbol = EditorCommandBinding(key: "r", modifiers: [.command, .shift])
     static let workspaceSymbols = EditorCommandBinding(key: "o", modifiers: [.command, .shift])
     static let callHierarchy = EditorCommandBinding(key: "h", modifiers: [.command, .option])
+
+    // MARK: - Line Editing (Phase 9)
+
+    static let deleteLine = EditorCommandBinding(key: "k", modifiers: [.command, .shift])
+    static let copyLineUp = EditorCommandBinding(key: "↑", modifiers: [.option, .shift])
+    static let copyLineDown = EditorCommandBinding(key: "↓", modifiers: [.option, .shift])
+    static let moveLineUp = EditorCommandBinding(key: "↑", modifiers: [.option])
+    static let moveLineDown = EditorCommandBinding(key: "↓", modifiers: [.option])
+    static let insertLineBelow = EditorCommandBinding(key: "\r", modifiers: [.command])
+    static let insertLineAbove = EditorCommandBinding(key: "\r", modifiers: [.command, .shift])
+    static let toggleLineComment = EditorCommandBinding(key: "/", modifiers: [.command])
+    static let transpose = EditorCommandBinding(key: "t", modifiers: [.control])
 }

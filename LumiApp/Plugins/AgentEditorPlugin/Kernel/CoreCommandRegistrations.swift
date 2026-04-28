@@ -18,6 +18,7 @@ enum CoreCommandRegistrations {
         registerFindReplaceCommands(state: state)
         registerLSPActionCommands(state: state)
         registerSaveCommands(state: state)
+        registerLineEditingCommands(state: state)
     }
 
     // MARK: - Format
@@ -329,6 +330,131 @@ enum CoreCommandRegistrations {
             enablement: .custom { _ in state.hasUnsavedChanges }
         ) {
             state.saveNow()
+        })
+    }
+
+    // MARK: - Line Editing (Phase 9)
+
+    private static func registerLineEditingCommands(state: EditorState) {
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.delete-line",
+            title: String(localized: "Delete Line", table: "LumiEditor"),
+            icon: "trash",
+            shortcut: EditorCommandBindings.deleteLine.kernelShortcut,
+            category: EditorCommandCategory.edit.rawValue,
+            order: 900
+        ) {
+            state.performLineEdit(.deleteLine)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.copy-line-down",
+            title: String(localized: "Copy Line Down", table: "LumiEditor"),
+            icon: "doc.on.doc",
+            shortcut: EditorCommandBindings.copyLineDown.kernelShortcut,
+            category: EditorCommandCategory.edit.rawValue,
+            order: 910
+        ) {
+            state.performLineEdit(.copyLineDown)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.copy-line-up",
+            title: String(localized: "Copy Line Up", table: "LumiEditor"),
+            icon: "doc.on.doc",
+            shortcut: EditorCommandBindings.copyLineUp.kernelShortcut,
+            category: EditorCommandCategory.edit.rawValue,
+            order: 920
+        ) {
+            state.performLineEdit(.copyLineUp)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.move-line-down",
+            title: String(localized: "Move Line Down", table: "LumiEditor"),
+            icon: "arrow.down",
+            shortcut: EditorCommandBindings.moveLineDown.kernelShortcut,
+            category: EditorCommandCategory.edit.rawValue,
+            order: 930
+        ) {
+            state.performLineEdit(.moveLineDown)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.move-line-up",
+            title: String(localized: "Move Line Up", table: "LumiEditor"),
+            icon: "arrow.up",
+            shortcut: EditorCommandBindings.moveLineUp.kernelShortcut,
+            category: EditorCommandCategory.edit.rawValue,
+            order: 940
+        ) {
+            state.performLineEdit(.moveLineUp)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.insert-line-below",
+            title: String(localized: "Insert Line Below", table: "LumiEditor"),
+            icon: "text.append",
+            shortcut: EditorCommandBindings.insertLineBelow.kernelShortcut,
+            category: EditorCommandCategory.edit.rawValue,
+            order: 950
+        ) {
+            state.performLineEdit(.insertLineBelow)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.insert-line-above",
+            title: String(localized: "Insert Line Above", table: "LumiEditor"),
+            icon: "text.prepend",
+            shortcut: EditorCommandBindings.insertLineAbove.kernelShortcut,
+            category: EditorCommandCategory.edit.rawValue,
+            order: 960
+        ) {
+            state.performLineEdit(.insertLineAbove)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.sort-lines-ascending",
+            title: String(localized: "Sort Lines Ascending", table: "LumiEditor"),
+            icon: "arrow.up.arrow.down",
+            category: EditorCommandCategory.edit.rawValue,
+            order: 970,
+            enablement: .whenTrue(.hasSelection)
+        ) {
+            state.performLineEdit(.sortLinesAscending)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.sort-lines-descending",
+            title: String(localized: "Sort Lines Descending", table: "LumiEditor"),
+            icon: "arrow.down.arrow.up",
+            category: EditorCommandCategory.edit.rawValue,
+            order: 980,
+            enablement: .whenTrue(.hasSelection)
+        ) {
+            state.performLineEdit(.sortLinesDescending)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.toggle-line-comment",
+            title: String(localized: "Toggle Line Comment", table: "LumiEditor"),
+            icon: "number",
+            shortcut: EditorCommandBindings.toggleLineComment.kernelShortcut,
+            category: EditorCommandCategory.edit.rawValue,
+            order: 990
+        ) {
+            state.performLineEdit(.toggleLineComment)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.transpose",
+            title: String(localized: "Transpose Characters", table: "LumiEditor"),
+            icon: "arrow.left.arrow.right",
+            shortcut: EditorCommandBindings.transpose.kernelShortcut,
+            category: EditorCommandCategory.edit.rawValue,
+            order: 1000
+        ) {
+            state.performLineEdit(.transpose)
         })
     }
 }
