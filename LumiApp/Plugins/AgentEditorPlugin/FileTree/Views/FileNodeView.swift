@@ -3,6 +3,7 @@ import SwiftUI
 
 /// 文件树节点视图 - 完全独立实现，无外部依赖
 struct FileNodeView: View {
+    @EnvironmentObject private var themeManager: ThemeManager
     let url: URL
     let depth: Int
 
@@ -90,13 +91,14 @@ struct FileNodeView: View {
 
     var body: some View {
         let isSelected = selectedURL == url
+        let theme = themeManager.activeAppTheme
 
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 4) {
                 if isDirectory {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(theme.workspaceSecondaryTextColor())
                         .frame(width: 12)
                 } else {
                     Color.clear.frame(width: 12)
@@ -104,12 +106,12 @@ struct FileNodeView: View {
 
                 Image(systemName: iconName)
                     .font(.system(size: 12))
-                    .foregroundColor(isDirectory ? .accentColor : .secondary)
+                    .foregroundColor(isDirectory ? theme.accentColors().primary : theme.workspaceSecondaryTextColor())
                     .frame(width: 16)
 
                 Text(fileName)
                     .font(.system(size: 11))
-                    .foregroundColor(isSelected ? Color.white : .primary)
+                    .foregroundColor(isSelected ? theme.sidebarSelectionTextColor() : theme.workspaceTextColor())
                     .lineLimit(1)
 
                 Spacer()
@@ -261,10 +263,11 @@ struct FileNodeView: View {
     }
 
     fileprivate func rowBackground(isSelected: Bool) -> Color {
+        let theme = themeManager.activeAppTheme
         if isSelected {
-            return isHovering ? Color.accentColor.opacity(0.28) : Color.accentColor.opacity(0.22)
+            return isHovering ? theme.sidebarSelectionColor().opacity(1.2) : theme.sidebarSelectionColor()
         } else {
-            return isHovering ? Color.primary.opacity(0.06) : Color.clear
+            return isHovering ? theme.workspaceTextColor().opacity(0.06) : Color.clear
         }
     }
 }

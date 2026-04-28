@@ -9,6 +9,60 @@ struct EditorCommand: Commands, SuperLog {
     var body: some Commands {
         #if os(macOS)
         CommandMenu("编辑器") {
+            Button("查找") {
+                NotificationCenter.postLumiEditorToggleFind()
+            }
+            .keyboardShortcut("f", modifiers: .command)
+
+            Button("查找下一个") {
+                NotificationCenter.postLumiEditorFindNext()
+            }
+            .keyboardShortcut("g", modifiers: .command)
+
+            Button("查找上一个") {
+                NotificationCenter.postLumiEditorFindPrevious()
+            }
+            .keyboardShortcut("g", modifiers: [.command, .shift])
+
+            Divider()
+
+            Button("向右分栏") {
+                NotificationCenter.postLumiEditorSplitRight()
+            }
+            .keyboardShortcut("\\", modifiers: .command)
+
+            Button("向下分栏") {
+                NotificationCenter.postLumiEditorSplitDown()
+            }
+            .keyboardShortcut("\\", modifiers: [.command, .shift])
+
+            Button("关闭分栏") {
+                NotificationCenter.postLumiEditorCloseSplit()
+            }
+            .keyboardShortcut("\\", modifiers: [.command, .option])
+
+            Button("聚焦下一个分组") {
+                NotificationCenter.postLumiEditorFocusNextGroup()
+            }
+            .keyboardShortcut("]", modifiers: [.command, .option])
+
+            Button("聚焦上一个分组") {
+                NotificationCenter.postLumiEditorFocusPreviousGroup()
+            }
+            .keyboardShortcut("[", modifiers: [.command, .option])
+
+            Button("移动到下一个分组") {
+                NotificationCenter.postLumiEditorMoveToNextGroup()
+            }
+            .keyboardShortcut("]", modifiers: [.command, .option, .shift])
+
+            Button("移动到上一个分组") {
+                NotificationCenter.postLumiEditorMoveToPreviousGroup()
+            }
+            .keyboardShortcut("[", modifiers: [.command, .option, .shift])
+
+            Divider()
+
             Button("格式化文档") {
                 NotificationCenter.postLumiEditorFormatDocument()
             }

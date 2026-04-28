@@ -174,8 +174,16 @@ struct ContentViewBody<Content: View>: View {
         self.onChangeColumnVisibility = onChangeColumnVisibility
     }
 
+    /// 根据当前应用主题计算应使用的 colorScheme，
+    /// 使得 `Color.adaptive(light:dark:)` 等基于 colorScheme 的颜色
+    /// 能与主题保持一致（例如 One Dark 深色主题在浅色系统模式下也使用深色文字色）。
+    private var preferredColorScheme: ColorScheme {
+        themeManager.activeAppTheme.isDarkTheme ? .dark : .light
+    }
+
     var body: some View {
         content
+            .preferredColorScheme(preferredColorScheme)
             .onOpenSettings(perform: openSettings)
             .onOpenPluginSettings(perform: openPluginSettings)
             .background {

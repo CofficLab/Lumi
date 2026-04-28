@@ -21,6 +21,9 @@ struct InputAreaView: View, SuperLog {
     /// 入队器：只负责把输入入队
     @EnvironmentObject private var inputQueueVM: InputQueueVM
 
+    /// 主题管理器
+    @EnvironmentObject private var themeManager: ThemeManager
+
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
 
@@ -108,15 +111,15 @@ struct InputAreaView: View, SuperLog {
             .accessibilityLabel(String(localized: "Chat Toolbar", table: "AgentInput"))
             .accessibilityHint(String(localized: "Chat Toolbar Hint", table: "AgentInput"))
         }
-        .background(.background)
+        .background(themeManager.activeAppTheme.workspaceBackgroundColor())
         .overlay(RoundedRectangle(cornerRadius: 0)
-            .stroke(Color.black.opacity(0.1), lineWidth: 1))
+            .stroke(themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.1), lineWidth: 1))
         .overlay {
             if !canChat {
                 noConversationOverlay
             }
         }
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+        .shadow(color: themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08), radius: 8, x: 0, y: 4)
         .overlay(alignment: .bottomLeading) {
             commandSuggestionOverlay
         }
@@ -134,19 +137,20 @@ struct InputAreaView: View, SuperLog {
 extension InputAreaView {
     /// 无会话时的遮罩层
     private var noConversationOverlay: some View {
-        ZStack {
+        let theme = themeManager.activeAppTheme
+        return ZStack {
             // 半透明背景，盖住输入区域，防止误操作
             RoundedRectangle(cornerRadius: 12)
-                .fill(.background.opacity(0.9))
+                .fill(theme.workspaceBackgroundColor().opacity(0.9))
 
             VStack(spacing: 8) {
                 Image(systemName: "bubble.left.and.bubble.right")
                     .font(.system(size: 18))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.workspaceTertiaryTextColor())
 
                 Text(String(localized: "Please create or select a conversation first", table: "AgentInput"))
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.workspaceSecondaryTextColor())
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
             }
@@ -173,6 +177,7 @@ extension InputAreaView {
         MacEditorView(
             text: $inputViewModel.text,
             height: $editorHeight,
+            textColor: NSColor(themeManager.activeAppTheme.workspaceTextColor()),
             onSubmit: handleSubmit,
             onArrowUp: handleArrowUp,
             onArrowDown: handleArrowDown,

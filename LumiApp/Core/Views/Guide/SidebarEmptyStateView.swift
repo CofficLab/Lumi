@@ -5,21 +5,23 @@ struct SidebarEmptyStateView: View {
     let message: String
     let subtitle: String
 
-    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
+        let theme = themeManager.activeAppTheme
+
         VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundColor(AppUI.Color.adaptive.textSecondary(for: colorScheme))
+                .foregroundColor(theme.workspaceSecondaryTextColor())
 
             Text(message)
                 .font(AppUI.Typography.bodyEmphasized)
-                .foregroundColor(AppUI.Color.adaptive.textSecondary(for: colorScheme))
+                .foregroundColor(theme.workspaceSecondaryTextColor())
 
             Text(subtitle)
                 .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.adaptive.textTertiary(for: colorScheme))
+                .foregroundColor(theme.workspaceTertiaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

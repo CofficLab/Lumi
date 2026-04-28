@@ -18,9 +18,6 @@ final class EditorWorkbenchState: ObservableObject {
     /// 当前活跃的 group ID。
     @Published var activeGroupID: EditorGroup.ID
 
-    /// 所有打开的 sessions（跨所有 group）。
-    private var globalSessions: [EditorSession.ID: EditorSession] = [:]
-
     init() {
         let defaultGroup = EditorGroup()
         self.rootGroup = defaultGroup
@@ -116,10 +113,57 @@ final class EditorWorkbenchState: ObservableObject {
     func moveActiveSessionTo(groupID: EditorGroup.ID) -> Bool {
         guard let activeGroup,
               let sessionID = activeGroup.activeSessionID else { return false }
-        return activeGroup.moveSessionToOtherGroup(
+        let moved = activeGroup.moveSessionToOtherGroup(
             sessionID: sessionID,
-            targetGroupID: groupID
+            targetGroup: findGroup(id: groupID)
         )
+        if moved {
+            activeGroupID = groupID
+        }
+        return moved
+    }
+
+    func activateGroup(_ groupID: EditorGroup.ID) {
+        guard findGroup(id: groupID) != nil else { return }
+        activeGroupID = groupID
+    }
+
+    func nextLeafGroup(after groupID: EditorGroup.ID) -> EditorGroup? {
+        let groups = leafGroups
+        guard let index = groups.firstIndex(where: { $0.id == groupID }), !groups.isEmpty else { return nil }
+        return groups[(index + 1) % groups.count]
+    }
+
+    func previousLeafGroup(before groupID: EditorGroup.ID) -> EditorGroup? {
+        let groups = leafGroups
+        guard let index = groups.firstIndex(where: { $0.id == groupID }), !groups.isEmpty else { return nil }
+        return groups[(index - 1 + groups.count) % groups.count]
+    }
+
+    @discardableResult
+    func focusNextGroup() -> EditorGroup? {
+        guard let next = nextLeafGroup(after: activeGroupID) else { return nil }
+        activeGroupID = next.id
+        return next
+    }
+
+    @discardableResult
+    func focusPreviousGroup() -> EditorGroup? {
+        guard let previous = previousLeafGroup(before: activeGroupID) else { return nil }
+        activeGroupID = previous.id
+        return previous
+    }
+
+    @discardableResult
+    func moveActiveSessionToNextGroup() -> Bool {
+        guard let target = nextLeafGroup(after: activeGroupID) else { return false }
+        return moveActiveSessionTo(groupID: target.id)
+    }
+
+    @discardableResult
+    func moveActiveSessionToPreviousGroup() -> Bool {
+        guard let target = previousLeafGroup(before: activeGroupID) else { return false }
+        return moveActiveSessionTo(groupID: target.id)
     }
 
     // MARK: - Sync

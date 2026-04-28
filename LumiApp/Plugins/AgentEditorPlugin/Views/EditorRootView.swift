@@ -8,81 +8,155 @@ import Combine
 /// Phase 4: 支持 workbench group 树，实现 split editor
 struct EditorRootView: View {
 
+    private struct SessionActivation {
+        let sessionID: EditorSession.ID
+        let fileURL: URL
+        let snapshot: EditorSession
+    }
+
+    private struct ActivationIntent: Equatable {
+        let preferredGroupID: EditorGroup.ID?
+        let sessionID: EditorSession.ID
+    }
+
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var layoutVM: LayoutVM
+    @EnvironmentObject private var themeManager: ThemeManager
 
     /// 编辑器状态
     @StateObject private var state = EditorState()
     @StateObject private var sessionStore = EditorSessionStore()
     @StateObject private var workbench = EditorWorkbenchState()
+    @StateObject private var hostStore = EditorGroupHostStore()
+    @State private var pendingActivationIntent: ActivationIntent?
 
     var body: some View {
+        eventBoundRootView
+    }
+
+    private var baseRootView: some View {
+        rootLayout
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+    }
+
+    private var lifecycleBoundRootView: some View {
+        baseRootView
+            .onChange(of: projectVM.selectedFileURL) { _, newURL in
+                openOrActivateSession(for: newURL)
+            }
+            .onChange(of: workbench.activeGroupID) { _, _ in
+                guard !consumePendingActivationIntent(for: workbench.activeGroupID) else { return }
+                syncEditorToActiveGroup()
+            }
+            .onAppear {
+                state.projectRootPath = projectVM.currentProject?.path
+                state.onActiveSessionChanged = { snapshot in
+                    sessionStore.syncActiveSession(from: snapshot)
+                    workbench.syncActiveSession(from: snapshot)
+                    syncGroupHost(workbench.activeGroupID, from: snapshot)
+                }
+                hostStore.retainOnly(Set(workbench.leafGroups.map(\.id)))
+                if projectVM.isFileSelected {
+                    openOrActivateSession(for: projectVM.selectedFileURL)
+                }
+            }
+            .onDisappear {
+                if state.hasUnsavedChanges {
+                    state.saveNow()
+                }
+                state.onActiveSessionChanged = nil
+            }
+    }
+
+    private var editorCommandBoundRootView: some View {
+        lifecycleBoundRootView
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFormatDocument)) { _ in
+                handleEditorCommandEvent("builtin.format-document")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindReferences)) { _ in
+                handleEditorCommandEvent("builtin.find-references")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorRenameSymbol)) { _ in
+                handleEditorCommandEvent("builtin.rename-symbol")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorWorkspaceSymbols)) { _ in
+                handleEditorCommandEvent("builtin.workspace-symbols")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorCallHierarchy)) { _ in
+                handleEditorCommandEvent("builtin.call-hierarchy")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleFind)) { _ in
+                handleEditorCommandEvent("builtin.find")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindNext)) { _ in
+                handleEditorCommandEvent("builtin.find-next")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindPrevious)) { _ in
+                handleEditorCommandEvent("builtin.find-previous")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorReplaceCurrent)) { _ in
+                handleEditorCommandEvent("builtin.replace-current")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorReplaceAll)) { _ in
+                handleEditorCommandEvent("builtin.replace-all")
+            }
+    }
+
+    private var eventBoundRootView: some View {
+        editorCommandBoundRootView
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorSplitRight)) { _ in
+                splitEditor(.horizontal)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorSplitDown)) { _ in
+                splitEditor(.vertical)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorCloseSplit)) { _ in
+                unsplitEditor()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFocusNextGroup)) { _ in
+                focusNextGroup()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFocusPreviousGroup)) { _ in
+                focusPreviousGroup()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorMoveToNextGroup)) { _ in
+                moveActiveSessionToNextGroup()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorMoveToPreviousGroup)) { _ in
+                moveActiveSessionToPreviousGroup()
+            }
+            .onChange(of: workbench.leafGroups.map(\.id)) { _, ids in
+                hostStore.retainOnly(Set(ids))
+            }
+            .background(editorSheetHosts)
+    }
+
+    private var rootLayout: some View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
                 if projectVM.isFileSelected {
-                    // Header 区域：面包屑 + 工具栏（带背景，覆盖编辑器）
                     headerArea
-
-                    // 文件信息提示
                     fileInfoBanner
-
-                    // 编辑器主体（Phase 4: group 树渲染）
                     workbenchContent
                 } else {
-                    // 空状态
                     emptyState
                 }
             }
 
-            if let panel = activeSidePanel {
+            if state.panelState.isOpenEditorsPanelPresented {
+                EditorOpenEditorsPanelView(
+                    state: state,
+                    items: openEditorItems,
+                    onSelect: activateOpenEditor,
+                    onClose: closeOpenEditorItem,
+                    onCloseOthers: closeOtherOpenEditorItems,
+                    onTogglePinned: togglePinnedOpenEditorItem
+                )
+            } else if let panel = activeSidePanel {
                 panel.content(state)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .textBackgroundColor))
-        .onChange(of: projectVM.selectedFileURL) { _, newURL in
-            openOrActivateSession(for: newURL)
-        }
-        .onAppear {
-            // 初始加载
-            state.projectRootPath = projectVM.currentProject?.path
-            state.onActiveSessionChanged = { snapshot in
-                sessionStore.syncActiveSession(from: snapshot)
-                // 同步到 workbench
-                workbench.syncActiveSession(from: snapshot)
-            }
-            if projectVM.isFileSelected {
-                openOrActivateSession(for: projectVM.selectedFileURL)
-            }
-        }
-        .onDisappear {
-            // 切走时保存
-            if state.hasUnsavedChanges {
-                state.saveNow()
-            }
-            state.onActiveSessionChanged = nil
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFormatDocument)) { _ in
-            guard projectVM.isFileSelected else { return }
-            state.performEditorCommand(id: "builtin.format-document")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindReferences)) { _ in
-            guard projectVM.isFileSelected else { return }
-            state.performEditorCommand(id: "builtin.find-references")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorRenameSymbol)) { _ in
-            guard projectVM.isFileSelected else { return }
-            state.performEditorCommand(id: "builtin.rename-symbol")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorWorkspaceSymbols)) { _ in
-            guard projectVM.isFileSelected else { return }
-            state.performEditorCommand(id: "builtin.workspace-symbols")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiEditorCallHierarchy)) { _ in
-            guard projectVM.isFileSelected else { return }
-            state.performEditorCommand(id: "builtin.call-hierarchy")
-        }
-        .background(editorSheetHosts)
     }
 
     private var activeSidePanel: EditorSidePanelSuggestion? {
@@ -117,14 +191,17 @@ struct EditorRootView: View {
     /// Header 区域：包含工具栏，带背景色覆盖编辑器内容
     private var headerArea: some View {
         VStack(spacing: 0) {
-            if !sessionStore.sessions.isEmpty {
+            if !visibleTabs.isEmpty {
                 EditorTabStripView(
-                    tabs: sessionStore.tabs,
-                    activeSessionID: sessionStore.activeSessionID,
+                    tabs: visibleTabs,
+                    activeSessionID: visibleActiveSessionID,
+                    openEditors: openEditorItems,
                     canNavigateBack: sessionStore.canNavigateBack,
                     canNavigateForward: sessionStore.canNavigateForward,
                     onNavigateBack: navigateBack,
                     onNavigateForward: navigateForward,
+                    onToggleOpenEditorsPanel: { state.performPanelCommand(.toggleOpenEditors) },
+                    onSelectOpenEditor: activateOpenEditor,
                     onSelect: activateSession,
                     onClose: closeSession,
                     onCloseOthers: closeOtherSessions,
@@ -136,11 +213,63 @@ struct EditorRootView: View {
         }
         // 关键：添加背景色，确保覆盖下方的编辑器内容（如行号）
         .background(
-            Color(nsColor: .textBackgroundColor)
+            themeManager.activeAppTheme.workspaceBackgroundColor()
                 .ignoresSafeArea()
         )
         // 使用 zIndex 确保 header 在编辑器上层
         .zIndex(1)
+    }
+
+    private var visibleTabs: [EditorTab] {
+        if let activeGroup = workbench.activeGroup, !activeGroup.tabs.isEmpty {
+            return activeGroup.tabs
+        }
+        return sessionStore.tabs
+    }
+
+    private var visibleActiveSessionID: EditorSession.ID? {
+        workbench.activeGroup?.activeSessionID ?? sessionStore.activeSessionID
+    }
+
+    private var openEditorItems: [EditorOpenEditorItem] {
+        sessionStore.tabs.compactMap { tab in
+            let group = workbench.leafGroups.first(where: { group in
+                group.sessions.contains(where: { $0.id == tab.sessionID })
+            })
+            let groupIndex = group.flatMap { targetGroup in
+                workbench.leafGroups.firstIndex(where: { $0.id == targetGroup.id })
+            }
+            return EditorOpenEditorItem(
+                sessionID: tab.sessionID,
+                fileURL: tab.fileURL,
+                title: tab.title,
+                isDirty: tab.isDirty,
+                isPinned: tab.isPinned,
+                groupID: group?.id,
+                groupIndex: groupIndex,
+                isInActiveGroup: group?.id == workbench.activeGroupID,
+                isActive: tab.sessionID == visibleActiveSessionID,
+                recentActivationRank: sessionStore.recentActivationRank(for: tab.sessionID)
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.isInActiveGroup != rhs.isInActiveGroup {
+                return lhs.isInActiveGroup && !rhs.isInActiveGroup
+            }
+            if lhs.isActive != rhs.isActive {
+                return lhs.isActive && !rhs.isActive
+            }
+            if lhs.recentActivationRank != rhs.recentActivationRank {
+                return (lhs.recentActivationRank ?? .max) < (rhs.recentActivationRank ?? .max)
+            }
+            if lhs.groupIndex != rhs.groupIndex {
+                return (lhs.groupIndex ?? .max) < (rhs.groupIndex ?? .max)
+            }
+            if lhs.isPinned != rhs.isPinned {
+                return lhs.isPinned && !rhs.isPinned
+            }
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
     }
 
     // MARK: - Workbench Content (Phase 4)
@@ -157,7 +286,14 @@ struct EditorRootView: View {
                 EditorGroupView(
                     group: workbench.rootGroup,
                     workbench: workbench,
-                    editorState: state
+                    editorState: state,
+                    hostStore: hostStore,
+                    onActivateSession: activateSession,
+                    onActivateHostedSession: activateHostedSession,
+                    onCloseSession: closeSession,
+                    onCloseOthers: closeOtherSessions,
+                    onTogglePinned: togglePinned,
+                    onMoveSessionToGroup: moveSessionToGroup
                 )
             }
         }
@@ -215,7 +351,7 @@ struct EditorRootView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .textBackgroundColor))
+        .background(themeManager.activeAppTheme.workspaceBackgroundColor())
     }
 
     // MARK: - File Info Banner
@@ -253,7 +389,7 @@ struct EditorRootView: View {
             .padding(.vertical, 6)
             .background(AppUI.Color.semantic.warning.opacity(0.06))
             // Banner 也需要覆盖下层内容
-            .background(Color(nsColor: .textBackgroundColor))
+            .background(themeManager.activeAppTheme.workspaceBackgroundColor())
             .zIndex(1)
         }
     }
@@ -302,30 +438,183 @@ struct EditorRootView: View {
         state.projectRootPath = projectVM.currentProject?.path
         guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
             state.loadFile(from: nil)
+            applySnapshot(EditorSession(), toHostState: hostStore.state(for: workbench.activeGroupID))
             return
         }
 
         state.loadFile(from: session.fileURL)
+        applySnapshot(session, toHostState: hostStore.state(for: workbench.activeGroupID))
         restoreInteractionState(for: session)
     }
 
+    private func preferredHostedSnapshot(
+        for groupID: EditorGroup.ID,
+        sessionID: EditorSession.ID
+    ) -> EditorSession? {
+        let hostedSnapshot = hostStore.state(for: groupID).activeSession
+        guard hostedSnapshot.id == sessionID else { return nil }
+        return hostedSnapshot
+    }
+
+    private func resolvedPreferredSnapshot(
+        sessionID: EditorSession.ID,
+        preferredGroupID: EditorGroup.ID?,
+        fallbackGroupID: EditorGroup.ID? = nil
+    ) -> EditorSession? {
+        if let preferredGroupID,
+           let snapshot = preferredHostedSnapshot(for: preferredGroupID, sessionID: sessionID) {
+            return snapshot
+        }
+
+        if let fallbackGroupID,
+           fallbackGroupID != preferredGroupID,
+           let snapshot = preferredHostedSnapshot(for: fallbackGroupID, sessionID: sessionID) {
+            return snapshot
+        }
+
+        return nil
+    }
+
+    private func resolvedActivationSession(
+        for groupID: EditorGroup.ID,
+        fallback session: EditorSession
+    ) -> SessionActivation? {
+        resolvedSessionActivation(
+            for: session.id,
+            fallback: session,
+            preferredGroupID: groupID
+        )
+    }
+
+    private func resolvedSessionActivation(
+        for sessionID: EditorSession.ID,
+        preferredGroupID: EditorGroup.ID? = nil
+    ) -> SessionActivation? {
+        guard let session = sessionStore.session(for: sessionID) else { return nil }
+        return resolvedSessionActivation(
+            for: sessionID,
+            fallback: session,
+            preferredGroupID: preferredGroupID
+        )
+    }
+
+    private func resolvedSessionActivation(
+        for sessionID: EditorSession.ID,
+        fallback session: EditorSession,
+        preferredGroupID: EditorGroup.ID? = nil
+    ) -> SessionActivation? {
+        return resolvedActivation(
+            for: session,
+            preferredSnapshot: resolvedPreferredSnapshot(
+                sessionID: sessionID,
+                preferredGroupID: preferredGroupID
+            )
+        )
+    }
+
     private func activateSession(_ tab: EditorTab) {
-        guard let session = sessionStore.session(for: tab.sessionID),
-              let fileURL = session.fileURL else { return }
-        guard session.id != sessionStore.activeSessionID || projectVM.selectedFileURL != fileURL else { return }
-        _ = sessionStore.activate(sessionID: session.id)
-        projectVM.selectFile(at: fileURL)
+        activateSessionIntent(sessionID: tab.sessionID)
+    }
+
+    private func activateHostedSession(
+        in groupID: EditorGroup.ID,
+        _ tab: EditorTab
+    ) {
+        activateSessionIntent(
+            sessionID: tab.sessionID,
+            preferredGroupID: groupID
+        )
+    }
+
+    private func activateOpenEditor(_ item: EditorOpenEditorItem) {
+        activateSessionIntent(
+            sessionID: item.sessionID,
+            preferredGroupID: item.groupID
+        )
+    }
+
+    private func activateSessionIntent(
+        sessionID: EditorSession.ID,
+        preferredGroupID: EditorGroup.ID? = nil
+    ) {
+        pendingActivationIntent = ActivationIntent(
+            preferredGroupID: preferredGroupID,
+            sessionID: sessionID
+        )
+        activateSessionID(sessionID, preferredGroupID: preferredGroupID)
+    }
+
+    private func activateSessionID(
+        _ sessionID: EditorSession.ID,
+        preferredGroupID: EditorGroup.ID? = nil
+    ) {
+        guard let resolved = resolvedSessionActivation(
+            for: sessionID,
+            preferredGroupID: preferredGroupID
+        ) else { return }
+        guard resolved.sessionID != sessionStore.activeSessionID || projectVM.selectedFileURL != resolved.fileURL else { return }
+        applyResolvedSessionActivation(resolved)
+    }
+
+    private func consumePendingActivationIntent(for groupID: EditorGroup.ID) -> Bool {
+        guard let pendingActivationIntent,
+              pendingActivationIntent.preferredGroupID == groupID else {
+            return false
+        }
+        return true
+    }
+
+    private func resolvedActivation(
+        for session: EditorSession,
+        preferredSnapshot: EditorSession? = nil
+    ) -> SessionActivation? {
+        guard let fileURL = session.fileURL else { return nil }
+        let activationSnapshot = resolvedSnapshot(
+            for: session,
+            preferredSnapshot
+        )
+        return SessionActivation(
+            sessionID: session.id,
+            fileURL: fileURL,
+            snapshot: activationSnapshot
+        )
+    }
+
+    private func resolvedSnapshot(
+        for session: EditorSession,
+        _ preferredSnapshot: EditorSession?,
+    ) -> EditorSession {
+        guard let fileURL = session.fileURL,
+              let preferredSnapshot,
+              preferredSnapshot.fileURL == fileURL else { return session }
+        return preferredSnapshot
+    }
+
+    private func performSessionActivation(
+        sessionID: EditorSession.ID,
+        fileURL: URL,
+        snapshot: EditorSession
+    ) {
+        _ = sessionStore.activate(sessionID: sessionID)
+        _ = workbench.activate(sessionID: sessionID)
+        applyActivatedEditorState(fileURL: fileURL, snapshot: snapshot)
     }
 
     private func closeSession(_ tab: EditorTab) {
         guard let session = sessionStore.session(for: tab.sessionID) else { return }
         let wasActive = session.id == sessionStore.activeSessionID
+        let nextGroupSession = workbench.close(sessionID: session.id)
         if wasActive, state.hasUnsavedChanges {
             state.saveNow()
         }
 
         let nextSession = sessionStore.close(sessionID: session.id)
-        guard wasActive else { return }
+        guard wasActive else {
+            if nextGroupSession != nil {
+                syncEditorToActiveGroup()
+            }
+            return
+        }
 
         if let nextFileURL = nextSession?.fileURL {
             projectVM.selectFile(at: nextFileURL)
@@ -340,6 +629,7 @@ struct EditorRootView: View {
             state.saveNow()
         }
 
+        let _ = workbench.closeOthers(keeping: session.id)
         let keptSession = sessionStore.closeOthers(keeping: session.id)
         if let fileURL = keptSession?.fileURL {
             projectVM.selectFile(at: fileURL)
@@ -362,56 +652,227 @@ struct EditorRootView: View {
 
     private func togglePinned(_ tab: EditorTab) {
         sessionStore.togglePinned(sessionID: tab.sessionID)
+        workbench.groupContainingSession(sessionID: tab.sessionID)?.togglePinned(sessionID: tab.sessionID)
+    }
+
+    private func closeOpenEditorItem(_ item: EditorOpenEditorItem) {
+        closeSession(
+            EditorTab(
+                sessionID: item.sessionID,
+                fileURL: item.fileURL,
+                title: item.title,
+                isDirty: item.isDirty,
+                isPinned: item.isPinned
+            )
+        )
+    }
+
+    private func closeOtherOpenEditorItems(_ item: EditorOpenEditorItem) {
+        closeOtherSessions(
+            EditorTab(
+                sessionID: item.sessionID,
+                fileURL: item.fileURL,
+                title: item.title,
+                isDirty: item.isDirty,
+                isPinned: item.isPinned
+            )
+        )
+    }
+
+    private func togglePinnedOpenEditorItem(_ item: EditorOpenEditorItem) {
+        togglePinned(
+            EditorTab(
+                sessionID: item.sessionID,
+                fileURL: item.fileURL,
+                title: item.title,
+                isDirty: item.isDirty,
+                isPinned: item.isPinned
+            )
+        )
+    }
+
+    private func handleEditorCommandEvent(_ commandID: String) {
+        guard projectVM.isFileSelected else { return }
+        state.performEditorCommand(id: commandID)
     }
 
     // MARK: - Split Editor (Phase 4)
 
     /// 分割当前编辑器
     func splitEditor(_ direction: EditorGroup.SplitDirection) {
+        let sourceSnapshot = state.activeSession
         workbench.splitActiveGroup(direction)
+        if let targetGroup = workbench.activeGroup {
+            syncGroupHost(targetGroup.id, from: sourceSnapshot, seedSession: true)
+        }
+        syncEditorToActiveGroup()
     }
 
     /// 取消分割
     func unsplitEditor() {
         workbench.unsplitActiveGroup()
+        syncEditorToActiveGroup()
     }
 
     /// 将当前 session 移动到另一个 group
     func moveSessionToGroup(groupID: EditorGroup.ID) {
-        workbench.moveActiveSessionTo(groupID: groupID)
+        let sourceSnapshot = state.activeSession
+        guard workbench.moveActiveSessionTo(groupID: groupID) else { return }
+        syncGroupHost(groupID, from: sourceSnapshot, seedSession: true)
+        syncEditorToActiveGroup()
+    }
+
+    private func focusNextGroup() {
+        guard workbench.focusNextGroup() != nil else { return }
+        syncEditorToActiveGroup()
+    }
+
+    private func focusPreviousGroup() {
+        guard workbench.focusPreviousGroup() != nil else { return }
+        syncEditorToActiveGroup()
+    }
+
+    private func moveActiveSessionToNextGroup() {
+        let sourceSnapshot = state.activeSession
+        let targetGroupID = workbench.nextLeafGroup(after: workbench.activeGroupID)?.id
+        guard workbench.moveActiveSessionToNextGroup() else { return }
+        if let targetGroupID {
+            syncGroupHost(targetGroupID, from: sourceSnapshot, seedSession: true)
+        }
+        syncEditorToActiveGroup()
+    }
+
+    private func moveActiveSessionToPreviousGroup() {
+        let sourceSnapshot = state.activeSession
+        let targetGroupID = workbench.previousLeafGroup(before: workbench.activeGroupID)?.id
+        guard workbench.moveActiveSessionToPreviousGroup() else { return }
+        if let targetGroupID {
+            syncGroupHost(targetGroupID, from: sourceSnapshot, seedSession: true)
+        }
+        syncEditorToActiveGroup()
+    }
+
+    private func syncEditorToActiveGroup() {
+        guard let activeGroup = workbench.activeGroup,
+              let activeSession = activeGroup.activeSession else { return }
+        guard let resolved = resolvedActivationSession(
+            for: activeGroup.id,
+            fallback: activeSession
+        ) else { return }
+        applyResolvedSessionActivation(resolved)
+    }
+
+    private func syncGroupHost(
+        _ groupID: EditorGroup.ID,
+        from snapshot: EditorSession,
+        seedSession: Bool = false
+    ) {
+        applySnapshot(
+            snapshot,
+            toGroupID: groupID,
+            seedSession: seedSession,
+            hostState: hostStore.state(for: groupID)
+        )
+    }
+
+    private func applySnapshot(_ snapshot: EditorSession, toHostState hostState: EditorState) {
+        applySnapshot(
+            snapshot: snapshot,
+            toEditorState: hostState,
+            projectRootPath: state.projectRootPath,
+            requireFocusedTextView: false
+        )
+    }
+
+    private func applyResolvedSnapshot(
+        _ snapshot: EditorSession,
+        preferredGroupID: EditorGroup.ID,
+        toHostState hostState: EditorState
+    ) {
+        let resolvedSnapshot = resolvedPreferredSnapshot(
+            sessionID: snapshot.id,
+            preferredGroupID: preferredGroupID
+        ) ?? snapshot
+        applySnapshot(resolvedSnapshot, toHostState: hostState)
+    }
+
+    private func applySnapshot(
+        _ snapshot: EditorSession,
+        toGroupID groupID: EditorGroup.ID,
+        seedSession: Bool,
+        hostState: EditorState
+    ) {
+        guard let targetGroup = workbench.findGroup(id: groupID) else { return }
+
+        if seedSession, let targetSession = targetGroup.activeSession {
+            applySnapshot(snapshot, toSession: targetSession)
+        }
+
+        applyResolvedSnapshot(
+            snapshot,
+            preferredGroupID: groupID,
+            toHostState: hostState
+        )
+    }
+
+    private func applyResolvedSessionActivation(_ activation: SessionActivation) {
+        if pendingActivationIntent?.sessionID == activation.sessionID {
+            pendingActivationIntent = nil
+        }
+        applySnapshot(activation.snapshot, toSessionID: activation.sessionID)
+        performSessionActivation(
+            sessionID: activation.sessionID,
+            fileURL: activation.fileURL,
+            snapshot: activation.snapshot
+        )
+    }
+
+    private func applyActivatedEditorState(fileURL: URL, snapshot: EditorSession) {
+        if projectVM.selectedFileURL != fileURL {
+            projectVM.selectFile(at: fileURL)
+        } else {
+            restoreInteractionState(for: snapshot)
+        }
+    }
+
+    private func applySnapshot(_ snapshot: EditorSession, toSessionID sessionID: EditorSession.ID) {
+        if let session = sessionStore.session(for: sessionID) {
+            applySnapshot(snapshot, toSession: session)
+        }
+        if let session = workbench.groupContainingSession(sessionID: sessionID)?
+            .session(for: sessionID) {
+            applySnapshot(snapshot, toSession: session)
+        }
+    }
+
+    private func applySnapshot(_ snapshot: EditorSession, toSession session: EditorSession) {
+        session.applySnapshot(from: snapshot)
+    }
+
+    private func applySnapshot(
+        snapshot: EditorSession,
+        toEditorState targetState: EditorState,
+        projectRootPath: String?,
+        requireFocusedTextView: Bool
+    ) {
+        var restoreToken: AnyCancellable?
+        EditorStateRestoreCoordinator.apply(
+            snapshot: snapshot,
+            to: targetState,
+            projectRootPath: projectRootPath,
+            requireFocusedTextView: requireFocusedTextView,
+            restoreToken: &restoreToken
+        )
     }
 
     /// 恢复交互状态
     private func restoreInteractionState(for session: EditorSession) {
-        guard session.fileURL != nil else { return }
-
-        // 快速路径：如果编辑器已经加载了同一个文件，立即恢复
-        if state.currentFileURL == session.fileURL,
-           state.content != nil,
-           state.focusedTextView != nil {
-            state.applySessionRestore(session)
-            return
-        }
-
-        // 加载新文件时，在 `onActiveSessionChanged` 回调中完成恢复
-        // 这确保 content / textStorage / textView 都已就绪
-        let sessionID = session.id
-        var restoreToken: AnyCancellable?
-        restoreToken = state.$activeSession
-            .dropFirst()
-            .first(where: { _ in true })  // 只要 activeSession 更新一次
-            .sink { [weak state] _ in
-                guard let state else { return }
-                if state.currentFileURL == session.fileURL, state.content != nil {
-                    // 再等一个 runloop 确保 textView 就绪
-                    DispatchQueue.main.async {
-                        if state.focusedTextView != nil {
-                            state.applySessionRestore(session)
-                        }
-                    }
-                }
-                restoreToken?.cancel()
-            }
+        applySnapshot(
+            snapshot: session,
+            toEditorState: state,
+            projectRootPath: state.projectRootPath,
+            requireFocusedTextView: true
+        )
     }
 
 }
@@ -423,6 +884,14 @@ struct EditorGroupView: View {
     @ObservedObject var group: EditorGroup
     @ObservedObject var workbench: EditorWorkbenchState
     @ObservedObject var editorState: EditorState
+    @ObservedObject var hostStore: EditorGroupHostStore
+    @EnvironmentObject private var themeManager: ThemeManager
+    let onActivateSession: (EditorTab) -> Void
+    let onActivateHostedSession: (EditorGroup.ID, EditorTab) -> Void
+    let onCloseSession: (EditorTab) -> Void
+    let onCloseOthers: (EditorTab) -> Void
+    let onTogglePinned: (EditorTab) -> Void
+    let onMoveSessionToGroup: (EditorGroup.ID) -> Void
 
     var body: some View {
         if group.isLeaf {
@@ -436,13 +905,28 @@ struct EditorGroupView: View {
 
     @ViewBuilder
     private var leafGroupContent: some View {
+        let isActiveGroup = workbench.activeGroupID == group.id
         VStack(spacing: 0) {
+            leafGroupHeader
             if let activeSession = group.activeSession,
-               let fileURL = activeSession.fileURL {
-                editorContent(for: activeSession)
+               activeSession.fileURL != nil {
+                editorContent(for: activeSession, isActiveGroup: isActiveGroup)
             } else {
                 emptyPlaceholder
             }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 0)
+                .stroke(
+                    workbench.activeGroupID == group.id
+                        ? AppUI.Color.semantic.warning.opacity(0.45)
+                        : Color.clear,
+                    lineWidth: 1
+                )
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            workbench.activateGroup(group.id)
         }
     }
 
@@ -457,7 +941,14 @@ struct EditorGroupView: View {
                     EditorGroupView(
                         group: subGroup,
                         workbench: workbench,
-                        editorState: editorState
+                        editorState: editorState,
+                        hostStore: hostStore,
+                        onActivateSession: onActivateSession,
+                        onActivateHostedSession: onActivateHostedSession,
+                        onCloseSession: onCloseSession,
+                        onCloseOthers: onCloseOthers,
+                        onTogglePinned: onTogglePinned,
+                        onMoveSessionToGroup: onMoveSessionToGroup
                     )
                 }
             }
@@ -467,10 +958,61 @@ struct EditorGroupView: View {
                     EditorGroupView(
                         group: subGroup,
                         workbench: workbench,
-                        editorState: editorState
+                        editorState: editorState,
+                        hostStore: hostStore,
+                        onActivateSession: onActivateSession,
+                        onActivateHostedSession: onActivateHostedSession,
+                        onCloseSession: onCloseSession,
+                        onCloseOthers: onCloseOthers,
+                        onTogglePinned: onTogglePinned,
+                        onMoveSessionToGroup: onMoveSessionToGroup
                     )
                 }
             }
+        }
+    }
+
+    private var leafGroupHeader: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Text("Group \(groupOrdinal)")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+
+                Spacer(minLength: 0)
+
+                if workbench.leafGroups.count > 1, group.activeSessionID != nil {
+                    Menu {
+                        ForEach(workbench.leafGroups.filter { $0.id != group.id }) { targetGroup in
+                            Button("Move To Group \(leafOrdinal(for: targetGroup))") {
+                                workbench.activateGroup(group.id)
+                                onMoveSessionToGroup(targetGroup.id)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.right.square")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    }
+                    .menuStyle(.borderlessButton)
+                }
+            }
+
+            if !group.tabs.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(group.tabs) { tab in
+                            groupTabItem(for: tab)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+        .overlay(alignment: .bottom) {
+            Divider()
         }
     }
 
@@ -487,10 +1029,9 @@ struct EditorGroupView: View {
     }
 
     @ViewBuilder
-    private func editorContent(for session: EditorSession) -> some View {
+    private func editorContent(for session: EditorSession, isActiveGroup: Bool) -> some View {
         if session.fileURL != nil {
-            // 如果 session 对应的文件就是当前 state 的文件，直接显示
-            if session.fileURL == editorState.currentFileURL {
+            if isActiveGroup {
                 if editorState.isMarkdownFile, editorState.isMarkdownPreviewMode {
                     ScrollView {
                         if let content = editorState.content?.string, !content.isEmpty {
@@ -499,25 +1040,219 @@ struct EditorGroupView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(nsColor: .textBackgroundColor))
+                    .background(themeManager.activeAppTheme.workspaceBackgroundColor())
                 } else if editorState.canPreview || editorState.isBinaryFile {
                     SourceEditorView(state: editorState)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipped()
                 }
             } else {
-                // 其他 session 的占位（Phase 4.5: 未来可实现多编辑器实例）
-                VStack(spacing: 8) {
-                    Image(systemName: "doc")
-                        .font(.system(size: 24))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    Text(session.fileURL?.lastPathComponent ?? "")
-                        .font(.system(size: 12))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                EditorGroupHostView(
+                    session: session,
+                    projectRootPath: editorState.projectRootPath,
+                    state: hostStore.state(for: group.id),
+                    onActivate: {
+                        workbench.activateGroup(group.id)
+                        if let tab = group.tabs.first(where: { $0.sessionID == session.id }) {
+                            onActivateHostedSession(group.id, tab)
+                        }
+                    }
+                )
             }
         }
+    }
+
+    private func groupTabItem(for tab: EditorTab) -> some View {
+        let isActive = tab.sessionID == group.activeSessionID
+
+        return HStack(spacing: 6) {
+            Circle()
+                .fill(tab.isDirty ? AppUI.Color.semantic.warning : AppUI.Color.semantic.textTertiary.opacity(0.35))
+                .frame(width: 5, height: 5)
+
+            if tab.isPinned {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 7))
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+            }
+
+            Text(tab.title)
+                .font(.system(size: 11, weight: isActive ? .semibold : .regular))
+                .foregroundColor(isActive ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
+                .lineLimit(1)
+
+            Button {
+                onCloseSession(tab)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isActive ? AppUI.Color.semantic.textPrimary.opacity(0.08) : Color.clear)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            workbench.activateGroup(group.id)
+            onActivateHostedSession(group.id, tab)
+        }
+        .contextMenu {
+            Button(
+                tab.isPinned
+                    ? String(localized: "Unpin Tab", table: "LumiEditor")
+                    : String(localized: "Pin Tab", table: "LumiEditor")
+            ) {
+                onTogglePinned(tab)
+            }
+            Button(String(localized: "Close Others", table: "LumiEditor")) {
+                onCloseOthers(tab)
+            }
+        }
+    }
+
+    private var groupOrdinal: Int {
+        leafOrdinal(for: group)
+    }
+
+    private func leafOrdinal(for targetGroup: EditorGroup) -> Int {
+        (workbench.leafGroups.firstIndex(where: { $0.id == targetGroup.id }) ?? 0) + 1
+    }
+}
+
+private struct EditorGroupHostView: View {
+    private struct RestoreTrigger: Equatable {
+        let sessionID: EditorSession.ID
+        let fileURL: URL?
+        let isDirty: Bool
+        let projectRootPath: String?
+    }
+
+    @ObservedObject var session: EditorSession
+    let projectRootPath: String?
+    @ObservedObject var state: EditorState
+    let onActivate: () -> Void
+    @State private var restoreToken: AnyCancellable?
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    var body: some View {
+        ZStack {
+            Group {
+                if state.isMarkdownFile, state.isMarkdownPreviewMode {
+                    ScrollView {
+                        if let content = state.content?.string, !content.isEmpty {
+                            MarkdownBlockRenderer(markdown: content)
+                                .padding(20)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+                } else if state.canPreview || state.isBinaryFile {
+                    SourceEditorView(state: state)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                        .allowsHitTesting(false)
+                } else {
+                    VStack(spacing: 8) {
+                        Image(systemName: "doc")
+                            .font(.system(size: 24))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        Text(session.fileURL?.lastPathComponent ?? "")
+                            .font(.system(size: 12))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture(perform: onActivate)
+        }
+        .task(id: restoreTrigger) {
+            applyHostedSnapshot()
+        }
+        .onReceive(session.objectWillChange) { _ in
+            DispatchQueue.main.async {
+                applyHostedSnapshot()
+            }
+        }
+    }
+
+    private var restoreTrigger: RestoreTrigger {
+        RestoreTrigger(
+            sessionID: session.id,
+            fileURL: session.fileURL,
+            isDirty: session.isDirty,
+            projectRootPath: projectRootPath
+        )
+    }
+
+    private func applyHostedSnapshot() {
+        EditorStateRestoreCoordinator.apply(
+            snapshot: session,
+            to: state,
+            projectRootPath: projectRootPath,
+            requireFocusedTextView: false,
+            restoreToken: &restoreToken
+        )
+    }
+}
+
+@MainActor
+private enum EditorStateRestoreCoordinator {
+    static func apply(
+        snapshot: EditorSession,
+        to state: EditorState,
+        projectRootPath: String?,
+        requireFocusedTextView: Bool,
+        restoreToken: inout AnyCancellable?
+    ) {
+        state.projectRootPath = projectRootPath
+
+        guard let fileURL = snapshot.fileURL else {
+            restoreToken?.cancel()
+            restoreToken = nil
+            state.loadFile(from: nil)
+            return
+        }
+
+        let canRestoreImmediately =
+            state.currentFileURL == fileURL &&
+            state.content != nil &&
+            (!requireFocusedTextView || state.focusedTextView != nil)
+
+        if canRestoreImmediately {
+            state.applySessionRestore(snapshot)
+            return
+        }
+
+        restoreToken?.cancel()
+        if state.currentFileURL != fileURL {
+            state.loadFile(from: fileURL)
+        }
+
+        var pendingRestoreToken: AnyCancellable?
+        pendingRestoreToken = state.$activeSession
+            .dropFirst()
+            .first(where: { _ in true })
+            .sink { [weak state] _ in
+                guard let state else { return }
+                if state.currentFileURL == snapshot.fileURL,
+                   state.content != nil,
+                   (!requireFocusedTextView || state.focusedTextView != nil) {
+                    DispatchQueue.main.async {
+                        state.applySessionRestore(snapshot)
+                    }
+                }
+                pendingRestoreToken?.cancel()
+                pendingRestoreToken = nil
+            }
+        restoreToken = pendingRestoreToken
     }
 }
 

@@ -3,26 +3,29 @@ import SwiftUI
 /// 空消息视图 - 已选择会话但没有消息时显示
 struct EmptyMessagesView: View {
     @EnvironmentObject private var ConversationVM: ConversationVM
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
+        let theme = themeManager.activeAppTheme
+
         VStack(spacing: 20) {
             Spacer()
 
             // 图标
             Image(systemName: "text.bubble.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.workspaceTertiaryTextColor())
 
             // 标题
             Text(String(localized: "暂无消息", table: "AgentMessages"))
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundStyle(.primary)
+                .foregroundStyle(theme.workspaceTextColor())
 
             // 描述
             Text(String(localized: "在下方输入框中输入您的问题，开始与 AI 助手对话", table: "AgentMessages"))
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.workspaceSecondaryTextColor())
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 
@@ -30,15 +33,15 @@ struct EmptyMessagesView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(String(localized: "例如：", table: "AgentMessages"))
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.workspaceTertiaryTextColor())
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(String(localized: "· 帮我解释这段错误日志", table: "AgentMessages"))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.workspaceSecondaryTextColor())
                     Text(String(localized: "· 帮我为这个项目设计一个测试计划", table: "AgentMessages"))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.workspaceSecondaryTextColor())
                 }
             }
             .padding(.horizontal, 40)
@@ -51,7 +54,7 @@ struct EmptyMessagesView: View {
                 Text(id.uuidString)
                     .font(.caption)
                     .fontDesign(.monospaced)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.workspaceTertiaryTextColor())
             }
 
             Spacer()

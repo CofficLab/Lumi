@@ -4,7 +4,7 @@ import Foundation
 
 // MARK: - Command Router
 //
-// Phase 5: 将旧的 EditorCommandSuggestion 桥接到 CommandRegistry。
+// 将旧的 EditorCommandSuggestion 桥接到 CommandRegistry。
 //
 // 旧的命令体系基于 EditorCommandContributor.provideCommands() 返回数组，
 // 新的体系基于中央 CommandRegistry。
@@ -83,8 +83,7 @@ enum CommandRouter {
     static func execute(
         id: String,
         in context: CommandContext,
-        fallbackState: EditorState,
-        textView: TextView?
+        legacySuggestions: [EditorCommandSuggestion]
     ) -> Bool {
         // 优先走新 registry
         if CommandRegistry.shared.execute(id: id, context: context) {
@@ -92,8 +91,7 @@ enum CommandRouter {
         }
 
         // Fallback：旧的 editorCommandSuggestions 体系
-        let suggestions = fallbackState.editorCommandSuggestions()
-        guard let suggestion = suggestions.first(where: { $0.id == id }), suggestion.isEnabled else {
+        guard let suggestion = legacySuggestions.first(where: { $0.id == id }), suggestion.isEnabled else {
             return false
         }
         suggestion.action()

@@ -4,11 +4,14 @@ import SwiftUI
 /// 新会话按钮视图组件
 struct NewChatButton: View {
     @EnvironmentObject var conversationCreationVM: ConversationCreationVM
+    @EnvironmentObject private var themeManager: ThemeManager
 
     private let iconSize: CGFloat = 14
     private let iconButtonSize: CGFloat = 28
 
     var body: some View {
+        let theme = themeManager.activeAppTheme
+
         Button {
             Task {
                 await conversationCreationVM.createNewConversation()
@@ -16,6 +19,7 @@ struct NewChatButton: View {
         } label: {
             Image(systemName: "plus.circle")
                 .font(.system(size: iconSize))
+                .foregroundColor(theme.workspaceSecondaryTextColor())
                 .frame(width: iconButtonSize, height: iconButtonSize)
                 .clipShape(Circle())
         }

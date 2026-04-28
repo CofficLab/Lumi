@@ -9,6 +9,7 @@ struct AppCard<Content: View>: View {
 
     let style: Style
     let padding: EdgeInsets
+    @EnvironmentObject private var themeManager: ThemeManager
     @ViewBuilder let content: Content
 
     init(
@@ -30,21 +31,23 @@ struct AppCard<Content: View>: View {
     }
 
     private var background: some View {
-        Group {
+        let theme = themeManager.activeAppTheme
+        return Group {
             switch style {
             case .elevated:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
                     .fill(DesignTokens.Material.glass)
             case .subtle:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.06))
+                    .fill(theme.workspaceSecondaryTextColor().opacity(0.06))
             }
         }
     }
 
     private var border: some View {
-        RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-            .stroke(Color.white.opacity(style == .elevated ? 0.12 : 0.06), lineWidth: 1)
+        let theme = themeManager.activeAppTheme
+        return RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+            .stroke(theme.workspaceTertiaryTextColor().opacity(style == .elevated ? 0.12 : 0.06), lineWidth: 1)
     }
 }
 

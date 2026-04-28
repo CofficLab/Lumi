@@ -40,6 +40,7 @@
       }
     },
     "- %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1286,6 +1287,9 @@
     "Cannot preview image" : {
 
     },
+    "Case Sensitive" : {
+
+    },
     "Cask" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1510,6 +1514,9 @@
           }
         }
       }
+    },
+    "Close" : {
+
     },
     "Close Tab" : {
 
@@ -2434,6 +2441,12 @@
     "Finder" : {
 
     },
+    "G" : {
+
+    },
+    "G%lld" : {
+
+    },
     "General" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2551,6 +2564,9 @@
           }
         }
       }
+    },
+    "Group %lld" : {
+
     },
     "History / Layers" : {
       "localizations" : {
@@ -2683,6 +2699,9 @@
           }
         }
       }
+    },
+    "In Selection" : {
+
     },
     "Input Manager" : {
       "extractionState" : "manual",
@@ -3137,6 +3156,9 @@
           }
         }
       }
+    },
+    "Move To Group %lld" : {
+
     },
     "My Database" : {
       "localizations" : {
@@ -3713,6 +3735,9 @@
           }
         }
       }
+    },
+    "Preserve Case" : {
+
     },
     "Preview" : {
       "localizations" : {
@@ -5105,6 +5130,9 @@
         }
       }
     },
+    "Use Regular Expression" : {
+
+    },
     "user" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5201,6 +5229,9 @@
           }
         }
       }
+    },
+    "Whole Word" : {
+
     },
     "Wi-Fi" : {
       "localizations" : {
@@ -5556,6 +5587,9 @@
 
     },
     "关闭" : {
+
+    },
+    "关闭分栏" : {
 
     },
     "内存 %lld GB" : {
@@ -6091,6 +6125,12 @@
           }
         }
       }
+    },
+    "向下分栏" : {
+
+    },
+    "向右分栏" : {
+
     },
     "向量后端：%@" : {
 
@@ -7779,6 +7819,15 @@
         }
       }
     },
+    "查找" : {
+
+    },
+    "查找上一个" : {
+
+    },
+    "查找下一个" : {
+
+    },
     "查找引用" : {
 
     },
@@ -8388,6 +8437,12 @@
         }
       }
     },
+    "移动到上一个分组" : {
+
+    },
+    "移动到下一个分组" : {
+
+    },
     "移除此消息" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8563,6 +8618,12 @@
           }
         }
       }
+    },
+    "聚焦上一个分组" : {
+
+    },
+    "聚焦下一个分组" : {
+
     },
     "自动批准高风险命令" : {
       "extractionState" : "stale",

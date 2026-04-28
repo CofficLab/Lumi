@@ -19,6 +19,9 @@ struct ChatToolbarView: View, SuperLog {
     /// 入队器：只负责把输入入队到发送队列
     @EnvironmentObject private var inputQueueVM: InputQueueVM
 
+    /// 主题管理器
+    @EnvironmentObject private var themeManager: ThemeManager
+
     /// 消息队列状态（用于判断是否真的在处理）
     @EnvironmentObject private var messageQueueVM: MessageQueueVM
 
@@ -105,37 +108,19 @@ extension ChatToolbarView {
         }
     }
 
-    /// 模式选择器视图
+    /// 模式选择器视图（点击切换 Chat / Build 模式）
     private var modeSelector: some View {
-        Menu {
-            ForEach(ChatMode.allCases) { mode in
-                Button(action: {
-                    withAnimation {
-                        llmVM.setChatMode(mode)
-                    }
-                }) {
-                    HStack {
-                        Image(systemName: mode.iconName)
-                        Text(mode.displayName)
-                        Text("- \(mode.description)")
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                            .font(AppUI.Typography.caption1)
-                        if llmVM.chatMode == mode {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
+        Button(action: {
+            withAnimation {
+                llmVM.setChatMode(llmVM.chatMode == .chat ? .build : .chat)
             }
-        } label: {
+        }) {
             HStack(spacing: 4) {
                 Image(systemName: llmVM.chatMode.iconName)
                     .font(.system(size: 14))
                 Text(llmVM.chatMode.displayName)
                     .font(.system(size: 12))
                     .fontWeight(.medium)
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .foregroundColor(modeForegroundColor)
             .padding(.horizontal, 8)
@@ -143,8 +128,7 @@ extension ChatToolbarView {
             .background(modeBackgroundColor)
             .cornerRadius(6)
         }
-        .menuStyle(.borderlessButton)
-        .frame(width: 80)
+        .buttonStyle(.plain)
         .help(modeHelpText)
         .accessibilityLabel(String(localized: "Chat Mode", table: "AgentInput"))
         .accessibilityHint(String(localized: "Chat Mode Hint", table: "AgentInput"))
@@ -156,7 +140,7 @@ extension ChatToolbarView {
         case .chat:
             return Color.orange
         case .build:
-            return AppUI.Color.semantic.textSecondary
+            return themeManager.activeAppTheme.workspaceSecondaryTextColor()
         }
     }
 
@@ -166,7 +150,7 @@ extension ChatToolbarView {
         case .chat:
             return Color.orange.opacity(0.1)
         case .build:
-            return Color.black.opacity(0.05)
+            return themeManager.activeAppTheme.workspaceTextColor().opacity(0.06)
         }
     }
 
@@ -194,12 +178,12 @@ extension ChatToolbarView {
                     .truncationMode(.middle)
                 Image(systemName: "chevron.up")
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
             }
-            .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Color.black.opacity(0.05))
+            .background(themeManager.activeAppTheme.workspaceTextColor().opacity(0.06))
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
@@ -233,9 +217,9 @@ extension ChatToolbarView {
         }) {
             Image(systemName: "photo")
                 .font(.system(size: 14))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
                 .frame(width: 28, height: 28)
-                .background(Color.black.opacity(0.05))
+                .background(themeManager.activeAppTheme.workspaceTextColor().opacity(0.06))
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)

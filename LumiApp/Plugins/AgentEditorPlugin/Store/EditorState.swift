@@ -59,6 +59,9 @@ final class EditorState: ObservableObject, SuperLog {
 
     // MARK: - Problems
 
+    /// 是否展示 Open Editors 面板
+    @Published private(set) var isOpenEditorsPanelPresented: Bool = false
+
     /// 当前文件的诊断列表（Problems 面板数据源）
     @Published private(set) var problemDiagnostics: [Diagnostic] = []
 
@@ -98,6 +101,12 @@ final class EditorState: ObservableObject, SuperLog {
         panelBindings.removeAll()
 
         panelState.$problemDiagnostics
+            .sink { [weak self] _ in
+                self?.syncPublishedPanelDataFromPanelState()
+            }
+            .store(in: &panelBindings)
+
+        panelState.$isOpenEditorsPanelPresented
             .sink { [weak self] _ in
                 self?.syncPublishedPanelDataFromPanelState()
             }
@@ -484,26 +493,17 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func editorCommandSuggestions() -> [EditorCommandSuggestion] {
-        let line = max(cursorLine - 1, 0)
-        let character = max(cursorColumn - 1, 0)
-        let hasSelection = focusedTextView?.selectionManager.textSelections.contains(where: { !$0.range.isEmpty }) ?? false
-        let context = EditorCommandContext(
-            languageId: detectedLanguage?.tsName ?? "swift",
-            hasSelection: hasSelection,
-            line: line,
-            character: character
-        )
-        return editorExtensions.commandSuggestions(
-            for: context,
-            state: self,
-            textView: focusedTextView
-        )
+        let legacySuggestions = legacyEditorCommandSuggestions()
+        let registrySuggestions = CommandRouter.suggestionsFromRegistry(in: currentCommandContext())
+        return deduplicatingCommandSuggestions(registrySuggestions + legacySuggestions)
     }
 
     func performEditorCommand(id: String) {
-        guard let command = editorCommandSuggestions().first(where: { $0.id == id }) else { return }
-        guard command.isEnabled else { return }
-        command.action()
+        let _ = CommandRouter.execute(
+            id: id,
+            in: currentCommandContext(),
+            legacySuggestions: legacyEditorCommandSuggestions()
+        )
     }
 
     func editorToolbarItems() -> [EditorToolbarItemSuggestion] {
@@ -766,6 +766,41 @@ final class EditorState: ObservableObject, SuperLog {
         applyInteractionUpdate(
             .findReplace(state)
         )
+    }
+
+    func openFindPanel() {
+        var state = activeSession.findReplaceState
+        if state.findText.isEmpty,
+           let selectedText = currentSelectedPlainText(),
+           !selectedText.isEmpty {
+            state.findText = selectedText
+        }
+        state.isFindPanelVisible = true
+        applyFindReplaceObservation(state)
+    }
+
+    func closeFindPanel() {
+        var state = activeSession.findReplaceState
+        state.isFindPanelVisible = false
+        applyFindReplaceObservation(state)
+    }
+
+    func toggleFindPanel() {
+        activeSession.findReplaceState.isFindPanelVisible ? closeFindPanel() : openFindPanel()
+    }
+
+    func updateFindQuery(_ text: String) {
+        var state = activeSession.findReplaceState
+        state.findText = text
+        state.isFindPanelVisible = true
+        applyFindReplaceObservation(state)
+    }
+
+    func updateReplaceQuery(_ text: String) {
+        var state = activeSession.findReplaceState
+        state.replaceText = text
+        state.isFindPanelVisible = true
+        applyFindReplaceObservation(state)
     }
 
     func applySourceEditorBindingUpdate(_ update: EditorSourceEditorBindingUpdate) {
@@ -2175,6 +2210,7 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     private func updatedPanelSnapshot(
+        openEditors: Bool? = nil,
         problems: Bool? = nil,
         references: Bool? = nil,
         workspaceSymbols: Bool? = nil,
@@ -2182,6 +2218,7 @@ final class EditorState: ObservableObject, SuperLog {
     ) -> EditorPanelSnapshot {
         let snapshot = currentPanelSnapshot()
         return EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: openEditors ?? snapshot.isOpenEditorsPanelPresented,
             isProblemsPanelPresented: problems ?? snapshot.isProblemsPanelPresented,
             isReferencePanelPresented: references ?? snapshot.isReferencePanelPresented,
             isWorkspaceSymbolSearchPresented: workspaceSymbols ?? snapshot.isWorkspaceSymbolSearchPresented,
@@ -2206,6 +2243,7 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     private func syncPublishedPanelDataFromPanelState() {
+        isOpenEditorsPanelPresented = panelState.isOpenEditorsPanelPresented
         problemDiagnostics = panelState.problemDiagnostics
         selectedProblemDiagnostic = panelState.selectedProblemDiagnostic
         isProblemsPanelPresented = panelState.isProblemsPanelPresented
@@ -2250,6 +2288,40 @@ final class EditorState: ObservableObject, SuperLog {
             cursorColumn: cursorColumn,
             currentFindReplaceState: activeSession.findReplaceState
         )
+    }
+
+    private func currentLegacyCommandContext() -> EditorCommandContext {
+        let line = max(cursorLine - 1, 0)
+        let character = max(cursorColumn - 1, 0)
+        let hasSelection = focusedTextView?.selectionManager.textSelections.contains(where: { !$0.range.isEmpty }) ?? false
+        return EditorCommandContext(
+            languageId: detectedLanguage?.tsName ?? "swift",
+            hasSelection: hasSelection,
+            line: line,
+            character: character
+        )
+    }
+
+    private func currentCommandContext() -> CommandContext {
+        CommandRouter.commandContext(
+            state: self,
+            legacyContext: currentLegacyCommandContext()
+        )
+    }
+
+    private func legacyEditorCommandSuggestions() -> [EditorCommandSuggestion] {
+        editorExtensions.commandSuggestions(
+            for: currentLegacyCommandContext(),
+            state: self,
+            textView: focusedTextView
+        )
+    }
+
+    private func deduplicatingCommandSuggestions(_ suggestions: [EditorCommandSuggestion]) -> [EditorCommandSuggestion] {
+        var seen = Set<String>()
+        return suggestions.filter { suggestion in
+            seen.insert(suggestion.id).inserted
+        }
     }
 
     private func applyFindMatchesResult(_ result: EditorFindMatchesResult) {
@@ -2357,6 +2429,20 @@ final class EditorState: ObservableObject, SuperLog {
     private func currentEditorTextStorageString() -> NSString? {
         guard let content else { return nil }
         return content.string as NSString
+    }
+
+    private func currentSelectedPlainText() -> String? {
+        guard let text = content?.string,
+              let selection = multiCursorState.all.first,
+              selection.length > 0 else {
+            return nil
+        }
+
+        let nsText = text as NSString
+        let clampedLocation = max(0, min(selection.location, nsText.length))
+        let clampedLength = max(0, min(selection.length, nsText.length - clampedLocation))
+        guard clampedLength > 0 else { return nil }
+        return nsText.substring(with: NSRange(location: clampedLocation, length: clampedLength))
     }
 }
 

@@ -237,7 +237,7 @@ struct BreadcrumbComponent: View {
     @Binding var truncatedCrumbWidth: CGFloat?
     let onSelectFile: (URL) -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var themeManager: ThemeManager
     @State private var isHovering = false
     @State private var isMenuVisible = false
 
@@ -350,9 +350,8 @@ struct BreadcrumbComponent: View {
 
     private var hoverBackground: Color {
         guard isHovering else { return .clear }
-        return colorScheme == .dark
-            ? Color.white.opacity(0.06)
-            : Color.black.opacity(0.04)
+        let theme = themeManager.activeAppTheme
+        return theme.workspaceTextColor().opacity(0.06)
     }
 
     // MARK: - Icon Helpers

@@ -81,6 +81,7 @@ final class EditorGroup: ObservableObject, Identifiable {
         sessions.append(session)
         tabs.append(EditorTab(sessionID: session.id, fileURL: fileURL))
         activeSessionID = session.id
+        normalizeTabOrder()
         return session
     }
 
@@ -112,6 +113,7 @@ final class EditorGroup: ObservableObject, Identifiable {
             let nextIndex = min(index, max(sessions.count - 1, 0))
             if !sessions.isEmpty {
                 activeSessionID = sessions[nextIndex].id
+                normalizeTabOrder()
                 return sessions[nextIndex]
             } else {
                 activeSessionID = nil
@@ -119,6 +121,7 @@ final class EditorGroup: ObservableObject, Identifiable {
             }
         }
 
+        normalizeTabOrder()
         return activeSession
     }
 
@@ -129,7 +132,14 @@ final class EditorGroup: ObservableObject, Identifiable {
         sessions = [kept]
         tabs = tabs.filter { $0.sessionID == sessionID }
         activeSessionID = kept.id
+        normalizeTabOrder()
         return kept
+    }
+
+    func togglePinned(sessionID: EditorSession.ID) {
+        guard let index = tabs.firstIndex(where: { $0.sessionID == sessionID }) else { return }
+        tabs[index].isPinned.toggle()
+        normalizeTabOrder()
     }
 
     /// 关闭所有 session。
@@ -152,6 +162,20 @@ final class EditorGroup: ObservableObject, Identifiable {
         left.sessions = sessions
         left.tabs = tabs
         left.activeSessionID = activeSessionID
+
+        // VS Code 风格：split 后在新分栏中复制当前活跃会话，而不是留空。
+        if let activeSession {
+            let duplicatedSession = EditorSession(snapshot: activeSession, preservingID: false)
+            right.sessions = [duplicatedSession]
+            right.tabs = [
+                EditorTab(
+                    sessionID: duplicatedSession.id,
+                    fileURL: duplicatedSession.fileURL,
+                    isDirty: duplicatedSession.isDirty
+                )
+            ]
+            right.activeSessionID = duplicatedSession.id
+        }
 
         subGroups = [left, right]
         splitDirection = direction
@@ -188,13 +212,13 @@ final class EditorGroup: ObservableObject, Identifiable {
     /// 将 session 移动到另一个 group。
     func moveSessionToOtherGroup(
         sessionID: EditorSession.ID,
-        targetGroupID: EditorGroup.ID
+        targetGroup: EditorGroup?
     ) -> Bool {
         guard let sessionIndex = sessions.firstIndex(where: { $0.id == sessionID }),
-              let session = sessions[safe: sessionIndex] else { return false }
-
-        // 找到目标 group（在当前 group 的子 group 中查找）
-        guard let targetGroup = findSubGroup(id: targetGroupID) else { return false }
+              let session = sessions[safe: sessionIndex],
+              let targetGroup,
+              targetGroup.id != id,
+              targetGroup.isLeaf else { return false }
 
         sessions.remove(at: sessionIndex)
         tabs.removeAll(where: { $0.sessionID == sessionID })
@@ -209,6 +233,8 @@ final class EditorGroup: ObservableObject, Identifiable {
         targetGroup.sessions.append(session)
         targetGroup.tabs.append(EditorTab(sessionID: session.id, fileURL: session.fileURL))
         targetGroup.activeSessionID = session.id
+        targetGroup.normalizeTabOrder()
+        normalizeTabOrder()
 
         return true
     }
@@ -253,6 +279,16 @@ final class EditorGroup: ObservableObject, Identifiable {
                     isDirty: session.isDirty
                 )
             )
+        }
+        normalizeTabOrder()
+    }
+
+    private func normalizeTabOrder() {
+        tabs.sort { lhs, rhs in
+            if lhs.isPinned != rhs.isPinned {
+                return lhs.isPinned && !rhs.isPinned
+            }
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
         }
     }
 }

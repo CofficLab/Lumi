@@ -24,6 +24,9 @@ protocol ThemeProtocol {
     /// 主题主色调
     var iconColor: SwiftUI.Color { get }
 
+    /// 是否为深色主题（影响工作区文本色等默认值）
+    var isDarkTheme: Bool { get }
+
     // MARK: - 颜色配置
 
     /// 主色调
@@ -49,8 +52,31 @@ protocol ThemeProtocol {
     /// 边框渐变
     func borderGradient() -> LinearGradient
 
+    // MARK: - 工作区颜色
+
+    /// 编辑器工作区背景色（Tab 栏、工具栏、状态栏共享）
+    func workspaceBackgroundColor() -> SwiftUI.Color
+
+    /// 文件树侧边栏背景色
+    func sidebarBackgroundColor() -> SwiftUI.Color
+
+    /// 侧边栏选中行背景色
+    func sidebarSelectionColor() -> SwiftUI.Color
+
+    /// 侧边栏选中行文本色
+    func sidebarSelectionTextColor() -> SwiftUI.Color
+
+    /// 工作区主要文本色
+    func workspaceTextColor() -> SwiftUI.Color
+
+    /// 工作区次要文本色（图标、描述等）
+    func workspaceSecondaryTextColor() -> SwiftUI.Color
+
+    /// 工作区三级文本色（禁用、占位符等）
+    func workspaceTertiaryTextColor() -> SwiftUI.Color
+
     // MARK: - 全局背景视图
-    
+
     /// 创建全局背景视图
     /// - Parameter proxy: 几何代理，用于适配屏幕尺寸
     /// - Returns: 类型擦除的视图
@@ -59,6 +85,48 @@ protocol ThemeProtocol {
 
 // MARK: - 主题协议默认实现
 extension ThemeProtocol {
+    // MARK: - 主题信息默认实现
+
+    /// 默认为深色主题
+    var isDarkTheme: Bool { true }
+
+    // MARK: - 工作区颜色默认实现
+
+    /// 默认工作区背景色：使用氛围色 medium
+    func workspaceBackgroundColor() -> SwiftUI.Color {
+        atmosphereColors().medium
+    }
+
+    /// 默认侧边栏背景色：使用氛围色 deep
+    func sidebarBackgroundColor() -> SwiftUI.Color {
+        atmosphereColors().deep
+    }
+
+    /// 默认侧边栏选中行背景色：主色调低透明度
+    func sidebarSelectionColor() -> SwiftUI.Color {
+        accentColors().primary.opacity(0.22)
+    }
+
+    /// 默认侧边栏选中行文本色
+    func sidebarSelectionTextColor() -> SwiftUI.Color {
+        isDarkTheme ? SwiftUI.Color.white : SwiftUI.Color.white
+    }
+
+    /// 默认工作区主要文本色
+    func workspaceTextColor() -> SwiftUI.Color {
+        isDarkTheme ? SwiftUI.Color.white : SwiftUI.Color(hex: "1C1C1E")
+    }
+
+    /// 默认工作区次要文本色（图标、描述等）
+    func workspaceSecondaryTextColor() -> SwiftUI.Color {
+        isDarkTheme ? SwiftUI.Color.white.opacity(0.6) : SwiftUI.Color(hex: "6B6B7B")
+    }
+
+    /// 默认工作区三级文本色（禁用、占位符等）
+    func workspaceTertiaryTextColor() -> SwiftUI.Color {
+        isDarkTheme ? SwiftUI.Color.white.opacity(0.4) : SwiftUI.Color(hex: "98989E")
+    }
+
     /// 默认背景渐变实现
     func backgroundGradient() -> LinearGradient {
         let colors = atmosphereColors()

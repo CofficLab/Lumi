@@ -18,6 +18,11 @@ final class EditorSessionStore: ObservableObject {
     var canNavigateBack: Bool { navigationHistory.canGoBack }
     var canNavigateForward: Bool { navigationHistory.canGoForward }
 
+    func recentActivationRank(for sessionID: EditorSession.ID) -> Int? {
+        guard let index = navigationHistory.sessionIDs.lastIndex(of: sessionID) else { return nil }
+        return navigationHistory.sessionIDs.distance(from: index, to: navigationHistory.sessionIDs.endIndex) - 1
+    }
+
     @discardableResult
     func openOrActivate(fileURL: URL?) -> EditorSession? {
         guard let fileURL else {

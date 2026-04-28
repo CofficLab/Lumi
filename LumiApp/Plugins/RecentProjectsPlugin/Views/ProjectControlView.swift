@@ -5,19 +5,22 @@ import SwiftUI
 /// 默认显示当前项目名，点击后弹出最近项目 Popover
 struct ProjectControlView: View {
     @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject private var themeManager: ThemeManager
 
     @State private var isPopoverPresented = false
 
     var body: some View {
+        let theme = themeManager.activeAppTheme
+
         HStack(spacing: 6) {
             Text(projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName)
                 .font(AppUI.Typography.body)
                 .fontWeight(.medium)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(theme.workspaceTextColor())
 
             Image(systemName: "chevron.down")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(theme.workspaceTertiaryTextColor())
                 .rotationEffect(.degrees(isPopoverPresented ? 180 : 0))
                 .animation(.easeInOut(duration: DesignTokens.Duration.micro), value: isPopoverPresented)
         }

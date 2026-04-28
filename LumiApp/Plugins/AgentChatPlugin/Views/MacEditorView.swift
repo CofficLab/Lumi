@@ -23,6 +23,9 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 字体设置
     var font: NSFont = .systemFont(ofSize: 15)
 
+    /// 文字颜色（由主题驱动）
+    var textColor: NSColor = .textColor
+
     /// 提交回调：当用户按下 Enter 键时触发
     var onSubmit: () -> Void
 
@@ -63,6 +66,8 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.allowsUndo = true
+        textView.textColor = textColor
+        textView.insertionPointColor = textColor
 
         // 设置文本容器 - 使用无限高度以便计算内容高度
         textView.textContainer?.widthTracksTextView = true
@@ -92,6 +97,12 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
                     coordinator.parent.isImageDragHovering = hovering
                 }
             }
+        }
+
+        // 同步文字颜色（响应主题切换）
+        if textView.textColor != textColor {
+            textView.textColor = textColor
+            textView.insertionPointColor = textColor
         }
 
         // 如果用户正在使用输入法组合文字（存在 markedText），不要强制同步，否则会打断输入状态

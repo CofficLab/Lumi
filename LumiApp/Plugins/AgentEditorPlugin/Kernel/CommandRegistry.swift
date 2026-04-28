@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Command Registry
 //
-// Phase 5: 中央命令注册中心。
+// 中央命令注册中心。
 //
 // 所有编辑器行为（format、rename、find、multi-cursor 等）统一注册为 Command，
 // 通过 command ID 在任何上下文中（toolbar、menu、keybinding、command palette）执行。

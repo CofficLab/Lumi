@@ -38,6 +38,15 @@ enum CoreCommandRegistrations {
 
     private static func registerNavigationCommands(state: EditorState) {
         CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.open-editors-panel",
+            title: String(localized: "Open Editors", table: "LumiEditor"),
+            icon: "sidebar.left",
+            category: "navigation"
+        ) {
+            state.performPanelCommand(.toggleOpenEditors)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
             id: "builtin.find-references",
             title: String(localized: "Find All References", table: "LumiEditor"),
             icon: "magnifyingglass",
@@ -124,7 +133,7 @@ enum CoreCommandRegistrations {
             icon: "magnifyingglass",
             category: "find"
         ) {
-            state.performPanelCommand(.toggleProblems)
+            state.toggleFindPanel()
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(
@@ -145,6 +154,26 @@ enum CoreCommandRegistrations {
             enablement: CommandEnablement.whenTrue(.isEditorActive)
         ) {
             state.selectPreviousFindMatch()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand(
+            id: "builtin.replace-current",
+            title: String(localized: "Replace", table: "LumiEditor"),
+            icon: "arrow.triangle.2.circlepath",
+            category: "find",
+            enablement: .custom { _ in state.activeSession.findReplaceState.selectedMatchIndex != nil }
+        ) {
+            state.replaceCurrentFindMatch()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand(
+            id: "builtin.replace-all",
+            title: String(localized: "Replace All", table: "LumiEditor"),
+            icon: "square.stack.3d.up",
+            category: "find",
+            enablement: .custom { _ in !state.findMatches.isEmpty }
+        ) {
+            state.replaceAllFindMatches()
         })
     }
 

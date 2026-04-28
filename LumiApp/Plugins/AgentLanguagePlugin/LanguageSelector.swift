@@ -3,10 +3,13 @@ import SwiftUI
 /// 语言选择器：下拉菜单选择 AI 响应语言
 struct LanguageSelector: View {
     @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject private var themeManager: ThemeManager
 
     private let iconSize: CGFloat = 14
 
     var body: some View {
+        let theme = themeManager.activeAppTheme
+
         Menu {
             ForEach(LanguagePreference.allCases) { lang in
                 Button(action: {
@@ -28,6 +31,7 @@ struct LanguageSelector: View {
                     .font(.system(size: iconSize))
                 Text(projectVM.languagePreference.displayName)
             }
+            .foregroundColor(theme.workspaceTextColor())
         }
         .menuStyle(.borderlessButton)
         .frame(width: 70)

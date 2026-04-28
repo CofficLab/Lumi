@@ -201,7 +201,13 @@
         }
       }
     },
+    "Close" : {
+
+    },
     "Close Others" : {
+
+    },
+    "Close Split Editor" : {
 
     },
     "Code Editor" : {
@@ -227,6 +233,12 @@
       }
     },
     "Code editor with file tree" : {
+
+    },
+    "Current Group" : {
+
+    },
+    "Current Group (%lld)" : {
 
     },
     "Document formatted" : {
@@ -543,6 +555,19 @@
     },
     "Go to Symbol in Workspace" : {
 
+    },
+    "Group %lld" : {
+
+    },
+    "Group %lld (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Group %1$lld (%2$lld)"
+          }
+        }
+      }
     },
     "Invalid selection" : {
 
@@ -942,6 +967,9 @@
         }
       }
     },
+    "No Open Editors" : {
+
+    },
     "No Problems" : {
 
     },
@@ -991,6 +1019,15 @@
           }
         }
       }
+    },
+    "Open Editors" : {
+
+    },
+    "Other Open Editors" : {
+
+    },
+    "Other Open Editors (%lld)" : {
+
     },
     "Pin Tab" : {
 
@@ -1134,6 +1171,9 @@
           }
         }
       }
+    },
+    "Recently Active" : {
+
     },
     "References" : {
 
@@ -1314,6 +1354,12 @@
         }
       }
     },
+    "Replace" : {
+
+    },
+    "Replace All" : {
+
+    },
     "Save" : {
 
     },
@@ -1439,6 +1485,12 @@
           }
         }
       }
+    },
+    "Split Editor Down" : {
+
+    },
+    "Split Editor Right" : {
+
     },
     "Swift Keyword Hover" : {
       "extractionState" : "stale",

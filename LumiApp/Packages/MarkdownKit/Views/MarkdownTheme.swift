@@ -21,6 +21,10 @@ public struct MarkdownTheme: Sendable {
     public let tableHeaderBackground: Color
     /// 是否显示代码块语言标签
     public let showLanguageLabel: Bool
+    /// 正文文字颜色（nil 时使用系统默认）
+    public let textColor: Color?
+    /// 次要文字颜色（用于引用内容、序号等，nil 时使用 .secondary）
+    public let secondaryTextColor: Color?
     
     /// 默认主题（标准系统字体和间距）
     public static let standard = MarkdownTheme(
@@ -51,7 +55,9 @@ public struct MarkdownTheme: Sendable {
         codeBlockBackground: Color = MarkdownTheme.standard.codeBlockBackground,
         quoteBorderColor: Color = MarkdownTheme.standard.quoteBorderColor,
         tableHeaderBackground: Color = MarkdownTheme.standard.tableHeaderBackground,
-        showLanguageLabel: Bool = MarkdownTheme.standard.showLanguageLabel
+        showLanguageLabel: Bool = MarkdownTheme.standard.showLanguageLabel,
+        textColor: Color? = nil,
+        secondaryTextColor: Color? = nil
     ) {
         self.headingFont = headingFont
         self.bodyFont = bodyFont
@@ -62,5 +68,7 @@ public struct MarkdownTheme: Sendable {
         self.quoteBorderColor = quoteBorderColor
         self.tableHeaderBackground = tableHeaderBackground
         self.showLanguageLabel = showLanguageLabel
+        self.textColor = textColor
+        self.secondaryTextColor = secondaryTextColor
     }
 }

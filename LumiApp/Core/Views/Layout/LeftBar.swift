@@ -5,10 +5,12 @@ import SwiftUI
 ///
 /// 聚合所有提供 `addPanelView()` 的插件图标，
 /// 点击后通过 LayoutVM 驱动内容面板切换。
+///
+/// 主题适配：背景、图标颜色、选中指示条均跟随当前主题。
 struct ActivityBar: View {
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var layoutVM: LayoutVM
-    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject var themeManager: ThemeManager
 
     /// 图标栏宽度
     static let width: CGFloat = 48
@@ -16,6 +18,7 @@ struct ActivityBar: View {
     var body: some View {
         let panelItems = pluginProvider.getPanelItems()
         let selectedId = currentSelectedId(in: panelItems)
+        let theme = themeManager.activeAppTheme
 
         VStack(spacing: 0) {
             ScrollView(.vertical, showsIndicators: false) {
@@ -45,7 +48,7 @@ struct ActivityBar: View {
             .padding(.bottom, 8)
         }
         .frame(width: Self.width)
-        .background(background)
+        .background(theme.sidebarBackgroundColor())
         .onAppear {
             let items = pluginProvider.getPanelItems()
             layoutVM.restoreSelectedTab(from: items.map(\.id))
@@ -60,10 +63,6 @@ struct ActivityBar: View {
     private func currentSelectedId(in items: [PluginVM.PanelItem]) -> String {
         let id = layoutVM.selectedAgentSidebarTabId
         return items.contains(where: { $0.id == id }) ? id : (items.first?.id ?? "")
-    }
-
-    private var background: some View {
-        Color(nsColor: .controlBackgroundColor).opacity(colorScheme == .dark ? 0.6 : 0.3)
     }
 }
 
@@ -97,27 +96,31 @@ struct PanelContentView: View {
 // MARK: - Activity Bar Button
 
 /// VS Code 风格的活动栏图标按钮
+///
+/// 主题适配：选中指示条和图标颜色均跟随当前主题。
 struct ActivityBarButton: View {
     let icon: String
     let title: String
     let isSelected: Bool
     let action: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var themeManager: ThemeManager
     @State private var isHovered = false
 
     var body: some View {
+        let theme = themeManager.activeAppTheme
+
         Button(action: action) {
             ZStack(alignment: .leading) {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.accentColor)
+                        .fill(theme.accentColors().primary)
                         .frame(width: 2.5, height: 20)
                 }
 
                 Image(systemName: icon)
                     .font(.system(size: 18))
-                    .foregroundColor(iconColor)
+                    .foregroundColor(iconColor(theme: theme))
                     .frame(maxWidth: .infinity, minHeight: 40)
                     .contentShape(Rectangle())
             }
@@ -129,14 +132,17 @@ struct ActivityBarButton: View {
         }
     }
 
-    private var iconColor: Color {
+    // MARK: - Private
+
+    /// 根据主题计算图标颜色
+    private func iconColor(theme: any ThemeProtocol) -> Color {
         if isSelected {
-            return .primary
+            return theme.workspaceTextColor()
         }
         if isHovered {
-            return colorScheme == .dark ? .white.opacity(0.8) : .black.opacity(0.7)
+            return theme.workspaceTextColor().opacity(0.8)
         }
-        return colorScheme == .dark ? .white.opacity(0.5) : .black.opacity(0.4)
+        return theme.workspaceSecondaryTextColor()
     }
 }
 

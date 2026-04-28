@@ -91,6 +91,9 @@ struct SourceEditorView: View, SuperLog {
                 inlayHintsStrip
             }
             .overlay(alignment: .topLeading) {
+                findMatchesOverlay
+            }
+            .overlay(alignment: .topLeading) {
                 GeometryReader { proxy in
                     hoverPreview(in: proxy.size)
                 }
@@ -163,6 +166,26 @@ struct SourceEditorView: View, SuperLog {
             .frame(height: 22)
             .frame(maxWidth: .infinity)
             .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
+        }
+    }
+
+    @ViewBuilder
+    private var findMatchesOverlay: some View {
+        let highlights = visibleFindMatchHighlights
+        if !highlights.isEmpty {
+            ZStack(alignment: .topLeading) {
+                ForEach(highlights) { highlight in
+                    RoundedRectangle(cornerRadius: highlight.isSelected ? 4 : 3)
+                        .fill(highlight.color)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: highlight.isSelected ? 4 : 3)
+                                .stroke(highlight.borderColor, lineWidth: highlight.isSelected ? 1 : 0.5)
+                        )
+                        .frame(width: max(highlight.rect.width, 2), height: max(highlight.rect.height, 2))
+                        .offset(x: highlight.rect.minX, y: highlight.rect.minY)
+                }
+            }
+            .allowsHitTesting(false)
         }
     }
 
@@ -318,6 +341,61 @@ struct SourceEditorView: View, SuperLog {
         if let hoverCoordinator { result.append(hoverCoordinator) }
         return result
     }
+
+    private var visibleFindMatchHighlights: [FindMatchHighlight] {
+        guard let textView = state.focusedTextView else { return [] }
+        let visibleRect = textView.visibleRect
+        let selectedRange = state.activeSession.findReplaceState.selectedMatchRange
+
+        return state.findMatches.compactMap { match in
+            guard let rect = visibleRectForFindMatch(for: match.range, in: textView, visibleRect: visibleRect) else {
+                return nil
+            }
+
+            let isSelected = match.range == selectedRange
+            return FindMatchHighlight(
+                range: match.range,
+                rect: rect,
+                isSelected: isSelected
+            )
+        }
+    }
+
+    private func visibleRectForFindMatch(
+        for range: EditorRange,
+        in textView: TextView,
+        visibleRect: CGRect
+    ) -> CGRect? {
+        guard let startRect = textView.layoutManager.rectForOffset(range.location) else {
+            return nil
+        }
+
+        let contentRect: CGRect
+        if range.length > 0,
+           let endRect = textView.layoutManager.rectForOffset(max(range.location + range.length - 1, range.location)) {
+            if abs(startRect.minY - endRect.minY) < 1.0 {
+                contentRect = CGRect(
+                    x: startRect.minX,
+                    y: startRect.minY,
+                    width: max(endRect.maxX - startRect.minX, startRect.width),
+                    height: max(startRect.height, endRect.height)
+                )
+            } else {
+                contentRect = startRect
+            }
+        } else {
+            contentRect = startRect
+        }
+
+        guard contentRect.intersects(visibleRect) else { return nil }
+
+        return CGRect(
+            x: contentRect.origin.x - visibleRect.origin.x,
+            y: contentRect.origin.y - visibleRect.origin.y,
+            width: contentRect.width,
+            height: contentRect.height
+        )
+    }
     
     // MARK: - Configuration
 
@@ -389,5 +467,29 @@ struct SourceEditorView: View, SuperLog {
                 codeSuggestionTriggerCharacters: completionDelegate.completionTriggerCharacters()
             )
         )
+    }
+}
+
+private struct FindMatchHighlight: Identifiable {
+    let range: EditorRange
+    let rect: CGRect
+    let isSelected: Bool
+
+    var id: String {
+        "\(range.location):\(range.length):\(rect.minX):\(rect.minY):\(isSelected)"
+    }
+
+    var color: Color {
+        if isSelected {
+            return AppUI.Color.semantic.primary.opacity(0.28)
+        }
+        return AppUI.Color.semantic.warning.opacity(0.18)
+    }
+
+    var borderColor: Color {
+        if isSelected {
+            return AppUI.Color.semantic.primary.opacity(0.72)
+        }
+        return AppUI.Color.semantic.warning.opacity(0.42)
     }
 }

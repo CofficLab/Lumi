@@ -17,6 +17,11 @@ import LanguageServerProtocol
 @MainActor
 final class EditorPanelState: ObservableObject {
 
+    // MARK: - Open Editors 面板
+
+    /// 是否展示 Open Editors 面板
+    @Published var isOpenEditorsPanelPresented: Bool = false
+
     // MARK: - Problems 面板
 
     /// 当前文件的诊断列表
@@ -56,6 +61,7 @@ final class EditorPanelState: ObservableObject {
 
     var snapshot: EditorPanelSnapshot {
         EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: isOpenEditorsPanelPresented,
             isProblemsPanelPresented: isProblemsPanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
@@ -68,6 +74,7 @@ final class EditorPanelState: ObservableObject {
             mouseHoverContent: mouseHoverContent,
             mouseHoverSymbolRect: mouseHoverSymbolRect,
             referenceResults: referenceResults.map(Self.referenceResult(from:)),
+            isOpenEditorsPanelPresented: isOpenEditorsPanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
             isCallHierarchyPresented: isCallHierarchyPresented,
@@ -107,6 +114,7 @@ final class EditorPanelState: ObservableObject {
     }
 
     func apply(_ snapshot: EditorPanelSnapshot) {
+        isOpenEditorsPanelPresented = snapshot.isOpenEditorsPanelPresented
         isProblemsPanelPresented = snapshot.isProblemsPanelPresented
         isReferencePanelPresented = snapshot.isReferencePanelPresented
         isWorkspaceSymbolSearchPresented = snapshot.isWorkspaceSymbolSearchPresented
@@ -126,6 +134,7 @@ final class EditorPanelState: ObservableObject {
         } else {
             clearMouseHover()
         }
+        isOpenEditorsPanelPresented = state.isOpenEditorsPanelPresented
         isReferencePanelPresented = state.isReferencePanelPresented
         isWorkspaceSymbolSearchPresented = state.isWorkspaceSymbolSearchPresented
         isCallHierarchyPresented = state.isCallHierarchyPresented
@@ -137,6 +146,7 @@ final class EditorPanelState: ObservableObject {
     func reset() {
         problemDiagnostics = []
         selectedProblemDiagnostic = nil
+        isOpenEditorsPanelPresented = false
         isProblemsPanelPresented = false
         referenceResults = []
         isReferencePanelPresented = false
@@ -181,6 +191,7 @@ struct EditorPanelSessionState: Equatable {
     let mouseHoverContent: String?
     let mouseHoverSymbolRect: CGRect
     let referenceResults: [ReferenceResult]
+    let isOpenEditorsPanelPresented: Bool
     let isReferencePanelPresented: Bool
     let isWorkspaceSymbolSearchPresented: Bool
     let isCallHierarchyPresented: Bool
@@ -190,6 +201,7 @@ struct EditorPanelSessionState: Equatable {
 
     var snapshot: EditorPanelSnapshot {
         EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: isOpenEditorsPanelPresented,
             isProblemsPanelPresented: isProblemsPanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
@@ -201,6 +213,7 @@ struct EditorPanelSessionState: Equatable {
         mouseHoverContent: String? = nil,
         mouseHoverSymbolRect: CGRect = .zero,
         referenceResults: [ReferenceResult] = [],
+        isOpenEditorsPanelPresented: Bool = false,
         isReferencePanelPresented: Bool = false,
         isWorkspaceSymbolSearchPresented: Bool = false,
         isCallHierarchyPresented: Bool = false,
@@ -211,6 +224,7 @@ struct EditorPanelSessionState: Equatable {
         self.mouseHoverContent = mouseHoverContent
         self.mouseHoverSymbolRect = mouseHoverSymbolRect
         self.referenceResults = referenceResults
+        self.isOpenEditorsPanelPresented = isOpenEditorsPanelPresented
         self.isReferencePanelPresented = isReferencePanelPresented
         self.isWorkspaceSymbolSearchPresented = isWorkspaceSymbolSearchPresented
         self.isCallHierarchyPresented = isCallHierarchyPresented

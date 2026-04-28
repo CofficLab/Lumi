@@ -6,10 +6,25 @@ import CodeEditTextView
 /// 包含字体大小、缩进、主题切换等设置
 struct EditorToolbarView: View {
     
+    @EnvironmentObject private var themeManager: ThemeManager
     @ObservedObject var state: EditorState
+    let canSplitEditor: Bool
+    let onSplitHorizontal: () -> Void
+    let onSplitVertical: () -> Void
+    let onUnsplit: () -> Void
 
-    init(state: EditorState) {
+    init(
+        state: EditorState,
+        canSplitEditor: Bool = false,
+        onSplitHorizontal: @escaping () -> Void = {},
+        onSplitVertical: @escaping () -> Void = {},
+        onUnsplit: @escaping () -> Void = {}
+    ) {
         self._state = ObservedObject(wrappedValue: state)
+        self.canSplitEditor = canSplitEditor
+        self.onSplitHorizontal = onSplitHorizontal
+        self.onSplitVertical = onSplitVertical
+        self.onUnsplit = onUnsplit
     }
     
     var body: some View {
@@ -28,8 +43,20 @@ struct EditorToolbarView: View {
             // 中间：切换开关（可压缩）
             toggleButtons
 
+            Divider()
+                .frame(height: 14)
+
+            splitEditorControls
+
             ForEach(centerToolbarItems) { item in
                 item.content(state)
+            }
+
+            if isFindPanelVisible {
+                Divider()
+                    .frame(height: 14)
+
+                findReplaceControls
             }
 
             Spacer(minLength: 0)
@@ -40,7 +67,8 @@ struct EditorToolbarView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
-        .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
+        .background(themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.06))
+        .background(findKeyboardShortcutHost)
     }
 
     private var centerToolbarItems: [EditorToolbarItemSuggestion] {
@@ -49,6 +77,31 @@ struct EditorToolbarView: View {
 
     private var trailingToolbarItems: [EditorToolbarItemSuggestion] {
         state.editorToolbarItems().filter { $0.placement == .trailing }
+    }
+
+    private var isFindPanelVisible: Bool {
+        state.editorState.findPanelVisible ?? false
+    }
+
+    private var findTextBinding: Binding<String> {
+        Binding(
+            get: { state.editorState.findText ?? "" },
+            set: { state.updateFindQuery($0) }
+        )
+    }
+
+    private var replaceTextBinding: Binding<String> {
+        Binding(
+            get: { state.editorState.replaceText ?? "" },
+            set: { state.updateReplaceQuery($0) }
+        )
+    }
+
+    private var selectedMatchDescription: String {
+        let currentIndex = (state.activeSession.findReplaceState.selectedMatchIndex ?? -1) + 1
+        let total = state.findMatches.count
+        guard total > 0, currentIndex > 0 else { return "0/0" }
+        return "\(currentIndex)/\(total)"
     }
     
     // MARK: - Font Sizer
@@ -121,7 +174,8 @@ struct EditorToolbarView: View {
                 .frame(width: 22, height: 22)
         }
         .menuStyle(.borderlessButton)
-        .frame(height: 20)
+        .frame(width: 22, height: 20)
+        .fixedSize()
     }
     
     // MARK: - Toggle Buttons
@@ -170,6 +224,178 @@ struct EditorToolbarView: View {
             .help(state.multiCursorState.isEnabled
                 ? String(localized: "Clear Additional Cursors", table: "LumiEditor")
                 : String(localized: "Add Next Occurrence", table: "LumiEditor"))
+        }
+    }
+
+    private var splitEditorControls: some View {
+        HStack(spacing: 4) {
+            ToolbarToggle(
+                icon: "rectangle.split.2x1",
+                isActive: false
+            ) {
+                onSplitHorizontal()
+            }
+            .help(String(localized: "Split Editor Right", table: "LumiEditor"))
+            .disabled(!canSplitEditor)
+
+            ToolbarToggle(
+                icon: "rectangle.split.1x2",
+                isActive: false
+            ) {
+                onSplitVertical()
+            }
+            .help(String(localized: "Split Editor Down", table: "LumiEditor"))
+            .disabled(!canSplitEditor)
+
+            ToolbarToggle(
+                icon: "rectangle",
+                isActive: false
+            ) {
+                onUnsplit()
+            }
+            .help(String(localized: "Close Split Editor", table: "LumiEditor"))
+            .disabled(!canSplitEditor)
+        }
+    }
+
+    private var findReplaceControls: some View {
+        HStack(spacing: 6) {
+            TextField(String(localized: "Find", table: "LumiEditor"), text: findTextBinding)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 140)
+
+            TextField(String(localized: "Replace", table: "LumiEditor"), text: replaceTextBinding)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 140)
+
+            Text(selectedMatchDescription)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .frame(width: 36)
+
+            ToolbarToggle(icon: "arrow.up", isActive: false) {
+                state.performEditorCommand(id: "builtin.find-previous")
+            }
+            .help(String(localized: "Find Previous", table: "LumiEditor"))
+
+            ToolbarToggle(icon: "arrow.down", isActive: false) {
+                state.performEditorCommand(id: "builtin.find-next")
+            }
+            .help(String(localized: "Find Next", table: "LumiEditor"))
+
+            ToolbarToggle(icon: "arrow.triangle.2.circlepath", isActive: false) {
+                state.performEditorCommand(id: "builtin.replace-current")
+            }
+            .help(String(localized: "Replace", table: "LumiEditor"))
+
+            ToolbarToggle(icon: "square.stack.3d.up", isActive: false) {
+                state.performEditorCommand(id: "builtin.replace-all")
+            }
+            .help(String(localized: "Replace All", table: "LumiEditor"))
+
+            Menu {
+                Toggle(isOn: Binding(
+                    get: { state.activeSession.findReplaceState.options.isCaseSensitive },
+                    set: { newValue in
+                        state.updateFindReplaceOptions { $0.isCaseSensitive = newValue }
+                    }
+                )) {
+                    Text("Case Sensitive")
+                }
+
+                Toggle(isOn: Binding(
+                    get: { state.activeSession.findReplaceState.options.matchesWholeWord },
+                    set: { newValue in
+                        state.updateFindReplaceOptions { $0.matchesWholeWord = newValue }
+                    }
+                )) {
+                    Text("Whole Word")
+                }
+
+                Toggle(isOn: Binding(
+                    get: { state.activeSession.findReplaceState.options.isRegexEnabled },
+                    set: { newValue in
+                        state.updateFindReplaceOptions { $0.isRegexEnabled = newValue }
+                    }
+                )) {
+                    Text("Use Regular Expression")
+                }
+
+                Toggle(isOn: Binding(
+                    get: { state.activeSession.findReplaceState.options.inSelectionOnly },
+                    set: { newValue in
+                        state.updateFindReplaceOptions { $0.inSelectionOnly = newValue }
+                    }
+                )) {
+                    Text("In Selection")
+                }
+
+                Toggle(isOn: Binding(
+                    get: { state.activeSession.findReplaceState.options.preservesCase },
+                    set: { newValue in
+                        state.updateFindReplaceOptions { $0.preservesCase = newValue }
+                    }
+                )) {
+                    Text("Preserve Case")
+                }
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 10))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .frame(width: 22, height: 22)
+            }
+            .menuStyle(.borderlessButton)
+            .frame(height: 20)
+
+            ToolbarToggle(icon: "xmark", isActive: false) {
+                state.closeFindPanel()
+            }
+            .help(String(localized: "Close", table: "Localizable"))
+        }
+    }
+
+    @ViewBuilder
+    private var findKeyboardShortcutHost: some View {
+        if isFindPanelVisible {
+            ZStack {
+                Button(action: {
+                    state.performEditorCommand(id: "builtin.find-next")
+                }) {
+                    EmptyView()
+                }
+                .keyboardShortcut(.return, modifiers: [])
+
+                Button(action: {
+                    state.performEditorCommand(id: "builtin.find-previous")
+                }) {
+                    EmptyView()
+                }
+                .keyboardShortcut(.return, modifiers: [.shift])
+
+                Button(action: {
+                    state.performEditorCommand(id: "builtin.replace-current")
+                }) {
+                    EmptyView()
+                }
+                .keyboardShortcut(.return, modifiers: [.command])
+
+                Button(action: {
+                    state.performEditorCommand(id: "builtin.replace-all")
+                }) {
+                    EmptyView()
+                }
+                .keyboardShortcut(.return, modifiers: [.command, .shift])
+
+                Button(action: {
+                    state.closeFindPanel()
+                }) {
+                    EmptyView()
+                }
+                .keyboardShortcut(.escape, modifiers: [])
+            }
+            .frame(width: 0, height: 0)
+            .opacity(0.001)
+            .allowsHitTesting(false)
         }
     }
     

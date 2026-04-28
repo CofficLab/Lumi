@@ -18,6 +18,42 @@ extension Notification.Name {
     /// 请求执行「调用层级」
     static let lumiEditorCallHierarchy = Notification.Name("LumiEditorCallHierarchy")
 
+    /// 请求切换查找面板
+    static let lumiEditorToggleFind = Notification.Name("LumiEditorToggleFind")
+
+    /// 请求选择下一个查找结果
+    static let lumiEditorFindNext = Notification.Name("LumiEditorFindNext")
+
+    /// 请求选择上一个查找结果
+    static let lumiEditorFindPrevious = Notification.Name("LumiEditorFindPrevious")
+
+    /// 请求替换当前查找结果
+    static let lumiEditorReplaceCurrent = Notification.Name("LumiEditorReplaceCurrent")
+
+    /// 请求全部替换查找结果
+    static let lumiEditorReplaceAll = Notification.Name("LumiEditorReplaceAll")
+
+    /// 请求向右分栏
+    static let lumiEditorSplitRight = Notification.Name("LumiEditorSplitRight")
+
+    /// 请求向下分栏
+    static let lumiEditorSplitDown = Notification.Name("LumiEditorSplitDown")
+
+    /// 请求关闭分栏
+    static let lumiEditorCloseSplit = Notification.Name("LumiEditorCloseSplit")
+
+    /// 请求聚焦下一个编辑器分组
+    static let lumiEditorFocusNextGroup = Notification.Name("LumiEditorFocusNextGroup")
+
+    /// 请求聚焦上一个编辑器分组
+    static let lumiEditorFocusPreviousGroup = Notification.Name("LumiEditorFocusPreviousGroup")
+
+    /// 请求把当前 editor 移到下一个分组
+    static let lumiEditorMoveToNextGroup = Notification.Name("LumiEditorMoveToNextGroup")
+
+    /// 请求把当前 editor 移到上一个分组
+    static let lumiEditorMoveToPreviousGroup = Notification.Name("LumiEditorMoveToPreviousGroup")
+
     /// 请求触发补全
     static let lumiEditorTriggerCompletion = Notification.Name("LumiEditorTriggerCompletion")
 
@@ -46,5 +82,53 @@ extension NotificationCenter {
 
     static func postLumiEditorCallHierarchy() {
         NotificationCenter.default.post(name: .lumiEditorCallHierarchy, object: nil)
+    }
+
+    static func postLumiEditorToggleFind() {
+        NotificationCenter.default.post(name: .lumiEditorToggleFind, object: nil)
+    }
+
+    static func postLumiEditorFindNext() {
+        NotificationCenter.default.post(name: .lumiEditorFindNext, object: nil)
+    }
+
+    static func postLumiEditorFindPrevious() {
+        NotificationCenter.default.post(name: .lumiEditorFindPrevious, object: nil)
+    }
+
+    static func postLumiEditorReplaceCurrent() {
+        NotificationCenter.default.post(name: .lumiEditorReplaceCurrent, object: nil)
+    }
+
+    static func postLumiEditorReplaceAll() {
+        NotificationCenter.default.post(name: .lumiEditorReplaceAll, object: nil)
+    }
+
+    static func postLumiEditorSplitRight() {
+        NotificationCenter.default.post(name: .lumiEditorSplitRight, object: nil)
+    }
+
+    static func postLumiEditorSplitDown() {
+        NotificationCenter.default.post(name: .lumiEditorSplitDown, object: nil)
+    }
+
+    static func postLumiEditorCloseSplit() {
+        NotificationCenter.default.post(name: .lumiEditorCloseSplit, object: nil)
+    }
+
+    static func postLumiEditorFocusNextGroup() {
+        NotificationCenter.default.post(name: .lumiEditorFocusNextGroup, object: nil)
+    }
+
+    static func postLumiEditorFocusPreviousGroup() {
+        NotificationCenter.default.post(name: .lumiEditorFocusPreviousGroup, object: nil)
+    }
+
+    static func postLumiEditorMoveToNextGroup() {
+        NotificationCenter.default.post(name: .lumiEditorMoveToNextGroup, object: nil)
+    }
+
+    static func postLumiEditorMoveToPreviousGroup() {
+        NotificationCenter.default.post(name: .lumiEditorMoveToPreviousGroup, object: nil)
     }
 }
