@@ -225,8 +225,8 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 - [x] 定义编辑行为向 transaction 模型收敛 — `EditorTransaction` 已统一表达 replace/insert/delete/apply text edits/replace selections
 - [x] 列出现存内核问题清单 — 路线图文档"当前代码里的核心问题"章节已完成
 - [x] `Kernel/` 目录已建立，核心文本模型已落地
-- [ ] 性能基线指标（打开文件耗时、打字延迟、completion/hover/rename 延迟、大文件表现）尚无量化数据
-- [ ] 缺少性能回归自动化检测机制
+- [x] 性能基线指标 — `EditorPerformance` 已建立量化指标体系（23 种事件类型、慢速阈值、统计摘要、报告生成）
+- [ ] 性能回归自动化检测机制（CI 集成）
 
 ---
 
@@ -935,7 +935,7 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 2. ~~**Viewport 精细化**~~ — ✅ LSP 请求调度已完善，渲染管线绑定仍受限于 CodeEditSourceEditor 内部
 3. ~~**Cursor motion 语义打磨**~~ — ✅ 已完成
 4. ~~**键位可配置化**~~ — ✅ 基础设施已完成
-5. **性能基线** — Phase 0 遗留项，建立量化指标体系
+5. ~~**性能基线**~~ — ✅ `EditorPerformance` 已建立量化指标体系
 
 ### ✅ Cursor Motion 完成清单
 

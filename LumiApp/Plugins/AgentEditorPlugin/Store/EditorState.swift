@@ -1542,10 +1542,12 @@ final class EditorState: ObservableObject, SuperLog {
             level: .info,
             duration: 1.2
         )
+        let perfToken = EditorPerformance.shared.begin(.editFormat)
         let tabSize = tabWidth
         let insertSpaces = useSpaces
         guard let edits = await lspCoordinator.requestFormatting(tabSize: tabSize, insertSpaces: insertSpaces),
               !edits.isEmpty else {
+            EditorPerformance.shared.cancel(perfToken)
             showStatusToast(
                 String(localized: "No formatting changes", table: "LumiEditor"),
                 level: .warning
@@ -1553,6 +1555,7 @@ final class EditorState: ObservableObject, SuperLog {
             return
         }
         applyTextEditsToCurrentDocument(edits, reason: "lsp_format_document")
+        EditorPerformance.shared.end(perfToken)
         showStatusToast(
             String(localized: "Document formatted", table: "LumiEditor"),
             level: .success
@@ -2630,8 +2633,13 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     private func applyEditorTransaction(_ transaction: EditorTransaction, reason: String) {
-        guard let result = documentController.apply(transaction: transaction) else { return }
+        let perfToken = EditorPerformance.shared.begin(.editTransaction)
+        guard let result = documentController.apply(transaction: transaction) else {
+            EditorPerformance.shared.cancel(perfToken)
+            return
+        }
         commitDocumentEditResult(result, reason: reason)
+        EditorPerformance.shared.end(perfToken, metadata: ["reason": reason])
     }
 
     func applyBracketAutoClosingEdit(
