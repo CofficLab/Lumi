@@ -221,13 +221,10 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 
 ### ✅ Phase 0 完成清单
 
-**已完成：**
 - [x] 明确"谁是文本真相来源" — `EditorBuffer` 已成为 canonical text holder，`EditorDocumentController` 持有 buffer 并管理 NSTextStorage 桥接
 - [x] 定义编辑行为向 transaction 模型收敛 — `EditorTransaction` 已统一表达 replace/insert/delete/apply text edits/replace selections
 - [x] 列出现存内核问题清单 — 路线图文档"当前代码里的核心问题"章节已完成
 - [x] `Kernel/` 目录已建立，核心文本模型已落地
-
-**未完成：**
 - [ ] 性能基线指标（打开文件耗时、打字延迟、completion/hover/rename 延迟、大文件表现）尚无量化数据
 - [ ] 缺少性能回归自动化检测机制
 
@@ -343,7 +340,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 ### ✅ Phase 1 完成清单
 
-**已完成：**
 - [x] `Kernel/` 目录已建立
 - [x] `EditorBuffer` — 持有 canonical text + version，提供 `snapshot()`、`apply(_:)`、`replaceText(_:)`
 - [x] `EditorSnapshot` — 不可变快照（内嵌于 EditorBuffer.swift）
@@ -362,8 +358,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] 多光标 replacement 已改走 transaction（`multi_cursor_replace`）
 - [x] 多光标操作已改走 transaction（`multi_cursor_operation`）
 - [x] `EditorBufferTests` 测试已覆盖
-
-**未完成：**
 - [ ] `EditorUndoManager` — 目标架构 Layer 1 中规划，尚未独立实现，undo/redo 仍依赖原生 NSUndoManager
 - [ ] NSTextStorage 与 buffer 双写的同步风险尚未完全消除（`syncBufferFromTextStorageIfNeeded()` 作为补偿手段存在）
 - [ ] selection 映射在 format/rename 后的光标稳定性尚未有专项测试
@@ -441,7 +435,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 ### ✅ Phase 2 完成清单
 
-**已完成：**
 - [x] `EditorSelectionSet` — 内核选区 canonical state，支持 primary/secondary 选区、多光标模式判断、增删选区操作
 - [x] `EditorSelectionMapper` — TextView ↔ 内核选区双向桥接（`toCanonical`、`applyToView`、`shouldAcceptCanonicalUpdate`）
 - [x] `canonicalSelectionSet` 已在 EditorState 中作为内核选区状态持有
@@ -451,8 +444,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorSelectionSetTests` 测试已覆盖
 - [x] `EditorSelectionMapperTests` 测试已覆盖
 - [x] `MultiCursorTransactionBuilderTests` 测试已覆盖
-
-**未完成：**
 - [ ] `EditorCursorState` — 路线图原计划独立模块，实际功能已分散融入 `EditorSelectionSet`，可考虑后续整理
 - [ ] swizzle 依赖尚未完全退化 — `MultiCursorCommandsEditorPlugin` 仍依赖 `swizzleInsertText` / `swizzleDeleteBackward` 作为输入路由
 - [ ] completion / format / rename 后的选区恢复尚无专项自动测试
@@ -541,7 +532,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 ### ✅ Phase 3 完成清单
 
-**已完成：**
 - [x] `EditorSession` — 每个打开文件的独立编辑状态（fileURL、multiCursorState、panelState、isDirty、findReplaceState、scrollState、viewState）
 - [x] `EditorTab` — tab 展示单元（sessionID、fileURL、title、isDirty、isPinned）
 - [x] `EditorSessionStore` — session/tab 管理（openOrActivate、activate、close、closeOthers、goBack、goForward）
@@ -551,8 +541,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorTabStripView` 已实现 — 支持导航前进/后退、tab 选择/关闭、pin/unpin、close others、open editors 下拉菜单
 - [x] `EditorSession` 保存 cursor/scroll/find/panel 状态，切换 tab 后恢复
 - [x] `EditorSessionTests`（1144 行）、`EditorSessionStoreTests` 已覆盖
-
-**未完成：**
 - [ ] 一些面板状态可能仍是全局的（如 hover 内容、reference 结果），session-local vs global 划分可能不完全
 - [ ] 自动保存、外部文件刷新的 session 感知有待验证
 
@@ -593,7 +581,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 ### ✅ Phase 4 完成清单
 
-**已完成：**
 - [x] `EditorGroup` — 分栏组模型，管理 sessions/tabs/activeSessionID，支持 `split(_:)`、`unsplit()`、`moveSessionToOtherGroup`
 - [x] `EditorWorkbenchState` — 工作台顶层状态管理器，管理 rootGroup 树 + activeGroupID
 - [x] `EditorGroupHostStore` — Group host 状态管理
@@ -606,8 +593,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorRootView` 已接入 workbench — `@StateObject workbench`，`splitEditor()`、`unsplitEditor()` 方法，split 后 HSplitView/VSplitView 布局
 - [x] Split 后在新分栏中复制当前活跃 session（VS Code 风格）
 - [x] Workbench 命令已注册 — split-right、split-down、close-split、focus-next/previous-group、move-to-next/previous-group
-
-**未完成：**
 - [x] 多 EditorState 实例 — split 后每个 leaf group 持有独立的 `EditorState`，可独立加载文件、编辑、保存
 - [x] split 后的非活跃 group 完整编辑 — `EditorGroupHostView` 移除 `.allowsHitTesting(false)`，统一使用 hosted state 架构
 
@@ -677,7 +662,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 ### ✅ Phase 5 完成清单
 
-**已完成：**
 - [x] `CommandRegistry` — 中央命令注册中心，支持 register/execute/availableCommands(context-based enablement)
 - [x] `CommandRouter` — 新旧命令体系双向桥接（`registerSuggestions`、`suggestionsFromRegistry`、`execute`）
 - [x] `CoreCommandRegistrations` — 所有计划命令已注册（共 35 个命令，覆盖全部 9 个分类）
@@ -688,8 +672,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `CommandContext` — 上下文感知的命令启用状态（hasSelection、languageId、isEditorActive、isMultiCursor）
 - [x] `EditorCommandBindings` — 快捷键绑定映射
 - [x] `EditorCommandPaletteTests` 测试已覆盖
-
-**未完成：**
 - [ ] 键位可配置化 — 用户自定义快捷键映射（在"后续方向"中）
 - [ ] toolbar / context menu 是否已完全走 command id 需逐一验证
 
@@ -726,7 +708,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 ### ✅ Phase 6 完成清单
 
-**已完成：**
 - [x] `RequestGeneration` — 请求代际跟踪器（`next()`、`isCurrent(_:)`、`invalidate()`、`reset()`）
 - [x] `CancellationContext` — 异步请求取消令牌（`cancel()`、`isCancelled`）
 - [x] `LSPRequestLifecycle` — 统一请求生命周期包装器（`run(operation:apply:)`、`invalidate()`、`reset()`）
@@ -747,8 +728,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] LSPCoordinator — 已使用 `RequestGeneration`（`fileSessionGeneration` + `requestGeneration`）
 - [x] `RequestGenerationTests` 测试已覆盖
 - [x] `LSPDebouncerTests` 测试已覆盖
-
-**未完成：**
 - [ ] SemanticTokenHighlightProvider — 未找到独立的 Provider 文件（可能内嵌在其他模块中），需确认是否已迁移
 - [ ] 文档版本感知 — LSP 管线尚未与 `EditorBuffer.version` 对齐，目前使用 `RequestGeneration` 而非 buffer version
 - [ ] viewport/cursor 敏感刷新 — 部分管线已通过 debouncer 实现，但尚未系统化
@@ -776,7 +755,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 ### ✅ Phase 7 完成清单
 
-**已完成：**
 - [x] `EditorFindReplaceState` — 查找状态模型（findText、replaceText、options、resultCount、selectedMatchIndex、selectedMatchRange）
 - [x] `EditorFindReplaceOptions` — 查找选项（regex、caseSensitive、wholeWord、inSelection）
 - [x] `EditorFindReplaceController` — 查找匹配引擎（正则匹配、next/previous 导航、selectedMatchIndex 计算逻辑）
@@ -787,8 +765,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] per-session 保存查找状态 — `EditorSession.findReplaceState` 为每个 session 独立持有
 - [x] Find/Replace 命令已注册 — find、find-next、find-previous、replace-current、replace-all
 - [x] `EditorFindReplaceControllerTests`、`EditorFindReplaceTransactionBuilderTests` 测试已覆盖
-
-**未完成：**
 - [ ] preserve case 替换选项
 - [ ] 与 multi-cursor selection 联动的 in-selection 查找需进一步验证
 
@@ -824,7 +800,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 ### ✅ Phase 8 完成清单
 
-**已完成：**
 - [x] `LargeFileMode` — 文件大小分级（normal / medium / large / mega），带阈值常量
 - [x] `LongLineDetector` — 长行检测器，检测超长行（>10,000 字符）
 - [x] `ViewportRenderController` — Viewport 渲染控制器（visibleStartLine/EndLine、bufferSize、shouldDebounceUpdate）
@@ -834,11 +809,10 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] 长行保护 — `isLongLineProtectionEnabled` 在 large/mega 模式启用
 - [x] `ViewportRenderController` 已在 `EditorState` 中实例化
 - [x] `LargeFileModeTests` 测试已覆盖（191 行）
-
-**未完成：**
-- [ ] Inlay viewport 调度 — viewport 变化驱动 inlay hint 请求调度尚未实现
-- [ ] 截断安全 — 大文件截断预览尚未实现
-- [ ] ViewportRenderController 与实际渲染的绑定尚未完全实现（控制器存在但可能未驱动实际渲染）
+- [x] `LSPViewportScheduler` — 滚动节流管线（inlay hints/diagnostics/code actions 独立 debounce，500ms/300ms/400ms）
+- [x] Inlay viewport 调度 — `applyViewportObservation` 通过 `LSPViewportScheduler` 触发可见区域请求
+- [ ] 截断安全 — 大文件截断预览尚未实现（当前 `>2MB` 直接截断为 `256KB` 预览，缺少按需加载机制）
+- [ ] ViewportRenderController 与实际渲染的绑定尚未完全实现（CodeEditSourceEditor 内部渲染管线不受其控制）
 
 ---
 
@@ -880,7 +854,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 ### ✅ Phase 9 完成清单
 
-**已完成：**
 - [x] `EditorSaveParticipantController` — 保存前自动执行 trim trailing whitespace + insert final newline
 - [x] `EditorSavePipelineController` — 保存管线控制器（textParticipants → formatOnSave → deferredActions）
 - [x] format on save — 可配置，通过 `EditorSavePipelineOptions.formatOnSave` 控制
@@ -895,8 +868,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] Tab indent / Backtab outdent — `SmartIndentHandler.handleTab` / `handleBacktab`
 - [x] Line editing commands — 全部 11 个行编辑命令通过 `performLineEdit(_:)` 接入 EditorState
 - [x] `BracketAndIndentTests`（280 行）、`LineEditingControllerTests`（247 行）、`EditorSaveParticipantControllerTests`、`EditorSavePipelineControllerTests` 测试已覆盖
-
-**未完成：**
 - [ ] Bracket match overlay — 括号匹配高亮的 UI 层渲染（内核计算已有，UI 层需验证）
 - [ ] 外部文件修改冲突处理
 - [ ] BracketAndIndent 与实际 TextView 输入的集成（目前为内核模型，需确认接入程度）
@@ -960,10 +931,11 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 ## 后续方向
 
-1. **多 EditorState 实例** — split editor 需要支持多实例才能让 split 真正可用
-2. **Viewport 精细化** — `ViewportRenderController` 驱动更细粒度的按需渲染和 LSP viewport 刷新
+1. ~~**多 EditorState 实例**~~ — ✅ 已完成（Phase 4）
+2. ~~**Viewport 精细化**~~ — ✅ LSP 请求调度已完善，渲染管线绑定仍受限于 CodeEditSourceEditor 内部
 3. **Cursor motion 语义打磨** — VS Code 级别的 word navigation、line boundary、smart home
 4. **键位可配置化** — 用户自定义快捷键映射
+5. **性能基线** — Phase 0 遗留项，建立量化指标体系
 
 ## 最终结论
 

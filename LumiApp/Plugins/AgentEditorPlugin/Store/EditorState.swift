@@ -78,6 +78,8 @@ final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var viewportVisibleLineRange: Range<Int> = 0..<0
     @Published private(set) var viewportRenderLineRange: Range<Int> = 0..<0
     let viewportRenderController = ViewportRenderController()
+    /// LSP viewport 调度器（inlay hints、diagnostics 等）
+    let lspViewportScheduler = LSPViewportScheduler()
 
     var onActiveSessionChanged: ((EditorSession) -> Void)?
 
@@ -1105,11 +1107,39 @@ final class EditorState: ObservableObject, SuperLog {
         viewportVisibleLineRange = clampedStart..<clampedEnd
         viewportRenderLineRange = viewportRenderController.renderStartLine..<viewportRenderController.renderEndLine
 
+        // 记录 viewport 变更，供 LSPViewportScheduler 判断是否变化显著
+        lspViewportScheduler.recordViewport(startLine: clampedStart, endLine: clampedEnd)
+
         if areInlayHintsEnabledInViewport {
-            scheduleInlayHintsRefreshIfNeeded(textView: focusedTextView)
+            // 使用 LSPViewportScheduler 做滚动节流，替代原有的 inline Task debounce
+            lspViewportScheduler.scheduleInlayHints { [weak self] in
+                guard let self else { return }
+                self.requestInlayHintsForVisibleRange()
+            }
         } else {
             inlayHintRefreshTask?.cancel()
             inlayHintProvider.clear()
+        }
+    }
+
+    /// 对可见区域发起 inlay hint 请求（由 LSPViewportScheduler 调度后调用）
+    private func requestInlayHintsForVisibleRange() {
+        guard lspService.supportsInlayHints else { return }
+        guard areInlayHintsEnabledInViewport else {
+            inlayHintProvider.clear()
+            return
+        }
+        guard let uri = currentFileURL?.absoluteString else { return }
+        guard let tv = focusedTextView else { return }
+        guard let range = EditorInlayHintLayout.visibleDocumentLSPRange(in: tv) else { return }
+        Task { @MainActor in
+            await self.inlayHintProvider.requestHints(
+                uri: uri,
+                startLine: range.start.line,
+                startCharacter: range.start.character,
+                endLine: range.end.line,
+                endCharacter: range.end.character
+            )
         }
     }
 
@@ -1117,6 +1147,7 @@ final class EditorState: ObservableObject, SuperLog {
         viewportRenderController.updateVisibleRange(startLine: 0, endLine: 0, totalLines: max(0, totalLines))
         viewportVisibleLineRange = 0..<0
         viewportRenderLineRange = 0..<0
+        lspViewportScheduler.cancelAll()
     }
 
     private func applyInteractionUpdate(_ update: EditorInteractionUpdate) {
