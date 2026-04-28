@@ -933,9 +933,24 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 1. ~~**多 EditorState 实例**~~ — ✅ 已完成（Phase 4）
 2. ~~**Viewport 精细化**~~ — ✅ LSP 请求调度已完善，渲染管线绑定仍受限于 CodeEditSourceEditor 内部
-3. **Cursor motion 语义打磨** — VS Code 级别的 word navigation、line boundary、smart home
+3. ~~**Cursor motion 语义打磨**~~ — ✅ 已完成
 4. **键位可配置化** — 用户自定义快捷键映射
 5. **性能基线** — Phase 0 遗留项，建立量化指标体系
+
+### ✅ Cursor Motion 完成清单
+
+- [x] `CursorMotionController` — 纯函数光标移动控制器，VS Code 风格的 word boundary 定义
+- [x] `moveWordLeft` / `moveWordRight` — 单词级移动（空格→标点→标识符 三段式分割）
+- [x] `deleteWordLeft` / `deleteWordRight` — 单词级删除（走 transaction 模型）
+- [x] `moveToBeginningOfLine` / `moveToEndOfLine` — 行首/行尾移动
+- [x] `smartHome` — 智能 Home 键（行首 ↔ 内容起始 交替）
+- [x] `moveUp` / `moveDown` — 上下行移动（保持列位置）
+- [x] `moveToDocumentStart` / `moveToDocumentEnd` — 文档首尾
+- [x] `moveParagraphBackward` / `moveParagraphForward` — 段落级移动（空行分隔）
+- [x] Select 变体 — `wordLeftSelect`、`wordRightSelect`、`smartHomeSelect`、`lineEndSelect`
+- [x] `EditorState.performCursorMotion(_:)` — 14 种光标移动命令统一入口
+- [x] 命令已注册 — 14 个 cursor motion 命令（navigation + edit 分类）
+- [x] `CursorMotionControllerTests` 测试已覆盖（36 个测试用例，含 Unicode、CRLF、空字符串等边界场景）
 
 ## 最终结论
 

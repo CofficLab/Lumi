@@ -2774,6 +2774,149 @@ final class EditorState: ObservableObject, SuperLog {
         }
     }
 
+    // MARK: - Cursor Motion
+
+    /// 光标移动命令类型
+    enum CursorMotionKind {
+        case wordLeft
+        case wordRight
+        case wordLeftSelect
+        case wordRightSelect
+        case smartHome
+        case smartHomeSelect
+        case lineEnd
+        case lineEndSelect
+        case documentStart
+        case documentEnd
+        case deleteWordLeft
+        case deleteWordRight
+        case paragraphBackward
+        case paragraphForward
+    }
+
+    /// 执行光标移动命令
+    func performCursorMotion(_ kind: CursorMotionKind) {
+        guard let text = content?.string else { return }
+        guard let textView = focusedTextView else { return }
+
+        let currentLocation = textView.selectionManager.textSelections.first?.range.location ?? 0
+        let currentRange = textView.selectionManager.textSelections.first?.range
+            ?? NSRange(location: 0, length: 0)
+
+        switch kind {
+        case .wordLeft:
+            let target = CursorMotionController.moveWordLeft(location: currentLocation, text: text)
+            applyCursorMotionTarget(target, textView: textView)
+
+        case .wordRight:
+            let target = CursorMotionController.moveWordRight(location: currentLocation, text: text)
+            applyCursorMotionTarget(target, textView: textView)
+
+        case .wordLeftSelect:
+            let target = CursorMotionController.moveWordLeft(location: currentLocation, text: text)
+            let anchor = currentRange.location
+            let newRange = NSRange(
+                location: min(anchor, target.location),
+                length: abs(target.location - anchor)
+            )
+            textView.selectionManager.setSelectedRanges([newRange])
+
+        case .wordRightSelect:
+            let target = CursorMotionController.moveWordRight(location: currentLocation, text: text)
+            let anchor = currentRange.location
+            let newRange = NSRange(
+                location: min(anchor, target.location),
+                length: abs(target.location - anchor)
+            )
+            textView.selectionManager.setSelectedRanges([newRange])
+
+        case .smartHome:
+            let target = CursorMotionController.smartHome(location: currentLocation, text: text)
+            applyCursorMotionTarget(target, textView: textView)
+
+        case .smartHomeSelect:
+            let target = CursorMotionController.smartHome(location: currentLocation, text: text)
+            let anchor = currentRange.location
+            let newRange = NSRange(
+                location: min(anchor, target.location),
+                length: abs(target.location - anchor)
+            )
+            textView.selectionManager.setSelectedRanges([newRange])
+
+        case .lineEnd:
+            let target = CursorMotionController.moveToEndOfLine(location: currentLocation, text: text)
+            applyCursorMotionTarget(target, textView: textView)
+
+        case .lineEndSelect:
+            let target = CursorMotionController.moveToEndOfLine(location: currentLocation, text: text)
+            let anchor = currentRange.location
+            let newRange = NSRange(
+                location: min(anchor, target.location),
+                length: abs(target.location - anchor)
+            )
+            textView.selectionManager.setSelectedRanges([newRange])
+
+        case .documentStart:
+            let target = CursorMotionController.moveToDocumentStart()
+            applyCursorMotionTarget(target, textView: textView)
+
+        case .documentEnd:
+            let target = CursorMotionController.moveToDocumentEnd(text: text)
+            applyCursorMotionTarget(target, textView: textView)
+
+        case .deleteWordLeft:
+            let target = CursorMotionController.deleteWordLeft(location: currentLocation, text: text)
+            if let deleteRange = target.selectionRange {
+                let transaction = EditorTransaction(
+                    replacements: [
+                        .init(
+                            range: EditorRange(location: deleteRange.location, length: deleteRange.length),
+                            text: ""
+                        )
+                    ],
+                    updatedSelections: [EditorSelection(range: EditorRange(location: target.location, length: 0))]
+                )
+                applyEditorTransaction(transaction, reason: "delete_word_left")
+                textView.selectionManager.setSelectedRanges(
+                    currentSelectionsAsNSRanges()
+                )
+            }
+
+        case .deleteWordRight:
+            let target = CursorMotionController.deleteWordRight(location: currentLocation, text: text)
+            if let deleteRange = target.selectionRange {
+                let transaction = EditorTransaction(
+                    replacements: [
+                        .init(
+                            range: EditorRange(location: deleteRange.location, length: deleteRange.length),
+                            text: ""
+                        )
+                    ],
+                    updatedSelections: [EditorSelection(range: EditorRange(location: currentLocation, length: 0))]
+                )
+                applyEditorTransaction(transaction, reason: "delete_word_right")
+                textView.selectionManager.setSelectedRanges(
+                    currentSelectionsAsNSRanges()
+                )
+            }
+
+        case .paragraphBackward:
+            let target = CursorMotionController.moveParagraphBackward(location: currentLocation, text: text)
+            applyCursorMotionTarget(target, textView: textView)
+
+        case .paragraphForward:
+            let target = CursorMotionController.moveParagraphForward(location: currentLocation, text: text)
+            applyCursorMotionTarget(target, textView: textView)
+        }
+    }
+
+    /// 应用光标移动目标到 TextView
+    private func applyCursorMotionTarget(_ target: CursorMotionTarget, textView: TextView) {
+        textView.selectionManager.setSelectedRanges([
+            NSRange(location: target.location, length: 0)
+        ])
+    }
+
     private func applyInputEdit(
         replacementRange: NSRange,
         replacementText: String,

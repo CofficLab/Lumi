@@ -19,6 +19,7 @@ enum CoreCommandRegistrations {
         registerLSPActionCommands(state: state)
         registerSaveCommands(state: state)
         registerLineEditingCommands(state: state)
+        registerCursorMotionCommands(state: state)
     }
 
     // MARK: - Format
@@ -455,6 +456,150 @@ enum CoreCommandRegistrations {
             order: 1000
         ) {
             state.performLineEdit(.transpose)
+        })
+    }
+
+    // MARK: - Cursor Motion
+
+    private static func registerCursorMotionCommands(state: EditorState) {
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-word-left",
+            title: String(localized: "Cursor Word Left", table: "LumiEditor"),
+            icon: "arrow.left",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 550
+        ) {
+            state.performCursorMotion(.wordLeft)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-word-right",
+            title: String(localized: "Cursor Word Right", table: "LumiEditor"),
+            icon: "arrow.right",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 560
+        ) {
+            state.performCursorMotion(.wordRight)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-word-left-select",
+            title: String(localized: "Cursor Word Left Select", table: "LumiEditor"),
+            icon: "arrow.left.square",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 570
+        ) {
+            state.performCursorMotion(.wordLeftSelect)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-word-right-select",
+            title: String(localized: "Cursor Word Right Select", table: "LumiEditor"),
+            icon: "arrow.right.square",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 580
+        ) {
+            state.performCursorMotion(.wordRightSelect)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-smart-home",
+            title: String(localized: "Cursor Smart Home", table: "LumiEditor"),
+            icon: "arrow.left.to.line",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 590
+        ) {
+            state.performCursorMotion(.smartHome)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-smart-home-select",
+            title: String(localized: "Cursor Smart Home Select", table: "LumiEditor"),
+            icon: "arrow.left.to.line.compact",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 595
+        ) {
+            state.performCursorMotion(.smartHomeSelect)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-line-end",
+            title: String(localized: "Cursor Line End", table: "LumiEditor"),
+            icon: "arrow.right.to.line",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 596
+        ) {
+            state.performCursorMotion(.lineEnd)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-line-end-select",
+            title: String(localized: "Cursor Line End Select", table: "LumiEditor"),
+            icon: "arrow.right.to.line.compact",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 597
+        ) {
+            state.performCursorMotion(.lineEndSelect)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-document-start",
+            title: String(localized: "Cursor Document Start", table: "LumiEditor"),
+            icon: "arrow.up.to.line",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 598
+        ) {
+            state.performCursorMotion(.documentStart)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-document-end",
+            title: String(localized: "Cursor Document End", table: "LumiEditor"),
+            icon: "arrow.down.to.line",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 599
+        ) {
+            state.performCursorMotion(.documentEnd)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.delete-word-left",
+            title: String(localized: "Delete Word Left", table: "LumiEditor"),
+            icon: "delete.left",
+            category: EditorCommandCategory.edit.rawValue,
+            order: 1010
+        ) {
+            state.performCursorMotion(.deleteWordLeft)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.delete-word-right",
+            title: String(localized: "Delete Word Right", table: "LumiEditor"),
+            icon: "delete.right",
+            category: EditorCommandCategory.edit.rawValue,
+            order: 1020
+        ) {
+            state.performCursorMotion(.deleteWordRight)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-paragraph-backward",
+            title: String(localized: "Cursor Paragraph Backward", table: "LumiEditor"),
+            icon: "arrow.up.square",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 601
+        ) {
+            state.performCursorMotion(.paragraphBackward)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.cursor-paragraph-forward",
+            title: String(localized: "Cursor Paragraph Forward", table: "LumiEditor"),
+            icon: "arrow.down.square",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 602
+        ) {
+            state.performCursorMotion(.paragraphForward)
         })
     }
 }
