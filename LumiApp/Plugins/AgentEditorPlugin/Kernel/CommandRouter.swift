@@ -25,7 +25,9 @@ enum CommandRouter {
                 id: suggestion.id,
                 title: suggestion.title,
                 icon: suggestion.systemImage,
+                shortcut: suggestion.shortcut,
                 category: category,
+                order: suggestion.order,
                 enablement: CommandEnablement.custom { _ in suggestion.isEnabled },
                 handler: suggestion.action
             )
@@ -71,7 +73,9 @@ enum CommandRouter {
                 id: command.id,
                 title: command.title,
                 systemImage: command.icon ?? "command",
-                order: 0,
+                category: command.category,
+                shortcut: command.shortcut,
+                order: command.order,
                 isEnabled: command.isEnabled(in: context)
             ) {
                 command.handler()

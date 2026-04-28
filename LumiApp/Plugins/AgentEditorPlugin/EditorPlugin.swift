@@ -1,20 +1,22 @@
+import Combine
 import Foundation
+import MagicKit
 import SwiftUI
 import os
-import MagicKit
-import Combine
 
 /// Editor Plugin: 代码编辑器 + 文件树
 actor EditorPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
 
     nonisolated static let emoji = "✏️"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "LumiEditor"
     static let displayName: String = String(localized: "Code Editor", table: "LumiEditor")
-    static let description: String = String(localized: "Code editor with file tree", table: "LumiEditor")
+    static let description: String = String(
+        localized: "Code editor with file tree", table: "LumiEditor")
     static let iconName: String = "chevron.left.forwardslash.chevron.right"
     static var isConfigurable: Bool { false }
     static var order: Int { 77 }
@@ -25,7 +27,8 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 包裹 RootView：确保文件选中监听、编辑器初始化生效
-    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView?
+    where Content: View {
         AnyView(
             EditorRootOverlay(
                 content: content()

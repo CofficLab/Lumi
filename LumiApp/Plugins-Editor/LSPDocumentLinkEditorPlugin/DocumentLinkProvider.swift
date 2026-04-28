@@ -7,6 +7,7 @@ import LanguageServerProtocol
 final class DocumentLinkProvider: ObservableObject {
     
     private let lspService: LSPService
+    private let requestLifecycle = LSPRequestLifecycle()
 
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
@@ -17,15 +18,22 @@ final class DocumentLinkProvider: ObservableObject {
     var isAvailable: Bool { lspService.isAvailable }
     
     func requestLinks(uri: String) async {
-        let serverLinks = await lspService.requestDocumentLinks(uri: uri)
-        links = serverLinks.map { serverLink in
-            EditorDocumentLink(
-                range: serverLink.range,
-                target: serverLink.target,
-                tooltip: serverLink.tooltip,
-                data: serverLink.data
-            )
-        }
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestDocumentLinks(uri: uri)
+            },
+            apply: { [weak self] serverLinks in
+                guard let self else { return }
+                links = serverLinks.map { serverLink in
+                    EditorDocumentLink(
+                        range: serverLink.range,
+                        target: serverLink.target,
+                        tooltip: serverLink.tooltip,
+                        data: serverLink.data
+                    )
+                }
+            }
+        )
     }
     
     func resolveLink(_ link: inout EditorDocumentLink) async {
@@ -39,7 +47,14 @@ final class DocumentLinkProvider: ObservableObject {
         }
     }
     
-    func clear() { links.removeAll() }
+    func clear() {
+        requestLifecycle.reset()
+        links.removeAll()
+    }
+
+    func reset() {
+        requestLifecycle.reset()
+    }
     
     func linkAtPosition(line: Int, character: Int) -> EditorDocumentLink? {
         let position = Position(line: line, character: character)

@@ -472,11 +472,6 @@ final class ContextMenuHelper: NSObject {
 
         currentTargets.removeAll()
 
-        // 插入分隔符到顶部
-        let topSeparator = NSMenuItem.separator()
-        topSeparator.tag = injectedSeparatorTag
-        menu.insertItem(topSeparator, at: 0)
-
         // 从插件注册中心获取所有命令（包括多光标、Chat 集成、LSP 命令等）
         let (line, character) = Self.cursorLSPLineCharacter(textView: textView, state: state)
         let hasSelection = textView.selectionManager.textSelections.contains { !$0.range.isEmpty }
@@ -486,38 +481,77 @@ final class ContextMenuHelper: NSObject {
             line: line,
             character: character
         )
-        let pluginCommands = state.editorExtensions.commandSuggestions(
+        let presentationModel = state.editorCommandPresentationModel(
             for: commandContext,
-            state: state,
-            textView: textView
+            textView: textView,
+            categories: EditorCommandCategoryScope.editorContextMenu
         )
-        for command in pluginCommands.reversed() {
-            let commandItem = buildInjectedItem(
-                title: command.title,
-                image: command.systemImage,
-                action: command.action
-            )
-            commandItem.isEnabled = command.isEnabled
-            menu.insertItem(commandItem, at: 0)
+        guard !presentationModel.flattenedCommands.isEmpty else { return }
+
+        // 插入分隔符到顶部
+        let topSeparator = NSMenuItem.separator()
+        topSeparator.tag = injectedSeparatorTag
+        menu.insertItem(topSeparator, at: 0)
+
+        var insertIndex = 0
+
+        if !presentationModel.recentCommands.isEmpty {
+            menu.insertItem(buildSectionHeader(title: "Recently Used"), at: insertIndex)
+            insertIndex += 1
+            for command in presentationModel.recentCommands {
+                menu.insertItem(buildInjectedItem(for: command, state: state), at: insertIndex)
+                insertIndex += 1
+            }
+            let separator = NSMenuItem.separator()
+            separator.tag = injectedSeparatorTag
+            menu.insertItem(separator, at: insertIndex)
+            insertIndex += 1
         }
+
+        for (sectionIndex, section) in presentationModel.sections.enumerated() {
+            menu.insertItem(buildSectionHeader(title: section.title), at: insertIndex)
+            insertIndex += 1
+            for command in section.commands {
+                menu.insertItem(buildInjectedItem(for: command, state: state), at: insertIndex)
+                insertIndex += 1
+            }
+            if sectionIndex < presentationModel.sections.count - 1 {
+                let separator = NSMenuItem.separator()
+                separator.tag = injectedSeparatorTag
+                menu.insertItem(separator, at: insertIndex)
+                insertIndex += 1
+            }
+        }
+
+        // AppKit 的 NSMenu 没有公开的宽度控制 API，这里保留默认布局，
+        // 避免依赖不存在的属性导致编译失败。
     }
 
     private func buildInjectedItem(
-        title: String,
-        image: String,
-        action: @escaping () -> Void
+        for command: EditorCommandSuggestion,
+        state: EditorState
     ) -> NSMenuItem {
-        let target = ContextMenuTarget(action: action)
+        let target = ContextMenuTarget(action: {
+            state.performEditorCommand(id: command.id)
+        })
         currentTargets.append(target)
 
         let item = NSMenuItem(
-            title: title,
+            title: command.title,
             action: #selector(ContextMenuTarget.addToChatClicked),
             keyEquivalent: ""
         )
         item.target = target
         item.tag = injectedItemTag
-        item.image = NSImage(systemSymbolName: image, accessibilityDescription: nil)
+        item.image = NSImage(systemSymbolName: command.systemImage, accessibilityDescription: nil)
+        item.isEnabled = command.isEnabled
+        return item
+    }
+
+    private func buildSectionHeader(title: String) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.tag = injectedItemTag
+        item.isEnabled = false
         return item
     }
 

@@ -9,6 +9,7 @@ import LanguageServerProtocol
 final class InlayHintProvider: ObservableObject {
     
     private let lspService: LSPService
+    private let requestLifecycle = LSPRequestLifecycle()
 
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
@@ -24,37 +25,53 @@ final class InlayHintProvider: ObservableObject {
     
     /// 请求可见区域的 inlay hints
     func requestHints(uri: String, startLine: Int, startCharacter: Int, endLine: Int, endCharacter: Int) async {
-        let newHints = await lspService.requestInlayHint(
-            uri: uri,
-            startLine: startLine,
-            startCharacter: startCharacter,
-            endLine: endLine,
-            endCharacter: endCharacter
-        ) ?? []
-        
-        hints = newHints.compactMap { hint in
-            let text = formatLabel(hint.label)
-            guard !text.isEmpty else { return nil }
-            return InlayHintItem(
-                line: Int(hint.position.line),
-                character: Int(hint.position.character),
-                text: text,
-                kind: hint.kind,
-                tooltip: extractTooltip(from: hint.tooltip),
-                paddingLeft: hint.paddingLeft == true,
-                paddingRight: hint.paddingRight == true
-            )
-        }
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestInlayHint(
+                    uri: uri,
+                    startLine: startLine,
+                    startCharacter: startCharacter,
+                    endLine: endLine,
+                    endCharacter: endCharacter
+                ) ?? []
+            },
+            apply: { [weak self] newHints in
+                guard let self else { return }
+                hints = newHints.compactMap { hint in
+                    let text = formatLabel(hint.label)
+                    guard !text.isEmpty else { return nil }
+                    return InlayHintItem(
+                        line: Int(hint.position.line),
+                        character: Int(hint.position.character),
+                        text: text,
+                        kind: hint.kind,
+                        tooltip: extractTooltip(from: hint.tooltip),
+                        paddingLeft: hint.paddingLeft == true,
+                        paddingRight: hint.paddingRight == true
+                    )
+                }
+            }
+        )
     }
-    
+
+    /// 重置请求生命周期（切文件或主动清理时）
+    func reset() {
+        requestLifecycle.reset()
+    }
+
+    /// 清除所有 hints
+    func clear() {
+        requestLifecycle.reset()
+        hints.removeAll()
+    }
+
+    deinit {
+        requestLifecycle.reset()
+    }
+
     /// 请求完整文档范围的 hints（当可见区域不可用时）
     func requestFullDocumentHints(uri: String, lineCount: Int) async {
         await requestHints(uri: uri, startLine: 0, startCharacter: 0, endLine: lineCount, endCharacter: 0)
-    }
-    
-    /// 清除所有 hints
-    func clear() {
-        hints.removeAll()
     }
     
     // MARK: - Helpers

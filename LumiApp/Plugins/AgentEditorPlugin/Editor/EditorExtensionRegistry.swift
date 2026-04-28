@@ -290,11 +290,7 @@ final class EditorExtensionRegistry: ObservableObject {
     private func deduplicateCommands(_ suggestions: [EditorCommandSuggestion]) -> [EditorCommandSuggestion] {
         var seen: Set<String> = []
         var result: [EditorCommandSuggestion] = []
-
-        let sorted = suggestions.sorted { lhs, rhs in
-            if lhs.order != rhs.order { return lhs.order < rhs.order }
-            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
-        }
+        let sorted = suggestions.sortedForCommandPresentation()
 
         for item in sorted {
             let key = item.id.lowercased()

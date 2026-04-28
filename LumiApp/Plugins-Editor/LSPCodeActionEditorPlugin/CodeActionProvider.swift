@@ -10,6 +10,7 @@ import AppKit
 final class CodeActionProvider: ObservableObject {
 
     private let lspService: LSPService
+    private let requestLifecycle = LSPRequestLifecycle()
     weak var editorExtensionRegistry: EditorExtensionRegistry?
 
     init(lspService: LSPService = .shared) {
@@ -31,21 +32,17 @@ final class CodeActionProvider: ObservableObject {
         }
 
         isLoading = true
-        let codeActions = await lspService.requestCodeAction(uri: uri, range: range, diagnostics: diagnostics)
-        isLoading = false
-
-        actions = codeActions.compactMap { action -> CodeActionItem? in
-            guard action.disabled == nil else { return nil }
-            return CodeActionItem(
-                title: action.title,
-                kind: action.kind ?? "",
-                payload: .lsp(action),
-                isPreferred: action.isPreferred == true
-            )
-        }
-        actions = sortCodeActionItems(actions)
-
-        isVisible = !actions.isEmpty
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestCodeAction(uri: uri, range: range, diagnostics: diagnostics)
+            },
+            apply: { [weak self] codeActions in
+                guard let self else { return }
+                isLoading = false
+                actions = sortCodeActionItems(codeActions.compactMap(Self.codeActionItem(from:)))
+                isVisible = !actions.isEmpty
+            }
+        )
     }
 
     /// 请求针对某一行诊断的代码动作
@@ -59,27 +56,6 @@ final class CodeActionProvider: ObservableObject {
     ) async {
         let lineDiagnostics = diagnostics.filter { diag in
             Int(diag.range.start.line) <= line && Int(diag.range.end.line) >= line
-        }
-
-        var lspItems: [CodeActionItem] = []
-        if !lineDiagnostics.isEmpty, let firstDiag = lineDiagnostics.first {
-            isLoading = true
-            let codeActions = await lspService.requestCodeAction(
-                uri: uri,
-                range: firstDiag.range,
-                diagnostics: lineDiagnostics
-            )
-            isLoading = false
-
-            lspItems = codeActions.compactMap { action -> CodeActionItem? in
-                guard action.disabled == nil else { return nil }
-                return CodeActionItem(
-                    title: action.title,
-                    kind: action.kind ?? "",
-                    payload: .lsp(action),
-                    isPreferred: action.isPreferred == true
-                )
-            }
         }
 
         let pluginContext = EditorCodeActionContext(
@@ -98,9 +74,33 @@ final class CodeActionProvider: ObservableObject {
             )
         }
 
-        let merged = sortCodeActionItems(lspItems + pluginItems)
-        actions = merged
-        isVisible = !merged.isEmpty
+        guard !lineDiagnostics.isEmpty, let firstDiag = lineDiagnostics.first else {
+            requestLifecycle.reset()
+            isLoading = false
+            let merged = sortCodeActionItems(pluginItems)
+            actions = merged
+            isVisible = !merged.isEmpty
+            return
+        }
+
+        isLoading = true
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestCodeAction(
+                    uri: uri,
+                    range: firstDiag.range,
+                    diagnostics: lineDiagnostics
+                )
+            },
+            apply: { [weak self] codeActions in
+                guard let self else { return }
+                isLoading = false
+                let lspItems = codeActions.compactMap(Self.codeActionItem(from:))
+                let merged = sortCodeActionItems(lspItems + pluginItems)
+                actions = merged
+                isVisible = !merged.isEmpty
+            }
+        )
     }
 
     /// 执行代码动作（解析 lazy `edit`、应用 `WorkspaceEdit`、执行 `workspace/executeCommand`）
@@ -174,8 +174,14 @@ final class CodeActionProvider: ObservableObject {
 
     /// 清除
     func clear() {
+        requestLifecycle.reset()
         actions.removeAll()
+        isLoading = false
         isVisible = false
+    }
+
+    func reset() {
+        requestLifecycle.reset()
     }
 
     private func sortCodeActionItems(_ items: [CodeActionItem]) -> [CodeActionItem] {
@@ -183,6 +189,16 @@ final class CodeActionProvider: ObservableObject {
             if a.isPreferred != b.isPreferred { return a.isPreferred }
             return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
         }
+    }
+
+    private static func codeActionItem(from action: CodeAction) -> CodeActionItem? {
+        guard action.disabled == nil else { return nil }
+        return CodeActionItem(
+            title: action.title,
+            kind: action.kind ?? "",
+            payload: .lsp(action),
+            isPreferred: action.isPreferred == true
+        )
     }
 
     private func performPluginAction(

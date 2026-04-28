@@ -6,6 +6,7 @@ import LanguageServerProtocol
 final class SelectionRangeProvider: ObservableObject {
     
     private let lspService: LSPService
+    private let requestLifecycle = LSPRequestLifecycle()
 
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
@@ -17,14 +18,21 @@ final class SelectionRangeProvider: ObservableObject {
     var isAvailable: Bool { lspService.isAvailable }
     
     func requestSelectionRanges(uri: String, line: Int, character: Int) async {
-        let serverRanges = await lspService.requestSelectionRange(uri: uri, line: line, character: character)
-        guard let root = serverRanges.first else {
-            rangeChain = []
-            currentLevel = -1
-            return
-        }
-        rangeChain = flattenSelectionRange(root)
-        currentLevel = rangeChain.isEmpty ? -1 : 0
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestSelectionRange(uri: uri, line: line, character: character)
+            },
+            apply: { [weak self] serverRanges in
+                guard let self else { return }
+                guard let root = serverRanges.first else {
+                    rangeChain = []
+                    currentLevel = -1
+                    return
+                }
+                rangeChain = flattenSelectionRange(root)
+                currentLevel = rangeChain.isEmpty ? -1 : 0
+            }
+        )
     }
     
     func expandSelection() -> EditorSelectionRange? {
@@ -40,6 +48,7 @@ final class SelectionRangeProvider: ObservableObject {
     }
     
     func reset() {
+        requestLifecycle.reset()
         rangeChain = []
         currentLevel = -1
     }

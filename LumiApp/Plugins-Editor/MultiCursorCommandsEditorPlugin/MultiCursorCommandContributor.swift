@@ -17,6 +17,7 @@ final class MultiCursorCommandContributor: EditorCommandContributor {
                 id: "builtin.add-next-occurrence",
                 title: String(localized: "Add Next Occurrence", table: "LumiEditor"),
                 systemImage: "plus.magnifyingglass",
+                category: EditorCommandCategory.multiCursor.rawValue,
                 order: 51,
                 isEnabled: hasSelection
             ) {
@@ -31,6 +32,7 @@ final class MultiCursorCommandContributor: EditorCommandContributor {
                 id: "builtin.select-all-occurrences",
                 title: String(localized: "Select All Occurrences", table: "LumiEditor"),
                 systemImage: "text.magnifyingglass",
+                category: EditorCommandCategory.multiCursor.rawValue,
                 order: 52,
                 isEnabled: hasSelection
             ) {
@@ -45,6 +47,7 @@ final class MultiCursorCommandContributor: EditorCommandContributor {
                 id: "builtin.clear-additional-cursors",
                 title: String(localized: "Clear Additional Cursors", table: "LumiEditor"),
                 systemImage: "cursorarrow.motionlines",
+                category: EditorCommandCategory.multiCursor.rawValue,
                 order: 53,
                 isEnabled: state.multiCursorState.isEnabled
             ) {

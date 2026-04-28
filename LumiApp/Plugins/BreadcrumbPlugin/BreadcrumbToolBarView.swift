@@ -284,6 +284,8 @@ struct BreadcrumbComponent: View {
             }
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
+            .frame(maxWidth: 200)
+            .frame(maxWidth: 200)
             .frame(
                 maxWidth: isHovering || isLastItem ? nil : truncatedCrumbWidth,
                 alignment: .leading

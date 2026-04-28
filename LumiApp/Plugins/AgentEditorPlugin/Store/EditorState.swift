@@ -74,6 +74,7 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前激活会话（Phase 2 起逐步替代散落的会话级状态）
     @Published private(set) var activeSession = EditorSession()
     @Published private(set) var findMatches: [EditorFindMatch] = []
+    @Published private(set) var recentCommandIDs: [String] = []
 
     var onActiveSessionChanged: ((EditorSession) -> Void)?
 
@@ -81,6 +82,7 @@ final class EditorState: ObservableObject, SuperLog {
     private var panelBindings = Set<AnyCancellable>()
     private var multiCursorSearchSession: EditorMultiCursorSearchSession?
     private var isSessionSyncSuspended = false
+    private let referencesRequestGeneration = RequestGeneration()
 
     private func bindDiagnostics() {
         diagnosticsCancellable?.cancel()
@@ -498,12 +500,106 @@ final class EditorState: ObservableObject, SuperLog {
         return deduplicatingCommandSuggestions(registrySuggestions + legacySuggestions)
     }
 
+    func editorCommandSuggestions(
+        for context: EditorCommandContext,
+        textView: TextView?
+    ) -> [EditorCommandSuggestion] {
+        let legacySuggestions = editorExtensions.commandSuggestions(
+            for: context,
+            state: self,
+            textView: textView
+        )
+        let registrySuggestions = CommandRouter.suggestionsFromRegistry(
+            in: CommandRouter.commandContext(
+                from: context,
+                isEditorActive: currentFileURL != nil,
+                isMultiCursor: multiCursorState.isEnabled
+            )
+        )
+        return deduplicatingCommandSuggestions(registrySuggestions + legacySuggestions)
+    }
+
+    func editorCommandSections(matching query: String = "") -> [EditorCommandSection] {
+        editorCommandPresentationModel(matching: query).sections
+    }
+
+    func editorCommandSections(
+        for context: EditorCommandContext,
+        textView: TextView?,
+        matching query: String = ""
+    ) -> [EditorCommandSection] {
+        editorCommandPresentationModel(for: context, textView: textView, matching: query).sections
+    }
+
+    func editorCommandSections(
+        from suggestions: [EditorCommandSuggestion],
+        matching query: String = ""
+    ) -> [EditorCommandSection] {
+        editorCommandPresentationModel(from: suggestions, matching: query).sections
+    }
+
+    func editorCommandPresentationModel(matching query: String = "") -> EditorCommandPresentationModel {
+        editorCommandPresentationModel(from: editorCommandSuggestions(), matching: query)
+    }
+
+    func editorCommandPresentationModel(
+        for context: EditorCommandContext,
+        textView: TextView?,
+        matching query: String = "",
+        categories: Set<EditorCommandCategory>? = nil
+    ) -> EditorCommandPresentationModel {
+        editorCommandPresentationModel(
+            from: editorCommandSuggestions(for: context, textView: textView),
+            matching: query,
+            categories: categories
+        )
+    }
+
+    func editorCommandPresentationModel(
+        categories: Set<EditorCommandCategory>,
+        matching query: String = ""
+    ) -> EditorCommandPresentationModel {
+        editorCommandPresentationModel(
+            from: editorCommandSuggestions(),
+            matching: query,
+            categories: categories
+        )
+    }
+
+    func editorCommandPresentationModel(
+        from suggestions: [EditorCommandSuggestion],
+        matching query: String = "",
+        categories: Set<EditorCommandCategory>? = nil
+    ) -> EditorCommandPresentationModel {
+        EditorCommandPresentationModel.build(
+            from: suggestions,
+            recentCommandIDs: recentCommandIDs,
+            query: query,
+            allowedCategories: categories
+        )
+    }
+
     func performEditorCommand(id: String) {
-        let _ = CommandRouter.execute(
+        let didExecute = CommandRouter.execute(
             id: id,
             in: currentCommandContext(),
             legacySuggestions: legacyEditorCommandSuggestions()
         )
+        if didExecute {
+            recordCommandExecution(id: id)
+        }
+    }
+
+    func recordCommandExecution(id: String) {
+        recentCommandIDs.removeAll(where: { $0 == id })
+        recentCommandIDs.insert(id, at: 0)
+        if recentCommandIDs.count > 12 {
+            recentCommandIDs = Array(recentCommandIDs.prefix(12))
+        }
+    }
+
+    func recentCommandSuggestions(matching query: String = "", limit: Int = 5) -> [EditorCommandSuggestion] {
+        Array(editorCommandPresentationModel(matching: query).recentCommands.prefix(limit))
     }
 
     func editorToolbarItems() -> [EditorToolbarItemSuggestion] {
@@ -638,6 +734,7 @@ final class EditorState: ObservableObject, SuperLog {
     /// 加载指定文件
     func loadFile(from url: URL?) {
         // 清理旧状态
+        referencesRequestGeneration.invalidate()
         successClearTask?.cancel()
         successClearTask = nil
         
@@ -1046,6 +1143,7 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 重置状态
     private func resetState() {
+        referencesRequestGeneration.invalidate()
         withoutSessionSync {
             currentFileURL = nil
             content = nil
@@ -1090,6 +1188,7 @@ final class EditorState: ObservableObject, SuperLog {
     /// 不尝试解析内容，只设置文件元数据，供 QuickLook 预览使用
     func loadBinaryFile(from url: URL) {
         // 清理旧状态
+        referencesRequestGeneration.invalidate()
         successClearTask?.cancel()
         successClearTask = nil
         cleanupFileWatcher()
@@ -1212,6 +1311,8 @@ final class EditorState: ObservableObject, SuperLog {
     /// 查询当前光标位置的引用并弹窗展示
     func showReferencesFromCurrentCursor() async {
         guard let fileURL = currentFileURL else { return }
+        let requestGeneration = referencesRequestGeneration.next()
+        let requestFileURL = fileURL
         showStatusToast(
             String(localized: "Finding references...", table: "LumiEditor"),
             level: .info,
@@ -1222,6 +1323,8 @@ final class EditorState: ObservableObject, SuperLog {
             line: position.line,
             character: position.character
         )
+        guard referencesRequestGeneration.isCurrent(requestGeneration),
+              currentFileURL == requestFileURL else { return }
         guard !references.isEmpty else {
             clearPanelData(
                 closeReferences: false
@@ -1259,6 +1362,8 @@ final class EditorState: ObservableObject, SuperLog {
             if $0.line != $1.line { return $0.line < $1.line }
             return $0.column < $1.column
         }
+        guard referencesRequestGeneration.isCurrent(requestGeneration),
+              currentFileURL == requestFileURL else { return }
         setReferenceResults(sortedItems)
         applyPanelSnapshot(
             updatedPanelSnapshot(references: !sortedItems.isEmpty)
@@ -2319,9 +2424,10 @@ final class EditorState: ObservableObject, SuperLog {
 
     private func deduplicatingCommandSuggestions(_ suggestions: [EditorCommandSuggestion]) -> [EditorCommandSuggestion] {
         var seen = Set<String>()
-        return suggestions.filter { suggestion in
+        let deduplicated = suggestions.filter { suggestion in
             seen.insert(suggestion.id).inserted
         }
+        return deduplicated.sortedForCommandPresentation()
     }
 
     private func applyFindMatchesResult(_ result: EditorFindMatchesResult) {

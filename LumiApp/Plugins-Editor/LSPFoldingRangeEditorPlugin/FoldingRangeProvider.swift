@@ -8,6 +8,7 @@ import LanguageServerProtocol
 final class FoldingRangeProvider: ObservableObject {
     
     private let lspService: LSPService
+    private let requestLifecycle = LSPRequestLifecycle()
 
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
@@ -18,20 +19,34 @@ final class FoldingRangeProvider: ObservableObject {
     var isAvailable: Bool { lspService.isAvailable }
     
     func requestRanges(uri: String) async {
-        let serverRanges = await lspService.requestFoldingRange(uri: uri)
-        ranges = serverRanges.map { range in
-            FoldingRangeItem(
-                startLine: Int(range.startLine),
-                endLine: Int(range.endLine),
-                startCharacter: range.startCharacter.map { Int($0) },
-                kind: range.kind,
-                collapsedText: nil
-            )
-        }
-        ranges.sort { $0.startLine < $1.startLine }
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestFoldingRange(uri: uri)
+            },
+            apply: { [weak self] serverRanges in
+                guard let self else { return }
+                ranges = serverRanges.map { range in
+                    FoldingRangeItem(
+                        startLine: Int(range.startLine),
+                        endLine: Int(range.endLine),
+                        startCharacter: range.startCharacter.map { Int($0) },
+                        kind: range.kind,
+                        collapsedText: nil
+                    )
+                }
+                ranges.sort { $0.startLine < $1.startLine }
+            }
+        )
     }
     
-    func clear() { ranges.removeAll() }
+    func clear() {
+        requestLifecycle.reset()
+        ranges.removeAll()
+    }
+
+    func reset() {
+        requestLifecycle.reset()
+    }
 }
 
 struct FoldingRangeItem: Identifiable, Hashable {

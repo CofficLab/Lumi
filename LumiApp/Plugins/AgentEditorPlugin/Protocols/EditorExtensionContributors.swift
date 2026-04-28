@@ -94,15 +94,62 @@ struct EditorCommandContext {
     let character: Int
 }
 
+struct EditorCommandShortcut: Equatable {
+    enum Modifier: String, CaseIterable {
+        case command
+        case shift
+        case option
+        case control
+
+        var symbol: String {
+            switch self {
+            case .command: return "⌘"
+            case .shift: return "⇧"
+            case .option: return "⌥"
+            case .control: return "⌃"
+            }
+        }
+    }
+
+    let key: String
+    let modifiers: [Modifier]
+
+    var displayText: String {
+        modifiers.map(\.symbol).joined() + key.uppercased()
+    }
+}
+
 /// 编辑器命令建议
 @MainActor
 struct EditorCommandSuggestion: Identifiable {
     let id: String
     let title: String
     let systemImage: String
+    let category: String?
+    let shortcut: EditorCommandShortcut?
     let order: Int
     let isEnabled: Bool
     let action: () -> Void
+
+    init(
+        id: String,
+        title: String,
+        systemImage: String,
+        category: String? = nil,
+        shortcut: EditorCommandShortcut? = nil,
+        order: Int,
+        isEnabled: Bool,
+        action: @escaping () -> Void
+    ) {
+        self.id = id
+        self.title = title
+        self.systemImage = systemImage
+        self.category = category
+        self.shortcut = shortcut
+        self.order = order
+        self.isEnabled = isEnabled
+        self.action = action
+    }
 }
 
 /// 编辑器命令扩展点

@@ -62,17 +62,20 @@ struct EditorTabStripView: View {
 
     private var openEditorsMenu: some View {
         Menu {
-            ForEach(openEditorSections) { section in
-                Section(section.title) {
-                    ForEach(section.items) { item in
-                        Button {
-                            onSelectOpenEditor(item)
-                        } label: {
-                            openEditorLabel(for: item)
+            Group {
+                ForEach(openEditorSections) { section in
+                    Section(section.title) {
+                        ForEach(section.items) { item in
+                            Button {
+                                onSelectOpenEditor(item)
+                            } label: {
+                                openEditorLabel(for: item)
+                            }
                         }
                     }
                 }
             }
+            .frame(maxWidth: 220)
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "sidebar.left")

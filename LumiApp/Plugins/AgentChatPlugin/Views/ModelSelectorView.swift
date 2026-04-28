@@ -64,7 +64,7 @@ struct ModelSelectorView: View, SuperLog {
                 selectedTab: $selectedTab,
                 hoveringTab: $hoveringTab
             )
-            .frame(width: 120)
+            .frame(width: 180)
             .background(Color(nsColor: .controlBackgroundColor))
 
             Divider()

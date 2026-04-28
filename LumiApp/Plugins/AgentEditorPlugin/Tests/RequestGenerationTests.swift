@@ -2,6 +2,18 @@
 import XCTest
 @testable import Lumi
 
+private actor AppliedValuesBox {
+    private var values: [String] = []
+
+    func append(_ value: String) {
+        values.append(value)
+    }
+
+    func snapshot() -> [String] {
+        values
+    }
+}
+
 final class RequestGenerationTests: XCTestCase {
 
     func testStartsAtZero() {
@@ -40,6 +52,93 @@ final class RequestGenerationTests: XCTestCase {
         XCTAssertEqual(gen.generation, 0)
         let after = gen.next()
         XCTAssertEqual(after, 1)
+    }
+
+    func testInvalidateAdvancesGeneration() {
+        let gen = RequestGeneration()
+        let first = gen.next()
+        let invalidated = gen.invalidate()
+        let next = gen.next()
+
+        XCTAssertEqual(first, 1)
+        XCTAssertEqual(invalidated, 2)
+        XCTAssertEqual(next, 3)
+    }
+
+    func testLifecycleAppliesOnlyLatestResult() async {
+        let lifecycle = LSPRequestLifecycle()
+        let applied = AppliedValuesBox()
+
+        lifecycle.run(
+            operation: {
+                try? await Task.sleep(for: .milliseconds(80))
+                return "old"
+            },
+            apply: { value in
+                Task {
+                    await applied.append(value)
+                }
+            }
+        )
+
+        lifecycle.run(
+            operation: {
+                try? await Task.sleep(for: .milliseconds(10))
+                return "new"
+            },
+            apply: { value in
+                Task {
+                    await applied.append(value)
+                }
+            }
+        )
+
+        try? await Task.sleep(for: .milliseconds(180))
+        XCTAssertEqual(await applied.snapshot(), ["new"])
+    }
+
+    func testLifecycleResetDropsPendingResult() async {
+        let lifecycle = LSPRequestLifecycle()
+        let applied = AppliedValuesBox()
+
+        lifecycle.run(
+            operation: {
+                try? await Task.sleep(for: .milliseconds(60))
+                return "stale"
+            },
+            apply: { value in
+                Task {
+                    await applied.append(value)
+                }
+            }
+        )
+
+        lifecycle.reset()
+
+        try? await Task.sleep(for: .milliseconds(120))
+        XCTAssertTrue(await applied.snapshot().isEmpty)
+    }
+
+    func testLifecycleInvalidateDropsPendingResult() async {
+        let lifecycle = LSPRequestLifecycle()
+        let applied = AppliedValuesBox()
+
+        lifecycle.run(
+            operation: {
+                try? await Task.sleep(for: .milliseconds(60))
+                return "stale"
+            },
+            apply: { value in
+                Task {
+                    await applied.append(value)
+                }
+            }
+        )
+
+        lifecycle.invalidate()
+
+        try? await Task.sleep(for: .milliseconds(120))
+        XCTAssertTrue(await applied.snapshot().isEmpty)
     }
 }
 

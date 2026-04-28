@@ -50,6 +50,14 @@ final class RequestGeneration: @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         _generation = 0
     }
+
+    /// 使当前所有挂起请求失效。
+    @discardableResult
+    func invalidate() -> UInt64 {
+        lock.lock(); defer { lock.unlock() }
+        _generation += 1
+        return _generation
+    }
 }
 
 /// 异步请求取消令牌。
@@ -132,5 +140,13 @@ final class LSPRequestLifecycle: @unchecked Sendable {
     func reset() {
         lock.lock(); defer { lock.unlock() }
         _generation = 0
+    }
+
+    /// 使当前所有挂起请求失效，但保留单调递增的代际。
+    @discardableResult
+    func invalidate() -> UInt64 {
+        lock.lock(); defer { lock.unlock() }
+        _generation += 1
+        return _generation
     }
 }

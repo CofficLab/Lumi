@@ -9,84 +9,96 @@ struct EditorCommand: Commands, SuperLog {
     var body: some Commands {
         #if os(macOS)
         CommandMenu("编辑器") {
+            Button("命令面板") {
+                NotificationCenter.postLumiEditorShowCommandPalette()
+            }
+            .keyboardShortcut(EditorCommandBindings.commandPalette.keyEquivalent, modifiers: EditorCommandBindings.commandPalette.eventModifiers)
+
+            Divider()
+
             Button("查找") {
                 NotificationCenter.postLumiEditorToggleFind()
             }
-            .keyboardShortcut("f", modifiers: .command)
+            .keyboardShortcut(EditorCommandBindings.find.keyEquivalent, modifiers: EditorCommandBindings.find.eventModifiers)
 
             Button("查找下一个") {
                 NotificationCenter.postLumiEditorFindNext()
             }
-            .keyboardShortcut("g", modifiers: .command)
+            .keyboardShortcut(EditorCommandBindings.findNext.keyEquivalent, modifiers: EditorCommandBindings.findNext.eventModifiers)
 
             Button("查找上一个") {
                 NotificationCenter.postLumiEditorFindPrevious()
             }
-            .keyboardShortcut("g", modifiers: [.command, .shift])
+            .keyboardShortcut(EditorCommandBindings.findPrevious.keyEquivalent, modifiers: EditorCommandBindings.findPrevious.eventModifiers)
+
+            Button("打开编辑项") {
+                NotificationCenter.postLumiEditorToggleOpenEditorsPanel()
+            }
+            .keyboardShortcut(EditorCommandBindings.openEditors.keyEquivalent, modifiers: EditorCommandBindings.openEditors.eventModifiers)
 
             Divider()
 
             Button("向右分栏") {
                 NotificationCenter.postLumiEditorSplitRight()
             }
-            .keyboardShortcut("\\", modifiers: .command)
+            .keyboardShortcut(EditorCommandBindings.splitRight.keyEquivalent, modifiers: EditorCommandBindings.splitRight.eventModifiers)
 
             Button("向下分栏") {
                 NotificationCenter.postLumiEditorSplitDown()
             }
-            .keyboardShortcut("\\", modifiers: [.command, .shift])
+            .keyboardShortcut(EditorCommandBindings.splitDown.keyEquivalent, modifiers: EditorCommandBindings.splitDown.eventModifiers)
 
             Button("关闭分栏") {
                 NotificationCenter.postLumiEditorCloseSplit()
             }
-            .keyboardShortcut("\\", modifiers: [.command, .option])
+            .keyboardShortcut(EditorCommandBindings.closeSplit.keyEquivalent, modifiers: EditorCommandBindings.closeSplit.eventModifiers)
 
             Button("聚焦下一个分组") {
                 NotificationCenter.postLumiEditorFocusNextGroup()
             }
-            .keyboardShortcut("]", modifiers: [.command, .option])
+            .keyboardShortcut(EditorCommandBindings.focusNextGroup.keyEquivalent, modifiers: EditorCommandBindings.focusNextGroup.eventModifiers)
 
             Button("聚焦上一个分组") {
                 NotificationCenter.postLumiEditorFocusPreviousGroup()
             }
-            .keyboardShortcut("[", modifiers: [.command, .option])
+            .keyboardShortcut(EditorCommandBindings.focusPreviousGroup.keyEquivalent, modifiers: EditorCommandBindings.focusPreviousGroup.eventModifiers)
 
             Button("移动到下一个分组") {
                 NotificationCenter.postLumiEditorMoveToNextGroup()
             }
-            .keyboardShortcut("]", modifiers: [.command, .option, .shift])
+            .keyboardShortcut(EditorCommandBindings.moveToNextGroup.keyEquivalent, modifiers: EditorCommandBindings.moveToNextGroup.eventModifiers)
 
             Button("移动到上一个分组") {
                 NotificationCenter.postLumiEditorMoveToPreviousGroup()
             }
-            .keyboardShortcut("[", modifiers: [.command, .option, .shift])
+            .keyboardShortcut(EditorCommandBindings.moveToPreviousGroup.keyEquivalent, modifiers: EditorCommandBindings.moveToPreviousGroup.eventModifiers)
 
             Divider()
 
             Button("格式化文档") {
                 NotificationCenter.postLumiEditorFormatDocument()
             }
-            .keyboardShortcut("f", modifiers: [.command, .shift, .option])
+            .keyboardShortcut(EditorCommandBindings.formatDocument.keyEquivalent, modifiers: EditorCommandBindings.formatDocument.eventModifiers)
 
             Button("查找引用") {
                 NotificationCenter.postLumiEditorFindReferences()
             }
-            .keyboardShortcut("r", modifiers: [.command, .option])
+            .keyboardShortcut(EditorCommandBindings.findReferences.keyEquivalent, modifiers: EditorCommandBindings.findReferences.eventModifiers)
 
             Button("重命名符号") {
                 NotificationCenter.postLumiEditorRenameSymbol()
             }
-            .keyboardShortcut("r", modifiers: [.command, .shift])
+            .keyboardShortcut(EditorCommandBindings.renameSymbol.keyEquivalent, modifiers: EditorCommandBindings.renameSymbol.eventModifiers)
 
             Button("工作区符号搜索") {
                 NotificationCenter.postLumiEditorWorkspaceSymbols()
             }
-            .keyboardShortcut("o", modifiers: [.command, .shift])
+            .keyboardShortcut(EditorCommandBindings.workspaceSymbols.keyEquivalent, modifiers: EditorCommandBindings.workspaceSymbols.eventModifiers)
 
             Button("调用层级") {
                 NotificationCenter.postLumiEditorCallHierarchy()
             }
-            .keyboardShortcut("h", modifiers: [.command, .option])
+            .keyboardShortcut(EditorCommandBindings.callHierarchy.keyEquivalent, modifiers: EditorCommandBindings.callHierarchy.eventModifiers)
         }
         #endif
     }

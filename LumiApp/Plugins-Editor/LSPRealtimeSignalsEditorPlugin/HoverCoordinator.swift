@@ -55,7 +55,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     private var hoverCacheOrder: [HoverCacheKey] = []
     private var activeHoverRange: ActiveHoverRange?
     private var lastDocumentURI: String?
-    private var hoverRequestGeneration: UInt64 = 0
+    private let hoverRequestGeneration = RequestGeneration()
     private var lastMouseEventHandledAtNs: UInt64 = 0
 
     init(state: EditorState) {
@@ -100,7 +100,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         guard let state else { return }
         refreshDocumentContextIfNeeded()
         let delay = hoverDelay(for: line, character: character)
-        let requestGeneration = nextHoverRequestGeneration()
+        let requestGeneration = hoverRequestGeneration.next()
         let requestURI = state.currentFileURL?.absoluteString
         let requestFingerprint = documentFingerprint(for: state)
         hoverTask?.cancel()
@@ -191,7 +191,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         let hasActiveHoverState = state?.panelState.hasActiveHover == true
         let hasPendingWork = hoverTask != nil || activeHoverRange != nil || lastHoverPosition != nil
         guard hasActiveHoverState || hasPendingWork else { return }
-        _ = nextHoverRequestGeneration()
+        hoverRequestGeneration.invalidate()
         if EditorPlugin.verbose {
             EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🔴 取消悬停被调用")
         }
@@ -202,13 +202,8 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         state?.clearMouseHover()
     }
 
-    private func nextHoverRequestGeneration() -> UInt64 {
-        hoverRequestGeneration &+= 1
-        return hoverRequestGeneration
-    }
-
     private func isRequestStillValid(generation: UInt64, uri: String?, fingerprint: Int, state: EditorState) -> Bool {
-        guard generation == hoverRequestGeneration else { return false }
+        guard hoverRequestGeneration.isCurrent(generation) else { return false }
         guard state.currentFileURL?.absoluteString == uri else { return false }
         return documentFingerprint(for: state) == fingerprint
     }
@@ -491,7 +486,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     }
 
     private func markScrollActivity() {
-        _ = nextHoverRequestGeneration()
+        hoverRequestGeneration.invalidate()
         lastScrollEventAtNs = DispatchTime.now().uptimeNanoseconds
         hoverTask?.cancel()
         guard scrollSettleTask == nil else { return }

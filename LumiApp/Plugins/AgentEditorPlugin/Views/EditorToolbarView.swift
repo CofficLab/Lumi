@@ -48,6 +48,8 @@ struct EditorToolbarView: View {
 
             splitEditorControls
 
+            commandPaletteControl
+
             ForEach(centerToolbarItems) { item in
                 item.content(state)
             }
@@ -258,6 +260,16 @@ struct EditorToolbarView: View {
         }
     }
 
+    private var commandPaletteControl: some View {
+        ToolbarToggle(
+            icon: "command",
+            isActive: false
+        ) {
+            state.performEditorCommand(id: "builtin.command-palette")
+        }
+        .help(String(localized: "Command Palette", table: "LumiEditor") + " (\(EditorCommandBindings.commandPalette.kernelShortcut.displayText))")
+    }
+
     private var findReplaceControls: some View {
         HStack(spacing: 6) {
             TextField(String(localized: "Find", table: "LumiEditor"), text: findTextBinding)
@@ -345,7 +357,8 @@ struct EditorToolbarView: View {
                     .frame(width: 22, height: 22)
             }
             .menuStyle(.borderlessButton)
-            .frame(height: 20)
+            .frame(width: 22, height: 20)
+            .fixedSize()
 
             ToolbarToggle(icon: "xmark", isActive: false) {
                 state.closeFindPanel()

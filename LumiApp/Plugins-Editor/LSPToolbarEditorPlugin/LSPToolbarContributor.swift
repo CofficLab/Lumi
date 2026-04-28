@@ -117,14 +117,20 @@ private struct LSPActionsToolbarItem: View {
 
     var body: some View {
         Menu {
-            let commands = state.editorCommandSuggestions()
-            ForEach(commands) { command in
-                Button {
-                    command.action()
-                } label: {
-                    Label(command.title, systemImage: command.systemImage)
+            if !presentationModel.recentCommands.isEmpty {
+                Section(String(localized: "Recently Used", table: "LumiEditor")) {
+                    ForEach(presentationModel.recentCommands) { command in
+                        commandButton(for: command, emphasizeRecent: true)
+                    }
                 }
-                .disabled(!command.isEnabled)
+            }
+
+            ForEach(presentationModel.sections) { section in
+                Section(section.title) {
+                    ForEach(section.commands) { command in
+                        commandButton(for: command)
+                    }
+                }
             }
         } label: {
             Image(systemName: "wand.and.stars")
@@ -133,7 +139,36 @@ private struct LSPActionsToolbarItem: View {
                 .frame(width: 22, height: 22)
         }
         .menuStyle(.borderlessButton)
-        .frame(height: 20)
+        .frame(width: 22, height: 20)
+        .fixedSize()
+        .frame(maxWidth: 200)
         .help(String(localized: "LSP Actions", table: "LSPToolbarEditor"))
+    }
+
+    private var presentationModel: EditorCommandPresentationModel {
+        state.editorCommandPresentationModel(
+            categories: EditorCommandCategoryScope.lspActions
+        )
+    }
+
+    @ViewBuilder
+    private func commandButton(for command: EditorCommandSuggestion, emphasizeRecent: Bool = false) -> some View {
+        Button {
+            state.performEditorCommand(id: command.id)
+        } label: {
+            HStack(spacing: 8) {
+                if emphasizeRecent {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .foregroundColor(AppUI.Color.semantic.primary)
+                }
+                Label(command.title, systemImage: command.systemImage)
+                if let shortcut = command.shortcut {
+                    Spacer(minLength: 12)
+                    Text(shortcut.displayText)
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                }
+            }
+        }
+        .disabled(!command.isEnabled)
     }
 }

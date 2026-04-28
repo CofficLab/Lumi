@@ -29,6 +29,7 @@ struct EditorRootView: View {
     @StateObject private var workbench = EditorWorkbenchState()
     @StateObject private var hostStore = EditorGroupHostStore()
     @State private var pendingActivationIntent: ActivationIntent?
+    @State private var isCommandPalettePresented = false
 
     var body: some View {
         eventBoundRootView
@@ -89,6 +90,9 @@ struct EditorRootView: View {
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleFind)) { _ in
                 handleEditorCommandEvent("builtin.find")
             }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorShowCommandPalette)) { _ in
+                isCommandPalettePresented = true
+            }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindNext)) { _ in
                 handleEditorCommandEvent("builtin.find-next")
             }
@@ -100,6 +104,9 @@ struct EditorRootView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorReplaceAll)) { _ in
                 handleEditorCommandEvent("builtin.replace-all")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleOpenEditorsPanel)) { _ in
+                handleEditorCommandEvent("builtin.open-editors-panel")
             }
     }
 
@@ -144,29 +151,42 @@ struct EditorRootView: View {
                 }
             }
 
-            if state.panelState.isOpenEditorsPanelPresented {
-                EditorOpenEditorsPanelView(
-                    state: state,
-                    items: openEditorItems,
-                    onSelect: activateOpenEditor,
-                    onClose: closeOpenEditorItem,
-                    onCloseOthers: closeOtherOpenEditorItems,
-                    onTogglePinned: togglePinnedOpenEditorItem
-                )
-            } else if let panel = activeSidePanel {
+            if let panel = activeSidePanel {
                 panel.content(state)
             }
         }
     }
 
+    private var builtinSidePanels: [EditorSidePanelSuggestion] {
+        [
+            .init(
+                id: "builtin.open-editors-panel",
+                order: 0,
+                isPresented: { $0.panelState.isOpenEditorsPanelPresented },
+                content: { state in
+                    AnyView(
+                        EditorOpenEditorsPanelView(
+                            state: state,
+                            items: openEditorItems,
+                            onSelect: activateOpenEditor,
+                            onClose: closeOpenEditorItem,
+                            onCloseOthers: closeOtherOpenEditorItems,
+                            onTogglePinned: togglePinnedOpenEditorItem
+                        )
+                    )
+                }
+            )
+        ]
+    }
+
     private var activeSidePanel: EditorSidePanelSuggestion? {
-        state.editorExtensions
-            .sidePanelSuggestions(state: state)
+        (builtinSidePanels + state.editorExtensions.sidePanelSuggestions(state: state))
+            .sorted { $0.order < $1.order }
             .first(where: { $0.isPresented(state) })
     }
 
     private var editorSheetHosts: some View {
-        let sheets = state.editorExtensions.sheetSuggestions(state: state)
+        let sheets = builtinSheets + state.editorExtensions.sheetSuggestions(state: state)
         return ZStack {
             ForEach(sheets) { sheet in
                 EmptyView()
@@ -184,6 +204,24 @@ struct EditorRootView: View {
                     }
             }
         }
+    }
+
+    private var builtinSheets: [EditorSheetSuggestion] {
+        [
+            .init(
+                id: "builtin.command-palette-sheet",
+                order: 0,
+                isPresented: { _ in isCommandPalettePresented },
+                onDismiss: { _ in isCommandPalettePresented = false },
+                content: { state in
+                    AnyView(
+                        EditorCommandPaletteView(state: state) {
+                            isCommandPalettePresented = false
+                        }
+                    )
+                }
+            )
+        ]
     }
 
     // MARK: - Header Area

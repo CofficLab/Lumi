@@ -10,6 +10,7 @@ import Foundation
 final class DocumentHighlightProvider: ObservableObject {
     
     private let lspService: LSPService
+    private let requestLifecycle = LSPRequestLifecycle()
 
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
@@ -20,23 +21,34 @@ final class DocumentHighlightProvider: ObservableObject {
     
     /// 请求文档高亮
     func requestHighlight(uri: String, line: Int, character: Int, content: String) async {
-        let highlights = await lspService.requestDocumentHighlight(uri: uri, line: line, character: character)
-        
-        highlightRanges = highlights.compactMap { highlight -> NSRange? in
-            let lspRange = highlight.range
-            guard let nsRange = Self.nsRange(from: lspRange, in: content) else { return nil }
-            return nsRange
-        }
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestDocumentHighlight(uri: uri, line: line, character: character)
+            },
+            apply: { [weak self] highlights in
+                guard let self else { return }
+                highlightRanges = highlights.compactMap { highlight -> NSRange? in
+                    let lspRange = highlight.range
+                    guard let nsRange = Self.nsRange(from: lspRange, in: content) else { return nil }
+                    return nsRange
+                }
+            }
+        )
     }
     
     /// 清除高亮
     func clear() {
+        requestLifecycle.reset()
         highlightRanges.removeAll()
     }
     
     /// 是否有活跃高亮
     var isActive: Bool {
         !highlightRanges.isEmpty
+    }
+
+    func reset() {
+        requestLifecycle.reset()
     }
     
     // MARK: - Helpers

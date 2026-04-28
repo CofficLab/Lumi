@@ -7,6 +7,9 @@ import LanguageServerProtocol
 final class CallHierarchyProvider: ObservableObject {
     
     private let lspService: LSPService
+    private let prepareLifecycle = LSPRequestLifecycle()
+    private let incomingLifecycle = LSPRequestLifecycle()
+    private let outgoingLifecycle = LSPRequestLifecycle()
 
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
@@ -21,16 +24,33 @@ final class CallHierarchyProvider: ObservableObject {
     
     func prepareCallHierarchy(uri: String, line: Int, character: Int) async {
         isLoading = true
-        defer { isLoading = false }
-        
-        let items = await lspService.requestCallHierarchyPrepare(uri: uri, line: line, character: character)
-        guard let firstItem = items.first else {
-            rootItem = nil; incomingCalls = []; outgoingCalls = []
-            return
-        }
-        rootItem = EditorCallHierarchyItem(item: firstItem)
-        await fetchIncomingCalls(item: rootItem!)
-        await fetchOutgoingCalls(item: rootItem!)
+        incomingCalls = []
+        outgoingCalls = []
+
+        prepareLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestCallHierarchyPrepare(uri: uri, line: line, character: character)
+            },
+            apply: { [weak self] items in
+                guard let self else { return }
+                guard let firstItem = items.first else {
+                    rootItem = nil
+                    incomingCalls = []
+                    outgoingCalls = []
+                    isLoading = false
+                    return
+                }
+
+                let root = EditorCallHierarchyItem(item: firstItem)
+                rootItem = root
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    await fetchIncomingCalls(item: root)
+                    await fetchOutgoingCalls(item: root)
+                }
+                isLoading = false
+            }
+        )
     }
     
     func fetchIncomingCalls(item: EditorCallHierarchyItem) async {
@@ -45,10 +65,17 @@ final class CallHierarchyProvider: ObservableObject {
             selectionRange: item.selectionRange,
             data: item.data
         )
-        let calls = await lspService.requestCallHierarchyIncomingCalls(item: lspItem)
-        incomingCalls = calls.compactMap { call in
-            EditorCallHierarchyCall(item: call.from, fromRanges: call.fromRanges)
-        }
+        incomingLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestCallHierarchyIncomingCalls(item: lspItem)
+            },
+            apply: { [weak self] calls in
+                guard let self else { return }
+                incomingCalls = calls.compactMap { call in
+                    EditorCallHierarchyCall(item: call.from, fromRanges: call.fromRanges)
+                }
+            }
+        )
     }
     
     func fetchOutgoingCalls(item: EditorCallHierarchyItem) async {
@@ -63,14 +90,33 @@ final class CallHierarchyProvider: ObservableObject {
             selectionRange: item.selectionRange,
             data: item.data
         )
-        let calls = await lspService.requestCallHierarchyOutgoingCalls(item: lspItem)
-        outgoingCalls = calls.compactMap { call in
-            EditorCallHierarchyCall(item: call.to, fromRanges: call.fromRanges)
-        }
+        outgoingLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestCallHierarchyOutgoingCalls(item: lspItem)
+            },
+            apply: { [weak self] calls in
+                guard let self else { return }
+                outgoingCalls = calls.compactMap { call in
+                    EditorCallHierarchyCall(item: call.to, fromRanges: call.fromRanges)
+                }
+            }
+        )
     }
     
     func clear() {
-        rootItem = nil; incomingCalls = []; outgoingCalls = []; isLoading = false
+        prepareLifecycle.reset()
+        incomingLifecycle.reset()
+        outgoingLifecycle.reset()
+        rootItem = nil
+        incomingCalls = []
+        outgoingCalls = []
+        isLoading = false
+    }
+
+    func reset() {
+        prepareLifecycle.reset()
+        incomingLifecycle.reset()
+        outgoingLifecycle.reset()
     }
 }
 

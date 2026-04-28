@@ -235,6 +235,9 @@
     "Code editor with file tree" : {
 
     },
+    "Command Palette" : {
+
+    },
     "Current Group" : {
 
     },
@@ -462,6 +465,12 @@
       }
     },
     "Finding type definition..." : {
+
+    },
+    "Focus Next Editor Group" : {
+
+    },
+    "Focus Previous Editor Group" : {
 
     },
     "Format Document" : {
@@ -826,6 +835,15 @@
         }
       }
     },
+    "Move Editor to Next Group" : {
+
+    },
+    "Move Editor to Previous Group" : {
+
+    },
+    "Navigate" : {
+
+    },
     "New name" : {
       "localizations" : {
         "en" : {
@@ -944,6 +962,9 @@
           }
         }
       }
+    },
+    "No Matching Commands" : {
+
     },
     "No more occurrences found" : {
       "localizations" : {
@@ -1175,6 +1196,9 @@
     "Recently Active" : {
 
     },
+    "Recently Used" : {
+
+    },
     "References" : {
 
     },
@@ -1360,6 +1384,9 @@
     "Replace All" : {
 
     },
+    "Run" : {
+
+    },
     "Save" : {
 
     },
@@ -1409,6 +1436,9 @@
           }
         }
       }
+    },
+    "Search commands" : {
+
     },
     "Select a file to start editing" : {
       "localizations" : {

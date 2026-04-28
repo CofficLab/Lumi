@@ -27,6 +27,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
     private var lastMoveDebugSignature: String?
     private var activePluginItems: [EditorPluginSuggestionEntry] = []
     private var activeFallbackTypeItems: [LocalTypeSuggestionEntry] = []
+    private let requestGeneration = RequestGeneration()
 
     func completionTriggerCharacters() -> Set<String> {
         let characters = lspClient?.completionTriggerCharacters() ?? []
@@ -51,6 +52,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
 
         requestSequence += 1
         let requestID = requestSequence
+        let requestGen = requestGeneration.next()
         activeRequestID = requestID
         lastMoveDebugSignature = nil
         if EditorPlugin.verbose {
@@ -58,6 +60,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         }
 
         let completionItems = await lspClient.requestCompletion(line: line, character: character)
+        guard requestGeneration.isCurrent(requestGen) else { return nil }
         var entries = completionItems.map(EditorCodeSuggestionEntry.init(item:))
         let extensionContext = EditorCompletionContext(
             languageId: editorState?.detectedLanguage?.tsName ?? "swift",
@@ -67,6 +70,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             isTypeContext: context.isTypeContext
         )
         let extensionSuggestions = await editorExtensionRegistry?.completionSuggestions(for: extensionContext) ?? []
+        guard requestGeneration.isCurrent(requestGen) else { return nil }
         let extensionEntries = extensionSuggestions.map(EditorPluginSuggestionEntry.init)
         if EditorPlugin.verbose {
             EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP返回: \(entries.count) 项，扩展=\(extensionEntries.count) 项")
@@ -209,6 +213,7 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
     }
 
     func completionWindowDidClose() {
+        requestGeneration.invalidate()
         if EditorPlugin.verbose {
             let requestID = activeRequestID ?? -1
             EditorPlugin.logger.debug("\(Self.t)补全窗口关闭[\(requestID)]")

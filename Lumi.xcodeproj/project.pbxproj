@@ -148,6 +148,8 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Lumi-Info.plist",
+				Plugins-Editor/GoEditorPlugin/GoEditorPlugin.README.md,
+				Plugins/ConversationTimelinePlugin/ConversationTimelinePlugin.README.md,
 			);
 			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
 		};

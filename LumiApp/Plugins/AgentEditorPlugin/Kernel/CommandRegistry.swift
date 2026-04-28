@@ -108,9 +108,31 @@ struct KernelEditorCommand: Identifiable {
     let id: String
     let title: String
     let icon: String?
+    let shortcut: EditorCommandShortcut?
     let category: String?
+    let order: Int
     let enablement: CommandEnablement
     let handler: () -> Void
+
+    init(
+        id: String,
+        title: String,
+        icon: String? = nil,
+        shortcut: EditorCommandShortcut? = nil,
+        category: String? = nil,
+        order: Int = 0,
+        enablement: CommandEnablement = .always,
+        handler: @escaping () -> Void
+    ) {
+        self.id = id
+        self.title = title
+        self.icon = icon
+        self.shortcut = shortcut
+        self.category = category
+        self.order = order
+        self.enablement = enablement
+        self.handler = handler
+    }
 
     /// 在给定 context 下是否可用
     func isEnabled(in context: CommandContext) -> Bool {
@@ -122,7 +144,9 @@ struct KernelEditorCommand: Identifiable {
         id: String,
         title: String,
         icon: String? = nil,
+        shortcut: EditorCommandShortcut? = nil,
         category: String? = nil,
+        order: Int = 0,
         enablement: CommandEnablement = .always,
         handler: @escaping () -> Void
     ) -> KernelEditorCommand {
@@ -130,7 +154,9 @@ struct KernelEditorCommand: Identifiable {
             id: id,
             title: title,
             icon: icon,
+            shortcut: shortcut,
             category: category,
+            order: order,
             enablement: enablement,
             handler: handler
         )
@@ -141,14 +167,18 @@ struct KernelEditorCommand: Identifiable {
         id: String,
         title: String,
         icon: String? = nil,
+        shortcut: EditorCommandShortcut? = nil,
         category: String? = nil,
+        order: Int = 0,
         handler: @escaping () -> Void
     ) -> KernelEditorCommand {
         KernelEditorCommand(
             id: id,
             title: title,
             icon: icon,
+            shortcut: shortcut,
             category: category,
+            order: order,
             enablement: .whenTrue(.hasSelection),
             handler: handler
         )
@@ -183,13 +213,17 @@ final class CommandRegistry {
 
     /// 获取所有注册的命令。
     func allCommands() -> [KernelEditorCommand] {
-        Array(commands.values).sorted { $0.id < $1.id }
+        Array(commands.values).sorted {
+            ($0.order, $0.title.localizedLowercase, $0.id) < ($1.order, $1.title.localizedLowercase, $1.id)
+        }
     }
 
     /// 根据 context 过滤出可用的命令。
     func availableCommands(in context: CommandContext) -> [KernelEditorCommand] {
         commands.values.filter { $0.isEnabled(in: context) }
-            .sorted { $0.id < $1.id }
+            .sorted {
+                ($0.order, $0.title.localizedLowercase, $0.id) < ($1.order, $1.title.localizedLowercase, $1.id)
+            }
     }
 
     /// 执行指定命令。

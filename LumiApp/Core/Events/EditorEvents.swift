@@ -21,6 +21,9 @@ extension Notification.Name {
     /// 请求切换查找面板
     static let lumiEditorToggleFind = Notification.Name("LumiEditorToggleFind")
 
+    /// 请求显示命令面板
+    static let lumiEditorShowCommandPalette = Notification.Name("LumiEditorShowCommandPalette")
+
     /// 请求选择下一个查找结果
     static let lumiEditorFindNext = Notification.Name("LumiEditorFindNext")
 
@@ -32,6 +35,9 @@ extension Notification.Name {
 
     /// 请求全部替换查找结果
     static let lumiEditorReplaceAll = Notification.Name("LumiEditorReplaceAll")
+
+    /// 请求切换 Open Editors 面板
+    static let lumiEditorToggleOpenEditorsPanel = Notification.Name("LumiEditorToggleOpenEditorsPanel")
 
     /// 请求向右分栏
     static let lumiEditorSplitRight = Notification.Name("LumiEditorSplitRight")
@@ -88,6 +94,10 @@ extension NotificationCenter {
         NotificationCenter.default.post(name: .lumiEditorToggleFind, object: nil)
     }
 
+    static func postLumiEditorShowCommandPalette() {
+        NotificationCenter.default.post(name: .lumiEditorShowCommandPalette, object: nil)
+    }
+
     static func postLumiEditorFindNext() {
         NotificationCenter.default.post(name: .lumiEditorFindNext, object: nil)
     }
@@ -102,6 +112,10 @@ extension NotificationCenter {
 
     static func postLumiEditorReplaceAll() {
         NotificationCenter.default.post(name: .lumiEditorReplaceAll, object: nil)
+    }
+
+    static func postLumiEditorToggleOpenEditorsPanel() {
+        NotificationCenter.default.post(name: .lumiEditorToggleOpenEditorsPanel, object: nil)
     }
 
     static func postLumiEditorSplitRight() {

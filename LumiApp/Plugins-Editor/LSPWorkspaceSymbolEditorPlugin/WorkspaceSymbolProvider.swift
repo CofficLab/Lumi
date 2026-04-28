@@ -7,6 +7,7 @@ import LanguageServerProtocol
 final class WorkspaceSymbolProvider: ObservableObject {
     
     private let lspService: LSPService
+    private let requestLifecycle = LSPRequestLifecycle()
 
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
@@ -21,43 +22,62 @@ final class WorkspaceSymbolProvider: ObservableObject {
     func searchSymbols(query: String) async {
         isSearching = true
         searchError = nil
-        
-        guard let response = await lspService.requestWorkspaceSymbols(query: query) else {
-            symbols = []; isSearching = false; return
-        }
-        
-        switch response {
-        case .optionA(let infos):
-            symbols = infos.map { info in
-                WorkspaceSymbolItem(
-                    name: info.name, kind: info.kind,
-                    location: SymbolLocation(uri: info.location.uri, range: info.location.range),
-                    containerName: info.containerName, tags: info.tags, detail: nil, data: nil
-                )
-            }
-        case .optionB(let wsSymbols):
-            symbols = wsSymbols.compactMap { ws -> WorkspaceSymbolItem? in
-                guard let locOpt = ws.location else { return nil }
-                switch locOpt {
-                case .optionA(let loc):
-                    return WorkspaceSymbolItem(
-                        name: ws.name, kind: ws.kind,
-                        location: SymbolLocation(uri: loc.uri, range: loc.range),
-                        containerName: nil, tags: ws.tags, detail: nil, data: nil
-                    )
-                case .optionB(let identifier):
-                    return WorkspaceSymbolItem(
-                        name: ws.name, kind: ws.kind,
-                        location: SymbolLocation(uri: identifier.uri, range: LSPRange(start: .zero, end: .zero)),
-                        containerName: nil, tags: ws.tags, detail: nil, data: nil
-                    )
+
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestWorkspaceSymbols(query: query)
+            },
+            apply: { [weak self] response in
+                guard let self else { return }
+                isSearching = false
+
+                guard let response else {
+                    symbols = []
+                    return
+                }
+
+                switch response {
+                case .optionA(let infos):
+                    symbols = infos.map { info in
+                        WorkspaceSymbolItem(
+                            name: info.name, kind: info.kind,
+                            location: SymbolLocation(uri: info.location.uri, range: info.location.range),
+                            containerName: info.containerName, tags: info.tags, detail: nil, data: nil
+                        )
+                    }
+                case .optionB(let wsSymbols):
+                    symbols = wsSymbols.compactMap { ws -> WorkspaceSymbolItem? in
+                        guard let locOpt = ws.location else { return nil }
+                        switch locOpt {
+                        case .optionA(let loc):
+                            return WorkspaceSymbolItem(
+                                name: ws.name, kind: ws.kind,
+                                location: SymbolLocation(uri: loc.uri, range: loc.range),
+                                containerName: nil, tags: ws.tags, detail: nil, data: nil
+                            )
+                        case .optionB(let identifier):
+                            return WorkspaceSymbolItem(
+                                name: ws.name, kind: ws.kind,
+                                location: SymbolLocation(uri: identifier.uri, range: LSPRange(start: .zero, end: .zero)),
+                                containerName: nil, tags: ws.tags, detail: nil, data: nil
+                            )
+                        }
+                    }
                 }
             }
-        }
-        isSearching = false
+        )
     }
     
-    func clear() { symbols = []; isSearching = false; searchError = nil }
+    func clear() {
+        requestLifecycle.reset()
+        symbols = []
+        isSearching = false
+        searchError = nil
+    }
+
+    func reset() {
+        requestLifecycle.reset()
+    }
     
     func filterLocalResults(query: String) -> [WorkspaceSymbolItem] {
         guard !query.isEmpty else { return symbols }

@@ -6,6 +6,7 @@ import LanguageServerProtocol
 final class DocumentColorProvider: ObservableObject {
     
     private let lspService: LSPService
+    private let requestLifecycle = LSPRequestLifecycle()
 
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
@@ -16,16 +17,23 @@ final class DocumentColorProvider: ObservableObject {
     var isAvailable: Bool { lspService.isAvailable }
     
     func requestColors(uri: String) async {
-        let serverColors = await lspService.requestDocumentColors(uri: uri)
-        colors = serverColors.map { info in
-            EditorDocumentColor(
-                range: info.range,
-                red: Double(info.color.red),
-                green: Double(info.color.green),
-                blue: Double(info.color.blue),
-                alpha: Double(info.color.alpha)
-            )
-        }
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestDocumentColors(uri: uri)
+            },
+            apply: { [weak self] serverColors in
+                guard let self else { return }
+                colors = serverColors.map { info in
+                    EditorDocumentColor(
+                        range: info.range,
+                        red: Double(info.color.red),
+                        green: Double(info.color.green),
+                        blue: Double(info.color.blue),
+                        alpha: Double(info.color.alpha)
+                    )
+                }
+            }
+        )
     }
     
     func requestColorPresentations(uri: String, color: EditorDocumentColor) async -> [ColorPresentation] {
@@ -40,7 +48,14 @@ final class DocumentColorProvider: ObservableObject {
         )
     }
     
-    func clear() { colors.removeAll() }
+    func clear() {
+        requestLifecycle.reset()
+        colors.removeAll()
+    }
+
+    func reset() {
+        requestLifecycle.reset()
+    }
     
     func colorAtPosition(line: Int, character: Int) -> EditorDocumentColor? {
         let position = Position(line: line, character: character)

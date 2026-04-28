@@ -707,6 +707,7 @@ private final class SemanticTokenStorage {
 final class SemanticTokenHighlightProvider: HighlightProviding {
     private let lspService: LSPService
     private let uriProvider: () -> String?
+    private let requestGeneration = RequestGeneration()
     private var textView: TextView?
     private var highlights: [HighlightRange] = []
     private var storage = SemanticTokenStorage()
@@ -729,6 +730,7 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
     }
     
     func setUp(textView: TextView, codeLanguage: CodeLanguage) {
+        requestGeneration.invalidate()
         self.textView = textView
         installViewportObservers(for: textView)
         refreshSemanticTokens()
@@ -791,6 +793,7 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
         }
         guard let uri = uriProvider(), let textView else { return }
         isRefreshing = true
+        let generation = requestGeneration.next()
         
         Task { [weak self] in
             guard let self else { return }
@@ -809,15 +812,21 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
             }
             
             let invalidatedRanges: [NSRange]
+            let refreshedStorage: SemanticTokenStorage
             
             if let previousResultId = storage.lastResultId,
                let deltaResponse = await lspService.requestSemanticTokensDelta(uri: uri, previousResultId: previousResultId) {
+                guard requestGeneration.isCurrent(generation) else { return }
                 switch deltaResponse {
                 case .optionA(let full):
-                    storage.setData(full)
+                    var nextStorage = storage
+                    nextStorage.setData(full)
+                    refreshedStorage = nextStorage
                     invalidatedRanges = [textView.documentRange]
                 case .optionB(let delta):
-                    let changed = storage.applyDelta(delta)
+                    var nextStorage = storage
+                    let changed = nextStorage.applyDelta(delta)
+                    refreshedStorage = nextStorage
                     // 使用 LineOffsetTable 快速计算 invalidated ranges
                     let deltaTable = LineOffsetTable(content: textView.string)
                     invalidatedRanges = changed.compactMap { token in
@@ -828,25 +837,35 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
                     }
                 case .none:
                     if let full = await lspService.requestSemanticTokens(uri: uri) {
-                        storage.setData(full)
+                        guard requestGeneration.isCurrent(generation) else { return }
+                        var nextStorage = storage
+                        nextStorage.setData(full)
+                        refreshedStorage = nextStorage
                         invalidatedRanges = [textView.documentRange]
                     } else {
+                        guard requestGeneration.isCurrent(generation) else { return }
+                        refreshedStorage = storage
                         invalidatedRanges = []
                     }
                 }
             } else if let full = await lspService.requestSemanticTokens(uri: uri) {
-                storage.setData(full)
+                guard requestGeneration.isCurrent(generation) else { return }
+                var nextStorage = storage
+                nextStorage.setData(full)
+                refreshedStorage = nextStorage
                 invalidatedRanges = [textView.documentRange]
             } else {
                 return
             }
             
             // Token 解码优化：使用 LineOffsetTable 将 O(n×m) 降至 O(n)+m
-            let localTokens = self.storage.tokens
+            let localTokens = refreshedStorage.tokens
             let localContent = textView.string
             let table = LineOffsetTable(content: localContent)
             let decoded = map.decodeWithTable(tokens: localTokens, table: table)
             await MainActor.run {
+                guard self.requestGeneration.isCurrent(generation) else { return }
+                self.storage = refreshedStorage
                 self.highlights = decoded
                 self.completePendingEdit(using: invalidatedRanges, documentRange: textView.documentRange)
             }
@@ -922,6 +941,7 @@ final class SemanticTokenHighlightProvider: HighlightProviding {
     }
     
     deinit {
+        requestGeneration.invalidate()
         viewportRefreshTask?.cancel()
         editDebounceTask?.cancel()
     }

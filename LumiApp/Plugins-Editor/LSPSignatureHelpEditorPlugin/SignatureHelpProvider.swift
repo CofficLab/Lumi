@@ -9,6 +9,7 @@ import LanguageServerProtocol
 final class SignatureHelpProvider: ObservableObject {
     
     private let lspService: LSPService
+    private let requestLifecycle = LSPRequestLifecycle()
 
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
@@ -33,40 +34,53 @@ final class SignatureHelpProvider: ObservableObject {
     /// 请求签名帮助
     func requestSignatureHelp(uri: String, line: Int, character: Int) async {
         isLoading = true
-        let help = await lspService.requestSignatureHelp(uri: uri, line: line, character: character)
-        isLoading = false
-        
-        guard let help, !help.signatures.isEmpty else {
-            currentHelp = nil
-            return
-        }
-        
-        let activeIndex = help.activeSignature ?? 0
-        guard activeIndex < help.signatures.count else {
-            currentHelp = nil
-            return
-        }
-        
-        let activeSignature = help.signatures[activeIndex]
-        let activeParamIndex = help.activeParameter ?? 0
-        
-        currentHelp = SignatureHelpItem(
-            label: activeSignature.label,
-            documentation: extractDocumentation(from: activeSignature.documentation),
-            parameters: activeSignature.parameters?.compactMap { param -> SignatureParam? in
-                guard let label = extractParamLabel(from: param.label) else { return nil }
-                return SignatureParam(
-                    label: label,
-                    documentation: extractParamDocumentation(from: param.documentation)
+        requestLifecycle.run(
+            operation: { [lspService] in
+                await lspService.requestSignatureHelp(uri: uri, line: line, character: character)
+            },
+            apply: { [weak self] help in
+                guard let self else { return }
+                isLoading = false
+
+                guard let help, !help.signatures.isEmpty else {
+                    currentHelp = nil
+                    return
+                }
+
+                let activeIndex = help.activeSignature ?? 0
+                guard activeIndex < help.signatures.count else {
+                    currentHelp = nil
+                    return
+                }
+
+                let activeSignature = help.signatures[activeIndex]
+                let activeParamIndex = help.activeParameter ?? 0
+
+                currentHelp = SignatureHelpItem(
+                    label: activeSignature.label,
+                    documentation: extractDocumentation(from: activeSignature.documentation),
+                    parameters: activeSignature.parameters?.compactMap { param -> SignatureParam? in
+                        guard let label = extractParamLabel(from: param.label) else { return nil }
+                        return SignatureParam(
+                            label: label,
+                            documentation: extractParamDocumentation(from: param.documentation)
+                        )
+                    } ?? [],
+                    activeParameterIndex: activeParamIndex
                 )
-            } ?? [],
-            activeParameterIndex: activeParamIndex
+            }
         )
     }
     
     /// 当签名面板消失时调用
     func clear() {
+        requestLifecycle.reset()
         currentHelp = nil
+        isLoading = false
+    }
+
+    func reset() {
+        requestLifecycle.reset()
     }
     
     // MARK: - Helpers
