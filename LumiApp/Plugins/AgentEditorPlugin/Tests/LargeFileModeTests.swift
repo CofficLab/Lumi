@@ -151,6 +151,41 @@ final class ViewportRenderControllerTests: XCTestCase {
         // Large change should not debounce
         XCTAssertFalse(controller.shouldDebounceUpdate(from: 200, to: 220))
     }
+
+    @MainActor
+    func testEditorStateViewportObservationUpdatesMirroredRanges() {
+        let state = EditorState()
+
+        state.applyViewportObservation(startLine: 100, endLine: 120, totalLines: 1000)
+
+        XCTAssertEqual(state.viewportVisibleLineRange, 100..<120)
+        XCTAssertEqual(state.viewportRenderLineRange, 50..<170)
+        XCTAssertEqual(state.viewportRenderController.totalLines, 1000)
+    }
+
+    func testViewportFeatureEnabledWhenViewportStartsBeforeLimit() {
+        XCTAssertTrue(EditorState.isViewportFeatureEnabled(viewportRange: 500..<800, maxLine: 1_000))
+        XCTAssertFalse(EditorState.isViewportFeatureEnabled(viewportRange: 1_000..<1_200, maxLine: 1_000))
+    }
+
+    func testViewportFeatureEnabledWhenViewportRangeIsEmpty() {
+        XCTAssertTrue(EditorState.isViewportFeatureEnabled(viewportRange: 0..<0, maxLine: 1_000))
+    }
+
+    func testLongLineProtectionSuppressesSyntaxHighlightingInLargeModes() {
+        XCTAssertTrue(
+            EditorState.isLongLineProtectionSuppressingSyntaxHighlighting(
+                largeFileMode: .large,
+                longestDetectedLine: LongestDetectedLine(line: 8, length: 20_000)
+            )
+        )
+        XCTAssertFalse(
+            EditorState.isLongLineProtectionSuppressingSyntaxHighlighting(
+                largeFileMode: .medium,
+                longestDetectedLine: LongestDetectedLine(line: 8, length: 20_000)
+            )
+        )
+    }
 }
 
 #endif

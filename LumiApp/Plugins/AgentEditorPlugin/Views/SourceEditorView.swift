@@ -58,6 +58,10 @@ struct SourceEditorView: View, SuperLog {
             .onChange(of: state.useSpaces) { _, _ in updateConfigCache() }
             .onChange(of: state.currentThemeId) { _, _ in updateConfigCache() }
             .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
+            .onChange(of: state.largeFileMode) { _, _ in updateConfigCache() }
+            .onChange(of: state.isSyntaxHighlightingEnabledInViewport) { _, isEnabled in
+                semanticTokenProvider?.setEnabled(isEnabled)
+            }
             .onChange(of: state.content) { _, newContent in
                 jumpDelegate.textStorage = newContent
             }
@@ -148,24 +152,28 @@ struct SourceEditorView: View, SuperLog {
 
     @ViewBuilder
     private var inlayHintsStrip: some View {
-        let hints = state.inlayHintProvider.hints
-        if hints.isEmpty {
+        if state.largeFileMode.isInlayHintsDisabled {
             EmptyView()
         } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(hints.prefix(24)) { hint in
-                        Text("L\(hint.line + 1) \(hint.text)")
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                            .lineLimit(1)
+            let hints = state.inlayHintProvider.hints
+            if hints.isEmpty {
+                EmptyView()
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(hints.prefix(24)) { hint in
+                            Text("L\(hint.line + 1) \(hint.text)")
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .lineLimit(1)
+                        }
                     }
+                    .padding(.horizontal, 8)
                 }
-                .padding(.horizontal, 8)
+                .frame(height: 22)
+                .frame(maxWidth: .infinity)
+                .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
             }
-            .frame(height: 22)
-            .frame(maxWidth: .infinity)
-            .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
         }
     }
 
@@ -276,6 +284,7 @@ struct SourceEditorView: View, SuperLog {
                     state?.currentFileURL?.absoluteString
                 }
             )
+            semanticTokenProvider?.setEnabled(state.isSyntaxHighlightingEnabledInViewport)
         }
         if documentHighlightProvider == nil {
             documentHighlightProvider = DocumentHighlightHighlighter(
@@ -320,10 +329,17 @@ struct SourceEditorView: View, SuperLog {
     private var resolvedLanguage: CodeLanguage {
         state.detectedLanguage ?? CodeLanguage.allLanguages.first { $0.tsName == "swift" } ?? CodeLanguage.allLanguages[0]
     }
+
+    private var areSemanticHighlightsEnabled: Bool {
+        !state.largeFileMode.isSemanticTokensDisabled && state.isSyntaxHighlightingEnabledInViewport
+    }
     
     private var activeHighlightProviders: [any HighlightProviding] {
-        var providers: [any HighlightProviding] = [treeSitterClient]
-        if let semanticTokenProvider {
+        var providers: [any HighlightProviding] = []
+        if state.isSyntaxHighlightingEnabledInViewport {
+            providers.append(treeSitterClient)
+        }
+        if areSemanticHighlightsEnabled, let semanticTokenProvider {
             providers.insert(semanticTokenProvider, at: 0)
         }
         if let documentHighlightProvider {
@@ -462,8 +478,8 @@ struct SourceEditorView: View, SuperLog {
             ),
             peripherals: .init(
                 showGutter: state.showGutter,
-                showMinimap: state.showMinimap,
-                showFoldingRibbon: state.showFoldingRibbon,
+                showMinimap: state.showMinimap && !state.largeFileMode.isMinimapDisabled,
+                showFoldingRibbon: state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled,
                 codeSuggestionTriggerCharacters: completionDelegate.completionTriggerCharacters()
             )
         )

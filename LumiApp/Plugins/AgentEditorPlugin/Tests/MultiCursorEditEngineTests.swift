@@ -42,5 +42,45 @@ final class MultiCursorEditEngineTests: XCTestCase {
             ]
         )
     }
+
+    func testIndentInsertsIndentAtEachCursor() {
+        let result = MultiCursorEditEngine.apply(
+            text: "foo\nbar",
+            selections: [
+                .init(location: 0, length: 0),
+                .init(location: 4, length: 0),
+            ],
+            operation: .indent("    ")
+        )
+
+        XCTAssertEqual(result.text, "    foo\n    bar")
+        XCTAssertEqual(
+            result.selections,
+            [
+                .init(location: 0, length: 0),
+                .init(location: 8, length: 0),
+            ]
+        )
+    }
+
+    func testOutdentRemovesLeadingSpacesFromEachLine() {
+        let result = MultiCursorEditEngine.apply(
+            text: "    foo\n    bar",
+            selections: [
+                .init(location: 0, length: 0),
+                .init(location: 8, length: 0),
+            ],
+            operation: .outdent(tabSize: 4, useSpaces: true)
+        )
+
+        XCTAssertEqual(result.text, "foo\nbar")
+        XCTAssertEqual(
+            result.selections,
+            [
+                .init(location: 0, length: 0),
+                .init(location: 4, length: 0),
+            ]
+        )
+    }
 }
 #endif

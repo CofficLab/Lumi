@@ -3,7 +3,7 @@ import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView
 
-final class ScrollCoordinator: TextViewCoordinator {
+final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
     private weak var state: EditorState?
     private var boundsObserver: NSObjectProtocol?
     private var frameObserver: NSObjectProtocol?
@@ -13,9 +13,24 @@ final class ScrollCoordinator: TextViewCoordinator {
     }
 
     nonisolated func prepareCoordinator(controller: TextViewController) {
+        MainActor.assumeIsolated {
+            prepareOnMain(controller: controller)
+        }
+    }
+
+    nonisolated func destroy() {
+        MainActor.assumeIsolated {
+            removeObservers()
+            state = nil
+        }
+    }
+
+    @MainActor
+    private func prepareOnMain(controller: TextViewController) {
         removeObservers()
 
-        guard let scrollView = controller.textView?.enclosingScrollView else { return }
+        guard let textView = controller.textView,
+              let scrollView = textView.enclosingScrollView else { return }
         let clipView = scrollView.contentView
         clipView.postsBoundsChangedNotifications = true
         clipView.postsFrameChangedNotifications = true
@@ -26,7 +41,9 @@ final class ScrollCoordinator: TextViewCoordinator {
             object: clipView,
             queue: .main
         ) { _ in
-            state?.applyScrollObservation(viewportOrigin: clipView.bounds.origin)
+            MainActor.assumeIsolated {
+                Self.publishViewportObservation(from: textView, clipView: clipView, state: state)
+            }
         }
 
         frameObserver = NotificationCenter.default.addObserver(
@@ -34,17 +51,12 @@ final class ScrollCoordinator: TextViewCoordinator {
             object: clipView,
             queue: .main
         ) { _ in
-            state?.applyScrollObservation(viewportOrigin: clipView.bounds.origin)
+            MainActor.assumeIsolated {
+                Self.publishViewportObservation(from: textView, clipView: clipView, state: state)
+            }
         }
 
-        DispatchQueue.main.async {
-            state?.applyScrollObservation(viewportOrigin: clipView.bounds.origin)
-        }
-    }
-
-    nonisolated func destroy() {
-        removeObservers()
-        state = nil
+        Self.publishViewportObservation(from: textView, clipView: clipView, state: state)
     }
 
     private func removeObservers() {
@@ -56,5 +68,29 @@ final class ScrollCoordinator: TextViewCoordinator {
             NotificationCenter.default.removeObserver(frameObserver)
             self.frameObserver = nil
         }
+    }
+
+    @MainActor
+    private static func publishViewportObservation(from textView: TextView, clipView: NSClipView, state: EditorState?) {
+        state?.applyScrollObservation(viewportOrigin: clipView.bounds.origin)
+
+        guard let layoutManager = textView.layoutManager else {
+            state?.resetViewportObservation()
+            return
+        }
+        guard let visibleTextRange = textView.visibleTextRange else {
+            state?.resetViewportObservation(totalLines: layoutManager.lineCount)
+            return
+        }
+
+        let totalLines = layoutManager.lineCount
+        let startLine = layoutManager.textLineForOffset(visibleTextRange.location)?.index ?? 0
+        let endOffset = max(visibleTextRange.location, visibleTextRange.max - 1)
+        let endLine = layoutManager.textLineForOffset(endOffset)?.index ?? startLine
+        state?.applyViewportObservation(
+            startLine: startLine,
+            endLine: min(totalLines, endLine + 1),
+            totalLines: totalLines
+        )
     }
 }

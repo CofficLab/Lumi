@@ -148,7 +148,13 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Lumi-Info.plist",
-				Plugins-Editor/GoEditorPlugin/GoEditorPlugin.README.md,
+				"Plugins-Editor/CSSEditorPlugin/CSSEditorPlugin.README.md",
+				"Plugins-Editor/GoEditorPlugin/GoEditorPlugin.README.md",
+				"Plugins-Editor/HTMLEditorPlugin/HTMLEditorPlugin.README.md",
+				"Plugins-Editor/JSEditorPlugin/JSEditorPlugin.README.md",
+				"Plugins-Editor/VueEditorPlugin/VueEditorPlugin.README.md",
+				Plugins/AgentEditorPlugin/.agent/rules/EDITOR_MARKDOWN_HIGHLIGHT_PLAN.md,
+				Plugins/AgentEditorPlugin/EDITOR_MARKDOWN_HIGHLIGHT_PLAN.md,
 				Plugins/ConversationTimelinePlugin/ConversationTimelinePlugin.README.md,
 			);
 			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
@@ -589,7 +595,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.59.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiFinder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -634,7 +640,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.59.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiFinder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -857,7 +863,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
 				);
-				MARKETING_VERSION = 1.59.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -908,7 +914,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
 				);
-				MARKETING_VERSION = 1.59.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -939,7 +945,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.59.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.NettoExtension;
 				PRODUCT_NAME = "$(inherited)";
 				REGISTER_APP_GROUPS = YES;
@@ -973,7 +979,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.59.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.NettoExtension;
 				PRODUCT_NAME = "$(inherited)";
 				REGISTER_APP_GROUPS = YES;

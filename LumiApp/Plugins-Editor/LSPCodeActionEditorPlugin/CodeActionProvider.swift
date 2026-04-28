@@ -58,43 +58,39 @@ final class CodeActionProvider: ObservableObject {
             Int(diag.range.start.line) <= line && Int(diag.range.end.line) >= line
         }
 
-        let pluginContext = EditorCodeActionContext(
-            languageId: languageId,
-            line: line,
-            character: character,
-            selectedText: selectedText
-        )
-        let pluginSuggestions = await editorExtensionRegistry?.codeActionSuggestions(for: pluginContext) ?? []
-        let pluginItems = pluginSuggestions.map { suggestion in
-            CodeActionItem(
-                title: suggestion.title,
-                kind: "plugin",
-                payload: .plugin(suggestion),
-                isPreferred: false
-            )
-        }
-
-        guard !lineDiagnostics.isEmpty, let firstDiag = lineDiagnostics.first else {
-            requestLifecycle.reset()
-            isLoading = false
-            let merged = sortCodeActionItems(pluginItems)
-            actions = merged
-            isVisible = !merged.isEmpty
-            return
-        }
-
         isLoading = true
         requestLifecycle.run(
-            operation: { [lspService] in
-                await lspService.requestCodeAction(
-                    uri: uri,
-                    range: firstDiag.range,
-                    diagnostics: lineDiagnostics
+            operation: { [lspService, weak editorExtensionRegistry] in
+                let pluginContext = EditorCodeActionContext(
+                    languageId: languageId,
+                    line: line,
+                    character: character,
+                    selectedText: selectedText
                 )
+                async let pluginSuggestions = editorExtensionRegistry?.codeActionSuggestions(for: pluginContext) ?? []
+                async let lspCodeActions: [CodeAction] = {
+                    guard !lineDiagnostics.isEmpty, let firstDiag = lineDiagnostics.first else {
+                        return []
+                    }
+                    return await lspService.requestCodeAction(
+                        uri: uri,
+                        range: firstDiag.range,
+                        diagnostics: lineDiagnostics
+                    )
+                }()
+                return await (pluginSuggestions, lspCodeActions)
             },
-            apply: { [weak self] codeActions in
+            apply: { [weak self] pluginSuggestions, codeActions in
                 guard let self else { return }
                 isLoading = false
+                let pluginItems = pluginSuggestions.map { suggestion in
+                    CodeActionItem(
+                        title: suggestion.title,
+                        kind: "plugin",
+                        payload: .plugin(suggestion),
+                        isPreferred: false
+                    )
+                }
                 let lspItems = codeActions.compactMap(Self.codeActionItem(from:))
                 let merged = sortCodeActionItems(lspItems + pluginItems)
                 actions = merged

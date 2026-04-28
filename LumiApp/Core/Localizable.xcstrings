@@ -2435,10 +2435,19 @@
         }
       }
     },
+    "File changed on disk" : {
+
+    },
     "File indexing is automatic when switching projects" : {
 
     },
     "Finder" : {
+
+    },
+    "Fix All on Save" : {
+
+    },
+    "Format on Save" : {
 
     },
     "G" : {
@@ -2736,6 +2745,9 @@
         }
       }
     },
+    "Insert Final Newline" : {
+
+    },
     "Interface" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2832,6 +2844,9 @@
           }
         }
       }
+    },
+    "Keep Editor Version" : {
+
     },
     "Keys" : {
       "localizations" : {
@@ -3572,6 +3587,9 @@
         }
       }
     },
+    "Organize Imports on Save" : {
+
+    },
     "Password" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3967,6 +3985,9 @@
           }
         }
       }
+    },
+    "Reload from Disk" : {
+
     },
     "Reset" : {
       "localizations" : {
@@ -4932,6 +4953,9 @@
           }
         }
       }
+    },
+    "Trim Trailing Whitespace" : {
+
     },
     "Try other search keywords" : {
       "extractionState" : "stale",

@@ -75,6 +75,9 @@ final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var activeSession = EditorSession()
     @Published private(set) var findMatches: [EditorFindMatch] = []
     @Published private(set) var recentCommandIDs: [String] = []
+    @Published private(set) var viewportVisibleLineRange: Range<Int> = 0..<0
+    @Published private(set) var viewportRenderLineRange: Range<Int> = 0..<0
+    let viewportRenderController = ViewportRenderController()
 
     var onActiveSessionChanged: ((EditorSession) -> Void)?
 
@@ -83,6 +86,18 @@ final class EditorState: ObservableObject, SuperLog {
     private var multiCursorSearchSession: EditorMultiCursorSearchSession?
     private var isSessionSyncSuspended = false
     private let referencesRequestGeneration = RequestGeneration()
+
+    private var savePipelineOptions: EditorSavePipelineOptions {
+        EditorSavePipelineOptions(
+            textParticipants: .init(
+                trimTrailingWhitespace: trimTrailingWhitespaceOnSave,
+                insertFinalNewline: insertFinalNewlineOnSave
+            ),
+            formatOnSave: formatOnSave,
+            organizeImportsOnSave: organizeImportsOnSave,
+            fixAllOnSave: fixAllOnSave
+        )
+    }
 
     private func bindDiagnostics() {
         diagnosticsCancellable?.cancel()
@@ -172,6 +187,13 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 上次已知的文件修改日期
     private var lastKnownModificationDate: Date?
+
+    private struct ExternalFileConflictState {
+        let content: String
+        let modificationDate: Date
+    }
+
+    private var externalFileConflictState: ExternalFileConflictState?
     
     /// 轮询间隔（秒）
     private static let pollInterval: TimeInterval = 1.0
@@ -233,17 +255,68 @@ final class EditorState: ObservableObject, SuperLog {
 
     private var inlayHintRefreshTask: Task<Void, Never>?
 
+    var isSyntaxHighlightingEnabledInViewport: Bool {
+        if isLongLineProtectionSuppressingSyntaxHighlighting {
+            return false
+        }
+        return Self.isViewportFeatureEnabled(
+            viewportRange: viewportRenderLineRange,
+            maxLine: largeFileMode.maxSyntaxHighlightLines
+        )
+    }
+
+    var areInlayHintsEnabledInViewport: Bool {
+        !largeFileMode.isInlayHintsDisabled && isSyntaxHighlightingEnabledInViewport
+    }
+
+    var isLongLineProtectionSuppressingSyntaxHighlighting: Bool {
+        Self.isLongLineProtectionSuppressingSyntaxHighlighting(
+            largeFileMode: largeFileMode,
+            longestDetectedLine: longestDetectedLine
+        )
+    }
+
+    static func isLongLineProtectionSuppressingSyntaxHighlighting(
+        largeFileMode: LargeFileMode,
+        longestDetectedLine: LongestDetectedLine?
+    ) -> Bool {
+        largeFileMode.isLongLineProtectionEnabled && longestDetectedLine != nil
+    }
+
+    static func isViewportFeatureEnabled(viewportRange: Range<Int>, maxLine: Int) -> Bool {
+        if maxLine == .max {
+            return true
+        }
+        if viewportRange.isEmpty {
+            return true
+        }
+        return viewportRange.lowerBound < maxLine
+    }
+
     /// 在光标稳定后刷新可见区域内的 Inlay Hints
     func scheduleInlayHintsRefreshIfNeeded(controller: TextViewController) {
+        scheduleInlayHintsRefreshIfNeeded(textView: controller.textView)
+    }
+
+    /// 在 viewport 或光标稳定后刷新可见区域内的 Inlay Hints
+    func scheduleInlayHintsRefreshIfNeeded(textView: TextView?) {
         inlayHintRefreshTask?.cancel()
         guard lspService.supportsInlayHints else { return }
+        guard areInlayHintsEnabledInViewport else {
+            inlayHintProvider.clear()
+            return
+        }
         guard currentFileURL != nil else { return }
         let uriSnapshot = currentFileURL?.absoluteString
-        inlayHintRefreshTask = Task { @MainActor [weak self, weak controller] in
+        inlayHintRefreshTask = Task { @MainActor [weak self, weak textView] in
             try? await Task.sleep(for: .milliseconds(380))
             guard let self, !Task.isCancelled else { return }
+            guard self.areInlayHintsEnabledInViewport else {
+                self.inlayHintProvider.clear()
+                return
+            }
             guard let uri = uriSnapshot ?? self.currentFileURL?.absoluteString else { return }
-            guard let tv = controller?.textView else { return }
+            guard let tv = textView else { return }
             guard let range = EditorInlayHintLayout.visibleDocumentLSPRange(in: tv) else { return }
             await self.inlayHintProvider.requestHints(
                 uri: uri,
@@ -263,6 +336,12 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 当前文件是否可预览
     @Published var canPreview: Bool = false
+
+    /// 当前文件的大文件模式。
+    @Published private(set) var largeFileMode: LargeFileMode = .normal
+
+    /// 当前文档检测到的最长长行信息。
+    @Published private(set) var longestDetectedLine: LongestDetectedLine?
 
     /// 当前文件是否为 Markdown 预览模式
     @Published var isMarkdownPreviewMode: Bool = false
@@ -395,6 +474,23 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 是否使用空格替代 Tab
     @Published var useSpaces: Bool = true
+
+    /// 保存时是否执行格式化
+    @Published var formatOnSave: Bool = false
+
+    /// 保存时是否执行 organize imports
+    @Published var organizeImportsOnSave: Bool = false
+
+    /// 保存时是否执行 source.fixAll
+    @Published var fixAllOnSave: Bool = false
+
+    /// 保存时是否去除行尾空白
+    @Published var trimTrailingWhitespaceOnSave: Bool = true
+
+    /// 保存时是否补最终换行
+    @Published var insertFinalNewlineOnSave: Bool = true
+
+    @Published private(set) var hasExternalFileConflict: Bool = false
     
     /// 是否自动换行
     @Published var wrapLines: Bool = true
@@ -446,6 +542,7 @@ final class EditorState: ObservableObject, SuperLog {
         case editing
         case saving
         case saved
+        case conflict(String)
         case error(String)
         
         var icon: String {
@@ -454,6 +551,7 @@ final class EditorState: ObservableObject, SuperLog {
             case .editing: return "pencil.circle"
             case .saving: return "arrow.triangle.2.circlepath"
             case .saved: return "checkmark.circle.fill"
+            case .conflict: return "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90"
             case .error: return "exclamationmark.triangle.fill"
             }
         }
@@ -464,6 +562,7 @@ final class EditorState: ObservableObject, SuperLog {
             case .editing: return String(localized: "Editing...", table: "LumiEditor")
             case .saving: return String(localized: "Saving...", table: "LumiEditor")
             case .saved: return String(localized: "Saved", table: "LumiEditor")
+            case .conflict(let msg): return msg
             case .error(let msg): return msg
             }
         }
@@ -619,6 +718,21 @@ final class EditorState: ObservableObject, SuperLog {
         if let us = EditorConfigStore.loadBool(forKey: EditorConfigStore.useSpacesKey) {
             useSpaces = us
         }
+        if let format = EditorConfigStore.loadBool(forKey: EditorConfigStore.formatOnSaveKey) {
+            formatOnSave = format
+        }
+        if let organizeImports = EditorConfigStore.loadBool(forKey: EditorConfigStore.organizeImportsOnSaveKey) {
+            organizeImportsOnSave = organizeImports
+        }
+        if let fixAll = EditorConfigStore.loadBool(forKey: EditorConfigStore.fixAllOnSaveKey) {
+            fixAllOnSave = fixAll
+        }
+        if let trimTrailingWhitespace = EditorConfigStore.loadBool(forKey: EditorConfigStore.trimTrailingWhitespaceOnSaveKey) {
+            trimTrailingWhitespaceOnSave = trimTrailingWhitespace
+        }
+        if let insertFinalNewline = EditorConfigStore.loadBool(forKey: EditorConfigStore.insertFinalNewlineOnSaveKey) {
+            insertFinalNewlineOnSave = insertFinalNewline
+        }
         if let wl = EditorConfigStore.loadBool(forKey: EditorConfigStore.wrapLinesKey) {
             wrapLines = wl
         }
@@ -648,6 +762,11 @@ final class EditorState: ObservableObject, SuperLog {
         EditorConfigStore.saveValue(fontSize, forKey: EditorConfigStore.fontSizeKey)
         EditorConfigStore.saveValue(tabWidth, forKey: EditorConfigStore.tabWidthKey)
         EditorConfigStore.saveValue(useSpaces, forKey: EditorConfigStore.useSpacesKey)
+        EditorConfigStore.saveValue(formatOnSave, forKey: EditorConfigStore.formatOnSaveKey)
+        EditorConfigStore.saveValue(organizeImportsOnSave, forKey: EditorConfigStore.organizeImportsOnSaveKey)
+        EditorConfigStore.saveValue(fixAllOnSave, forKey: EditorConfigStore.fixAllOnSaveKey)
+        EditorConfigStore.saveValue(trimTrailingWhitespaceOnSave, forKey: EditorConfigStore.trimTrailingWhitespaceOnSaveKey)
+        EditorConfigStore.saveValue(insertFinalNewlineOnSave, forKey: EditorConfigStore.insertFinalNewlineOnSaveKey)
         EditorConfigStore.saveValue(wrapLines, forKey: EditorConfigStore.wrapLinesKey)
         EditorConfigStore.saveValue(showMinimap, forKey: EditorConfigStore.showMinimapKey)
         EditorConfigStore.saveValue(showGutter, forKey: EditorConfigStore.showGutterKey)
@@ -763,7 +882,7 @@ final class EditorState: ObservableObject, SuperLog {
                 }
                 
                 let shouldTruncate = fileSize > Self.truncationThreshold
-                let shouldReadOnly = fileSize > Self.readOnlyThreshold
+                let mode = LargeFileMode.mode(for: fileSize)
                 
                 let content: String
                 if shouldTruncate {
@@ -775,13 +894,16 @@ final class EditorState: ObservableObject, SuperLog {
                 
                 await MainActor.run { [weak self] in
                     guard let self, self.currentFileURL != loadingURL || self.content == nil else { return }
+                    let longestLine = LongLineDetector.findLongestLine(in: content)
                     self.withoutSessionSync {
                         self.currentFileURL = loadingURL
                         _ = self.documentController.load(text: content)
                         self.content = self.documentController.textStorage
                         self.persistedContentSnapshot = content
                         self.canPreview = true
-                        self.isEditable = !shouldReadOnly
+                        self.largeFileMode = mode
+                        self.longestDetectedLine = longestLine
+                        self.isEditable = !shouldTruncate && !mode.isReadOnly
                         self.isTruncated = shouldTruncate
                         self.fileExtension = loadingURL.pathExtension.lowercased()
                         self.fileName = loadingURL.lastPathComponent
@@ -810,6 +932,7 @@ final class EditorState: ObservableObject, SuperLog {
 
                         // 计算行数
                         self.totalLines = content.filter { $0 == "\n" }.count + 1
+                        self.resetViewportObservation(totalLines: self.totalLines)
                         self.inlayHintProvider.clear()
                         self.codeActionProvider.clear()
                         self.inlayHintRefreshTask?.cancel()
@@ -910,6 +1033,33 @@ final class EditorState: ObservableObject, SuperLog {
         applyInteractionUpdate(
             .scroll(EditorScrollState(viewportOrigin: viewportOrigin))
         )
+    }
+
+    func applyViewportObservation(startLine: Int, endLine: Int, totalLines: Int) {
+        let clampedTotalLines = max(0, totalLines)
+        let clampedStart = max(0, min(startLine, clampedTotalLines))
+        let clampedEnd = max(clampedStart, min(endLine, clampedTotalLines))
+
+        viewportRenderController.updateVisibleRange(
+            startLine: clampedStart,
+            endLine: clampedEnd,
+            totalLines: clampedTotalLines
+        )
+        viewportVisibleLineRange = clampedStart..<clampedEnd
+        viewportRenderLineRange = viewportRenderController.renderStartLine..<viewportRenderController.renderEndLine
+
+        if areInlayHintsEnabledInViewport {
+            scheduleInlayHintsRefreshIfNeeded(textView: focusedTextView)
+        } else {
+            inlayHintRefreshTask?.cancel()
+            inlayHintProvider.clear()
+        }
+    }
+
+    func resetViewportObservation(totalLines: Int = 0) {
+        viewportRenderController.updateVisibleRange(startLine: 0, endLine: 0, totalLines: max(0, totalLines))
+        viewportVisibleLineRange = 0..<0
+        viewportRenderLineRange = 0..<0
     }
 
     private func applyInteractionUpdate(_ update: EditorInteractionUpdate) {
@@ -1160,6 +1310,9 @@ final class EditorState: ObservableObject, SuperLog {
             hasUnsavedChanges = false
             saveState = .idle
             detectedLanguage = nil
+            largeFileMode = .normal
+            longestDetectedLine = nil
+            resetViewportObservation()
             resetPrimaryCursorPosition()
             totalLines = 0
             clearPanelData(
@@ -1211,6 +1364,9 @@ final class EditorState: ObservableObject, SuperLog {
             isBinaryFile = true
             isEditable = false
             isTruncated = false
+            largeFileMode = LargeFileMode.mode(for: Int64(fileSize))
+            longestDetectedLine = nil
+            resetViewportObservation()
             fileExtension = url.pathExtension.lowercased()
             fileName = url.lastPathComponent
             hasUnsavedChanges = false
@@ -1250,6 +1406,9 @@ final class EditorState: ObservableObject, SuperLog {
         if let result = documentController.syncBufferFromTextStorageIfNeeded() {
             content = documentController.textStorage
             totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+            if viewportVisibleLineRange.isEmpty {
+                resetViewportObservation(totalLines: totalLines)
+            }
         }
         let changed: Bool
         if let snapshot = persistedContentSnapshot {
@@ -1537,8 +1696,12 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 立即保存
     func saveNow() {
-        guard let content = documentController.currentText ?? content?.string, let fileURL = currentFileURL else { return }
-        performSave(content: content, to: fileURL)
+        if case .saving = saveState {
+            return
+        }
+        Task { @MainActor [weak self] in
+            await self?.prepareAndSaveNow()
+        }
     }
 
     /// 仅在存在未保存改动时立即保存（用于失焦等场景）
@@ -1593,6 +1756,7 @@ final class EditorState: ObservableObject, SuperLog {
                 }
                 persistedContentSnapshot = content
                 hasUnsavedChanges = false
+                clearExternalFileConflict()
                 saveState = .saved
                 syncActiveSessionState()
                 scheduleSuccessClear()
@@ -1603,6 +1767,101 @@ final class EditorState: ObservableObject, SuperLog {
                 scheduleSuccessClear()
             }
         }
+    }
+
+    private func prepareSaveFormatting(_ text: String, tabSize: Int, insertSpaces: Bool) async -> String? {
+        guard let edits = await lspCoordinator.requestFormatting(
+            tabSize: tabSize,
+            insertSpaces: insertSpaces
+        ), edits.isEmpty == false else {
+            return nil
+        }
+        return TextEditApplier.apply(edits: edits, to: text)
+    }
+
+    private func applyPreparedSaveText(_ text: String) {
+        let result = documentController.replaceText(text)
+        content = documentController.textStorage
+        totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+        lspCoordinator.replaceDocument(result.snapshot.text)
+        notifyContentChanged()
+    }
+
+    private func fullDocumentRange(for text: String) -> LSPRange {
+        let lines = text.components(separatedBy: .newlines)
+        let endLine = max(lines.count - 1, 0)
+        let endCharacter = lines.last?.utf16.count ?? 0
+        return LSPRange(
+            start: Position(line: 0, character: 0),
+            end: Position(line: endLine, character: endCharacter)
+        )
+    }
+
+    private func codeActionKinds(for actions: [EditorDeferredSaveAction]) -> [CodeActionKind] {
+        actions.compactMap { action in
+            switch action {
+            case .organizeImports:
+                return .SourceOrganizeImports
+            case .fixAll:
+                return .SourceFixAll
+            }
+        }
+    }
+
+    private func applyDeferredSaveActions(_ actions: [EditorDeferredSaveAction]) async {
+        guard actions.isEmpty == false else { return }
+        guard let currentText = documentController.currentText ?? content?.string else { return }
+        let requestedKinds = codeActionKinds(for: actions)
+        guard !requestedKinds.isEmpty else { return }
+
+        let range = fullDocumentRange(for: currentText)
+        let codeActions = await lspCoordinator.requestCodeAction(
+            range: range,
+            diagnostics: problemDiagnostics,
+            triggerKinds: requestedKinds
+        )
+        guard !codeActions.isEmpty else { return }
+
+        for action in codeActions {
+            var resolved = action
+            if resolved.edit == nil, lspService.codeActionResolveSupported,
+               let resolvedAction = await lspService.resolveCodeAction(resolved) {
+                resolved = resolvedAction
+            }
+            guard let edit = resolved.edit else { continue }
+            applyCodeActionWorkspaceEdit(edit)
+        }
+    }
+
+    private func prepareAndSaveNow() async {
+        guard let currentContent = documentController.currentText ?? content?.string,
+              let fileURL = currentFileURL else { return }
+
+        let requestFileURL = fileURL
+        let prepared = await EditorSavePipelineController.prepare(
+            text: currentContent,
+            options: savePipelineOptions,
+            tabSize: tabWidth,
+            insertSpaces: useSpaces,
+            formatDocument: { [weak self] text, tabSize, insertSpaces in
+                guard let self else { return nil }
+                return await self.prepareSaveFormatting(
+                    text,
+                    tabSize: tabSize,
+                    insertSpaces: insertSpaces
+                )
+            }
+        )
+
+        guard currentFileURL == requestFileURL else { return }
+
+        if prepared.changed {
+            applyPreparedSaveText(prepared.text)
+        }
+
+        await applyDeferredSaveActions(prepared.deferredActions)
+        let finalContent = documentController.currentText ?? content?.string ?? prepared.text
+        performSave(content: finalContent, to: requestFileURL)
     }
     
     /// 安排成功状态清除
@@ -1651,13 +1910,11 @@ final class EditorState: ObservableObject, SuperLog {
         pollTimer?.invalidate()
         pollTimer = nil
         lastKnownModificationDate = nil
+        clearExternalFileConflict()
     }
     
     /// 轮询检查文件是否变化
     private func pollFileChange(url: URL) {
-        // 有未保存修改时不覆盖
-        guard !hasUnsavedChanges else { return }
-        
         let currentModDate = Self.getModificationDate(of: url)
         
         // 文件可能被删除
@@ -1693,7 +1950,14 @@ final class EditorState: ObservableObject, SuperLog {
                     return
                 }
                 
-                self.applyExternalContent(newContent, modificationDate: currentModDate)
+                if self.hasUnsavedChanges {
+                    self.registerExternalFileConflict(
+                        newContent,
+                        modificationDate: currentModDate
+                    )
+                } else {
+                    self.applyExternalContent(newContent, modificationDate: currentModDate)
+                }
             } catch {
                 if Self.verbose {
                     logger.error("\(Self.t)读取外部文件失败：\(error)")
@@ -1701,11 +1965,45 @@ final class EditorState: ObservableObject, SuperLog {
             }
         }
     }
+
+    private func registerExternalFileConflict(_ newContent: String, modificationDate: Date) {
+        if let conflict = externalFileConflictState,
+           conflict.modificationDate == modificationDate,
+           conflict.content == newContent {
+            return
+        }
+
+        externalFileConflictState = ExternalFileConflictState(
+            content: newContent,
+            modificationDate: modificationDate
+        )
+        hasExternalFileConflict = true
+        saveState = .conflict(String(localized: "File changed on disk", table: "LumiEditor"))
+    }
+
+    private func clearExternalFileConflict() {
+        externalFileConflictState = nil
+        hasExternalFileConflict = false
+    }
+
+    func reloadExternalFileConflict() {
+        guard let conflict = externalFileConflictState else { return }
+        applyExternalContent(
+            conflict.content,
+            modificationDate: conflict.modificationDate
+        )
+        clearExternalFileConflict()
+    }
+
+    func keepEditorVersionForExternalConflict() {
+        guard let conflict = externalFileConflictState else { return }
+        lastKnownModificationDate = conflict.modificationDate
+        clearExternalFileConflict()
+        saveState = hasUnsavedChanges ? .editing : .idle
+    }
     
     /// 应用外部修改到编辑器
     private func applyExternalContent(_ newContent: String, modificationDate: Date) {
-        guard !hasUnsavedChanges else { return }
-        
         if Self.verbose {
             logger.info("\(Self.t)检测到外部修改，重新加载：\(self.currentFileURL?.lastPathComponent ?? "")")
         }
@@ -1718,6 +2016,7 @@ final class EditorState: ObservableObject, SuperLog {
         
         persistedContentSnapshot = newContent
         lastKnownModificationDate = modificationDate
+        clearExternalFileConflict()
         hasUnsavedChanges = false
         saveState = .idle
         totalLines = newContent.filter { $0 == "\n" }.count + 1
@@ -2051,11 +2350,29 @@ final class EditorState: ObservableObject, SuperLog {
             operation: operation
         )
 
-        let transaction = MultiCursorTransactionBuilder.makeTransaction(
-            operation: operation,
-            selections: selections,
-            updatedSelections: result.selections
-        )
+        let transaction: EditorTransaction
+        switch operation {
+        case .indent, .outdent:
+            transaction = EditorTransaction(
+                replacements: [
+                    .init(
+                        range: EditorRange(location: 0, length: (text as NSString).length),
+                        text: result.text
+                    )
+                ],
+                updatedSelections: result.selections.map {
+                    EditorSelection(
+                        range: EditorRange(location: $0.location, length: $0.length)
+                    )
+                }
+            )
+        default:
+            transaction = MultiCursorTransactionBuilder.makeTransaction(
+                operation: operation,
+                selections: selections,
+                updatedSelections: result.selections
+            )
+        }
         applyEditorTransaction(transaction, reason: "multi_cursor_operation")
         return result.selections
     }
@@ -2221,6 +2538,90 @@ final class EditorState: ObservableObject, SuperLog {
     private func applyEditorTransaction(_ transaction: EditorTransaction, reason: String) {
         guard let result = documentController.apply(transaction: transaction) else { return }
         commitDocumentEditResult(result, reason: reason)
+    }
+
+    func applyBracketAutoClosingEdit(
+        replacementRange: NSRange,
+        replacementText: String,
+        selectedRange: NSRange
+    ) -> Bool {
+        applyInputEdit(
+            replacementRange: replacementRange,
+            replacementText: replacementText,
+            selectedRanges: [selectedRange],
+            reason: "bracket_auto_closing"
+        )
+    }
+
+    func applySmartIndentEdit(
+        replacementRange: NSRange,
+        replacementText: String,
+        cursorLocation: Int
+    ) -> Bool {
+        applyInputEdit(
+            replacementRange: replacementRange,
+            replacementText: replacementText,
+            selectedRanges: [NSRange(location: cursorLocation, length: 0)],
+            reason: "smart_indent_enter"
+        )
+    }
+
+    func applyOutdentEdit(
+        replacementRange: NSRange,
+        replacementText: String,
+        selectedRange: NSRange
+    ) -> Bool {
+        applyInputEdit(
+            replacementRange: replacementRange,
+            replacementText: replacementText,
+            selectedRanges: [selectedRange],
+            reason: "smart_outdent"
+        )
+    }
+
+    func applyFullTextEdit(
+        replacementText: String,
+        selectedRanges: [NSRange],
+        reason: String
+    ) -> Bool {
+        let fullLength = (content?.string ?? "") as NSString
+        return applyInputEdit(
+            replacementRange: NSRange(location: 0, length: fullLength.length),
+            replacementText: replacementText,
+            selectedRanges: selectedRanges,
+            reason: reason
+        )
+    }
+
+    private func applyInputEdit(
+        replacementRange: NSRange,
+        replacementText: String,
+        selectedRanges: [NSRange],
+        reason: String
+    ) -> Bool {
+        guard replacementRange.location != NSNotFound else { return false }
+
+        let transaction = EditorTransaction(
+            replacements: [
+                .init(
+                    range: EditorRange(
+                        location: replacementRange.location,
+                        length: replacementRange.length
+                    ),
+                    text: replacementText
+                )
+            ],
+            updatedSelections: selectedRanges.map {
+                EditorSelection(
+                    range: EditorRange(
+                        location: $0.location,
+                        length: $0.length
+                    )
+                )
+            }
+        )
+        applyEditorTransaction(transaction, reason: reason)
+        return true
     }
 
     private func commitDocumentEditResult(_ result: EditorEditResult, reason: String) {

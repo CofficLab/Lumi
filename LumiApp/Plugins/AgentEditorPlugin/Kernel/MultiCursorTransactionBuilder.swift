@@ -39,6 +39,8 @@ enum MultiCursorTransactionBuilder {
                     text: ""
                 )
             }
+        case .indent, .outdent:
+            replacements = []
         }
 
         return EditorTransaction(

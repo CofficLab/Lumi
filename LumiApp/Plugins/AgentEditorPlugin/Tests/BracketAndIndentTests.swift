@@ -137,6 +137,43 @@ final class BracketMatcherAutoCloseTests: XCTestCase {
         XCTAssertTrue(BracketMatcher.shouldAutoSurround(typedChar: "{", config: config))
         XCTAssertFalse(BracketMatcher.shouldAutoSurround(typedChar: "a", config: config))
     }
+
+    func testAutoClosingEditInsertsPairAndPlacesCursorInside() {
+        let result = BracketMatcher.autoClosingEdit(
+            in: "let value = ",
+            selection: NSRange(location: 12, length: 0),
+            typedChar: "(",
+            config: config
+        )
+
+        XCTAssertEqual(result?.replacementText, "()")
+        XCTAssertEqual(result?.selectedRange, NSRange(location: 13, length: 0))
+    }
+
+    func testAutoClosingEditSurroundsSelection() {
+        let text = "value"
+        let result = BracketMatcher.autoClosingEdit(
+            in: text,
+            selection: NSRange(location: 0, length: 5),
+            typedChar: "(",
+            config: config
+        )
+
+        XCTAssertEqual(result?.replacementText, "(value)")
+        XCTAssertEqual(result?.selectedRange, NSRange(location: 7, length: 0))
+    }
+
+    func testAutoClosingEditSkipsExistingCloseBracket() {
+        let result = BracketMatcher.autoClosingEdit(
+            in: "()",
+            selection: NSRange(location: 1, length: 0),
+            typedChar: ")",
+            config: config
+        )
+
+        XCTAssertEqual(result?.replacementText, "")
+        XCTAssertEqual(result?.selectedRange, NSRange(location: 2, length: 0))
+    }
 }
 
 final class SmartIndentHandlerTests: XCTestCase {
@@ -179,6 +216,15 @@ final class SmartIndentHandlerTests: XCTestCase {
         XCTAssertEqual(result.cursorOffset, 5)
     }
 
+    func testEnterPreservesCRLFLineEndings() {
+        let text = "if true {\r\n    value\r\n}"
+        let position = "if true {\r\n    value".count
+        let result = SmartIndentHandler.handleEnter(in: text, at: position, tabSize: 4, useSpaces: true)
+
+        XCTAssertEqual(result.textToInsert, "\r\n    ")
+        XCTAssertEqual(result.cursorOffset, 6)
+    }
+
     func testTabWithSpaces() {
         let result = SmartIndentHandler.handleTab(at: 0, hasSelection: false, selectionStart: 0, selectionEnd: 0, tabSize: 4, useSpaces: true)
         XCTAssertEqual(result.textToInsert, "    ")
@@ -189,6 +235,45 @@ final class SmartIndentHandlerTests: XCTestCase {
         let result = SmartIndentHandler.handleTab(at: 0, hasSelection: false, selectionStart: 0, selectionEnd: 0, tabSize: 4, useSpaces: false)
         XCTAssertEqual(result.textToInsert, "\t")
         XCTAssertEqual(result.cursorOffset, 1)
+    }
+
+    func testBacktabRemovesLeadingSpacesFromCurrentLine() {
+        let text = "    let value = 1"
+        let result = SmartIndentHandler.handleBacktab(
+            in: text,
+            selection: NSRange(location: text.count, length: 0),
+            tabSize: 4,
+            useSpaces: true
+        )
+
+        XCTAssertEqual(result?.replacementText, "let value = 1")
+        XCTAssertEqual(result?.selectedRange, NSRange(location: text.count - 4, length: 0))
+    }
+
+    func testBacktabOutdentsAllSelectedLines() {
+        let text = "    first\n    second"
+        let result = SmartIndentHandler.handleBacktab(
+            in: text,
+            selection: NSRange(location: 0, length: (text as NSString).length),
+            tabSize: 4,
+            useSpaces: true
+        )
+
+        XCTAssertEqual(result?.replacementText, "first\nsecond")
+        XCTAssertEqual(result?.selectedRange, NSRange(location: 0, length: ("first\nsecond" as NSString).length))
+    }
+
+    func testTabIndentsAllSelectedLines() {
+        let text = "first\nsecond"
+        let result = SmartIndentHandler.handleTab(
+            in: text,
+            selection: NSRange(location: 0, length: (text as NSString).length),
+            tabSize: 4,
+            useSpaces: true
+        )
+
+        XCTAssertEqual(result?.replacementText, "    first\n    second")
+        XCTAssertEqual(result?.selectedRange, NSRange(location: 0, length: ("    first\n    second" as NSString).length))
     }
 }
 

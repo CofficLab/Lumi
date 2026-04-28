@@ -29,12 +29,14 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
     weak var textViewController: TextViewController?
     var currentFileURLProvider: (() -> URL?)?
     var onOpenExternalDefinition: ((URL, CursorPosition) -> Void)?
+    private let requestGeneration = RequestGeneration()
     
     // MARK: - JumpToDefinitionDelegate
     
     /// 查询定义链接 - 当用户 Cmd+Click 时，引擎调用此方法查找目标
     func queryLinks(forRange range: NSRange, textView: TextViewController) async -> [JumpToDefinitionLink]? {
         guard let textStorage = textStorage else { return nil }
+        let generation = requestGeneration.next()
         
         let content = textStorage.string
         let word = (content as NSString).substring(with: range)
@@ -54,6 +56,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             cursorRange: range,
             content: content
         ) {
+            guard requestGeneration.isCurrent(generation) else { return nil }
             if EditorPlugin.verbose {
                 EditorPlugin.logger.debug("\(self.t)LSP 匹配: '\(word)'")
             }
@@ -66,6 +69,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             cursorRange: range,
             content: content
         ) {
+            guard requestGeneration.isCurrent(generation) else { return nil }
             let position = CursorPosition(range: definitionRange)
             if EditorPlugin.verbose {
                 EditorPlugin.logger.debug("\(self.t)AST 匹配: '\(word)' -> \(definitionRange.location)")
@@ -79,6 +83,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             cursorRange: range,
             content: content
         ) {
+            guard requestGeneration.isCurrent(generation) else { return nil }
             let position = CursorPosition(range: fallbackRange)
             if EditorPlugin.verbose {
                 EditorPlugin.logger.debug("\(self.t)正则匹配: '\(word)' -> \(fallbackRange.location)")
@@ -134,6 +139,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         fallbackToRegex: Bool
     ) async {
         guard let ts = textStorage, let controller = textViewController else { return }
+        let generation = requestGeneration.next()
         let content = ts.string
         let word = (content as NSString).substring(with: range)
 
@@ -144,6 +150,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             cursorRange: range,
             content: content
         ) {
+            guard requestGeneration.isCurrent(generation) else { return }
             openNavigationLink(link, textStorage: ts, controller: controller)
             return
         }
@@ -155,6 +162,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
                cursorRange: range,
                content: content
            ) {
+            guard requestGeneration.isCurrent(generation) else { return }
             let position = CursorPosition(range: definitionRange)
             let link = createLink(for: word, targetRange: position, content: content)
             openNavigationLink(link, textStorage: ts, controller: controller)
@@ -168,6 +176,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
                cursorRange: range,
                content: content
            ) {
+            guard requestGeneration.isCurrent(generation) else { return }
             let position = CursorPosition(range: fallbackRange)
             let link = createLink(for: word, targetRange: position, content: content)
             openNavigationLink(link, textStorage: ts, controller: controller)

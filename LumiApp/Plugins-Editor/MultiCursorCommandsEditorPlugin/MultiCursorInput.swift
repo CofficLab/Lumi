@@ -17,6 +17,9 @@ final class MultiCursorInputInstaller: NSObject {
         if objc_getAssociatedObject(targetClass, Self.swizzledKey) == nil {
             objc_setAssociatedObject(targetClass, Self.swizzledKey, true, .OBJC_ASSOCIATION_RETAIN)
             swizzleInsertText(for: targetClass)
+            swizzleInsertNewline(for: targetClass)
+            swizzleInsertTab(for: targetClass)
+            swizzleInsertBacktab(for: targetClass)
             swizzleDeleteBackward(for: targetClass)
             swizzlePerformKeyEquivalent(for: targetClass)
             swizzleMoveLeft(for: targetClass)
@@ -58,6 +61,57 @@ final class MultiCursorInputInstaller: NSObject {
 
         let block: @convention(block) (TextView, Any?) -> Void = { textView, sender in
             if let helper = Self.helper(for: textView), helper.handleDeleteBackward() {
+                return
+            }
+
+            typealias Original = @convention(c) (AnyObject, Selector, Any?) -> Void
+            unsafeBitCast(originalIMP, to: Original.self)(textView, selector, sender)
+        }
+
+        class_replaceMethod(targetClass, selector, imp_implementationWithBlock(block), method_getTypeEncoding(method))
+    }
+
+    private func swizzleInsertNewline(for targetClass: AnyClass) {
+        let selector = #selector(NSResponder.insertNewline(_:))
+        guard let method = class_getInstanceMethod(targetClass, selector) else { return }
+        let originalIMP = method_getImplementation(method)
+
+        let block: @convention(block) (TextView, Any?) -> Void = { textView, sender in
+            if let helper = Self.helper(for: textView), helper.handleInsertNewline() {
+                return
+            }
+
+            typealias Original = @convention(c) (AnyObject, Selector, Any?) -> Void
+            unsafeBitCast(originalIMP, to: Original.self)(textView, selector, sender)
+        }
+
+        class_replaceMethod(targetClass, selector, imp_implementationWithBlock(block), method_getTypeEncoding(method))
+    }
+
+    private func swizzleInsertTab(for targetClass: AnyClass) {
+        let selector = #selector(NSResponder.insertTab(_:))
+        guard let method = class_getInstanceMethod(targetClass, selector) else { return }
+        let originalIMP = method_getImplementation(method)
+
+        let block: @convention(block) (TextView, Any?) -> Void = { textView, sender in
+            if let helper = Self.helper(for: textView), helper.handleInsertTab() {
+                return
+            }
+
+            typealias Original = @convention(c) (AnyObject, Selector, Any?) -> Void
+            unsafeBitCast(originalIMP, to: Original.self)(textView, selector, sender)
+        }
+
+        class_replaceMethod(targetClass, selector, imp_implementationWithBlock(block), method_getTypeEncoding(method))
+    }
+
+    private func swizzleInsertBacktab(for targetClass: AnyClass) {
+        let selector = #selector(NSResponder.insertBacktab(_:))
+        guard let method = class_getInstanceMethod(targetClass, selector) else { return }
+        let originalIMP = method_getImplementation(method)
+
+        let block: @convention(block) (TextView, Any?) -> Void = { textView, sender in
+            if let helper = Self.helper(for: textView), helper.handleInsertBacktab() {
                 return
             }
 
@@ -151,7 +205,6 @@ final class MultiCursorInputHelper: NSObject {
 
     func handleInsertText(_ string: Any, replacementRange: NSRange) -> Bool {
         guard let textView, let state else { return false }
-        guard state.multiCursorState.all.count > 1 else { return false }
         guard !isApplyingMultiCursorEdit else { return false }
 
         let text: String
@@ -162,6 +215,59 @@ final class MultiCursorInputHelper: NSObject {
         } else {
             return false
         }
+
+        if state.multiCursorState.all.count <= 1,
+           text.count == 1,
+           let typedChar = text.first,
+           let selection = singleSelectionRange(in: textView, replacementRange: replacementRange),
+           let currentText = state.content?.string {
+            let config = BracketPairsConfig.defaultForLanguage(state.detectedLanguage?.tsName ?? "swift")
+            if let edit = BracketMatcher.autoClosingEdit(
+                in: currentText,
+                selection: selection,
+                typedChar: typedChar,
+                config: config
+            ) {
+                isApplyingMultiCursorEdit = true
+                defer { isApplyingMultiCursorEdit = false }
+
+                if state.applyBracketAutoClosingEdit(
+                    replacementRange: edit.replacementRange,
+                    replacementText: edit.replacementText,
+                    selectedRange: edit.selectedRange
+                ) {
+                    textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+                    return true
+                }
+            }
+        }
+
+        if state.multiCursorState.all.count > 1,
+           text.count == 1,
+           let typedChar = text.first,
+           let currentText = state.content?.string {
+            let config = BracketPairsConfig.defaultForLanguage(state.detectedLanguage?.tsName ?? "swift")
+            if let edit = multiCursorAutoClosingEdit(
+                in: currentText,
+                selections: textView.selectionManager.textSelections.map(\.range),
+                typedChar: typedChar,
+                config: config
+            ) {
+                isApplyingMultiCursorEdit = true
+                defer { isApplyingMultiCursorEdit = false }
+
+                if state.applyFullTextEdit(
+                    replacementText: edit.text,
+                    selectedRanges: edit.selections,
+                    reason: "multi_cursor_bracket_auto_closing"
+                ) {
+                    textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+                    return true
+                }
+            }
+        }
+
+        guard state.multiCursorState.all.count > 1 else { return false }
 
         isApplyingMultiCursorEdit = true
         defer { isApplyingMultiCursorEdit = false }
@@ -205,6 +311,198 @@ final class MultiCursorInputHelper: NSObject {
             note: "resultSelectionCount=\(resultSelections.count)"
         )
         return true
+    }
+
+    func handleInsertNewline() -> Bool {
+        guard let textView, let state else { return false }
+        guard !isApplyingMultiCursorEdit else { return false }
+        guard state.multiCursorState.all.count <= 1 else { return false }
+        guard let selection = singleSelectionRange(in: textView, replacementRange: NSRange(location: NSNotFound, length: 0)),
+              let currentText = state.content?.string else {
+            return false
+        }
+
+        let result = SmartIndentHandler.handleEnter(
+            in: currentText,
+            at: selection.location,
+            tabSize: state.tabWidth,
+            useSpaces: state.useSpaces
+        )
+
+        isApplyingMultiCursorEdit = true
+        defer { isApplyingMultiCursorEdit = false }
+
+        guard state.applySmartIndentEdit(
+            replacementRange: selection,
+            replacementText: result.textToInsert,
+            cursorLocation: selection.location + result.cursorOffset
+        ) else {
+            return false
+        }
+
+        textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+        return true
+    }
+
+    func handleInsertTab() -> Bool {
+        guard let textView, let state else { return false }
+        guard !isApplyingMultiCursorEdit else { return false }
+        if state.multiCursorState.all.count > 1 {
+            let indentUnit = state.useSpaces
+                ? String(repeating: " ", count: state.tabWidth)
+                : "\t"
+
+            isApplyingMultiCursorEdit = true
+            defer { isApplyingMultiCursorEdit = false }
+
+            guard state.applyMultiCursorOperation(.indent(indentUnit)) != nil else {
+                return false
+            }
+            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+            return true
+        }
+        guard let selection = singleSelectionRange(in: textView, replacementRange: NSRange(location: NSNotFound, length: 0)),
+              let currentText = state.content?.string else {
+            return false
+        }
+
+        if selection.length > 0 {
+            guard let result = SmartIndentHandler.handleTab(
+                in: currentText,
+                selection: selection,
+                tabSize: state.tabWidth,
+                useSpaces: state.useSpaces
+            ) else {
+                return false
+            }
+
+            isApplyingMultiCursorEdit = true
+            defer { isApplyingMultiCursorEdit = false }
+
+            guard state.applyOutdentEdit(
+                replacementRange: result.replacementRange,
+                replacementText: result.replacementText,
+                selectedRange: result.selectedRange
+            ) else {
+                return false
+            }
+
+            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+            return true
+        }
+
+        let result = SmartIndentHandler.handleTab(
+            at: selection.location,
+            hasSelection: false,
+            selectionStart: selection.location,
+            selectionEnd: selection.location,
+            tabSize: state.tabWidth,
+            useSpaces: state.useSpaces
+        )
+
+        isApplyingMultiCursorEdit = true
+        defer { isApplyingMultiCursorEdit = false }
+
+        guard state.applySmartIndentEdit(
+            replacementRange: selection,
+            replacementText: result.textToInsert,
+            cursorLocation: selection.location + result.cursorOffset
+        ) else {
+            return false
+        }
+
+        textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+        return true
+    }
+
+    func handleInsertBacktab() -> Bool {
+        guard let textView, let state else { return false }
+        guard !isApplyingMultiCursorEdit else { return false }
+        if state.multiCursorState.all.count > 1 {
+            isApplyingMultiCursorEdit = true
+            defer { isApplyingMultiCursorEdit = false }
+
+            guard state.applyMultiCursorOperation(.outdent(tabSize: state.tabWidth, useSpaces: state.useSpaces)) != nil else {
+                return false
+            }
+            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+            return true
+        }
+        guard let selection = singleSelectionRange(in: textView, replacementRange: NSRange(location: NSNotFound, length: 0)),
+              let currentText = state.content?.string else {
+            return false
+        }
+
+        guard let result = SmartIndentHandler.handleBacktab(
+            in: currentText,
+            selection: selection,
+            tabSize: state.tabWidth,
+            useSpaces: state.useSpaces
+        ) else {
+            return false
+        }
+
+        isApplyingMultiCursorEdit = true
+        defer { isApplyingMultiCursorEdit = false }
+
+        guard state.applyOutdentEdit(
+            replacementRange: result.replacementRange,
+            replacementText: result.replacementText,
+            selectedRange: result.selectedRange
+        ) else {
+            return false
+        }
+
+        textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+        return true
+    }
+
+    private func singleSelectionRange(in textView: TextView, replacementRange: NSRange) -> NSRange? {
+        if replacementRange.location != NSNotFound {
+            return replacementRange
+        }
+        let selections = textView.selectionManager.textSelections.map(\.range)
+        guard selections.count == 1 else { return nil }
+        return selections.first
+    }
+
+    private func multiCursorAutoClosingEdit(
+        in text: String,
+        selections: [NSRange],
+        typedChar: Character,
+        config: BracketPairsConfig
+    ) -> (text: String, selections: [NSRange])? {
+        guard !selections.isEmpty else { return nil }
+
+        var mutableText = text
+        let orderedSelections = selections
+            .filter { $0.location != NSNotFound }
+            .sorted { $0.location > $1.location }
+
+        var updatedSelectionsDescending: [NSRange] = []
+        var applied = false
+
+        for selection in orderedSelections {
+            guard let edit = BracketMatcher.autoClosingEdit(
+                in: mutableText,
+                selection: selection,
+                typedChar: typedChar,
+                config: config
+            ) else {
+                return nil
+            }
+
+            let stringRange = Range(edit.replacementRange, in: mutableText)!
+            mutableText.replaceSubrange(stringRange, with: edit.replacementText)
+            updatedSelectionsDescending.append(edit.selectedRange)
+
+            if edit.replacementRange.length > 0 || !edit.replacementText.isEmpty || edit.selectedRange != selection {
+                applied = true
+            }
+        }
+
+        guard applied else { return nil }
+        return (mutableText, updatedSelectionsDescending.reversed())
     }
 
     func handlePerformKeyEquivalent(_ event: NSEvent) -> Bool {

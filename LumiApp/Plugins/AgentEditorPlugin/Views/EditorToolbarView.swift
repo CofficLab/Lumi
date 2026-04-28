@@ -39,6 +39,11 @@ struct EditorToolbarView: View {
             
             Divider()
                 .frame(height: 14)
+
+            saveBehaviorSettings
+
+            Divider()
+                .frame(height: 14)
             
             // 中间：切换开关（可压缩）
             toggleButtons
@@ -59,6 +64,20 @@ struct EditorToolbarView: View {
                     .frame(height: 14)
 
                 findReplaceControls
+            }
+
+            if state.hasExternalFileConflict {
+                Divider()
+                    .frame(height: 14)
+
+                externalFileConflictControl
+            }
+
+            if shouldShowLargeFileIndicator {
+                Divider()
+                    .frame(height: 14)
+
+                largeFileIndicator
             }
 
             Spacer(minLength: 0)
@@ -104,6 +123,62 @@ struct EditorToolbarView: View {
         let total = state.findMatches.count
         guard total > 0, currentIndex > 0 else { return "0/0" }
         return "\(currentIndex)/\(total)"
+    }
+
+    private var shouldShowLargeFileIndicator: Bool {
+        state.largeFileMode != .normal || state.longestDetectedLine != nil
+    }
+
+    private var largeFileModeTitle: String {
+        switch state.largeFileMode {
+        case .normal:
+            return "Normal File"
+        case .medium:
+            return "Medium File"
+        case .large:
+            return "Large File"
+        case .mega:
+            return "Mega File"
+        }
+    }
+
+    private var largeFileModeSummary: String {
+        var items: [String] = []
+        if state.largeFileMode.isSemanticTokensDisabled {
+            items.append("semantic")
+        }
+        if state.isLongLineProtectionSuppressingSyntaxHighlighting {
+            items.append("long-line syntax")
+        }
+        if state.largeFileMode.isInlayHintsDisabled {
+            items.append("inlay")
+        }
+        if state.largeFileMode.isFoldingDisabled {
+            items.append("folding")
+        }
+        if state.largeFileMode.isMinimapDisabled {
+            items.append("minimap")
+        }
+        if state.isTruncated {
+            items.append("truncated")
+        }
+        if state.longestDetectedLine != nil {
+            items.append("long line")
+        }
+        if items.isEmpty {
+            return largeFileModeTitle
+        }
+        return "\(largeFileModeTitle) · \(items.joined(separator: ", "))"
+    }
+
+    private var viewportRenderSummary: String? {
+        guard !state.viewportVisibleLineRange.isEmpty else { return nil }
+
+        let visibleStart = state.viewportVisibleLineRange.lowerBound + 1
+        let visibleEnd = state.viewportVisibleLineRange.upperBound
+        let renderStart = state.viewportRenderLineRange.lowerBound + 1
+        let renderEnd = state.viewportRenderLineRange.upperBound
+        return "Visible L\(visibleStart)-\(visibleEnd) · Render L\(renderStart)-\(renderEnd)"
     }
     
     // MARK: - Font Sizer
@@ -177,6 +252,136 @@ struct EditorToolbarView: View {
         }
         .menuStyle(.borderlessButton)
         .frame(width: 22, height: 20)
+        .fixedSize()
+    }
+
+    private var saveBehaviorSettings: some View {
+        Menu {
+            Toggle(isOn: Binding(
+                get: { state.formatOnSave },
+                set: { newValue in
+                    state.formatOnSave = newValue
+                    state.persistConfig()
+                }
+            )) {
+                Text("Format on Save")
+            }
+
+            Toggle(isOn: Binding(
+                get: { state.organizeImportsOnSave },
+                set: { newValue in
+                    state.organizeImportsOnSave = newValue
+                    state.persistConfig()
+                }
+            )) {
+                Text("Organize Imports on Save")
+            }
+
+            Toggle(isOn: Binding(
+                get: { state.fixAllOnSave },
+                set: { newValue in
+                    state.fixAllOnSave = newValue
+                    state.persistConfig()
+                }
+            )) {
+                Text("Fix All on Save")
+            }
+
+            Toggle(isOn: Binding(
+                get: { state.trimTrailingWhitespaceOnSave },
+                set: { newValue in
+                    state.trimTrailingWhitespaceOnSave = newValue
+                    state.persistConfig()
+                }
+            )) {
+                Text("Trim Trailing Whitespace")
+            }
+
+            Toggle(isOn: Binding(
+                get: { state.insertFinalNewlineOnSave },
+                set: { newValue in
+                    state.insertFinalNewlineOnSave = newValue
+                    state.persistConfig()
+                }
+            )) {
+                Text("Insert Final Newline")
+            }
+        } label: {
+            Image(systemName: "square.and.arrow.down")
+                .font(.system(size: 10))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .frame(width: 22, height: 22)
+        }
+        .menuStyle(.borderlessButton)
+        .frame(width: 22, height: 20)
+        .fixedSize()
+    }
+
+    private var externalFileConflictControl: some View {
+        Menu {
+            Button("Reload from Disk") {
+                state.reloadExternalFileConflict()
+            }
+
+            Button("Keep Editor Version") {
+                state.keepEditorVersionForExternalConflict()
+            }
+        } label: {
+            Image(systemName: "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90")
+                .font(.system(size: 10))
+                .foregroundColor(.orange)
+                .frame(width: 22, height: 22)
+        }
+        .help("File changed on disk")
+        .menuStyle(.borderlessButton)
+        .frame(width: 22, height: 20)
+        .fixedSize()
+    }
+
+    private var largeFileIndicator: some View {
+        Menu {
+            Text(largeFileModeTitle)
+            if state.largeFileMode.isSemanticTokensDisabled {
+                Text("Semantic tokens disabled")
+            }
+            if state.largeFileMode.isInlayHintsDisabled {
+                Text("Inlay hints disabled")
+            }
+            if state.largeFileMode.isFoldingDisabled {
+                Text("Folding ribbon disabled")
+            }
+            if state.largeFileMode.isMinimapDisabled {
+                Text("Minimap disabled")
+            }
+            if state.isTruncated {
+                Text("Editing disabled for truncated preview")
+            }
+            if let longestLine = state.longestDetectedLine {
+                Text("Long line: L\(longestLine.line + 1) · \(longestLine.length) chars")
+            }
+            if let viewportRenderSummary {
+                Divider()
+                Text(viewportRenderSummary)
+            }
+            if state.largeFileMode.maxSyntaxHighlightLines != .max {
+                Text("Syntax highlighting limit: first \(state.largeFileMode.maxSyntaxHighlightLines.formatted()) lines")
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: state.largeFileMode == .normal ? "text.line.first.and.arrowtriangle.forward" : "exclamationmark.triangle")
+                    .font(.system(size: 10, weight: .medium))
+                Text(largeFileModeSummary)
+                    .font(.system(size: 10, weight: .medium))
+                    .lineLimit(1)
+            }
+            .foregroundColor(state.largeFileMode == .normal ? AppUI.Color.semantic.textSecondary : .orange)
+            .padding(.horizontal, 6)
+            .frame(height: 22)
+            .background(AppUI.Color.semantic.textTertiary.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+        .help(largeFileModeSummary)
+        .menuStyle(.borderlessButton)
         .fixedSize()
     }
     

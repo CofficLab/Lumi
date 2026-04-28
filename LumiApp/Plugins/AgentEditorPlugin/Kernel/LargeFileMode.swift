@@ -98,6 +98,12 @@ enum LargeFileMode: Equatable, Sendable {
     }
 }
 
+/// 检测到的长行信息。
+struct LongestDetectedLine: Equatable, Sendable {
+    let line: Int
+    let length: Int
+}
+
 /// 长行检测器。
 ///
 /// 当文档中存在超长行时（如 > 10,000 字符），
@@ -108,7 +114,7 @@ enum LongLineDetector: Sendable {
 
     /// 检测文本中是否存在超长行。
     /// 返回第一行长行的行号和内容长度。
-    static func findLongestLine(in text: String, limit: Int = threshold) -> (line: Int, length: Int)? {
+    static func findLongestLine(in text: String, limit: Int = threshold) -> LongestDetectedLine? {
         var longestLine = 0
         var longestLength = 0
         var currentLine = 0
@@ -120,7 +126,7 @@ enum LongLineDetector: Sendable {
                     longestLength = currentLength
                     longestLine = currentLine
                     if longestLength > limit {
-                        return (longestLine, longestLength)
+                        return LongestDetectedLine(line: longestLine, length: longestLength)
                     }
                 }
                 currentLine += 1
@@ -136,7 +142,7 @@ enum LongLineDetector: Sendable {
             longestLine = currentLine
         }
 
-        return longestLength > limit ? (longestLine, longestLength) : nil
+        return longestLength > limit ? LongestDetectedLine(line: longestLine, length: longestLength) : nil
     }
 }
 
