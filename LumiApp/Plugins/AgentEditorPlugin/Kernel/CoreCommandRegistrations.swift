@@ -10,6 +10,14 @@ import LanguageServerProtocol
 @MainActor
 enum CoreCommandRegistrations {
 
+    /// 解析命令的实际快捷键（用户自定义优先，否则默认）
+    private static func resolveShortcut(
+        _ binding: EditorCommandBinding,
+        for commandID: String
+    ) -> EditorCommandShortcut {
+        binding.resolveKernelShortcut(for: commandID)
+    }
+
     static func registerAll(in state: EditorState) {
         registerFormatCommands(state: state)
         registerNavigationCommands(state: state)
@@ -29,7 +37,7 @@ enum CoreCommandRegistrations {
             id: "builtin.format-document",
             title: String(localized: "Format Document", table: "LumiEditor"),
             icon: "text.justify",
-            shortcut: EditorCommandBindings.formatDocument.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.formatDocument, for: "builtin.format-document"),
             category: EditorCommandCategory.format.rawValue,
             order: 500
         ) {
@@ -46,7 +54,7 @@ enum CoreCommandRegistrations {
             id: "builtin.open-editors-panel",
             title: String(localized: "Open Editors", table: "LumiEditor"),
             icon: "sidebar.left",
-            shortcut: EditorCommandBindings.openEditors.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.openEditors, for: "builtin.open-editors-panel"),
             category: EditorCommandCategory.navigation.rawValue,
             order: 200
         ) {
@@ -57,7 +65,7 @@ enum CoreCommandRegistrations {
             id: "builtin.find-references",
             title: String(localized: "Find All References", table: "LumiEditor"),
             icon: "magnifyingglass",
-            shortcut: EditorCommandBindings.findReferences.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.findReferences, for: "builtin.find-references"),
             category: EditorCommandCategory.navigation.rawValue,
             order: 510
         ) {
@@ -70,7 +78,7 @@ enum CoreCommandRegistrations {
             id: "builtin.rename-symbol",
             title: String(localized: "Rename Symbol", table: "LumiEditor"),
             icon: "pencil",
-            shortcut: EditorCommandBindings.renameSymbol.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.renameSymbol, for: "builtin.rename-symbol"),
             category: EditorCommandCategory.navigation.rawValue,
             order: 520
         ) {
@@ -81,7 +89,7 @@ enum CoreCommandRegistrations {
             id: "builtin.workspace-symbols",
             title: String(localized: "Go to Symbol in Workspace", table: "LumiEditor"),
             icon: "text.magnifyingglass",
-            shortcut: EditorCommandBindings.workspaceSymbols.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.workspaceSymbols, for: "builtin.workspace-symbols"),
             category: EditorCommandCategory.navigation.rawValue,
             order: 530
         ) {
@@ -92,7 +100,7 @@ enum CoreCommandRegistrations {
             id: "builtin.call-hierarchy",
             title: String(localized: "Show Call Hierarchy", table: "LumiEditor"),
             icon: "list.bullet",
-            shortcut: EditorCommandBindings.callHierarchy.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.callHierarchy, for: "builtin.call-hierarchy"),
             category: EditorCommandCategory.navigation.rawValue,
             order: 540
         ) {
@@ -109,7 +117,7 @@ enum CoreCommandRegistrations {
             id: "builtin.command-palette",
             title: String(localized: "Command Palette", table: "LumiEditor"),
             icon: "command",
-            shortcut: EditorCommandBindings.commandPalette.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.commandPalette, for: "builtin.command-palette"),
             category: EditorCommandCategory.workbench.rawValue,
             order: 100
         ) {
@@ -120,7 +128,7 @@ enum CoreCommandRegistrations {
             id: "builtin.split-right",
             title: String(localized: "Split Editor Right", table: "LumiEditor"),
             icon: "rectangle.split.2x1",
-            shortcut: EditorCommandBindings.splitRight.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.splitRight, for: "builtin.split-right"),
             category: EditorCommandCategory.workbench.rawValue,
             order: 110
         ) {
@@ -131,7 +139,7 @@ enum CoreCommandRegistrations {
             id: "builtin.split-down",
             title: String(localized: "Split Editor Down", table: "LumiEditor"),
             icon: "rectangle.split.1x2",
-            shortcut: EditorCommandBindings.splitDown.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.splitDown, for: "builtin.split-down"),
             category: EditorCommandCategory.workbench.rawValue,
             order: 120
         ) {
@@ -142,7 +150,7 @@ enum CoreCommandRegistrations {
             id: "builtin.close-split",
             title: String(localized: "Close Split Editor", table: "LumiEditor"),
             icon: "rectangle.compress.vertical",
-            shortcut: EditorCommandBindings.closeSplit.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.closeSplit, for: "builtin.close-split"),
             category: EditorCommandCategory.workbench.rawValue,
             order: 130
         ) {
@@ -153,7 +161,7 @@ enum CoreCommandRegistrations {
             id: "builtin.focus-next-group",
             title: String(localized: "Focus Next Editor Group", table: "LumiEditor"),
             icon: "arrow.right.to.line",
-            shortcut: EditorCommandBindings.focusNextGroup.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.focusNextGroup, for: "builtin.focus-next-group"),
             category: EditorCommandCategory.workbench.rawValue,
             order: 140
         ) {
@@ -164,7 +172,7 @@ enum CoreCommandRegistrations {
             id: "builtin.focus-previous-group",
             title: String(localized: "Focus Previous Editor Group", table: "LumiEditor"),
             icon: "arrow.left.to.line",
-            shortcut: EditorCommandBindings.focusPreviousGroup.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.focusPreviousGroup, for: "builtin.focus-previous-group"),
             category: EditorCommandCategory.workbench.rawValue,
             order: 150
         ) {
@@ -175,7 +183,7 @@ enum CoreCommandRegistrations {
             id: "builtin.move-to-next-group",
             title: String(localized: "Move Editor to Next Group", table: "LumiEditor"),
             icon: "arrow.right.square",
-            shortcut: EditorCommandBindings.moveToNextGroup.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.moveToNextGroup, for: "builtin.move-to-next-group"),
             category: EditorCommandCategory.workbench.rawValue,
             order: 160
         ) {
@@ -186,7 +194,7 @@ enum CoreCommandRegistrations {
             id: "builtin.move-to-previous-group",
             title: String(localized: "Move Editor to Previous Group", table: "LumiEditor"),
             icon: "arrow.left.square",
-            shortcut: EditorCommandBindings.moveToPreviousGroup.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.moveToPreviousGroup, for: "builtin.move-to-previous-group"),
             category: EditorCommandCategory.workbench.rawValue,
             order: 170
         ) {
@@ -241,7 +249,7 @@ enum CoreCommandRegistrations {
             id: "builtin.find",
             title: String(localized: "Find", table: "LumiEditor"),
             icon: "magnifyingglass",
-            shortcut: EditorCommandBindings.find.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.find, for: "builtin.find"),
             category: EditorCommandCategory.find.rawValue,
             order: 400
         ) {
@@ -252,7 +260,7 @@ enum CoreCommandRegistrations {
             id: "builtin.find-next",
             title: String(localized: "Find Next", table: "LumiEditor"),
             icon: "arrow.down",
-            shortcut: EditorCommandBindings.findNext.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.findNext, for: "builtin.find-next"),
             category: EditorCommandCategory.find.rawValue,
             order: 410,
             enablement: CommandEnablement.whenTrue(.isEditorActive)
@@ -264,7 +272,7 @@ enum CoreCommandRegistrations {
             id: "builtin.find-previous",
             title: String(localized: "Find Previous", table: "LumiEditor"),
             icon: "arrow.up",
-            shortcut: EditorCommandBindings.findPrevious.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.findPrevious, for: "builtin.find-previous"),
             category: EditorCommandCategory.find.rawValue,
             order: 420,
             enablement: CommandEnablement.whenTrue(.isEditorActive)
@@ -341,7 +349,7 @@ enum CoreCommandRegistrations {
             id: "builtin.delete-line",
             title: String(localized: "Delete Line", table: "LumiEditor"),
             icon: "trash",
-            shortcut: EditorCommandBindings.deleteLine.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.deleteLine, for: "builtin.delete-line"),
             category: EditorCommandCategory.edit.rawValue,
             order: 900
         ) {
@@ -352,7 +360,7 @@ enum CoreCommandRegistrations {
             id: "builtin.copy-line-down",
             title: String(localized: "Copy Line Down", table: "LumiEditor"),
             icon: "doc.on.doc",
-            shortcut: EditorCommandBindings.copyLineDown.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.copyLineDown, for: "builtin.copy-line-down"),
             category: EditorCommandCategory.edit.rawValue,
             order: 910
         ) {
@@ -363,7 +371,7 @@ enum CoreCommandRegistrations {
             id: "builtin.copy-line-up",
             title: String(localized: "Copy Line Up", table: "LumiEditor"),
             icon: "doc.on.doc",
-            shortcut: EditorCommandBindings.copyLineUp.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.copyLineUp, for: "builtin.copy-line-up"),
             category: EditorCommandCategory.edit.rawValue,
             order: 920
         ) {
@@ -374,7 +382,7 @@ enum CoreCommandRegistrations {
             id: "builtin.move-line-down",
             title: String(localized: "Move Line Down", table: "LumiEditor"),
             icon: "arrow.down",
-            shortcut: EditorCommandBindings.moveLineDown.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.moveLineDown, for: "builtin.move-line-down"),
             category: EditorCommandCategory.edit.rawValue,
             order: 930
         ) {
@@ -385,7 +393,7 @@ enum CoreCommandRegistrations {
             id: "builtin.move-line-up",
             title: String(localized: "Move Line Up", table: "LumiEditor"),
             icon: "arrow.up",
-            shortcut: EditorCommandBindings.moveLineUp.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.moveLineUp, for: "builtin.move-line-up"),
             category: EditorCommandCategory.edit.rawValue,
             order: 940
         ) {
@@ -396,7 +404,7 @@ enum CoreCommandRegistrations {
             id: "builtin.insert-line-below",
             title: String(localized: "Insert Line Below", table: "LumiEditor"),
             icon: "text.append",
-            shortcut: EditorCommandBindings.insertLineBelow.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.insertLineBelow, for: "builtin.insert-line-below"),
             category: EditorCommandCategory.edit.rawValue,
             order: 950
         ) {
@@ -407,7 +415,7 @@ enum CoreCommandRegistrations {
             id: "builtin.insert-line-above",
             title: String(localized: "Insert Line Above", table: "LumiEditor"),
             icon: "text.prepend",
-            shortcut: EditorCommandBindings.insertLineAbove.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.insertLineAbove, for: "builtin.insert-line-above"),
             category: EditorCommandCategory.edit.rawValue,
             order: 960
         ) {
@@ -440,7 +448,7 @@ enum CoreCommandRegistrations {
             id: "builtin.toggle-line-comment",
             title: String(localized: "Toggle Line Comment", table: "LumiEditor"),
             icon: "number",
-            shortcut: EditorCommandBindings.toggleLineComment.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.toggleLineComment, for: "builtin.toggle-line-comment"),
             category: EditorCommandCategory.edit.rawValue,
             order: 990
         ) {
@@ -451,7 +459,7 @@ enum CoreCommandRegistrations {
             id: "builtin.transpose",
             title: String(localized: "Transpose Characters", table: "LumiEditor"),
             icon: "arrow.left.arrow.right",
-            shortcut: EditorCommandBindings.transpose.kernelShortcut,
+            shortcut: resolveShortcut(EditorCommandBindings.transpose, for: "builtin.transpose"),
             category: EditorCommandCategory.edit.rawValue,
             order: 1000
         ) {

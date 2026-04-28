@@ -95,7 +95,7 @@ struct EditorCommandContext {
 }
 
 struct EditorCommandShortcut: Equatable {
-    enum Modifier: String, CaseIterable {
+    enum Modifier: String, CaseIterable, Codable, Sendable {
         case command
         case shift
         case option

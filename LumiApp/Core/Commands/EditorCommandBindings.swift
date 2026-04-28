@@ -5,8 +5,25 @@ struct EditorCommandBinding {
     let key: String
     let modifiers: [EditorCommandShortcut.Modifier]
 
-    var kernelShortcut: EditorCommandShortcut {
+    /// 默认快捷键（不可被用户覆盖改变）
+    var defaultKernelShortcut: EditorCommandShortcut {
         EditorCommandShortcut(key: key, modifiers: modifiers)
+    }
+
+    /// 实际生效的快捷键（用户自定义优先，否则默认）
+    var kernelShortcut: EditorCommandShortcut {
+        // 不在 @MainActor 上下文中时使用默认值
+        // 实际 resolve 通过 resolveKernelShortcut(for:) 完成
+        defaultKernelShortcut
+    }
+
+    /// 解析命令的实际快捷键（用户自定义优先）
+    @MainActor
+    func resolveKernelShortcut(for commandID: String) -> EditorCommandShortcut {
+        EditorKeybindingStore.shared.shortcut(
+            for: commandID,
+            default: defaultKernelShortcut
+        ) ?? defaultKernelShortcut
     }
 
     var keyEquivalent: KeyEquivalent {

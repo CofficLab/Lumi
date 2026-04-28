@@ -250,7 +250,49 @@
     "Current Group (%lld)" : {
 
     },
+    "Cursor Document End" : {
+
+    },
+    "Cursor Document Start" : {
+
+    },
+    "Cursor Line End" : {
+
+    },
+    "Cursor Line End Select" : {
+
+    },
+    "Cursor Paragraph Backward" : {
+
+    },
+    "Cursor Paragraph Forward" : {
+
+    },
+    "Cursor Smart Home" : {
+
+    },
+    "Cursor Smart Home Select" : {
+
+    },
+    "Cursor Word Left" : {
+
+    },
+    "Cursor Word Left Select" : {
+
+    },
+    "Cursor Word Right" : {
+
+    },
+    "Cursor Word Right Select" : {
+
+    },
     "Delete Line" : {
+
+    },
+    "Delete Word Left" : {
+
+    },
+    "Delete Word Right" : {
 
     },
     "Document formatted" : {

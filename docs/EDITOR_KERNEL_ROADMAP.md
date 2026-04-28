@@ -934,7 +934,7 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 1. ~~**多 EditorState 实例**~~ — ✅ 已完成（Phase 4）
 2. ~~**Viewport 精细化**~~ — ✅ LSP 请求调度已完善，渲染管线绑定仍受限于 CodeEditSourceEditor 内部
 3. ~~**Cursor motion 语义打磨**~~ — ✅ 已完成
-4. **键位可配置化** — 用户自定义快捷键映射
+4. ~~**键位可配置化**~~ — ✅ 基础设施已完成
 5. **性能基线** — Phase 0 遗留项，建立量化指标体系
 
 ### ✅ Cursor Motion 完成清单
@@ -951,6 +951,17 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] `EditorState.performCursorMotion(_:)` — 14 种光标移动命令统一入口
 - [x] 命令已注册 — 14 个 cursor motion 命令（navigation + edit 分类）
 - [x] `CursorMotionControllerTests` 测试已覆盖（36 个测试用例，含 Unicode、CRLF、空字符串等边界场景）
+
+### ✅ 键位可配置化完成清单
+
+- [x] `EditorKeybindingStore` — 用户自定义快捷键存储（JSON 持久化、load/save、冲突检测）
+- [x] `EditorKeybindingEntry` — 自定义快捷键条目模型（Codable、Sendable）
+- [x] `EditorCommandBinding.resolveKernelShortcut(for:)` — 解析实际生效快捷键（用户自定义优先）
+- [x] `CoreCommandRegistrations` — 所有 26 个快捷键注册已改为 `resolveShortcut` 查询
+- [x] `EditorCommandShortcut.Modifier` — 新增 Codable、Sendable 支持
+- [x] 命令面板自动显示生效的快捷键（用户自定义 or 默认）
+- [ ] 快捷键设置 UI — 用户修改快捷键的界面（后续迭代）
+- [ ] 快捷键录制器 — 捕获用户按键输入的 UI 组件（后续迭代）
 
 ## 最终结论
 
