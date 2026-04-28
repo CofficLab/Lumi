@@ -190,7 +190,6 @@ struct ContentViewBody<Content: View>: View {
                 GeometryReader { proxy in
                     themeManager.activeAppTheme.makeGlobalBackground(proxy: proxy)
                 }
-                .ignoresSafeArea()
             }
             .onAppear(perform: onAppear)
             .onChange(of: columnVisibility) { _, _ in

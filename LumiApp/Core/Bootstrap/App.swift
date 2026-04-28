@@ -43,7 +43,6 @@ struct CoreApp: App {
         // 工具栏使用统一样式，不显示传统标题。
         Window("Lumi", id: MainWindowID.main) {
             ContentLayout()
-                .ignoresSafeArea()
                 .inRootView()
         }
         .windowStyle(.titleBar)
@@ -67,7 +66,6 @@ struct CoreApp: App {
         // 使用紧凑型工具栏样式，节省空间。
         Window("设置", id: SettingsWindowID.settings) {
             SettingView()
-                .ignoresSafeArea()
                 .inRootView()
         }
         .windowStyle(.hiddenTitleBar)
