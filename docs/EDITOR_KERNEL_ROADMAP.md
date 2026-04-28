@@ -867,8 +867,8 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] Smart Enter — `SmartIndentHandler.handleEnter` 智能缩进换行（含括号间额外缩进）
 - [x] Tab indent / Backtab outdent — `SmartIndentHandler.handleTab` / `handleBacktab`
 - [x] Line editing commands — 全部 11 个行编辑命令通过 `performLineEdit(_:)` 接入 EditorState
+- [x] Bracket match overlay — 括号匹配高亮 UI 渲染完整接入（`applyPrimaryCursorObservation`、`applyCanonicalSelectionSet`、`notifyContentChanged` 均触发 `updateBracketMatch()`）
 - [x] `BracketAndIndentTests`（280 行）、`LineEditingControllerTests`（247 行）、`EditorSaveParticipantControllerTests`、`EditorSavePipelineControllerTests` 测试已覆盖
-- [ ] Bracket match overlay — 括号匹配高亮的 UI 层渲染（内核计算已有，UI 层需验证）
 - [ ] 外部文件修改冲突处理
 - [ ] BracketAndIndent 与实际 TextView 输入的集成（目前为内核模型，需确认接入程度）
 

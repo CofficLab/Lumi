@@ -1286,6 +1286,8 @@ final class EditorState: ObservableObject, SuperLog {
             column: column,
             preserveCursorSelection: true
         )
+        // 括号匹配需要在每次光标移动时更新
+        updateBracketMatch()
     }
 
     func navigateToCursorPositions(_ positions: [CursorPosition]) {
@@ -2616,6 +2618,8 @@ final class EditorState: ObservableObject, SuperLog {
         // 同步到外部 multiCursorState（向后兼容）
         let mcSelections = selectionSet.toMultiCursorSelections()
         applyMultiCursorSelections(mcSelections)
+        // 选区变化后更新括号匹配
+        updateBracketMatch()
     }
 
     /// 将内核 canonical selection 应用到原生 TextView（canonical → view 方向）。
