@@ -608,8 +608,8 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] Workbench 命令已注册 — split-right、split-down、close-split、focus-next/previous-group、move-to-next/previous-group
 
 **未完成：**
-- [ ] 多 EditorState 实例 — split 后非活跃 group 目前可能共享单一 EditorState，真正独立需要多实例支持
-- [ ] split 后的非活跃 group 显示占位/独立渲染需要验证
+- [x] 多 EditorState 实例 — split 后每个 leaf group 持有独立的 `EditorState`，可独立加载文件、编辑、保存
+- [x] split 后的非活跃 group 完整编辑 — `EditorGroupHostView` 移除 `.allowsHitTesting(false)`，统一使用 hosted state 架构
 
 ---
 

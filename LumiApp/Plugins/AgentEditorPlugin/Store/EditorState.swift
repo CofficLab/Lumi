@@ -839,6 +839,13 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
+    /// 同步主题但不触发持久化和通知（用于 hosted state 同步）
+    func syncThemeSilently(_ themeId: String) {
+        guard currentThemeId != themeId else { return }
+        currentThemeId = themeId
+        currentTheme = resolveTheme(for: themeId)
+    }
+
     /// 获取所有可用主题
     func availableThemes() -> [any EditorThemeContributor] {
         editorExtensions.allThemes()

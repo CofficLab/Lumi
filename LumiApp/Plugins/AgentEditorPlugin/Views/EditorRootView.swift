@@ -52,6 +52,7 @@ struct EditorRootView: View {
             }
             .onAppear {
                 state.projectRootPath = projectVM.currentProject?.path
+                hostStore.setPrimaryState(state)
                 state.onActiveSessionChanged = { snapshot in
                     sessionStore.syncActiveSession(from: snapshot)
                     workbench.syncActiveSession(from: snapshot)
@@ -63,8 +64,15 @@ struct EditorRootView: View {
                 }
             }
             .onDisappear {
+                // 保存主 EditorState 的变更
                 if state.hasUnsavedChanges {
                     state.saveNow()
+                }
+                // 保存所有 hosted EditorState 的变更
+                for hostedState in hostStore.allStates {
+                    if hostedState.hasUnsavedChanges {
+                        hostedState.saveNow()
+                    }
                 }
                 state.onActiveSessionChanged = nil
             }
@@ -793,11 +801,35 @@ struct EditorRootView: View {
     private func syncEditorToActiveGroup() {
         guard let activeGroup = workbench.activeGroup,
               let activeSession = activeGroup.activeSession else { return }
-        guard let resolved = resolvedActivationSession(
-            for: activeGroup.id,
-            fallback: activeSession
-        ) else { return }
-        applyResolvedSessionActivation(resolved)
+
+        // 主 EditorState 需要同步到活跃 group 的文件和交互状态，
+        // 以便 toolbar、状态栏、命令面板等正确反映当前活跃分栏。
+        let hostedState = hostStore.state(for: activeGroup.id)
+        syncPrimaryStateFromHosted(hostedState, session: activeSession)
+    }
+
+    /// 将活跃 group 的 hosted state 同步到主 EditorState。
+    ///
+    /// 这样 toolbar、状态栏、命令面板、面板等都读取主 state 的值，
+    /// 确保它们反映当前活跃分栏的状态。
+    private func syncPrimaryStateFromHosted(_ hostedState: EditorState, session: EditorSession) {
+        // 同步文件内容状态
+        if hostedState.currentFileURL != state.currentFileURL {
+            // hosted state 已经加载了目标文件，直接同步内容引用
+            if hostedState.content != nil {
+                state.loadFile(from: hostedState.currentFileURL)
+            } else {
+                state.loadFile(from: session.fileURL)
+            }
+        }
+
+        // 同步交互状态（光标、滚动、选区、查找等）
+        let snapshot = hostedState.activeSession
+        if snapshot.fileURL != nil {
+            restoreInteractionState(for: snapshot)
+        } else {
+            restoreInteractionState(for: session)
+        }
     }
 
     private func syncGroupHost(
@@ -1069,34 +1101,18 @@ struct EditorGroupView: View {
     @ViewBuilder
     private func editorContent(for session: EditorSession, isActiveGroup: Bool) -> some View {
         if session.fileURL != nil {
-            if isActiveGroup {
-                if editorState.isMarkdownFile, editorState.isMarkdownPreviewMode {
-                    ScrollView {
-                        if let content = editorState.content?.string, !content.isEmpty {
-                            MarkdownBlockRenderer(markdown: content)
-                                .padding(20)
-                        }
+            // 统一使用 hosted state：每个 group（无论是否活跃）使用独立的 EditorState
+            EditorGroupHostView(
+                session: session,
+                projectRootPath: editorState.projectRootPath,
+                state: hostStore.state(for: group.id),
+                onActivate: {
+                    workbench.activateGroup(group.id)
+                    if let tab = group.tabs.first(where: { $0.sessionID == session.id }) {
+                        onActivateHostedSession(group.id, tab)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(themeManager.activeAppTheme.workspaceBackgroundColor())
-                } else if editorState.canPreview || editorState.isBinaryFile {
-                    SourceEditorView(state: editorState)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
                 }
-            } else {
-                EditorGroupHostView(
-                    session: session,
-                    projectRootPath: editorState.projectRootPath,
-                    state: hostStore.state(for: group.id),
-                    onActivate: {
-                        workbench.activateGroup(group.id)
-                        if let tab = group.tabs.first(where: { $0.sessionID == session.id }) {
-                            onActivateHostedSession(group.id, tab)
-                        }
-                    }
-                )
-            }
+            )
         }
     }
 
@@ -1162,6 +1178,10 @@ struct EditorGroupView: View {
     }
 }
 
+/// 每个 split 分栏的编辑器宿主视图。
+///
+/// 每个分栏持有独立的 `EditorState`，可以独立加载文件、编辑、保存。
+/// 点击激活时通知父视图切换活跃 group。
 private struct EditorGroupHostView: View {
     private struct RestoreTrigger: Equatable {
         let sessionID: EditorSession.ID
@@ -1190,10 +1210,10 @@ private struct EditorGroupHostView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(themeManager.activeAppTheme.workspaceBackgroundColor())
                 } else if state.canPreview || state.isBinaryFile {
+                    // 完整可编辑的源码编辑器——不再禁止交互
                     SourceEditorView(state: state)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipped()
-                        .allowsHitTesting(false)
                 } else {
                     VStack(spacing: 8) {
                         Image(systemName: "doc")
