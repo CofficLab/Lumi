@@ -1205,6 +1205,7 @@
       }
     },
     "Auto" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5500,6 +5501,7 @@
       }
     },
     "从历史记录中继续加载更早的消息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5601,6 +5603,9 @@
           }
         }
       }
+    },
+    "停止录制" : {
+
     },
     "停止扫描" : {
       "localizations" : {
@@ -5751,6 +5756,7 @@
       }
     },
     "创建一个新的会话" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5912,6 +5918,7 @@
 
     },
     "加载更早消息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6477,6 +6484,7 @@
       }
     },
     "展开更早加载的历史消息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6866,6 +6874,12 @@
         }
       }
     },
+    "录制快捷键" : {
+
+    },
+    "快捷键" : {
+
+    },
     "思考过程" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6917,6 +6931,12 @@
           }
         }
       }
+    },
+    "恢复全部默认" : {
+
+    },
+    "恢复默认" : {
+
     },
     "打开" : {
 
@@ -7041,6 +7061,7 @@
 
     },
     "打开首次使用说明" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7222,6 +7243,7 @@
       }
     },
     "折叠消息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7271,6 +7293,7 @@
       }
     },
     "按时间顺序展示会话消息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7373,6 +7396,9 @@
 
     },
     "搜索并安装来自 Open VSX 的扩展\n支持数千个开源扩展" : {
+
+    },
+    "搜索快捷键或命令…" : {
 
     },
     "搜索扩展 (如: python, theme)" : {
@@ -7479,6 +7505,7 @@
 
     },
     "新建对话" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7554,6 +7581,7 @@
       }
     },
     "显示更早已加载消息（%lld 条）" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7570,6 +7598,7 @@
       }
     },
     "显示更早消息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7912,6 +7941,7 @@
       }
     },
     "查看新手引导" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8029,6 +8059,7 @@
       }
     },
     "正在加载历史消息…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8145,6 +8176,9 @@
     "正在索引文件..." : {
 
     },
+    "没有匹配的快捷键" : {
+
+    },
     "没有发现可清理的缓存文件" : {
       "localizations" : {
         "zh-Hans" : {
@@ -8179,6 +8213,7 @@
       }
     },
     "消息列表" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8525,6 +8560,7 @@
       }
     },
     "空状态页面" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8668,6 +8704,7 @@
       }
     },
     "聊天消息区域" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8706,6 +8743,9 @@
         }
       }
     },
+    "自定义" : {
+
+    },
     "获取索引状态失败" : {
 
     },
@@ -8742,6 +8782,9 @@
       }
     },
     "访问 Open VSX 官网" : {
+
+    },
+    "试试搜索命令名、命令 ID，或者像 `⌘⇧P` 这样的快捷键。" : {
 
     },
     "请从侧边栏选择一个导航入口" : {
@@ -9420,7 +9463,6 @@
       }
     },
     "默认" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

@@ -8,7 +8,7 @@
 
 **插件目录自包含，代码组织清晰，遵循统一的结构约定。**
 
-每个插件位于 `LumiApp/Plugins/<PluginName>/` 或 `LumiApp/Plugins-Agent/<PluginName>/` 目录下（Agent 相关插件在 `Plugins-Agent`），自行管理其内部的所有代码文件和资源。
+每个插件位于 `LumiApp/Plugins/<PluginName>/` 目录下，自行管理其内部的所有代码文件和资源。
 
 插件的说明文档（README）统一放在 `docs/plugins/<PluginName>/README.md`，不放在插件源码目录中。
 

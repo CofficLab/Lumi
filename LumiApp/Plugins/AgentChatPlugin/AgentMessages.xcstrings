@@ -24,6 +24,78 @@
         }
       }
     },
+    "Dev Assistant" : {
+
+    },
+    "Empty State Page" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty state page"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空状态页面"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空狀態頁面"
+          }
+        }
+      }
+    },
+    "Example Error Log" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Help me explain this error log"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· 帮我解释这段错误日志"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· 幫我解釋這段錯誤日誌"
+          }
+        }
+      }
+    },
+    "Example Test Plan" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Help me design a test plan for this project"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· 帮我为这个项目设计一个测试计划"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· 幫我為這個項目設計一個測試計劃"
+          }
+        }
+      }
+    },
     "Expand Earlier Loaded Messages (%lld)" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -116,75 +188,6 @@
         }
       }
     },
-    "Loading History" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading history messages…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在加载历史消息…"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在載入歷史訊息…"
-          }
-        }
-      }
-    },
-    "Loading More Messages" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading..."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加载中..."
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入中..."
-          }
-        }
-      }
-    },
-    "Load More Messages (%lld of %lld)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Load earlier messages (%lld loaded, %lld total)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加载更早消息（已加载 %lld 条，共 %lld 条）"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入更早訊息（已載入 %lld 條，共 %lld 條）"
-          }
-        }
-      }
-    },
     "Load Earlier Messages" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -227,6 +230,75 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "從歷史記錄中繼續載入更早的訊息"
+          }
+        }
+      }
+    },
+    "Load More Messages (%lld of %lld)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load earlier messages (%lld loaded, %lld total)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载更早消息（已加载 %lld 条，共 %lld 条）"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入更早訊息（已載入 %lld 條，共 %lld 條）"
+          }
+        }
+      }
+    },
+    "Loading History" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading history messages…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在加载历史消息…"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在載入歷史訊息…"
+          }
+        }
+      }
+    },
+    "Loading More Messages" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载中..."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入中..."
           }
         }
       }
@@ -484,74 +556,8 @@
         }
       }
     },
-    "Empty State Page" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empty state page"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空状态页面"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空狀態頁面"
-          }
-        }
-      }
-    },
-    "Example Error Log" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· Help me explain this error log"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· 帮我解释这段错误日志"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· 幫我解釋這段錯誤日誌"
-          }
-        }
-      }
-    },
-    "Example Test Plan" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· Help me design a test plan for this project"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· 帮我为这个项目设计一个测试计划"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· 幫我為這個項目設計一個測試計劃"
-          }
-        }
-      }
+    "Tool Output" : {
+
     }
   },
   "version" : "1.1"
