@@ -19,8 +19,6 @@ struct SourceEditorView: View, SuperLog {
     @State private var contextMenuCoordinator: ContextMenuCoordinator?
     @State private var semanticTokenProvider: SemanticTokenHighlightProvider?
     @State private var documentHighlightProvider: DocumentHighlightHighlighter?
-    @State private var signatureHelpProvider = SignatureHelpProvider()
-    @State private var codeActionPanelPresented: Bool = false
     @State private var hoverCoordinator: HoverEditorCoordinator?
     
     /// 跳转到定义代理（Cmd+Click / 右键跳转共用同一实例）
@@ -73,7 +71,7 @@ struct SourceEditorView: View, SuperLog {
                 semanticTokenProvider?.setEnabled(isEnabled)
             }
             .onChange(of: state.viewportRenderLineRange) { _, _ in
-                if state.panelState.hasActiveHover {
+                if state.shouldCancelHoverForViewportTransition {
                     hoverCoordinator?.cancelHover()
                 }
                 state.handleViewportRuntimeTransition()
@@ -82,7 +80,7 @@ struct SourceEditorView: View, SuperLog {
                 state.handleDocumentHighlightRuntimeAvailabilityChange(isEnabled)
             }
             .onChange(of: state.areHoversEnabled) { _, isEnabled in
-                if !isEnabled {
+                if state.shouldCancelHoverForRuntimeAvailabilityChange(isEnabled) {
                     hoverCoordinator?.cancelHover()
                 }
             }
@@ -154,8 +152,7 @@ struct SourceEditorView: View, SuperLog {
 
     @ViewBuilder
     private var signatureHelpOverlay: some View {
-        if state.shouldPresentSignatureHelpOverlay,
-           let help = state.signatureHelpProvider.currentHelp {
+        if let help = state.currentSignatureHelpOverlayItem {
             SignatureHelpView(item: help)
                 .padding(.leading, 12)
                 .padding(.bottom, 32)
@@ -166,20 +163,10 @@ struct SourceEditorView: View, SuperLog {
     private var codeActionOverlay: some View {
         if state.shouldPresentCodeActionOverlay {
             CodeActionPanel(
-                actions: state.codeActionProvider.actions
+                actions: state.currentCodeActionOverlayActions
             ) { action in
                 Task { @MainActor in
-                    await state.codeActionProvider.performAction(
-                        action,
-                        textView: state.focusedTextView,
-                        documentURL: state.currentFileURL,
-                        applyWorkspaceEditViaTransaction: { [weak state] edit in
-                            state?.applyCodeActionWorkspaceEdit(edit)
-                        }
-                    ) { message in
-                        state.showStatusToast(message, level: .warning)
-                    }
-                    state.codeActionProvider.clear()
+                    await state.performCodeActionOverlayAction(action)
                 }
             }
             .padding(.leading, 12)
@@ -266,7 +253,7 @@ struct SourceEditorView: View, SuperLog {
             HoverPopoverView(markdownText: hoverText)
                 .onAppear {
                     if EditorPlugin.verbose {
-                        EditorPlugin.logger.debug("\(Self.t)悬停预览: 内容长度=\(hoverText.count), 矩形=\(String(describing: self.state.panelState.mouseHoverSymbolRect))")
+                        EditorPlugin.logger.debug("\(Self.t)悬停预览: 内容长度=\(hoverText.count), 矩形=\(String(describing: state.currentHoverOverlayRect))")
                         EditorPlugin.logger.debug("\(Self.t)悬停预览: 原始内容=\n\(hoverText)")
                     }
                 }
@@ -294,8 +281,8 @@ struct SourceEditorView: View, SuperLog {
                     insertion: .opacity.combined(with: .scale(scale: 0.96, anchor: .bottomLeading)),
                     removal: .opacity
                 ))
-                .animation(.easeOut(duration: 0.14), value: state.panelState.mouseHoverContent)
-                .animation(.easeOut(duration: 0.12), value: state.panelState.mouseHoverSymbolRect)
+                .animation(.easeOut(duration: 0.14), value: state.currentHoverOverlayText)
+                .animation(.easeOut(duration: 0.12), value: state.currentHoverOverlayRect)
         }
     }
 
@@ -375,19 +362,15 @@ struct SourceEditorView: View, SuperLog {
         state.detectedLanguage ?? CodeLanguage.allLanguages.first { $0.tsName == "swift" } ?? CodeLanguage.allLanguages[0]
     }
 
-    private var areSemanticHighlightsEnabled: Bool {
-        !state.largeFileMode.isSemanticTokensDisabled && state.isSyntaxHighlightingEnabledInViewport
-    }
-    
     private var activeHighlightProviders: [any HighlightProviding] {
         var providers: [any HighlightProviding] = []
-        if state.isSyntaxHighlightingEnabledInViewport {
+        if state.shouldUseTreeSitterHighlightProvider {
             providers.append(treeSitterClient)
         }
-        if areSemanticHighlightsEnabled, let semanticTokenProvider {
+        if state.shouldUseSemanticTokenHighlightProvider, let semanticTokenProvider {
             providers.insert(semanticTokenProvider, at: 0)
         }
-        if state.areDocumentHighlightsEnabled, let documentHighlightProvider {
+        if state.shouldUseDocumentHighlightProvider, let documentHighlightProvider {
             providers.append(documentHighlightProvider)
         }
         return providers
@@ -404,59 +387,18 @@ struct SourceEditorView: View, SuperLog {
     }
 
     private var visibleFindMatchHighlights: [FindMatchHighlight] {
-        guard let textView = state.focusedTextView else { return [] }
-        guard let lineTable = contentLineTable else { return [] }
-        let visibleRect = textView.visibleRect
-        let selectedRange = state.activeSession.findReplaceState.selectedMatchRange
+        guard let textView = state.focusedTextView,
+              let lineTable = contentLineTable else {
+            return []
+        }
 
-        return state.currentRenderedFindMatches(lineTable: lineTable).compactMap { match in
-            guard let rect = visibleRectForFindMatch(for: match.range, in: textView, visibleRect: visibleRect) else {
-                return nil
-            }
-
-            let isSelected = match.range == selectedRange
-            return FindMatchHighlight(
-                range: match.range,
-                rect: rect,
-                isSelected: isSelected
+        return state.renderedFindMatchHighlights(textView: textView, lineTable: lineTable).map { highlight in
+            FindMatchHighlight(
+                range: highlight.range,
+                rect: highlight.rect,
+                isSelected: highlight.isSelected
             )
         }
-    }
-
-    private func visibleRectForFindMatch(
-        for range: EditorRange,
-        in textView: TextView,
-        visibleRect: CGRect
-    ) -> CGRect? {
-        guard let startRect = textView.layoutManager.rectForOffset(range.location) else {
-            return nil
-        }
-
-        let contentRect: CGRect
-        if range.length > 0,
-           let endRect = textView.layoutManager.rectForOffset(max(range.location + range.length - 1, range.location)) {
-            if abs(startRect.minY - endRect.minY) < 1.0 {
-                contentRect = CGRect(
-                    x: startRect.minX,
-                    y: startRect.minY,
-                    width: max(endRect.maxX - startRect.minX, startRect.width),
-                    height: max(startRect.height, endRect.height)
-                )
-            } else {
-                contentRect = startRect
-            }
-        } else {
-            contentRect = startRect
-        }
-
-        guard contentRect.intersects(visibleRect) else { return nil }
-
-        return CGRect(
-            x: contentRect.origin.x - visibleRect.origin.x,
-            y: contentRect.origin.y - visibleRect.origin.y,
-            width: contentRect.width,
-            height: contentRect.height
-        )
     }
     
     // MARK: - Configuration

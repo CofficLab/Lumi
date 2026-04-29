@@ -9,6 +9,18 @@ struct EditorCommand: Commands, SuperLog {
     var body: some Commands {
         #if os(macOS)
         CommandMenu("编辑器") {
+            Button("撤销") {
+                NotificationCenter.postLumiEditorUndo()
+            }
+            .keyboardShortcut(EditorCommandBindings.undo.keyEquivalent, modifiers: EditorCommandBindings.undo.eventModifiers)
+
+            Button("重做") {
+                NotificationCenter.postLumiEditorRedo()
+            }
+            .keyboardShortcut(EditorCommandBindings.redo.keyEquivalent, modifiers: EditorCommandBindings.redo.eventModifiers)
+
+            Divider()
+
             Button("命令面板") {
                 NotificationCenter.postLumiEditorShowCommandPalette()
             }

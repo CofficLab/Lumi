@@ -427,9 +427,9 @@ struct EditorToolbarView: View {
                 isActive: state.multiCursorState.isEnabled
             ) {
                 if state.multiCursorState.isEnabled {
-                    state.clearMultiCursors()
+                    state.performEditorCommand(id: "builtin.clear-additional-cursors")
                 } else {
-                    state.addNextOccurrence()
+                    state.performEditorCommand(id: "builtin.add-next-occurrence")
                 }
                 syncSelectionsToFocusedTextView()
             }

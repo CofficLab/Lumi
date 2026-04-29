@@ -49,6 +49,8 @@ struct EditorCommandBinding {
 }
 
 enum EditorCommandBindings {
+    static let undo = EditorCommandBinding(key: "z", modifiers: [.command])
+    static let redo = EditorCommandBinding(key: "z", modifiers: [.command, .shift])
     static let find = EditorCommandBinding(key: "f", modifiers: [.command])
     static let commandPalette = EditorCommandBinding(key: "p", modifiers: [.command, .shift])
     static let findNext = EditorCommandBinding(key: "g", modifiers: [.command])

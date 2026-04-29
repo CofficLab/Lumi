@@ -80,6 +80,12 @@ struct EditorRootView: View {
 
     private var editorCommandBoundRootView: some View {
         lifecycleBoundRootView
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorUndo)) { _ in
+                handleEditorCommandEvent("builtin.undo")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorRedo)) { _ in
+                handleEditorCommandEvent("builtin.redo")
+            }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFormatDocument)) { _ in
                 handleEditorCommandEvent("builtin.format-document")
             }

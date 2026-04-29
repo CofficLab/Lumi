@@ -220,6 +220,55 @@ final class ViewportRenderControllerTests: XCTestCase {
     }
 
     @MainActor
+    func testEditorStateHighlightProviderAvailabilityFollowsViewportRules() {
+        let state = EditorState()
+        state.applyViewportObservation(startLine: 0, endLine: 100, totalLines: 20_000)
+        state.largeFileMode = .large
+        state.longestDetectedLine = LongestDetectedLine(line: 3, length: 15_000)
+
+        XCTAssertFalse(state.shouldUseTreeSitterHighlightProvider)
+        XCTAssertFalse(state.shouldUseSemanticTokenHighlightProvider)
+        XCTAssertFalse(state.shouldUseDocumentHighlightProvider)
+    }
+
+    @MainActor
+    func testEditorStateCurrentOverlayDataRespectsRuntimeAvailability() {
+        let state = EditorState()
+        state.applyViewportObservation(startLine: 0, endLine: 100, totalLines: 1_000)
+        state.signatureHelpProvider.currentHelp = SignatureHelpItem(
+            label: "foo(bar: Int)",
+            documentation: nil,
+            parameters: [
+                SignatureParam(label: "bar: Int", documentation: nil)
+            ],
+            activeParameterIndex: 0
+        )
+        state.codeActionProvider.actions = [
+            CodeActionItem(
+                title: "Fix It",
+                kind: "quickfix",
+                payload: .plugin(
+                    EditorCodeActionSuggestion(
+                        title: "Fix It",
+                        kind: "quickfix"
+                    ) { _ in }
+                ),
+                isPreferred: false
+            )
+        ]
+        state.codeActionProvider.isVisible = true
+
+        XCTAssertNotNil(state.currentSignatureHelpOverlayItem)
+        XCTAssertEqual(state.currentCodeActionOverlayActions.count, 1)
+
+        state.largeFileMode = .large
+        state.longestDetectedLine = LongestDetectedLine(line: 3, length: 15_000)
+
+        XCTAssertNil(state.currentSignatureHelpOverlayItem)
+        XCTAssertTrue(state.currentCodeActionOverlayActions.isEmpty)
+    }
+
+    @MainActor
     func testEditorStateRenderedRangeHelpers() {
         let state = EditorState()
         state.applyViewportObservation(startLine: 100, endLine: 120, totalLines: 1000)

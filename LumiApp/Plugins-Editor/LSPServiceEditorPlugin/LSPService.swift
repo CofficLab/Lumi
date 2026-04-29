@@ -136,7 +136,7 @@ final class LSPService: ObservableObject, SuperLog {
         projectRootPath = projectPath
     }
     
-    func openDocument(uri: String, languageId: String, text: String) async {
+    func openDocument(uri: String, languageId: String, text: String, version: Int = 0) async {
         checkAvailability(for: languageId)
 
         if server == nil || activeLanguageId != languageId {
@@ -151,13 +151,13 @@ final class LSPService: ObservableObject, SuperLog {
         guard let server else { return }
         
         currentURI = uri
-        currentVersion = 0
+        currentVersion = version
         latestDocumentSnapshot = text
         pendingChanges.removeAll()
         currentDiagnostics = []
         
         do {
-            try await server.openDocument(uri: uri, languageId: languageId, text: text)
+            try await server.openDocument(uri: uri, languageId: languageId, text: text, version: version)
         } catch {
             Self.logger.error("\(Self.t)打开文档失败: \(error)")
         }
@@ -170,6 +170,7 @@ final class LSPService: ObservableObject, SuperLog {
                 try await server.closeDocument(uri: uri)
                 if currentURI == uri {
                     currentURI = nil
+                    currentVersion = 0
                     currentDiagnostics = []
                     latestDocumentSnapshot = nil
                     pendingChanges.removeAll()
@@ -185,9 +186,9 @@ final class LSPService: ObservableObject, SuperLog {
         latestDocumentSnapshot = text
     }
     
-    func documentDidChange(uri: String, range: LSPRange, text: String) {
+    func documentDidChange(uri: String, range: LSPRange, text: String, version: Int) {
         guard uri == currentURI else { return }
-        currentVersion += 1
+        currentVersion = version
         pendingChanges.append(.init(range: range, text: text))
         
         changeDebounceTimer?.invalidate()
@@ -203,15 +204,16 @@ final class LSPService: ObservableObject, SuperLog {
         let changes = pendingChanges
         let snapshot = latestDocumentSnapshot
         do {
-            try await server.documentDidChange(uri: uri, changes: changes, fullText: snapshot)
+            try await server.documentDidChange(uri: uri, changes: changes, fullText: snapshot, version: currentVersion)
             pendingChanges.removeAll()
         } catch {
             Self.logger.error("\(Self.t)发送变更失败: \(error)")
         }
     }
     
-    func replaceDocument(uri: String, text: String) {
+    func replaceDocument(uri: String, text: String, version: Int) {
         guard uri == currentURI else { return }
+        currentVersion = version
         latestDocumentSnapshot = text
         pendingChanges.removeAll()
         changeDebounceTimer?.invalidate()
@@ -219,7 +221,7 @@ final class LSPService: ObservableObject, SuperLog {
         guard let server else { return }
         Task {
             do {
-                try await server.documentDidChange(uri: uri, text: text)
+                try await server.documentDidChange(uri: uri, text: text, version: version)
             } catch {
                 Self.logger.error("\(Self.t)替换文档失败: \(error)")
             }
@@ -695,7 +697,8 @@ final class LSPService: ObservableObject, SuperLog {
             try await restartedServer.openDocument(
                 uri: currentURI,
                 languageId: languageId,
-                text: latestDocumentSnapshot
+                text: latestDocumentSnapshot,
+                version: currentVersion
             )
             pendingChanges.removeAll()
             if Self.verbose {
@@ -723,6 +726,7 @@ final class LSPService: ObservableObject, SuperLog {
         }
         server = nil
         currentURI = nil
+        currentVersion = 0
         currentDiagnostics = []
         activeLanguageId = nil
         latestDocumentSnapshot = nil

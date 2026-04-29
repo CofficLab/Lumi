@@ -57,6 +57,32 @@ final class EditorDocumentController {
     }
 
     @discardableResult
+    func applyTextStorageEdit(range: NSRange, text: String) -> EditorEditResult? {
+        guard let buffer else { return nil }
+        let previousText = buffer.text
+        let transaction = EditorTransaction(
+            replacements: [
+                .init(
+                    range: EditorRange(location: range.location, length: range.length),
+                    text: text
+                )
+            ]
+        )
+        guard let result = buffer.apply(transaction), result.snapshot.text != previousText else {
+            return nil
+        }
+
+        if let textStorage {
+            if textStorage.string != result.snapshot.text {
+                textStorage.mutableString.setString(result.snapshot.text)
+            }
+        } else {
+            textStorage = NSTextStorage(string: result.snapshot.text)
+        }
+        return result
+    }
+
+    @discardableResult
     func syncBufferFromTextStorageIfNeeded() -> EditorEditResult? {
         guard let textStorage else { return nil }
         guard buffer?.text != textStorage.string else { return nil }

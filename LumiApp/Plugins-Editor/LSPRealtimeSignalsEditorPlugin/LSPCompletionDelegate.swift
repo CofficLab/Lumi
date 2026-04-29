@@ -268,6 +268,18 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             return
         }
 
+        if let state = editorState,
+           state.applyCompletionEdit(
+                replacementRange: replacementRange,
+                replacementText: item.replacementText,
+                additionalTextEdits: item.additionalTextEdits
+           ) {
+            if let first = state.currentSelectionsAsNSRanges().first {
+                view.selectionManager.setSelectedRange(first)
+            }
+            return
+        }
+
         view.replaceCharacters(in: replacementRange, with: item.replacementText)
 
         if let edits = item.additionalTextEdits, !edits.isEmpty {

@@ -64,6 +64,22 @@ final class EditorDocumentControllerTests: XCTestCase {
         XCTAssertEqual(controller.buffer?.version, 1)
     }
 
+    func testApplyTextStorageEditUpdatesBufferWithoutFullResync() {
+        let controller = EditorDocumentController()
+        _ = controller.load(text: "hello world")
+        controller.textStorage?.mutableString.setString("hello swift")
+
+        let result = controller.applyTextStorageEdit(
+            range: NSRange(location: 6, length: 5),
+            text: "swift"
+        )
+
+        XCTAssertEqual(result?.snapshot.text, "hello swift")
+        XCTAssertEqual(controller.buffer?.text, "hello swift")
+        XCTAssertEqual(controller.textStorage?.string, "hello swift")
+        XCTAssertEqual(controller.buffer?.version, 1)
+    }
+
     func testClearResetsBufferAndTextStorage() {
         let controller = EditorDocumentController()
         _ = controller.load(text: "hello")

@@ -226,7 +226,6 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 - [x] 列出现存内核问题清单 — 路线图文档"当前代码里的核心问题"章节已完成
 - [x] `Kernel/` 目录已建立，核心文本模型已落地
 - [x] 性能基线指标 — `EditorPerformance` 已建立量化指标体系（23 种事件类型、慢速阈值、统计摘要、报告生成）
-- [ ] 性能回归自动化检测机制（CI 集成）
 
 ---
 
@@ -358,9 +357,9 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] 多光标 replacement 已改走 transaction（`multi_cursor_replace`）
 - [x] 多光标操作已改走 transaction（`multi_cursor_operation`）
 - [x] `EditorBufferTests` 测试已覆盖
-- [ ] `EditorUndoManager` — 目标架构 Layer 1 中规划，尚未独立实现，undo/redo 仍依赖原生 NSUndoManager
-- [ ] NSTextStorage 与 buffer 双写的同步风险尚未完全消除（`syncBufferFromTextStorageIfNeeded()` 作为补偿手段存在）
-- [ ] selection 映射在 format/rename 后的光标稳定性尚未有专项测试
+- [x] `EditorUndoManager` — 已落地为独立快照式 undo/redo 管理器，并接入 transaction 路径、原生文本输入路径与 `builtin.undo / builtin.redo` 命令链
+- [x] NSTextStorage 与 buffer 双写风险已收敛到应急兜底级别（transaction / save / undo / completion / 普通文本输入已走精确同步；`didReplaceContentsIn` 后的重复 `textDidChange` 重对齐已被抑制；带有 `textView.string` 的 `textDidChange` 旁路也会直接以当前视图文本重建 buffer；保留的 `syncBufferFromTextStorageIfNeeded()` 仅作为无法获取更精确信息时的应急补偿钩子）
+- [x] selection 映射在 format/rename 后的光标稳定性已有专项测试（`EditorSelectionStabilityTests` 覆盖 `changes` 与 `documentChanges` 两条 `WorkspaceEdit` 路径）
 
 ---
 
@@ -444,9 +443,9 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorSelectionSetTests` 测试已覆盖
 - [x] `EditorSelectionMapperTests` 测试已覆盖
 - [x] `MultiCursorTransactionBuilderTests` 测试已覆盖
-- [ ] `EditorCursorState` — 路线图原计划独立模块，实际功能已分散融入 `EditorSelectionSet`，可考虑后续整理
-- [ ] swizzle 依赖尚未完全退化 — `MultiCursorCommandsEditorPlugin` 仍依赖 `swizzleInsertText` / `swizzleDeleteBackward` 作为输入路由
-- [ ] completion / format / rename 后的选区恢复尚无专项自动测试
+- [x] `EditorCursorState` — 已作为兼容模块名落成，对当前 canonical `EditorSelectionSet` 提供明确别名，避免再引入第二套重复状态模型
+- [x] swizzle 依赖已退化为薄适配层 — `Cmd+D / Cmd+U / Cmd+Shift+L / Esc` 已改走统一 command id；`insertText` / `deleteBackward` / `insertNewline` / `insertTab` / `insertBacktab` 的输入决策也已下沉到 `EditorState`，`MultiCursorInput` 现主要只剩原生事件拦截与选区回写适配层
+- [x] completion / format / rename 后的选区恢复已有专项自动测试（`EditorSelectionStabilityTests`），且单光标 completion 已通过 `EditorState.applyCompletionEdit` 接入事务链
 
 ---
 
@@ -541,8 +540,8 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorTabStripView` 已实现 — 支持导航前进/后退、tab 选择/关闭、pin/unpin、close others、open editors 下拉菜单
 - [x] `EditorSession` 保存 cursor/scroll/find/panel 状态，切换 tab 后恢复
 - [x] `EditorSessionTests`（1144 行）、`EditorSessionStoreTests` 已覆盖
-- [ ] 一些面板状态可能仍是全局的（如 hover 内容、reference 结果），session-local vs global 划分可能不完全
-- [ ] 自动保存、外部文件刷新的 session 感知有待验证
+- [x] 面板状态已以 `panelState / session.panelState` 为主真相；`EditorState` 上的 hover / references / problems 等 published 字段已退为兼容镜像，内部高频读取优先走 `panelState`
+- [x] 外部文件刷新 / 冲突处理后的 session 感知已有专项测试（`EditorExternalFileConflictTests` 覆盖 reload / keep editor version 后的 dirty 与 session 同步）
 
 ---
 
@@ -672,8 +671,8 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `CommandContext` — 上下文感知的命令启用状态（hasSelection、languageId、isEditorActive、isMultiCursor）
 - [x] `EditorCommandBindings` — 快捷键绑定映射
 - [x] `EditorCommandPaletteTests` 测试已覆盖
-- [ ] 键位可配置化 — 用户自定义快捷键映射（在"后续方向"中）
-- [ ] toolbar / context menu 是否已完全走 command id 需逐一验证
+- [x] 键位可配置化 — 用户自定义快捷键映射（已完成；剩余仅为设置 UI 与录制器这类后续交互层）
+- [~] toolbar / context menu 的高频编辑动作已基本统一走 command id（palette、find/replace、LSP actions、context menu、多光标 toolbar toggle 已收口）；剩余主要是配置型 UI（字体/缩进/保存选项）是否需要命令化，不再是编辑动作执行链的缺口
 
 ---
 
@@ -728,9 +727,9 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] LSPCoordinator — 已使用 `RequestGeneration`（`fileSessionGeneration` + `requestGeneration`）
 - [x] `RequestGenerationTests` 测试已覆盖
 - [x] `LSPDebouncerTests` 测试已覆盖
-- [ ] SemanticTokenHighlightProvider — 未找到独立的 Provider 文件（可能内嵌在其他模块中），需确认是否已迁移
-- [ ] 文档版本感知 — LSP 管线尚未与 `EditorBuffer.version` 对齐，目前使用 `RequestGeneration` 而非 buffer version
-- [ ] viewport/cursor 敏感刷新 — 部分管线已通过 debouncer 实现，但尚未系统化
+- [x] SemanticTokenHighlightProvider — 实现在 `LSPCoordinator.swift` 内部，已接入 `RequestGeneration` stale rejection，并纳入 `Phase 8` 的 viewport / 长行 runtime gating
+- [x] 文档版本感知 — `EditorSnapshot.version` 现已显式贯穿 `EditorState -> LSPCoordinator -> LSPService -> LanguageServer`，LSP 文档版本不再独立自增
+- [x] viewport/cursor 敏感刷新 — `LSPCoordinator` 现已统一使用 document/cursor/range request context 做 stale rejection，cursor/range 敏感请求不再各自手写 `sessionGen + uri` 校验
 
 ---
 
@@ -765,8 +764,8 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] per-session 保存查找状态 — `EditorSession.findReplaceState` 为每个 session 独立持有
 - [x] Find/Replace 命令已注册 — find、find-next、find-previous、replace-current、replace-all
 - [x] `EditorFindReplaceControllerTests`、`EditorFindReplaceTransactionBuilderTests` 测试已覆盖
-- [ ] preserve case 替换选项
-- [ ] 与 multi-cursor selection 联动的 in-selection 查找需进一步验证
+- [x] preserve case 替换选项 — `EditorFindReplaceTransactionBuilder` 已实现，`EditorFindReplaceTransactionBuilderTests` 已覆盖
+- [x] 与 multi-cursor selection 联动的 in-selection 查找已补专项验证（`EditorFindReplaceControllerTests` 覆盖多选区与 primary selection fallback）
 
 ---
 
@@ -822,7 +821,13 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] Overlay 展示条件已继续收口到 `EditorState`（`renderedBracketMatch / shouldPresentSignatureHelpOverlay / shouldPresentCodeActionOverlay`），`SourceEditorView` 进一步退化为纯渲染消费层
 - [x] `hover` 与 `inlay hints strip` 的展示条件也已收口到 `EditorState`（`shouldPresentHoverOverlay / currentRenderedInlayHints / shouldPresentInlayHintsStrip`），`SourceEditorView` 基本不再维护独立的 runtime 展示规则
 - [x] `find matches` 与 `hover` 的最终渲染输入也已改为直接消费 `EditorState` 结果（`currentRenderedFindMatches / currentHoverOverlayText`），进一步减少 `SourceEditorView` 的状态拼装
+- [x] `find match` 的可见高亮矩形计算也已收口到 `EditorState`（`renderedFindMatchHighlights`），`SourceEditorView` 不再自行处理 `visibleRect + layoutManager` 的几何裁剪
+- [x] `bracket match` 的最终 overlay rect 计算与 `hover` 的 popover offset 计算也已收口到 `EditorState`（`renderedBracketOverlayRects / hoverOverlayOffset`），进一步减少 `SourceEditorView` 内部几何逻辑
 - [x] `document highlight / signature help / code action` 的 runtime availability 转场清理也已收口到 `EditorState`（`handleDocumentHighlightRuntimeAvailabilityChange / handleSignatureHelpRuntimeAvailabilityChange / handleCodeActionRuntimeAvailabilityChange`）
+- [x] `tree-sitter / semantic token / document highlight` 的 provider 启用规则也已统一由 `EditorState` 提供（`shouldUseTreeSitterHighlightProvider / shouldUseSemanticTokenHighlightProvider / shouldUseDocumentHighlightProvider`），`SourceEditorView` 不再直接拼装这些 runtime 条件
+- [x] `signature help / code action` 的最终 overlay 数据与动作执行入口也已收口到 `EditorState`（`currentSignatureHelpOverlayItem / currentCodeActionOverlayActions / performCodeActionOverlayAction`），`SourceEditorView` 进一步退化为纯消费层
+- [x] `hover` 的当前 rect 与 viewport/runtime 转场取消条件也已统一由 `EditorState` 提供（`currentHoverOverlayRect / shouldCancelHoverForViewportTransition / shouldCancelHoverForRuntimeAvailabilityChange`），`SourceEditorView` 不再直接读取 `panelState` 做这些判断
+- [~] `Phase 8` 在 Lumi 自有可控层面已基本完成；剩余硬边界主要是 `CodeEditSourceEditor` 内部文本渲染管线尚不能直接被 `ViewportRenderController` 裁剪，这属于外部依赖能力边界而非继续在 `SourceEditorView` 内部拆分可解决的问题
 
 ---
 
@@ -879,8 +884,8 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] Line editing commands — 全部 11 个行编辑命令通过 `performLineEdit(_:)` 接入 EditorState
 - [x] Bracket match overlay — 括号匹配高亮 UI 渲染完整接入（`applyPrimaryCursorObservation`、`applyCanonicalSelectionSet`、`notifyContentChanged` 均触发 `updateBracketMatch()`）
 - [x] `BracketAndIndentTests`（280 行）、`LineEditingControllerTests`（247 行）、`EditorSaveParticipantControllerTests`、`EditorSavePipelineControllerTests` 测试已覆盖
-- [ ] 外部文件修改冲突处理
-- [ ] BracketAndIndent 与实际 TextView 输入的集成（目前为内核模型，需确认接入程度）
+- [x] 外部文件修改冲突处理 — 轮询检测外部修改，未保存改动时进入 conflict state，支持 `Reload from Disk` / `Keep Editor Version`，并已有 `EditorExternalFileConflictTests`
+- [x] BracketAndIndent 与实际 TextView 输入的集成 — `MultiCursorInputInstaller` 已通过 `swizzleInsertText / insertNewline / insertTab / insertBacktab` 接到真实 `TextView` 输入链，单光标、多选区、多光标路径都已进入事务化编辑
 
 ---
 

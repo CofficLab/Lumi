@@ -198,12 +198,12 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     
     // MARK: - Document Lifecycle
     
-    func openDocument(uri: String, languageId: String, text: String) async throws {
+    func openDocument(uri: String, languageId: String, text: String, version: Int = 0) async throws {
         guard !openDocuments.keys.contains(uri) else { return }
-        openDocuments[uri] = 0
+        openDocuments[uri] = version
         documentContents[uri] = text
         
-        let doc = TextDocumentItem(uri: uri, languageId: languageId, version: 0, text: text)
+        let doc = TextDocumentItem(uri: uri, languageId: languageId, version: version, text: text)
         try await server.textDocumentDidOpen(DidOpenTextDocumentParams(textDocument: doc))
         if LSPService.verbose {
             LSPService.logger.debug("\(Self.t)已打开: \(uri)")
@@ -221,9 +221,9 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         }
     }
     
-    func documentDidChange(uri: String, text: String) async throws {
-        guard let version = openDocuments[uri] else { return }
-        let newVersion = version + 1
+    func documentDidChange(uri: String, text: String, version explicitVersion: Int? = nil) async throws {
+        guard let currentVersion = openDocuments[uri] else { return }
+        let newVersion = explicitVersion ?? (currentVersion + 1)
         openDocuments[uri] = newVersion
         documentContents[uri] = text
         
@@ -240,12 +240,12 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         let text: String
     }
     
-    func documentDidChange(uri: String, changes: [DocumentChange], fullText: String?) async throws {
+    func documentDidChange(uri: String, changes: [DocumentChange], fullText: String?, version explicitVersion: Int? = nil) async throws {
         guard !changes.isEmpty else { return }
-        guard let version = openDocuments[uri] else { return }
+        guard let currentVersion = openDocuments[uri] else { return }
         
         let syncKind = resolveDocumentSyncKind()
-        let newVersion = version + 1
+        let newVersion = explicitVersion ?? (currentVersion + 1)
         openDocuments[uri] = newVersion
         
         switch syncKind {

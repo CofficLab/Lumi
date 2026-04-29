@@ -19,6 +19,7 @@ enum CoreCommandRegistrations {
     }
 
     static func registerAll(in state: EditorState) {
+        registerHistoryCommands(state: state)
         registerFormatCommands(state: state)
         registerNavigationCommands(state: state)
         registerWorkbenchCommands()
@@ -28,6 +29,34 @@ enum CoreCommandRegistrations {
         registerSaveCommands(state: state)
         registerLineEditingCommands(state: state)
         registerCursorMotionCommands(state: state)
+    }
+
+    // MARK: - Format
+
+    private static func registerHistoryCommands(state: EditorState) {
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.undo",
+            title: String(localized: "Undo", table: "LumiEditor"),
+            icon: "arrow.uturn.backward",
+            shortcut: resolveShortcut(EditorCommandBindings.undo, for: "builtin.undo"),
+            category: EditorCommandCategory.other.rawValue,
+            order: 50,
+            enablement: .custom { _ in state.canUndo }
+        ) {
+            state.performUndo()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.redo",
+            title: String(localized: "Redo", table: "LumiEditor"),
+            icon: "arrow.uturn.forward",
+            shortcut: resolveShortcut(EditorCommandBindings.redo, for: "builtin.redo"),
+            category: EditorCommandCategory.other.rawValue,
+            order: 60,
+            enablement: .custom { _ in state.canRedo }
+        ) {
+            state.performRedo()
+        })
     }
 
     // MARK: - Format
@@ -214,6 +243,7 @@ enum CoreCommandRegistrations {
             enablement: .whenTrue(.hasSelection)
         ) {
             state.addNextOccurrence()
+            state.focusedTextView?.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
         })
 
         CommandRegistry.shared.register(KernelEditorCommand(
@@ -227,7 +257,22 @@ enum CoreCommandRegistrations {
             guard let textView = state.focusedTextView else { return }
             let currentSelection = textView.selectionManager.textSelections.last?.range
                 ?? NSRange(location: NSNotFound, length: 0)
-            _ = state.addAllOccurrences(from: currentSelection)
+            if let ranges = state.addAllOccurrences(from: currentSelection) {
+                textView.selectionManager.setSelectedRanges(ranges)
+            }
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand(
+            id: "builtin.remove-last-occurrence-selection",
+            title: String(localized: "Remove Last Occurrence Selection", table: "LumiEditor"),
+            icon: "minus.magnifyingglass",
+            category: EditorCommandCategory.multiCursor.rawValue,
+            order: 615,
+            enablement: .whenTrue(.isMultiCursor)
+        ) {
+            if let ranges = state.removeLastOccurrenceSelection() {
+                state.focusedTextView?.selectionManager.setSelectedRanges(ranges)
+            }
         })
 
         CommandRegistry.shared.register(KernelEditorCommand(
@@ -239,6 +284,7 @@ enum CoreCommandRegistrations {
             enablement: .whenTrue(.isMultiCursor)
         ) {
             state.clearMultiCursors()
+            state.focusedTextView?.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
         })
     }
 

@@ -29,6 +29,24 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     /// 文档版本计数器
     private var version = 0
 
+    private struct DocumentRequestContext {
+        let uri: String
+        let sessionGeneration: UInt64
+    }
+
+    private struct CursorRequestContext {
+        let uri: String
+        let sessionGeneration: UInt64
+        let line: Int
+        let character: Int
+    }
+
+    private struct RangeRequestContext {
+        let uri: String
+        let sessionGeneration: UInt64
+        let range: LSPRange
+    }
+
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
     }
@@ -40,14 +58,14 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     }
     
     /// 打开文件时调用
-    func openFile(uri: String, languageId: String, content: String) async {
+    func openFile(uri: String, languageId: String, content: String, version: Int = 0) async {
         fileSessionGeneration.invalidate()
         await debouncer.cancelAll()
         self.fileURI = uri
         self.languageId = languageId
-        self.version = 0
+        self.version = version
 
-        await lspService.openDocument(uri: uri, languageId: languageId, text: content)
+        await lspService.openDocument(uri: uri, languageId: languageId, text: content, version: version)
         logger.info("\(Self.t)LSP: 已打开文件 \(uri)")
     }
     
@@ -60,6 +78,7 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
         }
         lspService.closeDocument(uri: uri)
         fileURI = nil
+        version = 0
         logger.info("\(Self.t)LSP: 已关闭文件")
     }
     
@@ -68,19 +87,58 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
         guard let uri = fileURI else { return }
         lspService.updateDocumentSnapshot(uri: uri, text: content)
     }
+
+    private func documentRequestContext(uri: String) -> DocumentRequestContext {
+        DocumentRequestContext(
+            uri: uri,
+            sessionGeneration: fileSessionGeneration.generation
+        )
+    }
+
+    private func cursorRequestContext(uri: String, line: Int, character: Int) -> CursorRequestContext {
+        CursorRequestContext(
+            uri: uri,
+            sessionGeneration: fileSessionGeneration.generation,
+            line: line,
+            character: character
+        )
+    }
+
+    private func rangeRequestContext(uri: String, range: LSPRange) -> RangeRequestContext {
+        RangeRequestContext(
+            uri: uri,
+            sessionGeneration: fileSessionGeneration.generation,
+            range: range
+        )
+    }
+
+    private func isCurrent(_ context: DocumentRequestContext) -> Bool {
+        fileSessionGeneration.isCurrent(context.sessionGeneration) && fileURI == context.uri
+    }
+
+    private func isCurrent(_ context: CursorRequestContext, line: Int? = nil, character: Int? = nil) -> Bool {
+        isCurrent(DocumentRequestContext(uri: context.uri, sessionGeneration: context.sessionGeneration)) &&
+        (line == nil || context.line == line) &&
+        (character == nil || context.character == character)
+    }
+
+    private func isCurrent(_ context: RangeRequestContext, range: LSPRange? = nil) -> Bool {
+        isCurrent(DocumentRequestContext(uri: context.uri, sessionGeneration: context.sessionGeneration)) &&
+        (range == nil || context.range == range)
+    }
     
     /// 文档内容增量变更
-    func contentDidChange(range: LSPRange, text: String) {
+    func contentDidChange(range: LSPRange, text: String, version: Int) {
         guard let uri = fileURI else { return }
-        version += 1
-        lspService.documentDidChange(uri: uri, range: range, text: text)
+        self.version = version
+        lspService.documentDidChange(uri: uri, range: range, text: text, version: version)
     }
     
     /// 文档内容被整段替换（外部修改等）
-    func replaceDocument(_ content: String) {
+    func replaceDocument(_ content: String, version: Int) {
         guard let uri = fileURI else { return }
-        version += 1
-        lspService.replaceDocument(uri: uri, text: content)
+        self.version = version
+        lspService.replaceDocument(uri: uri, text: content, version: version)
     }
     
     // MARK: - LSP Features
@@ -88,13 +146,13 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     /// 请求代码补全（防抖版 — 50ms延迟，新请求取消旧请求）
     func requestCompletionDebounced(line: Int, character: Int) async -> [CompletionItem] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let key = "completion_\(uri)_\(line)_\(character)"
         let result: [CompletionItem] = await debouncer.debounce(key: key, delay: 50_000_000) { [weak self] in
             guard let self else { return [] as [CompletionItem] }
             return await self.lspService.requestCompletion(uri: uri, line: line, character: character)
         } ?? []
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context, line: line, character: character) else { return [] }
         return result
     }
 
@@ -107,13 +165,13 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     /// 请求悬停提示（防抖版 — 200ms延迟，鼠标需静止才请求）
     func requestHoverRawDebounced(line: Int, character: Int) async -> Hover? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let key = "hover_\(uri)_\(line)_\(character)"
         let result: Hover? = await debouncer.debounce(key: key, delay: 200_000_000) { [weak self] in
             guard let self else { return nil }
             return await self.lspService.requestHoverRaw(uri: uri, line: line, character: character)
         }
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context, line: line, character: character) else { return nil }
         return result
     }
 
@@ -132,121 +190,121 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     /// 请求文档高亮（节流版 — 250ms最小间隔）
     func requestDocumentHighlightThrottled(line: Int, character: Int) async -> [DocumentHighlight] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let key = "highlight_\(uri)"
         let result: [DocumentHighlight] = await debouncer.throttle(key: key, interval: 250_000_000) { [weak self] in
             guard let self else { return [] as [DocumentHighlight] }
             return await self.lspService.requestDocumentHighlight(uri: uri, line: line, character: character)
         } ?? []
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context, line: line, character: character) else { return [] }
         return result
     }
 
     /// 请求定义位置
     func requestDefinition(line: Int, character: Int) async -> Location? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let result = await lspService.requestDefinition(uri: uri, line: line, character: character)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context, line: line, character: character) else { return nil }
         return result
     }
 
     /// 请求引用
     func requestReferences(line: Int, character: Int) async -> [Location] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let result = await lspService.requestReferences(uri: uri, line: line, character: character)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context, line: line, character: character) else { return [] }
         return result
     }
 
     /// 请求文档符号
     func requestDocumentSymbols() async -> [DocumentSymbol] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = documentRequestContext(uri: uri)
         let result = await lspService.requestDocumentSymbols(uri: uri)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context) else { return [] }
         return result
     }
 
     /// 请求重命名
     func requestRename(line: Int, character: Int, newName: String) async -> WorkspaceEdit? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let result = await lspService.requestRename(uri: uri, line: line, character: character, newName: newName)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context, line: line, character: character) else { return nil }
         return result
     }
 
     /// 请求格式化
     func requestFormatting(tabSize: Int, insertSpaces: Bool) async -> [TextEdit]? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = documentRequestContext(uri: uri)
         let result = await lspService.requestFormatting(uri: uri, tabSize: tabSize, insertSpaces: insertSpaces)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context) else { return nil }
         return result
     }
     
     /// 请求签名帮助
     func requestSignatureHelp(line: Int, character: Int) async -> SignatureHelp? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let result = await lspService.requestSignatureHelp(uri: uri, line: line, character: character)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context, line: line, character: character) else { return nil }
         return result
     }
     
     /// 请求内联提示
     func requestInlayHint(startLine: Int, startCharacter: Int, endLine: Int, endCharacter: Int) async -> [InlayHint]? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = documentRequestContext(uri: uri)
         let result = await lspService.requestInlayHint(uri: uri, startLine: startLine, startCharacter: startCharacter, endLine: endLine, endCharacter: endCharacter)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context) else { return nil }
         return result
     }
     
     /// 请求文档高亮
     func requestDocumentHighlight(line: Int, character: Int) async -> [DocumentHighlight] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let result = await lspService.requestDocumentHighlight(uri: uri, line: line, character: character)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context, line: line, character: character) else { return [] }
         return result
     }
     
     /// 请求代码动作
     func requestCodeAction(range: LSPRange, diagnostics: [Diagnostic], triggerKinds: [CodeActionKind]? = nil) async -> [CodeAction] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = rangeRequestContext(uri: uri, range: range)
         let result = await lspService.requestCodeAction(uri: uri, range: range, diagnostics: diagnostics, triggerKinds: triggerKinds)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context, range: range) else { return [] }
         return result
     }
 
     /// 请求声明位置
     func requestDeclaration(line: Int, character: Int) async -> Location? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let response = await lspService.requestDeclaration(uri: uri, line: line, character: character)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context, line: line, character: character) else { return nil }
         return lspService.parseLocationResponse(response)
     }
 
     /// 请求类型定义位置
     func requestTypeDefinition(line: Int, character: Int) async -> Location? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let response = await lspService.requestTypeDefinition(uri: uri, line: line, character: character)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context, line: line, character: character) else { return nil }
         return lspService.parseLocationResponse(response)
     }
 
     /// 请求实现位置
     func requestImplementation(line: Int, character: Int) async -> Location? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let response = await lspService.requestImplementation(uri: uri, line: line, character: character)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context, line: line, character: character) else { return nil }
         return lspService.parseLocationResponse(response)
     }
 
@@ -257,52 +315,52 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     /// 请求代码动作（防抖版 — 300ms延迟，与诊断同步）
     func requestCodeActionDebounced(range: LSPRange, diagnostics: [Diagnostic], triggerKinds: [CodeActionKind]? = nil) async -> [CodeAction] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = rangeRequestContext(uri: uri, range: range)
         let key = "codeaction_\(uri)_\(range.start.line)_\(range.start.character)"
         let result: [CodeAction] = await debouncer.debounce(key: key, delay: 300_000_000) { [weak self] in
             guard let self else { return [] as [CodeAction] }
             return await self.lspService.requestCodeAction(uri: uri, range: range, diagnostics: diagnostics, triggerKinds: triggerKinds)
         } ?? []
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context, range: range) else { return [] }
         return result
     }
 
     /// 请求签名帮助（防抖版 — 150ms延迟）
     func requestSignatureHelpDebounced(line: Int, character: Int) async -> SignatureHelp? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let key = "signature_\(uri)_\(line)_\(character)"
         let result: SignatureHelp? = await debouncer.debounce(key: key, delay: 150_000_000) { [weak self] in
             guard let self else { return nil }
             return await self.lspService.requestSignatureHelp(uri: uri, line: line, character: character)
         }
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context, line: line, character: character) else { return nil }
         return result
     }
 
     /// 请求内联提示（节流版 — 500ms间隔）
     func requestInlayHintThrottled(startLine: Int, startCharacter: Int, endLine: Int, endCharacter: Int) async -> [InlayHint]? {
         guard let uri = fileURI else { return nil }
-        let sessionGen = fileSessionGeneration.generation
+        let context = documentRequestContext(uri: uri)
         let key = "inlayhint_\(uri)"
         let result: [InlayHint]? = await debouncer.throttle(key: key, interval: 500_000_000) { [weak self] in
             guard let self else { return nil }
             return await self.lspService.requestInlayHint(uri: uri, startLine: startLine, startCharacter: startCharacter, endLine: endLine, endCharacter: endCharacter)
         }
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return nil }
+        guard isCurrent(context) else { return nil }
         return result
     }
 
     /// 请求折叠范围（防抖版 — 1s延迟，打开文件时请求）
     func requestFoldingRangeDebounced() async -> [FoldingRange] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = documentRequestContext(uri: uri)
         let key = "folding_\(uri)"
         let result: [FoldingRange] = await debouncer.debounce(key: key, delay: 1_000_000_000) { [weak self] in
             guard let self else { return [] as [FoldingRange] }
             return await self.lspService.requestFoldingRange(uri: uri)
         } ?? []
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context) else { return [] }
         return result
     }
     
@@ -311,45 +369,45 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     /// 请求折叠范围
     func requestFoldingRange() async -> [FoldingRange] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = documentRequestContext(uri: uri)
         let result = await lspService.requestFoldingRange(uri: uri)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context) else { return [] }
         return result
     }
     
     /// 请求选择范围
     func requestSelectionRange(line: Int, character: Int) async -> [SelectionRange] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         let result = await lspService.requestSelectionRange(uri: uri, line: line, character: character)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context, line: line, character: character) else { return [] }
         return result
     }
     
     /// 请求文档链接
     func requestDocumentLinks() async -> [DocumentLink] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = documentRequestContext(uri: uri)
         let result = await lspService.requestDocumentLinks(uri: uri)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context) else { return [] }
         return result
     }
     
     /// 请求文档颜色
     func requestDocumentColors() async -> [ColorInformation] {
         guard let uri = fileURI else { return [] }
-        let sessionGen = fileSessionGeneration.generation
+        let context = documentRequestContext(uri: uri)
         let result = await lspService.requestDocumentColors(uri: uri)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return [] }
+        guard isCurrent(context) else { return [] }
         return result
     }
     
     /// 请求调用层级
     func requestCallHierarchy(line: Int, character: Int) async {
         guard let uri = fileURI else { return }
-        let sessionGen = fileSessionGeneration.generation
+        let context = cursorRequestContext(uri: uri, line: line, character: character)
         await lspService.requestCallHierarchyPrepare(uri: uri, line: line, character: character)
-        guard fileSessionGeneration.isCurrent(sessionGen), fileURI == uri else { return }
+        guard isCurrent(context, line: line, character: character) else { return }
     }
     
     /// 请求工作区符号

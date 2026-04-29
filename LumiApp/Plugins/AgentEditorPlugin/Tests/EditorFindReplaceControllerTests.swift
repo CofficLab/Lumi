@@ -56,5 +56,49 @@ final class EditorFindReplaceControllerTests: XCTestCase {
             EditorRange(location: 8, length: 3)
         ])
     }
+
+    func testMatchesInSelectionOnlyUsesAllNonEmptySelectionsInMultiSelectionMode() {
+        let state = EditorFindReplaceState(
+            findText: "foo",
+            options: EditorFindReplaceOptions(inSelectionOnly: true)
+        )
+
+        let result = EditorFindReplaceController.matches(
+            in: "foo bar foo baz foo",
+            state: state,
+            selections: [
+                EditorSelection(range: EditorRange(location: 0, length: 3)),
+                EditorSelection(range: EditorRange(location: 8, length: 3)),
+                EditorSelection(range: EditorRange(location: 16, length: 3))
+            ],
+            primarySelection: EditorSelection(range: EditorRange(location: 8, length: 3))
+        )
+
+        XCTAssertEqual(result.matches.map(\.range), [
+            EditorRange(location: 0, length: 3),
+            EditorRange(location: 8, length: 3),
+            EditorRange(location: 16, length: 3)
+        ])
+    }
+
+    func testMatchesInSelectionOnlyFallsBackToPrimarySelectionWhenSelectionsAreEmpty() {
+        let state = EditorFindReplaceState(
+            findText: "foo",
+            options: EditorFindReplaceOptions(inSelectionOnly: true)
+        )
+
+        let result = EditorFindReplaceController.matches(
+            in: "foo bar foo baz",
+            state: state,
+            selections: [
+                EditorSelection(range: EditorRange(location: 0, length: 0))
+            ],
+            primarySelection: EditorSelection(range: EditorRange(location: 8, length: 3))
+        )
+
+        XCTAssertEqual(result.matches.map(\.range), [
+            EditorRange(location: 8, length: 3)
+        ])
+    }
 }
 #endif

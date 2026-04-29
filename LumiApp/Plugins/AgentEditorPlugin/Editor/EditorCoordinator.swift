@@ -9,12 +9,18 @@ import os
 /// 文本变更协调器
 /// 监听 CodeEditSourceEditor 的文本与焦点事件，通知 EditorState 更新脏状态并在失焦时保存
 final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
+    private struct PendingNativeEdit {
+        let lspRange: LSPRange
+        let nsRange: NSRange
+        let undoState: EditorUndoState?
+    }
     
     /// 弱引用状态管理器
     private weak var state: EditorState?
-    private var editedRange: LSPRange?
     private weak var textViewController: TextViewController?
     private var endEditingObserver: NSObjectProtocol?
+    private var pendingNativeEdit: PendingNativeEdit?
+    private var suppressNextTextDidChangeReconciliation = false
     /// 跳转定义代理（由外部注入）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
     
@@ -47,6 +53,11 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     
     nonisolated func textViewDidChangeText(controller: TextViewController) {
         let state = self.state
+        let currentText = controller.textView?.string ?? ""
+        let shouldSuppressReconciliation = suppressNextTextDidChangeReconciliation
+        if shouldSuppressReconciliation {
+            suppressNextTextDidChangeReconciliation = false
+        }
         if EditorPlugin.verbose {
             EditorPlugin.logger.info("\(EditorState.t)文本变更: state=\(state != nil), 长度=\(controller.textView?.string.count ?? -1)")
         }
@@ -55,7 +66,9 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
             if state == nil {
                 EditorPlugin.logger.warning("\(EditorState.t)Coordinator 已被释放，state 为 nil")
             }
-            state?.notifyContentChanged()
+            if !shouldSuppressReconciliation {
+                state?.notifyContentChanged(fromTextViewString: currentText)
+            }
             guard let state else { return }
             Task { @MainActor in
                 let context = Self.interactionContext(
@@ -116,7 +129,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
             if !state.areCodeActionsEnabled {
                 state.codeActionProvider.clear()
             } else if let fileURL = state.currentFileURL {
-                let diagnostics = state.problemDiagnostics.filter { diag in
+                let diagnostics = state.panelState.problemDiagnostics.filter { diag in
                     Int(diag.range.start.line) + 1 == cursor.start.line ||
                     (Int(diag.range.start.line) + 1 < cursor.start.line && Int(diag.range.end.line) + 1 >= cursor.start.line)
                 }
@@ -175,19 +188,33 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     }
     
     func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with string: String) {
-        editedRange = Self.lspRange(from: range, in: textView.string)
+        guard let lspRange = Self.lspRange(from: range, in: textView.string) else {
+            pendingNativeEdit = nil
+            return
+        }
+        let state = self.state
+        let undoState = MainActor.assumeIsolated { state?.captureUndoState() }
+        pendingNativeEdit = PendingNativeEdit(
+            lspRange: lspRange,
+            nsRange: range,
+            undoState: undoState
+        )
     }
     
     func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with string: String) {
-        guard let lspRange = editedRange else { return }
-        editedRange = nil
+        guard let pendingEdit = pendingNativeEdit else { return }
+        pendingNativeEdit = nil
         let state = self.state
+        suppressNextTextDidChangeReconciliation = true
         DispatchQueue.main.async {
-            state?.notifyLSPIncrementalChange(range: lspRange, text: string)
             // 关键：CodeEditSourceEditor 对实现了 TextViewDelegate 的 coordinator
             // 只调用 textView(_:didReplaceContentsIn:with:)，不会调用 textViewDidChangeText(controller:)。
             // 因此脏状态更新逻辑必须在这里触发。
-            state?.notifyContentChanged()
+            state?.applyNativeTextEdit(range: pendingEdit.nsRange, text: string, textViewString: textView.string)
+            state?.notifyLSPIncrementalChange(range: pendingEdit.lspRange, text: string)
+            if let undoState = pendingEdit.undoState {
+                state?.recordUndoChange(from: undoState, reason: "text_input")
+            }
         }
     }
     

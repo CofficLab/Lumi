@@ -7,6 +7,7 @@ import CodeEditTextView
 import CodeEditLanguages
 import SwiftTreeSitter
 import LanguageServerProtocol
+import MagicAlert
 import os
 import MagicKit
 
@@ -185,6 +186,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
 
         // 未找到目标
         NSSound.beep()
+        alert_info(kind.toastNotFound, duration: 1.5)
     }
 
     /// 打开导航链接（同文件 / 跨文件）
@@ -277,6 +279,15 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             case .declaration: return String(localized: "Finding declaration...", table: "LumiEditor")
             case .typeDefinition: return String(localized: "Finding type definition...", table: "LumiEditor")
             case .implementation: return String(localized: "Finding implementation...", table: "LumiEditor")
+            }
+        }
+
+        var toastNotFound: String {
+            switch self {
+            case .definition: return String(localized: "No definition found", table: "LumiEditor")
+            case .declaration: return String(localized: "No declaration found", table: "LumiEditor")
+            case .typeDefinition: return String(localized: "No type definition found", table: "LumiEditor")
+            case .implementation: return String(localized: "No implementation found", table: "LumiEditor")
             }
         }
     }

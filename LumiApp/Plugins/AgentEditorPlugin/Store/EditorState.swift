@@ -42,6 +42,12 @@ final class EditorState: ObservableObject, SuperLog {
         let close: CGRect
     }
 
+    struct FindMatchOverlayHighlight: Equatable {
+        let range: EditorRange
+        let rect: CGRect
+        let isSelected: Bool
+    }
+
     // MARK: - 组合子状态容器（P2.1）
     // 所有 @Published 属性通过 computed properties 桥接到子状态容器，
     // 保持向后兼容的同时实现关注点分离。
@@ -75,6 +81,8 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 是否展示 Problems 面板
     @Published private(set) var isProblemsPanelPresented: Bool = false
+    @Published private(set) var canUndo: Bool = false
+    @Published private(set) var canRedo: Bool = false
 
     /// 当前激活会话（Phase 2 起逐步替代散落的会话级状态）
     @Published private(set) var activeSession = EditorSession()
@@ -92,7 +100,9 @@ final class EditorState: ObservableObject, SuperLog {
     private var panelBindings = Set<AnyCancellable>()
     private var multiCursorSearchSession: EditorMultiCursorSearchSession?
     private var isSessionSyncSuspended = false
+    private var isRestoringUndoState = false
     private let referencesRequestGeneration = RequestGeneration()
+    private let editorUndoManager = EditorUndoManager()
 
     private var savePipelineOptions: EditorSavePipelineOptions {
         EditorSavePipelineOptions(
@@ -378,6 +388,30 @@ final class EditorState: ObservableObject, SuperLog {
         renderedFindMatches(findMatches, lineTable: lineTable)
     }
 
+    func renderedFindMatchHighlights(
+        textView: TextView,
+        lineTable: LineOffsetTable
+    ) -> [FindMatchOverlayHighlight] {
+        let visibleRect = textView.visibleRect
+        let selectedRange = activeSession.findReplaceState.selectedMatchRange
+
+        return currentRenderedFindMatches(lineTable: lineTable).compactMap { match in
+            guard let rect = findMatchOverlayRect(
+                for: match.range,
+                in: textView,
+                visibleRect: visibleRect
+            ) else {
+                return nil
+            }
+
+            return FindMatchOverlayHighlight(
+                range: match.range,
+                rect: rect,
+                isSelected: match.range == selectedRange
+            )
+        }
+    }
+
     func renderedInlayHints(_ hints: [InlayHintItem]) -> [InlayHintItem] {
         hints.filter { isRenderedLine($0.line) }
     }
@@ -444,6 +478,18 @@ final class EditorState: ObservableObject, SuperLog {
         return panelState.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    var currentHoverOverlayRect: CGRect {
+        panelState.mouseHoverSymbolRect
+    }
+
+    var shouldCancelHoverForViewportTransition: Bool {
+        panelState.hasActiveHover
+    }
+
+    func shouldCancelHoverForRuntimeAvailabilityChange(_ isEnabled: Bool) -> Bool {
+        !isEnabled
+    }
+
     func hoverOverlayOffset(
         in containerSize: CGSize,
         popoverHeight: CGFloat,
@@ -466,12 +512,84 @@ final class EditorState: ObservableObject, SuperLog {
         return CGSize(width: clampedX, height: clampedY)
     }
 
+    var shouldUseTreeSitterHighlightProvider: Bool {
+        isSyntaxHighlightingEnabledInViewport
+    }
+
+    var shouldUseSemanticTokenHighlightProvider: Bool {
+        !largeFileMode.isSemanticTokensDisabled && isSyntaxHighlightingEnabledInViewport
+    }
+
+    var shouldUseDocumentHighlightProvider: Bool {
+        areDocumentHighlightsEnabled
+    }
+
+    private func findMatchOverlayRect(
+        for range: EditorRange,
+        in textView: TextView,
+        visibleRect: CGRect
+    ) -> CGRect? {
+        guard let startRect = textView.layoutManager.rectForOffset(range.location) else {
+            return nil
+        }
+
+        let contentRect: CGRect
+        if range.length > 0,
+           let endRect = textView.layoutManager.rectForOffset(max(range.location + range.length - 1, range.location)) {
+            if abs(startRect.minY - endRect.minY) < 1.0 {
+                contentRect = CGRect(
+                    x: startRect.minX,
+                    y: startRect.minY,
+                    width: max(endRect.maxX - startRect.minX, startRect.width),
+                    height: max(startRect.height, endRect.height)
+                )
+            } else {
+                contentRect = startRect
+            }
+        } else {
+            contentRect = startRect
+        }
+
+        guard contentRect.intersects(visibleRect) else { return nil }
+
+        return CGRect(
+            x: contentRect.origin.x - visibleRect.origin.x,
+            y: contentRect.origin.y - visibleRect.origin.y,
+            width: contentRect.width,
+            height: contentRect.height
+        )
+    }
+
     var shouldPresentSignatureHelpOverlay: Bool {
         areSignatureHelpEnabled && isPrimaryCursorRendered && signatureHelpProvider.currentHelp != nil
     }
 
+    var currentSignatureHelpOverlayItem: SignatureHelpItem? {
+        guard shouldPresentSignatureHelpOverlay else { return nil }
+        return signatureHelpProvider.currentHelp
+    }
+
     var shouldPresentCodeActionOverlay: Bool {
         codeActionProvider.isVisible && isPrimaryCursorRendered
+    }
+
+    var currentCodeActionOverlayActions: [CodeActionItem] {
+        guard shouldPresentCodeActionOverlay else { return [] }
+        return codeActionProvider.actions
+    }
+
+    func performCodeActionOverlayAction(_ action: CodeActionItem) async {
+        await codeActionProvider.performAction(
+            action,
+            textView: focusedTextView,
+            documentURL: currentFileURL,
+            applyWorkspaceEditViaTransaction: { [weak self] edit in
+                self?.applyCodeActionWorkspaceEdit(edit)
+            }
+        ) { [weak self] message in
+            self?.showStatusToast(message, level: .warning)
+        }
+        codeActionProvider.clear()
     }
 
     /// 在光标稳定后刷新可见区域内的 Inlay Hints
@@ -1203,6 +1321,7 @@ final class EditorState: ObservableObject, SuperLog {
                         )
                     }
                     self.syncActiveSessionState()
+                    self.resetUndoHistory()
                     
                     // 启动文件变化监听器（检测外部编辑器的修改）
                     self.setupFileWatcher(for: loadingURL)
@@ -1212,11 +1331,13 @@ final class EditorState: ObservableObject, SuperLog {
                     if let languageId {
                         let rootPath = self.projectRootPath ?? loadingURL.deletingLastPathComponent().path
                         self.lspCoordinator.setProjectRootPath(rootPath)
+                        let documentVersion = self.currentDocumentVersion
                         Task {
                             await self.lspCoordinator.openFile(
                                 uri: loadingURL.absoluteString,
                                 languageId: languageId,
-                                content: content
+                                content: content,
+                                version: documentVersion
                             )
                         }
                     }
@@ -1632,6 +1753,7 @@ final class EditorState: ObservableObject, SuperLog {
         
         // 关闭 LSP 文档
         lspCoordinator.closeFile()
+        resetUndoHistory()
         syncActiveSessionState()
     }
     
@@ -1686,11 +1808,55 @@ final class EditorState: ObservableObject, SuperLog {
         if Self.verbose {
             logger.info("\(Self.t)加载二进制文件: \(url.lastPathComponent), 大小: \(sizeText)")
         }
+        resetUndoHistory()
         syncActiveSessionState()
     }
     
     // MARK: - Content Change Detection
     
+    private func refreshContentDerivedState(using contentString: String) {
+        let changed: Bool
+        if let snapshot = persistedContentSnapshot {
+            changed = contentString != snapshot
+        } else {
+            changed = false
+        }
+
+        if Self.verbose {
+            logger.info("\(Self.t)内容变更检测: changed=\(changed), 内容长度=\(contentString.count), 快照长度=\(self.persistedContentSnapshot?.count ?? -1), 文件=\(self.currentFileURL?.lastPathComponent ?? "nil")")
+        }
+
+        if changed {
+            hasUnsavedChanges = true
+            saveState = .editing
+            lspCoordinator.updateDocumentSnapshot(contentString)
+        } else {
+            hasUnsavedChanges = false
+            saveState = .idle
+        }
+        refreshFindMatches()
+        syncActiveSessionState()
+        updateBracketMatch()
+    }
+
+    private func notifyContentChangedAfterSynchronizedEdit(using contentString: String) {
+        refreshContentDerivedState(using: contentString)
+    }
+
+    func notifyContentChanged(fromTextViewString text: String) {
+        if documentController.currentText == text {
+            notifyContentChangedAfterSynchronizedEdit(using: text)
+        } else {
+            let result = documentController.replaceText(text)
+            content = documentController.textStorage
+            totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+            if viewportVisibleLineRange.isEmpty {
+                resetViewportObservation(totalLines: totalLines)
+            }
+            notifyContentChangedAfterSynchronizedEdit(using: result.snapshot.text)
+        }
+    }
+
     /// 通知内容已变更（由 TextViewCoordinator 调用）
     func notifyContentChanged() {
         guard let textStorage = content else {
@@ -1708,35 +1874,53 @@ final class EditorState: ObservableObject, SuperLog {
                 resetViewportObservation(totalLines: totalLines)
             }
         }
-        let changed: Bool
-        if let snapshot = persistedContentSnapshot {
-            // 使用精确字符串比较，而非 hashValue（存在哈希碰撞风险）
-            changed = contentString != snapshot
+        notifyContentChangedAfterSynchronizedEdit(using: contentString)
+    }
+
+    func applyNativeTextEdit(range: NSRange, text: String, textViewString: String? = nil) {
+        if let result = documentController.applyTextStorageEdit(range: range, text: text) {
+            content = documentController.textStorage
+            totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+            if viewportVisibleLineRange.isEmpty {
+                resetViewportObservation(totalLines: totalLines)
+            }
+            notifyContentChangedAfterSynchronizedEdit(using: result.snapshot.text)
+        } else if let textViewString {
+            notifyContentChanged(fromTextViewString: textViewString)
         } else {
-            // 快照为空说明尚未初始化，视为无变更
-            changed = false
+            notifyContentChanged()
         }
-        
-        if Self.verbose {
-            logger.info("\(Self.t)内容变更检测: changed=\(changed), 内容长度=\(contentString.count), 快照长度=\(self.persistedContentSnapshot?.count ?? -1), 文件=\(self.currentFileURL?.lastPathComponent ?? "nil")")
-        }
-        
-        if changed {
-            hasUnsavedChanges = true
-            saveState = .editing
-            lspCoordinator.updateDocumentSnapshot(contentString)
-        } else {
-            hasUnsavedChanges = false
-            saveState = .idle
-        }
-        refreshFindMatches()
-        syncActiveSessionState()
-        updateBracketMatch()
+    }
+
+    func captureUndoState() -> EditorUndoState {
+        EditorUndoState(
+            text: documentController.currentText ?? content?.string ?? "",
+            selections: canonicalSelectionSet.selections
+        )
+    }
+
+    func recordUndoChange(from before: EditorUndoState, reason: String) {
+        guard !isRestoringUndoState else { return }
+        let after = captureUndoState()
+        editorUndoManager.recordChange(from: before, to: after, reason: reason)
+        syncUndoAvailability()
+    }
+
+    func performUndo() {
+        guard let target = editorUndoManager.undo() else { return }
+        applyUndoState(target)
+        syncUndoAvailability()
+    }
+
+    func performRedo() {
+        guard let target = editorUndoManager.redo() else { return }
+        applyUndoState(target)
+        syncUndoAvailability()
     }
     
     /// 通知 LSP 发生增量文本变更（由编辑器 coordinator 转发）
     func notifyLSPIncrementalChange(range: LSPRange, text: String) {
-        lspCoordinator.contentDidChange(range: range, text: text)
+        lspCoordinator.contentDidChange(range: range, text: text, version: currentDocumentVersion)
     }
 
     // MARK: - LSP Actions
@@ -2082,11 +2266,13 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     private func applyPreparedSaveText(_ text: String) {
+        let before = captureUndoState()
         let result = documentController.replaceText(text)
         content = documentController.textStorage
         totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
-        lspCoordinator.replaceDocument(result.snapshot.text)
-        notifyContentChanged()
+        lspCoordinator.replaceDocument(result.snapshot.text, version: result.snapshot.version)
+        notifyContentChangedAfterSynchronizedEdit(using: result.snapshot.text)
+        recordUndoChange(from: before, reason: "save_prepare_text")
     }
 
     private func fullDocumentRange(for text: String) -> LSPRange {
@@ -2119,7 +2305,7 @@ final class EditorState: ObservableObject, SuperLog {
         let range = fullDocumentRange(for: currentText)
         let codeActions = await lspCoordinator.requestCodeAction(
             range: range,
-            diagnostics: problemDiagnostics,
+            diagnostics: panelState.problemDiagnostics,
             triggerKinds: requestedKinds
         )
         guard !codeActions.isEmpty else { return }
@@ -2281,6 +2467,7 @@ final class EditorState: ObservableObject, SuperLog {
         )
         hasExternalFileConflict = true
         saveState = .conflict(String(localized: "File changed on disk", table: "LumiEditor"))
+        syncActiveSessionState()
     }
 
     private func clearExternalFileConflict() {
@@ -2295,6 +2482,7 @@ final class EditorState: ObservableObject, SuperLog {
             modificationDate: conflict.modificationDate
         )
         clearExternalFileConflict()
+        syncActiveSessionState()
     }
 
     func keepEditorVersionForExternalConflict() {
@@ -2302,6 +2490,7 @@ final class EditorState: ObservableObject, SuperLog {
         lastKnownModificationDate = conflict.modificationDate
         clearExternalFileConflict()
         saveState = hasUnsavedChanges ? .editing : .idle
+        syncActiveSessionState()
     }
     
     /// 应用外部修改到编辑器
@@ -2325,7 +2514,9 @@ final class EditorState: ObservableObject, SuperLog {
         refreshFindMatches()
         
         // 通知 LSP 文档内容已替换
-        lspCoordinator.replaceDocument(newContent)
+        lspCoordinator.replaceDocument(newContent, version: result.snapshot.version)
+        resetUndoHistory()
+        syncActiveSessionState()
     }
     
     /// 获取文件的修改日期
@@ -2699,8 +2890,26 @@ final class EditorState: ObservableObject, SuperLog {
     /// 将 LSP TextEdits 应用到当前文档，走 transaction 路径。
     /// 这是 Phase 1 "format / rename / code action 走 transaction" 的核心入口。
     private func applyTextEditsToCurrentDocument(_ edits: [TextEdit], reason: String = "text_edits") {
-        guard let result = documentController.applyTextEdits(edits) else { return }
+        guard let text = documentController.currentText,
+              let transaction = TextEditTransactionBuilder.makeTransaction(edits: edits, in: text) else {
+            return
+        }
+        let before = captureUndoState()
+
+        let transactionWithSelections: EditorTransaction
+        if transaction.updatedSelections == nil,
+           let remappedSelections = remappedSelections(for: transaction.replacements) {
+            transactionWithSelections = EditorTransaction(
+                replacements: transaction.replacements,
+                updatedSelections: remappedSelections
+            )
+        } else {
+            transactionWithSelections = transaction
+        }
+
+        guard let result = documentController.apply(transaction: transactionWithSelections) else { return }
         commitDocumentEditResult(result, reason: reason)
+        recordUndoChange(from: before, reason: reason)
     }
 
     /// Code Action 的 WorkspaceEdit 统一入口。
@@ -2846,11 +3055,13 @@ final class EditorState: ObservableObject, SuperLog {
 
     private func applyEditorTransaction(_ transaction: EditorTransaction, reason: String) {
         let perfToken = EditorPerformance.shared.begin(.editTransaction)
+        let before = captureUndoState()
         guard let result = documentController.apply(transaction: transaction) else {
             EditorPerformance.shared.cancel(perfToken)
             return
         }
         commitDocumentEditResult(result, reason: reason)
+        recordUndoChange(from: before, reason: reason)
         EditorPerformance.shared.end(perfToken, metadata: ["reason": reason])
     }
 
@@ -2905,6 +3116,208 @@ final class EditorState: ObservableObject, SuperLog {
             selectedRanges: selectedRanges,
             reason: reason
         )
+    }
+
+    func handleTextInput(_ text: String, replacementRange: NSRange, textViewSelections: [NSRange]) -> Bool {
+        if multiCursorState.all.count <= 1,
+           text.count == 1,
+           let typedChar = text.first,
+           let selection = singleInputSelectionRange(
+                from: textViewSelections,
+                replacementRange: replacementRange
+           ),
+           let currentText = currentEditorTextStorageString() as? String {
+            let config = BracketPairsConfig.defaultForLanguage(detectedLanguage?.tsName ?? "swift")
+            if let edit = BracketMatcher.autoClosingEdit(
+                in: currentText,
+                selection: selection,
+                typedChar: typedChar,
+                config: config
+            ) {
+                return applyBracketAutoClosingEdit(
+                    replacementRange: edit.replacementRange,
+                    replacementText: edit.replacementText,
+                    selectedRange: edit.selectedRange
+                )
+            }
+        }
+
+        if multiCursorState.all.count > 1,
+           text.count == 1,
+           let typedChar = text.first,
+           let currentText = currentEditorTextStorageString() as? String,
+           let edit = multiCursorAutoClosingEdit(
+                in: currentText,
+                selections: textViewSelections,
+                typedChar: typedChar,
+                config: BracketPairsConfig.defaultForLanguage(detectedLanguage?.tsName ?? "swift")
+           ) {
+            return applyFullTextEdit(
+                replacementText: edit.text,
+                selectedRanges: edit.selections,
+                reason: "multi_cursor_bracket_auto_closing"
+            )
+        }
+
+        guard multiCursorState.all.count > 1 else { return false }
+        return applyMultiCursorOperation(.replaceSelection(text)) != nil
+    }
+
+    func handleDeleteBackwardInput() -> Bool {
+        guard multiCursorState.all.count > 1 else { return false }
+        return applyMultiCursorOperation(.deleteBackward) != nil
+    }
+
+    func handleInsertNewlineInput(textViewSelections: [NSRange]) -> Bool {
+        guard multiCursorState.all.count <= 1 else { return false }
+        guard let selection = singleInputSelectionRange(
+            from: textViewSelections,
+            replacementRange: NSRange(location: NSNotFound, length: 0)
+        ),
+        let currentText = currentEditorTextStorageString() as? String else {
+            return false
+        }
+
+        let result = SmartIndentHandler.handleEnter(
+            in: currentText,
+            at: selection.location,
+            tabSize: tabWidth,
+            useSpaces: useSpaces
+        )
+
+        return applySmartIndentEdit(
+            replacementRange: selection,
+            replacementText: result.textToInsert,
+            cursorLocation: selection.location + result.cursorOffset
+        )
+    }
+
+    func handleInsertTabInput(textViewSelections: [NSRange]) -> Bool {
+        if multiCursorState.all.count > 1 {
+            let indentUnit = useSpaces ? String(repeating: " ", count: tabWidth) : "\t"
+            return applyMultiCursorOperation(.indent(indentUnit)) != nil
+        }
+
+        guard let selection = singleInputSelectionRange(
+            from: textViewSelections,
+            replacementRange: NSRange(location: NSNotFound, length: 0)
+        ),
+        let currentText = currentEditorTextStorageString() as? String else {
+            return false
+        }
+
+        if selection.length > 0 {
+            guard let result = SmartIndentHandler.handleTab(
+                in: currentText,
+                selection: selection,
+                tabSize: tabWidth,
+                useSpaces: useSpaces
+            ) else {
+                return false
+            }
+
+            return applyOutdentEdit(
+                replacementRange: result.replacementRange,
+                replacementText: result.replacementText,
+                selectedRange: result.selectedRange
+            )
+        }
+
+        let result = SmartIndentHandler.handleTab(
+            at: selection.location,
+            hasSelection: false,
+            selectionStart: selection.location,
+            selectionEnd: selection.location,
+            tabSize: tabWidth,
+            useSpaces: useSpaces
+        )
+
+        return applySmartIndentEdit(
+            replacementRange: selection,
+            replacementText: result.textToInsert,
+            cursorLocation: selection.location + result.cursorOffset
+        )
+    }
+
+    func handleInsertBacktabInput(textViewSelections: [NSRange]) -> Bool {
+        if multiCursorState.all.count > 1 {
+            return applyMultiCursorOperation(.outdent(tabSize: tabWidth, useSpaces: useSpaces)) != nil
+        }
+
+        guard let selection = singleInputSelectionRange(
+            from: textViewSelections,
+            replacementRange: NSRange(location: NSNotFound, length: 0)
+        ),
+        let currentText = currentEditorTextStorageString() as? String else {
+            return false
+        }
+
+        guard let result = SmartIndentHandler.handleBacktab(
+            in: currentText,
+            selection: selection,
+            tabSize: tabWidth,
+            useSpaces: useSpaces
+        ) else {
+            return false
+        }
+
+        return applyOutdentEdit(
+            replacementRange: result.replacementRange,
+            replacementText: result.replacementText,
+            selectedRange: result.selectedRange
+        )
+    }
+
+    func applyCompletionEdit(
+        replacementRange: NSRange,
+        replacementText: String,
+        additionalTextEdits: [TextEdit]?
+    ) -> Bool {
+        guard let text = documentController.currentText ?? content?.string else { return false }
+
+        var replacements: [EditorTransaction.Replacement] = [
+            .init(
+                range: EditorRange(
+                    location: replacementRange.location,
+                    length: replacementRange.length
+                ),
+                text: replacementText
+            )
+        ]
+
+        if let additionalTextEdits, !additionalTextEdits.isEmpty {
+            guard let additionalTransaction = TextEditTransactionBuilder.makeTransaction(
+                edits: additionalTextEdits,
+                in: text
+            ) else {
+                return false
+            }
+            replacements.append(contentsOf: additionalTransaction.replacements)
+        }
+
+        let selectionAnchor = replacementRange.location + replacementRange.length
+        let finalCursorLocation = remappedOffset(
+            selectionAnchor,
+            isRangeEnd: true,
+            replacements: replacements.sorted { lhs, rhs in
+                if lhs.range.location != rhs.range.location {
+                    return lhs.range.location < rhs.range.location
+                }
+                return lhs.range.length < rhs.range.length
+            }
+        )
+
+        let transaction = EditorTransaction(
+            replacements: replacements,
+            updatedSelections: [
+                EditorSelection(
+                    range: EditorRange(location: finalCursorLocation, length: 0)
+                )
+            ]
+        )
+
+        applyEditorTransaction(transaction, reason: "completion_apply")
+        return true
     }
 
     // MARK: - Line Editing (Phase 9)
@@ -3176,8 +3589,8 @@ final class EditorState: ObservableObject, SuperLog {
             canonicalSelectionSet = EditorSelectionSet(selections: selections)
             setSelections(multiCursorSelections(from: selections))
         }
-        lspCoordinator.replaceDocument(result.snapshot.text)
-        notifyContentChanged()
+        lspCoordinator.replaceDocument(result.snapshot.text, version: result.snapshot.version)
+        notifyContentChangedAfterSynchronizedEdit(using: result.snapshot.text)
 
         if Self.verbose {
             logger.info("\(Self.t)应用编辑事务: reason=\(reason), version=\(result.snapshot.version), length=\(result.snapshot.text.count)")
@@ -3188,6 +3601,145 @@ final class EditorState: ObservableObject, SuperLog {
         selections.map {
             MultiCursorSelection(location: $0.range.location, length: $0.range.length)
         }
+    }
+
+    private var currentDocumentVersion: Int {
+        documentController.buffer?.version ?? 0
+    }
+
+    private func applyUndoState(_ state: EditorUndoState) {
+        isRestoringUndoState = true
+        defer { isRestoringUndoState = false }
+
+        let result = documentController.replaceText(state.text)
+        content = documentController.textStorage
+        totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+        canonicalSelectionSet = EditorSelectionSet(selections: state.selections)
+        setSelections(multiCursorSelections(from: state.selections))
+        pushCanonicalSelectionToView()
+        lspCoordinator.replaceDocument(result.snapshot.text, version: result.snapshot.version)
+        notifyContentChangedAfterSynchronizedEdit(using: result.snapshot.text)
+    }
+
+    private func resetUndoHistory() {
+        editorUndoManager.reset()
+        syncUndoAvailability()
+    }
+
+    private func syncUndoAvailability() {
+        canUndo = editorUndoManager.canUndo
+        canRedo = editorUndoManager.canRedo
+    }
+
+    private func remappedSelections(
+        for replacements: [EditorTransaction.Replacement]
+    ) -> [EditorSelection]? {
+        let currentSelections = currentSelectionsAsNSRanges()
+        guard !currentSelections.isEmpty else { return nil }
+
+        let sortedReplacements = replacements.sorted { lhs, rhs in
+            if lhs.range.location != rhs.range.location {
+                return lhs.range.location < rhs.range.location
+            }
+            return lhs.range.length < rhs.range.length
+        }
+
+        return currentSelections.map { selection in
+            let start = remappedOffset(
+                selection.location,
+                isRangeEnd: false,
+                replacements: sortedReplacements
+            )
+            let end = remappedOffset(
+                selection.location + selection.length,
+                isRangeEnd: true,
+                replacements: sortedReplacements
+            )
+            return EditorSelection(
+                range: EditorRange(
+                    location: min(start, end),
+                    length: max(end - start, 0)
+                )
+            )
+        }
+    }
+
+    private func remappedOffset(
+        _ offset: Int,
+        isRangeEnd: Bool,
+        replacements: [EditorTransaction.Replacement]
+    ) -> Int {
+        var mapped = offset
+        for replacement in replacements {
+            let start = replacement.range.location
+            let end = replacement.range.location + replacement.range.length
+            let delta = (replacement.text as NSString).length - replacement.range.length
+
+            if mapped < start {
+                continue
+            }
+
+            if mapped > end || (mapped == end && isRangeEnd) {
+                mapped += delta
+                continue
+            }
+
+            mapped = start + (replacement.text as NSString).length
+        }
+        return max(mapped, 0)
+    }
+
+    private func singleInputSelectionRange(
+        from selections: [NSRange],
+        replacementRange: NSRange
+    ) -> NSRange? {
+        if replacementRange.location != NSNotFound {
+            return replacementRange
+        }
+        guard selections.count == 1 else { return nil }
+        return selections.first
+    }
+
+    private func multiCursorAutoClosingEdit(
+        in text: String,
+        selections: [NSRange],
+        typedChar: Character,
+        config: BracketPairsConfig
+    ) -> (text: String, selections: [NSRange])? {
+        guard !selections.isEmpty else { return nil }
+
+        var mutableText = text
+        let orderedSelections = selections
+            .filter { $0.location != NSNotFound }
+            .sorted { $0.location > $1.location }
+
+        var updatedSelectionsDescending: [NSRange] = []
+        var applied = false
+
+        for selection in orderedSelections {
+            guard let edit = BracketMatcher.autoClosingEdit(
+                in: mutableText,
+                selection: selection,
+                typedChar: typedChar,
+                config: config
+            ) else {
+                return nil
+            }
+
+            guard let stringRange = Range(edit.replacementRange, in: mutableText) else {
+                return nil
+            }
+
+            mutableText.replaceSubrange(stringRange, with: edit.replacementText)
+            updatedSelectionsDescending.append(edit.selectedRange)
+
+            if edit.replacementRange.length > 0 || !edit.replacementText.isEmpty || edit.selectedRange != selection {
+                applied = true
+            }
+        }
+
+        guard applied else { return nil }
+        return (mutableText, updatedSelectionsDescending.reversed())
     }
 
     private func syncActiveSessionState(

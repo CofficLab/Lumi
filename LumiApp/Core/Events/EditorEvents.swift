@@ -3,6 +3,8 @@ import SwiftUI
 // MARK: - Notification Extension (Editor / LSP Actions)
 
 extension Notification.Name {
+    static let lumiEditorUndo = Notification.Name("LumiEditorUndo")
+    static let lumiEditorRedo = Notification.Name("LumiEditorRedo")
     /// 请求执行「格式化文档」
     static let lumiEditorFormatDocument = Notification.Name("LumiEditorFormatDocument")
 
@@ -70,6 +72,14 @@ extension Notification.Name {
 // MARK: - NotificationCenter Helpers
 
 extension NotificationCenter {
+    static func postLumiEditorUndo() {
+        NotificationCenter.default.post(name: .lumiEditorUndo, object: nil)
+    }
+
+    static func postLumiEditorRedo() {
+        NotificationCenter.default.post(name: .lumiEditorRedo, object: nil)
+    }
+
     static func postLumiEditorFormatDocument() {
         NotificationCenter.default.post(name: .lumiEditorFormatDocument, object: nil)
     }

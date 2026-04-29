@@ -29,11 +29,25 @@ final class MultiCursorCommandContributor: EditorCommandContributor {
             },
 
             .init(
+                id: "builtin.remove-last-occurrence-selection",
+                title: String(localized: "Remove Last Occurrence Selection", table: "LumiEditor"),
+                systemImage: "minus.magnifyingglass",
+                category: EditorCommandCategory.multiCursor.rawValue,
+                order: 52,
+                isEnabled: state.multiCursorState.isEnabled
+            ) {
+                guard let textView else { return }
+                if let ranges = state.removeLastOccurrenceSelection() {
+                    textView.selectionManager.setSelectedRanges(ranges)
+                }
+            },
+
+            .init(
                 id: "builtin.select-all-occurrences",
                 title: String(localized: "Select All Occurrences", table: "LumiEditor"),
                 systemImage: "text.magnifyingglass",
                 category: EditorCommandCategory.multiCursor.rawValue,
-                order: 52,
+                order: 53,
                 isEnabled: hasSelection
             ) {
                 guard let textView else { return }
@@ -48,7 +62,7 @@ final class MultiCursorCommandContributor: EditorCommandContributor {
                 title: String(localized: "Clear Additional Cursors", table: "LumiEditor"),
                 systemImage: "cursorarrow.motionlines",
                 category: EditorCommandCategory.multiCursor.rawValue,
-                order: 53,
+                order: 54,
                 isEnabled: state.multiCursorState.isEnabled
             ) {
                 state.clearMultiCursors()

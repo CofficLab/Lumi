@@ -1,6 +1,18 @@
 import AppKit
 import CodeEditTextView
 
+// MARK: - Native Input Adapter
+//
+// 当前文件仍通过 swizzle 拦截 CodeEditTextView 的原生输入回调，
+// 但业务决策已下沉到 EditorState / command system：
+// - 多光标快捷键走统一 command id
+// - insert/delete/newline/tab/backtab 的输入规则走 EditorState 入口
+//
+// 因此这里的职责仅剩：
+// 1. 拦截原生输入事件
+// 2. 把上下文（textView selections / replacementRange）转发给状态层
+// 3. 将结果选区回写到 TextView
+
 @MainActor
 final class MultiCursorInputInstaller: NSObject {
 
@@ -216,59 +228,6 @@ final class MultiCursorInputHelper: NSObject {
             return false
         }
 
-        if state.multiCursorState.all.count <= 1,
-           text.count == 1,
-           let typedChar = text.first,
-           let selection = singleSelectionRange(in: textView, replacementRange: replacementRange),
-           let currentText = state.content?.string {
-            let config = BracketPairsConfig.defaultForLanguage(state.detectedLanguage?.tsName ?? "swift")
-            if let edit = BracketMatcher.autoClosingEdit(
-                in: currentText,
-                selection: selection,
-                typedChar: typedChar,
-                config: config
-            ) {
-                isApplyingMultiCursorEdit = true
-                defer { isApplyingMultiCursorEdit = false }
-
-                if state.applyBracketAutoClosingEdit(
-                    replacementRange: edit.replacementRange,
-                    replacementText: edit.replacementText,
-                    selectedRange: edit.selectedRange
-                ) {
-                    textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
-                    return true
-                }
-            }
-        }
-
-        if state.multiCursorState.all.count > 1,
-           text.count == 1,
-           let typedChar = text.first,
-           let currentText = state.content?.string {
-            let config = BracketPairsConfig.defaultForLanguage(state.detectedLanguage?.tsName ?? "swift")
-            if let edit = multiCursorAutoClosingEdit(
-                in: currentText,
-                selections: textView.selectionManager.textSelections.map(\.range),
-                typedChar: typedChar,
-                config: config
-            ) {
-                isApplyingMultiCursorEdit = true
-                defer { isApplyingMultiCursorEdit = false }
-
-                if state.applyFullTextEdit(
-                    replacementText: edit.text,
-                    selectedRanges: edit.selections,
-                    reason: "multi_cursor_bracket_auto_closing"
-                ) {
-                    textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
-                    return true
-                }
-            }
-        }
-
-        guard state.multiCursorState.all.count > 1 else { return false }
-
         isApplyingMultiCursorEdit = true
         defer { isApplyingMultiCursorEdit = false }
 
@@ -277,21 +236,24 @@ final class MultiCursorInputHelper: NSObject {
             textViewSelections: textView.selectionManager.textSelections.map(\.range),
             note: "replacementRange=\(NSStringFromRange(replacementRange)) textLength=\((text as NSString).length)"
         )
-        guard let resultSelections = state.applyMultiCursorOperation(.replaceSelection(text)) else {
+        guard state.handleTextInput(
+            text,
+            replacementRange: replacementRange,
+            textViewSelections: textView.selectionManager.textSelections.map(\.range)
+        ) else {
             return false
         }
         textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
         state.logMultiCursorInput(
             action: "insertText.after",
             textViewSelections: textView.selectionManager.textSelections.map(\.range),
-            note: "resultSelectionCount=\(resultSelections.count)"
+            note: "resultSelectionCount=\(state.currentSelectionsAsNSRanges().count)"
         )
         return true
     }
 
     func handleDeleteBackward() -> Bool {
         guard let textView, let state else { return false }
-        guard state.multiCursorState.all.count > 1 else { return false }
         guard !isApplyingMultiCursorEdit else { return false }
 
         isApplyingMultiCursorEdit = true
@@ -301,14 +263,14 @@ final class MultiCursorInputHelper: NSObject {
             action: "deleteBackward.before",
             textViewSelections: textView.selectionManager.textSelections.map(\.range)
         )
-        guard let resultSelections = state.applyMultiCursorOperation(.deleteBackward) else {
+        guard state.handleDeleteBackwardInput() else {
             return false
         }
         textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
         state.logMultiCursorInput(
             action: "deleteBackward.after",
             textViewSelections: textView.selectionManager.textSelections.map(\.range),
-            note: "resultSelectionCount=\(resultSelections.count)"
+            note: "resultSelectionCount=\(state.currentSelectionsAsNSRanges().count)"
         )
         return true
     }
@@ -316,26 +278,12 @@ final class MultiCursorInputHelper: NSObject {
     func handleInsertNewline() -> Bool {
         guard let textView, let state else { return false }
         guard !isApplyingMultiCursorEdit else { return false }
-        guard state.multiCursorState.all.count <= 1 else { return false }
-        guard let selection = singleSelectionRange(in: textView, replacementRange: NSRange(location: NSNotFound, length: 0)),
-              let currentText = state.content?.string else {
-            return false
-        }
-
-        let result = SmartIndentHandler.handleEnter(
-            in: currentText,
-            at: selection.location,
-            tabSize: state.tabWidth,
-            useSpaces: state.useSpaces
-        )
 
         isApplyingMultiCursorEdit = true
         defer { isApplyingMultiCursorEdit = false }
 
-        guard state.applySmartIndentEdit(
-            replacementRange: selection,
-            replacementText: result.textToInsert,
-            cursorLocation: selection.location + result.cursorOffset
+        guard state.handleInsertNewlineInput(
+            textViewSelections: textView.selectionManager.textSelections.map(\.range)
         ) else {
             return false
         }
@@ -347,66 +295,12 @@ final class MultiCursorInputHelper: NSObject {
     func handleInsertTab() -> Bool {
         guard let textView, let state else { return false }
         guard !isApplyingMultiCursorEdit else { return false }
-        if state.multiCursorState.all.count > 1 {
-            let indentUnit = state.useSpaces
-                ? String(repeating: " ", count: state.tabWidth)
-                : "\t"
-
-            isApplyingMultiCursorEdit = true
-            defer { isApplyingMultiCursorEdit = false }
-
-            guard state.applyMultiCursorOperation(.indent(indentUnit)) != nil else {
-                return false
-            }
-            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
-            return true
-        }
-        guard let selection = singleSelectionRange(in: textView, replacementRange: NSRange(location: NSNotFound, length: 0)),
-              let currentText = state.content?.string else {
-            return false
-        }
-
-        if selection.length > 0 {
-            guard let result = SmartIndentHandler.handleTab(
-                in: currentText,
-                selection: selection,
-                tabSize: state.tabWidth,
-                useSpaces: state.useSpaces
-            ) else {
-                return false
-            }
-
-            isApplyingMultiCursorEdit = true
-            defer { isApplyingMultiCursorEdit = false }
-
-            guard state.applyOutdentEdit(
-                replacementRange: result.replacementRange,
-                replacementText: result.replacementText,
-                selectedRange: result.selectedRange
-            ) else {
-                return false
-            }
-
-            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
-            return true
-        }
-
-        let result = SmartIndentHandler.handleTab(
-            at: selection.location,
-            hasSelection: false,
-            selectionStart: selection.location,
-            selectionEnd: selection.location,
-            tabSize: state.tabWidth,
-            useSpaces: state.useSpaces
-        )
 
         isApplyingMultiCursorEdit = true
         defer { isApplyingMultiCursorEdit = false }
 
-        guard state.applySmartIndentEdit(
-            replacementRange: selection,
-            replacementText: result.textToInsert,
-            cursorLocation: selection.location + result.cursorOffset
+        guard state.handleInsertTabInput(
+            textViewSelections: textView.selectionManager.textSelections.map(\.range)
         ) else {
             return false
         }
@@ -418,91 +312,18 @@ final class MultiCursorInputHelper: NSObject {
     func handleInsertBacktab() -> Bool {
         guard let textView, let state else { return false }
         guard !isApplyingMultiCursorEdit else { return false }
-        if state.multiCursorState.all.count > 1 {
-            isApplyingMultiCursorEdit = true
-            defer { isApplyingMultiCursorEdit = false }
-
-            guard state.applyMultiCursorOperation(.outdent(tabSize: state.tabWidth, useSpaces: state.useSpaces)) != nil else {
-                return false
-            }
-            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
-            return true
-        }
-        guard let selection = singleSelectionRange(in: textView, replacementRange: NSRange(location: NSNotFound, length: 0)),
-              let currentText = state.content?.string else {
-            return false
-        }
-
-        guard let result = SmartIndentHandler.handleBacktab(
-            in: currentText,
-            selection: selection,
-            tabSize: state.tabWidth,
-            useSpaces: state.useSpaces
-        ) else {
-            return false
-        }
 
         isApplyingMultiCursorEdit = true
         defer { isApplyingMultiCursorEdit = false }
 
-        guard state.applyOutdentEdit(
-            replacementRange: result.replacementRange,
-            replacementText: result.replacementText,
-            selectedRange: result.selectedRange
+        guard state.handleInsertBacktabInput(
+            textViewSelections: textView.selectionManager.textSelections.map(\.range)
         ) else {
             return false
         }
 
         textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
         return true
-    }
-
-    private func singleSelectionRange(in textView: TextView, replacementRange: NSRange) -> NSRange? {
-        if replacementRange.location != NSNotFound {
-            return replacementRange
-        }
-        let selections = textView.selectionManager.textSelections.map(\.range)
-        guard selections.count == 1 else { return nil }
-        return selections.first
-    }
-
-    private func multiCursorAutoClosingEdit(
-        in text: String,
-        selections: [NSRange],
-        typedChar: Character,
-        config: BracketPairsConfig
-    ) -> (text: String, selections: [NSRange])? {
-        guard !selections.isEmpty else { return nil }
-
-        var mutableText = text
-        let orderedSelections = selections
-            .filter { $0.location != NSNotFound }
-            .sorted { $0.location > $1.location }
-
-        var updatedSelectionsDescending: [NSRange] = []
-        var applied = false
-
-        for selection in orderedSelections {
-            guard let edit = BracketMatcher.autoClosingEdit(
-                in: mutableText,
-                selection: selection,
-                typedChar: typedChar,
-                config: config
-            ) else {
-                return nil
-            }
-
-            let stringRange = Range(edit.replacementRange, in: mutableText)!
-            mutableText.replaceSubrange(stringRange, with: edit.replacementText)
-            updatedSelectionsDescending.append(edit.selectedRange)
-
-            if edit.replacementRange.length > 0 || !edit.replacementText.isEmpty || edit.selectedRange != selection {
-                applied = true
-            }
-        }
-
-        guard applied else { return nil }
-        return (mutableText, updatedSelectionsDescending.reversed())
     }
 
     func handlePerformKeyEquivalent(_ event: NSEvent) -> Bool {
@@ -514,62 +335,50 @@ final class MultiCursorInputHelper: NSObject {
         let key = event.charactersIgnoringModifiers?.lowercased()
 
         if commandPressed, !shiftPressed, key == "d" {
-            let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
             state.logMultiCursorInput(
                 action: "cmd+d.before",
                 textViewSelections: textView.selectionManager.textSelections.map(\.range),
-                note: "currentSelection=\(NSStringFromRange(currentSelection))"
+                note: "command=builtin.add-next-occurrence"
             )
-            // 同步选区到 state，确保 addNextOccurrence 使用最新的选区
-            let mapped = textView.selectionManager.textSelections
-                .map { $0.range }
-                .filter { $0.location != NSNotFound }
-                .map { MultiCursorSelection(location: $0.location, length: $0.length) }
-            if !mapped.isEmpty {
-                state.setSelections(mapped)
-            }
-            if let ranges = state.addNextOccurrence(from: currentSelection) {
-                textView.selectionManager.setSelectedRanges(ranges)
-                state.logMultiCursorInput(
-                    action: "cmd+d.after",
-                    textViewSelections: textView.selectionManager.textSelections.map(\.range),
-                    note: "appliedRangeCount=\(ranges.count)"
-                )
-            }
+            state.performEditorCommand(id: "builtin.add-next-occurrence")
+            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+            state.logMultiCursorInput(
+                action: "cmd+d.after",
+                textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                note: "appliedRangeCount=\(state.currentSelectionsAsNSRanges().count)"
+            )
             return true
         }
 
         if commandPressed, !shiftPressed, key == "u" {
             state.logMultiCursorInput(
                 action: "cmd+u.before",
-                textViewSelections: textView.selectionManager.textSelections.map(\.range)
+                textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                note: "command=builtin.remove-last-occurrence-selection"
             )
-            if let ranges = state.removeLastOccurrenceSelection() {
-                textView.selectionManager.setSelectedRanges(ranges)
-                state.logMultiCursorInput(
-                    action: "cmd+u.after",
-                    textViewSelections: textView.selectionManager.textSelections.map(\.range),
-                    note: "appliedRangeCount=\(ranges.count)"
-                )
-            }
+            state.performEditorCommand(id: "builtin.remove-last-occurrence-selection")
+            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+            state.logMultiCursorInput(
+                action: "cmd+u.after",
+                textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                note: "appliedRangeCount=\(state.currentSelectionsAsNSRanges().count)"
+            )
             return true
         }
 
         if commandPressed, shiftPressed, key == "l" {
-            let currentSelection = textView.selectionManager.textSelections.last?.range ?? NSRange(location: NSNotFound, length: 0)
             state.logMultiCursorInput(
                 action: "cmd+shift+l.before",
                 textViewSelections: textView.selectionManager.textSelections.map(\.range),
-                note: "currentSelection=\(NSStringFromRange(currentSelection))"
+                note: "command=builtin.select-all-occurrences"
             )
-            if let ranges = state.addAllOccurrences(from: currentSelection) {
-                textView.selectionManager.setSelectedRanges(ranges)
-                state.logMultiCursorInput(
-                    action: "cmd+shift+l.after",
-                    textViewSelections: textView.selectionManager.textSelections.map(\.range),
-                    note: "appliedRangeCount=\(ranges.count)"
-                )
-            }
+            state.performEditorCommand(id: "builtin.select-all-occurrences")
+            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+            state.logMultiCursorInput(
+                action: "cmd+shift+l.after",
+                textViewSelections: textView.selectionManager.textSelections.map(\.range),
+                note: "appliedRangeCount=\(state.currentSelectionsAsNSRanges().count)"
+            )
             return true
         }
 
@@ -590,9 +399,10 @@ final class MultiCursorInputHelper: NSObject {
 
         state.logMultiCursorInput(
             action: "cancel.before",
-            textViewSelections: textView.selectionManager.textSelections.map(\.range)
+            textViewSelections: textView.selectionManager.textSelections.map(\.range),
+            note: "command=builtin.clear-additional-cursors"
         )
-        state.clearMultiCursors()
+        state.performEditorCommand(id: "builtin.clear-additional-cursors")
         textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
         state.logMultiCursorInput(
             action: "cancel.after",
