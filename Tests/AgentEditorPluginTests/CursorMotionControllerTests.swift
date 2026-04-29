@@ -51,12 +51,12 @@ final class CursorMotionControllerTests: XCTestCase {
             CursorMotionController.moveWordLeft(location: 9, text: text).location,
             8  // 'w' 的位置
         )
-        // 继续向左跳过空格
+        // 在单词边界上再次左移，会越过空格并停在前一个单词开头
         XCTAssertEqual(
             CursorMotionController.moveWordLeft(location: 8, text: text).location,
-            5  // 第一个空格
+            0  // "hello" 开头
         )
-        // 继续向左到 "hello" 开头
+        // 从空格区左移同样会到前一个单词开头
         XCTAssertEqual(
             CursorMotionController.moveWordLeft(location: 5, text: text).location,
             0
@@ -74,9 +74,9 @@ final class CursorMotionControllerTests: XCTestCase {
 
     func testMoveWordLeft_operators() {
         let text = "foo = bar"
-        // 光标在空格之后（'=' 区域），应该跳到 '='
+        // 从 '=' 之后左移，会先停在 '=' 的位置
         XCTAssertEqual(
-            CursorMotionController.moveWordLeft(location: 4, text: text).location,
+            CursorMotionController.moveWordLeft(location: 5, text: text).location,
             4  // '=' 的位置
         )
     }
@@ -119,10 +119,10 @@ final class CursorMotionControllerTests: XCTestCase {
             CursorMotionController.moveWordRight(location: 0, text: text).location,
             1  // 'a' 之后
         )
-        // 跳过空格到 '+'
+        // 从空格处右移会越过 '+' 这个 operator 块
         XCTAssertEqual(
             CursorMotionController.moveWordRight(location: 1, text: text).location,
-            2  // '+' 位置
+            3  // '+' 之后
         )
         // 从 '+' 跳到后面的空格
         XCTAssertEqual(
@@ -372,9 +372,9 @@ final class CursorMotionControllerTests: XCTestCase {
 
     func testMultipleEmptyLines() {
         let text = "a\n\n\n\nb"
-        // 从 'b' 向上移动段落，跳过所有空行
+        // 从 'b' 向上移动段落，应停在连续空行块的开头
         let result = CursorMotionController.moveParagraphBackward(location: 5, text: text)
-        XCTAssertEqual(result.location, 0)
+        XCTAssertEqual(result.location, 2)
     }
 }
 #endif

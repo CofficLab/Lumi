@@ -16,7 +16,8 @@ actor LSPDebouncer {
 
     // MARK: - 属性
 
-    private var pendingDebounceTasks: [String: Task<Void, Never>] = [:]
+    private var pendingDebounceCancels: [String: @Sendable () -> Void] = [:]
+    private var pendingDebounceTokens: [String: UUID] = [:]
     private var lastThrottleTimes: [String: UInt64] = [:]
 
     // MARK: - Debounce
@@ -28,24 +29,26 @@ actor LSPDebouncer {
         operation: @escaping @Sendable () async -> T?
     ) async -> T? {
         // 取消同 key 的旧任务
-        pendingDebounceTasks[key]?.cancel()
-        pendingDebounceTasks.removeValue(forKey: key)
+        pendingDebounceCancels[key]?()
+        pendingDebounceCancels.removeValue(forKey: key)
+        pendingDebounceTokens.removeValue(forKey: key)
 
         let delayNanoseconds = delay ?? Self.defaultDebounceDelay
+        let token = UUID()
         let task = Task<T?, Never> {
             try? await Task.sleep(nanoseconds: delayNanoseconds)
             guard !Task.isCancelled else { return nil }
             return await operation()
         }
+        pendingDebounceTokens[key] = token
+        pendingDebounceCancels[key] = { task.cancel() }
 
-        let tracker = Task<Void, Never> {
-            _ = await task.value
-            // 任务完成后清理
-            self.pendingDebounceTasks.removeValue(forKey: key)
+        let result = await task.value
+        if pendingDebounceTokens[key] == token {
+            pendingDebounceTokens.removeValue(forKey: key)
+            pendingDebounceCancels.removeValue(forKey: key)
         }
-        pendingDebounceTasks[key] = tracker
-
-        return await task.value
+        return result
     }
 
     // MARK: - Throttle
@@ -73,14 +76,16 @@ actor LSPDebouncer {
 
     /// 取消指定 key 的待执行任务
     func cancel(key: String) {
-        pendingDebounceTasks[key]?.cancel()
-        pendingDebounceTasks.removeValue(forKey: key)
+        pendingDebounceCancels[key]?()
+        pendingDebounceCancels.removeValue(forKey: key)
+        pendingDebounceTokens.removeValue(forKey: key)
     }
 
     /// 取消所有待执行任务
     func cancelAll() {
-        pendingDebounceTasks.values.forEach { $0.cancel() }
-        pendingDebounceTasks.removeAll()
+        pendingDebounceCancels.values.forEach { $0() }
+        pendingDebounceCancels.removeAll()
+        pendingDebounceTokens.removeAll()
         lastThrottleTimes.removeAll()
     }
 }

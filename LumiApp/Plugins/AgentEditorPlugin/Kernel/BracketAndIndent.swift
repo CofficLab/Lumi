@@ -180,6 +180,22 @@ enum BracketMatcher {
             }
         }
 
+        // 检查光标当前位置字符是否是开括号
+        if cursorPosition < textLength {
+            let openIndex = text.utf16.index(text.utf16.startIndex, offsetBy: cursorPosition)
+            if let scalar = Unicode.Scalar(text.utf16[openIndex]),
+               let closeChar = config.matchingClose(for: Character(scalar)) {
+                if let closePos = findCloseBracket(
+                    in: text,
+                    from: cursorPosition + 1,
+                    openChar: Character(scalar),
+                    closeChar: closeChar
+                ) {
+                    return MatchResult(openPosition: cursorPosition, closePosition: closePos)
+                }
+            }
+        }
+
         // 检查光标位置字符是否是闭括号
         if cursorPosition < textLength {
             let closeIndex = text.utf16.index(text.utf16.startIndex, offsetBy: cursorPosition)
@@ -192,6 +208,22 @@ enum BracketMatcher {
                     closeChar: Character(scalar)
                 ) {
                     return MatchResult(openPosition: openPos, closePosition: cursorPosition)
+                }
+            }
+        }
+
+        // 检查光标前一个字符是否是闭括号
+        if cursorPosition > 0 {
+            let closeIndex = text.utf16.index(text.utf16.startIndex, offsetBy: cursorPosition - 1)
+            if let scalar = Unicode.Scalar(text.utf16[closeIndex]),
+               let openChar = config.matchingOpen(for: Character(scalar)) {
+                if let openPos = findOpenBracket(
+                    in: text,
+                    from: cursorPosition - 2,
+                    openChar: openChar,
+                    closeChar: Character(scalar)
+                ) {
+                    return MatchResult(openPosition: openPos, closePosition: cursorPosition - 1)
                 }
             }
         }
@@ -436,27 +468,35 @@ enum SmartIndentHandler {
         tabSize: Int,
         useSpaces: Bool
     ) -> IndentResult {
+        let nsText = text as NSString
+        let safePosition = min(max(0, position), nsText.length)
         let indent = indentString(tabSize: tabSize, useSpaces: useSpaces)
         let newline = newlineString(in: text)
 
-        // 获取当前行
-        let lineStart = findLineStart(text, position: position)
-        let currentLineEnd = findLineEnd(text, position: position)
-        let currentLine = String(text[text.index(text.startIndex, offsetBy: lineStart)..<text.index(text.startIndex, offsetBy: currentLineEnd)])
+        let anchor = safePosition == nsText.length ? max(0, safePosition - 1) : safePosition
+        let lineRange = nsText.lineRange(for: NSRange(location: anchor, length: 0))
+        let currentLineText = nsText.substring(with: lineRange)
 
         // 计算当前行前导空白
-        let leadingWhitespace = currentLine.prefix(while: { $0 == " " || $0 == "\t" })
+        let leadingWhitespace = currentLineText.prefix(while: { $0 == " " || $0 == "\t" })
+        let leadingWhitespaceLength = (String(leadingWhitespace) as NSString).length
+        let indentLength = (indent as NSString).length
+        let newlineLength = (newline as NSString).length
 
         // 检查光标前一个字符是否是开括号
-        let prevChar = position > 0 ? text[text.index(text.startIndex, offsetBy: position - 1)] : nil
-        let nextChar = position < text.count ? text[text.index(text.startIndex, offsetBy: position)] : nil
+        let prevChar: Character? = safePosition > 0
+            ? nsText.substring(with: NSRange(location: safePosition - 1, length: 1)).first
+            : nil
+        let nextChar: Character? = safePosition < nsText.length
+            ? nsText.substring(with: NSRange(location: safePosition, length: 1)).first
+            : nil
 
         // 如果光标在 `{` 和 `}` 之间，插入额外的缩进
         if prevChar == "{", nextChar == "}" {
             let newText = newline + String(leadingWhitespace) + indent + newline + String(leadingWhitespace)
             return IndentResult(
                 textToInsert: newText,
-                cursorOffset: String(leadingWhitespace).count + indent.count + newline.count
+                cursorOffset: leadingWhitespaceLength + indentLength + newlineLength
             )
         }
 
@@ -465,7 +505,7 @@ enum SmartIndentHandler {
             let newText = newline + String(leadingWhitespace) + indent
             return IndentResult(
                 textToInsert: newText,
-                cursorOffset: String(leadingWhitespace).count + indent.count + newline.count
+                cursorOffset: leadingWhitespaceLength + indentLength + newlineLength
             )
         }
 
@@ -473,7 +513,7 @@ enum SmartIndentHandler {
         let newText = newline + String(leadingWhitespace)
         return IndentResult(
             textToInsert: newText,
-            cursorOffset: String(leadingWhitespace).count + newline.count
+            cursorOffset: leadingWhitespaceLength + newlineLength
         )
     }
 
@@ -688,11 +728,11 @@ enum SmartIndentHandler {
     }
 
     private static func findLineStart(_ text: String, position: Int) -> Int {
-        var pos = position
+        var pos = min(max(0, position), text.count)
         while pos > 0 {
-            let charIndex = text.index(text.startIndex, offsetBy: pos)
+            let charIndex = text.index(text.startIndex, offsetBy: pos - 1)
             if text[charIndex] == "\n" {
-                return pos + 1
+                return pos
             }
             pos -= 1
         }
@@ -700,7 +740,7 @@ enum SmartIndentHandler {
     }
 
     private static func findLineEnd(_ text: String, position: Int) -> Int {
-        var pos = position
+        var pos = min(max(0, position), text.count)
         while pos < text.count {
             let charIndex = text.index(text.startIndex, offsetBy: pos)
             if text[charIndex] == "\n" {

@@ -1,6 +1,7 @@
 #if canImport(XCTest)
 import XCTest
 import CodeEditSourceEditor
+import LanguageServerProtocol
 @testable import Lumi
 
 @MainActor
@@ -127,9 +128,8 @@ final class EditorSessionTests: XCTestCase {
             codeDescription: nil,
             source: nil,
             message: "warn",
-            relatedInformation: nil,
             tags: nil,
-            data: nil
+            relatedInformation: nil
         )
 
         session.panelState = .init(
@@ -253,7 +253,7 @@ final class EditorSessionTests: XCTestCase {
 
         XCTAssertEqual(sourceState.findText, "needle")
         XCTAssertEqual(sourceState.replaceText, "value")
-        XCTAssertTrue(sourceState.findPanelVisible)
+        XCTAssertTrue(sourceState.findPanelVisible == true)
     }
 
     func testSourceEditorBindingControllerIgnoresCursorPositionsInMultiCursorMode() {
@@ -328,7 +328,9 @@ final class EditorSessionTests: XCTestCase {
             currentViewState: currentViewState
         )
 
-        XCTAssertEqual(resolved.bridgeState?.viewState, currentViewState)
+        XCTAssertEqual(resolved.bridgeState?.viewState.primaryCursorLine, currentViewState.primaryCursorLine)
+        XCTAssertEqual(resolved.bridgeState?.viewState.primaryCursorColumn, currentViewState.primaryCursorColumn)
+        XCTAssertEqual(resolved.bridgeState?.viewState.cursorPositions, currentViewState.cursorPositions)
         XCTAssertEqual(resolved.bridgeState?.findReplaceState?.findText, "abc")
         XCTAssertEqual(resolved.bridgeState?.findReplaceState?.replaceText, "xyz")
         XCTAssertFalse(resolved.bridgeState?.findReplaceState?.isFindPanelVisible ?? true)
@@ -462,9 +464,8 @@ final class EditorSessionTests: XCTestCase {
             codeDescription: nil,
             source: nil,
             message: "warning",
-            relatedInformation: nil,
             tags: nil,
-            data: nil
+            relatedInformation: nil
         )
 
         let positions = EditorNavigationController.cursorPositions(for: diagnostic)
@@ -551,9 +552,8 @@ final class EditorSessionTests: XCTestCase {
             codeDescription: nil,
             source: nil,
             message: "error",
-            relatedInformation: nil,
             tags: nil,
-            data: nil
+            relatedInformation: nil
         )
 
         let resolved = EditorOpenItemCommandController.resolve(.problem(diagnostic))
@@ -569,15 +569,17 @@ final class EditorSessionTests: XCTestCase {
         let item = WorkspaceSymbolItem(
             name: "Demo",
             kind: .class,
-            tags: nil,
-            containerName: nil,
             location: .init(
                 uri: URL(fileURLWithPath: "/tmp/demo.swift").absoluteString,
                 range: .init(
                     start: .init(line: 5, character: 2),
                     end: .init(line: 5, character: 6)
                 )
-            )
+            ),
+            containerName: nil,
+            tags: nil,
+            detail: nil,
+            data: nil
         )
 
         let resolved = EditorOpenItemCommandController.resolve(.workspaceSymbol(item))
@@ -594,6 +596,7 @@ final class EditorSessionTests: XCTestCase {
 
     func testPanelCommandControllerTogglesProblemsAndClosesReferences() {
         let snapshot = EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: true,
             isWorkspaceSymbolSearchPresented: false,
@@ -608,6 +611,7 @@ final class EditorSessionTests: XCTestCase {
 
     func testPanelCommandControllerOpensAndClosesWorkspaceSymbolSearch() {
         let snapshot = EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: false,
             isWorkspaceSymbolSearchPresented: false,
@@ -624,6 +628,7 @@ final class EditorSessionTests: XCTestCase {
 
     func testPanelCommandControllerOpensAndClosesCallHierarchy() {
         let snapshot = EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: false,
             isWorkspaceSymbolSearchPresented: true,
@@ -923,6 +928,7 @@ final class EditorSessionTests: XCTestCase {
 
         state.apply(
             .init(
+                isOpenEditorsPanelPresented: false,
                 isProblemsPanelPresented: true,
                 isReferencePanelPresented: true,
                 isWorkspaceSymbolSearchPresented: false,
@@ -995,9 +1001,8 @@ final class EditorSessionTests: XCTestCase {
             codeDescription: nil,
             source: nil,
             message: "warn",
-            relatedInformation: nil,
             tags: nil,
-            data: nil
+            relatedInformation: nil
         )
 
         state.restore(
@@ -1081,9 +1086,8 @@ final class EditorSessionTests: XCTestCase {
             codeDescription: nil,
             source: nil,
             message: "demo",
-            relatedInformation: nil,
             tags: nil,
-            data: nil
+            relatedInformation: nil
         )
         state.panelState.problemDiagnostics = [diagnostic]
 
@@ -1107,9 +1111,8 @@ final class EditorSessionTests: XCTestCase {
             codeDescription: nil,
             source: nil,
             message: "warn",
-            relatedInformation: nil,
             tags: nil,
-            data: nil
+            relatedInformation: nil
         )
         let session = EditorSession(
             fileURL: fileURL,

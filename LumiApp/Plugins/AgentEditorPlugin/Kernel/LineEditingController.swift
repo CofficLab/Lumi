@@ -392,23 +392,34 @@ enum LineEditingController: Sendable {
 
         for (index, range) in mergedRanges.enumerated() {
             let lineText = copiedTexts[index]
-            // 复制的内容需要确保以换行结尾
             let insertText: String
-            if lineText.hasSuffix("\n") {
-                insertText = lineText
-            } else {
-                insertText = lineText + "\n"
-            }
-
             let insertLocation: Int
-            switch direction {
-            case .up:
-                insertLocation = range.location
-            case .down:
-                insertLocation = NSMaxRange(range)
-                // 如果是最后一行且没有末尾换行，需要在新行前加换行
-                if !lineText.hasSuffix("\n") {
-                    // insertText 已经加了换行
+            let cursorLocation: Int
+            let originalSelection = selections[index]
+            let originalColumn = originalSelection.location - range.location
+            let lineContentLength = (lineText as NSString).length - (lineText.hasSuffix("\n") ? 1 : 0)
+
+            if lineText.hasSuffix("\n") {
+                switch direction {
+                case .up:
+                    insertText = lineText
+                    insertLocation = range.location
+                    cursorLocation = insertLocation + min(originalColumn, max(lineContentLength, 0))
+                case .down:
+                    insertText = lineText
+                    insertLocation = NSMaxRange(range)
+                    cursorLocation = insertLocation + min(originalColumn, max(lineContentLength, 0))
+                }
+            } else {
+                switch direction {
+                case .up:
+                    insertText = lineText + "\n"
+                    insertLocation = range.location
+                    cursorLocation = insertLocation + min(originalColumn, max(lineContentLength, 0))
+                case .down:
+                    insertText = "\n" + lineText
+                    insertLocation = NSMaxRange(range)
+                    cursorLocation = insertLocation + 1 + min(originalColumn, max(lineContentLength, 0))
                 }
             }
 
@@ -416,20 +427,6 @@ enum LineEditingController: Sendable {
                 range: NSRange(location: insertLocation, length: 0),
                 text: insertText
             ))
-
-            // 光标放到复制的新行上（保持与原光标相同的列位置）
-            let originalSelection = selections[index]
-            let originalColumn = originalSelection.location - range.location
-            let lineContentLength = (lineText as NSString).length - (lineText.hasSuffix("\n") ? 1 : 0)
-
-            let cursorLocation: Int
-            switch direction {
-            case .up:
-                cursorLocation = insertLocation + min(originalColumn, max(lineContentLength, 0))
-            case .down:
-                cursorLocation = insertLocation + min(originalColumn, max(lineContentLength, 0))
-            }
-
             newCursors.append(NSRange(location: cursorLocation, length: 0))
         }
 
@@ -472,21 +469,23 @@ enum LineEditingController: Sendable {
 
             let aboveText = nsText.substring(with: aboveLineRange)
             let blockText = mergedRanges.map { nsText.substring(with: $0) }.joined()
-
-            let newText = blockText + aboveText
-            let shift = (newText as NSString).length - (swapRange.length as Int)
+            let aboveContent = stripTrailingNewline(from: aboveText)
+            let blockContent = stripTrailingNewline(from: blockText)
+            let newText = blockContent + "\n" + aboveContent
 
             // 计算新光标位置
             let newCursors = selections.map { selection in
-                let offset = selection.location - aboveLineRange.location
+                let offset = selection.location - mergedRanges.first!.location
                 // 块移到上方，光标跟着块移动
-                let newLocation = swapRange.location + min(offset, max((newText as NSString).length - 1, 0))
+                let newLocation = swapRange.location + min(offset, max((blockContent as NSString).length, 0))
                 return NSRange(location: newLocation, length: selection.length)
             }
 
+            let replacedText = replacing(text: text, range: swapRange, with: newText)
+
             return LineEditResult(
-                replacementRange: swapRange,
-                replacementText: newText,
+                replacementRange: NSRange(location: 0, length: nsText.length),
+                replacementText: replacedText,
                 selectedRanges: newCursors
             )
 
@@ -509,11 +508,13 @@ enum LineEditingController: Sendable {
 
             let blockText = mergedRanges.map { nsText.substring(with: $0) }.joined()
             let belowText = nsText.substring(with: belowLineRange)
-
-            let newText = belowText + blockText
+            let blockContent = stripTrailingNewline(from: blockText)
+            let belowContent = stripTrailingNewline(from: belowText)
+            let trailingNewline = blockText.hasSuffix("\n") ? "\n" : ""
+            let newText = belowContent + "\n" + blockContent + trailingNewline
 
             // 计算新光标位置：块向下移动了一行
-            let blockSize = (blockText as NSString).length
+            let blockSize = (blockContent as NSString).length
             let belowSize = (belowText as NSString).length
 
             let newCursors = selections.map { selection in
@@ -522,9 +523,11 @@ enum LineEditingController: Sendable {
                 return NSRange(location: newLocation, length: selection.length)
             }
 
+            let replacedText = replacing(text: text, range: swapRange, with: newText)
+
             return LineEditResult(
-                replacementRange: swapRange,
-                replacementText: newText,
+                replacementRange: NSRange(location: 0, length: nsText.length),
+                replacementText: replacedText,
                 selectedRanges: newCursors
             )
         }
@@ -690,9 +693,6 @@ enum LineEditingController: Sendable {
         // 按位置从后向前排序
         let sortedEdits = edits.sorted { $0.range.location > $1.range.location }
 
-        // 跟踪偏移量来修正 newCursors
-        var adjustments: [(location: Int, delta: Int)] = []
-
         for edit in sortedEdits {
             let range = edit.range
             let insertText = edit.text
@@ -703,28 +703,30 @@ enum LineEditingController: Sendable {
             if range.length == 0 {
                 // 纯插入
                 mutableText.insert(contentsOf: insertText, at: stringRange.lowerBound)
-                adjustments.append((location: range.location, delta: insertedLength))
             } else {
                 mutableText.replaceSubrange(stringRange, with: insertText)
-                adjustments.append((location: range.location, delta: insertedLength - range.length))
             }
-        }
-
-        // 修正光标位置
-        let adjustedCursors = newCursors.map { cursor -> NSRange in
-            var adjustedLocation = cursor.location
-            for adjustment in adjustments {
-                if cursor.location > adjustment.location {
-                    adjustedLocation += adjustment.delta
-                }
-            }
-            return NSRange(location: adjustedLocation, length: cursor.length)
         }
 
         return LineEditResult(
             replacementRange: NSRange(location: 0, length: nsText.length),
             replacementText: mutableText,
-            selectedRanges: adjustedCursors
+            selectedRanges: newCursors
         )
+    }
+
+    private static func stripTrailingNewline(from text: String) -> String {
+        guard text.hasSuffix("\n") else { return text }
+        return String(text.dropLast())
+    }
+
+    private static func replacing(text: String, range: NSRange, with replacement: String) -> String {
+        let nsText = text as NSString
+        let prefix = nsText.substring(to: range.location)
+        let suffixStart = NSMaxRange(range)
+        let suffix = suffixStart < nsText.length
+            ? nsText.substring(from: suffixStart)
+            : ""
+        return prefix + replacement + suffix
     }
 }

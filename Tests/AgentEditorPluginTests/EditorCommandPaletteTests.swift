@@ -10,7 +10,7 @@ final class EditorCommandPaletteTests: XCTestCase {
         let sections = state.editorCommandSections()
 
         XCTAssertFalse(sections.isEmpty)
-        XCTAssertEqual(sections.first?.category, .find)
+        XCTAssertEqual(sections.first?.category, .edit)
         XCTAssertTrue(sections.contains(where: { $0.category == .workbench }))
         XCTAssertTrue(sections.contains(where: { $0.category == .navigation }))
     }
@@ -59,7 +59,7 @@ final class EditorCommandPaletteTests: XCTestCase {
         let commandIDs = sections.flatMap(\.commands).map(\.id)
 
         XCTAssertTrue(commandIDs.contains("builtin.command-palette"))
-        XCTAssertTrue(commandIDs.contains("builtin.open-editors-panel"))
+        XCTAssertTrue(commandIDs.contains("builtin.split-right"))
     }
 
     func testEditorCommandSectionsCanMatchCommandIdentifier() {

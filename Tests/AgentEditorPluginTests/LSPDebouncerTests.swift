@@ -33,9 +33,10 @@ final class LSPDebouncerTests: XCTestCase {
 
         let resolved = await result
         try? await Task.sleep(for: .milliseconds(100))
+        let hitCountAfterCancel = await hits.value()
 
         XCTAssertNil(resolved)
-        XCTAssertEqual(await hits.value(), 0)
+        XCTAssertEqual(hitCountAfterCancel, 0)
     }
 
     func testCancelAllResetsThrottleWindow() async {
@@ -49,9 +50,10 @@ final class LSPDebouncerTests: XCTestCase {
             await hits.increment()
             return "first"
         }
+        let hitCountAfterFirstThrottle = await hits.value()
 
         XCTAssertEqual(first, "first")
-        XCTAssertEqual(await hits.value(), 1)
+        XCTAssertEqual(hitCountAfterFirstThrottle, 1)
 
         let throttled = await debouncer.throttle(
             key: "hover",
@@ -62,7 +64,8 @@ final class LSPDebouncerTests: XCTestCase {
         }
 
         XCTAssertNil(throttled)
-        XCTAssertEqual(await hits.value(), 1)
+        let hitCountAfterThrottle = await hits.value()
+        XCTAssertEqual(hitCountAfterThrottle, 1)
 
         await debouncer.cancelAll()
 
@@ -73,9 +76,10 @@ final class LSPDebouncerTests: XCTestCase {
             await hits.increment()
             return "third"
         }
+        let hitCountAfterReset = await hits.value()
 
         XCTAssertEqual(afterReset, "third")
-        XCTAssertEqual(await hits.value(), 2)
+        XCTAssertEqual(hitCountAfterReset, 2)
     }
 }
 

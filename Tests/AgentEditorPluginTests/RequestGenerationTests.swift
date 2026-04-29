@@ -94,7 +94,8 @@ final class RequestGenerationTests: XCTestCase {
         )
 
         try? await Task.sleep(for: .milliseconds(180))
-        XCTAssertEqual(await applied.snapshot(), ["new"])
+        let snapshot = await applied.snapshot()
+        XCTAssertEqual(snapshot, ["new"])
     }
 
     func testLifecycleResetDropsPendingResult() async {
@@ -116,7 +117,8 @@ final class RequestGenerationTests: XCTestCase {
         lifecycle.reset()
 
         try? await Task.sleep(for: .milliseconds(120))
-        XCTAssertTrue(await applied.snapshot().isEmpty)
+        let snapshot = await applied.snapshot()
+        XCTAssertTrue(snapshot.isEmpty)
     }
 
     func testLifecycleInvalidateDropsPendingResult() async {
@@ -138,7 +140,8 @@ final class RequestGenerationTests: XCTestCase {
         lifecycle.invalidate()
 
         try? await Task.sleep(for: .milliseconds(120))
-        XCTAssertTrue(await applied.snapshot().isEmpty)
+        let snapshot = await applied.snapshot()
+        XCTAssertTrue(snapshot.isEmpty)
     }
 }
 

@@ -52,7 +52,12 @@ struct EditorSelectionSet: Equatable, Sendable {
         if selections.isEmpty {
             self.selections = [EditorSelection(range: EditorRange(location: 0, length: 0))]
         } else {
-            self.selections = selections
+            self.selections = selections.sorted {
+                if $0.range.location != $1.range.location {
+                    return $0.range.location < $1.range.location
+                }
+                return $0.range.length < $1.range.length
+            }
         }
     }
 

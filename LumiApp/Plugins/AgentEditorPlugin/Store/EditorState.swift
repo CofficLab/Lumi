@@ -135,62 +135,68 @@ final class EditorState: ObservableObject, SuperLog {
         panelBindings.removeAll()
 
         panelState.$problemDiagnostics
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] diagnostics in
+                self?.problemDiagnostics = diagnostics
             }
             .store(in: &panelBindings)
 
         panelState.$isOpenEditorsPanelPresented
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] isPresented in
+                self?.isOpenEditorsPanelPresented = isPresented
             }
             .store(in: &panelBindings)
 
         panelState.$selectedProblemDiagnostic
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] diagnostic in
+                self?.selectedProblemDiagnostic = diagnostic
             }
             .store(in: &panelBindings)
 
         panelState.$isProblemsPanelPresented
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] isPresented in
+                self?.isProblemsPanelPresented = isPresented
             }
             .store(in: &panelBindings)
 
         panelState.$referenceResults
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] results in
+                self?.referenceResults = results.map(Self.referenceResult(from:))
             }
             .store(in: &panelBindings)
 
         panelState.$isReferencePanelPresented
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] isPresented in
+                self?.isReferencePanelPresented = isPresented
             }
             .store(in: &panelBindings)
 
         panelState.$isWorkspaceSymbolSearchPresented
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] isPresented in
+                self?.isWorkspaceSymbolSearchPresented = isPresented
             }
             .store(in: &panelBindings)
 
         panelState.$isCallHierarchyPresented
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] isPresented in
+                self?.isCallHierarchyPresented = isPresented
             }
             .store(in: &panelBindings)
 
         panelState.$mouseHoverContent
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] content in
+                self?.hoverText = content
+                self?.mouseHoverContent = content
             }
             .store(in: &panelBindings)
 
         panelState.$mouseHoverSymbolRect
-            .sink { [weak self] _ in
-                self?.syncPublishedPanelDataFromPanelState()
+            .sink { [weak self] rect in
+                self?.mouseHoverSymbolRect = rect
+                self?.mouseHoverPoint = rect == .zero
+                    ? .zero
+                    : CGPoint(x: rect.midX, y: rect.midY)
+                self?.mouseHoverLine = 0
+                self?.mouseHoverCharacter = 0
             }
             .store(in: &panelBindings)
 
@@ -570,7 +576,7 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     var shouldPresentCodeActionOverlay: Bool {
-        codeActionProvider.isVisible && isPrimaryCursorRendered
+        areCodeActionsEnabled && codeActionProvider.isVisible && isPrimaryCursorRendered
     }
 
     var currentCodeActionOverlayActions: [CodeActionItem] {
@@ -1271,7 +1277,11 @@ final class EditorState: ObservableObject, SuperLog {
                 }
                 
                 await MainActor.run { [weak self] in
-                    guard let self, self.currentFileURL != loadingURL || self.content == nil else { return }
+                    guard let self else { return }
+                    let standardizedLoadingURL = loadingURL.standardizedFileURL
+                    let isReloadingCurrentFile = self.currentFileURL?.standardizedFileURL == standardizedLoadingURL
+                    let shouldReplaceCurrentBuffer = !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
+                    guard shouldReplaceCurrentBuffer else { return }
                     let longestLine = LongLineDetector.findLongestLine(in: content)
                     self.withoutSessionSync {
                         self.currentFileURL = loadingURL
@@ -2411,7 +2421,8 @@ final class EditorState: ObservableObject, SuperLog {
         }
         
         // 修改日期没变，跳过
-        if let lastDate = lastKnownModificationDate,
+        if !hasUnsavedChanges,
+           let lastDate = lastKnownModificationDate,
            currentModDate.timeIntervalSince(lastDate) < 0.5 {
             return
         }

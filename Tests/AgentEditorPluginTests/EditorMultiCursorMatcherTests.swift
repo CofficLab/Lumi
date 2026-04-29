@@ -54,7 +54,7 @@ final class EditorMultiCursorMatcherTests: XCTestCase {
         let text = "hello world" as NSString
 
         let value = EditorMultiCursorMatcher.selectionText(
-            for: .init(location: 6, length: 5),
+            for: NSRange(location: 6, length: 5),
             in: text
         )
 

@@ -163,14 +163,14 @@ enum CursorMotionController: Sendable {
         let lineEnd = NSMaxRange(lineRange)
         let target: Int
         if lineEnd > 0, lineEnd <= textLength {
-            // 检查行末是否是换行符
-            if lineEnd > lineRange.location,
+            // 优先识别 CRLF，再处理普通 LF。
+            if lineEnd > lineRange.location + 1,
+               nsText.character(at: lineEnd - 2) == UInt16(("\r" as Character).utf16.first!),
                nsText.character(at: lineEnd - 1) == UInt16(("\n" as Character).utf16.first!) {
-                target = lineEnd - 1
-            } else if lineEnd > lineRange.location + 1,
-                      nsText.character(at: lineEnd - 2) == UInt16(("\r" as Character).utf16.first!),
-                      nsText.character(at: lineEnd - 1) == UInt16(("\n" as Character).utf16.first!) {
                 target = lineEnd - 2
+            } else if lineEnd > lineRange.location,
+                      nsText.character(at: lineEnd - 1) == UInt16(("\n" as Character).utf16.first!) {
+                target = lineEnd - 1
             } else {
                 target = lineEnd
             }
@@ -299,22 +299,49 @@ enum CursorMotionController: Sendable {
         let textLength = nsText.length
         guard textLength > 0 else { return CursorMotionTarget(location: 0) }
 
-        var pos = min(location, textLength)
+        let currentLineStart = lineStart(containing: min(location, textLength), in: nsText)
 
-        // 如果当前在空行上，先跳过连续空行
-        while pos > 0 && isLineEmpty(nsText, at: pos - 1) {
-            let lineRange = nsText.lineRange(for: NSRange(location: pos - 1, length: 0))
-            pos = lineRange.location
-            if pos == 0 { return CursorMotionTarget(location: 0) }
+        if isLineEmpty(nsText, at: currentLineStart) {
+            var pos = currentLineStart
+
+            // 当前位于空行块内：先跳过整段空行，再回到上一个段落开头。
+            while pos > 0 {
+                let prevLineRange = nsText.lineRange(for: NSRange(location: pos - 1, length: 0))
+                if isLineEmpty(nsText, at: prevLineRange.location) {
+                    pos = prevLineRange.location
+                    continue
+                }
+
+                var paragraphStart = prevLineRange.location
+                while paragraphStart > 0 {
+                    let candidateRange = nsText.lineRange(for: NSRange(location: paragraphStart - 1, length: 0))
+                    if isLineEmpty(nsText, at: candidateRange.location) {
+                        break
+                    }
+                    paragraphStart = candidateRange.location
+                }
+                return CursorMotionTarget(location: paragraphStart)
+            }
+
+            return CursorMotionTarget(location: 0)
         }
 
-        // 跳过非空行
+        // 当前位于段落内：找到其前方的空行块，并停在空行块开头。
+        var pos = currentLineStart
         while pos > 0 {
-            let lineRange = nsText.lineRange(for: NSRange(location: pos - 1, length: 0))
-            if isLineEmpty(nsText, at: lineRange.location) {
-                return CursorMotionTarget(location: lineRange.location)
+            let prevLineRange = nsText.lineRange(for: NSRange(location: pos - 1, length: 0))
+            if isLineEmpty(nsText, at: prevLineRange.location) {
+                var emptyBlockStart = prevLineRange.location
+                while emptyBlockStart > 0 {
+                    let candidateRange = nsText.lineRange(for: NSRange(location: emptyBlockStart - 1, length: 0))
+                    if !isLineEmpty(nsText, at: candidateRange.location) {
+                        break
+                    }
+                    emptyBlockStart = candidateRange.location
+                }
+                return CursorMotionTarget(location: emptyBlockStart)
             }
-            pos = lineRange.location
+            pos = prevLineRange.location
         }
 
         return CursorMotionTarget(location: 0)
@@ -326,25 +353,29 @@ enum CursorMotionController: Sendable {
         let textLength = nsText.length
         guard textLength > 0 else { return CursorMotionTarget(location: textLength) }
 
-        var pos = min(location, textLength)
+        let currentLineStart = lineStart(containing: min(location, textLength), in: nsText)
+        let currentLineRange = nsText.lineRange(for: NSRange(location: currentLineStart, length: 0))
 
-        // 如果当前在空行上，先跳过连续空行
-        while pos < textLength && isLineEmpty(nsText, at: pos) {
-            let lineRange = nsText.lineRange(for: NSRange(location: pos, length: 0))
-            let nextPos = NSMaxRange(lineRange)
-            if nextPos >= textLength { return CursorMotionTarget(location: textLength) }
-            pos = nextPos
+        if isLineEmpty(nsText, at: currentLineStart) {
+            var pos = NSMaxRange(currentLineRange)
+            while pos < textLength {
+                let lineRange = nsText.lineRange(for: NSRange(location: pos, length: 0))
+                if !isLineEmpty(nsText, at: lineRange.location) {
+                    return CursorMotionTarget(location: lineRange.location)
+                }
+                pos = NSMaxRange(lineRange)
+            }
+            return CursorMotionTarget(location: textLength)
         }
 
-        // 跳过非空行
+        // 当前位于段落内：找到其后的空行块，并停在空行块开头。
+        var pos = NSMaxRange(currentLineRange)
         while pos < textLength {
             let lineRange = nsText.lineRange(for: NSRange(location: pos, length: 0))
-            let nextPos = NSMaxRange(lineRange)
-            if nextPos >= textLength { return CursorMotionTarget(location: textLength) }
-            if isLineEmpty(nsText, at: nextPos) {
-                return CursorMotionTarget(location: nextPos)
+            if isLineEmpty(nsText, at: lineRange.location) {
+                return CursorMotionTarget(location: lineRange.location)
             }
-            pos = nextPos
+            pos = NSMaxRange(lineRange)
         }
 
         return CursorMotionTarget(location: textLength)
@@ -435,5 +466,12 @@ enum CursorMotionController: Sendable {
             pos += 1
         }
         return true
+    }
+
+    private static func lineStart(containing location: Int, in nsText: NSString) -> Int {
+        guard nsText.length > 0 else { return 0 }
+        let safeLocation = min(location, nsText.length)
+        let anchor = safeLocation == nsText.length ? max(0, safeLocation - 1) : safeLocation
+        return nsText.lineRange(for: NSRange(location: anchor, length: 0)).location
     }
 }

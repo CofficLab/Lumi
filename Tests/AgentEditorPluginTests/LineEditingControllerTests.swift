@@ -122,7 +122,7 @@ final class LineEditingControllerTests: XCTestCase {
         XCTAssertEqual(result!.replacementText, "  hello\n  ")
         // 光标应在新行的缩进后
         XCTAssertNotNil(result!.selectedRanges.first)
-        XCTAssertEqual(result!.selectedRanges.first!.location, 9) // "  hello\n  ".count = 9, 光标在末尾
+        XCTAssertEqual(result!.selectedRanges.first!.location, 10) // "  hello\n  ".count = 10，光标在末尾
     }
 
     func testInsertLineAbove() {

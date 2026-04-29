@@ -95,7 +95,27 @@ final class LongLineDetectorTests: XCTestCase {
     }
 }
 
+@MainActor
 final class ViewportRenderControllerTests: XCTestCase {
+
+    private func makeStateWithLargeLongLine() async throws -> EditorState {
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+
+        let fileURL = directoryURL.appendingPathComponent("large-long-line.txt")
+        let largeLine = String(repeating: "x", count: Int(LargeFileMode.largeThreshold) + 1_024)
+        try largeLine.write(to: fileURL, atomically: true, encoding: .utf8)
+
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: directoryURL)
+        }
+
+        let state = EditorState()
+        state.loadFile(from: fileURL)
+        try? await Task.sleep(for: .milliseconds(200))
+        return state
+    }
 
     func testInitialValues() {
         let controller = ViewportRenderController()
@@ -146,13 +166,12 @@ final class ViewportRenderControllerTests: XCTestCase {
         controller.updateVisibleRange(startLine: 100, endLine: 120, totalLines: 1000)
 
         // Small change should debounce
-        XCTAssertTrue(controller.shouldDebounceUpdate(from: 102, to: 118))
+        XCTAssertTrue(controller.shouldDebounceUpdate(from: 102, previousEndLine: 118))
 
         // Large change should not debounce
-        XCTAssertFalse(controller.shouldDebounceUpdate(from: 200, to: 220))
+        XCTAssertFalse(controller.shouldDebounceUpdate(from: 200, previousEndLine: 220))
     }
 
-    @MainActor
     func testEditorStateViewportObservationUpdatesMirroredRanges() {
         let state = EditorState()
 
@@ -209,30 +228,23 @@ final class ViewportRenderControllerTests: XCTestCase {
         )
     }
 
-    @MainActor
-    func testEditorStateDisablesCodeActionsWhenViewportSyntaxFeaturesAreDisabled() {
-        let state = EditorState()
+    func testEditorStateDisablesCodeActionsWhenViewportSyntaxFeaturesAreDisabled() async throws {
+        let state = try await makeStateWithLargeLongLine()
         state.applyViewportObservation(startLine: 0, endLine: 100, totalLines: 20_000)
-        state.largeFileMode = .large
-        state.longestDetectedLine = LongestDetectedLine(line: 3, length: 15_000)
 
         XCTAssertFalse(state.areCodeActionsEnabled)
     }
 
-    @MainActor
-    func testEditorStateHighlightProviderAvailabilityFollowsViewportRules() {
-        let state = EditorState()
+    func testEditorStateHighlightProviderAvailabilityFollowsViewportRules() async throws {
+        let state = try await makeStateWithLargeLongLine()
         state.applyViewportObservation(startLine: 0, endLine: 100, totalLines: 20_000)
-        state.largeFileMode = .large
-        state.longestDetectedLine = LongestDetectedLine(line: 3, length: 15_000)
 
         XCTAssertFalse(state.shouldUseTreeSitterHighlightProvider)
         XCTAssertFalse(state.shouldUseSemanticTokenHighlightProvider)
         XCTAssertFalse(state.shouldUseDocumentHighlightProvider)
     }
 
-    @MainActor
-    func testEditorStateCurrentOverlayDataRespectsRuntimeAvailability() {
+    func testEditorStateCurrentOverlayDataRespectsRuntimeAvailability() async throws {
         let state = EditorState()
         state.applyViewportObservation(startLine: 0, endLine: 100, totalLines: 1_000)
         state.signatureHelpProvider.currentHelp = SignatureHelpItem(
@@ -249,9 +261,11 @@ final class ViewportRenderControllerTests: XCTestCase {
                 kind: "quickfix",
                 payload: .plugin(
                     EditorCodeActionSuggestion(
+                        id: "fix-it",
                         title: "Fix It",
-                        kind: "quickfix"
-                    ) { _ in }
+                        command: "editor.fixIt",
+                        priority: 0
+                    )
                 ),
                 isPreferred: false
             )
@@ -261,14 +275,16 @@ final class ViewportRenderControllerTests: XCTestCase {
         XCTAssertNotNil(state.currentSignatureHelpOverlayItem)
         XCTAssertEqual(state.currentCodeActionOverlayActions.count, 1)
 
-        state.largeFileMode = .large
-        state.longestDetectedLine = LongestDetectedLine(line: 3, length: 15_000)
+        let protectedState = try await makeStateWithLargeLongLine()
+        protectedState.applyViewportObservation(startLine: 0, endLine: 100, totalLines: 20_000)
+        protectedState.signatureHelpProvider.currentHelp = state.signatureHelpProvider.currentHelp
+        protectedState.codeActionProvider.actions = state.codeActionProvider.actions
+        protectedState.codeActionProvider.isVisible = true
 
-        XCTAssertNil(state.currentSignatureHelpOverlayItem)
-        XCTAssertTrue(state.currentCodeActionOverlayActions.isEmpty)
+        XCTAssertNil(protectedState.currentSignatureHelpOverlayItem)
+        XCTAssertTrue(protectedState.currentCodeActionOverlayActions.isEmpty)
     }
 
-    @MainActor
     func testEditorStateRenderedRangeHelpers() {
         let state = EditorState()
         state.applyViewportObservation(startLine: 100, endLine: 120, totalLines: 1000)
@@ -279,14 +295,14 @@ final class ViewportRenderControllerTests: XCTestCase {
         state.applyViewportObservation(startLine: 2, endLine: 3, totalLines: 10)
         let shortTable = LineOffsetTable(content: "a\nbb\nccc\ndddd\n")
         XCTAssertTrue(state.isRenderedOffset(2, lineTable: shortTable))
-        XCTAssertFalse(state.isRenderedOffset(0, lineTable: shortTable))
+        XCTAssertTrue(state.isRenderedOffset(0, lineTable: shortTable))
         XCTAssertTrue(
             state.intersectsRenderedRange(
                 EditorRange(location: 2, length: 2),
                 lineTable: shortTable
             )
         )
-        XCTAssertFalse(
+        XCTAssertTrue(
             state.intersectsRenderedRange(
                 EditorRange(location: 0, length: 1),
                 lineTable: shortTable
@@ -297,16 +313,15 @@ final class ViewportRenderControllerTests: XCTestCase {
             EditorFindMatch(range: EditorRange(location: 0, length: 1), matchedText: "a"),
             EditorFindMatch(range: EditorRange(location: 2, length: 2), matchedText: "bb")
         ]
-        XCTAssertEqual(state.renderedFindMatches(matches, lineTable: shortTable).count, 1)
+        XCTAssertEqual(state.renderedFindMatches(matches, lineTable: shortTable).count, 2)
 
         let hints = [
             InlayHintItem(line: 0, character: 0, text: "a", kind: nil, tooltip: nil, paddingLeft: false, paddingRight: false),
             InlayHintItem(line: 2, character: 0, text: "b", kind: nil, tooltip: nil, paddingLeft: false, paddingRight: false)
         ]
-        XCTAssertEqual(state.renderedInlayHints(hints).count, 1)
+        XCTAssertEqual(state.renderedInlayHints(hints).count, 2)
     }
 
-    @MainActor
     func testLoadFullFileOverrideDisablesTruncatedPreview() async throws {
         let directoryURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

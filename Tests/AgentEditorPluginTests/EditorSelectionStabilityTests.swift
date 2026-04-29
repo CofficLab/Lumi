@@ -32,14 +32,15 @@ final class EditorSelectionStabilityTests: XCTestCase {
                         newText: ""
                     )
                 ]
-            ]
+            ],
+            documentChanges: nil
         )
 
         state.applyCodeActionWorkspaceEdit(edit)
 
         XCTAssertEqual(state.content?.string, "foo()\n")
         XCTAssertEqual(state.currentSelectionsAsNSRanges(), [NSRange(location: 4, length: 0)])
-        XCTAssertEqual(state.canonicalSelectionSet.primary.range, EditorRange(location: 4, length: 0))
+        XCTAssertEqual(state.canonicalSelectionSet.primary?.range, EditorRange(location: 4, length: 0))
     }
 
     func testWorkspaceEditDocumentChangesRemapCurrentSelectionAfterRenameLikeEdit() async throws {
@@ -58,6 +59,7 @@ final class EditorSelectionStabilityTests: XCTestCase {
         state.setSelections([.init(location: 5, length: 0)])
 
         let edit = WorkspaceEdit(
+            changes: nil,
             documentChanges: [
                 .textDocumentEdit(
                     TextDocumentEdit(
@@ -83,7 +85,7 @@ final class EditorSelectionStabilityTests: XCTestCase {
 
         XCTAssertEqual(state.content?.string, "foobar bar\n")
         XCTAssertEqual(state.currentSelectionsAsNSRanges(), [NSRange(location: 8, length: 0)])
-        XCTAssertEqual(state.canonicalSelectionSet.primary.range, EditorRange(location: 8, length: 0))
+        XCTAssertEqual(state.canonicalSelectionSet.primary?.range, EditorRange(location: 8, length: 0))
     }
 
     func testCompletionEditRestoresSelectionAfterPrimaryReplacement() async throws {
@@ -110,7 +112,7 @@ final class EditorSelectionStabilityTests: XCTestCase {
         XCTAssertTrue(ok)
         XCTAssertEqual(state.content?.string, "print\n")
         XCTAssertEqual(state.currentSelectionsAsNSRanges(), [NSRange(location: 5, length: 0)])
-        XCTAssertEqual(state.canonicalSelectionSet.primary.range, EditorRange(location: 5, length: 0))
+        XCTAssertEqual(state.canonicalSelectionSet.primary?.range, EditorRange(location: 5, length: 0))
     }
 
     func testCompletionEditRestoresSelectionWithAdditionalTextEdits() async throws {
@@ -145,7 +147,7 @@ final class EditorSelectionStabilityTests: XCTestCase {
         XCTAssertTrue(ok)
         XCTAssertEqual(state.content?.string, "self.Foo.bar\n")
         XCTAssertEqual(state.currentSelectionsAsNSRanges(), [NSRange(location: 12, length: 0)])
-        XCTAssertEqual(state.canonicalSelectionSet.primary.range, EditorRange(location: 12, length: 0))
+        XCTAssertEqual(state.canonicalSelectionSet.primary?.range, EditorRange(location: 12, length: 0))
     }
 
     private func waitFor(

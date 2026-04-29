@@ -50,37 +50,33 @@ enum EditorSaveParticipantController {
     }
 
     private static func trimTrailingWhitespace(in text: String) -> String {
+        let nsText = text as NSString
+        let trailingWhitespace = CharacterSet(charactersIn: " \t")
         var result = ""
-        var index = text.startIndex
+        var location = 0
 
-        while index < text.endIndex {
-            let lineStart = index
-            while index < text.endIndex,
-                  text[index] != "\n",
-                  text[index] != "\r" {
-                index = text.index(after: index)
-            }
+        while location < nsText.length {
+            var lineStart = 0
+            var lineEnd = 0
+            var contentsEnd = 0
+            nsText.getLineStart(&lineStart, end: &lineEnd, contentsEnd: &contentsEnd, for: NSRange(location: location, length: 0))
 
-            result.append(
-                String(text[lineStart..<index])
-                    .trimmingCharacters(in: .whitespaces)
-            )
-
-            guard index < text.endIndex else { break }
-
-            if text[index] == "\r" {
-                let nextIndex = text.index(after: index)
-                if nextIndex < text.endIndex, text[nextIndex] == "\n" {
-                    result.append("\r\n")
-                    index = text.index(after: nextIndex)
-                } else {
-                    result.append("\r")
-                    index = nextIndex
+            var trimmedContentsEnd = contentsEnd
+            while trimmedContentsEnd > lineStart {
+                let scalar = nsText.character(at: trimmedContentsEnd - 1)
+                guard let unicodeScalar = UnicodeScalar(scalar),
+                      trailingWhitespace.contains(unicodeScalar) else {
+                    break
                 }
-            } else {
-                result.append("\n")
-                index = text.index(after: index)
+                trimmedContentsEnd -= 1
             }
+
+            result += nsText.substring(with: NSRange(location: lineStart, length: trimmedContentsEnd - lineStart))
+            if lineEnd > contentsEnd {
+                result += nsText.substring(with: NSRange(location: contentsEnd, length: lineEnd - contentsEnd))
+            }
+
+            location = lineEnd
         }
 
         return result

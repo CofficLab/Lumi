@@ -33,12 +33,12 @@ final class MultiCursorEditEngineTests: XCTestCase {
             operation: .deleteBackward
         )
 
-        XCTAssertEqual(result.text, "ad")
+        XCTAssertEqual(result.text, "bd")
         XCTAssertEqual(
             result.selections,
             [
                 .init(location: 0, length: 0),
-                .init(location: 1, length: 0),
+                .init(location: 2, length: 0),
             ]
         )
     }

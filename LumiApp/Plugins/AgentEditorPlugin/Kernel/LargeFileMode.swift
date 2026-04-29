@@ -125,7 +125,7 @@ enum LongLineDetector: Sendable {
                 if currentLength > longestLength {
                     longestLength = currentLength
                     longestLine = currentLine
-                    if longestLength > limit {
+                    if longestLength >= limit {
                         return LongestDetectedLine(line: longestLine, length: longestLength)
                     }
                 }
@@ -142,7 +142,7 @@ enum LongLineDetector: Sendable {
             longestLine = currentLine
         }
 
-        return longestLength > limit ? LongestDetectedLine(line: longestLine, length: longestLength) : nil
+        return longestLength >= limit ? LongestDetectedLine(line: longestLine, length: longestLength) : nil
     }
 }
 

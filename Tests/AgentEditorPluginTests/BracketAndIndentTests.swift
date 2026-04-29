@@ -57,10 +57,10 @@ final class BracketMatcherTests: XCTestCase {
 
     func testFindMatchingBrace() {
         let text = "let x = { a + b }"
-        // Position right after "{"
+        // Position on "{"
         let result = BracketMatcher.findMatchingBracket(in: text, at: 8, config: config)
         XCTAssertNotNil(result)
-        XCTAssertEqual(result?.openPosition, 7)  // "{"
+        XCTAssertEqual(result?.openPosition, 8)  // "{"
         XCTAssertEqual(result?.closePosition, 16) // "}"
     }
 
