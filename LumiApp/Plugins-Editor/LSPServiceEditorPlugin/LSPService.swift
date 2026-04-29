@@ -99,11 +99,15 @@ final class LSPService: ObservableObject, SuperLog {
         activeLanguageId = languageId
         projectRootPath = projectPath
         
+        // Phase 4: 为 sourcekit-lsp 提供 Xcode workspaceFolders
+        let workspaceFolders = Self.makeWorkspaceFolders(for: languageId, projectPath: projectPath)
+        
         do {
             let newServer = try await LanguageServer.create(
                 languageId: languageId,
                 config: config,
-                workspacePath: projectPath
+                workspacePath: projectPath,
+                workspaceFolders: workspaceFolders
             )
             newServer.onPublishDiagnostics = { [weak self] params in
                 Task { @MainActor [weak self] in
@@ -121,12 +125,28 @@ final class LSPService: ObservableObject, SuperLog {
             server = newServer
             isInitializing = false
             if Self.verbose {
-                Self.logger.info("\(Self.t)\(languageId) 服务器已初始化")
+                Self.logger.info("\(Self.t)\(languageId) 服务器已初始化, workspaceFolders=\(workspaceFolders?.count ?? 0)")
             }
         } catch {
             Self.logger.error("\(Self.t)启动服务器失败: \(error.localizedDescription)")
             isInitializing = false
             activeLanguageId = nil
+        }
+    }
+    
+    /// 为 Xcode 项目生成 workspaceFolders
+    /// 对应 Phase 4: 补齐 workspaceFolders
+    static func makeWorkspaceFolders(for languageId: String, projectPath: String) -> [LanguageServerProtocol.WorkspaceFolder]? {
+        // 仅对 sourcekit-lsp 且当前是 Xcode 项目时，使用 bridge 提供的 workspaceFolders
+        guard languageId == "sourcekit",
+              XcodeProjectContextBridge.shared.isXcodeProject,
+              let folders = XcodeProjectContextBridge.shared.makeWorkspaceFolders(),
+              !folders.isEmpty else {
+            return nil
+        }
+        return folders.compactMap { dict in
+            guard let uri = dict["uri"], let name = dict["name"] else { return nil }
+            return LanguageServerProtocol.WorkspaceFolder(uri: uri, name: name)
         }
     }
     
@@ -136,6 +156,16 @@ final class LSPService: ObservableObject, SuperLog {
         projectRootPath = projectPath
         if Self.verbose {
             Self.logger.info("\(Self.t)设置项目根目录: \(projectPath ?? "<nil>", privacy: .public)")
+        }
+        // 通知 Xcode Bridge 项目已打开
+        if let projectPath {
+            Task { @MainActor in
+                await XcodeProjectContextBridge.shared.projectOpened(at: projectPath)
+            }
+        } else {
+            Task { @MainActor in
+                XcodeProjectContextBridge.shared.projectClosed()
+            }
         }
     }
     

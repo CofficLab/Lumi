@@ -46,6 +46,16 @@ actor EditorPlugin: SuperPlugin, SuperLog {
 
     /// 在全局状态栏右侧显示 Editor 插件入口
     @MainActor func addStatusBarTrailingView() -> AnyView? {
-        AnyView(EditorLoadedPluginsStatusBarView())
+        AnyView(
+            HStack(spacing: 4) {
+                // Xcode 项目状态栏（对应 Phase 8）
+                if XcodeProjectContextBridge.shared.isXcodeProject {
+                    XcodeProjectStatusBar()
+                    Divider()
+                        .frame(height: 16)
+                }
+                EditorLoadedPluginsStatusBarView()
+            }
+        )
     }
 }

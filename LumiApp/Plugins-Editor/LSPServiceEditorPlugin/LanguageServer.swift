@@ -44,11 +44,12 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     static func create(
         languageId: String,
         config: LSPConfig.ServerConfig,
-        workspacePath: String
+        workspacePath: String,
+        workspaceFolders: [LanguageServerProtocol.WorkspaceFolder]? = nil
     ) async throws -> LanguageServer {
         if LSPService.verbose {
             LSPService.logger.info(
-                "\(Self.t)正在创建 \(languageId) 服务器: exec=\(config.execPath, privacy: .public), args=\(config.arguments.joined(separator: " "), privacy: .public), workspacePath=\(workspacePath, privacy: .public)"
+                "\(Self.t)正在创建 \(languageId) 服务器: exec=\(config.execPath, privacy: .public), args=\(config.arguments.joined(separator: " "), privacy: .public), workspacePath=\(workspacePath, privacy: .public), workspaceFolders=\(workspaceFolders?.count ?? 0)"
             )
         }
         
@@ -68,14 +69,14 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         let connection = JSONRPCServerConnection(dataChannel: channel)
         let initServer = InitializingServer(
             server: connection,
-            initializeParamsProvider: Self.makeInitParams(workspacePath: workspacePath)
+            initializeParamsProvider: Self.makeInitParams(workspacePath: workspacePath, workspaceFolders: workspaceFolders)
         )
         
         let initResult = try await initServer.initializeIfNeeded()
         
         if LSPService.verbose {
             LSPService.logger.info(
-                "\(Self.t)服务器已初始化，PID: \(process.processIdentifier), rootUri=file://\(workspacePath, privacy: .public), workspaceFolders=nil, definitionProvider=\(String(describing: initResult.capabilities.definitionProvider), privacy: .public)"
+                "\(Self.t)服务器已初始化，PID: \(process.processIdentifier), rootUri=file://\(workspacePath, privacy: .public), workspaceFolders=\(workspaceFolders?.count ?? 0), definitionProvider=\(String(describing: initResult.capabilities.definitionProvider), privacy: .public)"
             )
         }
         
@@ -93,7 +94,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     
     // MARK: - Init Params (简化版，参考 CodeEdit 的核心能力)
     
-    static func makeInitParams(workspacePath: String) -> InitializingServer.InitializeParamsProvider {
+    static func makeInitParams(workspacePath: String, workspaceFolders: [LanguageServerProtocol.WorkspaceFolder]? = nil) -> InitializingServer.InitializeParamsProvider {
         {
             let textDocumentCaps = TextDocumentClientCapabilities(
                 completion: CompletionClientCapabilities(
@@ -187,6 +188,9 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
                 experimental: nil
             )
             
+            // Phase 4: workspaceFolders 不再为 nil，而是由调用方传入
+            let folders = workspaceFolders ?? [LanguageServerProtocol.WorkspaceFolder(uri: "file://" + workspacePath, name: URL(filePath: workspacePath).lastPathComponent)]
+            
             return InitializeParams(
                 processId: nil,
                 locale: nil,
@@ -195,7 +199,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
                 initializationOptions: [],
                 capabilities: capabilities,
                 trace: nil,
-                workspaceFolders: nil
+                workspaceFolders: folders
             )
         }
     }

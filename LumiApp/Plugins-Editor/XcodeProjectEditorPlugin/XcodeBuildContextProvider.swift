@@ -1,0 +1,376 @@
+import Foundation
+import os
+import MagicKit
+
+/// Xcode Build Context Provider
+/// 对应 Roadmap Phase 3
+/// 职责：
+/// 1. 生成/管理 buildServer.json
+/// 2. 提供文件到 build context 的映射
+/// 3. 缓存 build settings
+/// 4. 处理 context invalidation
+@MainActor
+final class XcodeBuildContextProvider: SuperLog, ObservableObject {
+    
+    nonisolated static let emoji = "🏗️"
+    nonisolated static let verbose = true
+    
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.buildcontext")
+    
+    // MARK: - Published State
+    
+    @Published private(set) var currentWorkspace: XcodeWorkspaceContext?
+    @Published private(set) var activeScheme: XcodeSchemeContext?
+    @Published var buildContextStatus: BuildContextStatus = .unknown
+    
+    @Published private(set) var buildServerJSONPath: String?
+    @Published private(set) var isGeneratingBuildServer: Bool = false
+    
+    // MARK: - Cache
+    
+    /// build settings 缓存: cacheKey → settings
+    private var buildSettingsCache: [String: [[String: String]]] = [:]
+    
+    /// xcode-build-server 路径缓存
+    private var xcodeBuildServerPath: String?
+    
+    // MARK: - 解析器
+    
+    private let resolver = XcodeProjectResolver()
+    
+    // MARK: - 状态枚举
+    
+    /// Build context 状态（对应 Phase 8：需要 UI 可见）
+    enum BuildContextStatus: Sendable {
+        case unknown
+        case resolving
+        case available(XcodeBuildServerConfig)
+        case unavailable(String)
+        case needsResync
+        
+        /// 人类可读的状态描述
+        var displayDescription: String {
+            switch self {
+            case .unknown:
+                return "未知"
+            case .resolving:
+                return "正在解析 build context..."
+            case .available(let config):
+                return "可用 (scheme: \(config.scheme))"
+            case .unavailable(let reason):
+                return "不可用: \(reason)"
+            case .needsResync:
+                return "需要重新同步"
+            }
+        }
+    }
+    
+    struct XcodeBuildServerConfig {
+        let buildServerJSONPath: String
+        let workspacePath: String
+        let scheme: String
+    }
+    
+    // MARK: - 初始化
+    
+    init() {
+        locateXcodeBuildServer()
+    }
+    
+    // MARK: - 核心方法
+    
+    /// 打开/识别一个 Xcode 项目
+    func openProject(at projectURL: URL) async {
+        guard FileManager.default.fileExists(atPath: projectURL.path) else {
+            buildContextStatus = .unavailable("项目路径不存在: \(projectURL.path)")
+            return
+        }
+        
+        let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL)
+        guard let workspaceURL else {
+            buildContextStatus = .unavailable("未找到 .xcodeproj / .xcworkspace")
+            return
+        }
+        
+        buildContextStatus = .resolving
+        
+        // 解析项目
+        guard let workspaceContext = await resolver.resolve(workspaceURL: workspaceURL) else {
+            buildContextStatus = .unavailable("无法解析项目")
+            return
+        }
+        
+        currentWorkspace = workspaceContext
+        
+        // 自动选择第一个 scheme
+        if let firstScheme = workspaceContext.schemes.first {
+            await setActiveScheme(firstScheme)
+        }
+    }
+    
+    /// 设置 active scheme
+    func setActiveScheme(_ scheme: XcodeSchemeContext) async {
+        guard let workspace = currentWorkspace else { return }
+        
+        Self.logger.info("\(Self.t)切换 Scheme: \(scheme.name, privacy: .public)")
+        
+        activeScheme = scheme
+        currentWorkspace?.activeScheme = scheme
+        
+        // 清除旧缓存
+        buildSettingsCache.removeAll()
+        
+        // 重新生成 buildServer.json
+        await generateBuildServerJSON(
+            workspaceURL: workspace.path,
+            scheme: scheme.name
+        )
+    }
+    
+    /// 设置 active configuration
+    func setActiveConfiguration(_ configurationName: String) async {
+        guard var scheme = activeScheme else { return }
+        scheme.activeConfiguration = configurationName
+        activeScheme = scheme
+        
+        // 清除缓存
+        buildSettingsCache.removeAll()
+        
+        // 重新生成
+        if let workspace = currentWorkspace {
+            await generateBuildServerJSON(
+                workspaceURL: workspace.path,
+                scheme: scheme.name
+            )
+        }
+    }
+    
+    // MARK: - buildServer.json 管理
+    
+    /// 生成 buildServer.json
+    /// 返回 JSON 路径，如果失败返回 nil
+    func generateBuildServerJSON(workspaceURL: URL, scheme: String) async {
+        guard let serverPath = xcodeBuildServerPath else {
+            buildContextStatus = .unavailable("未安装 xcode-build-server，请运行: brew install xcode-build-server")
+            return
+        }
+        
+        isGeneratingBuildServer = true
+        
+        let isProject = workspaceURL.pathExtension == "xcodeproj"
+        let workspaceArg = isProject ? "-project" : "-workspace"
+        
+        let args = [
+            serverPath, "config",
+            workspaceArg, workspaceURL.path,
+            "-scheme", scheme
+        ]
+        
+        Self.logger.info("\(Self.t)生成 buildServer.json: \(args.joined(separator: " "), privacy: .public)")
+        
+        let success = await runCommand(path: serverPath, args: ["config", workspaceArg, workspaceURL.path, "-scheme", scheme])
+        
+        isGeneratingBuildServer = false
+        
+        if success {
+            let jsonPath = workspaceURL.deletingLastPathComponent().appendingPathComponent("buildServer.json").path
+            buildServerJSONPath = jsonPath
+            
+            if let config = buildServerConfig(from: jsonPath) {
+                buildContextStatus = .available(config)
+                Self.logger.info("\(Self.t)buildServer.json 已生成: \(jsonPath, privacy: .public)")
+            }
+        } else {
+            buildContextStatus = .unavailable("生成 buildServer.json 失败")
+        }
+    }
+    
+    /// 读取并解析 buildServer.json
+    func buildServerConfig(from path: String) -> XcodeBuildServerConfig? {
+        let url = URL(filePath: path)
+        guard let data = try? Data(contentsOf: url),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        
+        let workspacePath = json["workspace"] as? String ?? ""
+        let scheme = json["scheme"] as? String ?? ""
+        
+        return XcodeBuildServerConfig(
+            buildServerJSONPath: path,
+            workspacePath: workspacePath,
+            scheme: scheme
+        )
+    }
+    
+    // MARK: - 文件归属查询
+    
+    /// 查询文件属于哪个 target
+    func findTargetForFile(fileURL: URL) -> XcodeTargetContext? {
+        guard let workspace = currentWorkspace else { return nil }
+        
+        let filePath = fileURL.path
+        for project in workspace.projects {
+            for target in project.targets {
+                if target.sourceFiles.contains(filePath) {
+                    return target
+                }
+            }
+        }
+        return nil
+    }
+    
+    /// 获取文件的编译上下文（供 LSP 使用）
+    func buildContextForFile(fileURL: URL) async -> XcodeFileBuildContext? {
+        guard let workspace = currentWorkspace,
+              let scheme = activeScheme else { return nil }
+        
+        // 先从缓存查找
+        let cacheKey = "\(workspace.id)|\(scheme.name)"
+        if let cached = buildSettingsCache[cacheKey], !cached.isEmpty {
+            return XcodeFileBuildContext(
+                fileURL: fileURL,
+                settings: cached.first!,
+                scheme: scheme.name,
+                workspacePath: workspace.rootURL.path
+            )
+        }
+        
+        // 实时获取
+        let projectURL = workspace.projects.first?.path ?? workspace.path
+        let settings = await resolver.fetchBuildSettings(
+            workspaceURL: workspace.projects.first?.path,
+            projectURL: projectURL,
+            scheme: scheme.name
+        )
+        
+        guard let settings = settings, !settings.isEmpty else { return nil }
+        
+        buildSettingsCache[cacheKey] = settings
+        
+        return XcodeFileBuildContext(
+            fileURL: fileURL,
+            settings: settings.first!,
+            scheme: scheme.name,
+            workspacePath: workspace.rootURL.path
+        )
+    }
+    
+    // MARK: - Context Invalidation
+    
+    /// 使所有缓存失效
+    func invalidateAllContexts() {
+        buildSettingsCache.removeAll()
+        buildContextStatus = .needsResync
+        Self.logger.info("\(Self.t)所有 build context 已失效")
+    }
+    
+    /// 使特定 scheme 的缓存失效
+    func invalidateContext(for schemeName: String) {
+        buildSettingsCache = buildSettingsCache.filter { key, _ in
+            !key.contains(schemeName)
+        }
+        Self.logger.info("\(Self.t)Scheme '\(schemeName, privacy: .public)' 的 build context 已失效")
+    }
+    
+    // MARK: - 工具方法
+    
+    /// 查找 xcode-build-server 路径
+    private func locateXcodeBuildServer() {
+        let paths = [
+            "/opt/homebrew/bin/xcode-build-server",
+            "/usr/local/bin/xcode-build-server",
+        ]
+        
+        for path in paths {
+            if FileManager.default.fileExists(atPath: path) {
+                xcodeBuildServerPath = path
+                Self.logger.info("\(Self.t)找到 xcode-build-server: \(path, privacy: .public)")
+                return
+            }
+        }
+        
+        // 尝试 PATH
+        if let path = try? runShellCommand("which", args: ["xcode-build-server"])?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !path.isEmpty {
+            xcodeBuildServerPath = path
+        }
+    }
+    
+    /// 执行命令
+    private func runCommand(path: String, args: [String]) async -> Bool {
+        await withCheckedContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(filePath: path)
+            process.arguments = args
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            
+            process.terminationHandler = { _ in
+                continuation.resume(returning: process.terminationStatus == 0)
+            }
+            
+            do {
+                try process.run()
+            } catch {
+                Self.logger.error("\(Self.t)命令执行失败: \(error.localizedDescription, privacy: .public)")
+                continuation.resume(returning: false)
+            }
+        }
+    }
+    
+    private func runShellCommand(_ path: String, args: [String]) throws -> String? {
+        let process = Process()
+        process.executableURL = URL(filePath: path)
+        process.arguments = args
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        try process.run()
+        process.waitUntilExit()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8)
+    }
+}
+
+// MARK: - Xcode File Build Context
+
+/// 单个文件的编译上下文
+struct XcodeFileBuildContext: Sendable {
+    let fileURL: URL
+    let settings: [String: String]
+    let scheme: String
+    let workspacePath: String
+    
+    /// 提取 SDK 路径
+    var sdkPath: String? { settings["SDKROOT"] }
+    
+    /// 提取 toolchain 路径
+    var toolchainPath: String? { settings["TOOLCHAIN_DIR"] }
+    
+    /// 提取 target triple
+    var targetTriple: String? { settings["LLVM_TARGET_TRIPLE_SUFFIX"] }
+    
+    /// 提取 header search paths
+    var headerSearchPaths: [String] {
+        (settings["HEADER_SEARCH_PATHS"] ?? "")
+            .split(separator: " ")
+            .map(String.init)
+    }
+    
+    /// 提取 framework search paths
+    var frameworkSearchPaths: [String] {
+        (settings["FRAMEWORK_SEARCH_PATHS"] ?? "")
+            .split(separator: " ")
+            .map(String.init)
+    }
+    
+    /// 提取 active compilation conditions
+    var activeCompilationConditions: [String] {
+        (settings["ACTIVE_COMPILATION_CONDITIONS"] ?? "")
+            .split(separator: " ")
+            .map(String.init)
+    }
+    
+    /// 提取 module name
+    var moduleName: String? { settings["PRODUCT_MODULE_NAME"] }
+}

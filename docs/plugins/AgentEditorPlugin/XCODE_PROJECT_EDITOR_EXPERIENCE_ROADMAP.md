@@ -1,5 +1,8 @@
 # AgentEditorPlugin Xcode Project Editor Experience Roadmap
 
+> **最后更新**: 2025-06-27  
+> **实现状态**: Phase 1-8 核心实现已完成，详见 [实现状态](#实现状态)
+
 ## 目标
 
 不是只把 `AgentEditorPlugin` 做成“能打开 Swift 文件的编辑器”，而是把它逐步推进成一个**管理 Xcode 项目时，编辑器核心体验接近 Xcode** 的工作台。
@@ -463,3 +466,98 @@
 4. 在真实 Lumi 工程上把 Swift cross-file definition 跑通并固化成回归用例
 
 如果这一步不先做，后续 references、rename、fix-it、diagnostics 都会建立在不稳定的地基上。
+
+---
+
+## 实现状态
+
+### 已完成
+
+#### Phase 1: Xcode Project Identity ✅
+- ✅ `XcodeWorkspaceContext` / `XcodeProjectContext` / `XcodeTargetContext` / `XcodeSchemeContext` / `XcodeDestinationContext` / `XcodeBuildConfigurationContext`
+- ✅ `XcodeProjectResolver` — 自动发现 `.xcworkspace` / `.xcodeproj`，调用 `xcodebuild -list -json` 解析
+- ✅ `XcodeBuildSettingsParser` — 解析 `xcodebuild` 输出
+
+#### Phase 2: Scheme/Target/Config Awareness ✅
+- ✅ Scheme / Target / Configuration / Destination 数据模型
+- ✅ `setActiveScheme()` / `setActiveConfiguration()` 方法
+- ✅ scheme 切换后的 context invalidation (`invalidateAllContexts()`)
+- ⚠️ scheme 选择 UI 已在 `XcodeProjectStatusBar` 中实现
+
+#### Phase 3: Build Context Provider ✅
+- ✅ `XcodeBuildContextProvider` 完整流程：xcode-build-server 查找 → buildServer.json 生成 → 缓存 → 文件归属查询
+- ✅ `XcodeFileBuildContext` 结构体（含 SDK/toolchain/header search paths）
+- ✅ build settings 缓存与失效策略
+- ✅ `BuildContextStatus` 枚举（含 displayDescription）
+
+#### Phase 4: SourceKit-LSP Integration Hardening ✅
+- ✅ `XcodeProjectContextBridge` — XcodeProjectEditorPlugin 与 LSPService 之间的桥梁
+- ✅ `XcodeProjectEditorPlugin.register()` 现在向 Bridge 注册 buildContextProvider
+- ✅ `LSPService.setProjectRootPath()` 现在调用 `XcodeProjectContextBridge.projectOpened()`
+- ✅ `LSPService.startServer()` 现在为 sourcekit-lsp 传入 `workspaceFolders`
+- ✅ `LanguageServer.makeInitParams()` 接受 `workspaceFolders` 参数，不再硬编码 `nil`
+- ✅ `XcodeLSPErrorTaxonomy` — LSP 错误分类（server / project / build / semantic / timeout）
+- ✅ `XcodeLSPErrorClassifier` — 将通用错误分类为可操作的 Xcode 特定错误
+- ✅ `LSPService.makeWorkspaceFolders()` — 为 sourcekit-lsp 生成正确的 workspaceFolders
+
+#### Phase 5: Swift Semantic Navigation Parity ✅ (基础设施就绪)
+- ✅ definition / type definition / implementation / declaration 请求已在 LSPService 中实现
+- ✅ references / call hierarchy / workspace symbols 已实现
+- ✅ 跳转失败原因细分（`XcodeLSPErrorTaxonomy`）
+- ✅ 文档同步防抖策略 (`LSPDebouncer`)
+- ✅ pending changes flush before definition/rename/completion
+
+#### Phase 6: Swift Diagnostics, Fix-It, Rename ✅ (基础设施就绪)
+- ✅ diagnostics 发布处理 (`handlePublishDiagnostics`)
+- ✅ rename / code action / fix-it 请求链路完整
+- ✅ 自动恢复机制 (`recoverServerIfNeeded`)
+
+#### Phase 7: Xcode Project File Editing ✅ (基础实现)
+- ✅ `XCConfigSyntax` — xcconfig 语法高亮（注释、include、key-value、变量引用）
+- ✅ `XCConfigValidator` — xcconfig 验证器
+- ✅ `PlistEditing` — Info.plist 常见 key 参考和验证
+
+#### Phase 8: Xcode-Oriented Editor UX ✅ (基础实现)
+- ✅ `XcodeProjectStatusBar` — 状态栏显示 scheme 选择器 + build context 状态指示器
+- ✅ 集成到 `EditorPlugin.addStatusBarTrailingView()`
+- ✅ `XcodeFileNotInTargetWarning` — 文件未绑定到 target 的提示
+- ✅ `BuildContextStatus.displayDescription` — 人类可读的状态描述
+- ✅ LSP isInitializing 状态追踪
+
+### 待完善
+
+#### Phase 9: Regression Gates ❌
+- ❌ Xcode 项目 fixture 集
+- ❌ Swift cross-file navigation tests
+- ❌ scheme switch regression tests
+- ❌ build context cache correctness tests
+- ❌ Xcode project stress playbook
+
+#### 仍需验证的功能
+
+1. **真实环境测试**：`workspaceFolders` 注入后，sourcekit-lsp 的跨文件 definition 是否真正稳定
+2. **xcode-build-server 安装检查**：需要用户运行 `brew install xcode-build-server`
+3. **scheme 切换后的 LSP 重建**：当前 `setActiveScheme` 会清除缓存，但需要验证 LSP 是否正确重建
+4. **多 scheme/多 target 场景**：当前只支持自动选择第一个 scheme
+
+### 新增文件清单
+
+| 文件 | 对应 Phase | 功能 |
+|------|-----------|------|
+| `XcodeProjectContextBridge.swift` | Phase 4 | Xcode 项目与 LSP 之间的桥梁 |
+| `XcodeLSPErrorTaxonomy.swift` | Phase 4 | LSP 错误分类与用户友好提示 |
+| `XcodeProjectStatusBar.swift` | Phase 8 | 状态栏 scheme 选择器 + 状态指示 |
+| `XCConfigSyntax.swift` | Phase 7 | xcconfig 语法高亮与验证 |
+| `PlistEditing.swift` | Phase 7 | plist/entitlements 编辑辅助 |
+
+### 修改的文件清单
+
+| 文件 | 修改内容 |
+|------|---------|
+| `XcodeProjectEditorPlugin.swift` | `register()` 现在向 Bridge 注册 buildContextProvider |
+| `LSPService.swift` | `setProjectRootPath()` 触发 Bridge 初始化；`startServer()` 传入 workspaceFolders |
+| `LanguageServer.swift` | `create()` 接受 workspaceFolders 参数；`makeInitParams()` 使用传入的 workspaceFolders |
+| `EditorPlugin.swift` | `addStatusBarTrailingView()` 包含 XcodeProjectStatusBar |
+| `XcodeBuildContextProvider.swift` | BuildContextStatus 增加 Sendable + displayDescription |
+| `XcodeProjectResolver.swift` | 修复 $targetName 闭包捕获问题 |
+| `XCODE_PROJECT_EDITOR_EXPERIENCE_ROADMAP.md` | 增加实现状态章节
