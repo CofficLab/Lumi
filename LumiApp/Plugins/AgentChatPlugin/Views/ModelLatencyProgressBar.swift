@@ -107,23 +107,23 @@ struct ModelLatencyProgressBar: View {
         let ttftPercent = String(format: "%.1f", ttftRatio * 100)
         let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
         var text = """
-        ⚡ 首个 Token 延迟 (TTFT): \(formatTTFT(ttft)) (\(ttftPercent)%)
-        🕐 响应时间: \(formatLatency(totalLatency)) (\(responsePercent)%)
+        ⚡ TTFT: \(formatTTFT(ttft)) (\(ttftPercent)%)
+        🕐 \(String(localized: "Response Time", table: "AgentInput")): \(formatLatency(totalLatency)) (\(responsePercent)%)
         """
 
         if tps > 0 {
-            text += "\n🚀 生成速度: \(formatTPS(tps))"
+            text += "\n🚀 \(formatTPS(tps))"
         }
 
         text += """
 
 
-        TTFT 表示从发送请求到收到第一个 token 的时间
-        响应时间表示从第一个 token 到响应完成的时间
+        \(String(localized: "TTFT Help", table: "AgentInput"))
+        \(String(localized: "Response Time Help", table: "AgentInput"))
         """
 
         if tps > 0 {
-            text += "TPS (Tokens Per Second) 表示每秒生成的 token 数量"
+            text += "\nTPS (Tokens Per Second)"
         }
 
         return text

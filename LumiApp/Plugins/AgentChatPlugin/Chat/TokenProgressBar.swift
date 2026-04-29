@@ -44,11 +44,11 @@ struct TokenProgressBar: View {
         let inputPercent = String(format: "%.1f", inputRatio * 100)
         let outputPercent = String(format: "%.1f", (1 - inputRatio) * 100)
         return """
-        ➡️ 输入 Token: \(inputTokens) (\(inputPercent)%)
-        ⬅️ 输出 Token: \(outputTokens) (\(outputPercent)%)
+        ➡️ Input Token: \(inputTokens) (\(inputPercent)%)
+        ⬅️ Output Token: \(outputTokens) (\(outputPercent)%)
 
-        输入 Token 表示发送给模型的 token 数量
-        输出 Token 表示模型生成的 token 数量
+        \(String(localized: "Input Token Help", table: "AgentInput"))
+        \(String(localized: "Output Token Help", table: "AgentInput"))
         """
     }
 }

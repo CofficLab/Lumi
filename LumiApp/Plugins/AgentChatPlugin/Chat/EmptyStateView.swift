@@ -19,36 +19,36 @@ struct EmptyStateView: View {
                         .font(.system(size: 60))
                         .foregroundStyle(.secondary)
 
-                    Text(String(localized: hasAnyConversation ? "选择一个会话开始聊天" : "暂无对话", table: "AgentMessages"))
+                    Text(String(localized: hasAnyConversation ? "Select Conversation" : "No Conversations", table: "AgentMessages"))
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
 
                     if hasAnyConversation {
-                        Text(String(localized: "从左侧列表选择一个现有会话，或创建新会话", table: "AgentMessages"))
+                        Text(String(localized: "Select or Create Conversation", table: "AgentMessages"))
                             .font(.body)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
 
                     if !hasAnyConversation {
-                        AppButton("新建对话", systemImage: "plus.circle.fill", style: .primary) {
+                        AppButton(String(localized: "New Conversation", table: "AgentMessages"), systemImage: "plus.circle.fill", style: .primary) {
                             Task {
                                 await conversationCreationVM.createNewConversation()
                             }
                         }
-                        .accessibilityLabel("新建对话")
-                        .accessibilityHint("创建一个新的会话")
+                        .accessibilityLabel(String(localized: "New Conversation", table: "AgentMessages"))
+                        .accessibilityHint(String(localized: "New Conversation Hint", table: "AgentMessages"))
                     }
 
-                    AppButton("查看新手引导", style: .ghost, size: .small) {
+                    AppButton(String(localized: "Onboarding Guide", table: "AgentMessages"), style: .ghost, size: .small) {
                         NotificationCenter.default.post(
                             name: Notification.Name("AgentOnboarding.Show"),
                             object: nil
                         )
                     }
-                    .accessibilityLabel("查看新手引导")
-                    .accessibilityHint("打开首次使用说明")
+                    .accessibilityLabel(String(localized: "Onboarding Guide", table: "AgentMessages"))
+                    .accessibilityHint(String(localized: "Onboarding Guide Hint", table: "AgentMessages"))
 
                     QuickStartActionsView(sendStrategy: .createConversationAndSend)
                         .padding(.top, 4)
@@ -62,7 +62,7 @@ struct EmptyStateView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("空状态页面")
+        .accessibilityLabel(String(localized: "Empty State Page", table: "AgentMessages"))
     }
 }
 

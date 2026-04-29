@@ -17,13 +17,13 @@ struct EmptyMessagesView: View {
                 .foregroundStyle(theme.workspaceTertiaryTextColor())
 
             // 标题
-            Text(String(localized: "暂无消息", table: "AgentMessages"))
+            Text(String(localized: "No Messages", table: "AgentMessages"))
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundStyle(theme.workspaceTextColor())
 
             // 描述
-            Text(String(localized: "在下方输入框中输入您的问题，开始与 AI 助手对话", table: "AgentMessages"))
+            Text(String(localized: "No Messages Description", table: "AgentMessages"))
                 .font(.body)
                 .foregroundStyle(theme.workspaceSecondaryTextColor())
                 .multilineTextAlignment(.center)
@@ -31,15 +31,15 @@ struct EmptyMessagesView: View {
 
             // 示例引导
             VStack(alignment: .leading, spacing: 6) {
-                Text(String(localized: "例如：", table: "AgentMessages"))
+                Text(String(localized: "For Example", table: "AgentMessages"))
                     .font(.caption)
                     .foregroundStyle(theme.workspaceTertiaryTextColor())
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "· 帮我解释这段错误日志", table: "AgentMessages"))
+                    Text(String(localized: "Example Error Log", table: "AgentMessages"))
                         .font(.caption)
                         .foregroundStyle(theme.workspaceSecondaryTextColor())
-                    Text(String(localized: "· 帮我为这个项目设计一个测试计划", table: "AgentMessages"))
+                    Text(String(localized: "Example Test Plan", table: "AgentMessages"))
                         .font(.caption)
                         .foregroundStyle(theme.workspaceSecondaryTextColor())
                 }

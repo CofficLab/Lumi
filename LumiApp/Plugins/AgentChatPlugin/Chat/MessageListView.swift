@@ -142,8 +142,8 @@ extension MessageListView {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .environment(\.preferOuterScroll, true)
-        .accessibilityLabel("消息列表")
-        .accessibilityHint("按时间顺序展示会话消息")
+        .accessibilityLabel(String(localized: "Message List", table: "AgentMessages"))
+        .accessibilityHint(String(localized: "Message List Hint", table: "AgentMessages"))
         .overlay(alignment: .topLeading) {
             ScrollPositionObserver { atBottom, userInitiated in
                 handleScrollPositionChanged(atBottom: atBottom, userInitiated: userInitiated)
@@ -167,15 +167,18 @@ extension MessageListView {
         HStack {
             Spacer()
             AppButton(
-                LocalizedStringKey("显示更早已加载消息（\(hiddenCount) 条）"),
+                String(
+                    format: String(localized: "Expand Earlier Loaded Messages (%lld)", table: "AgentMessages"),
+                    hiddenCount
+                ),
                 systemImage: "clock.arrow.circlepath",
                 style: .tonal,
                 size: .small
             ) {
                 historyWindowLimit += Self.historyWindowStep
             }
-            .accessibilityLabel("显示更早消息")
-            .accessibilityHint("展开更早加载的历史消息")
+            .accessibilityLabel(String(localized: "Expand Earlier Messages", table: "AgentMessages"))
+            .accessibilityHint(String(localized: "Expand Earlier Messages Hint", table: "AgentMessages"))
             Spacer()
         }
         .padding(.vertical, 4)
@@ -184,7 +187,7 @@ extension MessageListView {
     private var loadingOverlay: some View {
         VStack(spacing: 12) {
             ProgressView()
-            Text("正在加载历史消息…")
+            Text(String(localized: "Loading History", table: "AgentMessages"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -207,19 +210,19 @@ extension MessageListView {
                     RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
                         .fill(AppUI.Color.semantic.textSecondary.opacity(0.08))
                 )
-                .accessibilityLabel(LocalizedStringKey("加载更早消息"))
-                .accessibilityHint(LocalizedStringKey("从历史记录中继续加载更早的消息"))
+                .accessibilityLabel(String(localized: "Load Earlier Messages", table: "AgentMessages"))
+                .accessibilityHint(String(localized: "Load Earlier Messages Hint", table: "AgentMessages"))
             } else {
                 AppButton(
-                    LocalizedStringKey(loadMoreButtonText),
+                    loadMoreButtonText,
                     systemImage: "arrow.up.circle",
                     style: .tonal,
                     size: .small
                 ) {
                     timelineViewModel.handleLoadMore()
                 }
-                .accessibilityLabel(LocalizedStringKey("加载更早消息"))
-                .accessibilityHint(LocalizedStringKey("从历史记录中继续加载更早的消息"))
+                .accessibilityLabel(String(localized: "Load Earlier Messages", table: "AgentMessages"))
+                .accessibilityHint(String(localized: "Load Earlier Messages Hint", table: "AgentMessages"))
             }
             Spacer()
         }
@@ -228,10 +231,14 @@ extension MessageListView {
 
     private var loadMoreButtonText: String {
         if timelineViewModel.isLoadingMore {
-            return "加载中..."
+            return String(localized: "Loading More Messages", table: "AgentMessages")
         }
         let loadedCount = timelineViewModel.persistedMessages.count
-        return "加载更早消息（已加载 \(loadedCount) 条，共 \(timelineViewModel.totalMessageCount) 条）"
+        return String(
+            format: String(localized: "Load More Messages (%lld of %lld)", table: "AgentMessages"),
+            loadedCount,
+            timelineViewModel.totalMessageCount
+        )
     }
 }
 

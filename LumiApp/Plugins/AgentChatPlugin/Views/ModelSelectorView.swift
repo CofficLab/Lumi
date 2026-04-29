@@ -135,7 +135,7 @@ struct ModelSelectorView: View, SuperLog {
                             let filteredInfos = infos.filter {
                                 matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
                             }
-                            let fallbackSeries = "其他"
+                            let fallbackSeries = String(localized: "Other", table: "AgentInput")
                             let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
                             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                                 Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
@@ -262,7 +262,7 @@ struct ModelSelectorView: View, SuperLog {
                             let filteredInfos = infos.filter {
                                 matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
                             }
-                            let fallbackSeries = "其他"
+                            let fallbackSeries = String(localized: "Other", table: "AgentInput")
                             let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
                             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                                 Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
