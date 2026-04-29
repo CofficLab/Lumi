@@ -403,6 +403,18 @@ final class PluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addToolBarLeadingView() }
     }
 
+    /// 获取所有插件的工具栏中间视图
+    ///
+    /// 收集所有启用插件提供的工具栏中间视图。
+    /// 这些视图将在工具栏中间位置水平排列显示。
+    ///
+    /// - Returns: 工具栏中间视图数组
+    func getToolbarCenterViews() -> [AnyView] {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addToolBarCenterView() }
+    }
+
     /// 获取所有插件的工具栏右侧视图
     ///
     /// 收集所有启用插件提供的工具栏右侧视图。
@@ -503,6 +515,27 @@ final class PluginVM: ObservableObject, SuperLog {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
             AppLogger.core.info("\(self.t) getStatusBarLeadingViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏左侧视图数量=\(views.count)")
+        }
+
+        return views
+    }
+
+    /// 获取所有插件提供的状态栏中间视图（用于 Agent 模式底部状态栏）
+    ///
+    /// 收集所有启用插件提供的状态栏中间视图。
+    /// 状态栏位于 Agent 模式底部，用于显示状态信息、操作提示等内容。
+    /// 多个插件的状态栏视图会水平排列显示在中间。
+    ///
+    /// - Returns: 状态栏中间视图数组
+    func getStatusBarCenterViews() -> [AnyView] {
+        let views = plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addStatusBarCenterView() }
+
+        if Self.verbose {
+            let pluginNames = plugins.map { String(describing: type(of: $0)) }
+            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
+            AppLogger.core.info("\(self.t) getStatusBarCenterViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏中间视图数量=\(views.count)")
         }
 
         return views

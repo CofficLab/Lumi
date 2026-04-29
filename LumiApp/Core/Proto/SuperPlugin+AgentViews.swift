@@ -10,6 +10,9 @@ extension SuperPlugin {
     /// 默认实现：不提供状态栏左侧视图
     @MainActor func addStatusBarLeadingView() -> AnyView? { nil }
 
+    /// 默认实现：不提供状态栏中间视图
+    @MainActor func addStatusBarCenterView() -> AnyView? { nil }
+
     /// 默认实现：不提供状态栏右侧视图
     @MainActor func addStatusBarTrailingView() -> AnyView? { nil }
 }

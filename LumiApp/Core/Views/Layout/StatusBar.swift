@@ -8,12 +8,14 @@ struct StatusBar: View {
     var body: some View {
         let theme = themeManager.activeAppTheme
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews()
+        let statusBarCenterViews = pluginProvider.getStatusBarCenterViews()
         let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews()
         let hasLeadingViews = !statusBarLeadingViews.isEmpty
+        let hasCenterViews = !statusBarCenterViews.isEmpty
         let hasTrailingViews = !statusBarTrailingViews.isEmpty
 
         return Group {
-            if hasLeadingViews || hasTrailingViews {
+            if hasLeadingViews || hasCenterViews || hasTrailingViews {
                 HStack(spacing: 12) {
                     // 左侧视图
                     if hasLeadingViews {
@@ -21,6 +23,18 @@ struct StatusBar: View {
                             ForEach(statusBarLeadingViews.indices, id: \.self) { index in
                                 statusBarLeadingViews[index]
                                     .id("status_bar_leading_\(index)")
+                            }
+                        }
+                    }
+
+                    Spacer()
+
+                    // 中间视图
+                    if hasCenterViews {
+                        HStack(spacing: 12) {
+                            ForEach(statusBarCenterViews.indices, id: \.self) { index in
+                                statusBarCenterViews[index]
+                                    .id("status_bar_center_\(index)")
                             }
                         }
                     }

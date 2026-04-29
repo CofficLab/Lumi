@@ -33,6 +33,9 @@ extension SuperPlugin {
     /// 默认实现：不提供工具栏前导视图
     @MainActor func addToolBarLeadingView() -> AnyView? { nil }
 
+    /// 默认实现：不提供工具栏中间视图
+    @MainActor func addToolBarCenterView() -> AnyView? { nil }
+
     /// 默认实现：不提供工具栏右侧视图
     @MainActor func addToolBarTrailingView() -> AnyView? { nil }
 

@@ -104,6 +104,9 @@ protocol SuperPlugin: Actor {
     /// 添加工具栏前导视图
     @MainActor func addToolBarLeadingView() -> AnyView?
 
+    /// 添加工具栏中间视图
+    @MainActor func addToolBarCenterView() -> AnyView?
+
     /// 添加工具栏右侧视图
     @MainActor func addToolBarTrailingView() -> AnyView?
 
@@ -151,6 +154,9 @@ protocol SuperPlugin: Actor {
 
     /// 添加状态栏左侧视图（用于 Agent 模式底部状态栏）
     @MainActor func addStatusBarLeadingView() -> AnyView?
+
+    /// 添加状态栏中间视图（用于 Agent 模式底部状态栏）
+    @MainActor func addStatusBarCenterView() -> AnyView?
 
     /// 添加状态栏右侧视图（用于 Agent 模式底部状态栏）
     @MainActor func addStatusBarTrailingView() -> AnyView?
