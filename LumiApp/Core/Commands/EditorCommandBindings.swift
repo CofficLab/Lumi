@@ -48,6 +48,50 @@ struct EditorCommandBinding {
     }
 }
 
+extension EditorCommandShortcut {
+    var keyEquivalent: KeyEquivalent {
+        switch key {
+        case "\r", "return", "enter":
+            return .return
+        case "\t", "tab":
+            return .tab
+        case "↑", "uparrow", "up":
+            return .upArrow
+        case "↓", "downarrow", "down":
+            return .downArrow
+        case "←", "leftarrow", "left":
+            return .leftArrow
+        case "→", "rightarrow", "right":
+            return .rightArrow
+        case " ", "space":
+            return .space
+        case "\u{1b}", "escape", "esc":
+            return .escape
+        case "\u{8}", "\u{7f}", "delete", "backspace":
+            return .delete
+        default:
+            return KeyEquivalent(Character(key.lowercased()))
+        }
+    }
+
+    var eventModifiers: EventModifiers {
+        var result: EventModifiers = []
+        for modifier in modifiers {
+            switch modifier {
+            case .command:
+                result.insert(.command)
+            case .shift:
+                result.insert(.shift)
+            case .option:
+                result.insert(.option)
+            case .control:
+                result.insert(.control)
+            }
+        }
+        return result
+    }
+}
+
 enum EditorCommandBindings {
     static let undo = EditorCommandBinding(key: "z", modifiers: [.command])
     static let redo = EditorCommandBinding(key: "z", modifiers: [.command, .shift])

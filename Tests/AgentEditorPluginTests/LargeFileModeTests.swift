@@ -242,6 +242,7 @@ final class ViewportRenderControllerTests: XCTestCase {
         XCTAssertFalse(state.shouldUseTreeSitterHighlightProvider)
         XCTAssertFalse(state.shouldUseSemanticTokenHighlightProvider)
         XCTAssertFalse(state.shouldUseDocumentHighlightProvider)
+        XCTAssertFalse(state.shouldUsePluginHighlightProviders)
     }
 
     func testEditorStateCurrentOverlayDataRespectsRuntimeAvailability() async throws {

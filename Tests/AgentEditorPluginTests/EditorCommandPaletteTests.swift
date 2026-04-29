@@ -52,6 +52,24 @@ final class EditorCommandPaletteTests: XCTestCase {
         XCTAssertEqual(commandIDs, ["builtin.command-palette"])
     }
 
+    func testEditorCommandSectionsReflectUpdatedCustomShortcut() {
+        let store = EditorKeybindingStore.shared
+        store.removeBinding(commandID: "builtin.command-palette")
+        addTeardownBlock {
+            Task { @MainActor in
+                EditorKeybindingStore.shared.removeBinding(commandID: "builtin.command-palette")
+            }
+        }
+
+        let state = EditorState()
+        store.setBinding(commandID: "builtin.command-palette", key: "k", modifiers: [.command, .option])
+
+        let sections = state.editorCommandSections(matching: "⌘⌥K")
+        let commandIDs = sections.flatMap(\.commands).map(\.id)
+
+        XCTAssertEqual(commandIDs, ["builtin.command-palette"])
+    }
+
     func testEditorCommandSectionsCanMatchCategoryRawValue() {
         let state = EditorState()
 

@@ -14,7 +14,7 @@ struct AppButton: View {
         case medium
     }
 
-    let title: LocalizedStringKey
+    let title: Text
     let systemImage: String?
     let style: Style
     let size: Size
@@ -29,7 +29,23 @@ struct AppButton: View {
         fillsWidth: Bool = false,
         action: @escaping () -> Void
     ) {
-        self.title = title
+        self.title = Text(title)
+        self.systemImage = systemImage
+        self.style = style
+        self.size = size
+        self.fillsWidth = fillsWidth
+        self.action = action
+    }
+
+    init(
+        _ title: String,
+        systemImage: String? = nil,
+        style: Style = .secondary,
+        size: Size = .medium,
+        fillsWidth: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.title = Text(title)
         self.systemImage = systemImage
         self.style = style
         self.size = size
@@ -43,7 +59,7 @@ struct AppButton: View {
                 if let systemImage {
                     Image(systemName: systemImage)
                 }
-                Text(title)
+                title
             }
             .font(font)
             .foregroundStyle(foregroundColor)

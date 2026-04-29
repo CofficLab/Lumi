@@ -97,6 +97,7 @@ final class EditorState: ObservableObject, SuperLog {
     var onActiveSessionChanged: ((EditorSession) -> Void)?
 
     private var diagnosticsCancellable: AnyCancellable?
+    private var keybindingCancellable: AnyCancellable?
     private var panelBindings = Set<AnyCancellable>()
     private var multiCursorSearchSession: EditorMultiCursorSearchSession?
     private var isSessionSyncSuspended = false
@@ -530,6 +531,10 @@ final class EditorState: ObservableObject, SuperLog {
         areDocumentHighlightsEnabled
     }
 
+    var shouldUsePluginHighlightProviders: Bool {
+        isSyntaxHighlightingEnabledInViewport
+    }
+
     private func findMatchOverlayRect(
         for range: EditorRange,
         in textView: TextView,
@@ -960,10 +965,25 @@ final class EditorState: ObservableObject, SuperLog {
         self.editorPluginManager.autoDiscoverAndRegisterPlugins()
         self.codeActionProvider.editorExtensionRegistry = self.editorExtensions
         CoreCommandRegistrations.registerAll(in: self)
+        bindKeybindings()
         bindPanelState()
         bindDiagnostics()
         restoreConfig()
         observeThemeChanges()
+    }
+
+    private func bindKeybindings() {
+        keybindingCancellable?.cancel()
+        keybindingCancellable = EditorKeybindingStore.shared.$customBindings
+            .dropFirst()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                refreshCoreCommandRegistrations()
+            }
+    }
+
+    private func refreshCoreCommandRegistrations() {
+        CoreCommandRegistrations.registerAll(in: self)
     }
 
     func setEditorFeaturePluginEnabled(_ pluginID: String, enabled: Bool) {
@@ -971,6 +991,7 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func editorCommandSuggestions() -> [EditorCommandSuggestion] {
+        refreshCoreCommandRegistrations()
         let legacySuggestions = legacyEditorCommandSuggestions()
         let registrySuggestions = CommandRouter.suggestionsFromRegistry(in: currentCommandContext())
         return deduplicatingCommandSuggestions(registrySuggestions + legacySuggestions)
@@ -980,6 +1001,7 @@ final class EditorState: ObservableObject, SuperLog {
         for context: EditorCommandContext,
         textView: TextView?
     ) -> [EditorCommandSuggestion] {
+        refreshCoreCommandRegistrations()
         let legacySuggestions = editorExtensions.commandSuggestions(
             for: context,
             state: self,
@@ -1056,6 +1078,7 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func performEditorCommand(id: String) {
+        refreshCoreCommandRegistrations()
         let didExecute = CommandRouter.execute(
             id: id,
             in: currentCommandContext(),

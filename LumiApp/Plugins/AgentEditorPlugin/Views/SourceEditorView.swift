@@ -375,7 +375,9 @@ struct SourceEditorView: View, SuperLog {
         if state.shouldUseDocumentHighlightProvider, let documentHighlightProvider {
             providers.append(documentHighlightProvider)
         }
-        providers.append(contentsOf: state.editorExtensions.highlightProviders(for: languageID))
+        if state.shouldUsePluginHighlightProviders {
+            providers.append(contentsOf: state.editorExtensions.highlightProviders(for: languageID))
+        }
         return providers
     }
     
