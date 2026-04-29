@@ -101,12 +101,18 @@ final class EditorWorkbenchState: ObservableObject {
 
     /// 取消分割。
     func unsplitActiveGroup() {
-        guard let activeGroup, !activeGroup.isLeaf else { return }
-        activeGroup.unsplit()
-        // 恢复后，第一个叶子 group 成为活跃
-        if let firstLeaf = rootGroup.leafGroups().first {
-            activeGroupID = firstLeaf.id
+        if let activeGroup, !activeGroup.isLeaf {
+            activeGroup.unsplit()
+            activeGroupID = activeGroup.id
+            return
         }
+
+        guard let splitAncestor = rootGroup.nearestSplitAncestor(containing: activeGroupID) else {
+            return
+        }
+
+        splitAncestor.unsplit()
+        activeGroupID = splitAncestor.id
     }
 
     /// 将当前活跃 group 的 session 移动到另一个 group。

@@ -250,6 +250,19 @@ final class EditorGroup: ObservableObject, Identifiable {
         return nil
     }
 
+    /// 查找包含目标 group 的最近可合并父 group。
+    func nearestSplitAncestor(containing groupID: EditorGroup.ID) -> EditorGroup? {
+        for subGroup in subGroups {
+            if subGroup.id == groupID {
+                return self
+            }
+            if let found = subGroup.nearestSplitAncestor(containing: groupID) {
+                return found
+            }
+        }
+        return nil
+    }
+
     /// 获取所有叶子 group。
     func leafGroups() -> [EditorGroup] {
         if isLeaf { return [self] }

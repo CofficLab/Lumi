@@ -584,7 +584,7 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorWorkbenchState` — 工作台顶层状态管理器，管理 rootGroup 树 + activeGroupID
 - [x] `EditorGroupHostStore` — Group host 状态管理
 - [x] Split editor — `EditorGroup.split(.horizontal/.vertical)` 创建子 group，支持水平/垂直分割
-- [ ] Unsplit — `EditorGroup.unsplit()` 已有底层合并实现，但当前 active group 到 unsplit 的工作台链路未打通
+- [x] Unsplit — `EditorWorkbenchState.unsplitActiveGroup()` 已支持从 active leaf 回溯到最近 split ancestor 执行合并，并补充 `testUnsplitActiveLeafCollapsesNearestSplitAncestor` 回归用例
 - [x] Session 移动 — `moveSessionToOtherGroup(sessionID:targetGroupID:)`
 - [x] Active group tracking — `EditorWorkbenchState.activeGroupID` + `focusNextGroup()` / `focusPreviousGroup()`
 - [x] 全局 session 查找 — `groupContainingSession(sessionID:)`

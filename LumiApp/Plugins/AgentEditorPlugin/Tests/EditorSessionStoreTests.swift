@@ -118,5 +118,25 @@ final class EditorSessionStoreTests: XCTestCase {
         XCTAssertEqual(store.tabs.first?.isPinned, true)
         XCTAssertEqual(store.tabs.last?.sessionID, second?.id)
     }
+
+    func testUnsplitActiveLeafCollapsesNearestSplitAncestor() {
+        let workbench = EditorWorkbenchState()
+        let fileURL = URL(fileURLWithPath: "/tmp/demo.swift")
+
+        _ = workbench.openOrActivate(fileURL: fileURL)
+        let originalRootID = workbench.rootGroup.id
+
+        workbench.splitActiveGroup(.horizontal)
+
+        XCTAssertEqual(workbench.leafGroups.count, 2)
+        XCTAssertNotEqual(workbench.activeGroupID, originalRootID)
+
+        workbench.unsplitActiveGroup()
+
+        XCTAssertEqual(workbench.leafGroups.count, 1)
+        XCTAssertEqual(workbench.activeGroupID, originalRootID)
+        XCTAssertEqual(workbench.rootGroup.id, originalRootID)
+        XCTAssertTrue(workbench.rootGroup.isLeaf)
+    }
 }
 #endif
