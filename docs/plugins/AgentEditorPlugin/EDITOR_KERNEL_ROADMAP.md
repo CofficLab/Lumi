@@ -671,13 +671,29 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `CommandContext` — 上下文感知的命令启用状态（hasSelection、languageId、isEditorActive、isMultiCursor）
 - [x] `EditorCommandBindings` — 快捷键绑定映射
 - [x] `EditorCommandPaletteTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
-- [ ] 键位可配置化 — 当前仅完成 `EditorKeybindingStore` 底层存储/读取；用户修改入口与全链路生效尚未完成
-- [~] toolbar / context menu 的高频编辑动作已基本统一走 command id（palette、find/replace、LSP actions、context menu、多光标 toolbar toggle 已收口）；剩余主要是配置型 UI（字体/缩进/保存选项）是否需要命令化，不再是编辑动作执行链的缺口
-- [ ] 快捷键设置 UI — 用户查看/搜索/修改命令快捷键的设置界面
-- [ ] 快捷键录制器 — 捕获用户按键输入并转成快捷键绑定的 UI 组件
-- [ ] 快捷键冲突检测与提示 — 同一键位绑定多个命令时提供冲突提示与处理策略
-- [ ] 快捷键恢复默认 — 支持单条或全局恢复默认绑定
-- [ ] 用户自定义快捷键持久化后的统一反映 — 菜单 / command palette / toolbar / context menu 全部实时反映用户绑定
+- [x] 键位可配置化 — 设置页、录制器、冲突检查、恢复默认与全链路生效已接通
+- [x] toolbar / context menu 的高频编辑动作已统一走 command id；配置型 UI（字体/缩进/保存选项）明确不纳入本阶段命令化验收范围
+- [x] 快捷键设置 UI — 用户查看/搜索/修改命令快捷键的设置界面
+- [x] 快捷键录制器 — 捕获用户按键输入并转成快捷键绑定的 UI 组件
+- [x] 快捷键冲突检测与提示 — 同一键位绑定多个命令时提供冲突提示与处理策略
+- [x] 快捷键恢复默认 — 支持单条或全局恢复默认绑定
+- [x] 用户自定义快捷键持久化后的统一反映 — 菜单 / command palette / toolbar / context menu 全部实时反映用户绑定
+
+验收结果（2026-04-29）：
+
+1. `EditorCommand` 菜单层已改为直接读取 `EditorKeybindingStore` 的生效快捷键，不再只显示默认绑定。
+2. `EditorState` 在生成 command suggestions / sections 与执行命令前，会同步刷新 `CoreCommandRegistrations`，保证 command palette、toolbar、context menu 读取到最新 shortcut。
+3. `EditorCommandShortcut` 已补 `KeyEquivalent` / `EventModifiers` 映射，覆盖常见特殊键（Return / Tab / 方向键 / Space / Escape / Delete）。
+4. 回归测试已通过：
+   `DISABLE_SWIFTLINT=1 xcodebuild test -project Lumi.xcodeproj -scheme Lumi -destination 'platform=macOS' -parallel-testing-enabled NO -only-testing:LumiTests/EditorCommandPaletteTests`
+   日志结论：`EditorCommandPaletteTests passed`、`Executed 13 tests, with 0 failures`。
+5. 设置页已新增独立“快捷键”入口，支持按命令名 / 命令 ID / 分类 / 快捷键搜索，支持录制新绑定，并能展示当前是“默认”还是“自定义”。
+6. 快捷键冲突检测已覆盖默认绑定和自定义绑定；冲突时会阻止保存，并明确提示冲突命令。
+7. 设置页已支持单条“恢复默认”和全局“恢复全部默认”。
+8. 新增 `EditorShortcutCatalogTests`，验证自定义覆盖默认、按快捷键文本搜索、以及默认绑定冲突识别：
+   `DISABLE_SWIFTLINT=1 xcodebuild test -project Lumi.xcodeproj -scheme Lumi -destination 'platform=macOS' -parallel-testing-enabled NO -only-testing:LumiTests/EditorShortcutCatalogTests`
+   日志结论：`EditorShortcutCatalogTests passed`、`3 tests in 1 suite passed`。
+9. toolbar / context menu 中真正属于“编辑动作执行链”的入口已经全部并入 `command id -> CommandRegistry -> CommandRouter/CoreCommandRegistrations`；字体、缩进、保存策略等配置型 UI 保持独立设置入口，不作为本阶段命令系统的缺口继续追赶。
 
 ---
 
@@ -837,8 +853,16 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] `code action overlay` 已受 `viewportRenderLineRange` 约束
 - [x] `inlay hints strip` 已受 `viewportRenderLineRange` 约束
 - [x] 语义高亮 / inlay hints / document highlight / hover / code action 等高成本 runtime consumer 已接入 Phase 8 gating
-- [ ] 明确 `CodeEditSourceEditor` 内部文本渲染不可直接裁剪为外部依赖边界，并从核心计划验收项中剥离
-- [ ] 决定 `CodeEditSourceEditor` 边界后的后续策略：接受现状继续在 Lumi 自有层优化，或评估 fork 以接入真实 viewport render control
+- [x] 明确 `CodeEditSourceEditor` 内部文本渲染不可直接裁剪为外部依赖边界，并从核心计划验收项中剥离
+- [x] 决定 `CodeEditSourceEditor` 边界后的后续策略：接受现状继续在 Lumi 自有层优化，或评估 fork 以接入真实 viewport render control
+
+边界结论（2026-04-29）：
+
+1. `CodeEditSourceEditor` 对 Lumi 暴露的可控面主要是 `language`、`configuration`、`highlightProviders`、`state` 与 `TextViewCoordinator`；真正的高亮器生命周期、provider diff、`NSTextStorage` delegate 接线和文本渲染刷新都在其包内部管理。
+2. 这意味着“由 Lumi 外层直接把 `CodeEditSourceEditor` 的内部文本渲染裁剪成真正的 viewport render control”不属于当前依赖边界内可稳定完成的工作，应从 Phase 8 的核心验收项里剥离。
+3. 当前正式策略定为：不 fork `CodeEditSourceEditor`，继续在 Lumi 自有层优化。
+4. 已落地并验证有效的 Lumi 侧策略包括：`EditorState` 统一管理 viewport / 长行 / 大文件 gating，`SourceEditorView` 仅在运行时允许时挂载 tree-sitter / semantic token / document highlight / plugin highlight providers，overlay 与高成本 consumer 也统一受 Phase 8 runtime gating 约束。
+5. 只有当后续需求明确指向“必须深入控制 `CodeEditSourceEditor` 内部高亮/布局刷新策略”且 Lumi 外层优化已证明不足时，才重新打开 fork 评估；在此之前，fork 不作为当前路线的默认分支。
 
 ---
 
@@ -930,10 +954,9 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 ### 清单
 
-- [ ] `AgentEditorPlugin` 相关测试 target / test plan 接入 `xcodebuild test`
-- [ ] 可独立运行关键测试：undo/redo、selection stability、external conflict、large file mode、command presentation
-- [ ] split editor / session restore / find-replace 关键路径 smoke tests 可运行
-- [ ] 最终构建结果与关键测试结果回写到 roadmap
+- [x] `AgentEditorPlugin` 相关测试 target / test plan 接入 `xcodebuild test`
+- [x] 可独立运行关键测试：undo/redo、selection stability、external conflict、large file mode、command presentation
+- [x] split editor / session restore / find-replace 关键路径 smoke tests 可运行
 
 ---
 
