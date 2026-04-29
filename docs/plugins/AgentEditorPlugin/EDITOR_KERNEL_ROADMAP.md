@@ -225,7 +225,7 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 - [x] 定义编辑行为向 transaction 模型收敛 — `EditorTransaction` 已统一表达 replace/insert/delete/apply text edits/replace selections
 - [x] 列出现存内核问题清单 — 路线图文档"当前代码里的核心问题"章节已完成
 - [x] `Kernel/` 目录已建立，核心文本模型已落地
-- [x] 性能基线指标 — `EditorPerformance` 已建立量化指标体系（23 种事件类型、慢速阈值、统计摘要、报告生成）
+- [x] 性能基线指标 — `EditorPerformance` 骨架已建立（24 种事件类型、慢速阈值、统计摘要、报告生成）；当前仅部分事件已完成实际埋点接线
 
 ---
 
@@ -356,10 +356,10 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] code action text edits 已改走 transaction
 - [x] 多光标 replacement 已改走 transaction（`multi_cursor_replace`）
 - [x] 多光标操作已改走 transaction（`multi_cursor_operation`）
-- [x] `EditorBufferTests` 测试已覆盖
+- [x] `EditorBufferTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
 - [x] `EditorUndoManager` — 已落地为独立快照式 undo/redo 管理器，并接入 transaction 路径、原生文本输入路径与 `builtin.undo / builtin.redo` 命令链
 - [x] NSTextStorage 与 buffer 双写风险已收敛到应急兜底级别（transaction / save / undo / completion / 普通文本输入已走精确同步；`didReplaceContentsIn` 后的重复 `textDidChange` 重对齐已被抑制；带有 `textView.string` 的 `textDidChange` 旁路也会直接以当前视图文本重建 buffer；保留的 `syncBufferFromTextStorageIfNeeded()` 仅作为无法获取更精确信息时的应急补偿钩子）
-- [x] selection 映射在 format/rename 后的光标稳定性已有专项测试（`EditorSelectionStabilityTests` 覆盖 `changes` 与 `documentChanges` 两条 `WorkspaceEdit` 路径）
+- [x] selection 映射在 format/rename 后的光标稳定性已编写专项测试用例（`EditorSelectionStabilityTests` 覆盖 `changes` 与 `documentChanges` 两条 `WorkspaceEdit` 路径；待 test target / test plan 接入后运行验证）
 
 ---
 
@@ -440,12 +440,12 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `applyCanonicalSelectionSet(_:)` 方法已实现，coordinator 通过此方法更新内核选区
 - [x] 多光标 replacement 已重构为 transaction-aware（Phase 1 已完成）
 - [x] 多光标 delete 已重构为 transaction-aware（Phase 1 已完成）
-- [x] `EditorSelectionSetTests` 测试已覆盖
-- [x] `EditorSelectionMapperTests` 测试已覆盖
-- [x] `MultiCursorTransactionBuilderTests` 测试已覆盖
+- [x] `EditorSelectionSetTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
+- [x] `EditorSelectionMapperTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
+- [x] `MultiCursorTransactionBuilderTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
 - [x] `EditorCursorState` — 已作为兼容模块名落成，对当前 canonical `EditorSelectionSet` 提供明确别名，避免再引入第二套重复状态模型
 - [x] swizzle 依赖已退化为薄适配层 — `Cmd+D / Cmd+U / Cmd+Shift+L / Esc` 已改走统一 command id；`insertText` / `deleteBackward` / `insertNewline` / `insertTab` / `insertBacktab` 的输入决策也已下沉到 `EditorState`，`MultiCursorInput` 现主要只剩原生事件拦截与选区回写适配层
-- [x] completion / format / rename 后的选区恢复已有专项自动测试（`EditorSelectionStabilityTests`），且单光标 completion 已通过 `EditorState.applyCompletionEdit` 接入事务链
+- [x] completion / format / rename 后的选区恢复已编写专项自动测试用例（`EditorSelectionStabilityTests`；待 test target / test plan 接入后运行验证），且单光标 completion 已通过 `EditorState.applyCompletionEdit` 接入事务链
 
 ---
 
@@ -539,9 +539,9 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorRootView` 已引入 `@StateObject sessionStore`，文件选中走 `openOrActivate` session
 - [x] `EditorTabStripView` 已实现 — 支持导航前进/后退、tab 选择/关闭、pin/unpin、close others、open editors 下拉菜单
 - [x] `EditorSession` 保存 cursor/scroll/find/panel 状态，切换 tab 后恢复
-- [x] `EditorSessionTests`（1144 行）、`EditorSessionStoreTests` 已覆盖
+- [x] `EditorSessionTests`（1144 行）、`EditorSessionStoreTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
 - [x] 面板状态已以 `panelState / session.panelState` 为主真相；`EditorState` 上的 hover / references / problems 等 published 字段已退为兼容镜像，内部高频读取优先走 `panelState`
-- [x] 外部文件刷新 / 冲突处理后的 session 感知已有专项测试（`EditorExternalFileConflictTests` 覆盖 reload / keep editor version 后的 dirty 与 session 同步）
+- [x] 外部文件刷新 / 冲突处理后的 session 感知已编写专项测试用例（`EditorExternalFileConflictTests` 覆盖 reload / keep editor version 后的 dirty 与 session 同步；待 test target / test plan 接入后运行验证）
 
 ---
 
@@ -584,7 +584,7 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorWorkbenchState` — 工作台顶层状态管理器，管理 rootGroup 树 + activeGroupID
 - [x] `EditorGroupHostStore` — Group host 状态管理
 - [x] Split editor — `EditorGroup.split(.horizontal/.vertical)` 创建子 group，支持水平/垂直分割
-- [x] Unsplit — `EditorGroup.unsplit()` 合并子 group
+- [ ] Unsplit — `EditorGroup.unsplit()` 已有底层合并实现，但当前 active group 到 unsplit 的工作台链路未打通
 - [x] Session 移动 — `moveSessionToOtherGroup(sessionID:targetGroupID:)`
 - [x] Active group tracking — `EditorWorkbenchState.activeGroupID` + `focusNextGroup()` / `focusPreviousGroup()`
 - [x] 全局 session 查找 — `groupContainingSession(sessionID:)`
@@ -670,8 +670,8 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorCommandPaletteView` — 命令面板 UI，支持搜索、分类过滤、快捷键显示
 - [x] `CommandContext` — 上下文感知的命令启用状态（hasSelection、languageId、isEditorActive、isMultiCursor）
 - [x] `EditorCommandBindings` — 快捷键绑定映射
-- [x] `EditorCommandPaletteTests` 测试已覆盖
-- [x] 键位可配置化 — 用户自定义快捷键映射（已完成；剩余仅为设置 UI 与录制器这类后续交互层）
+- [x] `EditorCommandPaletteTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
+- [ ] 键位可配置化 — 当前仅完成 `EditorKeybindingStore` 底层存储/读取；用户修改入口与全链路生效尚未完成
 - [~] toolbar / context menu 的高频编辑动作已基本统一走 command id（palette、find/replace、LSP actions、context menu、多光标 toolbar toggle 已收口）；剩余主要是配置型 UI（字体/缩进/保存选项）是否需要命令化，不再是编辑动作执行链的缺口
 - [ ] 快捷键设置 UI — 用户查看/搜索/修改命令快捷键的设置界面
 - [ ] 快捷键录制器 — 捕获用户按键输入并转成快捷键绑定的 UI 组件
@@ -730,8 +730,8 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] JumpToDefinitionDelegate — 已使用 `RequestGeneration`
 - [x] EditorState.showReferencesFromCurrentCursor() — 已使用 `referencesRequestGeneration`
 - [x] LSPCoordinator — 已使用 `RequestGeneration`（`fileSessionGeneration` + `requestGeneration`）
-- [x] `RequestGenerationTests` 测试已覆盖
-- [x] `LSPDebouncerTests` 测试已覆盖
+- [x] `RequestGenerationTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
+- [x] `LSPDebouncerTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
 - [x] SemanticTokenHighlightProvider — 实现在 `LSPCoordinator.swift` 内部，已接入 `RequestGeneration` stale rejection，并纳入 `Phase 8` 的 viewport / 长行 runtime gating
 - [x] 文档版本感知 — `EditorSnapshot.version` 现已显式贯穿 `EditorState -> LSPCoordinator -> LSPService -> LanguageServer`，LSP 文档版本不再独立自增
 - [x] viewport/cursor 敏感刷新 — `LSPCoordinator` 现已统一使用 document/cursor/range request context 做 stale rejection，cursor/range 敏感请求不再各自手写 `sessionGen + uri` 校验
@@ -768,9 +768,9 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] Transaction-based replace all — 通过 `applyEditorTransaction(_:reason: "find_replace_all")` 落地
 - [x] per-session 保存查找状态 — `EditorSession.findReplaceState` 为每个 session 独立持有
 - [x] Find/Replace 命令已注册 — find、find-next、find-previous、replace-current、replace-all
-- [x] `EditorFindReplaceControllerTests`、`EditorFindReplaceTransactionBuilderTests` 测试已覆盖
-- [x] preserve case 替换选项 — `EditorFindReplaceTransactionBuilder` 已实现，`EditorFindReplaceTransactionBuilderTests` 已覆盖
-- [x] 与 multi-cursor selection 联动的 in-selection 查找已补专项验证（`EditorFindReplaceControllerTests` 覆盖多选区与 primary selection fallback）
+- [x] `EditorFindReplaceControllerTests`、`EditorFindReplaceTransactionBuilderTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
+- [x] preserve case 替换选项 — `EditorFindReplaceTransactionBuilder` 已实现，并已编写 `EditorFindReplaceTransactionBuilderTests` 用例（待 test target / test plan 接入后运行验证）
+- [x] 与 multi-cursor selection 联动的 in-selection 查找已补专项验证用例（`EditorFindReplaceControllerTests` 覆盖多选区与 primary selection fallback；待 test target / test plan 接入后运行验证）
 
 ---
 
@@ -812,7 +812,7 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] 语法高亮上限 — `maxSyntaxHighlightLines` 按 mode 分级（normal→∞、medium→50K、large→10K、mega→1K）
 - [x] 长行保护 — `isLongLineProtectionEnabled` 在 large/mega 模式启用
 - [x] `ViewportRenderController` 已在 `EditorState` 中实例化
-- [x] `LargeFileModeTests` 测试已覆盖（191 行）
+- [x] `LargeFileModeTests` 已编写对应测试文件（336 行，含 `ViewportRenderControllerTests`；待 test target / test plan 接入后运行验证）
 - [x] `LSPViewportScheduler` — 滚动节流管线（inlay hints/diagnostics/code actions 独立 debounce，500ms/300ms/400ms）
 - [x] Inlay viewport 调度 — `applyViewportObservation` 通过 `LSPViewportScheduler` 触发可见区域请求
 - [x] Document highlight runtime gating — viewport / 长行保护会抑制请求并清理旧高亮
@@ -894,8 +894,8 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] Tab indent / Backtab outdent — `SmartIndentHandler.handleTab` / `handleBacktab`
 - [x] Line editing commands — 全部 11 个行编辑命令通过 `performLineEdit(_:)` 接入 EditorState
 - [x] Bracket match overlay — 括号匹配高亮 UI 渲染完整接入（`applyPrimaryCursorObservation`、`applyCanonicalSelectionSet`、`notifyContentChanged` 均触发 `updateBracketMatch()`）
-- [x] `BracketAndIndentTests`（280 行）、`LineEditingControllerTests`（247 行）、`EditorSaveParticipantControllerTests`、`EditorSavePipelineControllerTests` 测试已覆盖
-- [x] 外部文件修改冲突处理 — 轮询检测外部修改，未保存改动时进入 conflict state，支持 `Reload from Disk` / `Keep Editor Version`，并已有 `EditorExternalFileConflictTests`
+- [x] `BracketAndIndentTests`（280 行）、`LineEditingControllerTests`（247 行）、`EditorSaveParticipantControllerTests`、`EditorSavePipelineControllerTests` 已编写对应测试文件（待 test target / test plan 接入后运行验证）
+- [x] 外部文件修改冲突处理 — 轮询检测外部修改，未保存改动时进入 conflict state，支持 `Reload from Disk` / `Keep Editor Version`，并已编写 `EditorExternalFileConflictTests` 用例（待 test target / test plan 接入后运行验证）
 - [x] BracketAndIndent 与实际 TextView 输入的集成 — `MultiCursorInputInstaller` 已通过 `swizzleInsertText / insertNewline / insertTab / insertBacktab` 接到真实 `TextView` 输入链，单光标、多选区、多光标路径都已进入事务化编辑
 
 ---
