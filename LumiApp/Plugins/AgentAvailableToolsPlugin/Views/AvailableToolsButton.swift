@@ -24,7 +24,7 @@ struct AvailableToolsButton: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Show tools", table: "AgentAvailableToolsHeader"))
+        .help(String(localized: "Show tools", table: "AgentAvailableToolsPlugin"))
         .sheet(isPresented: $isPresented) {
             toolListSheet
         }

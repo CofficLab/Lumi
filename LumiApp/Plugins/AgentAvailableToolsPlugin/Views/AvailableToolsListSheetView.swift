@@ -32,7 +32,7 @@ extension AvailableToolsListSheetView {
 
     private var headerTitle: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(String(localized: "Tools", table: "AgentAvailableToolsHeader"))
+            Text(String(localized: "Tools", table: "AgentAvailableToolsPlugin"))
                 .font(AppUI.Typography.title3)
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
 
@@ -44,19 +44,19 @@ extension AvailableToolsListSheetView {
 
     private var toolsCountText: String {
         String.localizedStringWithFormat(
-            String(localized: "%lld tools available", table: "AgentAvailableToolsHeader", comment: "Count of available tools"),
+            String(localized: "%lld tools available", table: "AgentAvailableToolsPlugin", comment: "Count of available tools"),
             Int64(tools.count)
         )
     }
 
     private var searchField: some View {
-        TextField(String(localized: "Search tools", table: "AgentAvailableToolsHeader"), text: $query)
+        TextField(String(localized: "Search tools", table: "AgentAvailableToolsPlugin"), text: $query)
             .textFieldStyle(.roundedBorder)
             .frame(width: 260)
     }
 
     private var doneButton: some View {
-        Button(String(localized: "Done", table: "AgentAvailableToolsHeader")) {
+        Button(String(localized: "Done", table: "AgentAvailableToolsPlugin")) {
             handleDismiss()
         }
         .keyboardShortcut(.defaultAction)
@@ -75,10 +75,10 @@ extension AvailableToolsListSheetView {
 
     private var emptyStateView: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(String(localized: "No tools found", table: "AgentAvailableToolsHeader"))
+            Text(String(localized: "No tools found", table: "AgentAvailableToolsPlugin"))
                 .font(AppUI.Typography.body)
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
-            Text(String(localized: "Try a different search keyword.", table: "AgentAvailableToolsHeader"))
+            Text(String(localized: "Try a different search keyword.", table: "AgentAvailableToolsPlugin"))
                 .font(AppUI.Typography.caption1)
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
