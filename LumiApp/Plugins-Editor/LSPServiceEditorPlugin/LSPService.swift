@@ -134,10 +134,18 @@ final class LSPService: ObservableObject, SuperLog {
     
     func setProjectRootPath(_ projectPath: String?) {
         projectRootPath = projectPath
+        if Self.verbose {
+            Self.logger.info("\(Self.t)设置项目根目录: \(projectPath ?? "<nil>", privacy: .public)")
+        }
     }
     
     func openDocument(uri: String, languageId: String, text: String, version: Int = 0) async {
         checkAvailability(for: languageId)
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)openDocument: uri=\(uri, privacy: .public), languageId=\(languageId, privacy: .public), version=\(version), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), existingServerLanguage=\(self.activeLanguageId ?? "<nil>", privacy: .public), hasServer=\(self.server != nil)"
+            )
+        }
 
         if server == nil || activeLanguageId != languageId {
             if let root = projectRootPath {
@@ -287,9 +295,29 @@ final class LSPService: ObservableObject, SuperLog {
     
     func requestDefinition(uri: String, line: Int, character: Int) async -> Location? {
         guard let server else { return nil }
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)definition 请求: uri=\(uri, privacy: .public), line=\(line), character=\(character), pendingChanges=\(self.pendingChanges.count), currentURI=\(self.currentURI ?? "<nil>", privacy: .public), currentVersion=\(self.currentVersion), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), serverRoot=\(server.rootPath.path, privacy: .public)"
+            )
+        }
         do {
             let response: DefinitionResponse = try await server.definition(uri: uri, line: line, character: character)
-            return parseDefinitionLocation(response)
+            if Self.verbose {
+                Self.logger.info(
+                    "\(Self.t)definition 原始响应: \(self.describeDefinitionResponse(response), privacy: .public)"
+                )
+            }
+            let parsed = parseDefinitionLocation(response)
+            if Self.verbose {
+                if let parsed {
+                    Self.logger.info(
+                        "\(Self.t)definition 解析结果: uri=\(parsed.uri, privacy: .public), startLine=\(parsed.range.start.line), startCharacter=\(parsed.range.start.character), endLine=\(parsed.range.end.line), endCharacter=\(parsed.range.end.character)"
+                    )
+                } else {
+                    Self.logger.warning("\(Self.t)definition 解析结果为空")
+                }
+            }
+            return parsed
         } catch {
             Self.logger.error("\(Self.t)定义跳转失败: \(error)")
             return nil
@@ -784,6 +812,24 @@ final class LSPService: ObservableObject, SuperLog {
         case .optionC(let links):
             guard let link = links.first else { return nil }
             return Location(uri: link.targetUri, range: link.targetSelectionRange)
+        }
+    }
+
+    private func describeDefinitionResponse(_ response: DefinitionResponse) -> String {
+        guard let response else { return "nil" }
+        switch response {
+        case .optionA(let location):
+            return "singleLocation(uri=\(location.uri), start=\(location.range.start.line):\(location.range.start.character), end=\(location.range.end.line):\(location.range.end.character))"
+        case .optionB(let locations):
+            let preview = locations.prefix(3).map {
+                "\($0.uri)@\($0.range.start.line):\($0.range.start.character)"
+            }.joined(separator: ", ")
+            return "multiLocation(count=\(locations.count), preview=[\(preview)])"
+        case .optionC(let links):
+            let preview = links.prefix(3).map {
+                "\($0.targetUri)@\($0.targetSelectionRange.start.line):\($0.targetSelectionRange.start.character)"
+            }.joined(separator: ", ")
+            return "locationLink(count=\(links.count), preview=[\(preview)])"
         }
     }
 

@@ -1,18 +1,25 @@
-# AgentEditorPlugin Stress Playbook
+# AgentEditorPlugin VS Code 体验验证手册
 
-## Purpose
+## 目的
 
-This playbook defines repeatable manual validation scenarios for the editor kernel after structural changes. It is intentionally command- and scenario-oriented so the team can run the same checks before and after refactors.
+这份手册定义了 `AgentEditorPlugin` 在结构性变更后的可重复验证场景。它不再只服务于“内核是否稳定”，而是同时服务于以下目标：
 
-## Preconditions
+1. 编辑器内核是否稳定
+2. 工作台 UI 与交互是否连续
+3. 扩展贡献点接入后是否保持一致体验
+4. 整体用户体验是否继续朝 VS Code 靠拢
 
-- Use the `Lumi` scheme.
-- Prefer `DISABLE_SWIFTLINT=1` for regression/test runs unless SwiftLint package plugin behavior is explicitly under inspection.
-- Run on macOS with a clean app launch when validating UI-heavy scenarios.
+它刻意采用“命令 + 场景”的形式，方便团队在重构前后执行同一套检查。
 
-## Core Regression Commands
+## 前置条件
 
-### Full regression
+- 使用 `Lumi` scheme。
+- 回归或测试运行时，默认优先使用 `DISABLE_SWIFTLINT=1`，除非本次就是要检查 SwiftLint package plugin 的行为。
+- 验证偏 UI 的场景时，请在 macOS 上以全新启动的 app 进行。
+
+## 核心回归命令
+
+### 全量回归
 
 ```bash
 DISABLE_SWIFTLINT=1 xcodebuild test \
@@ -22,7 +29,7 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
   -parallel-testing-enabled NO
 ```
 
-### Kernel-focused suites
+### 内核聚焦测试组
 
 ```bash
 DISABLE_SWIFTLINT=1 xcodebuild test \
@@ -36,7 +43,7 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
   -only-testing:LumiTests/EditorUndoManagerTests
 ```
 
-### Runtime / large-file / viewport suites
+### 运行时 / 大文件 / viewport 测试组
 
 ```bash
 DISABLE_SWIFTLINT=1 xcodebuild test \
@@ -50,7 +57,7 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
   -only-testing:LumiTests/EditorOverlayControllerTests
 ```
 
-### Input / transaction / multi-cursor suites
+### 输入 / 事务 / 多光标测试组
 
 ```bash
 DISABLE_SWIFTLINT=1 xcodebuild test \
@@ -64,7 +71,7 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
   -only-testing:LumiTests/EditorMultiCursorWorkflowControllerTests
 ```
 
-### Bridge-layer suites
+### Bridge 层测试组
 
 ```bash
 DISABLE_SWIFTLINT=1 xcodebuild test \
@@ -77,76 +84,97 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
   -only-testing:LumiTests/SourceEditorViewBridgeTests
 ```
 
-## Manual Stress Scenarios
+## 人工压力场景
 
-### 1. Large file open latency
+### 1. 大文件打开延迟
 
-- Open a small source file `< 1k lines`.
-- Open a medium source file `10k-30k lines`.
-- Open a large source file `100k+ lines` or a file that triggers truncation / large-file mode.
-- Record:
-  - time to first render
-  - time to editable cursor
-  - whether minimap/folding/highlighting were gated as expected
+- 打开一个小型源码文件 `< 1k 行`。
+- 打开一个中型源码文件 `10k-30k 行`。
+- 打开一个大型源码文件 `100k+ 行`，或能触发截断 / 大文件模式的文件。
+- 记录：
+  - 首次渲染时间
+  - 光标可编辑时间
+  - minimap / folding / highlighting 是否按预期被 gating
 
-### 2. Long-line protection
+### 2. 超长行保护
 
-- Open a file containing at least one very long line.
-- Confirm syntax/highlight gating behavior changes predictably.
-- Scroll across the long line and verify hover/code action/signature overlays do not thrash or stall.
+- 打开一个至少包含一行超长行的文件。
+- 确认 syntax / highlight 的 gating 行为变化符合预期。
+- 在超长行附近滚动，确认 hover / code action / signature overlay 不会频繁抖动或卡住。
 
-### 3. Multi-session / restore
+### 3. 多 session / 恢复
 
-- Open at least 5 editor tabs.
-- Set different selections / scroll positions / find queries in 3 of them.
-- Close and reopen sessions or trigger restore paths.
-- Verify:
+- 至少打开 5 个 editor tab。
+- 在其中 3 个 tab 里设置不同的 selection / scroll position / find query。
+- 关闭并重新打开 session，或主动触发 restore 路径。
+- 验证：
   - selection restore
   - scroll restore
-  - per-session find state
-  - reference/problem panel state isolation
+  - 每个 session 独立的 find state
+  - reference / problem panel 状态隔离
 
-### 4. Multi-split workbench
+### 4. 多 split workbench
 
-- Create 2-way and 3-way splits.
-- Move focus between split leaves.
-- Trigger unsplit from a leaf and from an ancestor-adjacent path.
-- Verify:
-  - active editor correctness
-  - session preservation in surviving leaf
-  - no lost dirty state
+- 创建 2 路和 3 路 split。
+- 在不同 split leaf 之间切换焦点。
+- 分别从 leaf 和靠近 ancestor 的路径触发 unsplit。
+- 验证：
+  - active editor 是否正确
+  - 保留下来的 leaf 中 session 是否仍然完整
+  - dirty state 没有丢失
 
-### 5. Input stress
+### 5. 输入压力
 
-- Hold repeated typing for 10+ seconds in a normal file.
-- Execute multi-cursor add-next / add-all flows on repeated tokens.
-- Execute line move/copy/comment commands in succession.
-- Verify:
-  - no cursor loss
-  - no duplicated edits
-  - undo/redo preserves canonical selections
+- 在普通文件里持续重复输入 `10+ 秒`。
+- 在重复 token 上执行多光标 `add-next / add-all` 流程。
+- 连续执行 line move / copy / comment 命令。
+- 验证：
+  - 不会丢光标
+  - 不会产生重复编辑
+  - undo / redo 能保持 canonical selections
 
-### 6. LSP stability
+### 6. LSP 稳定性
 
-- Trigger hover, definition, references, rename, code action, signature help in quick succession.
-- Move cursor or switch file before slow requests return.
-- Verify stale responses are ignored and overlays/panels reflect only current session context.
+- 快速连续触发 hover、definition、references、rename、code action、signature help。
+- 在慢请求返回前移动光标或切换文件。
+- 验证过期响应会被忽略，overlay / panel 只反映当前 session 的上下文。
 
-## Recording Template
+### 7. 工作台 UI 连续性
 
-For each run, capture:
+- 打开 breadcrumb、outline、open editors、problems、references 等 UI 入口。
+- 在 tab、split、底部 panel、侧边 panel 之间切换焦点。
+- 触发 definition、references、problem 跳转后再返回。
+- 验证：
+  - 焦点转移自然
+  - active editor / active group 不错乱
+  - 面板内容与当前 session 保持一致
 
-- commit or branch
-- macOS version / hardware
-- scenario name
-- observed latency or qualitative result
-- regression present: yes/no
-- notes / screenshots if UI-specific
+### 8. 扩展贡献点一致性
 
-## Escalation Rule
+- 安装或启用至少一组 editor 扩展贡献（如 highlight / code action / command / panel）。
+- 验证其入口是否同时出现在正确的 UI 中，例如 command palette、context menu、overlay、panel 或状态栏。
+- 切换文件、切换语言、切换 split，确认贡献项 enablement 正确变化。
+- 验证：
+  - 不需要写特判 UI 逻辑也能稳定呈现
+  - 扩展贡献在不同 session / group 中不会串态
+  - 扩展禁用或不可用时 UI 能自然退场
 
-If a structural refactor changes bridge, runtime gating, session restore, or transaction flow, run:
+## 记录模板
+
+每次执行请记录：
+
+- commit 或 branch
+- macOS 版本 / 硬件
+- 场景名称
+- 观察到的延迟或定性结果
+- 是否存在回归：yes / no
+- 如果是 UI 特定问题，补充备注 / 截图
+
+## 升级规则
+
+如果结构性重构修改了 bridge、runtime gating、session restore、transaction flow，或明显影响 UI / 扩展贡献链，请执行：
 
 1. bridge-layer suites
 2. kernel-focused suites
-3. at least scenarios 3, 4, and 5 manually
+3. 至少手动执行场景 3、4、5
+4. 如果改动涉及工作台 UI 或扩展入口，再手动执行场景 7、8

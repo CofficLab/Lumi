@@ -1,43 +1,8 @@
-# Editor Kernel Roadmap & Execution Plan
+# AgentEditorPlugin VS Code 体验复刻路线图
 
 ## 目标
 
-不是简单做一个"带很多功能的原生编辑器"，而是用 Swift 把 VS Code 的核心编辑体验尽量复刻出来，并且把重心放在编辑器内核升级上。
-
-这意味着我们优先关注：
-
-1. 文本缓冲与文档模型
-2. 编辑事务与撤销重做
-3. 光标、选区、多光标语义
-4. 标签页、分栏、编辑器会话
-5. 语言服务管线
-6. 性能、大文件、长行与可恢复性
-
-不优先关注：
-
-1. 扩展市场
-2. 远程开发
-3. 调试器生态
-4. VS Code 扩展兼容层
-
-## 核心判断
-
-当前 `AgentEditorPlugin` 已经具备不错的基础：
-
-1. 有 `CodeEditSourceEditor` 作为编辑表面
-2. 有 LSP 相关能力
-3. 有 editor feature plugin / contributor 结构
-4. 有多光标、rename、format、references、hover、completion 等雏形
-
-但目前更接近：
-
-> "以原生文本视图为中心，再逐步挂更多能力"
-
-而不是：
-
-> "以编辑器模型为中心，视图、语言服务、工作台状态都围绕它组织"
-
-如果目标是向 VS Code 看齐，核心不是继续平铺功能，而是调整内核抽象。
+不是只做一个“内核更强的原生编辑器”，而是以 Swift 为基础，把 `AgentEditorPlugin` 逐步推进成一个在用户体验上尽可能接近 VS Code 的完整编辑器工作台。
 
 ## 对齐 VS Code 的设计原则
 
@@ -89,7 +54,19 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 
 覆盖范围：completion、hover、diagnostics、code actions、semantic tokens、inlay hints、references、rename。
 
-### 5. Performance Is Part of the Kernel
+### 5. UX Is Part of the Product, Not Just Decoration
+
+如果目标是接近 VS Code，体验层不能被视为“内核完成后的装饰”，而必须被当成一等能力处理。
+
+重点包括：
+
+1. command palette / quick open 的 discoverability
+2. breadcrumb / outline / minimap / gutter / panel 的连续工作流
+3. hover / code action / diagnostics / references 的统一交互
+4. 设置、快捷键、上下文菜单、状态栏入口的一致性
+5. 插件贡献的 UI 能力是否可被稳定挂接
+
+### 6. Performance Is Part of the Kernel
 
 性能不是后期补丁，而是内核设计的一部分：
 
@@ -101,6 +78,8 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 6. 主线程最小化压力
 
 ## 目标架构
+
+这份架构不再只描述“文本内核”，而是描述“完整编辑器体验栈”。
 
 ### Layer 1: Text Core
 
@@ -165,17 +144,6 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 | `OverlayLayoutSystem` | 统一 overlay 定位与刷新 |
 | `EditorInputRouter` | 输入路由 |
 
-## 当前代码里的核心问题
-
-基于现有实现，当前最需要解决的不是"缺功能"，而是这几个结构性问题：
-
-1. **`EditorState.swift` 过重** — 同时承担文件状态、UI 状态、LSP 状态、面板状态、编辑状态和命令入口，已经接近 monolith。
-2. **`EditorRootView.swift` 仍是单文件驱动** — 编辑器入口基本跟随 `selectedFileURL` 切换，不是 session/workbench 驱动。
-3. **`SourceEditorView.swift` 仍然过于接近"编辑器中心"** — 应该逐步退化为渲染层，而不是继续成为行为聚合中心。
-4. **`EditorCoordinator.swift` 主要在做同步胶水** — 既处理选区、脏状态、LSP 增量同步，也在承担编辑行为副作用。
-5. **多光标实现偏事件劫持** — `MultiCursorCommandsEditorPlugin` 高度依赖原生输入拦截，对后续 IME、撤销、统一事务模型不友好。
-6. **LSP 管线缺少更严格的 request lifecycle** — 目前已有良好基础，但还不够接近 VS Code 那种 request generation、stale response protection、cancellation 驱动的风格。
-
 ## 总体拆分策略
 
 不要一次性重写，而是按"抽内核、保 UI、逐步迁移"的方式推进。
@@ -235,100 +203,12 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 
 在不立刻推翻 UI 的前提下，建立新的核心文本模型。
 
-### 新增模块
+### 任务
 
-在 `AgentEditorPlugin` 下新增 `Kernel/` 目录：
-
-1. `Kernel/EditorBuffer.swift`
-2. `Kernel/EditorSnapshot.swift`
-3. `Kernel/EditorRange.swift`
-4. `Kernel/EditorSelection.swift`
-5. `Kernel/EditorTransaction.swift`
-6. `Kernel/EditorEditResult.swift`
-
-### 核心职责
-
-#### EditorBuffer
-
-负责：持有 canonical text、持有 version、提供快照、应用事务、产出 selection 映射结果。
-
-建议最小 API：
-
-```swift
-init(text: String)
-var text: String
-var version: Int
-func snapshot() -> EditorSnapshot
-func apply(_ transaction: EditorTransaction) -> EditorEditResult
-```
-
-#### EditorTransaction
-
-负责统一表达编辑动作。第一版覆盖：
-
-1. replace ranges
-2. insert text
-3. delete ranges
-4. apply text edits from LSP
-5. replace selections
-
-#### EditorSelection
-
-第一版只需要解决：
-
-1. location/length
-2. primary cursor
-3. 多选区稳定表达
-
-### 现有文件改造映射
-
-#### EditorState.swift
-
-第一阶段不要大拆 UI 状态，但要开始减重：
-
-1. 新增 `buffer: EditorBuffer?`
-2. 保留 `content: NSTextStorage?` 作为桥接输出，不再作为最终真相
-3. 新增统一入口 `applyEditorTransaction(_:)`
-4. 让 format、rename、code action、本地批量编辑、多光标 replacement 改走 transaction
-
-建议新增几个中间方法：
-
-```swift
-loadBuffer(from text: String)
-syncTextStorageFromBuffer()
-applyEditorTransaction(_ transaction: EditorTransaction, reason: String)
-applyTextEdits(_ edits: [TextEdit], source: String)
-```
-
-#### SourceEditorView.swift
-
-第一阶段不改 UI 结构，但要明确角色转变：
-
-1. 只消费 `NSTextStorage` 和 session state
-2. 不直接拥有核心编辑语义
-3. coordinator 输出事件最终由 `EditorState.applyEditorTransaction` 统一处理
-
-#### EditorCoordinator.swift
-
-重点不是删功能，而是收口：
-
-1. `didReplaceContentsIn` 不再直接散落触发多个副作用
-2. 统一改成：收集变更 → 生成 transaction or delta event → 交给 state
-3. 把"内容变化"和"选区变化"的处理职责拆开
-
-### 迁移顺序
-
-1. 先实现 `EditorBuffer`
-2. 再加 `applyEditorTransaction`
-3. 再把 `formatDocumentWithLSP()` 改走 transaction
-4. 再把 `renameSymbolWithLSP()` 改走 transaction
-5. 再把本地多选区 replacement 改走 transaction
-
-### 风险
-
-1. `NSTextStorage` 和 buffer 双写期间可能产生同步错误
-2. selection 映射若不清晰，会让 format/rename 后光标位置不稳定
-3. LSP full replace 和本地 transaction 并存期间，版本管理需要谨慎
+1. 建立 `EditorBuffer / EditorSnapshot / EditorTransaction` 这组文本核心对象
+2. 把编辑真相从 `NSTextStorage` 拉回内核 buffer
+3. 把 format、rename、code action、多光标 replacement 等编辑行为统一到 transaction 入口
+4. 让 `EditorState` 开始通过统一入口驱动文本改动，而不是继续散落落地
 
 ### 验收
 
@@ -369,61 +249,12 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 把最影响编码手感的部分先稳定下来。
 
-### 新增模块
+### 任务
 
-继续在 `Kernel/` 目录新增：
-
-1. `Kernel/EditorSelectionSet.swift`
-2. `Kernel/EditorCursorState.swift`
-3. `Kernel/EditorSelectionMapper.swift`
-
-### 核心思想
-
-把"原生 TextView 的选区"与"内核选区"彻底区分开：
-
-1. 内核选区是 canonical state
-2. 原生选区是渲染/交互镜像
-
-### 现有文件改造映射
-
-#### EditorCoordinator.swift
-
-要减少这些问题：
-
-1. view 先改选区，state 再追
-2. state 回写后又覆盖 view
-3. 多光标状态与 cursorPositions 之间来回同步
-
-建议目标：
-
-1. 把 view selection 变化先变成 `EditorSelectionSet`
-2. state 只接收结构化选区变化
-3. 只有当 canonical selection 变化时，才反推回 TextView
-
-#### MultiCursorCommandsEditorPlugin
-
-建议处理顺序：
-
-1. 保留现有功能，避免回归
-2. 增加 transaction-aware 的多光标编辑入口
-3. 把 `replaceSelection`、`deleteBackward` 等编辑行为逐步迁移到统一 transaction
-4. 降低对 `swizzleInsertText` / `swizzleDeleteBackward` 的结构性依赖
-
-不要求一次删掉 swizzle，但要让 swizzle 逐渐退化为输入路由，而不是编辑引擎本身。
-
-### 迁移顺序
-
-1. 在 state 中新增 canonical selection model
-2. 增加 TextView ↔ SelectionSet 的单向桥接层
-3. 重构多光标 replacement
-4. 重构多光标 delete
-5. 校验 completion、rename、format 后的选区恢复
-
-### 风险
-
-1. 键盘输入路径非常敏感，容易出现退格/输入法/撤销回归
-2. 多光标行为和 CodeEdit 内部 selectionManager 的交互要小心
-3. cursorPosition 与 NSRange 双体系并存时，必须明确谁是源，谁是映射
+1. 建立 `EditorSelectionSet / EditorSelectionMapper / EditorCursorState`
+2. 区分 canonical selection 与原生 TextView selection
+3. 让普通输入与多光标输入共享统一编辑入口
+4. 稳定 completion、format、rename 后的选区恢复
 
 ### 验收
 
@@ -455,73 +286,12 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 把当前"单文件编辑器"升级为"有 editor session 概念的编辑器"。
 
-### 新增模块
+### 任务
 
-新增 `Workbench/` 目录：
-
-1. `Workbench/EditorSession.swift`
-2. `Workbench/EditorTab.swift`
-3. `Workbench/EditorSessionStore.swift`
-4. `Workbench/EditorFindReplaceState.swift`
-5. `Workbench/EditorNavigationHistory.swift`
-
-### 最重要的思想变化
-
-不要再让"选中文件"、"当前视图"、"当前文本内容"这三件事几乎等价。
-
-要变成：
-
-| 概念 | 含义 |
-|------|------|
-| 文件 | document identity |
-| session | 打开中的编辑上下文 |
-| tab | 工作台展示单元 |
-| active session | 当前交互目标 |
-
-### 现有文件改造映射
-
-#### EditorRootView.swift
-
-这是第三阶段主战场。建议分两步做：
-
-第一步：
-
-1. 引入 `EditorSessionStore`
-2. `selectedFileURL` 不再直接等于"当前编辑器内容"
-3. 选中文件时变成"打开或激活对应 session"
-
-第二步：
-
-1. 增加 tab strip
-2. 当前中间编辑区域消费 active session
-3. 状态栏、toolbar、breadcrumb 都改读 active session
-
-#### EditorPanelView.swift
-
-第三阶段可以先不做 split editor，但要提前留出 workbench 容器形态：
-
-1. 保留左树 + 中间编辑区域布局
-2. 中间区域的根节点从单 editor 切到 session container
-3. 给未来的 group/split 预留插槽
-
-#### EditorToolbarView.swift
-
-后续要逐步从"直接操控 state"转向"针对 active session 执行命令"。
-
-### 迁移顺序
-
-1. 新增 `EditorSession`
-2. 新增 `EditorSessionStore`
-3. 在 `EditorRootView` 中接入 session store
-4. 单文件切换改成 open-or-activate session
-5. 引入 tab strip
-6. 保存每个 session 的 cursor/scroll/find 状态
-
-### 风险
-
-1. 现有状态默认假设只有一个 active file
-2. 一些面板状态可能当前是全局的，迁移后需要区分 global 和 session-local
-3. 自动保存、外部文件刷新、LSP 打开文档的生命周期都要重新看
+1. 建立 `EditorSession / EditorTab / EditorSessionStore / EditorNavigationHistory`
+2. 让“打开文件”升级为“打开或激活 session”
+3. 引入 tab strip 和 session-local 状态恢复
+4. 让 cursor、scroll、find、panel 等状态按 session 独立保存
 
 ### 验收
 
@@ -551,27 +321,12 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 开始具备 VS Code 式工作台能力。
 
-### 新增模块
+### 任务
 
-1. `Workbench/EditorGroup.swift` — 编辑器分栏组
-2. `Workbench/EditorWorkbenchState.swift` — 工作台顶层状态
-3. `Workbench/EditorGroupHostStore.swift` — Group host 状态管理
-
-### 核心能力
-
-| 能力 | 说明 |
-|------|------|
-| Group 管理 | `EditorGroup` 管理独立 session 列表和活跃 session |
-| Split editor | `EditorGroup.split(_ direction)` 水平/垂直分割 |
-| Unsplit | `EditorGroup.unsplit()` 合并子 group |
-| Session 移动 | `moveSessionToOtherGroup(sessionID:targetGroupID:)` |
-| Active group tracking | `EditorWorkbenchState.activeGroupID` |
-| 全局 session 查找 | `groupContainingSession(sessionID:)` |
-| 叶子 group 枚举 | `leafGroups()` 递归获取所有编辑器容器 |
-
-### 风险
-
-- split 后的非活跃 group 显示占位，需要多 EditorState 实例支持
+1. 建立 `EditorGroup / EditorWorkbenchState / EditorGroupHostStore`
+2. 支持 split、unsplit、跨 group 移动 session
+3. 让 workbench 命令感知 active group 和 active session
+4. 为多 EditorState 实例化提供稳定容器
 
 ### 验收
 
@@ -603,55 +358,12 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 编辑器行为从 UI 触发转向 command 驱动。
 
-### 新增模块
+### 任务
 
-1. `Kernel/CommandRegistry.swift` — 中央命令注册中心
-2. `Kernel/CommandRouter.swift` — 新旧命令体系双向桥接
-3. `Kernel/CoreCommandRegistrations.swift` — 核心命令注册
-4. `Kernel/EditorCommandPresentationModel.swift` — 命令搜索/分类/排序
-5. `Kernel/EditorCommandCategory.swift` — 命令分类枚举
-6. `Kernel/EditorCommandSection.swift` — 命令分区模型
-
-### 计划注册的命令
-
-| 分类 | 命令 ID | 快捷键 |
-|------|---------|--------|
-| format | `builtin.format-document` | ⌘⇧⌥F |
-| navigation | `builtin.open-editors-panel` | ⌘⇧E |
-| navigation | `builtin.find-references` | ⌘⌥R |
-| navigation | `builtin.rename-symbol` | ⌘⇧R |
-| navigation | `builtin.workspace-symbols` | ⌘⇧O |
-| navigation | `builtin.call-hierarchy` | ⌘⌥H |
-| workbench | `builtin.command-palette` | ⌘⇧P |
-| workbench | `builtin.split-right` | ⌘\\ |
-| workbench | `builtin.split-down` | ⌘⇧\\ |
-| workbench | `builtin.close-split` | ⌘⌥\\ |
-| workbench | `builtin.focus-next-group` | ⌘⌥] |
-| workbench | `builtin.focus-previous-group` | ⌘⌥[ |
-| workbench | `builtin.move-to-next-group` | ⌘⌥⇧] |
-| workbench | `builtin.move-to-previous-group` | ⌘⌥⇧[ |
-| multi-cursor | `builtin.add-next-occurrence` | — |
-| multi-cursor | `builtin.select-all-occurrences` | — |
-| multi-cursor | `builtin.clear-additional-cursors` | — |
-| find | `builtin.find` | ⌘F |
-| find | `builtin.find-next` | ⌘G |
-| find | `builtin.find-previous` | ⌘⇧G |
-| find | `builtin.replace-current` | — |
-| find | `builtin.replace-all` | — |
-| lsp | `builtin.trigger-completion` | — |
-| lsp | `builtin.trigger-parameter-hints` | — |
-| save | `builtin.save` | — |
-| edit | `builtin.delete-line` | ⌘⇧K |
-| edit | `builtin.copy-line-down` | ⌥⇧↓ |
-| edit | `builtin.copy-line-up` | ⌥⇧↑ |
-| edit | `builtin.move-line-down` | ⌥↓ |
-| edit | `builtin.move-line-up` | ⌥↑ |
-| edit | `builtin.insert-line-below` | ⌘↩ |
-| edit | `builtin.insert-line-above` | ⌘⇧↩ |
-| edit | `builtin.sort-lines-ascending` | — |
-| edit | `builtin.sort-lines-descending` | — |
-| edit | `builtin.toggle-line-comment` | ⌘/ |
-| edit | `builtin.transpose` | ⌃T |
+1. 建立 `CommandRegistry / CommandRouter / CoreCommandRegistrations`
+2. 统一 toolbar、menu、context menu、shortcut、command palette 的行为入口
+3. 建立命令搜索、分类、排序和 enablement context
+4. 打通用户可配置快捷键的完整链路
 
 ### 验收
 
@@ -679,13 +391,6 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] 快捷键恢复默认 — 支持单条或全局恢复默认绑定
 - [x] 用户自定义快捷键持久化后的统一反映 — 菜单 / command palette / toolbar / context menu 全部实时反映用户绑定
 
-验收结果（2026-04-29）：
-
-1. 命令执行入口已统一到 `command id -> CommandRegistry -> CommandRouter/CoreCommandRegistrations`，菜单、command palette、toolbar、context menu 与快捷键共用同一命令模型。
-2. 快捷键系统已具备完整用户入口：搜索、录制、冲突检测、单条恢复默认、全局恢复默认，以及生效绑定的全链路反映。
-3. `EditorCommandShortcut` 已补齐 `KeyEquivalent` / `EventModifiers` 映射，覆盖 Return / Tab / 方向键 / Space / Escape / Delete 等特殊键。
-4. 定向回归已通过：`EditorCommandPaletteTests` 与 `EditorShortcutCatalogTests` 均可独立运行并通过。
-
 ---
 
 ## Phase 6: Language Pipelines
@@ -694,22 +399,11 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 
 让语言智能在真实编码压力下依然稳定。
 
-### 新增模块
+### 任务
 
-- `Kernel/LSPRequestPipeline.swift` — 请求代际跟踪 + 取消上下文 + 请求生命周期包装器
-
-### 核心能力
-
-| 能力 | 说明 |
-|------|------|
-| Stale response protection | `RequestGeneration.isCurrent(_)` |
-| Request generation ID | `RequestGeneration.next()` |
-| Cancellation support | `CancellationContext` |
-| Unified lifecycle | `LSPRequestLifecycle.run(operation:apply:)` |
-
-### 计划迁移的 consumer
-
-InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHelpProvider、WorkspaceSymbolProvider、SelectionRangeProvider、DocumentLinkProvider、DocumentColorProvider、CallHierarchyProvider、FoldingRangeProvider、SemanticTokenHighlightProvider、HoverCoordinator、LSPCompletionDelegate、JumpToDefinitionDelegate、EditorState.showReferencesFromCurrentCursor()
+1. 建立统一的 request generation、cancellation、lifecycle 管线
+2. 把 hover、completion、references、rename、semantic tokens、inlay hints 等语言能力接到统一请求模型
+3. 增强 stale response protection 与 viewport / cursor 敏感刷新
 
 ### 验收
 
@@ -787,22 +481,12 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 缩小与 VS Code 的压力表现差距。
 
-### 新增模块
+### 任务
 
-- `Kernel/LargeFileMode.swift` — 大文件模式分类、长行检测器、Viewport 渲染控制器
-
-### 计划能力
-
-| 能力 | 说明 |
-|------|------|
-| 文件大小分级 | normal (<1MB) / medium (1-10MB) / large (10-50MB) / mega (>50MB) |
-| 运行时模式接线 | `EditorState.loadFile` 维护 `largeFileMode` |
-| 功能自动降级 | semantic tokens / inlay hints / folding / minimap 做 runtime gating |
-| Viewport 渲染控制 | `ViewportRenderController` 驱动按需渲染 |
-| 语法高亮上限 | `maxSyntaxHighlightLines` 按 viewport gating |
-| Inlay viewport 调度 | viewport 变化驱动 inlay hint 请求调度 |
-| 长行保护 | `LongLineDetector` 检测超长行并降级 |
-| 截断安全 | 大文件截断预览 |
+1. 建立 `LargeFileMode / LongLineDetector / ViewportRenderController`
+2. 让 runtime gating 覆盖高成本高亮、overlay 与语言特性
+3. 把渲染和请求调度尽量绑定到 viewport，而不是全量文档
+4. 为大文件和超长行提供稳定降级策略
 
 ### 验收
 
@@ -847,12 +531,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] 明确 `CodeEditSourceEditor` 内部文本渲染不可直接裁剪为外部依赖边界，并从核心计划验收项中剥离
 - [x] 决定 `CodeEditSourceEditor` 边界后的后续策略：接受现状继续在 Lumi 自有层优化，或评估 fork 以接入真实 viewport render control
 
-边界结论（2026-04-29）：
-
-1. `CodeEditSourceEditor` 的真正文本渲染与 provider 生命周期仍由依赖包内部掌控，Lumi 只能稳定控制其输入面，而不能从外层精确裁剪内部渲染链。
-2. 因此本路线正式接受一个现实边界：Phase 8 只要求 Lumi 自有层完成 viewport / 大文件 / 长行 runtime gating，不把“完全掌控底层渲染”作为当前验收目标。
-3. 当前策略是不 fork `CodeEditSourceEditor`，继续在 Lumi 层优化；只有当未来需求明确证明外层优化不足时，再重开 fork 决策。
-
 ---
 
 ## Phase 9: Polish
@@ -861,30 +539,12 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 把"可用"提升到"熟悉、顺手、像 VS Code"。
 
-### Save Participants
+### 任务
 
-- `Kernel/EditorSaveParticipantController.swift`
-- `Kernel/EditorSavePipelineController.swift`
-- 保存前自动执行：trim trailing whitespace、insert final newline
-- `format on save` / `organize imports on save` / `fix all on save` 可配置
-- 保存行为持久化配置
-- 外部文件修改冲突处理
-
-### 编辑体验引擎
-
-- `Kernel/BracketAndIndent.swift` — 括号匹配 + 自动闭合 + 自动环绕 + 智能缩进
-- `Kernel/LineEditingController.swift` — 行编辑命令引擎
-
-### 计划接入的编辑体验
-
-| 能力 | 说明 |
-|------|------|
-| Auto-closing pairs | 输入开括号自动补全闭括号 |
-| Auto-surround | 选中文本后输入括号自动环绕 |
-| Smart Enter | 智能缩进换行 |
-| Tab indent / Backtab outdent | 智能缩进/反缩进 |
-| Bracket match overlay | 括号匹配高亮 |
-| Line editing commands | delete/copy/move/insert/sort/comment/transpose 行 |
+1. 建立保存前参与者与保存管线
+2. 补齐 format on save、organize imports、fix all、保存冲突处理
+3. 建立括号、缩进、行编辑这组高频编辑体验引擎
+4. 打磨 auto-closing、auto-surround、smart enter、line edit、bracket match 这组日常体验
 
 ### 验收
 
@@ -949,27 +609,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 ---
 
-## 当前状态
-
-这份 roadmap 的执行清单已经完成，但这不等于“最终目的已经完全实现”。
-
-当前可以确认成立的是：
-
-1. 编辑器已经从“视图中心 + 功能平铺”切换到“模型优先 + 事务优先 + session/workbench 优先”的方向。
-2. 文本事务、选区、多光标、会话、workbench、命令、查找替换、语言请求生命周期与运行时性能 gating 已形成稳定基线。
-3. `xcodebuild test` 已经打通，说明这不再只是设计图，而是可验证实现。
-
-仍未完全达成的部分也很明确：
-
-1. `EditorState.swift` 仍然过重，尚未拆到足够清晰的小核心模块。
-2. `SourceEditorAdapter` / `TextViewBridge` / `EditorInputRouter` 这类桥接边界还没有完全独立成型。
-3. `EditorRootView` 与外部文件选择链路虽然已接入 session/workbench，但仍未完全摆脱“选择文件驱动打开”的入口模式。
-4. `CodeEditSourceEditor` 的底层渲染边界仍然受依赖包限制。
-
-换句话说：**这份路线已经完成了“把旧编辑器拉上正确轨道”的目标，但还没有完成“把编辑器内核彻底收口成长期稳定平台”的终局。**
-
----
-
 ## Phase 12: Kernel Decomposition
 
 ### 目标
@@ -993,26 +632,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 | `EditorCommandController` | 命令刷新与执行入口 | command context、registry refresh、command dispatch |
 | `EditorSaveController` | save pipeline glue | save participants / deferred actions / external write flow |
 
-### 当前职责分区（2026-04-29）
-
-先把 `EditorState` 当前真实承担的职责定清楚，后续拆分都以这份地图为基线：
-
-| 责任域 | 当前主要内容 | 代表字段 / 方法 |
-|------|------|------|
-| document | 文件打开、文本/二进制加载、外部修改监听、LSP 文档 open/close、保存前后内容真相同步 | `currentFileURL`、`content`、`documentController`、`loadFile(from:)`、`loadBinaryFile(from:)`、`resetState()`、`performSave(content:to:)` |
-| session | 当前编辑会话、canonical selections、find/replace、undo/redo、scroll restore、交互快照同步 | `activeSession`、`editorUndoManager`、`applySessionRestore(_:)`、`applyInteractionUpdate(_:)`、`refreshFindMatches()`、`applyEditorTransaction(_:reason:)`、`syncActiveSessionState(...)` |
-| workbench-integration | 与 workbench / host state 的耦合点，主要负责把单个 `EditorState` 的 session 快照向外同步 | `onActiveSessionChanged`、`performOpenItem(_:)`、`performNavigation(_:)`、`applySessionRestore(_:)` |
-| panel | problems / references / hover / workspace symbol / call hierarchy 等面板与浮层状态 | `panelState`、`bindPanelState()`、`performPanelCommand(_:)`、`showReferencesFromCurrentCursor()`、`openCallHierarchy()`、`setReferenceResults(...)` |
-| runtime | large file mode、长行保护、viewport render、runtime gating、overlay availability 与转场清理 | `largeFileMode`、`viewportRenderController`、`lspViewportScheduler`、`applyViewportObservation(...)`、`handleViewportRuntimeTransition()`、`shouldUse*Provider` |
-| command | command palette、命令执行、最近命令、registry refresh、toolbar/context menu/shortcut 统一入口 | `recentCommandIDs`、`performEditorCommand(id:)`、`editorCommandPresentationModel(...)`、`refreshCoreCommandRegistrations()`、`currentCommandContext()` |
-| save-config | editor config 持久化、theme、save pipeline options | `restoreConfig()`、`persistConfig()`、`setTheme(_:)`、`savePipelineOptions` |
-
-拆分原则：
-
-1. 先拆 document / panel / runtime / command / save 这些“强聚合、弱 UI”的块。
-2. `session` 先保留在 `EditorState` 作为组合根，不急着二次拆散，避免同时打断太多调用链。
-3. `workbench` 本身继续留在 `EditorRootView` / `EditorWorkbenchState`，这里只清理 `EditorState` 对它的集成耦合点，不把 workbench 再拉回 `EditorState`。
-
 ### 验收
 
 1. `EditorState.swift` 明显降重，不再承担默认新增能力入口
@@ -1028,40 +647,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] 抽离 `EditorCommandController`
 - [x] 抽离 `EditorSaveController`
 - [x] `EditorState.swift` 行数下降到可接受范围（目标：先压到 `< 2500`）
-
-阶段进展（2026-04-29）：
-
-1. `EditorState` 的职责地图已补齐，并同步写入 `EditorState.swift` 顶部注释，作为后续拆分基线。
-2. `EditorDocumentController` 已从“只管理 buffer/textStorage”升级为同时负责：
-   文档加载判定（文本 / 二进制 / 截断预览）、持久化快照基线、dirty 判定。
-3. `EditorState.loadFile` 与保存链路已改为消费 `EditorDocumentController` 的加载结果和 persisted snapshot，不再自己维护第二套加载/dirty 规则。
-4. `EditorPanelController` 已接管 panel command、diagnostics/reference payload、hover 清理、session restore 与 cursor→diagnostic 选择逻辑；`EditorState` 保留 legacy `@Published` 镜像桥接。
-5. `EditorRuntimeModeController` 已接管 viewport render / scheduler、large-file runtime gating、rendered-range 过滤、inlay hint 延迟刷新与 runtime availability cleanup；本轮按要求暂未做构建验证，留待 roadmap 收尾阶段统一回归。
-6. `EditorCommandController` 已接管 command registry refresh、快捷键配置刷新监听、registry/legacy suggestions 合并、presentation model 构建、命令执行入口与 recent commands 维护；`EditorState` 仅保留 command context 构造与对外 API。
-7. `EditorSaveController` 已接管 save pipeline options 构建、prepare+deferred actions 编排、异步文件写入成功/失败分支与 saved 状态自动清理；`EditorState` 只保留格式化、事务应用与状态落点。
-8. 为继续压低 `EditorState.swift`，外部文件轮询与冲突状态机已进一步抽到 `EditorExternalFileController`；这不是原始显式清单项，但属于 `< 2500` 收口所需的后续细化拆分。
-9. 配置恢复/持久化与主题同步通知已进一步抽到 `EditorConfigController`，把 `EditorState` 从“偏好设置读写入口”继续收缩成组合根。
-10. `find/replace` 的状态编排、匹配结果回写、next/previous 选择与 replace transaction 构建已进一步抽到 `EditorFindController`；`EditorState` 保留视图联动和事务落点。
-11. 多光标的状态变换、搜索会话推进和 replace/operation transaction 构建已开始向 `EditorMultiCursorController` 迁移；目前 `EditorState` 还保留日志、toast 和视图同步落点。
-12. 多光标的辅助胶水也在继续外移：NSRange 转换、cursor position 计算、日志文本拼接与 session 清理已并入 `EditorMultiCursorController`，为后续收紧 `session glue` 做准备。
-13. `restore → interaction resolve → bridge apply → session snapshot sync` 这一整段会话桥接链已抽到 `EditorSessionController`；`EditorState` 继续保留入口方法与状态落点，但不再直接承担 session adapter 角色。
-14. 光标观察、显式导航与 primary cursor reset/update 也已收进 `EditorCursorController`；`EditorState` 不再直接拼装 `EditorInteractionUpdate.cursor(...)`。
-15. undo/history 入口已开始外移到 `EditorUndoController`：state capture、undo/redo availability 与 manager 交互不再散落在 `EditorState` 主体里。
-16. `line edit` 与 `cursor motion` 的命令规划已抽到 `EditorInputCommandController`；`EditorState` 只保留事务提交和 TextView 选区落点，不再维护大段输入命令 switch。
-17. `handleTextInput / newline / tab / backtab` 的自动补全与缩进规划也已抽到 `EditorTextInputController`；`EditorState` 在输入链上进一步退化成“执行输入计划”的入口。
-18. `WorkspaceEdit` 与外部文件 `TextEdit` 路由已抽到 `EditorWorkspaceEditController`；`EditorState` 不再直接遍历 `changes/documentChanges`。
-19. transaction remap、completion transaction 构建与 commit payload 计算已抽到 `EditorTransactionController`；`EditorState` 只保留把 payload 落到 published 状态的职责。
-20. 多光标 search session 与状态迁移 workflow 已抽到 `EditorMultiCursorWorkflowController`；`EditorState` 不再维护大段 add/remove occurrence 编排分支。
-21. `references` 结果整理、文件扩展名→languageId 映射与跳转提示文案已抽到 `EditorLSPActionController`；`EditorState` 不再保留这批 LSP helper。
-22. rename 弹窗流程、状态文案和 workspace edit 路由已进一步收口到 `EditorRenameController` + `EditorWorkspaceEditController` 组合；`EditorState` 不再保留整段 rename 交互样板。
-23. formatting 请求编排、整文替换 payload 计算，以及保存成功/失败状态分支已分别抽到 `EditorFormattingController`、`EditorDocumentReplaceController` 和 `EditorSaveStateController`；`EditorState` 在保存/重载链上继续退化成状态落点。
-24. 外部文件轮询 reload 决策与调用层级打开流程已分别抽到 `EditorExternalFileWorkflowController` 和 `EditorCallHierarchyController`；`EditorState` 不再保留这两段工作流样板。
-25. `saveNow / saveNowIfNeeded / prepareAndSaveNow / performSave` 的主编排入口已抽到 `EditorSaveWorkflowController`；`EditorState` 只保留保存链需要的状态源和回调落点。
-26. status toast 分发与 file watcher 启停接线已分别抽到 `EditorStatusToastController` 和 `EditorFileWatcherController`；`EditorState` 继续缩成组合根和状态桥。
-27. `references / jump / rename / call hierarchy / formatting` 的入口编排已进一步收口到 `EditorLanguageActionFacade`；`EditorState` 只保留这些动作的薄包装方法。
-28. overlay / rendered-* / hover geometry / code-action & signature-help 展示判定已抽到 `EditorOverlayController`；`EditorState` 不再维护这批 UI 几何与展示细节。
-29. `restore/persist/theme/side-panel width` 这组外观配置职责已继续收口到 `EditorAppearanceController`；`EditorState` 对配置外观只保留状态赋值和主题解析。
-30. `EditorState` 里剩余的大段 language/save/file-watch/edit-apply 入口已进一步拆到 `EditorState+LanguageActions.swift`、`EditorState+SaveWorkflow.swift` 和独立 support types；主文件已压到 `< 2500`，`Phase 12` 的显式减重目标收口。
 
 ---
 
@@ -1103,44 +688,25 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] 迁移 `EditorCoordinator` 中剩余事务外副作用到明确归属模块
 - [x] 为 bridge 层补最小可运行测试或验证用例
 
-阶段进展（2026-04-29）：
-
-1. `SourceEditorAdapter` 已落地，接管 `SourceEditorView` 中的 language 解析、`SourceEditorConfiguration` 构建、高亮 provider 列表、coordinator 列表，以及 find-match overlay 输入模型拼装；`SourceEditorView` 不再直接维护这批渲染输入构造细节。
-2. `TextViewBridge` 已落地，接管 `EditorCoordinator` 中的原生 TextView attach/detach、LSP range/position 转换、selection→canonical 同步，以及 interaction context / typed character 提取；`EditorCoordinator` 开始从“桥接实现细节堆栈”退回为事件转发层。
-3. `EditorInputRouter` 已落地，接管 `EditorCoordinator` 中的 text-change / selection-change / native replacement 三类输入事件分发，包括 code action 刷新、plugin interaction 回调、脏状态/LSP/undo 协调；`EditorCoordinator` 继续退化成原生回调转发层。
-4. `SourceEditorViewBridge` 已落地，接管 `SourceEditorView` 中的 coordinator bootstrap、delegate 接线、`SourceEditorState` 安全 binding，以及 line-table 构建；视图层对 `SourceEditor` 的剩余职责已基本收缩到渲染和生命周期触发。
-5. `EditorCoordinator` 内最后残留的 observer 清理、pending native edit 记账和 suppress-reconciliation 状态已继续收口到 `TextViewBridge` / `EditorInputRouter`；`EditorCoordinator` 目前基本只承担原生回调转发与最薄的生命周期入口。
-6. bridge 层最小测试用例已补到 `TextViewBridgeTests`、`SourceEditorAdapterTests`、`SourceEditorViewBridgeTests`；本轮按要求未执行构建或测试，留待 roadmap 收尾时统一回归。
-
 ---
 
 ## Phase 14: Platform Hardening
 
 ### 目标
 
-把“架构方向正确”推进到“长期可演进的平台”，补上持续性能和回归机制。
+把“架构方向正确”推进到“长期可演进的平台”，建立最基本的回归、基线和边界决策机制。
 
 ### 任务
 
 1. 固化性能基线
-2. 固化关键路径回归命令
-3. 建立大文件 / 长行 / 多 split / 多 session 的压力验证
+2. 固化关键路径回归入口
+3. 建立独立的体验验证手册
 4. 形成是否 fork `CodeEditSourceEditor` 的决策门槛
-
-### 关键指标
-
-| 指标 | 说明 |
-|------|------|
-| open latency | 打开小/中/大文件耗时 |
-| edit latency | 连续输入与多光标编辑延迟 |
-| command latency | command palette / find-replace / split 切换响应 |
-| LSP stability | stale response / cancellation / viewport 调度稳定性 |
-| memory profile | 多 session / 多 split / 大文件占用 |
 
 ### 验收
 
-1. 有固定的性能与回归命令，不靠人工印象判断
-2. 大文件、多 split、多 session 场景有稳定验证基线
+1. 有固定的性能与回归入口，不靠人工印象判断
+2. 验证细节已沉淀到独立手册，而不是散落在 roadmap
 3. 是否 fork `CodeEditSourceEditor` 有客观门槛，不再靠感觉讨论
 
 ### 清单
@@ -1150,91 +716,145 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] 增加多 session / 多 split / 大文件压力验证脚本或手册
 - [x] 为 `CodeEditSourceEditor` fork 决策建立触发条件与评估表
 
-### 回归命令
+具体验证命令、压力场景和记录模板，统一见 [EDITOR_STRESS_PLAYBOOK.md](/Users/colorfy/Code/CofficLab/Lumi/docs/plugins/AgentEditorPlugin/EDITOR_STRESS_PLAYBOOK.md:1)。
 
-默认命令：
+---
 
-```bash
-DISABLE_SWIFTLINT=1 xcodebuild test \
-  -project Lumi.xcodeproj \
-  -scheme Lumi \
-  -destination 'platform=macOS' \
-  -parallel-testing-enabled NO
-```
+## Phase 15: Workbench UX Completion
 
-建议在结构改动后至少执行以下分组：
+### 目标
 
-1. session / selection / undo：
+把现有 workbench 从“可用”提升到“接近 VS Code 的连续工作流”。
 
-```bash
-DISABLE_SWIFTLINT=1 xcodebuild test \
-  -project Lumi.xcodeproj \
-  -scheme Lumi \
-  -destination 'platform=macOS' \
-  -parallel-testing-enabled NO \
-  -only-testing:LumiTests/EditorSessionTests \
-  -only-testing:LumiTests/EditorSessionStoreTests \
-  -only-testing:LumiTests/EditorSelectionStabilityTests \
-  -only-testing:LumiTests/EditorUndoManagerTests
-```
+### 任务
 
-2. runtime / viewport / large-file：
+1. 补齐编辑器顶部与导航辅助 UI
+2. 补齐侧边面板与底部面板联动
+3. 统一编辑器状态反馈与上下文信息
+4. 补齐预览态、固定态、历史恢复等工作流细节
 
-```bash
-DISABLE_SWIFTLINT=1 xcodebuild test \
-  -project Lumi.xcodeproj \
-  -scheme Lumi \
-  -destination 'platform=macOS' \
-  -parallel-testing-enabled NO \
-  -only-testing:LumiTests/LargeFileModeTests \
-  -only-testing:LumiTests/LSPViewportSchedulerTests \
-  -only-testing:LumiTests/EditorRuntimeModeControllerTests \
-  -only-testing:LumiTests/EditorOverlayControllerTests
-```
+### 验收
 
-3. input / transaction / multi-cursor：
+1. 用户能在不记命令名的前提下自然完成“打开、定位、切换、恢复、关闭、跳转”
+2. 面板状态切换、焦点切换、split/tab 切换不会丢失上下文
+3. 常见工作流在 UI 层有可见反馈，不依赖日志或隐式行为
 
-```bash
-DISABLE_SWIFTLINT=1 xcodebuild test \
-  -project Lumi.xcodeproj \
-  -scheme Lumi \
-  -destination 'platform=macOS' \
-  -parallel-testing-enabled NO \
-  -only-testing:LumiTests/EditorInputCommandControllerTests \
-  -only-testing:LumiTests/EditorTextInputControllerTests \
-  -only-testing:LumiTests/EditorTransactionControllerTests \
-  -only-testing:LumiTests/EditorMultiCursorWorkflowControllerTests
-```
+### 清单
 
-4. bridge-layer：
+- [ ] breadcrumb 导航（文件路径 / 符号路径 / 快速跳转）
+- [ ] outline 视图接入当前 session / active editor
+- [ ] minimap 策略与大文件 gating 后的可见行为统一
+- [ ] open editors 面板增强（dirty / pinned / active / group 归属更清晰）
+- [ ] references / problems / call hierarchy / workspace symbols 底部面板统一化
+- [ ] editor title 区支持 preview / pinned / dirty / language / readonly 状态展示
+- [ ] 最近关闭 editor 恢复（reopen closed editor）
+- [ ] tab / split 拖拽移动与跨 group 重排
+- [ ] 跳转历史 UI 反馈（返回 / 前进的可见提示）
+- [ ] workbench 相关 smoke tests 与人工验证场景补齐
 
-```bash
-DISABLE_SWIFTLINT=1 xcodebuild test \
-  -project Lumi.xcodeproj \
-  -scheme Lumi \
-  -destination 'platform=macOS' \
-  -parallel-testing-enabled NO \
-  -only-testing:LumiTests/TextViewBridgeTests \
-  -only-testing:LumiTests/SourceEditorAdapterTests \
-  -only-testing:LumiTests/SourceEditorViewBridgeTests
-```
+---
 
-### 性能基线
+## Phase 16: Editor Surface & Interaction Polish
 
-先采用“可人工记录、可重复比较”的基线，而不是现在就引入新的 benchmark 基础设施。
+### 目标
 
-| 指标 | 场景 | 当前记录方式 |
-|------|------|------|
-| open latency | 小 / 中 / 大文件首次打开 | 手动计时并记录到发布前验证表 |
-| edit latency | 连续输入、多光标批量编辑 | 手动观察输入跟手性，必要时录屏 |
-| command latency | command palette、find/replace、split 切换 | 手动计时或录屏对比 |
-| LSP stability | hover / references / rename / code action 快速切换 | 记录 stale response、错位 overlay、误更新 |
+把编辑表面的视觉反馈和高频交互打磨到更接近 VS Code。
 
-在引入自动 benchmark 之前，所有性能变更至少要附带一轮同场景前后对比记录。
+### 任务
 
-### 压力验证
+1. 打磨光标、选区、匹配、hover、诊断、code action 等表面反馈
+2. 补齐更完整的 gutter / decoration / inline UI
+3. 强化查找替换、多光标、括号与缩进的可见交互反馈
 
-压力验证手册已单独整理到 [EDITOR_STRESS_PLAYBOOK.md](/Users/colorfy/Code/CofficLab/Lumi/docs/plugins/AgentEditorPlugin/EDITOR_STRESS_PLAYBOOK.md:1)。
+### 验收
+
+1. 高频编辑行为有稳定且即时的视觉反馈
+2. gutter / overlay / inline UI 不再像独立功能拼接，而是统一体验
+3. 大文件与 viewport gating 下，反馈会降级但不突兀
+
+### 清单
+
+- [ ] gutter decoration contract（diagnostic / git-like / symbol / custom marker）
+- [ ] 当前行、高亮匹配、括号高亮、selection highlight 视觉统一
+- [ ] hover 卡片视觉与定位策略统一
+- [ ] code action lightbulb / quick fix 入口进一步贴近 VS Code 交互
+- [ ] inline message / inline value / inline diff 预留 UI contract
+- [ ] find match / current match / replace preview 视觉增强
+- [ ] multi-cursor 可见性增强（primary / secondary cursor differentiation）
+- [ ] folding affordance、fold region summary、展开收起动画优化
+- [ ] editor context menu 统一走 command / context contribution 链
+- [ ] interaction polish 的 screenshot baseline 或 UI 检查清单
+
+---
+
+## Phase 17: Extension Surface & Contribution Points
+
+### 目标
+
+把现有 contributor 体系从“够用”提升到“可扩展、可组合、可被长期维护”的 editor 扩展接口。
+
+### 任务
+
+1. 明确 editor extension API 边界
+2. 补齐缺少的 contribution points
+3. 让 UI 与插件贡献点真正接上
+4. 提供最小样例插件，验证 contract 不是纸面设计
+
+### 验收
+
+1. 插件可以稳定贡献 command、highlight、code action、hover、panel、decoration 等能力
+2. editor 不需要为每个新插件写特判接线
+3. 至少有 2-3 个样例插件走同一套 contract 成功接入
+
+### 清单
+
+- [ ] 定义 `EditorDecorationContributor`
+- [ ] 定义 `EditorHoverContentContributor`
+- [ ] 定义 `EditorContextMenuContributor`
+- [ ] 定义 `EditorPanelContributor`（problems / references / custom tool panel）
+- [ ] 定义 `EditorStatusItemContributor`（状态栏 / toolbar / title actions）
+- [ ] 定义 `EditorQuickOpenContributor`（符号 / 文件 / 命令统一入口）
+- [ ] 扩展 `EditorExtensionRegistry` 支持上述 contribution points
+- [ ] 为贡献点增加优先级、去重、冲突处理与 enablement context
+- [ ] 提供至少一个 decoration 样例插件
+- [ ] 提供至少一个 hover / panel 样例插件
+- [ ] 提供一组 extension contract tests
+
+---
+
+## Phase 18: Settings, Discoverability, and VS Code Parity Gaps
+
+### 目标
+
+把“有能力”变成“用户找得到、配得动、用得顺”，并补齐仍明显落后于 VS Code 的体验缺口。
+
+### 任务
+
+1. 统一 editor 设置入口
+2. 提升 discoverability
+3. 补齐最影响体感的 parity gap
+4. 建立 UI/扩展层的最小回归基线
+
+### 验收
+
+1. 用户不需要读文档，也能找到主要 editor 能力与设置入口
+2. 新扩展接入后，其命令、菜单、状态项、设置能自动被发现
+3. 核心 UI/扩展体验有固定回归手册，不靠人工记忆
+
+### 清单
+
+- [ ] editor 专属设置页（字体、tab size、wrap、minimap、folding、line numbers、render whitespace）
+- [ ] settings search 与 command palette / quick open 联动
+- [ ] command palette 支持最近命令、常用命令、分类记忆
+- [ ] 欢迎或空状态页补 editor 功能 discoverability
+- [ ] 保存冲突、外部修改、格式化失败、LSP 不可用等状态提示文案统一
+- [ ] 语言特定设置覆盖策略（global / workspace / language override）
+- [ ] 插件贡献设置项的统一注册与展示
+- [ ] “用例驱动”的 UI 回归手册（打开文件、查找、rename、split、quick fix、restore）
+- [ ] UI / 扩展层 smoke tests 命令清单写回文档
+- [ ] 梳理与 VS Code 仍有明显差距的前 10 项体验缺口，并按优先级排序
+
+UI / 扩展层的具体验证命令、压力场景和记录模板，统一见 [EDITOR_STRESS_PLAYBOOK.md](/Users/colorfy/Code/CofficLab/Lumi/docs/plugins/AgentEditorPlugin/EDITOR_STRESS_PLAYBOOK.md:1)。
 
 最低执行要求：
 
@@ -1243,37 +863,3 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
 3. 2-way / 3-way split 切换与 unsplit
 4. 多光标高频编辑
 5. LSP 快速切换下的 stale rejection
-
-### `CodeEditSourceEditor` Fork 决策表
-
-| 触发条件 | 说明 | 结论 |
-|------|------|------|
-| 桥接层重复补丁持续增长 | 同一类问题反复需要在 adapter/bridge/coordinator 旁路修补 | 提升 fork 优先级 |
-| 关键输入/选区 bug 无法在 Lumi 层稳定规避 | 例如多光标丢失、selection 映射不稳定、IME 兼容缺口 | 进入 fork 评估 |
-| runtime / viewport 性能瓶颈明确卡在上游内部实现 | Lumi 内核已完成 gating，但上游渲染/布局仍主导卡顿 | 进入 fork 评估 |
-| overlay / coordinate / layout 能力受上游 API 边界阻塞 | 需要更深的坐标或布局控制而 adapter 无法获取 | 进入 fork 评估 |
-| 上游升级频率低，且问题修复窗口不可接受 | 影响主线迭代节奏 | 进入 fork 评估 |
-
-fork 前必须回答：
-
-1. 这个问题是否已经证明无法在 `SourceEditorAdapter` / `TextViewBridge` / `EditorInputRouter` 层解决？
-2. fork 后我们是否有足够测试面覆盖输入、选区、viewport、overlay、LSP 关键路径？
-3. 维护成本是否低于继续在上游边界外反复补丁？
-
-阶段进展（2026-04-29）：
-
-1. `Phase 14` 先以文档化基线收口：固定 `xcodebuild test` 回归命令分组、定义四类性能基线记录方式。
-2. 多 session / 多 split / 大文件 / 长行 / 多光标 / LSP stale rejection 的压力验证步骤已整理到独立手册 [EDITOR_STRESS_PLAYBOOK.md](/Users/colorfy/Code/CofficLab/Lumi/docs/plugins/AgentEditorPlugin/EDITOR_STRESS_PLAYBOOK.md:1)。
-3. `CodeEditSourceEditor` 是否 fork 的讨论已从“感觉”改成“触发条件 + 进入评估前提”的门槛表。
-
----
-
-## 终局判断
-
-只有当以下条件同时成立时，才认为这条路线真正完成：
-
-1. 文本、事务、选区、session、workbench、命令、语言管线都以内核模型为第一真相
-2. `EditorState` 不再是单点 monolith，而只是组合根
-3. `SourceEditorView` / `EditorCoordinator` / 原生 TextView 只承担桥接与渲染职责
-4. 大文件、长行、viewport、异步语言请求都有稳定的可验证回归基线
-5. 新功能接入时，工程师默认先扩内核模块，而不是继续把逻辑堆回视图层或 `EditorState`

@@ -1150,6 +1150,9 @@ final class EditorState: ObservableObject, SuperLog {
                         let languageId = self.detectedLanguage?.id.rawValue ?? self.lspActionController.languageID(for: self.fileExtension)
                         if let languageId {
                             let rootPath = self.projectRootPath ?? loadingURL.deletingLastPathComponent().path
+                            EditorPlugin.logger.info(
+                                "\(Self.t)LSP openFile 准备: file=\(loadingURL.path, privacy: .public), languageId=\(languageId, privacy: .public), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), chosenRoot=\(rootPath, privacy: .public)"
+                            )
                             self.lspCoordinator.setProjectRootPath(rootPath)
                             let documentVersion = self.currentDocumentVersion
                             Task {

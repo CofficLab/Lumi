@@ -299,11 +299,19 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         cursorRange: NSRange,
         content: String
     ) async -> JumpToDefinitionLink? {
-        guard let lspClient else { return nil }
-
-        guard let lspPosition = Self.lspPosition(utf16Offset: cursorRange.location, in: content) else {
+        guard let lspClient else {
+            EditorPlugin.logger.warning("\(self.t)LSP 跳转取消: lspClient 不存在, kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public)")
             return nil
         }
+
+        guard let lspPosition = Self.lspPosition(utf16Offset: cursorRange.location, in: content) else {
+            EditorPlugin.logger.warning("\(self.t)LSP 跳转取消: 无法换算 LSP 位置, kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), range=\(cursorRange.location)-\(cursorRange.length)")
+            return nil
+        }
+        let currentURI = currentFileURLProvider?()?.absoluteString
+        EditorPlugin.logger.info(
+            "\(self.t)LSP 跳转请求: kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), currentURI=\(currentURI ?? "<nil>", privacy: .public), utf16Offset=\(cursorRange.location), lspLine=\(lspPosition.line), lspCharacter=\(lspPosition.character)"
+        )
 
         let location: Location?
         switch kind {
@@ -329,9 +337,16 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             )
         }
 
-        guard let location else { return nil }
+        guard let location else {
+            EditorPlugin.logger.warning(
+                "\(self.t)LSP 跳转无结果: kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), currentURI=\(currentURI ?? "<nil>", privacy: .public), lspLine=\(lspPosition.line), lspCharacter=\(lspPosition.character)"
+            )
+            return nil
+        }
+        EditorPlugin.logger.info(
+            "\(self.t)LSP 跳转命中: kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), targetURI=\(location.uri, privacy: .public), start=\(location.range.start.line):\(location.range.start.character), end=\(location.range.end.line):\(location.range.end.character)"
+        )
 
-        let currentURI = currentFileURLProvider?()?.absoluteString
         let isSameFile = currentURI == location.uri
 
         if isSameFile,

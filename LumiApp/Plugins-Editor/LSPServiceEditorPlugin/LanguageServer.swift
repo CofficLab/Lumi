@@ -47,7 +47,9 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         workspacePath: String
     ) async throws -> LanguageServer {
         if LSPService.verbose {
-            LSPService.logger.info("\(Self.t)正在创建 \(languageId) 服务器")
+            LSPService.logger.info(
+                "\(Self.t)正在创建 \(languageId) 服务器: exec=\(config.execPath, privacy: .public), args=\(config.arguments.joined(separator: " "), privacy: .public), workspacePath=\(workspacePath, privacy: .public)"
+            )
         }
         
         let execParams = Process.ExecutionParameters(
@@ -72,7 +74,9 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         let initResult = try await initServer.initializeIfNeeded()
         
         if LSPService.verbose {
-            LSPService.logger.info("\(Self.t)服务器已初始化，PID: \(process.processIdentifier)")
+            LSPService.logger.info(
+                "\(Self.t)服务器已初始化，PID: \(process.processIdentifier), rootUri=file://\(workspacePath, privacy: .public), workspaceFolders=nil, definitionProvider=\(String(describing: initResult.capabilities.definitionProvider), privacy: .public)"
+            )
         }
         
         let languageServer = LanguageServer(
