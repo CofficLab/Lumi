@@ -916,9 +916,9 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 ### 清单
 
-- [ ] 新增 `EditorHighlightProviderContributor`
-- [ ] `EditorExtensionRegistry` 支持按语言查询 highlight provider
-- [ ] `SourceEditorView` / 状态层接入插件高亮 provider 链
+- [x] 新增 `EditorHighlightProviderContributor`
+- [x] `EditorExtensionRegistry` 支持按语言查询 highlight provider
+- [x] `SourceEditorView` / 状态层接入插件高亮 provider 链
 - [ ] 创建 `MarkdownEditorPlugin`
 - [ ] Markdown 高亮的 viewport 限流、大文件降级、增量更新验证
 

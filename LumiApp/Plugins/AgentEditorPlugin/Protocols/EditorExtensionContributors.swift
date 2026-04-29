@@ -83,6 +83,19 @@ protocol EditorCodeActionContributor: AnyObject {
     func provideCodeActions(context: EditorCodeActionContext) async -> [EditorCodeActionSuggestion]
 }
 
+// MARK: - Highlight Provider
+
+/// 编辑器高亮 provider 扩展点
+///
+/// 允许插件按语言注入 `CodeEditSourceEditor` 的高亮 provider，
+/// 例如 Markdown、特殊 DSL、额外语义层等。
+@MainActor
+protocol EditorHighlightProviderContributor: AnyObject {
+    var id: String { get }
+    func supports(languageId: String) -> Bool
+    func provideHighlightProviders(languageId: String) -> [any HighlightProviding]
+}
+
 // MARK: - Command
 
 /// 编辑器命令上下文

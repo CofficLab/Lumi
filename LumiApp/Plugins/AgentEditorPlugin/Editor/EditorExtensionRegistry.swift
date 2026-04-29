@@ -17,6 +17,7 @@ final class EditorExtensionRegistry: ObservableObject {
     private var completionContributors: [any EditorCompletionContributor] = []
     private var hoverContributors: [any EditorHoverContributor] = []
     private var codeActionContributors: [any EditorCodeActionContributor] = []
+    private var highlightProviderContributors: [any EditorHighlightProviderContributor] = []
     private var commandContributors: [any EditorCommandContributor] = []
     private var interactionContributors: [any EditorInteractionContributor] = []
     private var sidePanelContributors: [any EditorSidePanelContributor] = []
@@ -28,6 +29,7 @@ final class EditorExtensionRegistry: ObservableObject {
         completionContributors.removeAll()
         hoverContributors.removeAll()
         codeActionContributors.removeAll()
+        highlightProviderContributors.removeAll()
         commandContributors.removeAll()
         interactionContributors.removeAll()
         sidePanelContributors.removeAll()
@@ -55,6 +57,13 @@ final class EditorExtensionRegistry: ObservableObject {
             return
         }
         codeActionContributors.append(contributor)
+    }
+
+    func registerHighlightProviderContributor(_ contributor: any EditorHighlightProviderContributor) {
+        if highlightProviderContributors.contains(where: { $0.id == contributor.id }) {
+            return
+        }
+        highlightProviderContributors.append(contributor)
     }
 
     func registerCommandContributor(_ contributor: any EditorCommandContributor) {
@@ -202,6 +211,24 @@ final class EditorExtensionRegistry: ObservableObject {
             }
         }
         return deduplicateToolbarItems(merged)
+    }
+
+    func highlightProviders(for languageId: String) -> [any HighlightProviding] {
+        guard !highlightProviderContributors.isEmpty else { return [] }
+
+        var merged: [any HighlightProviding] = []
+        var seenProviderIDs: Set<ObjectIdentifier> = []
+
+        for contributor in highlightProviderContributors where contributor.supports(languageId: languageId) {
+            for provider in contributor.provideHighlightProviders(languageId: languageId) {
+                let providerID = ObjectIdentifier(provider)
+                if seenProviderIDs.insert(providerID).inserted {
+                    merged.append(provider)
+                }
+            }
+        }
+
+        return merged
     }
 
     func runInteractionTextDidChange(

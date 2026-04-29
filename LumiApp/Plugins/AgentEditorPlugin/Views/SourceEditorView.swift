@@ -364,6 +364,8 @@ struct SourceEditorView: View, SuperLog {
 
     private var activeHighlightProviders: [any HighlightProviding] {
         var providers: [any HighlightProviding] = []
+        let languageID = state.detectedLanguage?.tsName ?? "swift"
+
         if state.shouldUseTreeSitterHighlightProvider {
             providers.append(treeSitterClient)
         }
@@ -373,6 +375,7 @@ struct SourceEditorView: View, SuperLog {
         if state.shouldUseDocumentHighlightProvider, let documentHighlightProvider {
             providers.append(documentHighlightProvider)
         }
+        providers.append(contentsOf: state.editorExtensions.highlightProviders(for: languageID))
         return providers
     }
     
