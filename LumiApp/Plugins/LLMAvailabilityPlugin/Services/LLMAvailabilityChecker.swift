@@ -1,11 +1,11 @@
 import Foundation
 import MagicKit
+import os
 
 /// LLM 可用性检测服务
 /// 通过向每个供应商的每个模型发送轻量 ping 请求来检测其可用性
-final class LLMAvailabilityChecker: @unchecked Sendable, SuperLog {
-    nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = false
+final class LLMAvailabilityChecker {
+    static let verbose: Bool = true
 
     private let llmService: LLMService
     private let store = LLMAvailabilityStore.shared
@@ -16,24 +16,27 @@ final class LLMAvailabilityChecker: @unchecked Sendable, SuperLog {
 
     /// 检测所有供应商+模型的可用性
     func checkAll() async {
-        await MainActor.run {
-            store.isCheckingAll = true
+        if Self.verbose {
+            let providersInfo = llmService.allProviders()
+            let totalModels = providersInfo.reduce(0) { $0 + $1.availableModels.count }
+            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)🚀 开始可用性检测：\(providersInfo.count) 个供应商，\(totalModels) 个模型")
         }
+
+        store.setCheckingAll(true)
 
         let providersInfo = llmService.allProviders()
 
-        // 逐个供应商检测（避免过多并发）
         for providerInfo in providersInfo {
             await checkProvider(providerInfo)
         }
 
-        await MainActor.run {
-            store.isCheckingAll = false
-        }
+        store.setCheckingAll(false)
 
-        let count = store.availablePairs.count
+        let availableCount = store.availablePairs.count
+        let totalModelCount = store.providers.reduce(0) { $0 + $1.models.count }
+
         if Self.verbose {
-            AppLogger.core.info("\(Self.t)✅ 可用性检测完成，共 \(count) 个模型可用")
+            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 可用性检测完成：\(availableCount) / \(totalModelCount) 个模型可用")
         }
     }
 
@@ -41,10 +44,17 @@ final class LLMAvailabilityChecker: @unchecked Sendable, SuperLog {
     private func checkProvider(_ info: LLMProviderInfo) async {
         let providerId = info.id
 
+        if Self.verbose {
+            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)📦 检测供应商: \(info.displayName) (\(providerId))，\(info.availableModels.count) 个模型")
+        }
+
         // 获取该供应商的 API Key
         guard let providerType = llmService.providerType(forId: providerId) else {
+            if Self.verbose {
+                LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ 供应商类型未找到: \(providerId)，跳过")
+            }
             for modelId in info.availableModels {
-                await updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("供应商类型未找到"))
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("供应商类型未找到"))
             }
             return
         }
@@ -53,8 +63,11 @@ final class LLMAvailabilityChecker: @unchecked Sendable, SuperLog {
 
         // 如果没有 API Key 且不是本地供应商，标记所有模型为不可用
         if apiKey.isEmpty && !info.isLocal {
+            if Self.verbose {
+                LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)⚠️ \(info.displayName) 未配置 API Key，跳过所有模型")
+            }
             for modelId in info.availableModels {
-                await updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("未配置 API Key"))
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("未配置 API Key"))
             }
             return
         }
@@ -63,11 +76,16 @@ final class LLMAvailabilityChecker: @unchecked Sendable, SuperLog {
         for modelId in info.availableModels {
             await checkModel(providerId: providerId, modelId: modelId, apiKey: apiKey)
         }
+
+        let availableCount = store.providers.first(where: { $0.providerId == providerId })?.availableModels.count ?? 0
+        if Self.verbose {
+            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ \(info.displayName) 检测完成：\(availableCount) / \(info.availableModels.count) 个模型可用")
+        }
     }
 
     /// 检测单个模型的可用性
     private func checkModel(providerId: String, modelId: String, apiKey: String) async {
-        await updateStatus(providerId: providerId, modelId: modelId, status: .checking)
+        store.updateStatus(providerId: providerId, modelId: modelId, status: .checking)
 
         let config = LLMConfig(
             apiKey: apiKey,
@@ -81,57 +99,33 @@ final class LLMAvailabilityChecker: @unchecked Sendable, SuperLog {
         ]
 
         do {
-            // 使用带超时的非流式请求进行连通性检测
-            try await withTimeout(seconds: 10) {
-                _ = try await self.llmService.sendMessage(messages: testMessages, config: config)
-            }
+            // 直接调用 sendMessage 进行连通性检测
+            // URLSession 已配置 300s 超时，对于 ping 场景已足够
+            _ = try await llmService.sendMessage(messages: testMessages, config: config)
+
             // 请求成功 → 模型可用
-            await updateStatus(providerId: providerId, modelId: modelId, status: .available)
-        } catch is TimeoutError {
-            await updateStatus(providerId: providerId, modelId: modelId, status: .unavailable("请求超时"))
+            if Self.verbose {
+                LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用: \(providerId) / \(modelId)")
+            }
         } catch let error as LLMServiceError {
             switch error {
             case .cancelled:
                 // 取消意味着请求已开始执行 → 视为可用
-                await updateStatus(providerId: providerId, modelId: modelId, status: .available)
+                if Self.verbose {
+                    LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 模型可用（请求被取消）: \(providerId) / \(modelId)")
+                }
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .available)
             default:
-                await updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(error.errorDescription ?? error.localizedDescription))
+                if Self.verbose {
+                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 模型不可用: \(providerId) / \(modelId) - \(error.errorDescription ?? error.localizedDescription)")
+                }
+                store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(error.errorDescription ?? error.localizedDescription))
             }
         } catch {
-            await updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(error.localizedDescription))
+            if Self.verbose {
+                LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 检测异常: \(providerId) / \(modelId) - \(error.localizedDescription)")
+            }
+            store.updateStatus(providerId: providerId, modelId: modelId, status: .unavailable(error.localizedDescription))
         }
-    }
-
-    @MainActor
-    private func updateStatus(providerId: String, modelId: String, status: LLMAvailabilityStatus) {
-        store.updateStatus(providerId: providerId, modelId: modelId, status: status)
-    }
-}
-
-// MARK: - Timeout Helper
-
-/// 超时错误
-struct TimeoutError: Error, LocalizedError {
-    let seconds: Double
-    var errorDescription: String? {
-        "操作超时（\(seconds) 秒）"
-    }
-}
-
-/// 带超时的异步操作
-func withTimeout<T>(seconds: Double, operation: @escaping () async throws -> T) async throws -> T {
-    try await withThrowingTaskGroup(of: T.self) { group in
-        group.addTask {
-            try await operation()
-        }
-
-        group.addTask {
-            try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-            throw TimeoutError(seconds: seconds)
-        }
-
-        let result = try await group.next()!
-        group.cancelAll()
-        return result
     }
 }

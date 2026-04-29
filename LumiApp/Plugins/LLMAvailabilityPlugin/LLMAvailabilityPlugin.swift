@@ -12,7 +12,7 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-availability")
 
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "LLMAvailability"
     static let displayName = String(localized: "LLM Availability", table: "LLMAvailability")
     static let description = String(localized: "Detect available LLM providers and models via health checks", table: "LLMAvailability")

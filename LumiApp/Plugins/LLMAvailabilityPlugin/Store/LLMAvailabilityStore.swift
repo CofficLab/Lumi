@@ -1,6 +1,6 @@
 import Foundation
+import os
 import MagicKit
-import SwiftUI
 
 /// 供应商+模型可用性状态
 enum LLMAvailabilityStatus: Equatable, Sendable {
@@ -46,39 +46,31 @@ struct LLMProviderAvailability: Identifiable, Equatable, Sendable {
     }
 }
 
+/// LLM 可用性日志辅助（非 MainActor 隔离，供 Store / Checker 使用）
+enum LLMAvailabilityLog: SuperLog {
+    nonisolated static let emoji = "🔍"
+    nonisolated static let verbose: Bool = true
+}
+
 /// LLM 可用性存储
 /// 维护当前实际可用的供应商+模型列表
-@MainActor
-final class LLMAvailabilityStore: ObservableObject {
+final class LLMAvailabilityStore: @unchecked Sendable {
     static let shared = LLMAvailabilityStore()
 
-    @Published var providers: [LLMProviderAvailability] = []
-    @Published var isCheckingAll: Bool = false
+    private let lock = NSRecursiveLock()
+    private var _providers: [LLMProviderAvailability] = []
+    private var _isCheckingAll: Bool = false
 
-    /// 获取所有可用的供应商+模型对
-    var availablePairs: [(providerId: String, modelId: String)] {
-        providers.flatMap { provider in
-            provider.availableModels.map { modelId in
-                (providerId: provider.providerId, modelId: modelId)
-            }
-        }
-    }
-
-    /// 检查指定供应商+模型对是否可用
-    func isAvailable(providerId: String, modelId: String) -> Bool {
-        guard let provider = providers.first(where: { $0.providerId == providerId }) else {
-            return false
-        }
-        guard let model = provider.models.first(where: { $0.modelId == modelId }) else {
-            return false
-        }
-        return model.status == .available
+    var isCheckingAll: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return _isCheckingAll
     }
 
     /// 初始化可用性列表（从 LLMVM 获取所有供应商+模型）
+    @MainActor
     func initialize(from llmVM: LLMVM) {
         let providersInfo = llmVM.allProviders
-        self.providers = providersInfo.map { info in
+        let providers = providersInfo.map { info in
             LLMProviderAvailability(
                 providerId: info.id,
                 displayName: info.displayName,
@@ -87,21 +79,93 @@ final class LLMAvailabilityStore: ObservableObject {
                 }
             )
         }
+
+        lock.lock()
+        _providers = providers
+        lock.unlock()
+
+        if LLMAvailabilityLog.verbose {
+            let totalModels = providers.reduce(0) { $0 + $1.models.count }
+            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)📋 已初始化 \(providers.count) 个供应商，共 \(totalModels) 个模型")
+        }
+    }
+
+    /// 获取所有可用的供应商+模型对
+    var availablePairs: [(providerId: String, modelId: String)] {
+        lock.lock(); defer { lock.unlock() }
+        return _providers.flatMap { provider in
+            provider.availableModels.map { modelId in
+                (providerId: provider.providerId, modelId: modelId)
+            }
+        }
+    }
+
+    /// 获取供应商快照（只读）
+    var providers: [LLMProviderAvailability] {
+        lock.lock(); defer { lock.unlock() }
+        return _providers
+    }
+
+    /// 检查指定供应商+模型对是否可用
+    func isAvailable(providerId: String, modelId: String) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        guard let provider = _providers.first(where: { $0.providerId == providerId }) else { return false }
+        guard let model = provider.models.first(where: { $0.modelId == modelId }) else { return false }
+        return model.status == .available
     }
 
     /// 更新指定模型的可用性状态
     func updateStatus(providerId: String, modelId: String, status: LLMAvailabilityStatus) {
-        guard let providerIndex = providers.firstIndex(where: { $0.providerId == providerId }) else { return }
-        guard let modelIndex = providers[providerIndex].models.firstIndex(where: { $0.modelId == modelId }) else { return }
-        providers[providerIndex].models[modelIndex].status = status
+        lock.lock()
+        guard let providerIndex = _providers.firstIndex(where: { $0.providerId == providerId }),
+              let modelIndex = _providers[providerIndex].models.firstIndex(where: { $0.modelId == modelId }) else {
+            lock.unlock()
+            return
+        }
+        _providers[providerIndex].models[modelIndex].status = status
+        lock.unlock()
+
+        switch status {
+        case .checking:
+            if LLMAvailabilityLog.verbose {
+                LLMAvailabilityPlugin.logger.debug("\(LLMAvailabilityLog.t)🔍 检测中: \(providerId) / \(modelId)")
+            }
+        case .available:
+            if LLMAvailabilityLog.verbose {
+                LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 可用: \(providerId) / \(modelId)")
+            }
+        case .unavailable(let reason):
+            if LLMAvailabilityLog.verbose {
+                LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 不可用: \(providerId) / \(modelId) - \(reason)")
+            }
+        case .unknown:
+            break
+        }
+    }
+
+    /// 标记检测开始/结束
+    func setCheckingAll(_ value: Bool) {
+        lock.lock()
+        _isCheckingAll = value
+        lock.unlock()
+
+        if LLMAvailabilityLog.verbose {
+            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)\(value ? "🚀 开始" : "🏁 结束")全局可用性检测")
+        }
     }
 
     /// 重置所有状态为未知
     func resetAllStatus() {
-        for i in providers.indices {
-            for j in providers[i].models.indices {
-                providers[i].models[j].status = .unknown
+        lock.lock()
+        for i in _providers.indices {
+            for j in _providers[i].models.indices {
+                _providers[i].models[j].status = .unknown
             }
+        }
+        lock.unlock()
+
+        if LLMAvailabilityLog.verbose {
+            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)🔄 已重置所有检测状态")
         }
     }
 }
