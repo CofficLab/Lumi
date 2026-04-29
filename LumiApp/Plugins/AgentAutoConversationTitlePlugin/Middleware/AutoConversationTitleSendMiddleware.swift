@@ -24,6 +24,8 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
         }
     }
 
+    // MARK: - Private
+
     private static func applyIfNeeded(
         conversationId: UUID,
         userText: String,
@@ -49,8 +51,8 @@ struct AutoConversationTitleSendMiddleware: SendMiddleware {
 
     /// 与创建会话时的占位标题一致时才自动替换。
     private static func shouldAutoTitle(_ title: String) -> Bool {
-        if title == "新对话" { return true }
-        if title.hasPrefix("新会话") { return true }
-        return false
+        let newConversation = String(localized: "New Conversation", table: "AutoConversationTitlePlugin")
+        let newChat = String(localized: "New Chat", table: "AutoConversationTitlePlugin")
+        return title == newConversation || title.hasPrefix(newChat)
     }
 }

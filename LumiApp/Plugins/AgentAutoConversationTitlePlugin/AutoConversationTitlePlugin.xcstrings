@@ -1,7 +1,7 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "自动会话标题": {
+    "Auto Conversation Title": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -24,7 +24,7 @@
         }
       }
     },
-    "首条用户消息发送后，按默认标题规则调用模型生成简短标题。": {
+    "After the first user message is sent, generate a short title by calling the model according to the default title rule.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -43,6 +43,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "首條用戶消息發送後，按默認標題規則調用模型生成簡短標題。"
+          }
+        }
+      }
+    },
+    "New Conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Conversation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新对话"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新對話"
+          }
+        }
+      }
+    },
+    "New Chat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Chat"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新会话"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新會話"
           }
         }
       }
