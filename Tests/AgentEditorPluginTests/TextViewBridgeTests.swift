@@ -1,6 +1,7 @@
 #if canImport(XCTest)
 import XCTest
 import LanguageServerProtocol
+import CodeEditTextView
 @testable import Lumi
 
 @MainActor

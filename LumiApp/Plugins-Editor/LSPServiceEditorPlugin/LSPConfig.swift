@@ -12,6 +12,11 @@ struct LSPConfig: SuperLog {
         "python",
         "typescript",
         "javascript",
+        "html",
+        "css",
+        "scss",
+        "sass",
+        "less",
         "rust",
         "go",
         "cpp",
@@ -76,7 +81,20 @@ struct LSPConfig: SuperLog {
     /// 获取默认配置
     static func defaultConfig(for languageId: String) -> ServerConfig? {
         guard let path = findServer(for: languageId) else { return nil }
-        return ServerConfig(languageId: languageId, execPath: path)
+        let executableName = URL(fileURLWithPath: path).lastPathComponent
+
+        switch languageId {
+        case "typescript", "javascript":
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
+        case "go":
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["serve"])
+        case "html", "css", "scss", "sass", "less":
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
+        case "python" where executableName == "pyright-langserver":
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
+        default:
+            return ServerConfig(languageId: languageId, execPath: path)
+        }
     }
 
     // MARK: - Async Availability Check
@@ -120,6 +138,10 @@ struct LSPConfig: SuperLog {
             return findCommand("typescript-language-server")
         case "javascript":
             return findCommand("typescript-language-server")
+        case "html":
+            return findCommand("vscode-html-language-server") ?? findCommand("html-languageserver")
+        case "css", "scss", "sass", "less":
+            return findCommand("vscode-css-language-server") ?? findCommand("css-languageserver")
         case "rust":
             return findCommand("rust-analyzer")
         case "go":

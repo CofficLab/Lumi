@@ -203,7 +203,7 @@ final class EditorDocumentController {
     private func isLikelyTextFile(url: URL) throws -> Bool {
         let ext = url.pathExtension.lowercased()
         let obviousTextExts: Set<String> = [
-            "swift", "m", "mm", "h", "hpp", "c", "cc", "cpp", "rs", "go", "py", "rb", "php", "java", "kt", "kts", "js", "ts", "tsx", "jsx", "json", "md", "txt", "yml", "yaml", "toml", "ini", "conf", "sh", "zsh", "bash", "fish", "html", "css", "scss", "less", "xml", "plist", "sql", "graphql", "proto", "env", "gitignore", "editorconfig", "xcodeproj", "pbxproj",
+            "swift", "m", "mm", "h", "hpp", "c", "cc", "cpp", "rs", "go", "py", "rb", "php", "java", "kt", "kts", "js", "ts", "tsx", "jsx", "json", "md", "txt", "yml", "yaml", "toml", "ini", "conf", "sh", "zsh", "bash", "fish", "html", "css", "scss", "sass", "less", "xml", "plist", "sql", "graphql", "proto", "env", "gitignore", "editorconfig", "xcodeproj", "pbxproj",
         ]
 
         if obviousTextExts.contains(ext) {

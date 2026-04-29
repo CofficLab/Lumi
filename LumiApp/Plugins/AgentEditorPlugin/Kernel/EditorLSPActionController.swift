@@ -55,6 +55,8 @@ final class EditorLSPActionController {
             "html": "html",
             "css": "css",
             "scss": "scss",
+            "sass": "sass",
+            "less": "less",
             "md": "markdown",
             "sql": "sql",
         ]

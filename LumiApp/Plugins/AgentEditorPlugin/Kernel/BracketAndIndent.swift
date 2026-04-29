@@ -70,6 +70,13 @@ struct BracketPairsConfig: Sendable {
                 ],
                 autoClosingPairs: []  // HTML/XML 标签不自动闭合
             )
+        case "css", "scss", "sass", "less":
+            return BracketPairsConfig(
+                pairs: commonPairs + [
+                    BracketPair(open: "\"", close: "\""),
+                    BracketPair(open: "'", close: "'"),
+                ]
+            )
         case "python":
             return BracketPairsConfig(
                 pairs: commonPairs + quotePairs,

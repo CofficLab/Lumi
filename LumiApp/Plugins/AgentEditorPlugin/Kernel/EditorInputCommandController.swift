@@ -121,7 +121,7 @@ final class EditorInputCommandController {
             return "#"
         case "html", "xml", "svg":
             return "<!--"
-        case "css", "scss", "less":
+        case "css", "scss", "sass", "less":
             return "/*"
         case "lua", "sql":
             return "--"
