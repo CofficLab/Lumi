@@ -12,7 +12,7 @@ actor EditorPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "✏️"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "LumiEditor"
     static let displayName: String = String(localized: "Code Editor", table: "LumiEditor")
     static let description: String = String(
@@ -44,18 +44,14 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     /// 编辑器面板需要右侧栏（聊天）
     nonisolated var panelNeedsSidebar: Bool { true }
 
-    /// 在全局状态栏右侧显示 Editor 插件入口
+    /// 在工具栏显示 Xcode 项目状态
+    @MainActor func addToolBarLeadingView() -> AnyView? {
+        guard XcodeProjectContextBridge.shared.isXcodeProject else { return nil }
+        return AnyView(XcodeProjectStatusBar())
+    }
+
+    /// 在状态栏右侧显示已加载插件入口
     @MainActor func addStatusBarTrailingView() -> AnyView? {
-        AnyView(
-            HStack(spacing: 4) {
-                // Xcode 项目状态栏（对应 Phase 8）
-                if XcodeProjectContextBridge.shared.isXcodeProject {
-                    XcodeProjectStatusBar()
-                    Divider()
-                        .frame(height: 16)
-                }
-                EditorLoadedPluginsStatusBarView()
-            }
-        )
+        AnyView(EditorLoadedPluginsStatusBarView())
     }
 }

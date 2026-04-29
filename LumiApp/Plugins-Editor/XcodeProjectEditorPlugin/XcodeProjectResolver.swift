@@ -50,7 +50,7 @@ final class XcodeProjectResolver: SuperLog {
         let workspacePath = isWorkspace ? workspaceURL : nil
         
         // 获取 xcodebuild -list -json 输出
-        guard let listResult = await fetchBuildList(workspaceURL: workspaceURL, projectURL: projectPath) else {
+        guard let listResult = await fetchBuildList(workspaceURL: workspacePath, projectURL: projectPath) else {
             Self.logger.error("\(Self.t)无法获取构建列表: \(workspaceURL.path, privacy: .public)")
             return nil
         }

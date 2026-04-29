@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 /// Xcode 项目状态栏视图
@@ -53,6 +54,7 @@ struct XcodeProjectStatusBar: View {
             }
         }
         .padding(.horizontal, 4)
+        .frame(width: 400)
     }
     
     // MARK: - Build Context 状态指示器
@@ -102,6 +104,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
     @Published var buildContextStatusDescription = "未初始化"
     
     private var provider: XcodeBuildContextProvider?
+    private var cancellables = Set<AnyCancellable>()
     
     init() {
         setup()
@@ -113,22 +116,34 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
         activeScheme = bridge.cachedActiveScheme
         buildContextStatusDescription = bridge.buildContextStatusDescription
         
-        if let provider = bridge.buildContextProvider {
-            self.provider = provider
-            schemes = provider.currentWorkspace?.schemes.map(\.name) ?? []
-            buildContextStatus = provider.buildContextStatus
-        }
+        guard let provider = bridge.buildContextProvider else { return }
+        self.provider = provider
+        schemes = provider.currentWorkspace?.schemes.map(\.name) ?? []
+        buildContextStatus = provider.buildContextStatus
+        
+        // 订阅 provider 的状态变化
+        provider.$buildContextStatus
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                self?.buildContextStatus = status
+                self?.buildContextStatusDescription = status.displayDescription
+            }
+            .store(in: &cancellables)
+        
+        provider.$currentWorkspace
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] workspace in
+                guard let self else { return }
+                self.schemes = workspace?.schemes.map(\.name) ?? []
+                self.activeScheme = workspace?.activeScheme?.name
+            }
+            .store(in: &cancellables)
     }
     
     func setActiveScheme(_ schemeName: String) {
         guard let provider, let scheme = provider.currentWorkspace?.schemes.first(where: { $0.name == schemeName }) else { return }
         Task {
             await provider.setActiveScheme(scheme)
-            await MainActor.run {
-                activeScheme = schemeName
-                buildContextStatus = provider.buildContextStatus
-                buildContextStatusDescription = provider.buildContextStatus.displayDescription
-            }
         }
     }
 }
