@@ -102,9 +102,15 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         
         currentWorkspace = workspaceContext
         
-        // 自动选择第一个 scheme
-        if let firstScheme = workspaceContext.schemes.first {
-            await setActiveScheme(firstScheme)
+        // 自动选择最佳 scheme：优先选择与项目同名的 scheme（通常是主 target），
+        // 其次选择与 target 同名的 scheme，最后才 fallback 到第一个
+        let bestScheme = Self.selectBestScheme(
+            schemes: workspaceContext.schemes,
+            projectName: workspaceContext.name,
+            targets: workspaceContext.projects.flatMap { $0.targets.map(\.name) }
+        )
+        if let bestScheme {
+            await setActiveScheme(bestScheme)
         }
     }
     
@@ -168,12 +174,19 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         
         Self.logger.info("\(Self.t)生成 buildServer.json: \(args.joined(separator: " "), privacy: .public)")
         
-        let success = await runCommand(path: serverPath, args: ["config", workspaceArg, workspaceURL.path, "-scheme", scheme])
+        // 关键：xcode-build-server config 会把 buildServer.json 生成到当前工作目录，
+        // 必须设置 currentDirectoryURL 为项目根目录（workspace/project 的父目录）
+        let outputDirectory = workspaceURL.deletingLastPathComponent()
+        let success = await runCommand(
+            path: serverPath,
+            args: ["config", workspaceArg, workspaceURL.path, "-scheme", scheme],
+            workingDirectory: outputDirectory
+        )
         
         isGeneratingBuildServer = false
         
         if success {
-            let jsonPath = workspaceURL.deletingLastPathComponent().appendingPathComponent("buildServer.json").path
+            let jsonPath = outputDirectory.appendingPathComponent("buildServer.json").path
             buildServerJSONPath = jsonPath
             
             if let config = buildServerConfig(from: jsonPath) {
@@ -273,6 +286,58 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         Self.logger.info("\(Self.t)Scheme '\(schemeName, privacy: .public)' 的 build context 已失效")
     }
     
+    // MARK: - Scheme 智能选择
+    
+    /// 选择最佳 scheme
+    /// 优先级：
+    /// 1. 与项目名同名的 scheme（如 Lumi 项目选 Lumi scheme）
+    /// 2. 与某个 target 同名的 scheme
+    /// 3. 排除已知依赖包 scheme 后的第一个
+    /// 4. 第一个 scheme（兜底）
+    static func selectBestScheme(
+        schemes: [XcodeSchemeContext],
+        projectName: String,
+        targets: [String]
+    ) -> XcodeSchemeContext? {
+        guard !schemes.isEmpty else { return nil }
+        
+        let schemeNames = schemes.map(\.name)
+        
+        // 1. 优先：与项目同名的 scheme
+        if let match = schemes.first(where: { $0.name == projectName }) {
+            logger.info("\(Self.t)自动选择 Scheme（与项目同名）: \(match.name, privacy: .public)")
+            return match
+        }
+        
+        // 2. 其次：与某个 target 同名的 scheme（排除 Package scheme）
+        let nonPackageTargets = targets.filter { !$0.hasSuffix("-Package") }
+        for target in nonPackageTargets {
+            if let match = schemes.first(where: { $0.name == target }) {
+                logger.info("\(Self.t)自动选择 Scheme（与 target 同名）: \(match.name, privacy: .public)")
+                return match
+            }
+        }
+        
+        // 3. 排除已知的依赖包 scheme
+        let dependencySuffixes = ["-Package", "-Testing", "Testing"]
+        let dependencyPrefixes = ["SwiftTreeSitter", "Semaphore"]
+        let isKnownDependency: (String) -> Bool = { name in
+            dependencySuffixes.contains(where: { name.hasSuffix($0) }) ||
+            dependencyPrefixes.contains(where: { name.hasPrefix($0) }) ||
+            name == "CodeEditLanguages" || name == "TextStory"
+        }
+        
+        if let match = schemes.first(where: { !isKnownDependency($0.name) }) {
+            logger.info("\(Self.t)自动选择 Scheme（排除依赖包后）: \(match.name, privacy: .public)")
+            return match
+        }
+        
+        // 4. 兜底
+        let fallback = schemes[0]
+        logger.info("\(Self.t)自动选择 Scheme（兜底）: \(fallback.name, privacy: .public)")
+        return fallback
+    }
+    
     // MARK: - 工具方法
     
     /// 查找 xcode-build-server 路径
@@ -298,13 +363,20 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
     }
     
     /// 执行命令
-    private func runCommand(path: String, args: [String]) async -> Bool {
+    /// - Parameters:
+    ///   - path: 可执行文件路径
+    ///   - args: 命令参数
+    ///   - workingDirectory: 工作目录，xcode-build-server config 会将 buildServer.json 生成到此目录
+    private func runCommand(path: String, args: [String], workingDirectory: URL? = nil) async -> Bool {
         await withCheckedContinuation { continuation in
             let process = Process()
             process.executableURL = URL(filePath: path)
             process.arguments = args
             process.standardOutput = FileHandle.nullDevice
             process.standardError = FileHandle.nullDevice
+            if let workingDirectory {
+                process.currentDirectoryURL = workingDirectory
+            }
             
             process.terminationHandler = { _ in
                 continuation.resume(returning: process.terminationStatus == 0)

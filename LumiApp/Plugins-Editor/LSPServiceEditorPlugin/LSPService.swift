@@ -137,8 +137,9 @@ final class LSPService: ObservableObject, SuperLog {
     /// 为 Xcode 项目生成 workspaceFolders
     /// 对应 Phase 4: 补齐 workspaceFolders
     static func makeWorkspaceFolders(for languageId: String, projectPath: String) -> [LanguageServerProtocol.WorkspaceFolder]? {
-        // 仅对 sourcekit-lsp 且当前是 Xcode 项目时，使用 bridge 提供的 workspaceFolders
-        guard languageId == "sourcekit",
+        // 仅对 Swift（sourcekit-lsp）且当前是 Xcode 项目时，使用 bridge 提供的 workspaceFolders
+        // 注意：系统中 languageId 统一使用 "swift"，而非 "sourcekit"
+        guard (languageId == "swift" || languageId == "sourcekit"),
               XcodeProjectContextBridge.shared.isXcodeProject,
               let folders = XcodeProjectContextBridge.shared.makeWorkspaceFolders(),
               !folders.isEmpty else {
