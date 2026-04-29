@@ -5,7 +5,7 @@ import os
 /// LLM 可用性检测服务
 /// 通过向每个供应商的每个模型发送轻量 ping 请求来检测其可用性
 final class LLMAvailabilityChecker {
-    static let verbose: Bool = true
+    static let verbose: Bool = false
 
     private let llmService: LLMService
     private let store = LLMAvailabilityStore.shared

@@ -49,7 +49,7 @@ struct LLMProviderAvailability: Identifiable, Equatable, Sendable {
 /// LLM 可用性日志辅助（非 MainActor 隔离，供 Store / Checker 使用）
 enum LLMAvailabilityLog: SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 }
 
 /// LLM 可用性存储
