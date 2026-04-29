@@ -673,6 +673,11 @@ applyTextEdits(_ edits: [TextEdit], source: String)
 - [x] `EditorCommandPaletteTests` 测试已覆盖
 - [x] 键位可配置化 — 用户自定义快捷键映射（已完成；剩余仅为设置 UI 与录制器这类后续交互层）
 - [~] toolbar / context menu 的高频编辑动作已基本统一走 command id（palette、find/replace、LSP actions、context menu、多光标 toolbar toggle 已收口）；剩余主要是配置型 UI（字体/缩进/保存选项）是否需要命令化，不再是编辑动作执行链的缺口
+- [ ] 快捷键设置 UI — 用户查看/搜索/修改命令快捷键的设置界面
+- [ ] 快捷键录制器 — 捕获用户按键输入并转成快捷键绑定的 UI 组件
+- [ ] 快捷键冲突检测与提示 — 同一键位绑定多个命令时提供冲突提示与处理策略
+- [ ] 快捷键恢复默认 — 支持单条或全局恢复默认绑定
+- [ ] 用户自定义快捷键持久化后的统一反映 — 菜单 / command palette / toolbar / context menu 全部实时反映用户绑定
 
 ---
 
@@ -815,7 +820,6 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] Signature help runtime gating — viewport / 长行保护会抑制请求并清理旧签名面板
 - [x] Code action runtime gating — viewport / 长行保护会抑制请求并清理旧灯泡动作
 - [x] 截断安全 — 大文件默认 `256KB` 截断预览，支持显式 `Load Full File` 按需全量加载
-- [~] ViewportRenderController 与实际渲染的绑定已部分实现：已驱动 `find match overlay`、`bracket match overlay`、`signature help overlay`、`code action overlay`、`inlay hints strip`，并在 viewport 变化时清理 `hover` 浮层、在主光标切出 render range 时清理 `document highlight / signature help / code action` 残留状态；语义高亮/inlay/document highlight/hover/code action 等 runtime gating 已接入；`CodeEditSourceEditor` 内部文本渲染管线仍不受其控制
 - [x] Viewport 转场清理已统一收口到 `EditorState.handleViewportRuntimeTransition()`，不再由 `SourceEditorView` 分散清理 `document highlight / signature help / code action`
 - [x] Render range 过滤 helper 已统一收口到 `EditorState`（`isRenderedLine / isRenderedOffset / intersectsRenderedRange / renderedFindMatches / renderedInlayHints`），`SourceEditorView` 不再自行维护这些过滤规则
 - [x] Overlay 展示条件已继续收口到 `EditorState`（`renderedBracketMatch / shouldPresentSignatureHelpOverlay / shouldPresentCodeActionOverlay`），`SourceEditorView` 进一步退化为纯渲染消费层
@@ -827,7 +831,14 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] `tree-sitter / semantic token / document highlight` 的 provider 启用规则也已统一由 `EditorState` 提供（`shouldUseTreeSitterHighlightProvider / shouldUseSemanticTokenHighlightProvider / shouldUseDocumentHighlightProvider`），`SourceEditorView` 不再直接拼装这些 runtime 条件
 - [x] `signature help / code action` 的最终 overlay 数据与动作执行入口也已收口到 `EditorState`（`currentSignatureHelpOverlayItem / currentCodeActionOverlayActions / performCodeActionOverlayAction`），`SourceEditorView` 进一步退化为纯消费层
 - [x] `hover` 的当前 rect 与 viewport/runtime 转场取消条件也已统一由 `EditorState` 提供（`currentHoverOverlayRect / shouldCancelHoverForViewportTransition / shouldCancelHoverForRuntimeAvailabilityChange`），`SourceEditorView` 不再直接读取 `panelState` 做这些判断
-- [~] `Phase 8` 在 Lumi 自有可控层面已基本完成；剩余硬边界主要是 `CodeEditSourceEditor` 内部文本渲染管线尚不能直接被 `ViewportRenderController` 裁剪，这属于外部依赖能力边界而非继续在 `SourceEditorView` 内部拆分可解决的问题
+- [x] `find match overlay` 已受 `viewportRenderLineRange` 约束
+- [x] `bracket match overlay` 已受 `viewportRenderLineRange` 约束
+- [x] `signature help overlay` 已受 `viewportRenderLineRange` 约束
+- [x] `code action overlay` 已受 `viewportRenderLineRange` 约束
+- [x] `inlay hints strip` 已受 `viewportRenderLineRange` 约束
+- [x] 语义高亮 / inlay hints / document highlight / hover / code action 等高成本 runtime consumer 已接入 Phase 8 gating
+- [ ] 明确 `CodeEditSourceEditor` 内部文本渲染不可直接裁剪为外部依赖边界，并从核心计划验收项中剥离
+- [ ] 决定 `CodeEditSourceEditor` 边界后的后续策略：接受现状继续在 Lumi 自有层优化，或评估 fork 以接入真实 viewport render control
 
 ---
 
@@ -889,94 +900,44 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 
 ---
 
-## 优先级建议
+## Phase 10: Language Highlight Extensibility
 
-如果目标是最快拉近和 VS Code 的核心体验差距，建议执行顺序：
+### 目标
 
-1. **Phase 1**: Buffer / Transaction Core
-2. **Phase 2**: Selection / Cursor Core
-3. **Phase 3**: Sessions / Tabs
-4. **Phase 5**: Commands / Keybindings
-5. **Phase 6**: Language Pipelines
-6. **Phase 7**: Find / Replace
-7. **Phase 4**: Workbench Groups
-8. **Phase 8**: Performance / Large Files
-9. **Phase 9**: Polish
+把语言高亮能力从当前内建 provider 链推进到真正可扩展的插件注入模型，为 Markdown 等非 tree-sitter 友好语言提供扩展入口。
 
-> Phase 4 很重要，但不建议早于 buffer 和 selection 稳定化，否则容易在不稳的底层上叠工作台复杂度。
+### 任务
 
-## 推荐的提交顺序
+1. 在 `EditorFeaturePlugin` 体系中新增 highlight provider 注入点
+2. 让 registry 能按语言查询 highlight provider
+3. 让编辑器高亮链消费插件注入的 provider
+4. 落地 Markdown 语法高亮插件
+5. 确保该能力遵守 Phase 8 的 viewport / 大文件 / 增量更新约束
 
-1. 新增 `Kernel/` 目录 + EditorBuffer/Snapshot/Transaction（不接 UI）
-2. EditorState 接入 buffer + applyEditorTransaction + format 走 transaction
-3. rename 走 transaction + code action text edits 走 transaction
-4. Canonical selection model + coordinator 收口选区同步
-5. 多光标 replacement / delete 迁移到 transaction
-6. 新增 `EditorSession` + EditorRootView 切 session store + 基础 tab strip
+### 清单
 
-## 测试建议
+- [ ] 新增 `EditorHighlightProviderContributor`
+- [ ] `EditorExtensionRegistry` 支持按语言查询 highlight provider
+- [ ] `SourceEditorView` / 状态层接入插件高亮 provider 链
+- [ ] 创建 `MarkdownEditorPlugin`
+- [ ] Markdown 高亮的 viewport 限流、大文件降级、增量更新验证
 
-内核升级过程中，建议优先补这些测试：
+---
 
-1. `EditorBuffer` 应用单次编辑
-2. `EditorBuffer` 应用多个 ranges 编辑
-3. transaction 后 selection 映射
-4. format 后光标恢复
-5. rename 后多文件变更应用
-6. 多光标 replace/delete
-7. session 切换后恢复 cursor/scroll
+## Phase 11: Final Validation
 
-测试优先级：
+### 目标
 
-1. transaction correctness
-2. selection stability
-3. multi-cursor behavior
-4. session restoration
+把“代码可构建”升级成“计划可验证”，为后续继续向 VS Code 靠齐建立稳定回归基础。
 
-## 成功标准
+### 清单
 
-这个计划成功的标志不是"功能数量接近 VS Code"，而是：
+- [ ] `AgentEditorPlugin` 相关测试 target / test plan 接入 `xcodebuild test`
+- [ ] 可独立运行关键测试：undo/redo、selection stability、external conflict、large file mode、command presentation
+- [ ] split editor / session restore / find-replace 关键路径 smoke tests 可运行
+- [ ] 最终构建结果与关键测试结果回写到 roadmap
 
-1. 文本真相不再主要由原生 TextView 持有
-2. 编辑行为以事务为中心
-3. tab / split / navigation 成为正式模型
-4. 异步语言能力版本安全
-5. 大文件和高频编辑场景下依然可用
-6. 重度 VS Code 用户进入后不会频繁撞到结构性粗糙感
-
-## 后续方向
-
-1. ~~**多 EditorState 实例**~~ — ✅ 已完成（Phase 4）
-2. ~~**Viewport 精细化**~~ — ✅ LSP 请求调度已完善，渲染管线绑定仍受限于 CodeEditSourceEditor 内部
-3. ~~**Cursor motion 语义打磨**~~ — ✅ 已完成
-4. ~~**键位可配置化**~~ — ✅ 基础设施已完成
-5. ~~**性能基线**~~ — ✅ `EditorPerformance` 已建立量化指标体系
-
-### ✅ Cursor Motion 完成清单
-
-- [x] `CursorMotionController` — 纯函数光标移动控制器，VS Code 风格的 word boundary 定义
-- [x] `moveWordLeft` / `moveWordRight` — 单词级移动（空格→标点→标识符 三段式分割）
-- [x] `deleteWordLeft` / `deleteWordRight` — 单词级删除（走 transaction 模型）
-- [x] `moveToBeginningOfLine` / `moveToEndOfLine` — 行首/行尾移动
-- [x] `smartHome` — 智能 Home 键（行首 ↔ 内容起始 交替）
-- [x] `moveUp` / `moveDown` — 上下行移动（保持列位置）
-- [x] `moveToDocumentStart` / `moveToDocumentEnd` — 文档首尾
-- [x] `moveParagraphBackward` / `moveParagraphForward` — 段落级移动（空行分隔）
-- [x] Select 变体 — `wordLeftSelect`、`wordRightSelect`、`smartHomeSelect`、`lineEndSelect`
-- [x] `EditorState.performCursorMotion(_:)` — 14 种光标移动命令统一入口
-- [x] 命令已注册 — 14 个 cursor motion 命令（navigation + edit 分类）
-- [x] `CursorMotionControllerTests` 测试已覆盖（36 个测试用例，含 Unicode、CRLF、空字符串等边界场景）
-
-### ✅ 键位可配置化完成清单
-
-- [x] `EditorKeybindingStore` — 用户自定义快捷键存储（JSON 持久化、load/save、冲突检测）
-- [x] `EditorKeybindingEntry` — 自定义快捷键条目模型（Codable、Sendable）
-- [x] `EditorCommandBinding.resolveKernelShortcut(for:)` — 解析实际生效快捷键（用户自定义优先）
-- [x] `CoreCommandRegistrations` — 所有 26 个快捷键注册已改为 `resolveShortcut` 查询
-- [x] `EditorCommandShortcut.Modifier` — 新增 Codable、Sendable 支持
-- [x] 命令面板自动显示生效的快捷键（用户自定义 or 默认）
-- [ ] 快捷键设置 UI — 用户修改快捷键的界面（后续迭代）
-- [ ] 快捷键录制器 — 捕获用户按键输入的 UI 组件（后续迭代）
+---
 
 ## 最终结论
 
