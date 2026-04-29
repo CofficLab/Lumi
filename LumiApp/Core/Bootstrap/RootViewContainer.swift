@@ -69,8 +69,12 @@ final class RootViewContainer: ObservableObject {
         // 初始化上下文服务
         self.contextService = ContextService()
 
-        // 初始化 LLM 服务
-        self.llmService = LLMService()
+        // 初始化供应商注册表（自动扫描并注册所有 SuperLLMProvider）
+        let providerRegistry = LLMProviderRegistry()
+        LLMProviderRegistration.registerAllProviders(to: providerRegistry)
+
+        // 初始化 LLM 服务（显式依赖 Registry）
+        self.llmService = LLMService(registry: providerRegistry)
 
         // 初始化提示词服务（依赖 ContextService）
         self.promptService = PromptService(contextService: contextService)
@@ -87,7 +91,7 @@ final class RootViewContainer: ObservableObject {
         )
 
         // 复用 LLMService 中的供应商注册表（已通过插件完成注册）
-        self.providerRegistry = llmService.registry
+        self.providerRegistry = providerRegistry
 
         // ========================================
         // 基础 ViewModel
