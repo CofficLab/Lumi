@@ -1,0 +1,192 @@
+import Foundation
+import AppKit
+import LanguageServerProtocol
+
+@MainActor
+extension EditorState {
+    func showReferencesFromCurrentCursor() async {
+        await languageActionFacade.showReferences(
+            currentFileURL: currentFileURL,
+            relativeFilePath: relativeFilePath,
+            projectRootPath: projectRootPath,
+            requestGenerationNext: { [weak self] in
+                self?.referencesRequestGeneration.next() ?? 0
+            },
+            isRequestCurrent: { [weak self] generation in
+                self?.referencesRequestGeneration.isCurrent(generation) ?? false
+            },
+            currentPosition: currentLSPPosition,
+            requestReferences: { [weak self] line, character in
+                guard let self else { return [] }
+                return await self.lspCoordinator.requestReferences(line: line, character: character)
+            },
+            lspActionController: lspActionController,
+            clearReferences: { [weak self] in
+                self?.panelController.clearData(closeReferences: false)
+            },
+            setReferenceResults: { [weak self] results in
+                self?.panelController.setReferenceResults(results)
+            },
+            updateReferenceVisibility: { [weak self] isVisible in
+                self?.panelController.updateVisibility(references: isVisible)
+            },
+            syncSession: { [weak self] in
+                self?.syncActiveSessionState()
+            },
+            showStatus: { [weak self] message, level, duration in
+                self?.showStatusToast(message, level: level, duration: duration)
+            }
+        )
+    }
+
+    func goToDefinition(for selection: NSRange) async {
+        await jump(to: selection, kind: .definition) { [weak self] range in
+            await self?.jumpDelegate?.performGoToDefinition(forRange: range)
+        }
+    }
+
+    func goToDeclaration(for selection: NSRange) async {
+        await jump(to: selection, kind: .declaration) { [weak self] range in
+            await self?.jumpDelegate?.performGoToDeclaration(forRange: range)
+        }
+    }
+
+    func goToTypeDefinition(for selection: NSRange) async {
+        await jump(to: selection, kind: .typeDefinition) { [weak self] range in
+            await self?.jumpDelegate?.performGoToTypeDefinition(forRange: range)
+        }
+    }
+
+    func goToImplementation(for selection: NSRange) async {
+        await jump(to: selection, kind: .implementation) { [weak self] range in
+            await self?.jumpDelegate?.performGoToImplementation(forRange: range)
+        }
+    }
+
+    func showStatusToast(_ message: String, level: EditorStatusLevel, duration: TimeInterval = 1.8) {
+        statusToastController.show(message: message, level: level, duration: duration)
+    }
+
+    func openCallHierarchy() async {
+        await languageActionFacade.openCallHierarchy(
+            callHierarchyController: callHierarchyController,
+            currentFileURL: currentFileURL,
+            cursorLine: cursorLine,
+            cursorColumn: cursorColumn,
+            prepare: { [weak self] uri, line, character in
+                await self?.callHierarchyProvider.prepareCallHierarchy(
+                    uri: uri,
+                    line: line,
+                    character: character
+                )
+            },
+            hasRootItem: { [weak self] in
+                self?.callHierarchyProvider.rootItem != nil
+            },
+            showWarning: { [weak self] message in
+                self?.showStatusToast(message, level: .warning)
+            },
+            openPanel: { [weak self] command in
+                self?.performPanelCommand(command)
+            }
+        )
+    }
+
+    func promptRenameSymbol() {
+        languageActionFacade.promptRenameSymbol(
+            canPreview: canPreview,
+            isEditable: isEditable,
+            renameController: renameController,
+            showStatus: { [weak self] message, level, duration in
+                self?.showStatusToast(message, level: level, duration: duration)
+            },
+            runRename: { [weak self] newName in
+                Task { @MainActor [weak self] in
+                    await self?.renameSymbolWithLSP(to: newName)
+                }
+            }
+        )
+    }
+
+    func currentLSPPosition() -> (line: Int, character: Int) {
+        (
+            max(cursorLine - 1, 0),
+            max(cursorColumn - 1, 0)
+        )
+    }
+
+    func applyTextEditsToCurrentDocument(_ edits: [TextEdit], reason: String = "text_edits") {
+        guard let text = documentController.currentText,
+              let transaction = transactionController.transactionForTextEdits(
+                edits,
+                in: text,
+                currentSelections: currentSelectionsAsNSRanges()
+              ) else {
+            return
+        }
+        let before = captureUndoState()
+        guard let result = documentController.apply(transaction: transaction) else { return }
+        commitDocumentEditResult(result, reason: reason)
+        recordUndoChange(from: before, reason: reason)
+    }
+
+    func applyCodeActionWorkspaceEdit(_ edit: WorkspaceEdit) {
+        let currentURI = currentFileURL?.absoluteString
+        _ = workspaceEditController.apply(
+            changes: edit.changes,
+            documentChanges: edit.documentChanges,
+            currentURI: currentURI ?? ""
+        ) { [weak self] edits, reason in
+            self?.applyTextEditsToCurrentDocument(edits, reason: reason)
+        } applyExternalFileEdits: { [weak self] edits, url in
+            self?.applyTextEditsToFile(edits, url: url) ?? false
+        }
+    }
+
+    func applyTextEditsToFile(_ edits: [TextEdit], url: URL) -> Bool {
+        workspaceEditController.applyTextEditsToFile(edits, url: url)
+    }
+
+    private func jump(
+        to selection: NSRange,
+        kind: EditorLSPActionController.JumpKind,
+        perform: @escaping (_ range: NSRange) async -> Void
+    ) async {
+        await languageActionFacade.jump(
+            selection: selection,
+            kind: kind,
+            lspActionController: lspActionController,
+            showStatus: { [weak self] message, level, duration in
+                self?.showStatusToast(message, level: level, duration: duration)
+            },
+            perform: perform
+        )
+    }
+
+    private func renameSymbolWithLSP(to newName: String) async {
+        await languageActionFacade.rename(
+            newName: newName,
+            currentURI: currentFileURL?.absoluteString,
+            currentPosition: currentLSPPosition,
+            requestRename: { [weak self] line, character, newName in
+                guard let self else { return nil }
+                return await self.lspCoordinator.requestRename(
+                    line: line,
+                    character: character,
+                    newName: newName
+                )
+            },
+            workspaceEditController: workspaceEditController,
+            renameController: renameController,
+            applyCurrentDocumentEdits: { [weak self] edits, reason in
+                self?.applyTextEditsToCurrentDocument(edits, reason: reason)
+            },
+            applyExternalFileEdits: { [weak self] edits, url in
+                self?.applyTextEditsToFile(edits, url: url) ?? false
+            },
+            showStatus: { [weak self] message, level, duration in
+                self?.showStatusToast(message, level: level, duration: duration)
+            }
+        )
+    }
+}

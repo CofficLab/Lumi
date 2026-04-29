@@ -1,10 +1,35 @@
 import AppKit
 import Foundation
 import LanguageServerProtocol
+import UniformTypeIdentifiers
 
 final class EditorDocumentController {
+    private static let truncationFileSizeThreshold: Int64 = 2 * 1024 * 1024
+
+    struct LoadedTextDocument {
+        let content: String
+        let fileSize: Int64
+        let isTruncated: Bool
+        let largeFileMode: LargeFileMode
+        let fileExtension: String
+        let fileName: String
+    }
+
+    struct LoadedBinaryDocument {
+        let fileSize: Int64
+        let largeFileMode: LargeFileMode
+        let fileExtension: String
+        let fileName: String
+    }
+
+    enum LoadedDocument {
+        case text(LoadedTextDocument)
+        case binary(LoadedBinaryDocument)
+    }
+
     private(set) var buffer: EditorBuffer?
     private(set) var textStorage: NSTextStorage?
+    private(set) var persistedTextSnapshot: String?
 
     var currentText: String? {
         buffer?.text ?? textStorage?.string
@@ -13,6 +38,7 @@ final class EditorDocumentController {
     func clear() {
         buffer = nil
         textStorage = nil
+        persistedTextSnapshot = nil
     }
 
     @discardableResult
@@ -89,6 +115,57 @@ final class EditorDocumentController {
         return replaceText(textStorage.string)
     }
 
+    func markPersistedText(_ text: String) {
+        persistedTextSnapshot = text
+    }
+
+    func clearPersistedTextSnapshot() {
+        persistedTextSnapshot = nil
+    }
+
+    func hasChangesComparedToPersistedSnapshot(_ text: String) -> Bool {
+        guard let persistedTextSnapshot else { return false }
+        return text != persistedTextSnapshot
+    }
+
+    func loadDocument(from url: URL, truncationReadBytes: Int, forceFullLoad: Bool = false) throws -> LoadedDocument {
+        let fileSize = Int64((try url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+        let largeFileMode = LargeFileMode.mode(for: fileSize)
+        let fileExtension = url.pathExtension.lowercased()
+        let fileName = url.lastPathComponent
+
+        guard try isLikelyTextFile(url: url) else {
+            return .binary(
+                .init(
+                    fileSize: fileSize,
+                    largeFileMode: largeFileMode,
+                    fileExtension: fileExtension,
+                    fileName: fileName
+                )
+            )
+        }
+
+        let shouldTruncate = !forceFullLoad && shouldUseTruncatedPreview(for: url, fileSize: fileSize)
+        let content: String
+        if shouldTruncate {
+            content = try readTruncatedContent(from: url, maxBytes: truncationReadBytes)
+        } else {
+            var detectedEncoding = String.Encoding.utf8
+            content = try String(contentsOf: url, usedEncoding: &detectedEncoding)
+        }
+
+        return .text(
+            .init(
+                content: content,
+                fileSize: fileSize,
+                isTruncated: shouldTruncate,
+                largeFileMode: largeFileMode,
+                fileExtension: fileExtension,
+                fileName: fileName
+            )
+        )
+    }
+
     private func syncTextStorage(from text: String) {
         if let textStorage {
             if textStorage.string != text {
@@ -97,5 +174,53 @@ final class EditorDocumentController {
         } else {
             textStorage = NSTextStorage(string: text)
         }
+    }
+
+    private func shouldUseTruncatedPreview(for url: URL, fileSize: Int64) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        let alwaysFullLoadExtensions: Set<String> = ["md", "markdown", "txt"]
+        if alwaysFullLoadExtensions.contains(ext) {
+            return false
+        }
+        return fileSize > Self.truncationFileSizeThreshold
+    }
+
+    private func readTruncatedContent(from url: URL, maxBytes: Int) throws -> String {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+
+        let data = try handle.read(upToCount: maxBytes) ?? Data()
+        let preview: String
+        if let string = String(data: data, encoding: .utf8) {
+            preview = string
+        } else {
+            preview = String(decoding: data, as: UTF8.self)
+        }
+        let suffix = "\n\n… " + String(localized: "File too large. Preview is truncated.", table: "LumiEditor")
+        return preview + suffix
+    }
+
+    private func isLikelyTextFile(url: URL) throws -> Bool {
+        let ext = url.pathExtension.lowercased()
+        let obviousTextExts: Set<String> = [
+            "swift", "m", "mm", "h", "hpp", "c", "cc", "cpp", "rs", "go", "py", "rb", "php", "java", "kt", "kts", "js", "ts", "tsx", "jsx", "json", "md", "txt", "yml", "yaml", "toml", "ini", "conf", "sh", "zsh", "bash", "fish", "html", "css", "scss", "less", "xml", "plist", "sql", "graphql", "proto", "env", "gitignore", "editorconfig", "xcodeproj", "pbxproj",
+        ]
+
+        if obviousTextExts.contains(ext) {
+            return true
+        }
+
+        if let type = UTType(filenameExtension: ext) {
+            if type.conforms(to: .text) || type.conforms(to: .sourceCode) || type.conforms(to: .xml) || type.conforms(to: .json) || type.conforms(to: .propertyList) {
+                return true
+            }
+        }
+
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        let data = try handle.read(upToCount: 1024) ?? Data()
+        if data.isEmpty { return true }
+        if data.contains(0) { return false }
+        return true
     }
 }

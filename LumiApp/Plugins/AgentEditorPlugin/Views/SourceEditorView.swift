@@ -11,6 +11,8 @@ struct SourceEditorView: View, SuperLog {
     nonisolated static let verbose: Bool = true
     
     @ObservedObject var state: EditorState
+    private let adapter = SourceEditorAdapter()
+    private let bridge = SourceEditorViewBridge()
     
     /// 编辑器协调器（使用 @State 确保在 View 更新间保持同一实例）
     @State private var textCoordinator: EditorCoordinator?
@@ -116,7 +118,7 @@ struct SourceEditorView: View, SuperLog {
                     content,
                     language: resolvedLanguage,
                     configuration: config,
-                    state: multiCursorSafeBinding,
+                    state: sourceEditorBinding,
                     highlightProviders: activeHighlightProviders,
                     coordinators: activeCoordinators,
                     completionDelegate: completionDelegate,
@@ -290,37 +292,25 @@ struct SourceEditorView: View, SuperLog {
 
     /// 首次出现时初始化协调器和配置缓存
     private func initializeCoordinators() {
-        if textCoordinator == nil {
-            textCoordinator = EditorCoordinator(state: state)
-        }
-        if cursorCoordinator == nil {
-            cursorCoordinator = CursorCoordinator(state: state)
-        }
-        if scrollCoordinator == nil {
-            scrollCoordinator = ScrollCoordinator(state: state)
-        }
-        if contextMenuCoordinator == nil {
-            contextMenuCoordinator = ContextMenuCoordinator(state: state)
-        }
-        if semanticTokenProvider == nil {
-            semanticTokenProvider = SemanticTokenHighlightProvider(
-                lspService: state.lspServiceInstance,
-                uriProvider: { [weak state] in
-                    state?.currentFileURL?.absoluteString
-                }
-            )
-            semanticTokenProvider?.setEnabled(state.isSyntaxHighlightingEnabledInViewport)
-        }
-        if documentHighlightProvider == nil {
-            documentHighlightProvider = DocumentHighlightHighlighter(
-                provider: state.documentHighlightProvider
-            )
-        }
+        let current = SourceEditorCoordinatorSet(
+            textCoordinator: textCoordinator,
+            cursorCoordinator: cursorCoordinator,
+            scrollCoordinator: scrollCoordinator,
+            contextMenuCoordinator: contextMenuCoordinator,
+            semanticTokenProvider: semanticTokenProvider,
+            documentHighlightProvider: documentHighlightProvider,
+            hoverCoordinator: hoverCoordinator
+        )
+        let next = bridge.initializeCoordinators(state: state, current: current)
+        textCoordinator = next.textCoordinator
+        cursorCoordinator = next.cursorCoordinator
+        scrollCoordinator = next.scrollCoordinator
+        contextMenuCoordinator = next.contextMenuCoordinator
+        semanticTokenProvider = next.semanticTokenProvider
+        documentHighlightProvider = next.documentHighlightProvider
+        hoverCoordinator = next.hoverCoordinator
         if cachedConfig == nil {
             updateConfigCache()
-        }
-        if hoverCoordinator == nil {
-            hoverCoordinator = HoverEditorCoordinator(state: state)
         }
         if contentLineTable == nil {
             updateContentLineTable()
@@ -328,22 +318,13 @@ struct SourceEditorView: View, SuperLog {
     }
 
     private func wireDelegates() {
-        jumpDelegate.textStorage = state.content
-        jumpDelegate.treeSitterClient = treeSitterClient
-        jumpDelegate.lspClient = state.lspClient
-        jumpDelegate.currentFileURLProvider = { [weak state] in
-            state?.currentFileURL
-        }
-        jumpDelegate.onOpenExternalDefinition = { [weak state] url, target in
-            state?.performNavigation(.definition(url, target, highlightLine: false))
-        }
-        state.jumpDelegate = jumpDelegate
-        
-        textCoordinator?.jumpDelegate = jumpDelegate
-        
-        completionDelegate.lspClient = state.lspClient
-        completionDelegate.editorExtensionRegistry = state.editorExtensions
-        completionDelegate.editorState = state
+        bridge.wireDelegates(
+            state: state,
+            jumpDelegate: jumpDelegate,
+            treeSitterClient: treeSitterClient,
+            textCoordinator: textCoordinator,
+            completionDelegate: &completionDelegate
+        )
     }
     
     // MARK: - Configuration Management
@@ -353,57 +334,40 @@ struct SourceEditorView: View, SuperLog {
     }
 
     private func updateContentLineTable() {
-        contentLineTable = state.content.map { LineOffsetTable(content: $0.string) }
+        contentLineTable = bridge.lineTable(for: state.content)
     }
     
     // MARK: - Language
     
     private var resolvedLanguage: CodeLanguage {
-        state.detectedLanguage ?? CodeLanguage.allLanguages.first { $0.tsName == "swift" } ?? CodeLanguage.allLanguages[0]
+        adapter.resolvedLanguage(for: state)
     }
 
     private var activeHighlightProviders: [any HighlightProviding] {
-        var providers: [any HighlightProviding] = []
-        let languageID = state.detectedLanguage?.tsName ?? "swift"
-
-        if state.shouldUseTreeSitterHighlightProvider {
-            providers.append(treeSitterClient)
-        }
-        if state.shouldUseSemanticTokenHighlightProvider, let semanticTokenProvider {
-            providers.insert(semanticTokenProvider, at: 0)
-        }
-        if state.shouldUseDocumentHighlightProvider, let documentHighlightProvider {
-            providers.append(documentHighlightProvider)
-        }
-        if state.shouldUsePluginHighlightProviders {
-            providers.append(contentsOf: state.editorExtensions.highlightProviders(for: languageID))
-        }
-        return providers
+        adapter.activeHighlightProviders(
+            for: state,
+            treeSitterClient: treeSitterClient,
+            semanticTokenProvider: semanticTokenProvider,
+            documentHighlightProvider: documentHighlightProvider
+        )
     }
     
     private var activeCoordinators: [TextViewCoordinator] {
-        var result: [TextViewCoordinator] = []
-        if let textCoordinator { result.append(textCoordinator) }
-        if let cursorCoordinator { result.append(cursorCoordinator) }
-        if let scrollCoordinator { result.append(scrollCoordinator) }
-        if let contextMenuCoordinator { result.append(contextMenuCoordinator) }
-        if let hoverCoordinator { result.append(hoverCoordinator) }
-        return result
+        adapter.activeCoordinators(
+            textCoordinator: textCoordinator,
+            cursorCoordinator: cursorCoordinator,
+            scrollCoordinator: scrollCoordinator,
+            contextMenuCoordinator: contextMenuCoordinator,
+            hoverCoordinator: hoverCoordinator
+        )
     }
 
-    private var visibleFindMatchHighlights: [FindMatchHighlight] {
-        guard let textView = state.focusedTextView,
-              let lineTable = contentLineTable else {
-            return []
-        }
-
-        return state.renderedFindMatchHighlights(textView: textView, lineTable: lineTable).map { highlight in
-            FindMatchHighlight(
-                range: highlight.range,
-                rect: highlight.rect,
-                isSelected: highlight.isSelected
-            )
-        }
+    private var visibleFindMatchHighlights: [SourceEditorFindMatchHighlight] {
+        adapter.visibleFindMatchHighlights(
+            for: state,
+            textView: state.focusedTextView,
+            lineTable: contentLineTable
+        )
     }
     
     // MARK: - Configuration
@@ -420,85 +384,15 @@ struct SourceEditorView: View, SuperLog {
     ///
     /// ### 3. 多光标模式下光标丢失
     /// 修复：多光标模式下忽略 cursorPositions 回写。
-    private var multiCursorSafeBinding: Binding<SourceEditorState> {
-        Binding<SourceEditorState>(
-            get: {
-                var result = state.editorState
-                result.scrollPosition = nil
-                return result
-            },
-            set: { newState in
-                let update = EditorSourceEditorBindingController.update(
-                    from: newState,
-                    multiCursorSelectionCount: state.multiCursorState.all.count,
-                    currentFindReplaceState: state.activeSession.findReplaceState
-                )
-
-                DispatchQueue.main.async {
-                    state.applySourceEditorBindingUpdate(update)
-                }
-            }
-        )
+    private var sourceEditorBinding: Binding<SourceEditorState> {
+        bridge.binding(for: state)
     }
 
     @MainActor
     private func buildConfiguration() -> SourceEditorConfiguration {
-        let fontSize = CGFloat(state.fontSize)
-        let lineHeightMultiple = 1.2
-        
-        return SourceEditorConfiguration(
-            appearance: .init(
-                theme: state.currentTheme ?? EditorThemeAdapter.fallbackTheme(),
-                useThemeBackground: true,
-                font: NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular),
-                lineHeightMultiple: lineHeightMultiple,
-                letterSpacing: 1.0,
-                wrapLines: state.wrapLines,
-                useSystemCursor: true,
-                tabWidth: state.tabWidth,
-                bracketPairEmphasis: .flash
-            ),
-            behavior: .init(
-                isEditable: state.isEditable,
-                indentOption: state.useSpaces
-                    ? .spaces(count: state.tabWidth)
-                    : .tab
-            ),
-            layout: .init(
-                editorOverscroll: 0.1,
-                contentInsets: nil,
-                additionalTextInsets: nil
-            ),
-            peripherals: .init(
-                showGutter: state.showGutter,
-                showMinimap: state.showMinimap && !state.largeFileMode.isMinimapDisabled,
-                showFoldingRibbon: state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled,
-                codeSuggestionTriggerCharacters: completionDelegate.completionTriggerCharacters()
-            )
+        adapter.configuration(
+            for: state,
+            completionDelegate: completionDelegate
         )
-    }
-}
-
-private struct FindMatchHighlight: Identifiable {
-    let range: EditorRange
-    let rect: CGRect
-    let isSelected: Bool
-
-    var id: String {
-        "\(range.location):\(range.length):\(rect.minX):\(rect.minY):\(isSelected)"
-    }
-
-    var color: Color {
-        if isSelected {
-            return AppUI.Color.semantic.primary.opacity(0.28)
-        }
-        return AppUI.Color.semantic.warning.opacity(0.18)
-    }
-
-    var borderColor: Color {
-        if isSelected {
-            return AppUI.Color.semantic.primary.opacity(0.72)
-        }
-        return AppUI.Color.semantic.warning.opacity(0.42)
     }
 }

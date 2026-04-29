@@ -117,6 +117,7 @@ enum EditorSaveState: Equatable {
     case editing
     case saving
     case saved
+    case conflict(String)
     case error(String)
 
     var icon: String {
@@ -125,6 +126,7 @@ enum EditorSaveState: Equatable {
         case .editing: return "pencil.circle"
         case .saving: return "arrow.triangle.2.circlepath"
         case .saved: return "checkmark.circle.fill"
+        case .conflict: return "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90"
         case .error: return "exclamationmark.triangle.fill"
         }
     }
@@ -135,6 +137,7 @@ enum EditorSaveState: Equatable {
         case .editing: return String(localized: "Editing...", table: "LumiEditor")
         case .saving: return String(localized: "Saving...", table: "LumiEditor")
         case .saved: return String(localized: "Saved", table: "LumiEditor")
+        case .conflict(let msg): return msg
         case .error(let msg): return msg
         }
     }

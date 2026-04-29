@@ -8,19 +8,13 @@ import os
 
 /// 文本变更协调器
 /// 监听 CodeEditSourceEditor 的文本与焦点事件，通知 EditorState 更新脏状态并在失焦时保存
-final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
-    private struct PendingNativeEdit {
-        let lspRange: LSPRange
-        let nsRange: NSRange
-        let undoState: EditorUndoState?
-    }
-    
+final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked Sendable {
     /// 弱引用状态管理器
     private weak var state: EditorState?
     private weak var textViewController: TextViewController?
     private var endEditingObserver: NSObjectProtocol?
-    private var pendingNativeEdit: PendingNativeEdit?
-    private var suppressNextTextDidChangeReconciliation = false
+    private let bridge = TextViewBridge()
+    private let inputRouter = EditorInputRouter()
     /// 跳转定义代理（由外部注入）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
     
@@ -31,292 +25,111 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
     // MARK: - TextViewCoordinator
     
     nonisolated func prepareCoordinator(controller: TextViewController) {
-        if let endEditingObserver {
-            NotificationCenter.default.removeObserver(endEditingObserver)
-            self.endEditingObserver = nil
-        }
-        textViewController = controller
-        jumpDelegate?.textViewController = controller
-        let st = state
-        DispatchQueue.main.async {
-            st?.focusedTextView = controller.textView
-        }
-
-        endEditingObserver = NotificationCenter.default.addObserver(
-            forName: NSText.didEndEditingNotification,
-            object: controller.textView,
-            queue: .main
-        ) { [weak st] _ in
-            st?.saveNowIfNeeded(reason: "editor_focus_lost")
+        MainActor.assumeIsolated {
+            textViewController = controller
+            endEditingObserver = bridge.attach(
+                controller: controller,
+                state: state,
+                jumpDelegate: jumpDelegate,
+                existingObserver: endEditingObserver
+            )
         }
     }
     
     nonisolated func textViewDidChangeText(controller: TextViewController) {
-        let state = self.state
-        let currentText = controller.textView?.string ?? ""
-        let shouldSuppressReconciliation = suppressNextTextDidChangeReconciliation
-        if shouldSuppressReconciliation {
-            suppressNextTextDidChangeReconciliation = false
+        let payload = MainActor.assumeIsolated {
+            let currentText = controller.textView?.string ?? ""
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.info("\(EditorState.t)文本变更: state=\(self.state != nil), 长度=\(controller.textView?.string.count ?? -1)")
+            }
+            return (
+                state: state,
+                inputRouter: inputRouter,
+                bridge: bridge,
+                currentText: currentText
+            )
         }
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(EditorState.t)文本变更: state=\(state != nil), 长度=\(controller.textView?.string.count ?? -1)")
-        }
-        // 延迟到下一个 RunLoop，避免 "Modifying state during view update"
-        DispatchQueue.main.async {
-            if state == nil {
-                EditorPlugin.logger.warning("\(EditorState.t)Coordinator 已被释放，state 为 nil")
-            }
-            if !shouldSuppressReconciliation {
-                state?.notifyContentChanged(fromTextViewString: currentText)
-            }
-            guard let state else { return }
-            Task { @MainActor in
-                let context = Self.interactionContext(
-                    controller: controller,
-                    state: state,
-                    typedCharacter: Self.lastTypedCharacter(in: controller)
-                )
-                await state.editorExtensions.runInteractionTextDidChange(
-                    context: context,
-                    state: state,
-                    controller: controller
-                )
-            }
+        Task { @MainActor in
+            payload.inputRouter.handleTextDidChange(
+                state: payload.state,
+                controller: controller,
+                currentText: payload.currentText,
+                shouldSuppressReconciliation: payload.bridge.consumeSuppressNextTextDidChangeReconciliation(),
+                bridge: payload.bridge
+            )
         }
     }
     
     nonisolated func textViewDidChangeSelection(controller: TextViewController) {
-        let state = self.state
-        let selectionRanges = controller.textView?.selectionManager.textSelections.map(\.range) ?? []
-        let cursorPositions = controller.cursorPositions
-        Task { @MainActor [weak state] in
-            guard let state else { return }
-            state.logMultiCursorInput(
-                action: "coordinator.selectionDidChange",
-                textViewSelections: selectionRanges,
-                note: "cursorPositions=\(cursorPositions.count)"
+        let payload = MainActor.assumeIsolated {
+            (
+                state: state,
+                inputRouter: inputRouter,
+                bridge: bridge,
+                selectionRanges: controller.textView?.selectionManager.textSelections.map(\.range) ?? [],
+                cursorPositions: controller.cursorPositions
             )
-
-            // 多光标模式下，跳过 syncSelections 和 clearUnfocusedMultiCursorsIfNeeded。
-            // 原因：CodeEditSourceEditor 的 updateCursorPosition() 会把 textSelections 转换为
-            // cursorPositions（基于 line/column），如果 layoutManager 尚未布局某些 offset，
-            // textLineForOffset 会返回 nil 导致部分选区丢失。然后 Coordinator 通过 Binding
-            // 回写 cursorPositions → SwiftUI 触发 updateNSViewController → setCursorPositions
-            // 把减少后的选区覆盖回 selectionManager，导致光标丢失。
-            let cursorCount = controller.textView?.selectionManager.textSelections.count ?? 0
-            let stateCount = state.multiCursorState.all.count
-            let isMultiCursorSession = stateCount > 1 || cursorCount > 1
-
-            if !isMultiCursorSession {
-                Self.syncSelections(from: controller, to: state)
-                state.clearUnfocusedMultiCursorsIfNeeded()
-            }
-
-            let cursor = controller.cursorPositions.first
-
-            state.updateSelectedProblemDiagnostic(for: cursor)
-
-            guard let cursor else {
-                return
-            }
-
-            // Hover 请求已由 HoverEditorCoordinator 统一处理，此处不再重复请求
-
-            let lspLine = max(cursor.start.line - 1, 0)
-            let lspCharacter = max(cursor.start.column - 1, 0)
-
-            // ✅ Code Action 请求放入独立 Task，不阻塞后续光标/插件操作
-            if !state.areCodeActionsEnabled {
-                state.codeActionProvider.clear()
-            } else if let fileURL = state.currentFileURL {
-                let diagnostics = state.panelState.problemDiagnostics.filter { diag in
-                    Int(diag.range.start.line) + 1 == cursor.start.line ||
-                    (Int(diag.range.start.line) + 1 < cursor.start.line && Int(diag.range.end.line) + 1 >= cursor.start.line)
-                }
-                let caURI = fileURL.absoluteString
-                let caDiags = diagnostics
-                let caLine = lspLine
-                let caChar = lspCharacter
-                let caLangId = state.detectedLanguage?.tsName ?? "swift"
-                let caSelectedText: String? = {
-                    guard let textView = controller.textView,
-                          let selection = textView.selectionManager.textSelections.first else { return nil }
-                    let range = selection.range
-                    guard range.location != NSNotFound, range.length > 0,
-                          let swiftRange = Range(range, in: textView.string) else { return nil }
-                    return String(textView.string[swiftRange])
-                }()
-                Task { @MainActor in
-                    await state.codeActionProvider.requestCodeActionsForLine(
-                        uri: caURI,
-                        line: caLine,
-                        character: caChar,
-                        diagnostics: caDiags,
-                        languageId: caLangId,
-                        selectedText: caSelectedText
-                    )
-                }
-            }
-
-            let context = Self.interactionContext(
+        }
+        guard let state = payload.state else { return }
+        Task { @MainActor in
+            await payload.inputRouter.handleSelectionDidChange(
+                state: state,
                 controller: controller,
-                state: state,
-                typedCharacter: nil
-            )
-            await state.editorExtensions.runInteractionSelectionDidChange(
-                context: context,
-                state: state,
-                controller: controller
+                selectionRanges: payload.selectionRanges,
+                cursorPositions: payload.cursorPositions,
+                bridge: payload.bridge
             )
         }
     }
     
     nonisolated func destroy() {
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.info("\(EditorState.t)Coordinator 销毁: state=\(self.state != nil)")
-        }
-        if let endEditingObserver {
-            NotificationCenter.default.removeObserver(endEditingObserver)
-            self.endEditingObserver = nil
-        }
-        let st = state
-        state = nil
-        textViewController = nil
-        DispatchQueue.main.async {
-            st?.focusedTextView = nil
+        MainActor.assumeIsolated {
+            if EditorPlugin.verbose {
+                EditorPlugin.logger.info("\(EditorState.t)Coordinator 销毁: state=\(self.state != nil)")
+            }
+            bridge.teardown(
+                state: &state,
+                textViewController: &textViewController,
+                observer: &endEditingObserver
+            )
         }
     }
     
     func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with string: String) {
-        guard let lspRange = Self.lspRange(from: range, in: textView.string) else {
-            pendingNativeEdit = nil
-            return
-        }
         let state = self.state
-        let undoState = MainActor.assumeIsolated { state?.captureUndoState() }
-        pendingNativeEdit = PendingNativeEdit(
-            lspRange: lspRange,
-            nsRange: range,
-            undoState: undoState
-        )
+        _ = MainActor.assumeIsolated {
+            bridge.beginNativeReplacement(
+                range: range,
+                text: string,
+                in: textView,
+                captureUndoState: {
+                    state?.captureUndoState()
+                }
+            )
+        }
     }
     
     func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with string: String) {
-        guard let pendingEdit = pendingNativeEdit else { return }
-        pendingNativeEdit = nil
+        let pendingEdit = MainActor.assumeIsolated {
+            bridge.consumeNativeReplacement(text: string)
+        }
+        guard let pendingEdit else { return }
         let state = self.state
-        suppressNextTextDidChangeReconciliation = true
-        DispatchQueue.main.async {
-            // 关键：CodeEditSourceEditor 对实现了 TextViewDelegate 的 coordinator
-            // 只调用 textView(_:didReplaceContentsIn:with:)，不会调用 textViewDidChangeText(controller:)。
-            // 因此脏状态更新逻辑必须在这里触发。
-            state?.applyNativeTextEdit(range: pendingEdit.nsRange, text: string, textViewString: textView.string)
-            state?.notifyLSPIncrementalChange(range: pendingEdit.lspRange, text: string)
-            if let undoState = pendingEdit.undoState {
-                state?.recordUndoChange(from: undoState, reason: "text_input")
-            }
+        let inputRouter = inputRouter
+        Task { @MainActor in
+            inputRouter.handleNativeReplacement(
+                state: state,
+                pendingEdit: pendingEdit,
+                textViewString: textView.string
+            )
         }
     }
     
-    private static func lspRange(from nsRange: NSRange, in text: String) -> LSPRange? {
-        let utf16Count = text.utf16.count
-        let startOffset = nsRange.location
-        let endOffset = nsRange.location + nsRange.length
-        
-        guard startOffset >= 0, endOffset >= startOffset, endOffset <= utf16Count else {
-            return nil
-        }
-        
-        guard let start = lspPosition(utf16Offset: startOffset, in: text),
-              let end = lspPosition(utf16Offset: endOffset, in: text) else {
-            return nil
-        }
-        
-        return LSPRange(start: start, end: end)
-    }
-    
-    private static func lspPosition(utf16Offset: Int, in text: String) -> Position? {
-        guard utf16Offset >= 0, utf16Offset <= text.utf16.count else { return nil }
-        
-        var line = 0
-        var character = 0
-        var consumed = 0
-        
-        for unit in text.utf16 {
-            if consumed >= utf16Offset {
-                break
-            }
-            if unit == 0x0A {
-                line += 1
-                character = 0
-            } else {
-                character += 1
-            }
-            consumed += 1
-        }
-        
-        return Position(line: line, character: character)
-    }
-
-    @MainActor
-    private static func syncSelections(
-        from controller: TextViewController,
-        to state: EditorState
-    ) {
-        guard let textView = controller.textView else { return }
-
-        // Phase 2: 通过 EditorSelectionMapper 进行 view → canonical 转换
-        let currentCanonical = state.canonicalSelectionSet
-
-        guard let viewSelectionSet = EditorSelectionMapper.toCanonical(
-            from: textView,
-            currentState: currentCanonical
-        ) else { return }
-
-        // 多光标保护：原生回传选区数量减少时，拒绝覆盖内核（可能是 CodeEdit 内部丢失）
-        guard EditorSelectionMapper.shouldAcceptCanonicalUpdate(
-            viewSelections: viewSelectionSet,
-            currentState: currentCanonical
-        ) else { return }
-
-        state.applyCanonicalSelectionSet(viewSelectionSet)
-    }
-
-    @MainActor
-    private static func interactionContext(
-        controller: TextViewController,
-        state: EditorState,
-        typedCharacter: String?
-    ) -> EditorInteractionContext {
-        let textView = controller.textView
-        let text = textView?.string ?? ""
-        let selection = textView?.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        let offset = max(selection.location, 0)
-        let position = lspPosition(utf16Offset: offset, in: text)
-            ?? Position(line: max(state.cursorLine - 1, 0), character: max(state.cursorColumn - 1, 0))
-
-        return EditorInteractionContext(
-            languageId: state.detectedLanguage?.tsName ?? "swift",
-            line: Int(position.line),
-            character: Int(position.character),
-            typedCharacter: typedCharacter
-        )
-    }
-
-    @MainActor
-    private static func lastTypedCharacter(in controller: TextViewController) -> String? {
-        guard let textView = controller.textView else { return nil }
-        let text = textView.string as NSString
-        guard let selection = textView.selectionManager.textSelections.first else { return nil }
-        let location = selection.range.location
-        guard location != NSNotFound, location > 0, location <= text.length else { return nil }
-        return text.substring(with: NSRange(location: location - 1, length: 1))
-    }
 }
 
 /// 光标位置协调器
 /// 监听光标位置变化，更新行号/列号信息
-final class CursorCoordinator: TextViewCoordinator {
+final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
     
     private weak var state: EditorState?
     
@@ -327,18 +140,18 @@ final class CursorCoordinator: TextViewCoordinator {
     // MARK: - TextViewCoordinator
     
     nonisolated func textViewDidChangeSelection(controller: TextViewController) {
-        let state = self.state
-        let positions = controller.cursorPositions
+        let payload = MainActor.assumeIsolated {
+            (state: state, positions: controller.cursorPositions)
+        }
         
-        // 延迟到下一个 RunLoop，避免 "Modifying state during view update"
         DispatchQueue.main.async {
-            if let first = positions.first {
-                state?.applyPrimaryCursorObservation(
+            if let first = payload.positions.first {
+                payload.state?.applyPrimaryCursorObservation(
                     line: first.start.line,
                     column: first.start.column
                 )
             } else {
-                state?.applyCursorObservation(positions)
+                payload.state?.applyCursorObservation(payload.positions)
             }
         }
     }
@@ -346,14 +159,14 @@ final class CursorCoordinator: TextViewCoordinator {
     nonisolated func prepareCoordinator(controller: TextViewController) {}
     
     nonisolated func controllerDidAppear(controller: TextViewController) {
-        if controller.isEditable && controller.isSelectable {
-            controller.view.window?.makeFirstResponder(controller.textView)
+        MainActor.assumeIsolated {
+            if controller.isEditable && controller.isSelectable {
+                controller.view.window?.makeFirstResponder(controller.textView)
+            }
         }
     }
     
-    nonisolated func destroy() {
-        state = nil
-    }
+    nonisolated func destroy() { MainActor.assumeIsolated { state = nil } }
 }
 
 // MARK: - Context Menu Coordinator
@@ -368,7 +181,7 @@ final class CursorCoordinator: TextViewCoordinator {
 ///
 /// 因此我们通过 ObjC runtime 的 `class_replaceMethod` 替换 textView 实例所属类
 /// 的 `menu(for:)` 实现。新实现先调用原始方法获取标准菜单，再往其中插入自定义项。
-final class ContextMenuCoordinator: TextViewCoordinator {
+final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable {
 
     private weak var state: EditorState?
 
@@ -379,19 +192,14 @@ final class ContextMenuCoordinator: TextViewCoordinator {
     nonisolated func prepareCoordinator(controller: TextViewController) {}
 
     nonisolated func controllerDidAppear(controller: TextViewController) {
-        guard let textView = controller.textView else { return }
-        let state = self.state
-
-        Task { @MainActor [weak state] in
-            guard let state else { return }
+        MainActor.assumeIsolated {
+            guard let textView = controller.textView, let state else { return }
             MultiCursorInputInstaller.shared.register(textView: textView, state: state)
             ContextMenuManager.shared.register(textView: textView, state: state)
         }
     }
 
-    nonisolated func destroy() {
-        state = nil
-    }
+    nonisolated func destroy() { MainActor.assumeIsolated { state = nil } }
 }
 
 // MARK: - Context Menu Manager
