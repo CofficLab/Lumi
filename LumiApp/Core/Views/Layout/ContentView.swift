@@ -69,7 +69,7 @@ struct ContentView: View, SuperLog {
             let centerViews = pluginProvider.getToolbarCenterViews()
             let trailingViews = pluginProvider.getToolbarTrailingViews()
 
-            ToolbarItemGroup(placement: .automatic) {
+            ToolbarItemGroup(placement: .navigation) {
                 ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
                     view
                 }

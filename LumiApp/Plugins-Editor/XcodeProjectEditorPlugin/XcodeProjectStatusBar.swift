@@ -9,14 +9,7 @@ struct XcodeProjectStatusBar: View {
     @State private var showSchemePicker = false
     
     var body: some View {
-        HStack(spacing: 8) {
-            // Xcode 项目标识
-            if viewModel.isXcodeProject {
-                Image(systemName: "hammer.fill")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.blue)
-            }
-            
+        HStack(spacing: 0) {
             // Scheme 选择器
             if viewModel.isXcodeProject, !viewModel.schemes.isEmpty {
                 Menu {
@@ -33,18 +26,13 @@ struct XcodeProjectStatusBar: View {
                         }
                     }
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 8))
+                    HStack(spacing: 6) {
+                        Image(systemName: "hammer.fill")
                         Text(viewModel.activeScheme ?? "Scheme")
                             .lineLimit(1)
                         Image(systemName: "chevron.down")
                             .font(.system(size: 8))
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(4)
                 }
             }
             
