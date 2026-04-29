@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+import CodeEditSourceEditor
 @testable import Lumi
 
 @MainActor
@@ -14,7 +15,7 @@ final class EditorCursorControllerTests: XCTestCase {
             fallbackColumn: 20
         )
 
-        guard case let .cursor(.observedPositions(applied, fallbackLine, fallbackColumn)) = update else {
+        guard case let .cursor(.observedPositions(applied, fallbackLine: fallbackLine, fallbackColumn: fallbackColumn)) = update else {
             return XCTFail("Expected observed cursor update")
         }
 
@@ -31,7 +32,12 @@ final class EditorCursorControllerTests: XCTestCase {
         let update = controller.resetPrimaryCursor(in: &editorState)
 
         XCTAssertEqual(editorState.cursorPositions, [])
-        guard case let .cursor(.primary(line, column, existingPositions, preserveCursorSelection)) = update else {
+        guard case let .cursor(.primary(
+            line: line,
+            column: column,
+            existingPositions: existingPositions,
+            preserveCursorSelection: preserveCursorSelection
+        )) = update else {
             return XCTFail("Expected primary cursor update")
         }
 

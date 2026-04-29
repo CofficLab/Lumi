@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+import LanguageServerProtocol
 @testable import Lumi
 
 @MainActor

@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+import CodeEditSourceEditor
 @testable import Lumi
 
 @MainActor
@@ -9,8 +10,7 @@ final class EditorSessionControllerTests: XCTestCase {
         let session = EditorSession(
             fileURL: URL(fileURLWithPath: "/tmp/demo.md"),
             multiCursorState: MultiCursorState(
-                all: [MultiCursorSelection(location: 4, length: 2)],
-                primaryIndex: 0
+                primary: MultiCursorSelection(location: 4, length: 2)
             ),
             panelState: EditorPanelSessionState(
                 mouseHoverContent: "hover",
@@ -24,9 +24,9 @@ final class EditorSessionControllerTests: XCTestCase {
             ),
             scrollState: EditorScrollState(viewportOrigin: CGPoint(x: 0, y: 42)),
             viewState: EditorViewState(
-                cursorPositions: [CursorPosition(start: .init(line: 3, column: 5), end: nil)],
                 primaryCursorLine: 3,
-                primaryCursorColumn: 5
+                primaryCursorColumn: 5,
+                cursorPositions: [CursorPosition(start: .init(line: 3, column: 5), end: nil)]
             )
         )
 
@@ -35,10 +35,22 @@ final class EditorSessionControllerTests: XCTestCase {
             fallbackCursorPositions: []
         )
 
-        XCTAssertEqual(application.multiCursorState, session.multiCursorState)
+        XCTAssertEqual(application.multiCursorState.primary, session.multiCursorState.primary)
+        XCTAssertEqual(application.multiCursorState.secondary, session.multiCursorState.secondary)
         XCTAssertEqual(application.panelState, session.panelState)
         XCTAssertEqual(application.scrollState, session.scrollState)
-        XCTAssertEqual(application.resolvedInteraction.bridgeState?.viewState, session.viewState)
+        XCTAssertEqual(
+            application.resolvedInteraction.bridgeState?.viewState.primaryCursorLine,
+            session.viewState.primaryCursorLine
+        )
+        XCTAssertEqual(
+            application.resolvedInteraction.bridgeState?.viewState.primaryCursorColumn,
+            session.viewState.primaryCursorColumn
+        )
+        XCTAssertEqual(
+            application.resolvedInteraction.bridgeState?.viewState.cursorPositions,
+            session.viewState.cursorPositions
+        )
         XCTAssertEqual(
             application.resolvedInteraction.bridgeState?.findReplaceState,
             session.findReplaceState
@@ -57,9 +69,9 @@ final class EditorSessionControllerTests: XCTestCase {
         )
         let bridgeState = EditorBridgeState(
             viewState: EditorViewState(
-                cursorPositions: [CursorPosition(start: .init(line: 8, column: 13), end: nil)],
                 primaryCursorLine: 8,
-                primaryCursorColumn: 13
+                primaryCursorColumn: 13,
+                cursorPositions: [CursorPosition(start: .init(line: 8, column: 13), end: nil)]
             ),
             findReplaceState: expectedFindReplaceState
         )
@@ -82,9 +94,9 @@ final class EditorSessionControllerTests: XCTestCase {
         let activeSession = EditorSession()
         let expectedBridgeState = EditorBridgeState(
             viewState: EditorViewState(
-                cursorPositions: [CursorPosition(start: .init(line: 2, column: 7), end: nil)],
                 primaryCursorLine: 2,
-                primaryCursorColumn: 7
+                primaryCursorColumn: 7,
+                cursorPositions: [CursorPosition(start: .init(line: 2, column: 7), end: nil)]
             ),
             findReplaceState: EditorFindReplaceState(
                 findText: "alpha",
@@ -102,8 +114,7 @@ final class EditorSessionControllerTests: XCTestCase {
             activeSession: activeSession,
             fileURL: URL(fileURLWithPath: "/tmp/file.swift"),
             multiCursorState: MultiCursorState(
-                all: [MultiCursorSelection(location: 1, length: 0)],
-                primaryIndex: 0
+                primary: MultiCursorSelection(location: 1, length: 0)
             ),
             panelState: expectedPanelState,
             isDirty: true,
@@ -115,11 +126,13 @@ final class EditorSessionControllerTests: XCTestCase {
         )
 
         XCTAssertEqual(activeSession.fileURL?.path, "/tmp/file.swift")
-        XCTAssertEqual(activeSession.multiCursorState.primaryIndex, 0)
+        XCTAssertEqual(activeSession.multiCursorState.primary, MultiCursorSelection(location: 1, length: 0))
         XCTAssertEqual(activeSession.panelState, expectedPanelState)
         XCTAssertTrue(activeSession.isDirty)
         XCTAssertEqual(activeSession.findReplaceState, expectedBridgeState.findReplaceState)
-        XCTAssertEqual(activeSession.viewState, expectedBridgeState.viewState)
+        XCTAssertEqual(activeSession.viewState.primaryCursorLine, expectedBridgeState.viewState.primaryCursorLine)
+        XCTAssertEqual(activeSession.viewState.primaryCursorColumn, expectedBridgeState.viewState.primaryCursorColumn)
+        XCTAssertEqual(activeSession.viewState.cursorPositions, expectedBridgeState.viewState.cursorPositions)
         XCTAssertEqual(activeSession.scrollState.viewportOrigin.y, 20)
         XCTAssertEqual(observedSessionID, activeSession.id)
     }

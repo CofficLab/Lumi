@@ -8,11 +8,10 @@ final class EditorMultiCursorWorkflowControllerTests: XCTestCase {
         let workflow = EditorMultiCursorWorkflowController()
         let controller = EditorMultiCursorController()
         let state = MultiCursorState(
-            all: [
-                MultiCursorSelection(location: 1, length: 0),
+            primary: MultiCursorSelection(location: 1, length: 0),
+            secondary: [
                 MultiCursorSelection(location: 4, length: 2)
-            ],
-            primaryIndex: 0
+            ]
         )
 
         let result = workflow.clearedState(currentState: state, using: controller)

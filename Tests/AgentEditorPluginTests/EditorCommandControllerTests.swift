@@ -24,18 +24,20 @@ final class EditorCommandControllerTests: XCTestCase {
             EditorCommandSuggestion(
                 id: "editor.open",
                 title: "Open",
-                subtitle: nil,
-                keywords: ["file"],
-                category: .navigation,
-                perform: {}
+                systemImage: "arrowshape.turn.up.right",
+                category: EditorCommandCategory.navigation.rawValue,
+                order: 0,
+                isEnabled: true,
+                action: {}
             ),
             EditorCommandSuggestion(
                 id: "editor.save",
                 title: "Save",
-                subtitle: nil,
-                keywords: ["write"],
-                category: .file,
-                perform: {}
+                systemImage: "square.and.arrow.down",
+                category: EditorCommandCategory.save.rawValue,
+                order: 1,
+                isEnabled: true,
+                action: {}
             )
         ]
 

@@ -13,7 +13,19 @@ final class EditorOverlayControllerTests: XCTestCase {
 
     func testCodeActionOverlayActionsHideWhenDisabled() {
         let controller = EditorOverlayController()
-        let actions = [CodeActionItem(title: "Fix", kind: nil, diagnostics: [], isPreferred: false, disabledReason: nil)]
+        let actions = [
+            CodeActionItem(
+                title: "Fix",
+                kind: "quickfix",
+                payload: .plugin(EditorCodeActionSuggestion(
+                    id: "fix",
+                    title: "Fix",
+                    command: "editor.fix",
+                    priority: 0
+                )),
+                isPreferred: false
+            )
+        ]
 
         XCTAssertTrue(controller.codeActionOverlayActions(shouldPresent: false, actions: actions).isEmpty)
         XCTAssertEqual(controller.codeActionOverlayActions(shouldPresent: true, actions: actions).count, 1)

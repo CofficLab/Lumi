@@ -12,7 +12,9 @@ final class SourceEditorViewBridgeTests: XCTestCase {
         let lineTable = bridge.lineTable(for: storage)
 
         XCTAssertNotNil(lineTable)
-        XCTAssertEqual(lineTable?.lineRange(at: 0), 0..<4)
+        XCTAssertEqual(lineTable?.lineCount, 3)
+        XCTAssertEqual(lineTable?.lineStart(line: 0), 0)
+        XCTAssertEqual(lineTable?.lineStart(line: 1), 4)
     }
 
     func testBindingClearsScrollPositionOnRead() {

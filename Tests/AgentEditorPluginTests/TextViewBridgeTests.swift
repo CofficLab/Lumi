@@ -50,9 +50,7 @@ final class TextViewBridgeTests: XCTestCase {
     }
 
     private func makeTextView(text: String) -> TextView {
-        let textView = TextView(frame: .zero)
-        textView.string = text
-        return textView
+        TextView(string: text)
     }
 }
 #endif

@@ -19,11 +19,11 @@ final class EditorFindControllerTests: XCTestCase {
         let state = EditorFindReplaceState()
 
         let updated = controller.stateForUpdatingOptions(state) { options in
-            options.caseSensitive = true
+            options.isCaseSensitive = true
         }
 
-        XCTAssertTrue(updated.options.caseSensitive)
-        XCTAssertFalse(state.options.caseSensitive)
+        XCTAssertTrue(updated.options.isCaseSensitive)
+        XCTAssertFalse(state.options.isCaseSensitive)
     }
 
     func testApplyMatchesResultUpdatesSelectionMetadata() {
