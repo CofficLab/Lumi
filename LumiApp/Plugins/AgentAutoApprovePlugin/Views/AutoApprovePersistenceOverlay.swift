@@ -1,10 +1,13 @@
 import SwiftUI
 
+/// 自动批准持久化覆盖层
+///
+/// 包裹在根视图之上，监听项目切换和开关状态变化，自动保存/恢复设置。
 struct AutoApprovePersistenceOverlay<Content: View>: View {
     @EnvironmentObject private var projectVM: ProjectVM
 
     let content: Content
-    private let store = AgentAutoApprovePersistenceStore()
+    private let store = AgentAutoApprovePluginLocalStore.shared
 
     @State private var restored = false
 
@@ -21,10 +24,6 @@ struct AutoApprovePersistenceOverlay<Content: View>: View {
             }
     }
 }
-
-// MARK: - View
-
-// MARK: - Action
 
 // MARK: - Setter
 
@@ -43,7 +42,6 @@ extension AutoApprovePersistenceOverlay {
     }
 
     private func handleProjectPathChange(_ newPath: String) {
-        // 切换项目时恢复该项目的设置
         setRestored(false)
         restoreIfNeeded()
     }
@@ -63,6 +61,3 @@ extension AutoApprovePersistenceOverlay {
         projectVM.setAutoApproveRisk(enabled)
     }
 }
-
-// MARK: - Preview
-

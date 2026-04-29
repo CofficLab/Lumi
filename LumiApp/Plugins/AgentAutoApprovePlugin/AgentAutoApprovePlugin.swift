@@ -1,16 +1,19 @@
 import MagicKit
+import os
 import SwiftUI
 
 /// 自动批准开关插件
 ///
 /// 在工具栏右侧提供自动批准开关（AutoApproveToggle），
 /// 持久化覆盖层（AutoApprovePersistenceOverlay）通过 addRootView 提供。
-actor AgentAutoApprovePlugin: SuperPlugin {
+actor AgentAutoApprovePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "✅"
     nonisolated static let verbose: Bool = false
-    static let id = "AgentAutoApproveHeader"
-    static let displayName = String(localized: "Auto-Approve Toggle", table: "AgentAutoApproveHeader")
-    static let description = String(localized: "Auto-approve toggle in chat header", table: "AgentAutoApproveHeader")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-auto-approve")
+
+    static let id = "AgentAutoApprovePlugin"
+    static let displayName = String(localized: "Auto-Approve Toggle", table: "AgentAutoApprovePlugin")
+    static let description = String(localized: "Auto-approve toggle in chat header", table: "AgentAutoApprovePlugin")
     static let iconName = "checkmark.circle"
     static var order: Int { 82 }
 
@@ -32,4 +35,12 @@ actor AgentAutoApprovePlugin: SuperPlugin {
     func addToolBarTrailingView() -> AnyView? {
         AnyView(AutoApproveToggle())
     }
+}
+
+// MARK: - Preview
+
+#Preview("Auto Approve Plugin") {
+    AutoApproveToggle()
+        .padding()
+        .inRootView()
 }
