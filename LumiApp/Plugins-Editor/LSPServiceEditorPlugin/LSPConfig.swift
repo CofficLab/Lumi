@@ -1,8 +1,10 @@
 import Foundation
 import os
+import MagicKit
 
 /// LSP 配置：定义语言服务器二进制路径和默认参数
-struct LSPConfig {
+struct LSPConfig: SuperLog {
+    nonisolated static let emoji = "⚙️"
 
     /// 当前内建支持的语言 ID（用于可用性探测和 UI 状态）
     static let supportedLanguageIds: [String] = [
@@ -92,7 +94,7 @@ struct LSPConfig {
                 }
             }
             _fullScanCompleted = true
-            logger.info("LSP 配置预热完成，缓存 \(_pathCache.count) 条记录")
+            logger.info("\(LSPConfig.t)LSP 配置预热完成，缓存 \(_pathCache.count) 条记录")
             return available
         }.value
     }

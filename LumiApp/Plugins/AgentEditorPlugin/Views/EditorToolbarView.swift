@@ -355,6 +355,11 @@ struct EditorToolbarView: View {
             }
             if state.isTruncated {
                 Text("Editing disabled for truncated preview")
+                if state.canLoadFullFile {
+                    Button("Load Full File") {
+                        state.loadFullFileFromDisk()
+                    }
+                }
             }
             if let longestLine = state.longestDetectedLine {
                 Text("Long line: L\(longestLine.line + 1) · \(longestLine.length) chars")

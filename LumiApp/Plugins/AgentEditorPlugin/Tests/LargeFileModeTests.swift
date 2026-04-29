@@ -186,6 +186,102 @@ final class ViewportRenderControllerTests: XCTestCase {
             )
         )
     }
+
+    func testViewportSyntaxFeatureEnabledWhenViewportWithinLimit() {
+        XCTAssertTrue(
+            EditorState.isViewportSyntaxFeatureEnabled(
+                viewportRange: 200..<400,
+                maxLine: 1_000,
+                largeFileMode: .medium,
+                longestDetectedLine: nil
+            )
+        )
+    }
+
+    func testViewportSyntaxFeatureDisabledWhenLongLineProtectionApplies() {
+        XCTAssertFalse(
+            EditorState.isViewportSyntaxFeatureEnabled(
+                viewportRange: 0..<100,
+                maxLine: 10_000,
+                largeFileMode: .large,
+                longestDetectedLine: LongestDetectedLine(line: 3, length: 15_000)
+            )
+        )
+    }
+
+    @MainActor
+    func testEditorStateDisablesCodeActionsWhenViewportSyntaxFeaturesAreDisabled() {
+        let state = EditorState()
+        state.applyViewportObservation(startLine: 0, endLine: 100, totalLines: 20_000)
+        state.largeFileMode = .large
+        state.longestDetectedLine = LongestDetectedLine(line: 3, length: 15_000)
+
+        XCTAssertFalse(state.areCodeActionsEnabled)
+    }
+
+    @MainActor
+    func testEditorStateRenderedRangeHelpers() {
+        let state = EditorState()
+        state.applyViewportObservation(startLine: 100, endLine: 120, totalLines: 1000)
+
+        XCTAssertTrue(state.isRenderedLine(60))
+        XCTAssertFalse(state.isRenderedLine(20))
+
+        state.applyViewportObservation(startLine: 2, endLine: 3, totalLines: 10)
+        let shortTable = LineOffsetTable(content: "a\nbb\nccc\ndddd\n")
+        XCTAssertTrue(state.isRenderedOffset(2, lineTable: shortTable))
+        XCTAssertFalse(state.isRenderedOffset(0, lineTable: shortTable))
+        XCTAssertTrue(
+            state.intersectsRenderedRange(
+                EditorRange(location: 2, length: 2),
+                lineTable: shortTable
+            )
+        )
+        XCTAssertFalse(
+            state.intersectsRenderedRange(
+                EditorRange(location: 0, length: 1),
+                lineTable: shortTable
+            )
+        )
+
+        let matches = [
+            EditorFindMatch(range: EditorRange(location: 0, length: 1), matchedText: "a"),
+            EditorFindMatch(range: EditorRange(location: 2, length: 2), matchedText: "bb")
+        ]
+        XCTAssertEqual(state.renderedFindMatches(matches, lineTable: shortTable).count, 1)
+
+        let hints = [
+            InlayHintItem(line: 0, character: 0, text: "a", kind: nil, tooltip: nil, paddingLeft: false, paddingRight: false),
+            InlayHintItem(line: 2, character: 0, text: "b", kind: nil, tooltip: nil, paddingLeft: false, paddingRight: false)
+        ]
+        XCTAssertEqual(state.renderedInlayHints(hints).count, 1)
+    }
+
+    @MainActor
+    func testLoadFullFileOverrideDisablesTruncatedPreview() async throws {
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+
+        let fileURL = directoryURL.appendingPathComponent("large.txt")
+        let largeContent = String(repeating: "abcdefg\n", count: 350_000)
+        try largeContent.write(to: fileURL, atomically: true, encoding: .utf8)
+
+        let state = EditorState()
+        state.loadFile(from: fileURL)
+        try? await Task.sleep(for: .milliseconds(200))
+
+        XCTAssertTrue(state.isTruncated)
+        XCTAssertFalse(state.isEditable)
+
+        state.loadFullFileFromDisk()
+        try? await Task.sleep(for: .milliseconds(200))
+
+        XCTAssertFalse(state.isTruncated)
+        XCTAssertFalse(state.canLoadFullFile)
+        XCTAssertEqual(state.content?.string, largeContent)
+    }
 }
 
 #endif

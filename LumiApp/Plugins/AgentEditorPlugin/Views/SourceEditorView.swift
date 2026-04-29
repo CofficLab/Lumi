@@ -35,6 +35,7 @@ struct SourceEditorView: View, SuperLog {
     
     /// 缓存的配置
     @State private var cachedConfig: SourceEditorConfiguration?
+    @State private var contentLineTable: LineOffsetTable?
     
     /// 缓存的 popover 高度，用于在上方定位时避免遮挡
     @State private var hoverPopoverHeight: CGFloat = 100
@@ -44,11 +45,18 @@ struct SourceEditorView: View, SuperLog {
     }
     
     var body: some View {
-        editorContent
+        configuredEditorContent
+    }
+
+    private var configuredEditorContent: some View {
+        let base = editorContent
             .onAppear {
                 initializeCoordinators()
                 wireDelegates()
+                updateContentLineTable()
             }
+
+        let appearanceObserved = base
             .onChange(of: state.fontSize) { _, _ in updateConfigCache() }
             .onChange(of: state.wrapLines) { _, _ in updateConfigCache() }
             .onChange(of: state.showGutter) { _, _ in updateConfigCache() }
@@ -59,11 +67,36 @@ struct SourceEditorView: View, SuperLog {
             .onChange(of: state.currentThemeId) { _, _ in updateConfigCache() }
             .onChange(of: state.currentTheme) { _, _ in updateConfigCache() }
             .onChange(of: state.largeFileMode) { _, _ in updateConfigCache() }
+
+        let runtimeObserved = appearanceObserved
             .onChange(of: state.isSyntaxHighlightingEnabledInViewport) { _, isEnabled in
                 semanticTokenProvider?.setEnabled(isEnabled)
             }
+            .onChange(of: state.viewportRenderLineRange) { _, _ in
+                if state.panelState.hasActiveHover {
+                    hoverCoordinator?.cancelHover()
+                }
+                state.handleViewportRuntimeTransition()
+            }
+            .onChange(of: state.areDocumentHighlightsEnabled) { _, isEnabled in
+                state.handleDocumentHighlightRuntimeAvailabilityChange(isEnabled)
+            }
+            .onChange(of: state.areHoversEnabled) { _, isEnabled in
+                if !isEnabled {
+                    hoverCoordinator?.cancelHover()
+                }
+            }
+            .onChange(of: state.areSignatureHelpEnabled) { _, isEnabled in
+                state.handleSignatureHelpRuntimeAvailabilityChange(isEnabled)
+            }
+            .onChange(of: state.areCodeActionsEnabled) { _, isEnabled in
+                state.handleCodeActionRuntimeAvailabilityChange(isEnabled)
+            }
+
+        return runtimeObserved
             .onChange(of: state.content) { _, newContent in
                 jumpDelegate.textStorage = newContent
+                updateContentLineTable()
             }
             .onChange(of: state.currentFileURL) { _, _ in
                 updateConfigCache()
@@ -121,7 +154,8 @@ struct SourceEditorView: View, SuperLog {
 
     @ViewBuilder
     private var signatureHelpOverlay: some View {
-        if let help = state.signatureHelpProvider.currentHelp {
+        if state.shouldPresentSignatureHelpOverlay,
+           let help = state.signatureHelpProvider.currentHelp {
             SignatureHelpView(item: help)
                 .padding(.leading, 12)
                 .padding(.bottom, 32)
@@ -130,7 +164,7 @@ struct SourceEditorView: View, SuperLog {
     
     @ViewBuilder
     private var codeActionOverlay: some View {
-        if state.codeActionProvider.isVisible {
+        if state.shouldPresentCodeActionOverlay {
             CodeActionPanel(
                 actions: state.codeActionProvider.actions
             ) { action in
@@ -155,28 +189,22 @@ struct SourceEditorView: View, SuperLog {
 
     @ViewBuilder
     private var inlayHintsStrip: some View {
-        if state.largeFileMode.isInlayHintsDisabled {
-            EmptyView()
-        } else {
-            let hints = state.inlayHintProvider.hints
-            if hints.isEmpty {
-                EmptyView()
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(hints.prefix(24)) { hint in
-                            Text("L\(hint.line + 1) \(hint.text)")
-                                .font(.system(size: 10, design: .monospaced))
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
-                                .lineLimit(1)
-                        }
+        if state.shouldPresentInlayHintsStrip {
+            let hints = state.currentRenderedInlayHints
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(hints.prefix(24)) { hint in
+                        Text("L\(hint.line + 1) \(hint.text)")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .lineLimit(1)
                     }
-                    .padding(.horizontal, 8)
                 }
-                .frame(height: 22)
-                .frame(maxWidth: .infinity)
-                .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
+                .padding(.horizontal, 8)
             }
+            .frame(height: 22)
+            .frame(maxWidth: .infinity)
+            .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
         }
     }
 
@@ -203,51 +231,30 @@ struct SourceEditorView: View, SuperLog {
     @ViewBuilder
     private var bracketMatchOverlay: some View {
         if let textView = state.focusedTextView,
-           let match = state.bracketMatchResult,
-           let openRect = textView.layoutManager.rectForOffset(match.openOffset),
-           let closeRect = textView.layoutManager.rectForOffset(match.closeOffset) {
-            
-            let visibleRect = textView.visibleRect
-            let openOverlayRect = CGRect(
-                x: openRect.origin.x - visibleRect.origin.x,
-                y: openRect.origin.y - visibleRect.origin.y,
-                width: max(openRect.width, 3),
-                height: max(openRect.height, 2)
-            )
-            let closeOverlayRect = CGRect(
-                x: closeRect.origin.x - visibleRect.origin.x,
-                y: closeRect.origin.y - visibleRect.origin.y,
-                width: max(closeRect.width, 3),
-                height: max(closeRect.height, 2)
-            )
+           let lineTable = contentLineTable,
+           let overlayRects = state.renderedBracketOverlayRects(textView: textView, lineTable: lineTable) {
 
-            let expandedVisibleRect = visibleRect.offsetBy(dx: -visibleRect.origin.x, dy: -visibleRect.origin.y)
-                .insetBy(dx: -4, dy: -4)
-            if openOverlayRect.intersects(expandedVisibleRect) ||
-               closeOverlayRect.intersects(expandedVisibleRect) {
-                
-                let bracketColor = AppUI.Color.semantic.primary
-                ZStack(alignment: .topLeading) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(bracketColor.opacity(0.2))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 2)
-                                .stroke(bracketColor.opacity(0.6), lineWidth: 1)
-                        )
-                        .frame(width: openOverlayRect.width, height: openOverlayRect.height)
-                        .offset(x: openOverlayRect.minX, y: openOverlayRect.minY)
+            let bracketColor = AppUI.Color.semantic.primary
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(bracketColor.opacity(0.2))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 2)
+                            .stroke(bracketColor.opacity(0.6), lineWidth: 1)
+                    )
+                    .frame(width: overlayRects.open.width, height: overlayRects.open.height)
+                    .offset(x: overlayRects.open.minX, y: overlayRects.open.minY)
 
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(bracketColor.opacity(0.2))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 2)
-                                .stroke(bracketColor.opacity(0.6), lineWidth: 1)
-                        )
-                        .frame(width: closeOverlayRect.width, height: closeOverlayRect.height)
-                        .offset(x: closeOverlayRect.minX, y: closeOverlayRect.minY)
-                }
-                .allowsHitTesting(false)
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(bracketColor.opacity(0.2))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 2)
+                            .stroke(bracketColor.opacity(0.6), lineWidth: 1)
+                    )
+                    .frame(width: overlayRects.close.width, height: overlayRects.close.height)
+                    .offset(x: overlayRects.close.minX, y: overlayRects.close.minY)
             }
+            .allowsHitTesting(false)
         }
     }
 
@@ -255,8 +262,7 @@ struct SourceEditorView: View, SuperLog {
 
     @ViewBuilder
     private func hoverPreview(in containerSize: CGSize) -> some View {
-        if let hoverText = state.panelState.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !hoverText.isEmpty {
+        if let hoverText = state.currentHoverOverlayText {
             HoverPopoverView(markdownText: hoverText)
                 .onAppear {
                     if EditorPlugin.verbose {
@@ -278,7 +284,12 @@ struct SourceEditorView: View, SuperLog {
                             }
                     }
                 )
-                .offset(hoverOffset(in: containerSize))
+                .offset(
+                    state.hoverOverlayOffset(
+                        in: containerSize,
+                        popoverHeight: hoverPopoverHeight
+                    )
+                )
                 .transition(.asymmetric(
                     insertion: .opacity.combined(with: .scale(scale: 0.96, anchor: .bottomLeading)),
                     removal: .opacity
@@ -286,33 +297,6 @@ struct SourceEditorView: View, SuperLog {
                 .animation(.easeOut(duration: 0.14), value: state.panelState.mouseHoverContent)
                 .animation(.easeOut(duration: 0.12), value: state.panelState.mouseHoverSymbolRect)
         }
-    }
-
-    /// 计算 hover popover 的偏移量
-    /// 核心策略：popover 显示在 symbol 的正上方，左对齐 symbol 起点
-    private func hoverOffset(in containerSize: CGSize) -> CGSize {
-        let symbolRect = state.panelState.mouseHoverSymbolRect
-        let popoverEstimatedHeight = hoverPopoverHeight
-        let popoverMaxWidth: CGFloat = 440
-        let verticalGap: CGFloat = 4  // popover 与 symbol 之间的间距
-
-        // X: 左对齐 symbol 起点，但不超出容器
-        let preferredX = symbolRect.minX
-        let clampedX = max(4, min(preferredX, containerSize.width - popoverMaxWidth - 4))
-
-        // Y: 放在 symbol 上方
-        let preferredY = symbolRect.minY - popoverEstimatedHeight - verticalGap
-
-        // 如果上方空间不足，则放到 symbol 下方
-        let fallbackY = symbolRect.maxY + verticalGap
-        let clampedY: CGFloat
-        if preferredY >= 4 {
-            clampedY = preferredY
-        } else {
-            clampedY = min(fallbackY, max(containerSize.height - popoverEstimatedHeight - 4, 4))
-        }
-
-        return CGSize(width: clampedX, height: clampedY)
     }
 
     // MARK: - Initialization & Delegates
@@ -351,6 +335,9 @@ struct SourceEditorView: View, SuperLog {
         if hoverCoordinator == nil {
             hoverCoordinator = HoverEditorCoordinator(state: state)
         }
+        if contentLineTable == nil {
+            updateContentLineTable()
+        }
     }
 
     private func wireDelegates() {
@@ -377,6 +364,10 @@ struct SourceEditorView: View, SuperLog {
     private func updateConfigCache() {
         cachedConfig = buildConfiguration()
     }
+
+    private func updateContentLineTable() {
+        contentLineTable = state.content.map { LineOffsetTable(content: $0.string) }
+    }
     
     // MARK: - Language
     
@@ -396,7 +387,7 @@ struct SourceEditorView: View, SuperLog {
         if areSemanticHighlightsEnabled, let semanticTokenProvider {
             providers.insert(semanticTokenProvider, at: 0)
         }
-        if let documentHighlightProvider {
+        if state.areDocumentHighlightsEnabled, let documentHighlightProvider {
             providers.append(documentHighlightProvider)
         }
         return providers
@@ -414,10 +405,11 @@ struct SourceEditorView: View, SuperLog {
 
     private var visibleFindMatchHighlights: [FindMatchHighlight] {
         guard let textView = state.focusedTextView else { return [] }
+        guard let lineTable = contentLineTable else { return [] }
         let visibleRect = textView.visibleRect
         let selectedRange = state.activeSession.findReplaceState.selectedMatchRange
 
-        return state.findMatches.compactMap { match in
+        return state.currentRenderedFindMatches(lineTable: lineTable).compactMap { match in
             guard let rect = visibleRectForFindMatch(for: match.range, in: textView, visibleRect: visibleRect) else {
                 return nil
             }

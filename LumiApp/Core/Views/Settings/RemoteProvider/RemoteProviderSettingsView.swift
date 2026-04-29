@@ -1,7 +1,12 @@
+import os
 import SwiftUI
+import MagicKit
 
 /// 云端大模型设置视图（仅展示远程/API 供应商）
-struct RemoteProviderSettingsView: View {
+struct RemoteProviderSettingsView: View, SuperLog {
+    nonisolated static let emoji = "☁️"
+    nonisolated static let verbose = true
+
     // MARK: - State
 
     /// 当前选中的云端供应商 ID
@@ -13,13 +18,12 @@ struct RemoteProviderSettingsView: View {
     /// 选中的模型
     @State private var selectedModel: String = ""
 
+    /// 是否正在加载设置（加载期间禁止 onChange(of: apiKey) 触发保存，避免竞态写入）
+    @State private var isLoadingSettings: Bool = false
+
     // MARK: - Environment
 
     @EnvironmentObject private var registry: LLMProviderRegistry
-
-    // MARK: - Constants
-
-    private static let selectedRemoteProviderKey = "RemoteProviderSettingsView.selectedProviderId"
 
     // MARK: - Computed
 
@@ -64,11 +68,17 @@ struct RemoteProviderSettingsView: View {
         }
         .padding(AppUI.Spacing.lg)
         .onAppear(perform: onAppear)
-        .onChange(of: selectedProviderId) { _, newValue in
+        .onChange(of: selectedProviderId) {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)供应商切换 \(r("newId=\(selectedProviderId)"))")
+            }
             loadSettings()
-            saveSelectedProviderId(newValue)
+            saveSelectedProviderId(selectedProviderId)
         }
-        .onChange(of: apiKey) { _, _ in
+        .onChange(of: apiKey) {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)apiKey 变化，isLoadingSettings=\(isLoadingSettings)，长度=\(apiKey.count)")
+            }
             saveApiKey()
         }
     }
@@ -199,100 +209,57 @@ extension RemoteProviderSettingsView {
     }
 }
 
-// MARK: - Remote Model Row
-
-struct RemoteModelRow: View {
-    let model: String
-    let isDefault: Bool
-    let supportsVision: Bool?
-    let supportsTools: Bool?
-    let onTap: () -> Void
-
-    var body: some View {
-        GlassRow {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: AppUI.Spacing.md) {
-                    // 模型名称
-                    Text(model)
-                        .font(AppUI.Typography.body)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
-
-                    Spacer()
-
-                    // 默认标记
-                    if isDefault {
-                        AppTag("默认", style: .accent)
-                    }
-                }
-
-                HStack(spacing: 6) {
-                    if let supportsVision {
-                        capabilityBadge(
-                            title: supportsVision
-                                ? String(localized: "Image", table: "AgentInput")
-                                : String(localized: "Text", table: "AgentInput"),
-                            systemImage: supportsVision ? "photo" : "text.bubble"
-                        )
-                    }
-
-                    if let supportsTools, supportsTools {
-                        capabilityBadge(
-                            title: String(localized: "Tools", table: "AgentInput"),
-                            systemImage: "wrench.and.screwdriver"
-                        )
-                    }
-                }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                onTap()
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func capabilityBadge(title: String, systemImage: String) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: systemImage)
-                .font(.system(size: 8, weight: .medium))
-            Text(title)
-                .font(.caption2)
-        }
-        .foregroundColor(AppUI.Color.semantic.textSecondary)
-        .padding(.horizontal, 4)
-        .padding(.vertical, 1)
-        .background(
-            RoundedRectangle(cornerRadius: 3)
-                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
-        )
-        .help(title)
-    }
-}
-
 // MARK: - Actions
 
 extension RemoteProviderSettingsView {
     /// 加载当前供应商的设置信息（API Key 和选中的模型）
     private func loadSettings() {
         guard let providerType = selectedProviderType else { return }
+        let providerId = selectedProviderId
+        isLoadingSettings = true
+        let hasKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) != nil
         apiKey = APIKeyStore.shared.string(forKey: providerType.apiKeyStorageKey) ?? ""
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)加载设置 \(r("provider=\(providerId)"))，apiKey 已配置=\(hasKey)")
+        }
         loadSelectedModel()
+        // 延迟重置标志位，确保 onChange(of: apiKey) 不会在加载期间触发保存
+        DispatchQueue.main.async {
+            self.isLoadingSettings = false
+        }
     }
 
     /// 保存 API Key 到 Keychain
     private func saveApiKey() {
+        guard !isLoadingSettings else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)跳过保存（正在加载中）")
+            }
+            return
+        }
         guard let providerType = selectedProviderType else { return }
+        let providerId = selectedProviderId
+        let keyLength = apiKey.count
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)保存 API Key \(r("provider=\(providerId)"))，长度=\(keyLength)")
+        }
         APIKeyStore.shared.set(apiKey, forKey: providerType.apiKeyStorageKey)
     }
 
     /// 保存选中的模型到持久化存储
     private func saveModel() {
         guard selectedProviderId.isNotEmpty else { return }
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)保存模型 \(r("provider=\(selectedProviderId), model=\(selectedModel)"))")
+        }
         AppSettingStore.saveRemoteProviderModel(providerId: selectedProviderId, modelId: selectedModel)
     }
 
     /// 保存选中的云端供应商 ID 到持久化存储
     private func saveSelectedProviderId(_ id: String) {
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)保存选中供应商 \(r("id=\(id)"))")
+        }
         AppSettingStore.saveSelectedRemoteProviderId(id)
     }
 
@@ -301,8 +268,14 @@ extension RemoteProviderSettingsView {
         if let savedId = AppSettingStore.loadSelectedRemoteProviderId(),
            remoteProviders.contains(where: { $0.id == savedId }) {
             selectedProviderId = savedId
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)恢复选中供应商 \(r("id=\(savedId)"))")
+            }
         } else if let firstProvider = remoteProviders.first {
             selectedProviderId = firstProvider.id
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)使用首个供应商 \(r("id=\(firstProvider.id)"))")
+            }
         }
     }
 
@@ -315,14 +288,23 @@ extension RemoteProviderSettingsView {
         if let savedModel = AppSettingStore.loadRemoteProviderModel(providerId: selectedProviderId),
            selectedProvider?.availableModels.contains(savedModel) == true {
             selectedModel = savedModel
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)加载用户配置模型 \(r("model=\(savedModel)"))")
+            }
         }
         // 2. 如果用户未配置，使用供应商默认模型
         else if let defaultModel = selectedProvider?.defaultModel {
             selectedModel = defaultModel
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)使用供应商默认模型 \(r("model=\(defaultModel)"))")
+            }
         }
         // 3. 如果没有默认模型，使用第一个可用模型
         else if let firstModel = selectedProvider?.availableModels.first {
             selectedModel = firstModel
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)使用首个可用模型 \(r("model=\(firstModel)"))")
+            }
         }
     }
 }
@@ -332,6 +314,9 @@ extension RemoteProviderSettingsView {
 extension RemoteProviderSettingsView {
     /// 视图出现时的事件处理 - 加载仅云端供应商的设置
     func onAppear() {
+        if Self.verbose {
+            AppLogger.core.info("\(Self.a)")
+        }
         loadSelectedProviderId()
         loadSettings()
     }

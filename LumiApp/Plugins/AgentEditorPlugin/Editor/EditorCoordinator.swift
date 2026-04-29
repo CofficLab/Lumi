@@ -113,7 +113,9 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate {
             let lspCharacter = max(cursor.start.column - 1, 0)
 
             // ✅ Code Action 请求放入独立 Task，不阻塞后续光标/插件操作
-            if let fileURL = state.currentFileURL {
+            if !state.areCodeActionsEnabled {
+                state.codeActionProvider.clear()
+            } else if let fileURL = state.currentFileURL {
                 let diagnostics = state.problemDiagnostics.filter { diag in
                     Int(diag.range.start.line) + 1 == cursor.start.line ||
                     (Int(diag.range.start.line) + 1 < cursor.start.line && Int(diag.range.end.line) + 1 >= cursor.start.line)

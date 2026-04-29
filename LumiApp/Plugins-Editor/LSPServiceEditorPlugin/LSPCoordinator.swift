@@ -11,7 +11,7 @@ import MagicKit
 /// 负责将 LSP 服务与 CodeEditSourceEditor 集成
 @MainActor
 class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
-    nonisolated static let emoji = "😊 "
+    nonisolated static let emoji = "😊"
     nonisolated static let verbose = true
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")

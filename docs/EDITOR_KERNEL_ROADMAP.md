@@ -811,8 +811,18 @@ InlayHintProvider、DocumentHighlightProvider、CodeActionProvider、SignatureHe
 - [x] `LargeFileModeTests` 测试已覆盖（191 行）
 - [x] `LSPViewportScheduler` — 滚动节流管线（inlay hints/diagnostics/code actions 独立 debounce，500ms/300ms/400ms）
 - [x] Inlay viewport 调度 — `applyViewportObservation` 通过 `LSPViewportScheduler` 触发可见区域请求
-- [ ] 截断安全 — 大文件截断预览尚未实现（当前 `>2MB` 直接截断为 `256KB` 预览，缺少按需加载机制）
-- [ ] ViewportRenderController 与实际渲染的绑定尚未完全实现（CodeEditSourceEditor 内部渲染管线不受其控制）
+- [x] Document highlight runtime gating — viewport / 长行保护会抑制请求并清理旧高亮
+- [x] Hover runtime gating — viewport / 长行保护会抑制 hover 请求并清理旧浮层
+- [x] Signature help runtime gating — viewport / 长行保护会抑制请求并清理旧签名面板
+- [x] Code action runtime gating — viewport / 长行保护会抑制请求并清理旧灯泡动作
+- [x] 截断安全 — 大文件默认 `256KB` 截断预览，支持显式 `Load Full File` 按需全量加载
+- [~] ViewportRenderController 与实际渲染的绑定已部分实现：已驱动 `find match overlay`、`bracket match overlay`、`signature help overlay`、`code action overlay`、`inlay hints strip`，并在 viewport 变化时清理 `hover` 浮层、在主光标切出 render range 时清理 `document highlight / signature help / code action` 残留状态；语义高亮/inlay/document highlight/hover/code action 等 runtime gating 已接入；`CodeEditSourceEditor` 内部文本渲染管线仍不受其控制
+- [x] Viewport 转场清理已统一收口到 `EditorState.handleViewportRuntimeTransition()`，不再由 `SourceEditorView` 分散清理 `document highlight / signature help / code action`
+- [x] Render range 过滤 helper 已统一收口到 `EditorState`（`isRenderedLine / isRenderedOffset / intersectsRenderedRange / renderedFindMatches / renderedInlayHints`），`SourceEditorView` 不再自行维护这些过滤规则
+- [x] Overlay 展示条件已继续收口到 `EditorState`（`renderedBracketMatch / shouldPresentSignatureHelpOverlay / shouldPresentCodeActionOverlay`），`SourceEditorView` 进一步退化为纯渲染消费层
+- [x] `hover` 与 `inlay hints strip` 的展示条件也已收口到 `EditorState`（`shouldPresentHoverOverlay / currentRenderedInlayHints / shouldPresentInlayHintsStrip`），`SourceEditorView` 基本不再维护独立的 runtime 展示规则
+- [x] `find matches` 与 `hover` 的最终渲染输入也已改为直接消费 `EditorState` 结果（`currentRenderedFindMatches / currentHoverOverlayText`），进一步减少 `SourceEditorView` 的状态拼装
+- [x] `document highlight / signature help / code action` 的 runtime availability 转场清理也已收口到 `EditorState`（`handleDocumentHighlightRuntimeAvailabilityChange / handleSignatureHelpRuntimeAvailabilityChange / handleCodeActionRuntimeAvailabilityChange`）
 
 ---
 

@@ -37,6 +37,11 @@ final class EditorState: ObservableObject, SuperLog {
 
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.state")
 
+    struct BracketOverlayRects: Equatable {
+        let open: CGRect
+        let close: CGRect
+    }
+
     // MARK: - 组合子状态容器（P2.1）
     // 所有 @Published 属性通过 computed properties 桥接到子状态容器，
     // 保持向后兼容的同时实现关注点分离。
@@ -256,19 +261,39 @@ final class EditorState: ObservableObject, SuperLog {
     weak var focusedTextView: TextView?
 
     private var inlayHintRefreshTask: Task<Void, Never>?
+    private var fullLoadOverrides: Set<URL> = []
 
     var isSyntaxHighlightingEnabledInViewport: Bool {
-        if isLongLineProtectionSuppressingSyntaxHighlighting {
-            return false
-        }
-        return Self.isViewportFeatureEnabled(
+        Self.isViewportSyntaxFeatureEnabled(
             viewportRange: viewportRenderLineRange,
-            maxLine: largeFileMode.maxSyntaxHighlightLines
+            maxLine: largeFileMode.maxSyntaxHighlightLines,
+            largeFileMode: largeFileMode,
+            longestDetectedLine: longestDetectedLine
         )
     }
 
     var areInlayHintsEnabledInViewport: Bool {
         !largeFileMode.isInlayHintsDisabled && isSyntaxHighlightingEnabledInViewport
+    }
+
+    var areDocumentHighlightsEnabled: Bool {
+        isSyntaxHighlightingEnabledInViewport
+    }
+
+    var areHoversEnabled: Bool {
+        isSyntaxHighlightingEnabledInViewport
+    }
+
+    var areSignatureHelpEnabled: Bool {
+        isSyntaxHighlightingEnabledInViewport
+    }
+
+    var areCodeActionsEnabled: Bool {
+        isSyntaxHighlightingEnabledInViewport
+    }
+
+    var canLoadFullFile: Bool {
+        isTruncated && currentFileURL != nil
     }
 
     var isLongLineProtectionSuppressingSyntaxHighlighting: Bool {
@@ -285,6 +310,24 @@ final class EditorState: ObservableObject, SuperLog {
         largeFileMode.isLongLineProtectionEnabled && longestDetectedLine != nil
     }
 
+    static func isViewportSyntaxFeatureEnabled(
+        viewportRange: Range<Int>,
+        maxLine: Int,
+        largeFileMode: LargeFileMode,
+        longestDetectedLine: LongestDetectedLine?
+    ) -> Bool {
+        guard !isLongLineProtectionSuppressingSyntaxHighlighting(
+            largeFileMode: largeFileMode,
+            longestDetectedLine: longestDetectedLine
+        ) else {
+            return false
+        }
+        return isViewportFeatureEnabled(
+            viewportRange: viewportRange,
+            maxLine: maxLine
+        )
+    }
+
     static func isViewportFeatureEnabled(viewportRange: Range<Int>, maxLine: Int) -> Bool {
         if maxLine == .max {
             return true
@@ -295,9 +338,167 @@ final class EditorState: ObservableObject, SuperLog {
         return viewportRange.lowerBound < maxLine
     }
 
+    func isRenderedLine(_ line: Int) -> Bool {
+        let renderRange = viewportRenderLineRange
+        guard !renderRange.isEmpty else { return true }
+        return renderRange.contains(max(line, 0))
+    }
+
+    var isPrimaryCursorRendered: Bool {
+        isRenderedLine(max(cursorLine - 1, 0))
+    }
+
+    func isRenderedOffset(_ offset: Int, lineTable: LineOffsetTable) -> Bool {
+        guard let line = lineTable.lineContaining(utf16Offset: max(offset, 0)) else {
+            return true
+        }
+        return isRenderedLine(line)
+    }
+
+    func intersectsRenderedRange(_ range: EditorRange, lineTable: LineOffsetTable) -> Bool {
+        let renderRange = viewportRenderLineRange
+        guard !renderRange.isEmpty else { return true }
+
+        let startOffset = max(range.location, 0)
+        let endOffset = max(range.location + max(range.length - 1, 0), startOffset)
+
+        guard let startLine = lineTable.lineContaining(utf16Offset: startOffset),
+              let endLine = lineTable.lineContaining(utf16Offset: endOffset) else {
+            return true
+        }
+
+        return (startLine..<(endLine + 1)).overlaps(renderRange)
+    }
+
+    func renderedFindMatches(_ matches: [EditorFindMatch], lineTable: LineOffsetTable) -> [EditorFindMatch] {
+        matches.filter { intersectsRenderedRange($0.range, lineTable: lineTable) }
+    }
+
+    func currentRenderedFindMatches(lineTable: LineOffsetTable) -> [EditorFindMatch] {
+        renderedFindMatches(findMatches, lineTable: lineTable)
+    }
+
+    func renderedInlayHints(_ hints: [InlayHintItem]) -> [InlayHintItem] {
+        hints.filter { isRenderedLine($0.line) }
+    }
+
+    func renderedBracketMatch(lineTable: LineOffsetTable) -> BracketMatchResult? {
+        guard let match = bracketMatchResult else { return nil }
+        guard isRenderedOffset(match.openOffset, lineTable: lineTable),
+              isRenderedOffset(match.closeOffset, lineTable: lineTable) else {
+            return nil
+        }
+        return match
+    }
+
+    func renderedBracketOverlayRects(
+        textView: TextView,
+        lineTable: LineOffsetTable
+    ) -> BracketOverlayRects? {
+        guard let match = renderedBracketMatch(lineTable: lineTable),
+              let openRect = textView.layoutManager.rectForOffset(match.openOffset),
+              let closeRect = textView.layoutManager.rectForOffset(match.closeOffset) else {
+            return nil
+        }
+
+        let visibleRect = textView.visibleRect
+        let openOverlayRect = CGRect(
+            x: openRect.origin.x - visibleRect.origin.x,
+            y: openRect.origin.y - visibleRect.origin.y,
+            width: max(openRect.width, 3),
+            height: max(openRect.height, 2)
+        )
+        let closeOverlayRect = CGRect(
+            x: closeRect.origin.x - visibleRect.origin.x,
+            y: closeRect.origin.y - visibleRect.origin.y,
+            width: max(closeRect.width, 3),
+            height: max(closeRect.height, 2)
+        )
+
+        let expandedVisibleRect = visibleRect.offsetBy(dx: -visibleRect.origin.x, dy: -visibleRect.origin.y)
+            .insetBy(dx: -4, dy: -4)
+        guard openOverlayRect.intersects(expandedVisibleRect) ||
+                closeOverlayRect.intersects(expandedVisibleRect) else {
+            return nil
+        }
+
+        return BracketOverlayRects(open: openOverlayRect, close: closeOverlayRect)
+    }
+
+    var currentRenderedInlayHints: [InlayHintItem] {
+        renderedInlayHints(inlayHintProvider.hints)
+    }
+
+    var shouldPresentInlayHintsStrip: Bool {
+        !largeFileMode.isInlayHintsDisabled && !currentRenderedInlayHints.isEmpty
+    }
+
+    var shouldPresentHoverOverlay: Bool {
+        areHoversEnabled &&
+        panelState.hasActiveHover &&
+        !(panelState.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+    }
+
+    var currentHoverOverlayText: String? {
+        guard shouldPresentHoverOverlay else { return nil }
+        return panelState.mouseHoverContent?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func hoverOverlayOffset(
+        in containerSize: CGSize,
+        popoverHeight: CGFloat,
+        maxWidth: CGFloat = 440,
+        verticalGap: CGFloat = 4
+    ) -> CGSize {
+        let symbolRect = panelState.mouseHoverSymbolRect
+        let preferredX = symbolRect.minX
+        let clampedX = max(4, min(preferredX, containerSize.width - maxWidth - 4))
+
+        let preferredY = symbolRect.minY - popoverHeight - verticalGap
+        let fallbackY = symbolRect.maxY + verticalGap
+        let clampedY: CGFloat
+        if preferredY >= 4 {
+            clampedY = preferredY
+        } else {
+            clampedY = min(fallbackY, max(containerSize.height - popoverHeight - 4, 4))
+        }
+
+        return CGSize(width: clampedX, height: clampedY)
+    }
+
+    var shouldPresentSignatureHelpOverlay: Bool {
+        areSignatureHelpEnabled && isPrimaryCursorRendered && signatureHelpProvider.currentHelp != nil
+    }
+
+    var shouldPresentCodeActionOverlay: Bool {
+        codeActionProvider.isVisible && isPrimaryCursorRendered
+    }
+
     /// 在光标稳定后刷新可见区域内的 Inlay Hints
     func scheduleInlayHintsRefreshIfNeeded(controller: TextViewController) {
         scheduleInlayHintsRefreshIfNeeded(textView: controller.textView)
+    }
+
+    func handleViewportRuntimeTransition() {
+        guard !isPrimaryCursorRendered else { return }
+        documentHighlightProvider.clear()
+        signatureHelpProvider.clear()
+        codeActionProvider.clear()
+    }
+
+    func handleDocumentHighlightRuntimeAvailabilityChange(_ isEnabled: Bool) {
+        guard !isEnabled else { return }
+        documentHighlightProvider.clear()
+    }
+
+    func handleSignatureHelpRuntimeAvailabilityChange(_ isEnabled: Bool) {
+        guard !isEnabled else { return }
+        signatureHelpProvider.clear()
+    }
+
+    func handleCodeActionRuntimeAvailabilityChange(_ isEnabled: Bool) {
+        guard !isEnabled else { return }
+        codeActionProvider.clear()
     }
 
     /// 在 viewport 或光标稳定后刷新可见区域内的 Inlay Hints
@@ -940,7 +1141,7 @@ final class EditorState: ObservableObject, SuperLog {
                     return
                 }
                 
-                let shouldTruncate = fileSize > Self.truncationThreshold
+                let shouldTruncate = shouldUseTruncatedPreview(for: url, fileSize: fileSize)
                 let mode = LargeFileMode.mode(for: fileSize)
                 
                 let content: String
@@ -1026,6 +1227,12 @@ final class EditorState: ObservableObject, SuperLog {
                 }
             }
         }
+    }
+
+    func loadFullFileFromDisk() {
+        guard let currentFileURL else { return }
+        fullLoadOverrides.insert(currentFileURL.standardizedFileURL)
+        loadFile(from: currentFileURL)
     }
 
     func applySessionRestore(_ session: EditorSession) {
@@ -2127,7 +2334,12 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     // MARK: - File Loading
-    
+
+    private func shouldUseTruncatedPreview(for url: URL, fileSize: Int64) -> Bool {
+        guard fileSize > Self.truncationThreshold else { return false }
+        return !fullLoadOverrides.contains(url.standardizedFileURL)
+    }
+
     /// 读取截断内容
     private func readTruncatedContent(from url: URL, maxBytes: Int) throws -> String {
         let handle = try FileHandle(forReadingFrom: url)

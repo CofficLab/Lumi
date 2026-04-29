@@ -20,6 +20,11 @@ final class LSPRealtimeInteractionContributor: EditorInteractionContributor {
         state: EditorState,
         controller: TextViewController
     ) async {
+        guard state.areDocumentHighlightsEnabled else {
+            state.documentHighlightProvider.clear()
+            state.scheduleInlayHintsRefreshIfNeeded(controller: controller)
+            return
+        }
         if let fileURL = state.currentFileURL, let content = state.content {
             await state.documentHighlightProvider.requestHighlight(
                 uri: fileURL.absoluteString,
@@ -35,6 +40,11 @@ final class LSPRealtimeInteractionContributor: EditorInteractionContributor {
         context: EditorInteractionContext,
         state: EditorState
     ) async {
+        guard state.areSignatureHelpEnabled else {
+            state.signatureHelpProvider.clear()
+            return
+        }
+
         guard let uri = state.currentFileURL?.absoluteString else {
             state.signatureHelpProvider.clear()
             return

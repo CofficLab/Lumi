@@ -98,6 +98,10 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     /// 当鼠标移动到新位置时调用，触发 hover 请求
     func triggerHover(for line: Int, character: Int, symbolRect: CGRect) {
         guard let state else { return }
+        guard state.areHoversEnabled else {
+            cancelHover()
+            return
+        }
         refreshDocumentContextIfNeeded()
         let delay = hoverDelay(for: line, character: character)
         let requestGeneration = hoverRequestGeneration.next()
@@ -505,6 +509,11 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
     }
 
     private func triggerHoverAtCurrentMousePositionIfNeeded() {
+        guard let state else { return }
+        guard state.areHoversEnabled else {
+            cancelHover()
+            return
+        }
         guard let textView = textViewController?.textView, let window = textView.window else { return }
         let localPoint = textView.convert(window.mouseLocationOutsideOfEventStream, from: nil)
         let tolerance: CGFloat = 2.0
@@ -610,6 +619,10 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
     private func handleMouseEvent(_ event: NSEvent) {
         guard let textView = textViewController?.textView, let state else { return }
+        guard state.areHoversEnabled else {
+            cancelHover()
+            return
+        }
         refreshDocumentContextIfNeeded()
         let now = DispatchTime.now().uptimeNanoseconds
         if now &- lastScrollEventAtNs < Self.hoverSuspendAfterScrollNs { return }

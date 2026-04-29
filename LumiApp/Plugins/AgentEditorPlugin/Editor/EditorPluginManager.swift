@@ -1,11 +1,13 @@
 import Foundation
 import os
 import ObjectiveC.runtime
+import MagicKit
 
 /// 编辑器子插件管理器。
 /// 负责插件自动发现、注册去重和扩展点注入。
 @MainActor
-final class EditorPluginManager: ObservableObject {
+final class EditorPluginManager: ObservableObject, SuperLog {
+    nonisolated static let emoji = "🔌"
     struct PluginInfo: Identifiable, Equatable {
         let id: String
         let displayName: String
@@ -15,7 +17,7 @@ final class EditorPluginManager: ObservableObject {
         let isEnabled: Bool
     }
 
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.plugin-manager")
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.plugin-manager")
 
     /// 扩展点注册中心（由具体插件写入能力）
     let registry: EditorExtensionRegistry
@@ -32,7 +34,7 @@ final class EditorPluginManager: ObservableObject {
 
     func register(_ plugin: any EditorFeaturePlugin) {
         if plugins.contains(where: { $0.id == plugin.id }) {
-            Self.logger.debug("[EditorPluginManager] 跳过重复插件: \(plugin.id, privacy: .public)")
+            logger.debug("\(self.t)跳过重复插件: \(plugin.id)")
             return
         }
 
@@ -43,7 +45,7 @@ final class EditorPluginManager: ObservableObject {
         }
 
         plugin.register(into: registry)
-        Self.logger.info("[EditorPluginManager] 注册插件: \(plugin.id, privacy: .public) (\(plugin.displayName, privacy: .public))")
+        logger.info("\(self.t)注册插件: \(plugin.id) (\(plugin.displayName))")
     }
 
     func isPluginEnabled(_ plugin: any EditorFeaturePlugin) -> Bool {
@@ -111,7 +113,7 @@ final class EditorPluginManager: ObservableObject {
             if enabled {
                 register(plugin)
             } else {
-                Self.logger.info("[EditorPluginManager] 跳过禁用插件: \(plugin.id, privacy: .public)")
+                logger.info("\(self.t)跳过禁用插件: \(plugin.id)")
             }
         }
         discoveredPluginInfos = infos

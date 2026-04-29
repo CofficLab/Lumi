@@ -418,6 +418,13 @@ struct EditorRootView: View {
                         .font(.system(size: 9))
                         .foregroundColor(AppUI.Color.semantic.warning)
                     }
+                    if state.canLoadFullFile {
+                        Button("Load Full File") {
+                            state.loadFullFileFromDisk()
+                        }
+                        .buttonStyle(.link)
+                        .font(.system(size: 9))
+                    }
                 }
                 if !state.isEditable {
                     HStack(spacing: 4) {
