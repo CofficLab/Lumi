@@ -39,7 +39,7 @@ actor BreadcrumbPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 在工具栏前导位置显示面包屑导航（左：项目选择器 + 右：面包屑路径）
-    @MainActor func addToolBarLeadingView() -> AnyView? {
+    @MainActor func addToolBarCenterView() -> AnyView? {
         AnyView(BreadcrumbToolBarView())
     }
 
