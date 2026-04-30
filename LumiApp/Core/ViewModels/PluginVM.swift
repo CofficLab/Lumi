@@ -497,18 +497,33 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 仅收集各插件通过 `addPanelIcon()` 提供的图标信息，
     /// 不触发 `addPanelView(activeIcon:)`。用于渲染活动栏图标按钮。
+    ///
+    /// 如果发现两个插件提供了相同的 icon，会触发 fatalError。
     func getPanelIconItems() -> [PanelIconItem] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { plugin -> PanelIconItem? in
-                guard let icon = plugin.addPanelIcon() else { return nil }
-                let pluginType = type(of: plugin)
-                return PanelIconItem(
-                    id: plugin.instanceLabel,
-                    title: pluginType.displayName,
-                    icon: icon
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var items: [PanelIconItem] = []
+        var seenIcons: [String: String] = [:]  // icon -> plugin id
+
+        for plugin in enabledPlugins {
+            guard let icon = plugin.addPanelIcon() else { continue }
+            let pluginType = type(of: plugin)
+            let pluginId = plugin.instanceLabel
+
+            if let existingPluginId = seenIcons[icon] {
+                fatalError(
+                    "[PluginVM] Duplicate panel icon \"\(icon)\" detected: " +
+                    "\(existingPluginId) and \(pluginId) both provide the same icon. " +
+                    "Each plugin must provide a unique icon via addPanelIcon()."
                 )
             }
+            seenIcons[icon] = pluginId
+            items.append(PanelIconItem(
+                id: pluginId,
+                title: pluginType.displayName,
+                icon: icon
+            ))
+        }
+        return items
     }
 
     /// 获取当前激活插件的 PanelItem

@@ -87,11 +87,11 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "cursorarrow.click.2" else { return nil }
+        guard activeIcon == "text.cursor" else { return nil }
         return AnyView(TextActionsSettingsView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "cursorarrow.click.2" }
+    nonisolated func addPanelIcon() -> String? { "text.cursor" }
 }
 
 // MARK: - Preview

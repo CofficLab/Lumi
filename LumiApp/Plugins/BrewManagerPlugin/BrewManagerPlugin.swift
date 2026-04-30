@@ -27,11 +27,11 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "shippingbox" else { return nil }
+        guard activeIcon == "mug.fill" else { return nil }
         return AnyView(BrewManagerView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "shippingbox" }
+    nonisolated func addPanelIcon() -> String? { "mug.fill" }
 }
 
 #Preview("App") {

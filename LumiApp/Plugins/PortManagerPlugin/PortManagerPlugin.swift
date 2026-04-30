@@ -29,11 +29,11 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "network" else { return nil }
+        guard activeIcon == "arrow.up.arrow.down.circle" else { return nil }
         return AnyView(PortManagerView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "network" }
+    nonisolated func addPanelIcon() -> String? { "arrow.up.arrow.down.circle" }
 }
 
 // MARK: - Preview
