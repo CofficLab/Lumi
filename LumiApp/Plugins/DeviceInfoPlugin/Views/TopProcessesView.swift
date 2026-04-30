@@ -85,8 +85,8 @@ struct TopProcessesView: View {
     }
 
     private func iconForProcess(_ process: ProcessMetric) -> Image {
-        if let path = process.icon, let nsImage = NSWorkspace.shared.icon(forFile: path) {
-            return Image(nsImage: nsImage)
+        if let path = process.icon {
+            return Image(nsImage: NSWorkspace.shared.icon(forFile: path))
         }
         return Image(systemName: "terminal")
     }
