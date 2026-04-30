@@ -33,10 +33,6 @@ struct EditorRootView: View {
     @State private var pendingActivationIntent: ActivationIntent?
     @State private var isCommandPalettePresented = false
     @State private var draggedTabSessionID: EditorSession.ID?
-    @State private var selectedSidebarTab: EditorSidebarWorkspaceTab = .explorer
-
-    private let sidebarStorageKey = "Split.Panel.LumiEditor"
-    private let sidebarSelectedTabStorageKey = "Split.Panel.LumiEditor.SelectedTab"
 
     var body: some View {
         eventBoundRootView
@@ -46,11 +42,10 @@ struct EditorRootView: View {
         rootLayout
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(themeManager.activeAppTheme.workspaceBackgroundColor())
-            .background(SplitViewAutosaveConfigurator(autosaveName: sidebarStorageKey))
     }
 
     private var lifecycleBoundRootView: some View {
-        let viewWithProjectBindings = baseRootView
+        baseRootView
             .onChange(of: projectVM.currentProjectPath) { _, newPath in
                 refreshProjectContext(for: newPath)
             }
@@ -67,97 +62,10 @@ struct EditorRootView: View {
             .onChange(of: state.documentSymbolProvider.symbols.map(\.id)) { _, _ in
                 updateBreadcrumbBridge()
             }
-
-        let viewWithPanelBindings = viewWithProjectBindings
-            .onChange(of: state.panelState.isOpenEditorsPanelPresented) { _, isPresented in
-                if isPresented {
-                    selectedSidebarTab = .openEditors
-                    persistSidebarWorkspaceSelection(.openEditors)
-                } else if !state.panelState.isOutlinePanelPresented, selectedSidebarTab == .openEditors {
-                    selectedSidebarTab = .explorer
-                    persistSidebarWorkspaceSelection(.explorer)
-                }
-            }
-            .onChange(of: state.panelState.isOutlinePanelPresented) { _, isPresented in
-                if isPresented {
-                    selectedSidebarTab = .outline
-                    persistSidebarWorkspaceSelection(.outline)
-                } else if !state.panelState.isOpenEditorsPanelPresented, selectedSidebarTab == .outline {
-                    selectedSidebarTab = .explorer
-                    persistSidebarWorkspaceSelection(.explorer)
-                }
-            }
-            .onChange(of: state.panelState.isProblemsPanelPresented) { _, isPresented in
-                if isPresented {
-                    selectedSidebarTab = .problems
-                    persistSidebarWorkspaceSelection(.problems)
-                } else if selectedSidebarTab == .problems {
-                    selectedSidebarTab = .explorer
-                    persistSidebarWorkspaceSelection(.explorer)
-                }
-            }
-            .onChange(of: state.panelState.isWorkspaceSearchPresented) { _, isPresented in
-                if isPresented {
-                    selectedSidebarTab = .searchResults
-                    persistSidebarWorkspaceSelection(.searchResults)
-                } else if selectedSidebarTab == .searchResults {
-                    selectedSidebarTab = .explorer
-                    persistSidebarWorkspaceSelection(.explorer)
-                }
-            }
-            .onChange(of: state.panelState.workspaceSearchResults.count) { _, count in
-                guard count == 0,
-                      selectedSidebarTab == .searchResults,
-                      !state.panelState.isWorkspaceSearchPresented,
-                      state.panelState.workspaceSearchQuery.isEmpty,
-                      !state.panelState.isWorkspaceSearchLoading else { return }
-                selectedSidebarTab = .explorer
-                persistSidebarWorkspaceSelection(.explorer)
-            }
-
-        let viewWithContextBindings = viewWithPanelBindings
-            .onChange(of: state.panelState.isReferencePanelPresented) { _, isPresented in
-                if isPresented {
-                    selectedSidebarTab = .references
-                    persistSidebarWorkspaceSelection(.references)
-                } else if selectedSidebarTab == .references {
-                    selectedSidebarTab = .explorer
-                    persistSidebarWorkspaceSelection(.explorer)
-                }
-            }
-            .onChange(of: state.panelState.isWorkspaceSymbolSearchPresented) { _, isPresented in
-                if isPresented {
-                    selectedSidebarTab = .workspaceSymbols
-                    persistSidebarWorkspaceSelection(.workspaceSymbols)
-                } else if selectedSidebarTab == .workspaceSymbols {
-                    selectedSidebarTab = .explorer
-                    persistSidebarWorkspaceSelection(.explorer)
-                }
-            }
-            .onChange(of: state.callHierarchyProvider.rootItem?.name) { _, rootName in
-                if rootName != nil || state.callHierarchyProvider.isLoading {
-                    selectedSidebarTab = .callHierarchy
-                    persistSidebarWorkspaceSelection(.callHierarchy)
-                } else if selectedSidebarTab == .callHierarchy, !state.panelState.isCallHierarchyPresented {
-                    selectedSidebarTab = .explorer
-                    persistSidebarWorkspaceSelection(.explorer)
-                }
-            }
-            .onChange(of: state.panelState.isCallHierarchyPresented) { _, isPresented in
-                if isPresented {
-                    selectedSidebarTab = .callHierarchy
-                    persistSidebarWorkspaceSelection(.callHierarchy)
-                } else if selectedSidebarTab == .callHierarchy {
-                    selectedSidebarTab = .explorer
-                    persistSidebarWorkspaceSelection(.explorer)
-                }
-            }
             .onChange(of: workbench.activeGroupID) { _, _ in
                 guard !consumePendingActivationIntent(for: workbench.activeGroupID) else { return }
                 syncEditorToActiveGroup()
             }
-
-        return viewWithContextBindings
             .onAppear {
                 state.projectRootPath = projectVM.currentProject?.path
                 refreshProjectContext(for: projectVM.currentProjectPath)
@@ -172,15 +80,12 @@ struct EditorRootView: View {
                     openOrActivateSession(for: projectVM.selectedFileURL)
                     state.refreshDocumentOutline()
                 }
-                restoreSidebarWorkspaceSelection()
                 updateBreadcrumbBridge()
             }
             .onDisappear {
-                // 保存主 EditorState 的变更
                 if state.hasUnsavedChanges {
                     state.saveNow()
                 }
-                // 保存所有 hosted EditorState 的变更
                 for hostedState in hostStore.allStates {
                     if hostedState.hasUnsavedChanges {
                         hostedState.saveNow()
@@ -282,38 +187,22 @@ struct EditorRootView: View {
     }
 
     private var rootLayout: some View {
-        HSplitView {
-            EditorSidebarWorkspaceView(
-                state: state,
-                selectedTab: $selectedSidebarTab,
-                openEditors: openEditorItems,
-                onSelectOpenEditor: activateOpenEditor,
-                onCloseOpenEditor: closeOpenEditorItem,
-                onCloseOtherOpenEditors: closeOtherOpenEditorItems,
-                onTogglePinnedOpenEditor: togglePinnedOpenEditorItem,
-                onSelectTab: selectSidebarTab,
-                onDismissTab: dismissSidebarTab
-            )
-            .frame(minWidth: 220, idealWidth: 280)
-            .background(SplitViewWidthPersistence(storageKey: sidebarStorageKey))
-
-            HStack(spacing: 0) {
-                VStack(spacing: 0) {
-                    if projectVM.isFileSelected {
-                        headerArea
-                        fileInfoBanner
-                        workbenchContent
-                        if shouldShowBottomPanel {
-                            EditorBottomPanelHostView(state: state)
-                        }
-                    } else {
-                        emptyState
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                if projectVM.isFileSelected {
+                    headerArea
+                    fileInfoBanner
+                    workbenchContent
+                    if shouldShowBottomPanel {
+                        EditorBottomPanelHostView(state: state)
                     }
+                } else {
+                    emptyState
                 }
+            }
 
-                if let panel = activeSidePanel {
-                    panel.content(state)
-                }
+            if let panel = activeSidePanel {
+                panel.content(state)
             }
         }
     }
@@ -994,104 +883,14 @@ struct EditorRootView: View {
     }
 
     private func toggleSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
-        if selectedSidebarTab == tab {
-            selectSidebarTab(.explorer)
-        } else {
-            selectSidebarTab(tab)
-        }
-    }
-
-    private func dismissSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
         switch tab {
-        case .explorer:
+        case .openEditors:
+            state.performPanelCommand(.toggleOpenEditors)
+        case .outline:
+            state.performPanelCommand(.toggleOutline)
+        default:
             break
-        case .openEditors:
-            state.performPanelCommand(.closeOpenEditors)
-        case .outline:
-            state.performPanelCommand(.closeOutline)
-        case .problems:
-            state.performPanelCommand(.closeProblems)
-        case .searchResults:
-            state.performPanelCommand(.closeWorkspaceSearch)
-        case .references:
-            state.performPanelCommand(.closeReferences)
-        case .workspaceSymbols:
-            state.performPanelCommand(.closeWorkspaceSymbolSearch)
-        case .callHierarchy:
-            state.performPanelCommand(.closeCallHierarchy)
         }
-        selectedSidebarTab = .explorer
-        persistSidebarWorkspaceSelection(.explorer)
-    }
-
-    private func selectSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
-        persistSidebarWorkspaceSelection(tab)
-        switch tab {
-        case .explorer:
-            state.performPanelCommand(.closeOpenEditors)
-            state.performPanelCommand(.closeOutline)
-            if selectedSidebarTab == .problems || state.panelState.activeBottomPanel == .problems {
-                state.performPanelCommand(.closeProblems)
-            }
-            if selectedSidebarTab == .searchResults || state.panelState.activeBottomPanel == .searchResults {
-                state.performPanelCommand(.closeWorkspaceSearch)
-            }
-            if selectedSidebarTab == .references || state.panelState.activeBottomPanel == .references {
-                state.performPanelCommand(.closeReferences)
-            }
-            if selectedSidebarTab == .workspaceSymbols || state.panelState.activeBottomPanel == .workspaceSymbols {
-                state.performPanelCommand(.closeWorkspaceSymbolSearch)
-            }
-            if selectedSidebarTab == .callHierarchy || state.panelState.activeBottomPanel == .callHierarchy {
-                state.performPanelCommand(.closeCallHierarchy)
-            }
-            selectedSidebarTab = .explorer
-        case .openEditors:
-            if !state.panelState.isOpenEditorsPanelPresented {
-                state.performPanelCommand(.toggleOpenEditors)
-            } else {
-                selectedSidebarTab = .openEditors
-            }
-        case .outline:
-            if !state.panelState.isOutlinePanelPresented {
-                state.performPanelCommand(.toggleOutline)
-            } else {
-                selectedSidebarTab = .outline
-            }
-        case .problems:
-            state.presentBottomPanel(.problems)
-            selectedSidebarTab = .problems
-        case .searchResults:
-            state.presentBottomPanel(.searchResults)
-            selectedSidebarTab = .searchResults
-        case .references:
-            state.presentBottomPanel(.references)
-            selectedSidebarTab = .references
-        case .workspaceSymbols:
-            state.presentBottomPanel(.workspaceSymbols)
-            selectedSidebarTab = .workspaceSymbols
-        case .callHierarchy:
-            state.presentBottomPanel(.callHierarchy)
-            selectedSidebarTab = .callHierarchy
-        }
-    }
-
-    private func restoreSidebarWorkspaceSelection() {
-        guard let rawValue = UserDefaults.standard.string(forKey: sidebarSelectedTabStorageKey),
-              let tab = EditorSidebarWorkspaceTab(rawValue: rawValue) else {
-            selectSidebarTab(.explorer)
-            return
-        }
-        if tab.isContextual {
-            selectSidebarTab(.explorer)
-            return
-        }
-        selectSidebarTab(tab)
-    }
-
-    private func persistSidebarWorkspaceSelection(_ tab: EditorSidebarWorkspaceTab) {
-        let storedTab: EditorSidebarWorkspaceTab = tab.isContextual ? .explorer : tab
-        UserDefaults.standard.set(storedTab.rawValue, forKey: sidebarSelectedTabStorageKey)
     }
 
     // MARK: - Unsupported File

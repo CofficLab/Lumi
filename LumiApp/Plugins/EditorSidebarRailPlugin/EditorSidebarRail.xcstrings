@@ -1,0 +1,38 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.1",
+  "strings": {
+    "Editor Sidebar Rail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor Sidebar Rail"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器侧边栏"
+          }
+        }
+      }
+    },
+    "Editor sidebar workspace with explorer, outline, problems and more": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor sidebar workspace with explorer, outline, problems and more"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器侧边栏工作区，包含文件浏览、大纲、问题面板等"
+          }
+        }
+      }
+    }
+  }
+}
