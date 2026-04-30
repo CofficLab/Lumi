@@ -23,6 +23,7 @@ import Foundation
 /// - 设置视图
 /// - Agent 工具与中间件
 /// - 主题贡献
+/// - 编辑器能力（补全、hover、code action、LSP 等），通过 `registerEditorExtensions` 注入
 ///
 /// ## 使用示例
 ///
@@ -176,6 +177,29 @@ protocol SuperPlugin: Actor {
 
     /// 提供「用户消息入队 → 发送模型」管线中间件（按插件 `order` 与中间件 `order` 排序）。
     @MainActor func sendMiddlewares() -> [AnySendMiddleware]
+
+    // MARK: - Editor Extension Points
+
+    /// 标记该插件是否提供编辑器扩展能力
+    ///
+    /// 返回 `true` 表示该插件会向 `EditorExtensionRegistry` 注入编辑器能力
+    ///（如补全、hover、code action、LSP 服务等）。
+    /// `PluginVM` 会据此过滤出编辑器插件，交给 `EditorPluginManager` 安装。
+    /// 默认返回 `false`。
+    nonisolated var providesEditorExtensions: Bool { get }
+
+    /// 向编辑器扩展注册中心注入能力
+    ///
+    /// 当插件的 `providesEditorExtensions` 为 `true` 时，此方法会被调用。
+    /// 插件在此方法中向 `EditorExtensionRegistry` 注册其提供的编辑器能力，例如：
+    /// - `registerCompletionContributor` — 代码补全
+    /// - `registerHoverContributor` — 悬浮提示
+    /// - `registerCodeActionContributor` — 快速修复
+    /// - `registerCommandContributor` — 编辑器命令
+    /// - 其他扩展点
+    ///
+    /// 默认实现为空操作。只有需要贡献编辑器能力的插件才需要重写此方法。
+    @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry)
 
     // MARK: - Lifecycle Hooks
 
