@@ -1,36 +1,48 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "PluginDescription" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detects and prevents infinite tool call loops"
+    "PluginDescription": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detects and prevents infinite tool call loops"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检测并阻止无限工具调用循环"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检测并阻止无限工具调用循环"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢測並阻止無限工具調用循環"
           }
         }
       }
     },
-    "PluginName" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tool Call Loop Detection"
+    "PluginName": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tool Call Loop Detection"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具调用循环检测"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具调用循环检测"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具調用循環檢測"
           }
         }
       }

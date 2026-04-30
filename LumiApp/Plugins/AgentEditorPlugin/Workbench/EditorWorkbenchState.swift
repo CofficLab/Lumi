@@ -119,14 +119,45 @@ final class EditorWorkbenchState: ObservableObject {
     func moveActiveSessionTo(groupID: EditorGroup.ID) -> Bool {
         guard let activeGroup,
               let sessionID = activeGroup.activeSessionID else { return false }
-        let moved = activeGroup.moveSessionToOtherGroup(
-            sessionID: sessionID,
-            targetGroup: findGroup(id: groupID)
-        )
+        let moved = moveSession(sessionID: sessionID, toGroupID: groupID)
         if moved {
             activeGroupID = groupID
         }
         return moved
+    }
+
+    @discardableResult
+    func reorderSession(
+        sessionID: EditorSession.ID,
+        in groupID: EditorGroup.ID,
+        before targetSessionID: EditorSession.ID?
+    ) -> Bool {
+        guard let group = findGroup(id: groupID), group.isLeaf else { return false }
+        return group.reorderSession(sessionID: sessionID, before: targetSessionID)
+    }
+
+    @discardableResult
+    func moveSession(
+        sessionID: EditorSession.ID,
+        toGroupID targetGroupID: EditorGroup.ID,
+        before targetSessionID: EditorSession.ID? = nil
+    ) -> Bool {
+        guard let sourceGroup = groupContainingSession(sessionID: sessionID),
+              let targetGroup = findGroup(id: targetGroupID),
+              targetGroup.isLeaf else { return false }
+
+        if sourceGroup.id == targetGroupID {
+            return sourceGroup.reorderSession(
+                sessionID: sessionID,
+                before: targetSessionID
+            )
+        }
+
+        return sourceGroup.moveSessionToOtherGroup(
+            sessionID: sessionID,
+            targetGroup: targetGroup,
+            before: targetSessionID
+        )
     }
 
     func activateGroup(_ groupID: EditorGroup.ID) {

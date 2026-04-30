@@ -64,8 +64,14 @@ struct SourceEditorViewBridge {
         jumpDelegate.textStorage = state.content
         jumpDelegate.treeSitterClient = treeSitterClient
         jumpDelegate.lspClient = state.lspClient
+        jumpDelegate.semanticCapabilityProvider = { [weak state] in
+            state?.semanticCapability
+        }
         jumpDelegate.currentFileURLProvider = { [weak state] in
             state?.currentFileURL
+        }
+        jumpDelegate.allowsLocalFallbackProvider = { [weak state] in
+            !(state?.projectContextSnapshot?.isStructuredProject ?? false)
         }
         jumpDelegate.onOpenExternalDefinition = { [weak state] url, target in
             state?.performNavigation(.definition(url, target, highlightLine: false))

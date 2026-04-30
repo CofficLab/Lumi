@@ -25,6 +25,7 @@ final class ExtensionResolver: ObservableObject {
 
     private var completionContributors: [any EditorCompletionContributor] = []
     private var hoverContributors: [any EditorHoverContributor] = []
+    private var hoverContentContributors: [any EditorHoverContentContributor] = []
     private var codeActionContributors: [any EditorCodeActionContributor] = []
 
     // MARK: - 初始化
@@ -36,6 +37,7 @@ final class ExtensionResolver: ObservableObject {
     func reset() {
         completionContributors.removeAll()
         hoverContributors.removeAll()
+        hoverContentContributors.removeAll()
         codeActionContributors.removeAll()
     }
 
@@ -50,6 +52,12 @@ final class ExtensionResolver: ObservableObject {
     func registerHoverContributor(_ contributor: any EditorHoverContributor) {
         if !hoverContributors.contains(where: { $0.id == contributor.id }) {
             hoverContributors.append(contributor)
+        }
+    }
+
+    func registerHoverContentContributor(_ contributor: any EditorHoverContentContributor) {
+        if !hoverContentContributors.contains(where: { $0.id == contributor.id }) {
+            hoverContentContributors.append(contributor)
         }
     }
 
@@ -78,11 +86,15 @@ final class ExtensionResolver: ObservableObject {
 
     /// 聚合 hover 建议（并行请求 + 后台去重）
     func resolveHover(context: EditorHoverContext) async -> [EditorHoverSuggestion] {
-        guard !hoverContributors.isEmpty else { return [] }
+        guard !hoverContributors.isEmpty || !hoverContentContributors.isEmpty else { return [] }
 
         var allResults: [EditorHoverSuggestion] = []
         for contributor in hoverContributors {
             let items = await contributor.provideHover(context: context)
+            allResults.append(contentsOf: items)
+        }
+        for contributor in hoverContentContributors {
+            let items = await contributor.provideHoverContent(context: context)
             allResults.append(contentsOf: items)
         }
 

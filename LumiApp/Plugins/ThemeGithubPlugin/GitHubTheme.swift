@@ -5,7 +5,7 @@ import SwiftUI
 /// 灵感来源于 GitHub 的深色主题设计。
 /// 特点：GitHub 蓝绿调，代码风格的深邃质感
 ///
-struct GitHubTheme: ThemeProtocol {
+struct GitHubTheme: SuperTheme {
     // MARK: - 主题信息
 
     let identifier = "github"

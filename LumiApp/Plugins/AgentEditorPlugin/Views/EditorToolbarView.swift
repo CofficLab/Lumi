@@ -125,6 +125,14 @@ struct EditorToolbarView: View {
         return "\(currentIndex)/\(total)"
     }
 
+    private var replacePreviewSummary: String? {
+        guard let current = state.currentFindMatch,
+              let replacement = state.currentReplacePreviewText else { return nil }
+        let matched = current.matchedText.count > 14 ? String(current.matchedText.prefix(14)) + "..." : current.matchedText
+        let target = replacement.count > 14 ? String(replacement.prefix(14)) + "..." : replacement
+        return "\(matched) -> \(target)"
+    }
+
     private var shouldShowLargeFileIndicator: Bool {
         state.largeFileMode != .normal || state.longestDetectedLine != nil
     }
@@ -319,11 +327,11 @@ struct EditorToolbarView: View {
 
     private var externalFileConflictControl: some View {
         Menu {
-            Button("Reload from Disk") {
+            Button(state.isEditingProjectPBXProj ? "Use Xcode Version" : "Reload from Disk") {
                 state.reloadExternalFileConflict()
             }
 
-            Button("Keep Editor Version") {
+            Button(state.isEditingProjectPBXProj ? "Use Lumi Version" : "Keep Editor Version") {
                 state.keepEditorVersionForExternalConflict()
             }
         } label: {
@@ -332,7 +340,7 @@ struct EditorToolbarView: View {
                 .foregroundColor(.orange)
                 .frame(width: 22, height: 22)
         }
-        .help("File changed on disk")
+        .help(state.saveState.label)
         .menuStyle(.borderlessButton)
         .frame(width: 22, height: 20)
         .fixedSize()
@@ -415,11 +423,13 @@ struct EditorToolbarView: View {
             // Minimap
             ToolbarToggle(
                 icon: "rectangle.split.1x2",
-                isActive: state.showMinimap
+                isActive: state.minimapPolicy.isVisible,
+                isEnabled: !state.minimapPolicy.isForcedHidden
             ) {
                 state.showMinimap.toggle()
                 state.persistConfig()
             }
+            .help(state.minimapPolicy.detailText)
             
             // 多光标
             ToolbarToggle(
@@ -494,6 +504,19 @@ struct EditorToolbarView: View {
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
                 .frame(width: 36)
+
+            if let replacePreviewSummary {
+                Text(replacePreviewSummary)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(AppUI.Color.semantic.primary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(AppUI.Color.semantic.primary.opacity(0.1))
+                    )
+                    .lineLimit(1)
+            }
 
             ToolbarToggle(icon: "arrow.up", isActive: false) {
                 state.performEditorCommand(id: "builtin.find-previous")
@@ -634,6 +657,7 @@ struct EditorToolbarView: View {
 private struct ToolbarToggle: View {
     let icon: String
     let isActive: Bool
+    var isEnabled: Bool = true
     let action: () -> Void
     
     var body: some View {
@@ -642,13 +666,24 @@ private struct ToolbarToggle: View {
         } label: {
             Image(systemName: icon)
                 .font(.system(size: 10))
-                .foregroundColor(isActive ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textTertiary)
+                .foregroundColor(foregroundColor)
                 .frame(width: 22, height: 22)
                 .background(
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(isActive ? AppUI.Color.semantic.primary.opacity(0.1) : Color.clear)
+                        .fill(backgroundColor)
                 )
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
+    }
+
+    private var foregroundColor: Color {
+        guard isEnabled else { return AppUI.Color.semantic.textTertiary.opacity(0.45) }
+        return isActive ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textTertiary
+    }
+
+    private var backgroundColor: Color {
+        guard isEnabled else { return AppUI.Color.semantic.textTertiary.opacity(0.04) }
+        return isActive ? AppUI.Color.semantic.primary.opacity(0.1) : Color.clear
     }
 }

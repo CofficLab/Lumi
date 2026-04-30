@@ -23,6 +23,7 @@ import Foundation
 /// - 设置视图
 /// - Agent 工具与中间件
 /// - 主题贡献
+/// - 编辑器能力（补全、hover、code action、LSP 等），通过 `registerEditorExtensions` 注入
 ///
 /// ## 使用示例
 ///
@@ -167,15 +168,68 @@ protocol SuperPlugin: Actor {
     // MARK: - Agent Tools Hooks
 
     /// 提供 Agent 工具列表。
-    @MainActor func agentTools() -> [AgentTool]
+    @MainActor func agentTools() -> [SuperAgentTool]
 
     /// 提供 Agent 工具工厂列表（带依赖注入）。
-    @MainActor func agentToolFactories() -> [AnyAgentToolFactory]
+    @MainActor func agentToolFactories() -> [AnySuperAgentToolFactory]
 
     // MARK: - Send Pipeline
 
     /// 提供「用户消息入队 → 发送模型」管线中间件（按插件 `order` 与中间件 `order` 排序）。
-    @MainActor func sendMiddlewares() -> [AnySendMiddleware]
+    @MainActor func sendMiddlewares() -> [AnySuperSendMiddleware]
+
+    /// 插件提供的 LLM 供应商类型
+    ///
+    /// 如果插件是一个 LLM 供应商插件，返回对应的 `SuperLLMProvider.Type`。
+    /// `PluginVM` 会在插件注册阶段自动收集并注册到 `LLMProviderRegistry`。
+    /// 默认返回 `nil`，表示该插件不提供 LLM 供应商。
+    nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)?
+
+    /// 插件提供的消息渲染器列表
+    ///
+    /// 如果插件提供自定义消息渲染器，返回 `SuperMessageRenderer` 实例数组。
+    /// `PluginVM` 会在插件注册阶段自动收集并注册到 `MessageRendererVM`。
+    /// 默认返回空数组，表示该插件不提供消息渲染器。
+    @MainActor func messageRenderers() -> [any SuperMessageRenderer]
+
+    // MARK: - Editor Extension Points
+
+    /// 标记该插件是否提供编辑器扩展能力
+    ///
+    /// 返回 `true` 表示该插件会向 `EditorExtensionRegistry` 注入编辑器能力
+    ///（如补全、hover、code action、LSP 服务等）。
+    /// `PluginVM` 会据此过滤出编辑器插件，交给 `EditorPluginManager` 安装。
+    /// 默认返回 `false`。
+    nonisolated var providesEditorExtensions: Bool { get }
+
+    /// 向编辑器扩展注册中心注入能力
+    ///
+    /// 当插件的 `providesEditorExtensions` 为 `true` 时，此方法会被调用。
+    /// 插件在此方法中向 `EditorExtensionRegistry` 注册其提供的编辑器能力，例如：
+    /// - `registerCompletionContributor` — 代码补全
+    /// - `registerHoverContributor` — 悬浮提示
+    /// - `registerCodeActionContributor` — 快速修复
+    /// - `registerCommandContributor` — 编辑器命令
+    /// - 其他扩展点
+    ///
+    /// 默认实现为空操作。只有需要贡献编辑器能力的插件才需要重写此方法。
+    @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry)
+
+    /// 提供项目上下文能力。
+    ///
+    /// 用于项目打开/关闭、上下文同步、当前文件项目快照等高层能力。
+    /// 这是 editor 内核面向插件的高层入口，插件作者不需要直接理解内核内部 registry 或 bridge。
+    @MainActor func editorProjectContextCapability() -> (any SuperEditorProjectContextCapability)?
+
+    /// 提供语义可用性能力。
+    ///
+    /// 用于 preflight、当前文件语义环境检查，以及语言能力不可用时的错误归类。
+    @MainActor func editorSemanticCapability() -> (any SuperEditorSemanticCapability)?
+
+    /// 提供语言服务项目集成能力列表。
+    ///
+    /// 用于按语言生成 workspace folders、initialization options 等项目型语言服务集成参数。
+    @MainActor func editorLanguageIntegrationCapabilities() -> [any SuperEditorLanguageIntegrationCapability]
 
     // MARK: - Lifecycle Hooks
 

@@ -29,6 +29,7 @@ enum CoreCommandRegistrations {
         registerSaveCommands(state: state)
         registerLineEditingCommands(state: state)
         registerCursorMotionCommands(state: state)
+        registerFoldingCommands(state: state)
     }
 
     // MARK: - Format
@@ -87,7 +88,18 @@ enum CoreCommandRegistrations {
             category: EditorCommandCategory.navigation.rawValue,
             order: 200
         ) {
-            state.performPanelCommand(.toggleOpenEditors)
+            NotificationCenter.postLumiEditorToggleOpenEditorsPanel()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.outline-panel",
+            title: String(localized: "Outline", table: "LumiEditor"),
+            icon: "list.bullet.indent",
+            shortcut: nil,
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 205
+        ) {
+            NotificationCenter.postLumiEditorToggleOutlinePanel()
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(
@@ -104,6 +116,32 @@ enum CoreCommandRegistrations {
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.quick-fix",
+            title: String(localized: "Quick Fix", table: "LumiEditor"),
+            icon: "lightbulb",
+            shortcut: resolveShortcut(EditorCommandBindings.quickFix, for: "builtin.quick-fix"),
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 512,
+            enablement: .custom { _ in state.canPreview && state.isEditable }
+        ) {
+            Task { @MainActor in
+                await state.showQuickFixesFromCurrentCursor()
+            }
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.peek-references",
+            title: String(localized: "Peek References", table: "LumiEditor"),
+            icon: "arrow.triangle.branch",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 515
+        ) {
+            Task { @MainActor in
+                await state.showPeekReferencesFromCurrentCursor()
+            }
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
             id: "builtin.rename-symbol",
             title: String(localized: "Rename Symbol", table: "LumiEditor"),
             icon: "pencil",
@@ -112,6 +150,18 @@ enum CoreCommandRegistrations {
             order: 520
         ) {
             state.promptRenameSymbol()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.peek-definition",
+            title: String(localized: "Peek Definition", table: "LumiEditor"),
+            icon: "arrow.turn.down.right",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 525
+        ) {
+            Task { @MainActor in
+                await state.showPeekDefinitionFromCurrentCursor()
+            }
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(
@@ -136,6 +186,74 @@ enum CoreCommandRegistrations {
             Task { @MainActor in
                 await state.openCallHierarchy()
             }
+        })
+    }
+
+    private static func registerFoldingCommands(state: EditorState) {
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.fold-current",
+            title: String(localized: "Fold Current Block", table: "LumiEditor"),
+            icon: "arrow.up.left.and.arrow.down.right",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 560,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.collapseCurrentFold()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.unfold-current",
+            title: String(localized: "Unfold Current Block", table: "LumiEditor"),
+            icon: "arrow.down.right.and.arrow.up.left",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 561,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.expandCurrentFold()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.fold-all",
+            title: String(localized: "Fold All", table: "LumiEditor"),
+            icon: "rectangle.compress.vertical",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 562,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.collapseAllFolds()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.unfold-all",
+            title: String(localized: "Unfold All", table: "LumiEditor"),
+            icon: "rectangle.expand.vertical",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 563,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.expandAllFolds()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.fold-level-1",
+            title: String(localized: "Fold Level 1", table: "LumiEditor"),
+            icon: "1.circle",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 564,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.collapseFolds(toLevel: 1)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.fold-level-2",
+            title: String(localized: "Fold Level 2", table: "LumiEditor"),
+            icon: "2.circle",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 565,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.collapseFolds(toLevel: 2)
         })
     }
 
@@ -303,6 +421,17 @@ enum CoreCommandRegistrations {
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.search-in-files",
+            title: String(localized: "Search in Files", table: "LumiEditor"),
+            icon: "doc.text.magnifyingglass",
+            shortcut: resolveShortcut(EditorCommandBindings.searchInFiles, for: "builtin.search-in-files"),
+            category: EditorCommandCategory.find.rawValue,
+            order: 405
+        ) {
+            state.openWorkspaceSearchPanel()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
             id: "builtin.find-next",
             title: String(localized: "Find Next", table: "LumiEditor"),
             icon: "arrow.down",
@@ -346,6 +475,17 @@ enum CoreCommandRegistrations {
             enablement: .custom { _ in !state.findMatches.isEmpty }
         ) {
             state.replaceAllFindMatches()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand(
+            id: "builtin.open-search-editor",
+            title: String(localized: "Open Search Editor", table: "LumiEditor"),
+            icon: "doc.plaintext",
+            category: EditorCommandCategory.find.rawValue,
+            order: 445,
+            enablement: .custom { _ in state.panelState.workspaceSearchSummary?.totalMatches ?? 0 > 0 }
+        ) {
+            state.openWorkspaceSearchResultsInEditor()
         })
     }
 

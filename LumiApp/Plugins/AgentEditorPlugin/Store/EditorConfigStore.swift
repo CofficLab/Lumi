@@ -80,9 +80,19 @@ enum EditorConfigStore {
         loadDict()[key] as? String
     }
 
+    static func loadDictionary(forKey key: String) -> [String: Any]? {
+        loadDict()[key] as? [String: Any]
+    }
+
     static func saveValue(_ value: Any, forKey key: String) {
         var dict = loadDict()
         dict[key] = value
+        saveDict(dict)
+    }
+
+    static func removeValue(forKey key: String) {
+        var dict = loadDict()
+        dict.removeValue(forKey: key)
         saveDict(dict)
     }
 
@@ -90,7 +100,16 @@ enum EditorConfigStore {
         loadBool(forKey: editorPluginEnabledPrefix + pluginID)
     }
 
+    /// @deprecated 使用 `PluginSettingsVM.setPluginEnabled` 替代
+    @available(*, deprecated, message: "Use PluginSettingsVM.setPluginEnabled instead")
     static func saveEditorPluginEnabled(_ pluginID: String, enabled: Bool) {
         saveValue(enabled, forKey: editorPluginEnabledPrefix + pluginID)
+    }
+
+    // MARK: - Migration Support
+
+    /// 加载所有旧版设置（仅用于迁移到 PluginSettingsVM）
+    static func loadAllSettings() -> [String: Any] {
+        loadDict()
     }
 }

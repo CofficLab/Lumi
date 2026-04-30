@@ -49,12 +49,14 @@ final class EditorCommandController {
     func presentationModel(
         from suggestions: [EditorCommandSuggestion],
         recentCommandIDs: [String],
+        commandUsageCounts: [String: Int] = [:],
         query: String = "",
         categories: Set<EditorCommandCategory>? = nil
     ) -> EditorCommandPresentationModel {
         EditorCommandPresentationModel.build(
             from: suggestions,
             recentCommandIDs: recentCommandIDs,
+            commandUsageCounts: commandUsageCounts,
             query: query,
             allowedCategories: categories
         )
@@ -72,12 +74,17 @@ final class EditorCommandController {
         )
     }
 
-    func recordExecution(id: String, recentCommandIDs: inout [String]) {
+    func recordExecution(
+        id: String,
+        recentCommandIDs: inout [String],
+        commandUsageCounts: inout [String: Int]
+    ) {
         recentCommandIDs.removeAll(where: { $0 == id })
         recentCommandIDs.insert(id, at: 0)
         if recentCommandIDs.count > 12 {
             recentCommandIDs = Array(recentCommandIDs.prefix(12))
         }
+        commandUsageCounts[id, default: 0] += 1
     }
 
     private func deduplicatingSuggestions(_ suggestions: [EditorCommandSuggestion]) -> [EditorCommandSuggestion] {

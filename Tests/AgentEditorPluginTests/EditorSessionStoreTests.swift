@@ -107,6 +107,60 @@ final class EditorSessionStoreTests: XCTestCase {
         XCTAssertEqual(forward?.id, third?.id)
     }
 
+    func testHistoryNavigationRestoresLatestSnapshotForVisitedSession() {
+        let store = EditorSessionStore()
+        let fileA = URL(fileURLWithPath: "/tmp/a.swift")
+        let fileB = URL(fileURLWithPath: "/tmp/b.swift")
+
+        _ = store.openOrActivate(fileURL: fileA)
+        store.syncActiveSession(
+            from: EditorSession(
+                fileURL: fileA,
+                viewState: .init(primaryCursorLine: 12, primaryCursorColumn: 3, cursorPositions: [])
+            )
+        )
+        _ = store.openOrActivate(fileURL: fileB)
+
+        let restored = store.goBack()
+
+        XCTAssertEqual(restored?.fileURL, fileA)
+        XCTAssertEqual(restored?.viewState.primaryCursorLine, 12)
+        XCTAssertEqual(restored?.viewState.primaryCursorColumn, 3)
+    }
+
+    func testHistoryNavigationRestoresReferencePanelContext() {
+        let store = EditorSessionStore()
+        let fileA = URL(fileURLWithPath: "/tmp/a.swift")
+        let fileB = URL(fileURLWithPath: "/tmp/b.swift")
+        let reference = ReferenceResult(
+            url: fileB,
+            line: 18,
+            column: 4,
+            path: "Sources/B.swift",
+            preview: "targetSymbol()"
+        )
+
+        _ = store.openOrActivate(fileURL: fileA)
+        store.syncActiveSession(
+            from: EditorSession(
+                fileURL: fileA,
+                panelState: .init(
+                    referenceResults: [reference],
+                    selectedReferenceResult: reference,
+                    isReferencePanelPresented: true
+                )
+            )
+        )
+        _ = store.openOrActivate(fileURL: fileB)
+
+        let restored = store.goBack()
+
+        XCTAssertEqual(restored?.fileURL, fileA)
+        XCTAssertEqual(restored?.referenceResults, [reference])
+        XCTAssertEqual(restored?.panelState.selectedReferenceResult, reference)
+        XCTAssertEqual(restored?.isReferencePanelPresented, true)
+    }
+
     func testTogglePinnedMovesTabAheadOfUnpinnedTabs() {
         let store = EditorSessionStore()
         let first = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/Beta.swift"))
@@ -117,6 +171,64 @@ final class EditorSessionStoreTests: XCTestCase {
         XCTAssertEqual(store.tabs.first?.sessionID, first?.id)
         XCTAssertEqual(store.tabs.first?.isPinned, true)
         XCTAssertEqual(store.tabs.last?.sessionID, second?.id)
+    }
+
+    func testManualReorderPreservesRequestedTabOrder() {
+        let store = EditorSessionStore()
+        let first = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/a.swift"))
+        let second = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/b.swift"))
+        let third = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/c.swift"))
+
+        let reordered = store.reorderSession(
+            sessionID: third!.id,
+            before: first?.id
+        )
+
+        XCTAssertTrue(reordered)
+        XCTAssertEqual(store.tabs.map(\.sessionID), [third?.id, first?.id, second?.id])
+        XCTAssertEqual(store.sessions.map(\.id), [third?.id, first?.id, second?.id])
+    }
+
+    func testPinnedTabsStayAheadAfterManualReorder() {
+        let store = EditorSessionStore()
+        let first = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/a.swift"))
+        let second = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/b.swift"))
+        let third = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/c.swift"))
+        store.togglePinned(sessionID: first!.id)
+
+        let reordered = store.reorderSession(
+            sessionID: third!.id,
+            before: first?.id
+        )
+
+        XCTAssertTrue(reordered)
+        XCTAssertEqual(store.tabs.map(\.sessionID), [first?.id, third?.id, second?.id])
+    }
+
+    func testWorkbenchCanMoveSessionAcrossGroupsBeforeTargetTab() {
+        let workbench = EditorWorkbenchState()
+        let first = workbench.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/a.swift"))
+        let second = workbench.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/b.swift"))
+
+        workbench.splitActiveGroup(.horizontal)
+
+        let leftGroup = workbench.leafGroups[0]
+        let rightGroup = workbench.leafGroups[1]
+        let third = workbench.openInGroup(
+            fileURL: URL(fileURLWithPath: "/tmp/c.swift"),
+            groupID: rightGroup.id
+        )
+
+        let moved = workbench.moveSession(
+            sessionID: first!.id,
+            toGroupID: rightGroup.id,
+            before: third?.id
+        )
+
+        XCTAssertTrue(moved)
+        XCTAssertEqual(leftGroup.tabs.map(\.sessionID), [second?.id])
+        XCTAssertEqual(Array(rightGroup.tabs.map(\.sessionID).suffix(2)), [first?.id, third?.id])
+        XCTAssertEqual(rightGroup.activeSessionID, first?.id)
     }
 
     func testUnsplitActiveLeafCollapsesNearestSplitAncestor() {

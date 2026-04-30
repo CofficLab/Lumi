@@ -18,8 +18,8 @@ struct ModelSelectorView: View, SuperLog {
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
 
-    /// 当前选中的 Tab，默认显示全部
-    @State private var selectedTab: ModelSelectorTab = .all
+    /// 当前选中的 Tab，默认显示当前供应商
+    @State private var selectedTab: ModelSelectorTab = .current
 
     /// 当前 hover 的 Tab
     @State private var hoveringTab: ModelSelectorTab? = nil
@@ -50,17 +50,10 @@ struct ModelSelectorView: View, SuperLog {
         llmVM.allProviders.first(where: { $0.id == llmVM.selectedProviderId })
     }
 
-    private var localProviders: [LLMProviderInfo] {
-        llmVM.allProviders.filter(\.isLocal)
-    }
-
-    private var remoteProviders: [LLMProviderInfo] {
-        llmVM.allProviders.filter { !$0.isLocal }
-    }
-
     var body: some View {
         HStack(spacing: 0) {
             ModelSelectorTabSidebar(
+                providers: llmVM.allProviders,
                 selectedTab: $selectedTab,
                 hoveringTab: $hoveringTab
             )
@@ -79,27 +72,19 @@ struct ModelSelectorView: View, SuperLog {
 
                 Group {
                     switch selectedTab {
-                    case .all:
-                        providerList(
-                            providers: filteredProviders(from: llmVM.allProviders),
-                            emptyMessage: String(localized: "No Providers", table: "AgentInput")
-                        )
                     case .current:
                         currentProviderList
                     case .frequent:
                         frequentModelsList
                     case .fast:
                         fastModelsList
-                    case .local:
+                    case .all:
                         providerList(
-                            providers: filteredProviders(from: localProviders),
-                            emptyMessage: String(localized: "No Local Providers", table: "AgentInput")
+                            providers: filteredProviders(from: llmVM.allProviders),
+                            emptyMessage: String(localized: "No Providers", table: "AgentChat")
                         )
-                    case .remote:
-                        providerList(
-                            providers: filteredProviders(from: remoteProviders),
-                            emptyMessage: String(localized: "No Remote Providers", table: "AgentInput")
-                        )
+                    case .provider(let providerId):
+                        singleProviderList(providerId: providerId)
                     }
                 }
                 .listStyle(.sidebar)
@@ -108,17 +93,44 @@ struct ModelSelectorView: View, SuperLog {
         .frame(width: 520, height: 400)
         .background(AppUI.Material.glass)
         .task {
-            // 将同步的数据库查询放到后台线程，避免阻塞 UI
             await loadAllStats()
         }
         .task(id: selectedTab) {
-            if selectedTab == .current {
+            switch selectedTab {
+            case .current:
                 if currentProvider?.isLocal == true {
                     await loadLocalModelInfos(providerIds: [llmVM.selectedProviderId])
                 }
-            } else if selectedTab == .local || selectedTab == .all {
-                await loadLocalModelInfos(providerIds: localProviders.map(\.id))
+            case .provider(let providerId):
+                if let provider = llmVM.allProviders.first(where: { $0.id == providerId }), provider.isLocal {
+                    await loadLocalModelInfos(providerIds: [providerId])
+                }
+            case .all:
+                let localIds = llmVM.allProviders.filter(\.isLocal).map(\.id)
+                await loadLocalModelInfos(providerIds: localIds)
+            default:
+                break
             }
+        }
+    }
+
+    // MARK: - Single Provider List
+
+    /// 单个供应商的模型列表
+    @ViewBuilder
+    private func singleProviderList(providerId: String) -> some View {
+        if let provider = llmVM.allProviders.first(where: { $0.id == providerId }),
+           hasVisibleModels(provider: provider) {
+            List {
+                Section(header: sectionHeader(for: provider)) {
+                    modelSectionContent(for: provider)
+                }
+            }
+        } else {
+            ContentUnavailableView {
+                Label(String(localized: "No Matching Models", table: "AgentChat"), systemImage: "magnifyingglass")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -131,50 +143,18 @@ struct ModelSelectorView: View, SuperLog {
             if hasVisibleModels(provider: provider) {
                 List {
                     Section(header: sectionHeader(for: provider)) {
-                        if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
-                            let filteredInfos = infos.filter {
-                                matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
-                            }
-                            let fallbackSeries = String(localized: "Other", table: "AgentInput")
-                            let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
-                            ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
-                                Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
-                                    ForEach(grouped[seriesName] ?? [], id: \.id) { info in
-                                        modelRow(
-                                            provider: provider,
-                                            model: info.id,
-                                            displayName: info.displayName,
-                                            supportsVision: info.supportsVision,
-                                            supportsTools: info.supportsTools
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            let filteredModels = provider.availableModels.filter {
-                                matchesSearch(provider: provider, model: $0)
-                            }
-                            ForEach(filteredModels, id: \.self) { model in
-                                let caps = capabilityValues(provider: provider, model: model)
-                                modelRow(
-                                    provider: provider,
-                                    model: model,
-                                    supportsVision: caps.supportsVision,
-                                    supportsTools: caps.supportsTools
-                                )
-                            }
-                        }
+                        modelSectionContent(for: provider)
                     }
                 }
             } else {
                 ContentUnavailableView {
-                    Label(String(localized: "No Matching Models", table: "AgentInput"), systemImage: "magnifyingglass")
+                    Label(String(localized: "No Matching Models", table: "AgentChat"), systemImage: "magnifyingglass")
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
             ContentUnavailableView {
-                Label(String(localized: "No Provider Selected", table: "AgentInput"), systemImage: "tray")
+                Label(String(localized: "No Provider Selected", table: "AgentChat"), systemImage: "tray")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -188,9 +168,9 @@ struct ModelSelectorView: View, SuperLog {
         let filteredEntries = filteredFrequentModels()
         if filteredEntries.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "No Frequent Models", table: "AgentInput"), systemImage: "clock.arrow.circlepath")
+                Label(String(localized: "No Frequent Models", table: "AgentChat"), systemImage: "clock.arrow.circlepath")
             } description: {
-                Text(String(localized: "No Frequent Models Description", table: "AgentInput"))
+                Text(String(localized: "No Frequent Models Description", table: "AgentChat"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -221,9 +201,9 @@ struct ModelSelectorView: View, SuperLog {
         let filteredEntries = filteredFastModels()
         if filteredEntries.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "No Fast Models", table: "AgentInput"), systemImage: "bolt.fill")
+                Label(String(localized: "No Fast Models", table: "AgentChat"), systemImage: "bolt.fill")
             } description: {
-                Text(String(localized: "No Fast Models Description", table: "AgentInput"))
+                Text(String(localized: "No Fast Models Description", table: "AgentChat"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -258,41 +238,49 @@ struct ModelSelectorView: View, SuperLog {
             List {
                 ForEach(providers) { provider in
                     Section(header: sectionHeader(for: provider)) {
-                        if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
-                            let filteredInfos = infos.filter {
-                                matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
-                            }
-                            let fallbackSeries = String(localized: "Other", table: "AgentInput")
-                            let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
-                            ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
-                                Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
-                                    ForEach(grouped[seriesName] ?? [], id: \.id) { info in
-                                        modelRow(
-                                            provider: provider,
-                                            model: info.id,
-                                            displayName: info.displayName,
-                                            supportsVision: info.supportsVision,
-                                            supportsTools: info.supportsTools
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            let filteredModels = provider.availableModels.filter {
-                                matchesSearch(provider: provider, model: $0)
-                            }
-                            ForEach(filteredModels, id: \.self) { model in
-                                let caps = capabilityValues(provider: provider, model: model)
-                                modelRow(
-                                    provider: provider,
-                                    model: model,
-                                    supportsVision: caps.supportsVision,
-                                    supportsTools: caps.supportsTools
-                                )
-                            }
-                        }
+                        modelSectionContent(for: provider)
                     }
                 }
+            }
+        }
+    }
+
+    // MARK: - Model Section Content
+
+    /// 供应商下的模型列表内容（共用，支持本地按系列分组 / 远程平铺）
+    @ViewBuilder
+    private func modelSectionContent(for provider: LLMProviderInfo) -> some View {
+        if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
+            let filteredInfos = infos.filter {
+                matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
+            }
+            let fallbackSeries = String(localized: "Other", table: "AgentChat")
+            let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
+            ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
+                Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
+                    ForEach(grouped[seriesName] ?? [], id: \.id) { info in
+                        modelRow(
+                            provider: provider,
+                            model: info.id,
+                            displayName: info.displayName,
+                            supportsVision: info.supportsVision,
+                            supportsTools: info.supportsTools
+                        )
+                    }
+                }
+            }
+        } else {
+            let filteredModels = provider.availableModels.filter {
+                matchesSearch(provider: provider, model: $0)
+            }
+            ForEach(filteredModels, id: \.self) { model in
+                let caps = capabilityValues(provider: provider, model: model)
+                modelRow(
+                    provider: provider,
+                    model: model,
+                    supportsVision: caps.supportsVision,
+                    supportsTools: caps.supportsTools
+                )
             }
         }
     }
@@ -357,7 +345,6 @@ extension ModelSelectorView {
     ///   - providerId: 供应商 ID
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
-        // 更新内存中的供应商和模型配置
         llmVM.selectedProviderId = providerId
         llmVM.currentModel = model
 
@@ -375,9 +362,7 @@ extension ModelSelectorView {
 
     /// 在后台线程加载所有统计数据，避免阻塞 UI
     private func loadAllStats() async {
-        // 先加载详细统计（这是最耗时的操作，涉及大量 SwiftData 查询）
         loadLatencyStats()
-        // 基于已加载的统计数据构建常用模型和快模型列表
         loadFrequentModels()
         loadFastModels()
         isStatsLoaded = true
@@ -424,7 +409,7 @@ extension ModelSelectorView {
                     providerDisplayName: provider?.displayName ?? entry.providerId,
                     modelName: entry.modelName,
                     useCount: entry.count,
-                    lastUsedAt: Date()  // 简化：不追踪精确的最后使用时间
+                    lastUsedAt: Date()
                 )
             }
             .sorted { $0.useCount > $1.useCount }
@@ -442,13 +427,11 @@ extension ModelSelectorView {
     private func loadLocalModelInfos(providerIds: [String]) async {
         isLoadingLocalModels = true
 
-        // 在主线程提前创建好所有 provider（createProvider 需要 MainActor）
         let providers: [(String, any SuperLocalLLMProvider)] = providerIds.compactMap { id in
             guard let provider = llmVM.createProvider(id: id) as? any SuperLocalLLMProvider else { return nil }
             return (id, provider)
         }
 
-        // 并行请求所有本地供应商的模型列表
         let results = await withTaskGroup(of: (String, [LocalModelInfo]).self) { group in
             for (id, provider) in providers {
                 group.addTask {
@@ -486,7 +469,6 @@ extension ModelSelectorView {
     ///   - model: 模型 ID
     /// - Returns: (supportsVision, supportsTools)
     private func capabilityValues(provider: LLMProviderInfo, model: String) -> (supportsVision: Bool?, supportsTools: Bool?) {
-        // 本地模型优先使用 LocalModelInfo；若未提供则不显示
         if provider.isLocal {
             return (nil, nil)
         }

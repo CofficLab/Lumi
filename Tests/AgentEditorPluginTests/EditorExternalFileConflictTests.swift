@@ -26,7 +26,7 @@ final class EditorExternalFileConflictTests: XCTestCase {
         try "disk v2\n".write(to: fileURL, atomically: true, encoding: .utf8)
         try await waitFor { state.hasExternalFileConflict }
 
-        XCTAssertEqual(state.saveState, .conflict(String(localized: "File changed on disk", table: "LumiEditor")))
+        XCTAssertEqual(state.saveState, .conflict(EditorStatusMessageCatalog.externalFileChangedOnDisk()))
 
         state.keepEditorVersionForExternalConflict()
 

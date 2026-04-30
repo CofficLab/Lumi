@@ -143,7 +143,26 @@ final class EditorSessionTests: XCTestCase {
             isCallHierarchyPresented: true,
             problemDiagnostics: [diagnostic],
             selectedProblemDiagnostic: diagnostic,
-            isProblemsPanelPresented: true
+            isProblemsPanelPresented: true,
+            workspaceSearchQuery: "needle",
+            workspaceSearchResults: [
+                .init(
+                    url: URL(fileURLWithPath: "/tmp/demo.swift"),
+                    path: "demo.swift",
+                    matches: [
+                        .init(
+                            url: URL(fileURLWithPath: "/tmp/demo.swift"),
+                            line: 5,
+                            column: 7,
+                            path: "demo.swift",
+                            preview: "let needle = 1"
+                        )
+                    ]
+                )
+            ],
+            workspaceSearchSummary: .init(query: "needle", totalMatches: 1, totalFiles: 1),
+            workspaceSearchCollapsedFilePaths: ["demo.swift"],
+            selectedWorkspaceSearchMatchID: "demo.swift:5:7:let needle = 1"
         )
 
         let restored = session.panelState
@@ -156,6 +175,11 @@ final class EditorSessionTests: XCTestCase {
         XCTAssertTrue(restored.isWorkspaceSymbolSearchPresented)
         XCTAssertTrue(restored.isCallHierarchyPresented)
         XCTAssertTrue(restored.isProblemsPanelPresented)
+        XCTAssertEqual(restored.workspaceSearchQuery, "needle")
+        XCTAssertEqual(restored.workspaceSearchResults.count, 1)
+        XCTAssertEqual(restored.workspaceSearchSummary?.totalMatches, 1)
+        XCTAssertEqual(restored.workspaceSearchCollapsedFilePaths, ["demo.swift"])
+        XCTAssertEqual(restored.selectedWorkspaceSearchMatchID, "demo.swift:5:7:let needle = 1")
         XCTAssertEqual(session.panelSnapshot, restored.snapshot)
     }
 
@@ -597,8 +621,10 @@ final class EditorSessionTests: XCTestCase {
     func testPanelCommandControllerTogglesProblemsAndClosesReferences() {
         let snapshot = EditorPanelSnapshot(
             isOpenEditorsPanelPresented: false,
+            isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: true,
+            isWorkspaceSearchPresented: false,
             isWorkspaceSymbolSearchPresented: false,
             isCallHierarchyPresented: false
         )
@@ -612,8 +638,10 @@ final class EditorSessionTests: XCTestCase {
     func testPanelCommandControllerOpensAndClosesWorkspaceSymbolSearch() {
         let snapshot = EditorPanelSnapshot(
             isOpenEditorsPanelPresented: false,
+            isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: false,
+            isWorkspaceSearchPresented: false,
             isWorkspaceSymbolSearchPresented: false,
             isCallHierarchyPresented: true
         )
@@ -629,8 +657,10 @@ final class EditorSessionTests: XCTestCase {
     func testPanelCommandControllerOpensAndClosesCallHierarchy() {
         let snapshot = EditorPanelSnapshot(
             isOpenEditorsPanelPresented: false,
+            isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: false,
+            isWorkspaceSearchPresented: false,
             isWorkspaceSymbolSearchPresented: true,
             isCallHierarchyPresented: false
         )
@@ -641,6 +671,25 @@ final class EditorSessionTests: XCTestCase {
         XCTAssertTrue(opened.isCallHierarchyPresented)
         XCTAssertTrue(opened.isWorkspaceSymbolSearchPresented)
         XCTAssertFalse(closed.isCallHierarchyPresented)
+    }
+
+    func testPanelCommandControllerTogglesOutlineAndClosesOpenEditors() {
+        let snapshot = EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: true,
+            isOutlinePanelPresented: false,
+            isProblemsPanelPresented: false,
+            isReferencePanelPresented: false,
+            isWorkspaceSearchPresented: false,
+            isWorkspaceSymbolSearchPresented: false,
+            isCallHierarchyPresented: false
+        )
+
+        let opened = EditorPanelCommandController.apply(.toggleOutline, to: snapshot)
+        let closed = EditorPanelCommandController.apply(.closeOutline, to: opened)
+
+        XCTAssertTrue(opened.isOutlinePanelPresented)
+        XCTAssertFalse(opened.isOpenEditorsPanelPresented)
+        XCTAssertFalse(closed.isOutlinePanelPresented)
     }
 
     func testBridgeStateControllerBuildsCombinedBridgeState() {
@@ -976,6 +1025,7 @@ final class EditorSessionTests: XCTestCase {
     func testEditorPanelSessionStateBuildsSnapshot() {
         let sessionState = EditorPanelSessionState(
             isReferencePanelPresented: true,
+            isWorkspaceSearchPresented: true,
             isWorkspaceSymbolSearchPresented: true,
             isCallHierarchyPresented: false,
             isProblemsPanelPresented: true
@@ -984,7 +1034,9 @@ final class EditorSessionTests: XCTestCase {
         let snapshot = sessionState.snapshot
 
         XCTAssertTrue(snapshot.isProblemsPanelPresented)
+        XCTAssertFalse(snapshot.isOutlinePanelPresented)
         XCTAssertTrue(snapshot.isReferencePanelPresented)
+        XCTAssertTrue(snapshot.isWorkspaceSearchPresented)
         XCTAssertTrue(snapshot.isWorkspaceSymbolSearchPresented)
         XCTAssertFalse(snapshot.isCallHierarchyPresented)
     }

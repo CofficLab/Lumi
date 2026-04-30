@@ -349,6 +349,19 @@
         }
       }
     },
+    "%lld matches in %lld files" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld matches in %2$lld files"
+          }
+        }
+      }
+    },
+    "%lld spaces" : {
+
+    },
     "%lld 个项目" : {
       "localizations" : {
         "zh-Hans" : {
@@ -505,10 +518,16 @@
         }
       }
     },
+    "^[%lld Available Skill](inflect: true)" : {
+
+    },
     "^[%lld Chunk](inflect: true)" : {
 
     },
     "^[%lld File](inflect: true)" : {
+
+    },
+    "^[%lld Skill](inflect: true)" : {
 
     },
     "↑%@" : {
@@ -1088,6 +1107,9 @@
         }
       }
     },
+    "Apply Rename" : {
+
+    },
     "Apps" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1528,6 +1550,9 @@
     "Code Actions" : {
 
     },
+    "Code Editor" : {
+
+    },
     "code-server 未运行，扩展管理不可用" : {
 
     },
@@ -1775,6 +1800,9 @@
     "Current Status" : {
 
     },
+    "Current Symbol" : {
+
+    },
     "Current version is the latest stable version" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1791,6 +1819,9 @@
           }
         }
       }
+    },
+    "Current: %@" : {
+
     },
     "Cursor" : {
 
@@ -2338,6 +2369,9 @@
     "Esc" : {
 
     },
+    "Explorer" : {
+
+    },
     "Export Backup..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2442,10 +2476,13 @@
         }
       }
     },
-    "File changed on disk" : {
+    "File indexing is automatic when switching projects" : {
 
     },
-    "File indexing is automatic when switching projects" : {
+    "Files" : {
+
+    },
+    "Filter symbols" : {
 
     },
     "Finder" : {
@@ -2458,9 +2495,6 @@
 
     },
     "Format on Save" : {
-
-    },
-    "G" : {
 
     },
     "G%lld" : {
@@ -2668,6 +2702,9 @@
         }
       }
     },
+    "Hover" : {
+
+    },
     "How to Use" : {
 
     },
@@ -2759,6 +2796,9 @@
       }
     },
     "Insert Final Newline" : {
+
+    },
+    "Insights" : {
 
     },
     "Interface" : {
@@ -2903,6 +2943,19 @@
         }
       }
     },
+    "L%lld:C%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "L%1$lld:C%2$lld"
+          }
+        }
+      }
+    },
+    "Language" : {
+
+    },
     "Last 60 seconds" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2951,6 +3004,9 @@
         }
       }
     },
+    "Ln %lld" : {
+
+    },
     "Load" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2968,6 +3024,9 @@
       }
     },
     "Load Full File" : {
+
+    },
+    "Loading Outline..." : {
 
     },
     "Local IP" : {
@@ -3334,6 +3393,9 @@
         }
       }
     },
+    "New name" : {
+
+    },
     "New Tag" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3466,6 +3528,9 @@
         }
       }
     },
+    "No preview available" : {
+
+    },
     "No project selected" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3497,6 +3562,9 @@
           }
         }
       }
+    },
+    "No Symbols" : {
+
     },
     "No themes available" : {
 
@@ -3581,6 +3649,12 @@
         }
       }
     },
+    "Open diagnostic" : {
+
+    },
+    "Open Search Editor" : {
+
+    },
     "Open System Settings" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3617,6 +3691,12 @@
       }
     },
     "Organize Imports on Save" : {
+
+    },
+    "Outline" : {
+
+    },
+    "Override" : {
 
     },
     "Password" : {
@@ -3783,6 +3863,9 @@
         }
       }
     },
+    "Preferred" : {
+
+    },
     "Preserve Case" : {
 
     },
@@ -3801,6 +3884,9 @@
           }
         }
       }
+    },
+    "Preview Changes" : {
+
     },
     "Preview Size" : {
       "localizations" : {
@@ -3954,6 +4040,9 @@
     "Quick File Search" : {
 
     },
+    "Quick Fix" : {
+
+    },
     "RAG" : {
 
     },
@@ -4016,6 +4105,9 @@
       }
     },
     "Reload from Disk" : {
+
+    },
+    "Rename Symbol" : {
 
     },
     "Reset" : {
@@ -4147,6 +4239,12 @@
         }
       }
     },
+    "Sample Insights" : {
+
+    },
+    "Sample Insights Inline Tips" : {
+
+    },
     "Save" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4178,6 +4276,12 @@
           }
         }
       }
+    },
+    "Scope" : {
+
+    },
+    "Search" : {
+
     },
     "Search clipboard history..." : {
       "localizations" : {
@@ -4243,6 +4347,9 @@
         }
       }
     },
+    "Search in files" : {
+
+    },
     "Search..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -4258,6 +4365,9 @@
           }
         }
       }
+    },
+    "Searching workspace…" : {
+
     },
     "Security Scan" : {
       "localizations" : {
@@ -4354,6 +4464,9 @@
           }
         }
       }
+    },
+    "Semantic Availability" : {
+
     },
     "Semantic tokens disabled" : {
 
@@ -4908,6 +5021,9 @@
         }
       }
     },
+    "This panel is contributed by `EditorPanelContributor` and toggled from a `titleTrailing` status item." : {
+
+    },
     "this text" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4939,6 +5055,9 @@
           }
         }
       }
+    },
+    "Toggle sample insights panel" : {
+
     },
     "Tools" : {
       "extractionState" : "stale",
@@ -5189,7 +5308,13 @@
         }
       }
     },
+    "Use Lumi Version" : {
+
+    },
     "Use Regular Expression" : {
+
+    },
+    "Use Xcode Version" : {
 
     },
     "user" : {
@@ -5239,6 +5364,9 @@
           }
         }
       }
+    },
+    "Value" : {
+
     },
     "View" : {
       "localizations" : {
@@ -5309,6 +5437,9 @@
       }
     },
     "Xcode" : {
+
+    },
+    "Xcode Context" : {
 
     },
     "Xcode 环境很干净！" : {
@@ -5436,6 +5567,9 @@
           }
         }
       }
+    },
+    "不需要读路线图，也能直接发现 editor 的主要入口、工作台能力和可调参数。" : {
+
     },
     "主题" : {
       "extractionState" : "stale",
@@ -5645,6 +5779,9 @@
           }
         }
       }
+    },
+    "全局设置继续在下方分组里编辑；覆盖层只在 workspace 或 language scope 下启用。" : {
+
     },
     "关于" : {
 
@@ -6191,6 +6328,9 @@
         }
       }
     },
+    "后续插件只要注册 `EditorSettingsContributor`，设置项就会自动出现在这里。" : {
+
+    },
     "向下分栏" : {
 
     },
@@ -6294,6 +6434,9 @@
       }
     },
     "在 Xcode 中打开" : {
+
+    },
+    "在文件中搜索" : {
 
     },
     "在浏览器打开公开问题列表" : {
@@ -6505,6 +6648,9 @@
           }
         }
       }
+    },
+    "工作区符号当前不可用" : {
+
     },
     "工作区符号搜索" : {
 
@@ -6844,6 +6990,18 @@
         }
       }
     },
+    "当前没有可用的编辑器上下文快照。" : {
+
+    },
+    "当前目标" : {
+
+    },
+    "当前编辑器语义上下文的目标平台" : {
+
+    },
+    "当前还没有可用的 workspace 上下文。先打开一个项目，再回到这里设置 workspace override。" : {
+
+    },
     "当前项目" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6884,6 +7042,9 @@
 
     },
     "快捷键" : {
+
+    },
+    "快速修复" : {
 
     },
     "思考过程" : {
@@ -7318,6 +7479,9 @@
         }
       }
     },
+    "换一个关键词，或清空搜索查看全部 editor settings。" : {
+
+    },
     "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）" : {
       "localizations" : {
         "zh-Hans" : {
@@ -7397,6 +7561,9 @@
           }
         }
       }
+    },
+    "搜索 editor settings" : {
+
     },
     "搜索中..." : {
 
@@ -8191,6 +8358,9 @@
     "没有匹配的快捷键" : {
 
     },
+    "没有匹配的设置项" : {
+
+    },
     "没有发现可清理的缓存文件" : {
       "localizations" : {
         "zh-Hans" : {
@@ -8435,6 +8605,9 @@
           }
         }
       }
+    },
+    "用于演示插件贡献设置如何统一显示在 editor settings 页面。" : {
+
     },
     "电脑内存 ≥ %lld GB" : {
       "localizations" : {
@@ -8684,6 +8857,9 @@
     "编辑器" : {
 
     },
+    "编辑器设置" : {
+
+    },
     "聊天工具栏" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8762,6 +8938,9 @@
 
     },
     "获取索引状态失败" : {
+
+    },
+    "解析中" : {
 
     },
     "设置" : {
@@ -9368,6 +9547,15 @@
           }
         }
       }
+    },
+    "重新解析" : {
+
+    },
+    "重新解析 Build Context" : {
+
+    },
+    "重新解析中" : {
+
     },
     "重试" : {
 

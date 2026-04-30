@@ -5,10 +5,39 @@ import SwiftUI
 // MARK: - Breadcrumb Toolbar View
 
 /// 工具栏面包屑导航视图
-/// 显示在应用顶部工具栏中，用于快速导航当前选中的文件路径
+/// 左侧显示项目选择器（最近项目），右侧显示文件路径面包屑
 struct BreadcrumbToolBarView: View {
 
     @EnvironmentObject private var projectVM: ProjectVM
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // 左侧：项目选择器（最近项目下拉）
+            ProjectControlView()
+
+            // 分隔线
+            if projectVM.isProjectSelected {
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.2))
+                    .frame(width: 1, height: 16)
+                    .padding(.horizontal, 6)
+            }
+
+            // 右侧：面包屑路径导航
+            BreadcrumbPathView()
+                .layoutPriority(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - Breadcrumb Path View
+
+/// 面包屑路径视图（原 BreadcrumbToolBarView 的核心逻辑）
+struct BreadcrumbPathView: View {
+
+    @EnvironmentObject private var projectVM: ProjectVM
+    @ObservedObject private var editorBreadcrumbBridge = EditorBreadcrumbContextBridge.shared
 
     /// 面包屑路径段列表
     private var breadcrumbItems: [BreadcrumbItem] {
@@ -83,6 +112,19 @@ struct BreadcrumbToolBarView: View {
                                     projectVM.selectFile(at: url)
                                 }
                             )
+                        }
+                    }
+
+                    if !editorBreadcrumbBridge.activeSymbolTrail.isEmpty && !breadcrumbItems.isEmpty {
+                        Rectangle()
+                            .fill(AppUI.Color.semantic.textTertiary.opacity(0.12))
+                            .frame(width: 1, height: 14)
+                            .padding(.horizontal, 6)
+                    }
+
+                    ForEach(editorBreadcrumbBridge.activeSymbolTrail) { symbol in
+                        SymbolBreadcrumbComponent(symbol: symbol) {
+                            editorBreadcrumbBridge.openSymbol?(symbol)
                         }
                     }
                 }
@@ -175,6 +217,34 @@ struct BreadcrumbToolBarView: View {
                 firstCrumbWidth = availableForFirst
             }
         }
+    }
+}
+
+private struct SymbolBreadcrumbComponent: View {
+    let symbol: EditorDocumentSymbolItem
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 5) {
+                Image(systemName: symbol.iconSymbol)
+                    .font(.system(size: 10))
+                    .foregroundColor(AppUI.Color.semantic.primary)
+
+                Text(symbol.name)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(AppUI.Color.semantic.primary.opacity(0.08))
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 3)
     }
 }
 

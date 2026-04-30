@@ -90,9 +90,15 @@ final class PluginVM: ObservableObject, SuperLog {
 
     // MARK: - Tools Cache
 
-    private var cachedAgentTools: [AgentTool]?
-    private var cachedAgentToolFactories: [AnyAgentToolFactory]?
-    private var cachedSendMiddlewares: [SendMiddleware]?
+    private var cachedAgentTools: [SuperAgentTool]?
+    private var cachedAgentToolFactories: [AnySuperAgentToolFactory]?
+    private var cachedSuperSendMiddlewares: [SuperSendMiddleware]?
+    /// 已发现的 LLM 供应商类型
+    ///
+    /// 在插件自动发现阶段，从所有实现了 `llmProviderType()` 的插件中收集。
+    /// 需要在 `RootViewContainer` 初始化时通过 `registerLLMProviders(to:)` 注册到 `LLMProviderRegistry`。
+    private(set) var discoveredLLMProviderTypes: [any SuperLLMProvider.Type] = []
+
     /// 初始化插件 VM
     ///
     /// - Parameters:
@@ -116,7 +122,7 @@ final class PluginVM: ObservableObject, SuperLog {
                 self?.rightSidebarViewsCache = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
-                self?.cachedSendMiddlewares = nil
+                self?.cachedSuperSendMiddlewares = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -133,13 +139,13 @@ final class PluginVM: ObservableObject, SuperLog {
 
     // MARK: - Agent Tools Aggregation
 
-    func getAgentTools() -> [AgentTool] {
+    func getAgentTools() -> [SuperAgentTool] {
         if let cachedAgentTools {
             return cachedAgentTools
         }
 
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var tools: [(pluginOrder: Int, tool: AgentTool)] = []
+        var tools: [(pluginOrder: Int, tool: SuperAgentTool)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
@@ -158,13 +164,13 @@ final class PluginVM: ObservableObject, SuperLog {
         return sorted
     }
 
-    func getAgentToolFactories() -> [AnyAgentToolFactory] {
+    func getAgentToolFactories() -> [AnySuperAgentToolFactory] {
         if let cachedAgentToolFactories {
             return cachedAgentToolFactories
         }
 
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var factories: [(pluginOrder: Int, f: AnyAgentToolFactory)] = []
+        var factories: [(pluginOrder: Int, f: AnySuperAgentToolFactory)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
@@ -186,13 +192,13 @@ final class PluginVM: ObservableObject, SuperLog {
 
     // MARK: - Send Middleware
 
-    func getSendMiddlewares() -> [SendMiddleware] {
-        if let cachedSendMiddlewares {
-            return cachedSendMiddlewares
+    func getSuperSendMiddlewares() -> [SuperSendMiddleware] {
+        if let cachedSuperSendMiddlewares {
+            return cachedSuperSendMiddlewares
         }
 
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var items: [(pluginOrder: Int, mwOrder: Int, middleware: SendMiddleware)] = []
+        var items: [(pluginOrder: Int, mwOrder: Int, middleware: SuperSendMiddleware)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
@@ -207,7 +213,7 @@ final class PluginVM: ObservableObject, SuperLog {
             return a.middleware.id < b.middleware.id
         }.map(\.middleware)
 
-        cachedSendMiddlewares = sorted
+        cachedSuperSendMiddlewares = sorted
         return sorted
     }
 
@@ -256,15 +262,18 @@ final class PluginVM: ObservableObject, SuperLog {
         rightSidebarViewsCache = nil
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
-        cachedSendMiddlewares = nil
+        cachedSuperSendMiddlewares = nil
 
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
         defer { free(UnsafeMutableRawPointer(classList)) }
+
+        AppLogger.core.info("\(self.t)开始扫描运行时插件类，总类数: \(count)")
         
         let classes = UnsafeBufferPointer(start: classList, count: Int(count))
         // 临时存储，包含 (实例，类名，顺序)
         var discoveredItems: [(instance: any SuperPlugin, className: String, order: Int)] = []
+        var pluginClassNames: [String] = []
         
         for i in 0 ..< classes.count {
             let cls: AnyClass = classes[i]
@@ -282,11 +291,15 @@ final class PluginVM: ObservableObject, SuperLog {
             let pluginType = type(of: instance)
             if pluginType.enable {
                 discoveredItems.append((instance, className, pluginType.order))
+                pluginClassNames.append(className)
                 if Self.verbose {
                     AppLogger.core.info("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
                 }
             }
         }
+
+        let sortedPluginClassNames = pluginClassNames.sorted()
+        AppLogger.core.info("\(self.t)运行时发现 \(sortedPluginClassNames.count) 个插件类: \(sortedPluginClassNames.joined(separator: ", "))")
         
         // 按 order 升序排序，确保核心插件先加载
         discoveredItems.sort { $0.order < $1.order }
@@ -299,7 +312,25 @@ final class PluginVM: ObservableObject, SuperLog {
         // 插件已更新，清空聚合缓存，避免在插件加载前被读取后永久缓存为空。
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
-        cachedSendMiddlewares = nil
+        cachedSuperSendMiddlewares = nil
+
+        // 从插件中收集 LLM 供应商类型
+        var providerTypes: [any SuperLLMProvider.Type] = []
+        var providerDiagnostics: [String] = []
+        for plugin in sortedPlugins {
+            let pluginType = type(of: plugin)
+            if let providerType = plugin.llmProviderType() {
+                providerTypes.append(providerType)
+                providerDiagnostics.append("\(pluginType.id)->\(providerType.id)")
+            } else {
+                providerDiagnostics.append("\(pluginType.id)->nil")
+            }
+        }
+        self.discoveredLLMProviderTypes = providerTypes
+
+        let discoveredProviderIDs = providerTypes.map { $0.id }
+        AppLogger.core.info("\(self.t)插件扫描结束，共加载 \(sortedPlugins.count) 个插件；LLM provider 映射: \(providerDiagnostics.joined(separator: ", "))")
+        AppLogger.core.info("\(self.t)最终发现 \(discoveredProviderIDs.count) 个 LLM provider type: \(discoveredProviderIDs.joined(separator: ", "))")
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {
@@ -309,12 +340,22 @@ final class PluginVM: ObservableObject, SuperLog {
                 plugin.onEnable()
             }
         }
+
+        // 从插件中收集消息渲染器并注册到 MessageRendererVM
+        var allRenderers: [any SuperMessageRenderer] = []
+        for plugin in sortedPlugins {
+            let pluginRenderers = plugin.messageRenderers()
+            allRenderers.append(contentsOf: pluginRenderers)
+        }
+        if !allRenderers.isEmpty {
+            MessageRendererVM.shared.register(allRenderers)
+        }
         
         // 发送通知，告知其他组件插件加载完成
         NotificationCenter.postPluginsDidLoad()
         
         if Self.verbose {
-            AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins.")
+            AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins, \(providerTypes.count) LLM providers, \(allRenderers.count) message renderers.")
         }
     }
     
@@ -576,6 +617,19 @@ final class PluginVM: ObservableObject, SuperLog {
                 let type = type(of: plugin)
                 return (type.id, type.displayName, type.iconName, view)
             }
+    }
+
+    /// 将已发现的 LLM 供应商注册到供应商注册表
+    ///
+    /// 在 `RootViewContainer` 初始化时调用，将所有通过插件发现的 LLM 供应商
+    /// 统一注册到 `LLMProviderRegistry`。
+    ///
+    /// - Parameter registry: 供应商注册表
+    func registerLLMProviders(to registry: LLMProviderRegistry) {
+        registry.register(discoveredLLMProviderTypes)
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)📦 Registered \(self.discoveredLLMProviderTypes.count) LLM providers from plugins.")
+        }
     }
 
     /// 获取所有启用插件提供的主题贡献（按插件顺序和主题顺序稳定排序）

@@ -5,7 +5,7 @@ import SwiftUI
 /// 严格遵循 Visual Studio Code Light+ (Light Modern) 默认配色方案。
 /// 特点：清爽明快的经典 IDE 亮色体验
 ///
-struct VscodeLightTheme: ThemeProtocol {
+struct VscodeLightTheme: SuperTheme {
     // MARK: - 主题信息
     let identifier = "vscode-light"
     let displayName = "VS Code 亮色"

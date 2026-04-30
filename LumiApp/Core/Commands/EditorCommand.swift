@@ -54,6 +54,14 @@ struct EditorCommand: Commands, SuperLog {
                 modifiers: resolvedShortcut(EditorCommandBindings.find, commandID: "builtin.find").eventModifiers
             )
 
+            Button("在文件中搜索") {
+                NotificationCenter.postLumiEditorSearchInFiles()
+            }
+            .keyboardShortcut(
+                resolvedShortcut(EditorCommandBindings.searchInFiles, commandID: "builtin.search-in-files").keyEquivalent,
+                modifiers: resolvedShortcut(EditorCommandBindings.searchInFiles, commandID: "builtin.search-in-files").eventModifiers
+            )
+
             Button("查找下一个") {
                 NotificationCenter.postLumiEditorFindNext()
             }
@@ -152,6 +160,14 @@ struct EditorCommand: Commands, SuperLog {
             .keyboardShortcut(
                 resolvedShortcut(EditorCommandBindings.findReferences, commandID: "builtin.find-references").keyEquivalent,
                 modifiers: resolvedShortcut(EditorCommandBindings.findReferences, commandID: "builtin.find-references").eventModifiers
+            )
+
+            Button("快速修复") {
+                NotificationCenter.postLumiEditorQuickFix()
+            }
+            .keyboardShortcut(
+                resolvedShortcut(EditorCommandBindings.quickFix, commandID: "builtin.quick-fix").keyEquivalent,
+                modifiers: resolvedShortcut(EditorCommandBindings.quickFix, commandID: "builtin.quick-fix").eventModifiers
             )
 
             Button("重命名符号") {

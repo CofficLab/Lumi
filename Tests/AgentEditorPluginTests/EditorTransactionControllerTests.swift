@@ -49,5 +49,55 @@ final class EditorTransactionControllerTests: XCTestCase {
         XCTAssertEqual(payload.canonicalSelectionSet?.selections.count, 1)
         XCTAssertEqual(payload.multiCursorSelections?.first?.location, 1)
     }
+
+    func testTransactionForSnippetEditBuildsLinkedPlaceholderSession() {
+        let controller = EditorTransactionController()
+        let snippet = EditorSnippetParser.parse("func ${1:name}($2) { $1($0) }")
+
+        let payload = controller.transactionForSnippetEdit(
+            text: "",
+            replacementRange: NSRange(location: 0, length: 0),
+            snippet: snippet,
+            additionalTextEdits: nil
+        )
+
+        XCTAssertEqual(payload?.transaction.replacements.first?.text, "func name() { name() }")
+        XCTAssertEqual(
+            payload?.transaction.updatedSelections?.map(\.range),
+            [EditorRange(location: 5, length: 4), EditorRange(location: 14, length: 4)]
+        )
+        XCTAssertEqual(payload?.session?.groups.count, 2)
+        XCTAssertEqual(payload?.session?.groups.first?.ranges, [
+            NSRange(location: 5, length: 4),
+            NSRange(location: 14, length: 4),
+        ])
+        XCTAssertEqual(payload?.session?.groups.last?.ranges, [NSRange(location: 10, length: 0)])
+        XCTAssertEqual(payload?.session?.exitSelection, NSRange(location: 19, length: 0))
+    }
+
+    func testTransactionForSnippetEditRemapsSessionThroughAdditionalEdits() {
+        let controller = EditorTransactionController()
+        let snippet = EditorSnippetParser.parse("${1:foo}")
+        let additionalTextEdits: [TextEdit] = [
+            .init(
+                range: .init(
+                    start: .init(line: 0, character: 0),
+                    end: .init(line: 0, character: 0)
+                ),
+                newText: "let "
+            )
+        ]
+
+        let payload = controller.transactionForSnippetEdit(
+            text: "bar",
+            replacementRange: NSRange(location: 0, length: 3),
+            snippet: snippet,
+            additionalTextEdits: additionalTextEdits
+        )
+
+        XCTAssertEqual(payload?.session?.groups.first?.ranges, [NSRange(location: 4, length: 3)])
+        XCTAssertEqual(payload?.session?.exitSelection, NSRange(location: 7, length: 0))
+        XCTAssertEqual(payload?.transaction.updatedSelections?.first?.range, EditorRange(location: 4, length: 3))
+    }
 }
 #endif

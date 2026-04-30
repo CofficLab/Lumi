@@ -14,7 +14,7 @@ import MagicKit
 /// 1. get_current_conversation() → { "conversation_id": "abc-123..." }
 /// 2. delay_message(conversation_id="abc-123...", message="检查结果", seconds=5)
 /// ```
-struct GetCurrentConversationTool: AgentTool {
+struct GetCurrentConversationTool: SuperAgentTool {
     let name = "get_current_conversation"
     let description = "Get the current active conversation ID. Use this before calling delay_message to ensure the delayed message is sent to the correct conversation."
 

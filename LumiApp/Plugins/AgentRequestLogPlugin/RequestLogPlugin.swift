@@ -21,7 +21,7 @@ actor RequestLogPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] {
-        [AnySendMiddleware(RequestLogSendMiddleware())]
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
+        [AnySuperSendMiddleware(RequestLogSuperSendMiddleware())]
     }
 }

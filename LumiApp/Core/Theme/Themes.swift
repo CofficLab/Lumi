@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - 神秘感主题
 ///
 /// 神秘感主题系统，支持动态主题加载和切换。
-/// 现在可以轻松添加新主题，只需实现 ThemeProtocol 并注册到主题注册表。
+/// 现在可以轻松添加新主题，只需实现 SuperTheme 并注册到主题注册表。
 ///
 enum Themes {
     // MARK: - 主题变体
@@ -26,7 +26,7 @@ enum Themes {
         case dracula     // Dracula
 
         /// 获取主题实例
-        var theme: ThemeProtocol {
+        var theme: SuperTheme {
             switch self {
             case .midnight: return MidnightTheme()
             case .aurora: return AuroraTheme()
@@ -62,7 +62,7 @@ enum Themes {
     }
 
     /// 统一主题对象（由 ThemeManager 驱动）
-    nonisolated(unsafe) static var currentTheme: any ThemeProtocol = MidnightTheme()
+    nonisolated(unsafe) static var currentTheme: any SuperTheme = MidnightTheme()
 
     nonisolated(unsafe) static var isHighContrast: Bool = false
     nonisolated(unsafe) static var isReducedMotion: Bool = false
@@ -85,7 +85,7 @@ enum Themes {
         let secondary: SwiftUI.Color
         let tertiary: SwiftUI.Color
 
-        init(theme: (any ThemeProtocol)? = nil) {
+        init(theme: (any SuperTheme)? = nil) {
             let colors = (theme ?? currentTheme).accentColors()
             self.primary = colors.primary
             self.secondary = colors.secondary
@@ -99,7 +99,7 @@ enum Themes {
         let medium: SwiftUI.Color
         let light: SwiftUI.Color
 
-        init(theme: (any ThemeProtocol)? = nil) {
+        init(theme: (any SuperTheme)? = nil) {
             let colors = (theme ?? currentTheme).atmosphereColors()
             self.deep = colors.deep
             self.medium = colors.medium
@@ -113,7 +113,7 @@ enum Themes {
         let medium: SwiftUI.Color
         let intense: SwiftUI.Color
 
-        init(theme: (any ThemeProtocol)? = nil) {
+        init(theme: (any SuperTheme)? = nil) {
             let colors = (theme ?? currentTheme).glowColors()
             self.subtle = colors.subtle
             self.medium = colors.medium
@@ -162,7 +162,7 @@ enum Themes {
 // MARK: - View 扩展 - 神秘效果
 extension View {
     /// 神秘背景效果
-    func mystiqueBackground(theme: (any ThemeProtocol)? = nil) -> some View {
+    func mystiqueBackground(theme: (any SuperTheme)? = nil) -> some View {
         let activeTheme = theme ?? Themes.currentTheme
         return self
             .background(

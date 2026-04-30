@@ -11,6 +11,9 @@ extension Notification.Name {
     /// 请求执行「查找引用」
     static let lumiEditorFindReferences = Notification.Name("LumiEditorFindReferences")
 
+    /// 请求执行「快速修复」
+    static let lumiEditorQuickFix = Notification.Name("LumiEditorQuickFix")
+
     /// 请求执行「重命名符号」
     static let lumiEditorRenameSymbol = Notification.Name("LumiEditorRenameSymbol")
 
@@ -22,6 +25,9 @@ extension Notification.Name {
 
     /// 请求切换查找面板
     static let lumiEditorToggleFind = Notification.Name("LumiEditorToggleFind")
+
+    /// 请求执行「在文件中搜索」
+    static let lumiEditorSearchInFiles = Notification.Name("LumiEditorSearchInFiles")
 
     /// 请求显示命令面板
     static let lumiEditorShowCommandPalette = Notification.Name("LumiEditorShowCommandPalette")
@@ -40,6 +46,9 @@ extension Notification.Name {
 
     /// 请求切换 Open Editors 面板
     static let lumiEditorToggleOpenEditorsPanel = Notification.Name("LumiEditorToggleOpenEditorsPanel")
+
+    /// 请求切换 Outline 面板
+    static let lumiEditorToggleOutlinePanel = Notification.Name("LumiEditorToggleOutlinePanel")
 
     /// 请求向右分栏
     static let lumiEditorSplitRight = Notification.Name("LumiEditorSplitRight")
@@ -67,6 +76,18 @@ extension Notification.Name {
 
     /// 请求触发参数提示
     static let lumiEditorTriggerSignatureHelp = Notification.Name("LumiEditorTriggerSignatureHelp")
+
+    /// 项目上下文已更新
+    static let lumiEditorProjectContextDidChange = Notification.Name("LumiEditorProjectContextDidChange")
+
+    /// 向后兼容旧的 Xcode 上下文事件名
+    static let lumiEditorXcodeContextDidChange = Notification.Name("LumiEditorXcodeContextDidChange")
+
+    /// 当前编辑器文件对应的 Xcode 上下文快照已更新
+    static let lumiEditorXcodeSnapshotDidChange = Notification.Name("LumiEditorXcodeSnapshotDidChange")
+
+    /// 编辑器设置已更新
+    static let lumiEditorSettingsDidChange = Notification.Name("LumiEditorSettingsDidChange")
 }
 
 // MARK: - NotificationCenter Helpers
@@ -88,6 +109,10 @@ extension NotificationCenter {
         NotificationCenter.default.post(name: .lumiEditorFindReferences, object: nil)
     }
 
+    static func postLumiEditorQuickFix() {
+        NotificationCenter.default.post(name: .lumiEditorQuickFix, object: nil)
+    }
+
     static func postLumiEditorRenameSymbol() {
         NotificationCenter.default.post(name: .lumiEditorRenameSymbol, object: nil)
     }
@@ -102,6 +127,10 @@ extension NotificationCenter {
 
     static func postLumiEditorToggleFind() {
         NotificationCenter.default.post(name: .lumiEditorToggleFind, object: nil)
+    }
+
+    static func postLumiEditorSearchInFiles() {
+        NotificationCenter.default.post(name: .lumiEditorSearchInFiles, object: nil)
     }
 
     static func postLumiEditorShowCommandPalette() {
@@ -124,8 +153,16 @@ extension NotificationCenter {
         NotificationCenter.default.post(name: .lumiEditorReplaceAll, object: nil)
     }
 
+    static func postLumiEditorSettingsDidChange() {
+        NotificationCenter.default.post(name: .lumiEditorSettingsDidChange, object: nil)
+    }
+
     static func postLumiEditorToggleOpenEditorsPanel() {
         NotificationCenter.default.post(name: .lumiEditorToggleOpenEditorsPanel, object: nil)
+    }
+
+    static func postLumiEditorToggleOutlinePanel() {
+        NotificationCenter.default.post(name: .lumiEditorToggleOutlinePanel, object: nil)
     }
 
     static func postLumiEditorSplitRight() {

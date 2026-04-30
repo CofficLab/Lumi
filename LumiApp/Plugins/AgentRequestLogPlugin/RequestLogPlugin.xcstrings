@@ -1,40 +1,52 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "PluginDescription" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Log every chat request data, for debugging and auditing."
+  "sourceLanguage": "en",
+  "strings": {
+    "PluginDescription": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log every chat request data, for debugging and auditing."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "记录每次聊天请求的发送数据，用于调试和审计。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "记录每次聊天请求的发送数据，用于调试和审计。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記錄每次聊天請求的發送數據，用於調試和審計。"
           }
         }
       }
     },
-    "PluginName" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request Log"
+    "PluginName": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request Log"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请求日志"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请求日志"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求日誌"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

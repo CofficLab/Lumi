@@ -13,6 +13,7 @@ final class EditorSession: ObservableObject, Identifiable {
     @Published var findReplaceState: EditorFindReplaceState
     @Published var scrollState: EditorScrollState
     @Published var viewState: EditorViewState
+    @Published var foldingState: EditorFoldingState
 
     var mouseHoverContent: String? { storedPanelState.mouseHoverContent }
     var mouseHoverSymbolRect: CGRect { storedPanelState.mouseHoverSymbolRect }
@@ -38,7 +39,8 @@ final class EditorSession: ObservableObject, Identifiable {
         isDirty: Bool = false,
         findReplaceState: EditorFindReplaceState = EditorFindReplaceState(),
         scrollState: EditorScrollState = EditorScrollState(),
-        viewState: EditorViewState = EditorViewState()
+        viewState: EditorViewState = EditorViewState(),
+        foldingState: EditorFoldingState = EditorFoldingState()
     ) {
         self.id = id
         self.fileURL = fileURL
@@ -48,6 +50,7 @@ final class EditorSession: ObservableObject, Identifiable {
         self.findReplaceState = findReplaceState
         self.scrollState = scrollState
         self.viewState = viewState
+        self.foldingState = foldingState
     }
 
     convenience init(snapshot: EditorSession, preservingID: Bool = true) {
@@ -59,7 +62,8 @@ final class EditorSession: ObservableObject, Identifiable {
             isDirty: snapshot.isDirty,
             findReplaceState: snapshot.findReplaceState,
             scrollState: snapshot.scrollState,
-            viewState: snapshot.viewState
+            viewState: snapshot.viewState,
+            foldingState: snapshot.foldingState
         )
     }
 
@@ -71,6 +75,7 @@ final class EditorSession: ObservableObject, Identifiable {
         findReplaceState = snapshot.findReplaceState
         scrollState = snapshot.scrollState
         viewState = snapshot.viewState
+        foldingState = snapshot.foldingState
     }
 
     func reset() {
@@ -81,5 +86,6 @@ final class EditorSession: ObservableObject, Identifiable {
         findReplaceState = EditorFindReplaceState()
         scrollState = EditorScrollState()
         viewState = .initial
+        foldingState = EditorFoldingState()
     }
 }

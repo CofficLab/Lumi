@@ -33,12 +33,63 @@ final class EditorPanelController {
         panelState.problemDiagnostics = diagnostics
     }
 
+    func setSemanticProblems(_ problems: [EditorSemanticProblem]) {
+        panelState.semanticProblems = problems
+    }
+
     func setSelectedProblemDiagnostic(_ diagnostic: Diagnostic?) {
         panelState.selectedProblemDiagnostic = diagnostic
     }
 
     func setReferenceResults(_ results: [ReferenceResult]) {
-        panelState.referenceResults = results.map(Self.editorReferenceResult(from:))
+        let editorResults = results.map(Self.editorReferenceResult(from:))
+        panelState.referenceResults = editorResults
+        if let selected = panelState.selectedReferenceResult,
+           editorResults.contains(selected) == false {
+            panelState.selectedReferenceResult = nil
+        }
+    }
+
+    func setSelectedReferenceResult(_ result: ReferenceResult?) {
+        panelState.selectedReferenceResult = result.map(Self.editorReferenceResult(from:))
+    }
+
+    func setWorkspaceSearchQuery(_ query: String) {
+        panelState.workspaceSearchQuery = query
+    }
+
+    func setWorkspaceSearchLoading(_ isLoading: Bool) {
+        panelState.isWorkspaceSearchLoading = isLoading
+    }
+
+    func setWorkspaceSearchResults(
+        _ results: [EditorWorkspaceSearchFileResult],
+        summary: EditorWorkspaceSearchSummary?,
+        errorMessage: String?
+    ) {
+        let visiblePaths = Set(results.map(\.path))
+        panelState.workspaceSearchCollapsedFilePaths = panelState.workspaceSearchCollapsedFilePaths
+            .intersection(visiblePaths)
+        panelState.workspaceSearchResults = results
+        panelState.workspaceSearchSummary = summary
+        panelState.workspaceSearchErrorMessage = errorMessage
+        let visibleMatchIDs = Set(results.flatMap { $0.matches.map(\.id) })
+        if let selectedWorkspaceSearchMatchID = panelState.selectedWorkspaceSearchMatchID,
+           !visibleMatchIDs.contains(selectedWorkspaceSearchMatchID) {
+            panelState.selectedWorkspaceSearchMatchID = nil
+        }
+    }
+
+    func toggleWorkspaceSearchFileCollapse(path: String) {
+        if panelState.workspaceSearchCollapsedFilePaths.contains(path) {
+            panelState.workspaceSearchCollapsedFilePaths.remove(path)
+        } else {
+            panelState.workspaceSearchCollapsedFilePaths.insert(path)
+        }
+    }
+
+    func setSelectedWorkspaceSearchMatchID(_ id: String?) {
+        panelState.selectedWorkspaceSearchMatchID = id
     }
 
     func setMouseHover(content: String, symbolRect: CGRect) {
@@ -53,19 +104,26 @@ final class EditorPanelController {
         clearDiagnostics: Bool = false,
         closeProblems: Bool? = nil,
         closeReferences: Bool? = nil,
+        closeWorkspaceSearch: Bool? = nil,
         closeWorkspaceSymbols: Bool? = nil,
         closeCallHierarchy: Bool? = nil
     ) {
         panelState.clearMouseHover()
         setReferenceResults([])
+        if closeWorkspaceSearch != nil {
+            setWorkspaceSearchLoading(false)
+        }
         if clearDiagnostics {
             setProblemDiagnostics([])
+            setSemanticProblems([])
         }
         setSelectedProblemDiagnostic(nil)
+        setSelectedReferenceResult(nil)
         apply(
             snapshot: updatedSnapshot(
                 problems: closeProblems,
                 references: closeReferences,
+                workspaceSearch: closeWorkspaceSearch,
                 workspaceSymbols: closeWorkspaceSymbols,
                 callHierarchy: closeCallHierarchy
             )
@@ -74,20 +132,41 @@ final class EditorPanelController {
 
     func updateVisibility(
         openEditors: Bool? = nil,
+        outline: Bool? = nil,
         problems: Bool? = nil,
         references: Bool? = nil,
+        workspaceSearch: Bool? = nil,
         workspaceSymbols: Bool? = nil,
         callHierarchy: Bool? = nil
     ) {
         apply(
             snapshot: updatedSnapshot(
                 openEditors: openEditors,
+                outline: outline,
                 problems: problems,
                 references: references,
+                workspaceSearch: workspaceSearch,
                 workspaceSymbols: workspaceSymbols,
                 callHierarchy: callHierarchy
             )
         )
+    }
+
+    func presentBottomPanel(_ panel: EditorBottomPanelKind?) {
+        switch panel {
+        case .problems:
+            updateVisibility(problems: true, references: false, workspaceSearch: false, workspaceSymbols: false, callHierarchy: false)
+        case .references:
+            updateVisibility(problems: false, references: true, workspaceSearch: false, workspaceSymbols: false, callHierarchy: false)
+        case .searchResults:
+            updateVisibility(problems: false, references: false, workspaceSearch: true, workspaceSymbols: false, callHierarchy: false)
+        case .workspaceSymbols:
+            updateVisibility(problems: false, references: false, workspaceSearch: false, workspaceSymbols: true, callHierarchy: false)
+        case .callHierarchy:
+            updateVisibility(problems: false, references: false, workspaceSearch: false, workspaceSymbols: false, callHierarchy: true)
+        case nil:
+            updateVisibility(problems: false, references: false, workspaceSearch: false, workspaceSymbols: false, callHierarchy: false)
+        }
     }
 
     func updateSelectedProblemDiagnostic(line: Int?, column: Int?) {
@@ -123,16 +202,20 @@ final class EditorPanelController {
 
     private func updatedSnapshot(
         openEditors: Bool? = nil,
+        outline: Bool? = nil,
         problems: Bool? = nil,
         references: Bool? = nil,
+        workspaceSearch: Bool? = nil,
         workspaceSymbols: Bool? = nil,
         callHierarchy: Bool? = nil
     ) -> EditorPanelSnapshot {
         let snapshot = panelState.snapshot
         return EditorPanelSnapshot(
             isOpenEditorsPanelPresented: openEditors ?? snapshot.isOpenEditorsPanelPresented,
+            isOutlinePanelPresented: outline ?? snapshot.isOutlinePanelPresented,
             isProblemsPanelPresented: problems ?? snapshot.isProblemsPanelPresented,
             isReferencePanelPresented: references ?? snapshot.isReferencePanelPresented,
+            isWorkspaceSearchPresented: workspaceSearch ?? snapshot.isWorkspaceSearchPresented,
             isWorkspaceSymbolSearchPresented: workspaceSymbols ?? snapshot.isWorkspaceSymbolSearchPresented,
             isCallHierarchyPresented: callHierarchy ?? snapshot.isCallHierarchyPresented
         )

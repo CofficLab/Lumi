@@ -17,13 +17,13 @@ struct EmptyMessagesView: View {
                 .foregroundStyle(theme.workspaceTertiaryTextColor())
 
             // 标题
-            Text(String(localized: "No Messages", table: "AgentMessages"))
+            Text(String(localized: "No Messages", table: "AgentChat"))
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundStyle(theme.workspaceTextColor())
 
             // 描述
-            Text(String(localized: "No Messages Description", table: "AgentMessages"))
+            Text(String(localized: "No Messages Description", table: "AgentChat"))
                 .font(.body)
                 .foregroundStyle(theme.workspaceSecondaryTextColor())
                 .multilineTextAlignment(.center)
@@ -31,15 +31,15 @@ struct EmptyMessagesView: View {
 
             // 示例引导
             VStack(alignment: .leading, spacing: 6) {
-                Text(String(localized: "For Example", table: "AgentMessages"))
+                Text(String(localized: "For Example", table: "AgentChat"))
                     .font(.caption)
                     .foregroundStyle(theme.workspaceTertiaryTextColor())
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "Example Error Log", table: "AgentMessages"))
+                    Text(String(localized: "Example Error Log", table: "AgentChat"))
                         .font(.caption)
                         .foregroundStyle(theme.workspaceSecondaryTextColor())
-                    Text(String(localized: "Example Test Plan", table: "AgentMessages"))
+                    Text(String(localized: "Example Test Plan", table: "AgentChat"))
                         .font(.caption)
                         .foregroundStyle(theme.workspaceSecondaryTextColor())
                 }

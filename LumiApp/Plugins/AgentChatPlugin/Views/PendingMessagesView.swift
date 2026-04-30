@@ -31,7 +31,7 @@ struct PendingMessagesView: View, SuperLog {
                         .font(.system(size: 10))
                         .foregroundColor(.accentColor)
 
-                    Text(cachedConversationTitle ?? String(localized: "Current Conversation", table: "AgentInput"))
+                    Text(cachedConversationTitle ?? String(localized: "Current Conversation", table: "AgentChat"))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.primary)
                         .lineLimit(1)
@@ -50,7 +50,7 @@ struct PendingMessagesView: View, SuperLog {
                         .font(.system(size: 10))
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
 
-                    Text(String(localized: "Waiting to Send", table: "AgentInput"))
+                    Text(String(localized: "Waiting to Send", table: "AgentChat"))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
 
@@ -148,7 +148,7 @@ struct PendingMessageRow: View {
                         .foregroundColor(.secondary.opacity(0.5))
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "Remove Message", table: "AgentInput"))
+                .help(String(localized: "Remove Message", table: "AgentChat"))
             }
         }
         .padding(.horizontal, 8)

@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 @MainActor
 extension EditorState {
@@ -43,12 +44,19 @@ extension EditorState {
             clearConflict: { [weak self] in self?.clearExternalFileConflict() },
             syncSession: { [weak self] in self?.syncActiveSessionState() },
             scheduleSuccessClear: { [weak self] in self?.scheduleSuccessClear() },
+            notifyDidSave: { [weak self] content in
+                guard let self, let uri = self.currentFileURL?.absoluteString else { return }
+                self.lspService.documentDidSave(uri: uri, text: content)
+            },
             setHasUnsavedChanges: { [weak self] value in self?.hasUnsavedChanges = value }
         )
     }
 
     func prepareSaveFormatting(_ text: String, tabSize: Int, insertSpaces: Bool) async -> String? {
-        await formattingController.prepareSaveFormatting(
+        if projectLanguagePreflightError(operation: "保存时格式化") != nil {
+            return nil
+        }
+        return await formattingController.prepareSaveFormatting(
             text: text,
             tabSize: tabSize,
             insertSpaces: insertSpaces
@@ -79,6 +87,10 @@ extension EditorState {
     }
 
     func prepareAndSaveNow() async {
+        guard confirmProjectFileSaveIfNeeded() else {
+            showStatusToast("已取消保存", level: .info, duration: 1.2)
+            return
+        }
         await saveWorkflowController.prepareAndSaveNow(
             currentContent: documentController.currentText ?? content?.string,
             fileURL: currentFileURL,
@@ -108,6 +120,9 @@ extension EditorState {
             },
             requestCodeActions: { [weak self] range, diagnostics, triggerKinds in
                 guard let self else { return [] }
+                if self.projectLanguagePreflightError(operation: "保存时代码修复") != nil {
+                    return []
+                }
                 return await self.lspCoordinator.requestCodeAction(
                     range: range,
                     diagnostics: diagnostics,
@@ -218,7 +233,12 @@ extension EditorState {
             return
         }
         hasExternalFileConflict = true
-        saveState = .conflict(String(localized: "File changed on disk", table: "LumiEditor"))
+        saveState = .conflict(
+            EditorStatusMessageCatalog.externalFileChangedOnDisk(
+                fileName: currentFileURL?.lastPathComponent,
+                isProjectFile: isEditingProjectPBXProj
+            )
+        )
         syncActiveSessionState()
     }
 
@@ -282,5 +302,18 @@ extension EditorState {
         )
         resetUndoHistory()
         syncActiveSessionState()
+    }
+
+    private func confirmProjectFileSaveIfNeeded() -> Bool {
+        guard isEditingProjectPBXProj, let fileURL = currentFileURL else { return true }
+
+        let alert = NSAlert()
+        alert.messageText = "Confirm project.pbxproj save"
+        alert.informativeText = EditorStatusMessageCatalog.projectFileSaveConfirmation(fileName: fileURL.lastPathComponent)
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Save in Lumi")
+        alert.addButton(withTitle: "Cancel")
+
+        return alert.runModal() == .alertFirstButtonReturn
     }
 }

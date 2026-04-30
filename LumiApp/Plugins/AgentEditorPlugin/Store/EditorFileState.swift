@@ -141,4 +141,15 @@ enum EditorSaveState: Equatable {
         case .error(let msg): return msg
         }
     }
+
+    var shortLabel: String {
+        switch self {
+        case .idle: return String(localized: "No Changes", table: "LumiEditor")
+        case .editing: return String(localized: "Editing...", table: "LumiEditor")
+        case .saving: return String(localized: "Saving...", table: "LumiEditor")
+        case .saved: return String(localized: "Saved", table: "LumiEditor")
+        case .conflict: return "External Change"
+        case .error: return "Save Failed"
+        }
+    }
 }

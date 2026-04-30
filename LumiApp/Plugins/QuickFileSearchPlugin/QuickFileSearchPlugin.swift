@@ -71,13 +71,13 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func agentTools() -> [AgentTool] { [] }
+    func agentTools() -> [SuperAgentTool] { [] }
 
     @MainActor
-    func agentToolFactories() -> [AnyAgentToolFactory] { [] }
+    func agentToolFactories() -> [AnySuperAgentToolFactory] { [] }
 
     @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] { [] }
+    func sendMiddlewares() -> [AnySuperSendMiddleware] { [] }
 }
 
 // MARK: - Preview

@@ -38,6 +38,13 @@ enum EditorFindReplaceTransactionBuilder {
         )
     }
 
+    static func previewReplacementText(
+        for match: EditorFindMatch,
+        state: EditorFindReplaceState
+    ) -> String {
+        replacementText(for: match, state: state)
+    }
+
     private static func replacementText(
         for match: EditorFindMatch,
         state: EditorFindReplaceState

@@ -4,6 +4,13 @@ import XCTest
 
 @MainActor
 final class EditorCommandPaletteTests: XCTestCase {
+    override func tearDown() {
+        AppSettingStore.saveEditorRecentCommandIDs([])
+        AppSettingStore.saveEditorCommandUsageCounts([:])
+        AppSettingStore.saveEditorCommandPaletteCategory(nil)
+        super.tearDown()
+    }
+
     func testEditorCommandSectionsAreOrderedByCategory() {
         let state = EditorState()
 
@@ -28,6 +35,23 @@ final class EditorCommandPaletteTests: XCTestCase {
             "builtin.workspace-symbols",
             "builtin.find",
             "builtin.rename-symbol"
+        ])
+    }
+
+    func testFrequentCommandSuggestionsPreferHigherUsageCounts() {
+        let state = EditorState()
+
+        state.recordCommandExecution(id: "builtin.find")
+        state.recordCommandExecution(id: "builtin.find")
+        state.recordCommandExecution(id: "builtin.rename-symbol")
+        state.recordCommandExecution(id: "builtin.rename-symbol")
+        state.recordCommandExecution(id: "builtin.rename-symbol")
+
+        let frequent = state.frequentCommandSuggestions(limit: 2)
+
+        XCTAssertEqual(frequent.map(\.id), [
+            "builtin.rename-symbol",
+            "builtin.find"
         ])
     }
 
@@ -117,7 +141,59 @@ final class EditorCommandPaletteTests: XCTestCase {
         )
 
         XCTAssertEqual(model.recentCommands.map(\.id), ["builtin.rename-symbol"])
+        XCTAssertEqual(model.frequentCommands.map(\.id), [])
         XCTAssertEqual(model.sections.flatMap(\.commands).map(\.id), ["builtin.find"])
+    }
+
+    func testPresentationModelSeparatesFrequentCommandsFromSections() {
+        let suggestions: [EditorCommandSuggestion] = [
+            .init(
+                id: "builtin.find",
+                title: "Find",
+                systemImage: "magnifyingglass",
+                category: EditorCommandCategory.find.rawValue,
+                order: 0,
+                isEnabled: true,
+                action: {}
+            ),
+            .init(
+                id: "builtin.rename-symbol",
+                title: "Rename Symbol",
+                systemImage: "pencil",
+                category: EditorCommandCategory.navigation.rawValue,
+                order: 0,
+                isEnabled: true,
+                action: {}
+            ),
+            .init(
+                id: "builtin.command-palette",
+                title: "Command Palette",
+                systemImage: "command",
+                category: EditorCommandCategory.workbench.rawValue,
+                order: 0,
+                isEnabled: true,
+                action: {}
+            )
+        ]
+
+        let model = EditorCommandPresentationModel.build(
+            from: suggestions,
+            recentCommandIDs: ["builtin.command-palette"],
+            commandUsageCounts: ["builtin.find": 3, "builtin.rename-symbol": 1, "builtin.command-palette": 4]
+        )
+
+        XCTAssertEqual(model.recentCommands.map(\.id), ["builtin.command-palette"])
+        XCTAssertEqual(model.frequentCommands.map(\.id), ["builtin.find"])
+        XCTAssertEqual(model.sections.flatMap(\.commands).map(\.id), ["builtin.rename-symbol"])
+    }
+
+    func testPreferredCommandPaletteCategoryPersists() {
+        let state = EditorState()
+
+        state.setPreferredCommandPaletteCategory(.workbench)
+
+        XCTAssertEqual(state.preferredCommandPaletteCategory(), .workbench)
+        XCTAssertEqual(AppSettingStore.loadEditorCommandPaletteCategory(), EditorCommandCategory.workbench.rawValue)
     }
 
     func testEditorCommandSectionsForContextUseSharedPresentationModel() {

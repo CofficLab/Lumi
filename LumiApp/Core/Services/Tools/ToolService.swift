@@ -21,7 +21,7 @@ import Combine
 /// │   └── (已迁移到插件提供)
 /// │
 /// └── 插件工具 (Plugin Tools)
-///     ├── AgentCoreToolsPlugin
+///     ├── 内核工具插件
 ///     │   ├── ShellTool (执行命令)
 ///     │   ├── ListDirectoryTool (列出目录)
 ///     │   ├── ReadFileTool (读取文件)
@@ -71,13 +71,13 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 所有可用工具
     ///
     /// 每次工具列表更新时都会重新计算。
-    private(set) var allTools: [AgentTool] = []
+    private(set) var allTools: [SuperAgentTool] = []
 
     /// 内置工具列表
-    private var builtInTools: [AgentTool] = []
+    private var builtInTools: [SuperAgentTool] = []
 
     /// 插件提供的工具列表
-    private var pluginTools: [AgentTool] = []
+    private var pluginTools: [SuperAgentTool] = []
 
     // MARK: - Dependencies
 
@@ -114,7 +114,7 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - Setup
 
-    // 说明：原先 `setupBuiltInTools()` 已迁移到插件（见 `AgentCoreToolsPlugin`）。
+    // 说明：原先 `setupBuiltInTools()` 已迁移到插件提供。
 
     /// 设置插件工具监听
     ///
@@ -147,7 +147,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 合并内置工具、MCP 工具和插件工具，通知观察者。
     @MainActor
     private func refreshAllTools() {
-        let env = AgentToolEnvironment(toolService: self, llmService: llmService)
+        let env = SuperAgentToolEnvironment(toolService: self, llmService: llmService)
         let directTools = PluginVM.shared.getAgentTools()
         let factories = PluginVM.shared.getAgentToolFactories()
         let factoryTools = factories.flatMap { $0.makeTools(env: env) }
@@ -163,7 +163,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 获取所有可用工具（只读）
     ///
     /// 返回完整的工具列表，包括内置和 MCP 工具。
-    var tools: [AgentTool] {
+    var tools: [SuperAgentTool] {
         return allTools
     }
 
@@ -171,7 +171,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///
     /// - Parameter name: 工具名称
     /// - Returns: 匹配的工具，如果未找到则返回 nil
-    func tool(named name: String) -> AgentTool? {
+    func tool(named name: String) -> SuperAgentTool? {
         let tool = allTools.first { $0.name == name }
 
         if Self.verbose && tool == nil {

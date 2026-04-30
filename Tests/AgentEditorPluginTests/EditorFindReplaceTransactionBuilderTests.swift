@@ -44,5 +44,20 @@ final class EditorFindReplaceTransactionBuilderTests: XCTestCase {
 
         XCTAssertEqual(transaction?.replacements.map(\.text), ["BAR", "Bar", "bar"])
     }
+
+    func testPreviewReplacementTextUsesPreservedCaseRules() {
+        let state = EditorFindReplaceState(
+            findText: "foo",
+            replaceText: "bar",
+            options: EditorFindReplaceOptions(preservesCase: true)
+        )
+
+        let preview = EditorFindReplaceTransactionBuilder.previewReplacementText(
+            for: EditorFindMatch(range: EditorRange(location: 0, length: 3), matchedText: "FOO"),
+            state: state
+        )
+
+        XCTAssertEqual(preview, "BAR")
+    }
 }
 #endif

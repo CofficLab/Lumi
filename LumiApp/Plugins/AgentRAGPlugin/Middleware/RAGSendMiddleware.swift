@@ -16,7 +16,7 @@ import os
 /// 7. 如果索引已完成，调用 RAG 服务检索相关文档
 /// 8. 将检索结果附加到消息上下文
 @MainActor
-final class RAGSendMiddleware: SendMiddleware, SuperLog {
+final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "🦞"
     nonisolated static let verbose: Bool = false
     let id = "rag"

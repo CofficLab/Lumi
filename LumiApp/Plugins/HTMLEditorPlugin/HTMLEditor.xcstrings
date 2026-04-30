@@ -1,0 +1,38 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "HTML Editor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML Editor"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 编辑器"
+          }
+        }
+      }
+    },
+    "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 编辑增强：标签补全、悬浮文档、自动闭合和标签匹配。"
+          }
+        }
+      }
+    }
+  }
+}

@@ -65,19 +65,19 @@ actor ShowImagePlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func agentToolFactories() -> [AnyAgentToolFactory] {
-        [AnyAgentToolFactory(ShowImageToolFactory())]
+    func agentToolFactories() -> [AnySuperAgentToolFactory] {
+        [AnySuperAgentToolFactory(ShowImageToolFactory())]
     }
 }
 
 // MARK: - Tool Factory
 
 @MainActor
-private struct ShowImageToolFactory: AgentToolFactory {
+private struct ShowImageToolFactory: SuperAgentToolFactory {
     let id: String = "show.image.factory"
     let order: Int = 0
 
-    func makeTools(env: AgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [ShowImageTool()]
     }
 }

@@ -13,7 +13,7 @@ import SwiftUI
 /// 深邃的午夜蓝调，神秘而宁静。
 /// 特点：蓝紫色调，赛博朋克风格
 ///
-struct MidnightTheme: ThemeProtocol {
+struct MidnightTheme: SuperTheme {
     // MARK: - 主题信息
 
     let identifier = "midnight"

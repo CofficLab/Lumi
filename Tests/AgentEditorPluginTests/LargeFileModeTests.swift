@@ -54,6 +54,39 @@ final class LargeFileModeTests: XCTestCase {
         XCTAssertEqual(LargeFileMode.mode(for: LargeFileMode.largeThreshold), .large)
         XCTAssertEqual(LargeFileMode.mode(for: LargeFileMode.megaThreshold), .mega)
     }
+
+    func testMinimapPolicyStaysVisibleForMediumFiles() {
+        let policy = EditorMinimapPolicy(
+            userRequestedVisible: true,
+            largeFileMode: .medium
+        )
+
+        XCTAssertTrue(policy.isVisible)
+        XCTAssertFalse(policy.isForcedHidden)
+        XCTAssertEqual(policy.statusTitle, "Minimap On")
+    }
+
+    func testMinimapPolicyIsForcedHiddenForLargeFiles() {
+        let policy = EditorMinimapPolicy(
+            userRequestedVisible: true,
+            largeFileMode: .large
+        )
+
+        XCTAssertFalse(policy.isVisible)
+        XCTAssertTrue(policy.isForcedHidden)
+        XCTAssertEqual(policy.statusTitle, "Minimap Gated")
+    }
+
+    func testMinimapPolicyRespectsUserSettingWhenNotGated() {
+        let policy = EditorMinimapPolicy(
+            userRequestedVisible: false,
+            largeFileMode: .normal
+        )
+
+        XCTAssertFalse(policy.isVisible)
+        XCTAssertFalse(policy.isForcedHidden)
+        XCTAssertEqual(policy.statusTitle, "Minimap Off")
+    }
 }
 
 final class LongLineDetectorTests: XCTestCase {
@@ -284,6 +317,41 @@ final class ViewportRenderControllerTests: XCTestCase {
 
         XCTAssertNil(protectedState.currentSignatureHelpOverlayItem)
         XCTAssertTrue(protectedState.currentCodeActionOverlayActions.isEmpty)
+    }
+
+    func testEditorStateCodeActionIndicatorPlacementRespectsOverlayAvailability() {
+        let state = EditorState()
+        let textView = TextView(string: "alpha\nbeta\n")
+        textView.frame = CGRect(x: 0, y: 0, width: 640, height: 300)
+        textView.layoutManager.ensureLayout(for: textView.textStorage)
+        let lineTable = LineOffsetTable(content: "alpha\nbeta\n")
+
+        state.applyViewportObservation(startLine: 0, endLine: 100, totalLines: 1_000)
+        state.cursorLine = 2
+        state.codeActionProvider.actions = [
+            CodeActionItem(
+                title: "Fix It",
+                kind: "quickfix",
+                payload: .plugin(
+                    EditorCodeActionSuggestion(
+                        id: "fix-it",
+                        title: "Fix It",
+                        command: "editor.fixIt",
+                        priority: 0
+                    )
+                ),
+                isPreferred: false
+            )
+        ]
+        state.codeActionProvider.isVisible = true
+
+        XCTAssertNotNil(
+            state.codeActionIndicatorPlacement(
+                textView: textView,
+                lineTable: lineTable,
+                containerSize: CGSize(width: 640, height: 300)
+            )
+        )
     }
 
     func testEditorStateRenderedRangeHelpers() {

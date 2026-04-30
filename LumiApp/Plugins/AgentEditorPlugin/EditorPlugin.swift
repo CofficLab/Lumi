@@ -44,12 +44,6 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     /// 编辑器面板需要右侧栏（聊天）
     nonisolated var panelNeedsSidebar: Bool { true }
 
-    /// 在工具栏显示 Xcode 项目状态
-    @MainActor func addToolBarLeadingView() -> AnyView? {
-        guard XcodeProjectContextBridge.shared.isXcodeProject else { return nil }
-        return AnyView(XcodeProjectStatusBar())
-    }
-
     /// 在状态栏右侧显示已加载插件入口
     @MainActor func addStatusBarTrailingView() -> AnyView? {
         AnyView(EditorLoadedPluginsStatusBarView())

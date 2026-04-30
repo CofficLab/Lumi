@@ -111,6 +111,29 @@
         }
       }
     },
+    "Add to Conversation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Conversation"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加到对话"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入對話"
+          }
+        }
+      }
+    },
     "Adds diagnostics, progress, and quick action items to the editor toolbar." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -153,6 +176,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "添加 LSP 上下文命令，如跳轉到定義與重命名。"
+          }
+        }
+      }
+    },
+    "Are you sure you want to delete \"%@\"?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to delete \"%@\"?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除 \"%@\" 吗？"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要刪除 \"%@\" 嗎？"
           }
         }
       }
@@ -244,10 +290,53 @@
     "Copy Line Up" : {
 
     },
-    "Current Group" : {
-
+    "Copy Path" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Path"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制路径"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製路徑"
+          }
+        }
+      }
     },
-    "Current Group (%lld)" : {
+    "Create" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立"
+          }
+        }
+      }
+    },
+    "Current Group" : {
 
     },
     "Cursor Document End" : {
@@ -386,10 +475,100 @@
         }
       }
     },
-    "File changed on disk" : {
-
+    "Enter the name for the new file." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the name for the new file."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入新文件的名称。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入新檔案的名稱。"
+          }
+        }
+      }
+    },
+    "Enter the name for the new folder." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the name for the new folder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入新文件夹的名称。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入新資料夾的名稱。"
+          }
+        }
+      }
+    },
+    "Enter the new name for this item." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the new name for this item."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入新的名称。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入新的名稱。"
+          }
+        }
+      }
+    },
+    "File name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File name"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件名"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案名稱"
+          }
+        }
+      }
     },
     "File not found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -527,6 +706,41 @@
     "Focus Previous Editor Group" : {
 
     },
+    "Fold All" : {
+
+    },
+    "Fold Current Block" : {
+
+    },
+    "Fold Level 1" : {
+
+    },
+    "Fold Level 2" : {
+
+    },
+    "Folder name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder name"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件夹名"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾名稱"
+          }
+        }
+      }
+    },
     "Format Document" : {
       "localizations" : {
         "en" : {
@@ -593,6 +807,9 @@
         }
       }
     },
+    "Frequently Used" : {
+
+    },
     "Go to Definition" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -621,16 +838,6 @@
     },
     "Group %lld" : {
 
-    },
-    "Group %lld (%lld)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Group %1$lld (%2$lld)"
-          }
-        }
-      }
     },
     "Insert Line Above" : {
 
@@ -681,6 +888,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已加載 %lld 個插件"
+          }
+        }
+      }
+    },
+    "Loading..." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载中..."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入中..."
           }
         }
       }
@@ -907,8 +1137,77 @@
     "Move Line Up" : {
 
     },
+    "Move to Trash" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to Trash"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移到废纸篓"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移到垃圾桶"
+          }
+        }
+      }
+    },
     "Navigate" : {
 
+    },
+    "New File" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New File"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建文件"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增檔案"
+          }
+        }
+      }
+    },
+    "New Folder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Folder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建文件夹"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增資料夾"
+          }
+        }
+      }
     },
     "New name" : {
       "localizations" : {
@@ -1077,7 +1376,7 @@
         }
       }
     },
-    "No Matching Commands" : {
+    "No Matching Results" : {
 
     },
     "No more occurrences found" : {
@@ -1107,6 +1406,29 @@
     },
     "No Problems" : {
 
+    },
+    "No project" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No project"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无项目"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無專案"
+          }
+        }
+      }
     },
     "No references found" : {
       "localizations" : {
@@ -1174,10 +1496,65 @@
     "Open Editors" : {
 
     },
+    "Open in Terminal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Terminal"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在终端中打开"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在終端機中開啟"
+          }
+        }
+      }
+    },
+    "Open in VS Code" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in VS Code"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 VS Code 中打开"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 VS Code 中開啟"
+          }
+        }
+      }
+    },
+    "Open Search Editor" : {
+
+    },
     "Other Open Editors" : {
 
     },
-    "Other Open Editors (%lld)" : {
+    "Outline" : {
+
+    },
+    "Peek Definition" : {
+
+    },
+    "Peek References" : {
 
     },
     "Pin Tab" : {
@@ -1254,6 +1631,52 @@
         }
       }
     },
+    "Project File Tree" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Project File Tree"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目文件树"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案檔案樹"
+          }
+        }
+      }
+    },
+    "Project Files" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Project Files"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目文件"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案檔案"
+          }
+        }
+      }
+    },
     "Provides references and problems side panels." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1322,6 +1745,12 @@
           }
         }
       }
+    },
+    "Quick Fix" : {
+
+    },
+    "Quick Open: files, @symbols, #workspace, :line, >commands" : {
+
     },
     "Recently Active" : {
 
@@ -1523,13 +1952,33 @@
     "Replace All" : {
 
     },
+    "Reveal in Finder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reveal in Finder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Finder 中显示"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Finder 中顯示"
+          }
+        }
+      }
+    },
     "Run" : {
 
     },
     "Save" : {
-
-    },
-    "Save failed" : {
 
     },
     "Saved" : {
@@ -1576,10 +2025,11 @@
         }
       }
     },
-    "Search commands" : {
+    "Search in Files" : {
 
     },
     "Select a file to start editing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1631,6 +2081,29 @@
     },
     "Show Call Hierarchy" : {
 
+    },
+    "Show project file directory structure" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show project file directory structure"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示当前项目的树状文件目录结构"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示當前專案的樹狀檔案目錄結構"
+          }
+        }
+      }
     },
     "Shows inline hover documentation for common Swift keywords." : {
       "extractionState" : "stale",
@@ -1739,6 +2212,29 @@
     "This code action has no edit or command" : {
 
     },
+    "This item will be moved to the Trash." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This item will be moved to the Trash."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该项目将被移到废纸篓。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該項目將被移到垃圾桶。"
+          }
+        }
+      }
+    },
     "Toggle Line Comment" : {
 
     },
@@ -1777,6 +2273,12 @@
     "Undo" : {
 
     },
+    "Unfold All" : {
+
+    },
+    "Unfold Current Block" : {
+
+    },
     "Unpin Tab" : {
 
     },
@@ -1806,5 +2308,5 @@
       }
     }
   },
-  "version" : "1.1"
+  "version" : "1.0"
 }

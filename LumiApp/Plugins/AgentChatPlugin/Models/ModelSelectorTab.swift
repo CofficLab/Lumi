@@ -1,33 +1,36 @@
 /// 模型选择器 Tab 类型
-enum ModelSelectorTab: String, CaseIterable {
-    /// 全部供应商与模型
-    case all
+enum ModelSelectorTab: Equatable {
+    // MARK: - 快捷 Tab
+
     /// 当前供应商
     case current
     /// 常用模型（跨供应商）
     case frequent
     /// TPS 较快的模型
     case fast
-    /// 本地供应商
-    case local
-    /// 远程供应商
-    case remote
+
+    // MARK: - 供应商 Tab
+
+    /// 全部供应商
+    case all
+    /// 指定供应商（关联 providerId）
+    case provider(String)
+
+    // MARK: - 显示标题
 
     /// Tab 显示标题
     var displayTitle: String {
         switch self {
-        case .all:
-            return String(localized: "All", table: "AgentInput")
         case .current:
-            return String(localized: "Current Provider", table: "AgentInput")
+            return String(localized: "Current Provider", table: "AgentChat")
         case .frequent:
-            return String(localized: "Frequent", table: "AgentInput")
+            return String(localized: "Frequent", table: "AgentChat")
         case .fast:
-            return String(localized: "Fast", table: "AgentInput")
-        case .local:
-            return String(localized: "Local Providers", table: "AgentInput")
-        case .remote:
-            return String(localized: "Remote Providers", table: "AgentInput")
+            return String(localized: "Fast", table: "AgentChat")
+        case .all:
+            return String(localized: "All", table: "AgentChat")
+        case .provider:
+            return ""  // 供应商标题由外部传入
         }
     }
 }

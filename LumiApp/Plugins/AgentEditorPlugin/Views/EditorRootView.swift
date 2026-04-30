@@ -1,11 +1,11 @@
 import MagicKit
 import SwiftUI
 import Combine
+import CodeEditSourceEditor
+import UniformTypeIdentifiers
 
 /// 编辑器主视图（根入口）
 /// 组合面包屑、工具栏、编辑器、状态栏
-///
-/// Phase 4: 支持 workbench group 树，实现 split editor
 struct EditorRootView: View {
 
     private struct SessionActivation {
@@ -30,6 +30,11 @@ struct EditorRootView: View {
     @StateObject private var hostStore = EditorGroupHostStore()
     @State private var pendingActivationIntent: ActivationIntent?
     @State private var isCommandPalettePresented = false
+    @State private var draggedTabSessionID: EditorSession.ID?
+    @State private var selectedSidebarTab: EditorSidebarWorkspaceTab = .explorer
+
+    private let sidebarStorageKey = "Split.Panel.LumiEditor"
+    private let sidebarSelectedTabStorageKey = "Split.Panel.LumiEditor.SelectedTab"
 
     var body: some View {
         eventBoundRootView
@@ -39,19 +44,121 @@ struct EditorRootView: View {
         rootLayout
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+            .background(SplitViewAutosaveConfigurator(autosaveName: sidebarStorageKey))
     }
 
     private var lifecycleBoundRootView: some View {
-        baseRootView
+        let viewWithProjectBindings = baseRootView
+            .onChange(of: projectVM.currentProjectPath) { _, newPath in
+                refreshProjectContext(for: newPath)
+            }
             .onChange(of: projectVM.selectedFileURL) { _, newURL in
                 openOrActivateSession(for: newURL)
+            }
+            .onChange(of: state.currentFileURL) { _, _ in
+                state.refreshDocumentOutline()
+                updateBreadcrumbBridge()
+            }
+            .onChange(of: state.cursorLine) { _, _ in
+                updateBreadcrumbBridge()
+            }
+            .onChange(of: state.documentSymbolProvider.symbols.map(\.id)) { _, _ in
+                updateBreadcrumbBridge()
+            }
+
+        let viewWithPanelBindings = viewWithProjectBindings
+            .onChange(of: state.panelState.isOpenEditorsPanelPresented) { _, isPresented in
+                if isPresented {
+                    selectedSidebarTab = .openEditors
+                    persistSidebarWorkspaceSelection(.openEditors)
+                } else if !state.panelState.isOutlinePanelPresented, selectedSidebarTab == .openEditors {
+                    selectedSidebarTab = .explorer
+                    persistSidebarWorkspaceSelection(.explorer)
+                }
+            }
+            .onChange(of: state.panelState.isOutlinePanelPresented) { _, isPresented in
+                if isPresented {
+                    selectedSidebarTab = .outline
+                    persistSidebarWorkspaceSelection(.outline)
+                } else if !state.panelState.isOpenEditorsPanelPresented, selectedSidebarTab == .outline {
+                    selectedSidebarTab = .explorer
+                    persistSidebarWorkspaceSelection(.explorer)
+                }
+            }
+            .onChange(of: state.panelState.isProblemsPanelPresented) { _, isPresented in
+                if isPresented {
+                    selectedSidebarTab = .problems
+                    persistSidebarWorkspaceSelection(.problems)
+                } else if selectedSidebarTab == .problems {
+                    selectedSidebarTab = .explorer
+                    persistSidebarWorkspaceSelection(.explorer)
+                }
+            }
+            .onChange(of: state.panelState.isWorkspaceSearchPresented) { _, isPresented in
+                if isPresented {
+                    selectedSidebarTab = .searchResults
+                    persistSidebarWorkspaceSelection(.searchResults)
+                } else if selectedSidebarTab == .searchResults {
+                    selectedSidebarTab = .explorer
+                    persistSidebarWorkspaceSelection(.explorer)
+                }
+            }
+            .onChange(of: state.panelState.workspaceSearchResults.count) { _, count in
+                guard count == 0,
+                      selectedSidebarTab == .searchResults,
+                      !state.panelState.isWorkspaceSearchPresented,
+                      state.panelState.workspaceSearchQuery.isEmpty,
+                      !state.panelState.isWorkspaceSearchLoading else { return }
+                selectedSidebarTab = .explorer
+                persistSidebarWorkspaceSelection(.explorer)
+            }
+
+        let viewWithContextBindings = viewWithPanelBindings
+            .onChange(of: state.panelState.isReferencePanelPresented) { _, isPresented in
+                if isPresented {
+                    selectedSidebarTab = .references
+                    persistSidebarWorkspaceSelection(.references)
+                } else if selectedSidebarTab == .references {
+                    selectedSidebarTab = .explorer
+                    persistSidebarWorkspaceSelection(.explorer)
+                }
+            }
+            .onChange(of: state.panelState.isWorkspaceSymbolSearchPresented) { _, isPresented in
+                if isPresented {
+                    selectedSidebarTab = .workspaceSymbols
+                    persistSidebarWorkspaceSelection(.workspaceSymbols)
+                } else if selectedSidebarTab == .workspaceSymbols {
+                    selectedSidebarTab = .explorer
+                    persistSidebarWorkspaceSelection(.explorer)
+                }
+            }
+            .onChange(of: state.callHierarchyProvider.rootItem?.name) { _, rootName in
+                if rootName != nil || state.callHierarchyProvider.isLoading {
+                    selectedSidebarTab = .callHierarchy
+                    persistSidebarWorkspaceSelection(.callHierarchy)
+                } else if selectedSidebarTab == .callHierarchy, !state.panelState.isCallHierarchyPresented {
+                    selectedSidebarTab = .explorer
+                    persistSidebarWorkspaceSelection(.explorer)
+                }
+            }
+            .onChange(of: state.panelState.isCallHierarchyPresented) { _, isPresented in
+                if isPresented {
+                    selectedSidebarTab = .callHierarchy
+                    persistSidebarWorkspaceSelection(.callHierarchy)
+                } else if selectedSidebarTab == .callHierarchy {
+                    selectedSidebarTab = .explorer
+                    persistSidebarWorkspaceSelection(.explorer)
+                }
             }
             .onChange(of: workbench.activeGroupID) { _, _ in
                 guard !consumePendingActivationIntent(for: workbench.activeGroupID) else { return }
                 syncEditorToActiveGroup()
             }
+
+        return viewWithContextBindings
             .onAppear {
                 state.projectRootPath = projectVM.currentProject?.path
+                refreshProjectContext(for: projectVM.currentProjectPath)
                 hostStore.setPrimaryState(state)
                 state.onActiveSessionChanged = { snapshot in
                     sessionStore.syncActiveSession(from: snapshot)
@@ -61,7 +168,10 @@ struct EditorRootView: View {
                 hostStore.retainOnly(Set(workbench.leafGroups.map(\.id)))
                 if projectVM.isFileSelected {
                     openOrActivateSession(for: projectVM.selectedFileURL)
+                    state.refreshDocumentOutline()
                 }
+                restoreSidebarWorkspaceSelection()
+                updateBreadcrumbBridge()
             }
             .onDisappear {
                 // 保存主 EditorState 的变更
@@ -75,11 +185,16 @@ struct EditorRootView: View {
                     }
                 }
                 state.onActiveSessionChanged = nil
+                EditorBreadcrumbContextBridge.shared.update(
+                    currentFileURL: nil,
+                    activeSymbolTrail: [],
+                    openSymbol: nil
+                )
             }
     }
 
     private var editorCommandBoundRootView: some View {
-        lifecycleBoundRootView
+        let viewWithPrimaryCommands = lifecycleBoundRootView
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorUndo)) { _ in
                 handleEditorCommandEvent("builtin.undo")
             }
@@ -91,6 +206,9 @@ struct EditorRootView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindReferences)) { _ in
                 handleEditorCommandEvent("builtin.find-references")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorQuickFix)) { _ in
+                handleEditorCommandEvent("builtin.quick-fix")
             }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorRenameSymbol)) { _ in
                 handleEditorCommandEvent("builtin.rename-symbol")
@@ -104,12 +222,17 @@ struct EditorRootView: View {
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleFind)) { _ in
                 handleEditorCommandEvent("builtin.find")
             }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorSearchInFiles)) { _ in
+                handleEditorCommandEvent("builtin.search-in-files")
+            }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorShowCommandPalette)) { _ in
                 isCommandPalettePresented = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindNext)) { _ in
                 handleEditorCommandEvent("builtin.find-next")
             }
+
+        return viewWithPrimaryCommands
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindPrevious)) { _ in
                 handleEditorCommandEvent("builtin.find-previous")
             }
@@ -120,7 +243,10 @@ struct EditorRootView: View {
                 handleEditorCommandEvent("builtin.replace-all")
             }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleOpenEditorsPanel)) { _ in
-                handleEditorCommandEvent("builtin.open-editors-panel")
+                toggleSidebarTab(.openEditors)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleOutlinePanel)) { _ in
+                toggleSidebarTab(.outline)
             }
     }
 
@@ -154,19 +280,38 @@ struct EditorRootView: View {
     }
 
     private var rootLayout: some View {
-        HStack(spacing: 0) {
-            VStack(spacing: 0) {
-                if projectVM.isFileSelected {
-                    headerArea
-                    fileInfoBanner
-                    workbenchContent
-                } else {
-                    emptyState
-                }
-            }
+        HSplitView {
+            EditorSidebarWorkspaceView(
+                state: state,
+                selectedTab: $selectedSidebarTab,
+                openEditors: openEditorItems,
+                onSelectOpenEditor: activateOpenEditor,
+                onCloseOpenEditor: closeOpenEditorItem,
+                onCloseOtherOpenEditors: closeOtherOpenEditorItems,
+                onTogglePinnedOpenEditor: togglePinnedOpenEditorItem,
+                onSelectTab: selectSidebarTab,
+                onDismissTab: dismissSidebarTab
+            )
+            .frame(minWidth: 220, idealWidth: 280)
+            .background(SplitViewWidthPersistence(storageKey: sidebarStorageKey))
 
-            if let panel = activeSidePanel {
-                panel.content(state)
+            HStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    if projectVM.isFileSelected {
+                        headerArea
+                        fileInfoBanner
+                        workbenchContent
+                        if shouldShowBottomPanel {
+                            EditorBottomPanelHostView(state: state)
+                        }
+                    } else {
+                        emptyState
+                    }
+                }
+
+                if let panel = activeSidePanel {
+                    panel.content(state)
+                }
             }
         }
     }
@@ -189,18 +334,40 @@ struct EditorRootView: View {
                         )
                     )
                 }
+            ),
+            .init(
+                id: "builtin.outline-panel",
+                order: 1,
+                isPresented: { $0.panelState.isOutlinePanelPresented },
+                content: { state in
+                    AnyView(
+                        EditorOutlinePanelView(
+                            state: state,
+                            provider: state.documentSymbolProvider
+                        )
+                    )
+                }
             )
         ]
     }
 
     private var activeSidePanel: EditorSidePanelSuggestion? {
         (builtinSidePanels + state.editorExtensions.sidePanelSuggestions(state: state))
+            .filter { suggestion in
+                suggestion.id != "builtin.open-editors-panel" &&
+                suggestion.id != "builtin.outline-panel" &&
+                suggestion.id != "builtin.references-panel" &&
+                suggestion.id != "builtin.problems-panel"
+            }
             .sorted { $0.order < $1.order }
             .first(where: { $0.isPresented(state) })
     }
 
     private var editorSheetHosts: some View {
-        let sheets = builtinSheets + state.editorExtensions.sheetSuggestions(state: state)
+        let sheets = builtinSheets + state.editorExtensions.sheetSuggestions(state: state).filter {
+            $0.id != "builtin.workspace-symbol-sheet" &&
+            $0.id != "builtin.call-hierarchy-sheet"
+        }
         return ZStack {
             ForEach(sheets) { sheet in
                 EmptyView()
@@ -229,7 +396,11 @@ struct EditorRootView: View {
                 onDismiss: { _ in isCommandPalettePresented = false },
                 content: { state in
                     AnyView(
-                        EditorCommandPaletteView(state: state) {
+                        EditorCommandPaletteView(
+                            state: state,
+                            openEditors: openEditorItems,
+                            onOpenFile: openFileFromQuickOpen
+                        ) {
                             isCommandPalettePresented = false
                         }
                     )
@@ -247,17 +418,19 @@ struct EditorRootView: View {
                 EditorTabStripView(
                     tabs: visibleTabs,
                     activeSessionID: visibleActiveSessionID,
-                    openEditors: openEditorItems,
-                    canNavigateBack: sessionStore.canNavigateBack,
-                    canNavigateForward: sessionStore.canNavigateForward,
-                    onNavigateBack: navigateBack,
-                    onNavigateForward: navigateForward,
-                    onToggleOpenEditorsPanel: { state.performPanelCommand(.toggleOpenEditors) },
-                    onSelectOpenEditor: activateOpenEditor,
                     onSelect: activateSession,
                     onClose: closeSession,
                     onCloseOthers: closeOtherSessions,
-                    onTogglePinned: togglePinned
+                    onTogglePinned: togglePinned,
+                    onStartDrag: beginTabDrag,
+                    onDropBefore: dropDraggedTabInActiveStrip
+                )
+            }
+
+            if !activeDocumentSymbolTrail.isEmpty {
+                EditorStickySymbolBarView(
+                    state: state,
+                    symbols: activeDocumentSymbolTrail
                 )
             }
 
@@ -281,6 +454,33 @@ struct EditorRootView: View {
 
     private var visibleActiveSessionID: EditorSession.ID? {
         workbench.activeGroup?.activeSessionID ?? sessionStore.activeSessionID
+    }
+
+    private var shouldShowBottomPanel: Bool {
+        state.panelState.activeBottomPanel.map {
+            $0 != .problems &&
+            $0 != .searchResults &&
+            $0 != .references &&
+            $0 != .workspaceSymbols &&
+            $0 != .callHierarchy
+        } == true ||
+            state.editorExtensions.panelSuggestions(state: state).contains {
+                $0.placement == .bottom && $0.isPresented(state)
+            }
+    }
+
+    private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
+        state.documentSymbolProvider.activeItems(for: state.cursorLine)
+    }
+
+    private func updateBreadcrumbBridge() {
+        EditorBreadcrumbContextBridge.shared.update(
+            currentFileURL: state.currentFileURL,
+            activeSymbolTrail: activeDocumentSymbolTrail,
+            openSymbol: { [weak state] symbol in
+                state?.performOpenItem(.documentSymbol(symbol))
+            }
+        )
     }
 
     private var openEditorItems: [EditorOpenEditorItem] {
@@ -345,7 +545,9 @@ struct EditorRootView: View {
                     onCloseSession: closeSession,
                     onCloseOthers: closeOtherSessions,
                     onTogglePinned: togglePinned,
-                    onMoveSessionToGroup: moveSessionToGroup
+                    onMoveSessionToGroup: moveSessionToGroup,
+                    onStartTabDrag: beginTabDrag,
+                    onDropTabBefore: dropDraggedTab(before:in:)
                 )
             }
         }
@@ -410,7 +612,7 @@ struct EditorRootView: View {
 
     @ViewBuilder
     private var fileInfoBanner: some View {
-        if state.isTruncated || !state.isEditable {
+        if state.isTruncated || !state.isEditable || shouldShowProjectContextWarning {
             VStack(alignment: .leading, spacing: 4) {
                 if state.isTruncated {
                     HStack(spacing: 4) {
@@ -442,6 +644,16 @@ struct EditorRootView: View {
                             .foregroundColor(AppUI.Color.semantic.warning)
                     }
                 }
+                if let warning = projectContextWarningMessage {
+                    HStack(spacing: 4) {
+                        Image(systemName: "hammer.circle.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(AppUI.Color.semantic.warning)
+                        Text(warning)
+                            .font(.system(size: 9))
+                            .foregroundColor(AppUI.Color.semantic.warning)
+                    }
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
@@ -453,23 +665,427 @@ struct EditorRootView: View {
         }
     }
 
+    private var shouldShowProjectContextWarning: Bool {
+        projectContextWarningMessage != nil
+    }
+
+    private var projectContextWarningMessage: String? {
+        guard let snapshot = state.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
+        switch snapshot.contextStatus {
+        case .unavailable, .needsResync:
+            return "项目语义上下文未就绪，跨文件语义能力可能不稳定。"
+        default:
+            break
+        }
+        guard state.currentFileURL != nil else { return nil }
+        if !snapshot.currentFileIsInTarget {
+            return "当前文件未绑定到任何编译 target，跨文件跳转和诊断可能不可用。"
+        }
+        if let activeScheme = snapshot.activeScheme,
+           let currentTarget = snapshot.currentFilePrimaryTarget,
+           !currentTarget.isEmpty,
+           !snapshot.activeSchemeBuildableTargets.isEmpty,
+           !snapshot.activeSchemeBuildableTargets.contains(currentTarget) {
+            return "当前文件属于 target '\(currentTarget)'，但当前 scheme '\(activeScheme)' 可能没有覆盖它。"
+        }
+        if snapshot.currentFileMatchedTargets.count > 1 {
+            if let preferredTarget = snapshot.currentFilePrimaryTarget, !preferredTarget.isEmpty {
+                return "当前文件属于多个 target，编辑器当前按 '\(preferredTarget)' 的语义上下文解析。"
+            }
+            let targets = snapshot.currentFileMatchedTargets.joined(separator: ", ")
+            return "当前文件同时属于多个 target（\(targets)），语义结果会受当前 scheme/configuration 影响。"
+        }
+        return nil
+    }
+
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "chevron.left.forwardslash.chevron.right")
-                .font(.system(size: 36, weight: .thin))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                discoverabilityHeroCard
 
-            Text(String(localized: "Code Editor", table: "LumiEditor"))
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                HStack(spacing: 12) {
+                    primaryDiscoverabilityAction(
+                        title: "Quick Open",
+                        subtitle: "在同一入口里搜文件、符号、设置与命令",
+                        systemImage: "magnifyingglass",
+                        accent: AppUI.Color.semantic.primary,
+                        action: { NotificationCenter.postLumiEditorShowCommandPalette() }
+                    )
 
-            Text(String(localized: "Select a file to start editing", table: "LumiEditor"))
-                .font(.system(size: 12))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    primaryDiscoverabilityAction(
+                        title: "编辑器设置",
+                        subtitle: "调整字体、tab size、wrap、minimap 与保存策略",
+                        systemImage: "slider.horizontal.3",
+                        accent: AppUI.Color.semantic.warning,
+                        action: openEditorSettings
+                    )
+                }
+
+                discoverabilitySection(
+                    title: "常用起点",
+                    subtitle: "第一次进入 editor 时，最常用的几条工作流入口。"
+                ) {
+                    VStack(spacing: 10) {
+                        discoverabilityActionRow(
+                            title: "Command Palette",
+                            subtitle: "执行 editor 命令，或直接搜到 settings / workspace symbols",
+                            shortcut: "⌘⇧P",
+                            systemImage: "command",
+                            action: { NotificationCenter.postLumiEditorShowCommandPalette() }
+                        )
+                        discoverabilityActionRow(
+                            title: "Workspace Symbols",
+                            subtitle: "跨文件跳转到工作区里的类型、函数和符号",
+                            shortcut: "⌘T",
+                            systemImage: "text.magnifyingglass",
+                            action: { state.performEditorCommand(id: "builtin.workspace-symbols") }
+                        )
+                        discoverabilityActionRow(
+                            title: "Open Editors",
+                            subtitle: "查看当前打开项、最近激活顺序和 group 分布",
+                            shortcut: "⌘B",
+                            systemImage: "sidebar.left",
+                            action: { toggleSidebarTab(.openEditors) }
+                        )
+                    }
+                }
+
+                discoverabilitySection(
+                    title: "Workbench 能力",
+                    subtitle: "这些能力是当前 editor surface 和 VS Code 对齐最明显的部分。"
+                ) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        capabilityCard(
+                            title: "Split Editor",
+                            subtitle: "向右或向下分栏，适合对照阅读和多文件编辑。",
+                            systemImage: "rectangle.split.2x1",
+                            shortcut: "⌘\\",
+                            action: { NotificationCenter.postLumiEditorSplitRight() }
+                        )
+                        capabilityCard(
+                            title: "Outline",
+                            subtitle: "基于当前 session 的 document symbols，直接跳到函数或类型。",
+                            systemImage: "list.bullet.indent",
+                            shortcut: nil,
+                            action: { toggleSidebarTab(.outline) }
+                        )
+                        capabilityCard(
+                            title: "Find / Replace",
+                            subtitle: "支持当前匹配高亮、replace preview 与多结果导航。",
+                            systemImage: "text.magnifyingglass",
+                            shortcut: "⌘F",
+                            action: { state.performEditorCommand(id: "builtin.find") }
+                        )
+                        capabilityCard(
+                            title: "Session Restore",
+                            subtitle: "tab、split、最近关闭恢复、back-forward 都会保留工作台状态。",
+                            systemImage: "clock.arrow.circlepath",
+                            shortcut: nil,
+                            action: { state.performEditorCommand(id: "builtin.command-palette") }
+                        )
+                    }
+                }
+            }
+            .padding(28)
+            .frame(maxWidth: 920)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+    }
+
+    private var discoverabilityHeroCard: some View {
+        GlassCard(glowColor: AppUI.Color.semantic.primary.opacity(0.22), borderIntensity: 0.12) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Code Editor")
+                            .font(.system(size: 26, weight: .semibold))
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        Text("不需要读路线图，也能直接发现 editor 的主要入口、工作台能力和可调参数。")
+                            .font(.system(size: 13))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.left.forwardslash.chevron.right")
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundColor(AppUI.Color.semantic.primary)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(AppUI.Color.semantic.primary.opacity(0.12))
+                        )
+                }
+
+                HStack(spacing: 10) {
+                    quickHintChip("Open a file from the project tree")
+                    quickHintChip("Use Quick Open for files / symbols / settings")
+                    quickHintChip("Restore sessions and split workbench state")
+                }
+            }
+        }
+    }
+
+    private func primaryDiscoverabilityAction(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        accent: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            GlassCard(showShadow: false, glowColor: accent.opacity(0.18), borderIntensity: 0.1) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(accent)
+                            .frame(width: 34, height: 34)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(accent.opacity(0.12))
+                            )
+                        Spacer(minLength: 0)
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    }
+
+                    Text(title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func discoverabilitySection<Content: View>(
+        title: String,
+        subtitle: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        GlassCard(showShadow: false, borderIntensity: 0.08) {
+            VStack(alignment: .leading, spacing: 14) {
+                GlassSectionHeader(
+                    icon: "sparkles",
+                    title: title,
+                    subtitle: subtitle
+                )
+
+                GlassDivider()
+
+                content()
+            }
+        }
+    }
+
+    private func discoverabilityActionRow(
+        title: String,
+        subtitle: String,
+        shortcut: String?,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            GlassRow {
+                HStack(spacing: 12) {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(AppUI.Color.semantic.primary)
+                        .frame(width: 18)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(title)
+                            .font(AppUI.Typography.bodyEmphasized)
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        Text(subtitle)
+                            .font(AppUI.Typography.caption1)
+                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    }
+
+                    Spacer()
+
+                    if let shortcut {
+                        Text(shortcut)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(AppUI.Color.semantic.textTertiary.opacity(0.08))
+                            )
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func capabilityCard(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        shortcut: String?,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            GlassCard(showShadow: false, borderIntensity: 0.08) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(AppUI.Color.semantic.primary)
+                        Spacer(minLength: 0)
+                        if let shortcut {
+                            Text(shortcut)
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        }
+                    }
+
+                    Text(title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func quickHintChip(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(AppUI.Color.semantic.textTertiary.opacity(0.08))
+            )
+    }
+
+    private func openEditorSettings() {
+        AppSettingStore.saveSettingsSelection(type: "core", value: SettingTab.editor.rawValue)
+        AppSettingStore.savePendingEditorSettingsSearchQuery(nil)
+        NotificationCenter.postOpenSettings()
+    }
+
+    private func toggleSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
+        if selectedSidebarTab == tab {
+            selectSidebarTab(.explorer)
+        } else {
+            selectSidebarTab(tab)
+        }
+    }
+
+    private func dismissSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
+        switch tab {
+        case .explorer:
+            break
+        case .openEditors:
+            state.performPanelCommand(.closeOpenEditors)
+        case .outline:
+            state.performPanelCommand(.closeOutline)
+        case .problems:
+            state.performPanelCommand(.closeProblems)
+        case .searchResults:
+            state.performPanelCommand(.closeWorkspaceSearch)
+        case .references:
+            state.performPanelCommand(.closeReferences)
+        case .workspaceSymbols:
+            state.performPanelCommand(.closeWorkspaceSymbolSearch)
+        case .callHierarchy:
+            state.performPanelCommand(.closeCallHierarchy)
+        }
+        selectedSidebarTab = .explorer
+        persistSidebarWorkspaceSelection(.explorer)
+    }
+
+    private func selectSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
+        persistSidebarWorkspaceSelection(tab)
+        switch tab {
+        case .explorer:
+            state.performPanelCommand(.closeOpenEditors)
+            state.performPanelCommand(.closeOutline)
+            if selectedSidebarTab == .problems || state.panelState.activeBottomPanel == .problems {
+                state.performPanelCommand(.closeProblems)
+            }
+            if selectedSidebarTab == .searchResults || state.panelState.activeBottomPanel == .searchResults {
+                state.performPanelCommand(.closeWorkspaceSearch)
+            }
+            if selectedSidebarTab == .references || state.panelState.activeBottomPanel == .references {
+                state.performPanelCommand(.closeReferences)
+            }
+            if selectedSidebarTab == .workspaceSymbols || state.panelState.activeBottomPanel == .workspaceSymbols {
+                state.performPanelCommand(.closeWorkspaceSymbolSearch)
+            }
+            if selectedSidebarTab == .callHierarchy || state.panelState.activeBottomPanel == .callHierarchy {
+                state.performPanelCommand(.closeCallHierarchy)
+            }
+            selectedSidebarTab = .explorer
+        case .openEditors:
+            if !state.panelState.isOpenEditorsPanelPresented {
+                state.performPanelCommand(.toggleOpenEditors)
+            } else {
+                selectedSidebarTab = .openEditors
+            }
+        case .outline:
+            if !state.panelState.isOutlinePanelPresented {
+                state.performPanelCommand(.toggleOutline)
+            } else {
+                selectedSidebarTab = .outline
+            }
+        case .problems:
+            state.presentBottomPanel(.problems)
+            selectedSidebarTab = .problems
+        case .searchResults:
+            state.presentBottomPanel(.searchResults)
+            selectedSidebarTab = .searchResults
+        case .references:
+            state.presentBottomPanel(.references)
+            selectedSidebarTab = .references
+        case .workspaceSymbols:
+            state.presentBottomPanel(.workspaceSymbols)
+            selectedSidebarTab = .workspaceSymbols
+        case .callHierarchy:
+            state.presentBottomPanel(.callHierarchy)
+            selectedSidebarTab = .callHierarchy
+        }
+    }
+
+    private func restoreSidebarWorkspaceSelection() {
+        guard let rawValue = UserDefaults.standard.string(forKey: sidebarSelectedTabStorageKey),
+              let tab = EditorSidebarWorkspaceTab(rawValue: rawValue) else {
+            selectSidebarTab(.explorer)
+            return
+        }
+        if tab.isContextual {
+            selectSidebarTab(.explorer)
+            return
+        }
+        selectSidebarTab(tab)
+    }
+
+    private func persistSidebarWorkspaceSelection(_ tab: EditorSidebarWorkspaceTab) {
+        let storedTab: EditorSidebarWorkspaceTab = tab.isContextual ? .explorer : tab
+        UserDefaults.standard.set(storedTab.rawValue, forKey: sidebarSelectedTabStorageKey)
     }
 
     // MARK: - Unsupported File
@@ -495,6 +1111,7 @@ struct EditorRootView: View {
 
     private func openOrActivateSession(for fileURL: URL?) {
         state.projectRootPath = projectVM.currentProject?.path
+        refreshProjectContext(for: projectVM.currentProjectPath)
         guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
             state.loadFile(from: nil)
             applySnapshot(EditorSession(), toHostState: hostStore.state(for: workbench.activeGroupID))
@@ -504,6 +1121,18 @@ struct EditorRootView: View {
         state.loadFile(from: session.fileURL)
         applySnapshot(session, toHostState: hostStore.state(for: workbench.activeGroupID))
         restoreInteractionState(for: session)
+    }
+
+    private func refreshProjectContext(for projectPath: String) {
+        let trimmedPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPath.isEmpty else {
+            state.refreshProjectContextSnapshot()
+            return
+        }
+        Task { @MainActor in
+            await state.projectContextCapability?.projectOpened(at: trimmedPath)
+            state.refreshProjectContextSnapshot()
+        }
     }
 
     private func preferredHostedSnapshot(
@@ -590,6 +1219,16 @@ struct EditorRootView: View {
             sessionID: item.sessionID,
             preferredGroupID: item.groupID
         )
+    }
+
+    private func openFileFromQuickOpen(
+        _ url: URL,
+        target: CursorPosition?,
+        highlightLine: Bool
+    ) {
+        openOrActivateSession(for: url)
+        guard let target else { return }
+        state.performNavigation(.definition(url, target, highlightLine: highlightLine))
     }
 
     private func activateSessionIntent(
@@ -701,17 +1340,90 @@ struct EditorRootView: View {
         guard let session = sessionStore.goBack(),
               let fileURL = session.fileURL else { return }
         projectVM.selectFile(at: fileURL)
+        applySnapshot(session, toSessionID: session.id)
+        restoreInteractionState(for: session)
     }
 
     private func navigateForward() {
         guard let session = sessionStore.goForward(),
               let fileURL = session.fileURL else { return }
         projectVM.selectFile(at: fileURL)
+        applySnapshot(session, toSessionID: session.id)
+        restoreInteractionState(for: session)
     }
 
     private func togglePinned(_ tab: EditorTab) {
         sessionStore.togglePinned(sessionID: tab.sessionID)
         workbench.groupContainingSession(sessionID: tab.sessionID)?.togglePinned(sessionID: tab.sessionID)
+    }
+
+    private func beginTabDrag(_ tab: EditorTab) {
+        draggedTabSessionID = tab.sessionID
+    }
+
+    private func dropDraggedTabInActiveStrip(before targetTab: EditorTab?) {
+        guard let activeGroup = workbench.activeGroup else {
+            draggedTabSessionID = nil
+            return
+        }
+        dropDraggedTab(before: targetTab, in: activeGroup.id)
+    }
+
+    private func dropDraggedTab(before targetTab: EditorTab?, in groupID: EditorGroup.ID) {
+        guard let draggedTabSessionID else { return }
+        defer { self.draggedTabSessionID = nil }
+
+        if targetTab?.sessionID == draggedTabSessionID {
+            return
+        }
+
+        let sourceGroupID = workbench.groupContainingSession(sessionID: draggedTabSessionID)?.id
+        let targetSessionID = targetTab?.sessionID
+        let sourceSnapshot = sourceSnapshotForDraggedSession(draggedTabSessionID)
+
+        if sourceGroupID == groupID {
+            guard workbench.reorderSession(
+                sessionID: draggedTabSessionID,
+                in: groupID,
+                before: targetSessionID
+            ) else { return }
+            _ = sessionStore.reorderSession(
+                sessionID: draggedTabSessionID,
+                before: targetSessionID
+            )
+            return
+        }
+
+        guard workbench.moveSession(
+            sessionID: draggedTabSessionID,
+            toGroupID: groupID,
+            before: targetSessionID
+        ) else { return }
+        workbench.activateGroup(groupID)
+
+        if let targetSessionID {
+            _ = sessionStore.reorderSession(
+                sessionID: draggedTabSessionID,
+                before: targetSessionID
+            )
+        } else {
+            _ = sessionStore.reorderSession(
+                sessionID: draggedTabSessionID,
+                before: nil
+            )
+        }
+
+        if let sourceSnapshot {
+            syncGroupHost(groupID, from: sourceSnapshot, seedSession: true)
+        }
+        syncEditorToActiveGroup()
+    }
+
+    private func sourceSnapshotForDraggedSession(_ sessionID: EditorSession.ID) -> EditorSession? {
+        if sessionID == state.activeSession.id, state.activeSession.fileURL != nil {
+            return state.activeSession
+        }
+        return sessionStore.session(for: sessionID)
     }
 
     private func closeOpenEditorItem(_ item: EditorOpenEditorItem) {
@@ -975,6 +1687,8 @@ struct EditorGroupView: View {
     let onCloseOthers: (EditorTab) -> Void
     let onTogglePinned: (EditorTab) -> Void
     let onMoveSessionToGroup: (EditorGroup.ID) -> Void
+    let onStartTabDrag: (EditorTab) -> Void
+    let onDropTabBefore: (EditorTab?, EditorGroup.ID) -> Void
 
     var body: some View {
         if group.isLeaf {
@@ -1011,6 +1725,10 @@ struct EditorGroupView: View {
         .onTapGesture {
             workbench.activateGroup(group.id)
         }
+        .onDrop(of: [.plainText], isTargeted: nil) { _ in
+            onDropTabBefore(nil, group.id)
+            return true
+        }
     }
 
     @ViewBuilder
@@ -1031,7 +1749,9 @@ struct EditorGroupView: View {
                         onCloseSession: onCloseSession,
                         onCloseOthers: onCloseOthers,
                         onTogglePinned: onTogglePinned,
-                        onMoveSessionToGroup: onMoveSessionToGroup
+                        onMoveSessionToGroup: onMoveSessionToGroup,
+                        onStartTabDrag: onStartTabDrag,
+                        onDropTabBefore: onDropTabBefore
                     )
                 }
             }
@@ -1048,7 +1768,9 @@ struct EditorGroupView: View {
                         onCloseSession: onCloseSession,
                         onCloseOthers: onCloseOthers,
                         onTogglePinned: onTogglePinned,
-                        onMoveSessionToGroup: onMoveSessionToGroup
+                        onMoveSessionToGroup: onMoveSessionToGroup,
+                        onStartTabDrag: onStartTabDrag,
+                        onDropTabBefore: onDropTabBefore
                     )
                 }
             }
@@ -1087,6 +1809,10 @@ struct EditorGroupView: View {
                         ForEach(group.tabs) { tab in
                             groupTabItem(for: tab)
                         }
+                    }
+                    .onDrop(of: [.plainText], isTargeted: nil) { _ in
+                        onDropTabBefore(nil, group.id)
+                        return true
                     }
                 }
             }
@@ -1167,6 +1893,28 @@ struct EditorGroupView: View {
         .onTapGesture {
             workbench.activateGroup(group.id)
             onActivateHostedSession(group.id, tab)
+        }
+        .onDrag {
+            onStartTabDrag(tab)
+            return NSItemProvider(object: tab.sessionID.uuidString as NSString)
+        } preview: {
+            if let fileURL = tab.fileURL {
+                DragPreview(fileURL: fileURL)
+            } else {
+                Text(tab.title)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.orange.opacity(0.95))
+                    )
+            }
+        }
+        .onDrop(of: [.plainText], isTargeted: nil) { _ in
+            onDropTabBefore(tab, group.id)
+            return true
         }
         .contextMenu {
             Button(

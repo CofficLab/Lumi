@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct WinterTheme: ThemeProtocol {
+struct WinterTheme: SuperTheme {
     let identifier = "winter"
     let displayName = "霜冬白"
     let compactName = "冬"

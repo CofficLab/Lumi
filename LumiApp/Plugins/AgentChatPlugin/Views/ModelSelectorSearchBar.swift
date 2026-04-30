@@ -12,7 +12,7 @@ struct ModelSelectorSearchBar: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
-            TextField(String(localized: "Search Models", table: "AgentInput"), text: $searchText)
+            TextField(String(localized: "Search Models", table: "AgentChat"), text: $searchText)
                 .textFieldStyle(.plain)
 
             Spacer()

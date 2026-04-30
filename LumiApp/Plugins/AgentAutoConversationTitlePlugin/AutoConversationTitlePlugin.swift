@@ -22,7 +22,7 @@ actor AutoConversationTitlePlugin: SuperPlugin, SuperLog {
     // MARK: - Middlewares
 
     @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] {
-        [AnySendMiddleware(AutoConversationTitleSendMiddleware())]
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
+        [AnySuperSendMiddleware(AutoConversationTitleSuperSendMiddleware())]
     }
 }

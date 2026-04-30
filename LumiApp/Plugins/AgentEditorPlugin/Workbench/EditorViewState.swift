@@ -1,7 +1,7 @@
 import Foundation
 import CodeEditSourceEditor
 
-struct EditorViewState {
+struct EditorViewState: Equatable {
     var primaryCursorLine: Int
     var primaryCursorColumn: Int
     var cursorPositions: [CursorPosition]

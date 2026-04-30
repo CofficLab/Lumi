@@ -81,10 +81,10 @@ extension ChatToolbarView {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Stop Generating", table: "AgentInput"))
+            .help(String(localized: "Stop Generating", table: "AgentChat"))
             .keyboardShortcut(.escape, modifiers: [])
-            .accessibilityLabel(String(localized: "Stop Generating", table: "AgentInput"))
-            .accessibilityHint(String(localized: "Stop Generating", table: "AgentInput"))
+            .accessibilityLabel(String(localized: "Stop Generating", table: "AgentChat"))
+            .accessibilityHint(String(localized: "Stop Generating", table: "AgentChat"))
         } else {
             // 发送按钞 - 正常状态
             Button(action: {
@@ -101,10 +101,10 @@ extension ChatToolbarView {
             }
             .buttonStyle(.plain)
             .disabled((inputViewModel.isEmpty && agentAttachmentsVM.pendingAttachments.isEmpty) || !projectVM.isProjectSelected)
-            .help(String(localized: "Send Message", table: "AgentInput"))
+            .help(String(localized: "Send Message", table: "AgentChat"))
             .keyboardShortcut(.return, modifiers: [.command])
-            .accessibilityLabel(String(localized: "Send Message", table: "AgentInput"))
-            .accessibilityHint(String(localized: "Send Message Hint", table: "AgentInput"))
+            .accessibilityLabel(String(localized: "Send Message", table: "AgentChat"))
+            .accessibilityHint(String(localized: "Send Message Hint", table: "AgentChat"))
         }
     }
 
@@ -130,8 +130,8 @@ extension ChatToolbarView {
         }
         .buttonStyle(.plain)
         .help(modeHelpText)
-        .accessibilityLabel(String(localized: "Chat Mode", table: "AgentInput"))
-        .accessibilityHint(String(localized: "Chat Mode Hint", table: "AgentInput"))
+        .accessibilityLabel(String(localized: "Chat Mode", table: "AgentChat"))
+        .accessibilityHint(String(localized: "Chat Mode Hint", table: "AgentChat"))
     }
 
     /// 根据当前模式返回前景色
@@ -158,9 +158,9 @@ extension ChatToolbarView {
     private var modeHelpText: String {
         switch llmVM.chatMode {
         case .chat:
-            return String(localized: "Chat Mode Description", table: "AgentInput")
+            return String(localized: "Chat Mode Description", table: "AgentChat")
         case .build:
-            return String(localized: "Build Mode Description", table: "AgentInput")
+            return String(localized: "Build Mode Description", table: "AgentChat")
         }
     }
 
@@ -187,15 +187,15 @@ extension ChatToolbarView {
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Select Model", table: "AgentInput"))
-        .accessibilityHint(String(localized: "Select Model Hint", table: "AgentInput"))
+        .accessibilityLabel(String(localized: "Select Model", table: "AgentChat"))
+        .accessibilityHint(String(localized: "Select Model Hint", table: "AgentChat"))
     }
 
     /// 当前显示的「供应商 + 模型」文案
     private var currentModelDisplayText: String {
         let model = llmVM.currentModel
         guard !model.isEmpty else {
-            return String(localized: "No Model Selected", table: "AgentInput")
+            return String(localized: "No Model Selected", table: "AgentChat")
         }
         guard let providerType = llmVM.providerType(forId: llmVM.selectedProviderId) else {
             return model
@@ -223,9 +223,9 @@ extension ChatToolbarView {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Upload Image", table: "AgentInput"))
-        .accessibilityLabel(String(localized: "Upload Image", table: "AgentInput"))
-        .accessibilityHint(String(localized: "Upload Image Hint", table: "AgentInput"))
+        .help(String(localized: "Upload Image", table: "AgentChat"))
+        .accessibilityLabel(String(localized: "Upload Image", table: "AgentChat"))
+        .accessibilityHint(String(localized: "Upload Image Hint", table: "AgentChat"))
     }
 
     /// 选择图片文件

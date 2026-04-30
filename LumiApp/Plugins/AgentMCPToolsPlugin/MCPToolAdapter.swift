@@ -2,8 +2,8 @@ import Foundation
 import MagicKit
 import MCP
 
-/// Adapts an MCP Tool to the AgentTool protocol.
-final class MCPToolAdapter: AgentTool, @unchecked Sendable, SuperLog {
+/// Adapts an MCP Tool to the SuperAgentTool protocol.
+final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🔧"
 
     let client: Client

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AvailableToolsListSheetView: View {
-    let tools: [AgentTool]
+    let tools: [SuperAgentTool]
 
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
@@ -91,7 +91,7 @@ extension AvailableToolsListSheetView {
         }
     }
 
-    private func toolRow(_ tool: AgentTool) -> some View {
+    private func toolRow(_ tool: SuperAgentTool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(tool.name)
@@ -116,7 +116,7 @@ extension AvailableToolsListSheetView {
 // MARK: - Computed
 
 extension AvailableToolsListSheetView {
-    private var filteredTools: [AgentTool] {
+    private var filteredTools: [SuperAgentTool] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return tools.sorted { $0.name < $1.name } }
         return tools

@@ -7,7 +7,7 @@ import WebKit
 ///
 /// 使用 WKWebView 渲染指定 URL 的网页，等待页面加载完成后截取完整截图。
 /// 截图保存到系统临时目录，返回文件路径。
-struct BrowserScreenshotTool: AgentTool, SuperLog {
+struct BrowserScreenshotTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📸"
     nonisolated static let verbose: Bool = false
 

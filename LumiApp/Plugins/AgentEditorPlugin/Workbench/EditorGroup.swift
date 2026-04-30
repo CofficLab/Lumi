@@ -142,6 +142,26 @@ final class EditorGroup: ObservableObject, Identifiable {
         normalizeTabOrder()
     }
 
+    func reorderSession(sessionID: EditorSession.ID, before targetSessionID: EditorSession.ID?) -> Bool {
+        guard let fromIndex = tabs.firstIndex(where: { $0.sessionID == sessionID }) else { return false }
+
+        let movingTab = tabs[fromIndex]
+        tabs.remove(at: fromIndex)
+
+        let insertionIndex: Int
+        if let targetSessionID,
+           let targetIndex = tabs.firstIndex(where: { $0.sessionID == targetSessionID }) {
+            insertionIndex = targetIndex
+        } else {
+            insertionIndex = tabs.endIndex
+        }
+
+        let boundedIndex = max(0, min(insertionIndex, tabs.count))
+        tabs.insert(movingTab, at: boundedIndex)
+        syncSessionsToTabOrder()
+        return true
+    }
+
     /// 关闭所有 session。
     func closeAll() {
         sessions.removeAll()
@@ -214,14 +234,29 @@ final class EditorGroup: ObservableObject, Identifiable {
         sessionID: EditorSession.ID,
         targetGroup: EditorGroup?
     ) -> Bool {
+        moveSessionToOtherGroup(
+            sessionID: sessionID,
+            targetGroup: targetGroup,
+            before: nil
+        )
+    }
+
+    func moveSessionToOtherGroup(
+        sessionID: EditorSession.ID,
+        targetGroup: EditorGroup?,
+        before targetSessionID: EditorSession.ID?
+    ) -> Bool {
         guard let sessionIndex = sessions.firstIndex(where: { $0.id == sessionID }),
               let session = sessions[safe: sessionIndex],
               let targetGroup,
               targetGroup.id != id,
               targetGroup.isLeaf else { return false }
 
+        guard let tabIndex = tabs.firstIndex(where: { $0.sessionID == sessionID }) else { return false }
+        let movingTab = tabs[tabIndex]
+
         sessions.remove(at: sessionIndex)
-        tabs.removeAll(where: { $0.sessionID == sessionID })
+        tabs.remove(at: tabIndex)
 
         // 如果移动的是活跃 session，切换到下一个
         if activeSessionID == sessionID {
@@ -229,12 +264,29 @@ final class EditorGroup: ObservableObject, Identifiable {
             activeSessionID = sessions.isEmpty ? nil : sessions[nextIndex].id
         }
 
-        // 添加到目标 group
+        let targetTabIndex: Int
+        if let targetSessionID,
+           let index = targetGroup.tabs.firstIndex(where: { $0.sessionID == targetSessionID }) {
+            targetTabIndex = index
+        } else {
+            targetTabIndex = targetGroup.tabs.endIndex
+        }
+
         targetGroup.sessions.append(session)
-        targetGroup.tabs.append(EditorTab(sessionID: session.id, fileURL: session.fileURL))
+        targetGroup.tabs.insert(
+            EditorTab(
+                sessionID: session.id,
+                fileURL: movingTab.fileURL ?? session.fileURL,
+                title: movingTab.title,
+                isDirty: movingTab.isDirty,
+                isPinned: movingTab.isPinned,
+                isPreview: movingTab.isPreview
+            ),
+            at: max(0, min(targetTabIndex, targetGroup.tabs.count))
+        )
         targetGroup.activeSessionID = session.id
-        targetGroup.normalizeTabOrder()
-        normalizeTabOrder()
+        targetGroup.syncSessionsToTabOrder()
+        syncSessionsToTabOrder()
 
         return true
     }
@@ -297,11 +349,17 @@ final class EditorGroup: ObservableObject, Identifiable {
     }
 
     private func normalizeTabOrder() {
-        tabs.sort { lhs, rhs in
-            if lhs.isPinned != rhs.isPinned {
-                return lhs.isPinned && !rhs.isPinned
-            }
-            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        let pinned = tabs.filter(\.isPinned)
+        let unpinned = tabs.filter { !$0.isPinned }
+        tabs = pinned + unpinned
+        syncSessionsToTabOrder()
+    }
+
+    private func syncSessionsToTabOrder() {
+        let sessionMap = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
+        let orderedSessions = tabs.compactMap { sessionMap[$0.sessionID] }
+        if orderedSessions.count == sessions.count {
+            sessions = orderedSessions
         }
     }
 }

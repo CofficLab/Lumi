@@ -8,12 +8,14 @@ final class EditorSaveStateController {
         clearConflict: () -> Void,
         syncSession: () -> Void,
         scheduleSuccessClear: () -> Void,
+        notifyDidSave: (_ content: String) -> Void,
         setHasUnsavedChanges: (Bool) -> Void,
         setSaveState: (EditorSaveState) -> Void
     ) {
         documentController.markPersistedText(content)
         setHasUnsavedChanges(false)
         clearConflict()
+        notifyDidSave(content)
         setSaveState(.saved)
         syncSession()
         scheduleSuccessClear()
@@ -25,7 +27,7 @@ final class EditorSaveStateController {
         scheduleSuccessClear: () -> Void,
         setSaveState: (EditorSaveState) -> Void
     ) {
-        setSaveState(.error(String(localized: "Save failed", table: "LumiEditor") + ": \(error.localizedDescription)"))
+        setSaveState(.error(EditorStatusMessageCatalog.saveFailed(error.localizedDescription)))
         syncSession()
         scheduleSuccessClear()
     }
@@ -34,7 +36,7 @@ final class EditorSaveStateController {
         scheduleSuccessClear: () -> Void,
         setSaveState: (EditorSaveState) -> Void
     ) {
-        setSaveState(.error(String(localized: "File not found", table: "LumiEditor")))
+        setSaveState(.error(EditorStatusMessageCatalog.fileNotFound()))
         scheduleSuccessClear()
     }
 }

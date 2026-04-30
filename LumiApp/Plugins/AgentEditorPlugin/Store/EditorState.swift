@@ -65,9 +65,16 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 是否展示 Open Editors 面板
     @Published private(set) var isOpenEditorsPanelPresented: Bool = false
+    @Published private(set) var isOutlinePanelPresented: Bool = false
 
     /// 当前文件的诊断列表（Problems 面板数据源）
     @Published private(set) var problemDiagnostics: [Diagnostic] = []
+
+    /// 当前文件的 Xcode 工程语义问题（Problems 面板附加数据源）
+    @Published private(set) var semanticProblems: [EditorSemanticProblem] = []
+
+    /// 是否正在重新解析项目上下文
+    @Published var isResyncingProjectContext: Bool = false
 
     /// 当前选中的问题，用于列表高亮与编辑器同步
     @Published private(set) var selectedProblemDiagnostic: Diagnostic?
@@ -80,11 +87,15 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前激活会话（Phase 2 起逐步替代散落的会话级状态）
     @Published private(set) var activeSession = EditorSession()
     @Published private(set) var findMatches: [EditorFindMatch] = []
-    @Published private(set) var recentCommandIDs: [String] = []
+    @Published private(set) var recentCommandIDs: [String] = AppSettingStore.loadEditorRecentCommandIDs()
+    @Published private(set) var commandUsageCounts: [String: Int] = AppSettingStore.loadEditorCommandUsageCounts()
     @Published private(set) var viewportVisibleLineRange: Range<Int> = 0..<0
     @Published private(set) var viewportRenderLineRange: Range<Int> = 0..<0
     private let runtimeModeController = EditorRuntimeModeController()
     private let commandController = EditorCommandController()
+    private let quickOpenController = EditorQuickOpenController()
+    let peekController = EditorPeekController()
+    private let settingsQuickOpenController = EditorSettingsQuickOpenController()
     let saveController = EditorSaveController()
     let externalFileController = EditorExternalFileController()
     private let configController = EditorConfigController()
@@ -119,12 +130,16 @@ final class EditorState: ObservableObject, SuperLog {
 
     private var diagnosticsCancellable: AnyCancellable?
     private var keybindingCancellable: AnyCancellable?
+    private var settingsCancellable: AnyCancellable?
+    private var projectContextCancellable: AnyCancellable?
+    private var semanticProgressCancellable: AnyCancellable?
     private var panelBindings = Set<AnyCancellable>()
     private var multiCursorSearchSession: EditorMultiCursorSearchSession?
     private let sessionSyncGate = SessionSyncGate()
     private var isRestoringUndoState = false
     let referencesRequestGeneration = RequestGeneration()
     private let editorUndoManager = EditorUndoManager()
+    private var lastSemanticReadinessState: EditorSemanticReadinessState = .idle
 
     var savePipelineOptions: EditorSavePipelineOptions {
         saveController.pipelineOptions(
@@ -160,9 +175,21 @@ final class EditorState: ObservableObject, SuperLog {
             }
             .store(in: &panelBindings)
 
+        panelState.$semanticProblems
+            .sink { [weak self] problems in
+                self?.semanticProblems = problems
+            }
+            .store(in: &panelBindings)
+
         panelState.$isOpenEditorsPanelPresented
             .sink { [weak self] isPresented in
                 self?.isOpenEditorsPanelPresented = isPresented
+            }
+            .store(in: &panelBindings)
+
+        panelState.$isOutlinePanelPresented
+            .sink { [weak self] isPresented in
+                self?.isOutlinePanelPresented = isPresented
             }
             .store(in: &panelBindings)
 
@@ -181,6 +208,12 @@ final class EditorState: ObservableObject, SuperLog {
         panelState.$referenceResults
             .sink { [weak self] results in
                 self?.referenceResults = results.map(Self.referenceResult(from:))
+            }
+            .store(in: &panelBindings)
+
+        panelState.$selectedReferenceResult
+            .sink { [weak self] result in
+                self?.selectedReferenceResult = result.map(Self.referenceResult(from:))
             }
             .store(in: &panelBindings)
 
@@ -226,10 +259,25 @@ final class EditorState: ObservableObject, SuperLog {
     // MARK: - File State
     
     /// 当前文件 URL
-    @Published private(set) var currentFileURL: URL?
+    @Published private(set) var currentFileURL: URL? {
+        didSet {
+            SuperEditorRuntimeContext.shared.updateCurrentDocument(
+                fileURL: currentFileURL,
+                content: content?.string
+            )
+            refreshProjectContextSnapshot()
+        }
+    }
     
     /// 当前文件内容（NSTextStorage，CodeEditSourceEditor 要求）
-    @Published var content: NSTextStorage?
+    @Published var content: NSTextStorage? {
+        didSet {
+            SuperEditorRuntimeContext.shared.updateCurrentDocument(
+                fileURL: currentFileURL,
+                content: content?.string
+            )
+        }
+    }
 
     /// Phase 1: 文档文本控制器，逐步收拢 buffer/textStorage 同步与事务应用
     let documentController = EditorDocumentController()
@@ -245,12 +293,40 @@ final class EditorState: ObservableObject, SuperLog {
     var lspServiceInstance: LSPService { lspService }
     /// 编辑器子插件管理器（负责补全/悬停/code action 等扩展点）
     let editorPluginManager: EditorPluginManager
+    /// 已安装的编辑器插件信息（Phase 4: 从 installedPlugins 派生）
+    var editorFeaturePlugins: [EditorPluginInfo] {
+        editorPluginManager.installedPlugins.map { plugin in
+            let type = type(of: plugin)
+            return EditorPluginInfo(
+                id: type.id,
+                displayName: type.displayName,
+                description: type.description,
+                order: type.order,
+                isConfigurable: type.isConfigurable,
+                isEnabled: PluginVM.shared.isPluginEnabled(plugin)
+            )
+        }
+    }
+
+    struct EditorPluginInfo: Identifiable, Equatable {
+        let id: String
+        let displayName: String
+        let description: String
+        let order: Int
+        let isConfigurable: Bool
+        let isEnabled: Bool
+    }
+
     /// 兼容旧调用：编辑器扩展注册中心
     var editorExtensions: EditorExtensionRegistry { editorPluginManager.registry }
+    var projectContextCapability: (any SuperEditorProjectContextCapability)? {
+        editorExtensions.projectContextProvider(for: projectRootPath)
+    }
+    var semanticCapability: (any SuperEditorSemanticCapability)? {
+        editorExtensions.semanticAvailabilityProvider(for: currentFileURL?.absoluteString)
+    }
     /// 后台扩展点解析器（异步聚合，去重/排序在后台线程执行）
     let editorExtensionResolver = ExtensionResolver.shared
-    /// 已发现的编辑器内部插件（含禁用项）
-    var editorFeaturePlugins: [EditorPluginManager.PluginInfo] { editorPluginManager.discoveredPluginInfos }
     
     // MARK: - New LSP Providers
     
@@ -266,6 +342,10 @@ final class EditorState: ObservableObject, SuperLog {
     let workspaceSymbolProvider: WorkspaceSymbolProvider
     /// 调用层级提供者
     let callHierarchyProvider: CallHierarchyProvider
+    /// 当前文件文档符号提供者
+    let documentSymbolProvider: DocumentSymbolProvider
+    /// 当前文件折叠范围提供者
+    let foldingRangeProvider: FoldingRangeProvider
     
     /// 跳转定义代理（右键和 Cmd+Click 共享）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
@@ -382,21 +462,50 @@ final class EditorState: ObservableObject, SuperLog {
         renderedFindMatches(findMatches, lineTable: lineTable)
     }
 
-    func renderedFindMatchHighlights(
+    func renderedSurfaceHighlights(
         textView: TextView,
         lineTable: LineOffsetTable
-    ) -> [FindMatchOverlayHighlight] {
-        overlayController.findMatchHighlights(
+    ) -> [EditorSurfaceHighlight] {
+        overlayController.surfaceHighlights(
             matches: currentRenderedFindMatches(lineTable: lineTable),
             selectedRange: activeSession.findReplaceState.selectedMatchRange,
+            bracketMatch: renderedBracketMatch(lineTable: lineTable),
+            cursorLine: cursorLine,
+            isPrimaryCursorRendered: isPrimaryCursorRendered,
             textView: textView,
-            visibleRect: textView.visibleRect
+            lineTable: lineTable,
+            theme: currentTheme
         )
     }
 
     func renderedInlayHints(_ hints: [InlayHintItem]) -> [InlayHintItem] {
         runtimeModeController.renderedInlayHints(
             hints,
+            renderRange: viewportRenderLineRange
+        )
+    }
+
+    func renderedGutterDecorations(
+        textView: TextView,
+        lineTable: LineOffsetTable
+    ) -> [EditorGutterDecoration] {
+        guard showGutter else { return [] }
+        return overlayController.gutterDecorations(
+            diagnostics: problemDiagnostics,
+            selectedDiagnostic: selectedProblemDiagnostic,
+            documentSymbols: documentSymbolProvider.symbols,
+            extensionSuggestions: editorExtensions.gutterDecorationSuggestions(
+                for: EditorGutterDecorationContext(
+                    languageId: detectedLanguage?.tsName ?? "swift",
+                    currentLine: cursorLine,
+                    visibleLineRange: viewportVisibleLineRange,
+                    renderLineRange: viewportRenderLineRange,
+                    isLargeFileMode: largeFileMode != .normal
+                ),
+                state: self
+            ),
+            textView: textView,
+            lineTable: lineTable,
             renderRange: viewportRenderLineRange
         )
     }
@@ -408,16 +517,6 @@ final class EditorState: ObservableObject, SuperLog {
             return nil
         }
         return match
-    }
-
-    func renderedBracketOverlayRects(
-        textView: TextView,
-        lineTable: LineOffsetTable
-    ) -> BracketOverlayRects? {
-        overlayController.bracketOverlayRects(
-            match: renderedBracketMatch(lineTable: lineTable),
-            textView: textView
-        )
     }
 
     var currentRenderedInlayHints: [InlayHintItem] {
@@ -455,18 +554,16 @@ final class EditorState: ObservableObject, SuperLog {
         !isEnabled
     }
 
-    func hoverOverlayOffset(
+    func hoverOverlayPlacement(
         in containerSize: CGSize,
-        popoverHeight: CGFloat,
-        maxWidth: CGFloat = 440,
-        verticalGap: CGFloat = 4
-    ) -> CGSize {
+        popoverSize: CGSize,
+        style: EditorHoverOverlayStyle = .standard
+    ) -> EditorHoverOverlayPlacement {
         overlayController.hoverOverlayOffset(
             symbolRect: panelState.mouseHoverSymbolRect,
             containerSize: containerSize,
-            popoverHeight: popoverHeight,
-            maxWidth: maxWidth,
-            verticalGap: verticalGap
+            popoverSize: popoverSize,
+            style: style
         )
     }
 
@@ -516,6 +613,81 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
+    var selectedCodeAction: CodeActionItem? {
+        let actions = codeActionProvider.actions
+        guard actions.indices.contains(selectedCodeActionIndex) else { return nil }
+        return actions[selectedCodeActionIndex]
+    }
+
+    func toggleCodeActionPanel() {
+        if isCodeActionPanelPresented {
+            dismissCodeActionPanel()
+        } else {
+            _ = presentCodeActionPanel(preferPreferred: true)
+        }
+    }
+
+    @discardableResult
+    func presentCodeActionPanel(preferPreferred: Bool) -> Bool {
+        let actions = codeActionProvider.actions
+        guard !actions.isEmpty else {
+            dismissCodeActionPanel()
+            return false
+        }
+        isCodeActionPanelPresented = true
+        reconcileCodeActionPanelState(preferPreferred: preferPreferred)
+        return true
+    }
+
+    func dismissCodeActionPanel() {
+        isCodeActionPanelPresented = false
+        selectedCodeActionIndex = 0
+        selectedCodeActionIdentity = nil
+    }
+
+    func reconcileCodeActionPanelState(preferPreferred: Bool = false) {
+        let actions = codeActionProvider.actions
+        guard !actions.isEmpty else {
+            dismissCodeActionPanel()
+            return
+        }
+
+        if let identity = selectedCodeActionIdentity,
+           let retainedIndex = actions.firstIndex(where: { codeActionIdentity(for: $0) == identity }) {
+            selectedCodeActionIndex = retainedIndex
+            return
+        }
+
+        let fallbackIndex = preferredCodeActionIndex(in: actions) ?? 0
+        if preferPreferred || !actions.indices.contains(selectedCodeActionIndex) {
+            selectedCodeActionIndex = fallbackIndex
+        } else {
+            selectedCodeActionIndex = min(selectedCodeActionIndex, actions.count - 1)
+        }
+        selectedCodeActionIdentity = actions.indices.contains(selectedCodeActionIndex)
+            ? codeActionIdentity(for: actions[selectedCodeActionIndex])
+            : nil
+    }
+
+    func selectCodeAction(at index: Int) {
+        let actions = codeActionProvider.actions
+        guard actions.indices.contains(index) else { return }
+        selectedCodeActionIndex = index
+        selectedCodeActionIdentity = codeActionIdentity(for: actions[index])
+    }
+
+    func moveCodeActionSelection(delta: Int) {
+        let actions = codeActionProvider.actions
+        guard !actions.isEmpty else { return }
+        let nextIndex = min(max(selectedCodeActionIndex + delta, 0), actions.count - 1)
+        selectCodeAction(at: nextIndex)
+    }
+
+    func applySelectedCodeAction() async {
+        guard let action = selectedCodeAction else { return }
+        await performCodeActionOverlayAction(action)
+    }
+
     func performCodeActionOverlayAction(_ action: CodeActionItem) async {
         await codeActionProvider.performAction(
             action,
@@ -527,7 +699,99 @@ final class EditorState: ObservableObject, SuperLog {
         ) { [weak self] message in
             self?.showStatusToast(message, level: .warning)
         }
+        dismissCodeActionPanel()
         codeActionProvider.clear()
+    }
+
+    var currentFindMatch: EditorFindMatch? {
+        guard let selectedIndex = activeSession.findReplaceState.selectedMatchIndex,
+              findMatches.indices.contains(selectedIndex) else {
+            return nil
+        }
+        return findMatches[selectedIndex]
+    }
+
+    var currentReplacePreviewText: String? {
+        guard let currentFindMatch,
+              activeSession.findReplaceState.isFindPanelVisible,
+              !activeSession.findReplaceState.replaceText.isEmpty else {
+            return nil
+        }
+        return EditorFindReplaceTransactionBuilder.previewReplacementText(
+            for: currentFindMatch,
+            state: activeSession.findReplaceState
+        )
+    }
+
+    func inlinePresentations(
+        textView: TextView,
+        lineTable: LineOffsetTable,
+        containerSize: CGSize
+    ) -> [EditorInlinePresentation] {
+        let renderedCurrentMatch: EditorFindMatch?
+        if let currentFindMatch,
+           intersectsRenderedRange(currentFindMatch.range, lineTable: lineTable) {
+            renderedCurrentMatch = currentFindMatch
+        } else {
+            renderedCurrentMatch = nil
+        }
+        return overlayController.inlinePresentations(
+            diagnostics: problemDiagnostics,
+            selectedDiagnostic: selectedProblemDiagnostic,
+            inlayHints: currentRenderedInlayHints,
+            currentMatch: renderedCurrentMatch,
+            replacementText: currentReplacePreviewText,
+            cursorLine: cursorLine,
+            textView: textView,
+            lineTable: lineTable,
+            containerSize: containerSize
+        )
+    }
+
+    func secondaryCursorHighlights(
+        textView: TextView,
+        lineTable: LineOffsetTable
+    ) -> [EditorMultiCursorHighlight] {
+        guard multiCursorState.isEnabled else { return [] }
+        let renderedSelections = multiCursorState.secondary.filter { selection in
+            if selection.length == 0 {
+                return isRenderedOffset(selection.location, lineTable: lineTable)
+            }
+            return intersectsRenderedRange(
+                EditorRange(location: selection.location, length: selection.length),
+                lineTable: lineTable
+            )
+        }
+        guard !renderedSelections.isEmpty else { return [] }
+        return overlayController.secondaryCursorHighlights(
+            selections: renderedSelections,
+            textView: textView,
+            visibleRect: textView.visibleRect
+        )
+    }
+
+    func codeActionIndicatorPlacement(
+        textView: TextView,
+        lineTable: LineOffsetTable,
+        containerSize: CGSize,
+        style: EditorCodeActionOverlayStyle = .standard
+    ) -> EditorCodeActionIndicatorPlacement? {
+        guard shouldPresentCodeActionOverlay else { return nil }
+        return overlayController.codeActionIndicatorPlacement(
+            cursorLine: cursorLine,
+            textView: textView,
+            lineTable: lineTable,
+            containerSize: containerSize,
+            style: style
+        )
+    }
+
+    private func preferredCodeActionIndex(in actions: [CodeActionItem]) -> Int? {
+        actions.firstIndex(where: \.isPreferred)
+    }
+
+    private func codeActionIdentity(for action: CodeActionItem) -> String {
+        "\(action.kind)|\(action.title)"
     }
 
     /// 在光标稳定后刷新可见区域内的 Inlay Hints
@@ -611,9 +875,21 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 文件名
     @Published var fileName: String = ""
+
+    var isEditingProjectPBXProj: Bool {
+        currentFileURL?.lastPathComponent == "project.pbxproj"
+    }
     
     /// 当前项目根路径（由 EditorRootView 设置，用于计算相对路径）
-    var projectRootPath: String?
+    var projectRootPath: String? {
+        didSet {
+            restoreConfig()
+            refreshProjectContextSnapshot()
+        }
+    }
+
+    /// 当前项目上下文快照（供 UI / 语言链路读取）
+    @Published private(set) var projectContextSnapshot: EditorProjectContextSnapshot?
     
     /// 当前文件相对于项目根目录的路径（用于构建选区位置信息）
     /// 若无项目则返回文件名
@@ -632,6 +908,54 @@ final class EditorState: ObservableObject, SuperLog {
         }
         return relative
     }
+
+    @MainActor
+    func refreshProjectContextSnapshot() {
+        guard let projectRootPath, !projectRootPath.isEmpty else {
+            projectContextSnapshot = nil
+            panelController.setSemanticProblems([])
+            syncActiveSessionState()
+            return
+        }
+        guard let capability = projectContextCapability,
+              let snapshot = capability.makeEditorContextSnapshot(currentFileURL: currentFileURL),
+              snapshot.projectPath == projectRootPath ||
+                snapshot.workspacePath.hasPrefix(projectRootPath) ||
+                projectRootPath.hasPrefix(snapshot.workspacePath) else {
+            projectContextSnapshot = nil
+            projectContextCapability?.updateLatestEditorSnapshot(nil)
+            panelController.setSemanticProblems([])
+            syncActiveSessionState()
+            return
+        }
+        projectContextSnapshot = snapshot
+        capability.updateLatestEditorSnapshot(snapshot)
+        refreshSemanticProblems()
+    }
+
+    @MainActor
+    private func refreshSemanticProblems() {
+        guard let snapshot = projectContextSnapshot, snapshot.isStructuredProject else {
+            panelController.setSemanticProblems([])
+            syncActiveSessionState()
+            return
+        }
+        let report = semanticCapability?.inspectCurrentFileContext(uri: currentFileURL?.absoluteString) ?? .empty
+        projectContextCapability?.updateLatestEditorSnapshot(snapshot)
+        panelController.setSemanticProblems(report.reasons.map(EditorSemanticProblem.init(reason:)))
+        syncActiveSessionState()
+    }
+
+    var currentProjectContextStatus: EditorProjectContextStatus {
+        guard projectContextSnapshot?.isStructuredProject == true else {
+            return .unknown
+        }
+        return projectContextSnapshot?.contextStatus ?? .unknown
+    }
+
+    var currentProjectContextStatusDescription: String {
+        currentProjectContextStatus.displayDescription
+    }
     
     // MARK: - Editor State
     
@@ -648,6 +972,12 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 当前 LSP Hover 文本（光标移动触发，已废弃，保留兼容）
     @Published private(set) var hoverText: String?
+    @Published var currentPeekPresentation: EditorPeekPresentation?
+    @Published var currentInlineRenameState: EditorInlineRenameState?
+    @Published private(set) var isCodeActionPanelPresented: Bool = false
+    @Published private(set) var selectedCodeActionIndex: Int = 0
+    private var pendingFoldingStateRestore: EditorFoldingState?
+    private(set) var activeSnippetSession: EditorSnippetSession?
 
     /// 鼠标悬停 Hover 内容（Markdown 格式）
     @Published private(set) var mouseHoverContent: String?
@@ -730,8 +1060,11 @@ final class EditorState: ObservableObject, SuperLog {
     /// 多光标编辑状态
     @Published var multiCursorState = MultiCursorState()
 
+    private var selectedCodeActionIdentity: String?
+
     /// References 结果列表（右侧面板）
     @Published private(set) var referenceResults: [ReferenceResult] = []
+    @Published private(set) var selectedReferenceResult: ReferenceResult?
 
     /// 是否展示 References 面板
     @Published private(set) var isReferencePanelPresented: Bool = false
@@ -744,7 +1077,11 @@ final class EditorState: ObservableObject, SuperLog {
     @Published var totalLines: Int = 0
     
     /// 检测到的语言
-    @Published var detectedLanguage: CodeLanguage?
+    @Published var detectedLanguage: CodeLanguage? {
+        didSet {
+            restoreConfig()
+        }
+    }
     
     // MARK: - Theme
     
@@ -794,6 +1131,13 @@ final class EditorState: ObservableObject, SuperLog {
     /// 是否显示代码折叠
     @Published var showFoldingRibbon: Bool = true
 
+    var minimapPolicy: EditorMinimapPolicy {
+        EditorMinimapPolicy(
+            userRequestedVisible: showMinimap,
+            largeFileMode: largeFileMode
+        )
+    }
+
     /// 右侧面板宽度
     @Published var sidePanelWidth: CGFloat = 360
     
@@ -814,7 +1158,8 @@ final class EditorState: ObservableObject, SuperLog {
     
     init(lspService: LSPService = .shared) {
         self.lspService = lspService
-        self.lspCoordinator = LSPCoordinator(lspService: lspService)
+        let lspCoordinator = LSPCoordinator(lspService: lspService)
+        self.lspCoordinator = lspCoordinator
         self.editorPluginManager = EditorPluginManager()
         self.signatureHelpProvider = SignatureHelpProvider(lspService: lspService)
         self.inlayHintProvider = InlayHintProvider(lspService: lspService)
@@ -822,14 +1167,43 @@ final class EditorState: ObservableObject, SuperLog {
         self.codeActionProvider = CodeActionProvider(lspService: lspService)
         self.workspaceSymbolProvider = WorkspaceSymbolProvider(lspService: lspService)
         self.callHierarchyProvider = CallHierarchyProvider(lspService: lspService)
-        self.editorPluginManager.autoDiscoverAndRegisterPlugins()
+        self.documentSymbolProvider = DocumentSymbolProvider(
+            requestDocumentSymbols: { [lspCoordinator] in
+                await lspCoordinator.requestDocumentSymbols()
+            }
+        )
+        self.foldingRangeProvider = FoldingRangeProvider(
+            lspService: lspService,
+            requestRangesOperation: { [lspCoordinator] _ in
+                await lspCoordinator.requestFoldingRangeDebounced()
+            }
+        )
         self.codeActionProvider.editorExtensionRegistry = self.editorExtensions
+        self.workspaceSymbolProvider.preflightMessageProvider = { [weak self] operation, strength in
+            self?.semanticCapability?.preflightMessage(
+                uri: nil,
+                operation: operation,
+                symbolName: nil,
+                strength: strength
+            )
+        }
+        installEditorPluginsFromPluginVM()
         commandController.refreshCoreCommandRegistrations(in: self)
         bindKeybindings()
         bindPanelState()
         bindDiagnostics()
         restoreConfig()
+        observeSettingsChanges()
         observeThemeChanges()
+        observeProjectContextChanges()
+    }
+
+    /// 从 PluginVM 过滤并安装编辑器插件（Phase 2）
+    private func installEditorPluginsFromPluginVM() {
+        let editorPlugins = PluginVM.shared.plugins.filter {
+            PluginVM.shared.isPluginEnabled($0) && $0.providesEditorExtensions
+        }
+        editorPluginManager.install(plugins: editorPlugins)
     }
 
     private func bindKeybindings() {
@@ -843,8 +1217,36 @@ final class EditorState: ObservableObject, SuperLog {
         commandController.refreshCoreCommandRegistrations(in: self)
     }
 
+    private func observeProjectContextChanges() {
+        projectContextCancellable?.cancel()
+        projectContextCancellable = NotificationCenter.default
+            .publisher(for: .lumiEditorProjectContextDidChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.refreshProjectContextSnapshot()
+                self?.updateSemanticReadinessFeedback()
+            }
+
+        semanticProgressCancellable?.cancel()
+        semanticProgressCancellable = lspService.progressProvider.$activeTasks
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updateSemanticReadinessFeedback()
+            }
+    }
+
+    private func observeSettingsChanges() {
+        settingsCancellable?.cancel()
+        settingsCancellable = NotificationCenter.default
+            .publisher(for: .lumiEditorSettingsDidChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.restoreConfig()
+            }
+    }
+
     func setEditorFeaturePluginEnabled(_ pluginID: String, enabled: Bool) {
-        editorPluginManager.setPluginEnabled(pluginID, enabled: enabled)
+        PluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
     }
 
     func editorCommandSuggestions() -> [EditorCommandSuggestion] {
@@ -910,6 +1312,44 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func editorCommandPresentationModel(
+        for invocationContext: EditorCommandInvocationContext,
+        matching query: String = "",
+        categories: Set<EditorCommandCategory>? = nil
+    ) -> EditorCommandPresentationModel {
+        refreshCoreCommandRegistrations()
+        return commandController.presentationModel(
+            from: commandController.commandSuggestions(
+                state: self,
+                registryContext: invocationContext.registryContext,
+                legacyContext: invocationContext.legacyContext,
+                textView: invocationContext.textView
+            ),
+            recentCommandIDs: recentCommandIDs,
+            query: query,
+            categories: categories
+        )
+    }
+
+    func editorContextMenuPresentationModel(
+        for invocationContext: EditorCommandInvocationContext,
+        matching query: String = "",
+        categories: Set<EditorCommandCategory>? = nil
+    ) -> EditorCommandPresentationModel {
+        refreshCoreCommandRegistrations()
+        let suggestions = editorExtensions.contextMenuSuggestions(
+            for: invocationContext.legacyContext,
+            state: self,
+            textView: invocationContext.textView
+        ).map(\.asCommandSuggestion)
+        return commandController.presentationModel(
+            from: suggestions,
+            recentCommandIDs: recentCommandIDs,
+            query: query,
+            categories: categories
+        )
+    }
+
+    func editorCommandPresentationModel(
         categories: Set<EditorCommandCategory>,
         matching query: String = ""
     ) -> EditorCommandPresentationModel {
@@ -928,6 +1368,7 @@ final class EditorState: ObservableObject, SuperLog {
         commandController.presentationModel(
             from: suggestions,
             recentCommandIDs: recentCommandIDs,
+            commandUsageCounts: commandUsageCounts,
             query: query,
             categories: categories
         )
@@ -945,38 +1386,159 @@ final class EditorState: ObservableObject, SuperLog {
         }
     }
 
+    func performEditorCommand(id: String, invocationContext: EditorCommandInvocationContext) {
+        refreshCoreCommandRegistrations()
+        let didExecute = commandController.executeCommand(
+            id: id,
+            registryContext: invocationContext.registryContext,
+            legacySuggestions: editorExtensions.commandSuggestions(
+                for: invocationContext.legacyContext,
+                state: self,
+                textView: invocationContext.textView
+            )
+        )
+        if didExecute {
+            recordCommandExecution(id: id)
+        }
+    }
+
+    func performEditorContextMenuCommand(id: String, invocationContext: EditorCommandInvocationContext) {
+        refreshCoreCommandRegistrations()
+        let suggestions = editorExtensions.contextMenuSuggestions(
+            for: invocationContext.legacyContext,
+            state: self,
+            textView: invocationContext.textView
+        ).map(\.asCommandSuggestion)
+        let didExecute = commandController.executeCommand(
+            id: id,
+            registryContext: invocationContext.registryContext,
+            legacySuggestions: suggestions
+        )
+        if didExecute {
+            recordCommandExecution(id: id)
+        }
+    }
+
+    func editorCommandInvocationContext(for textView: TextView?) -> EditorCommandInvocationContext {
+        let legacyContext = makeLegacyCommandContext(for: textView)
+        return EditorCommandInvocationContext(
+            legacyContext: legacyContext,
+            registryContext: CommandRouter.commandContext(
+                from: legacyContext,
+                isEditorActive: currentFileURL != nil,
+                isMultiCursor: multiCursorState.isEnabled
+            ),
+            textView: textView
+        )
+    }
+
     func recordCommandExecution(id: String) {
-        commandController.recordExecution(id: id, recentCommandIDs: &recentCommandIDs)
+        commandController.recordExecution(
+            id: id,
+            recentCommandIDs: &recentCommandIDs,
+            commandUsageCounts: &commandUsageCounts
+        )
+        AppSettingStore.saveEditorRecentCommandIDs(recentCommandIDs)
+        AppSettingStore.saveEditorCommandUsageCounts(commandUsageCounts)
     }
 
     func recentCommandSuggestions(matching query: String = "", limit: Int = 5) -> [EditorCommandSuggestion] {
         Array(editorCommandPresentationModel(matching: query).recentCommands.prefix(limit))
     }
 
+    func frequentCommandSuggestions(matching query: String = "", limit: Int = 5) -> [EditorCommandSuggestion] {
+        Array(editorCommandPresentationModel(matching: query).frequentCommands.prefix(limit))
+    }
+
+    func preferredCommandPaletteCategory() -> EditorCommandCategory? {
+        guard let rawValue = AppSettingStore.loadEditorCommandPaletteCategory() else { return nil }
+        return EditorCommandCategory(rawValue: rawValue)
+    }
+
+    func setPreferredCommandPaletteCategory(_ category: EditorCommandCategory?) {
+        AppSettingStore.saveEditorCommandPaletteCategory(category?.rawValue)
+    }
+
     func editorToolbarItems() -> [EditorToolbarItemSuggestion] {
         editorExtensions.toolbarItemSuggestions(state: self)
+    }
+
+    func editorStatusItems() -> [EditorStatusItemSuggestion] {
+        editorExtensions.statusItemSuggestions(state: self)
+    }
+
+    func quickOpenQuery(for rawQuery: String) -> EditorQuickOpenQuery {
+        quickOpenController.parse(rawQuery)
+    }
+
+    func editorQuickOpenItems(
+        matching query: String,
+        openEditors: [EditorOpenEditorItem],
+        onOpenFile: @escaping (URL, CursorPosition?, Bool) -> Void
+    ) async -> [EditorQuickOpenItemSuggestion] {
+        let resolvedQuery = quickOpenQuery(for: query)
+
+        switch resolvedQuery.scope {
+        case .files:
+            let fileItems = quickOpenController.fileSuggestions(
+                for: resolvedQuery,
+                context: EditorQuickOpenFileContext(
+                    projectRootPath: projectRootPath,
+                    currentFileURL: currentFileURL
+                ),
+                openEditors: openEditors,
+                onOpenFile: onOpenFile
+            )
+            let settingsItems = resolvedQuery.searchText.isEmpty
+                ? []
+                : settingsQuickOpenController.suggestions(matching: resolvedQuery.searchText)
+            let extensionItems = await editorExtensions.quickOpenSuggestions(
+                matching: resolvedQuery.searchText,
+                state: self
+            )
+            return fileItems + extensionItems + settingsItems
+
+        case .documentSymbols:
+            return quickOpenController.documentSymbolSuggestions(
+                for: resolvedQuery,
+                symbols: documentSymbolProvider.symbols,
+                onOpenSymbol: { [weak self] symbol in
+                    self?.performOpenItem(.documentSymbol(symbol))
+                }
+            )
+
+        case .workspaceSymbols:
+            return await editorExtensions.quickOpenSuggestions(
+                matching: resolvedQuery.searchText,
+                state: self
+            )
+
+        case .line:
+            return quickOpenController.lineSuggestions(
+                for: resolvedQuery,
+                currentFileURL: currentFileURL,
+                fileName: fileName,
+                relativeFilePath: relativeFilePath,
+                onOpenFile: onOpenFile
+            )
+
+        case .commands:
+            return []
+        }
     }
 
     // MARK: - Config Persistence
     
     /// 从持久化存储恢复配置
     private func restoreConfig() {
-        let snapshot = appearanceController.applyRestoredConfig(using: configController)
-        fontSize = snapshot.fontSize
-        tabWidth = snapshot.tabWidth
-        useSpaces = snapshot.useSpaces
-        formatOnSave = snapshot.formatOnSave
-        organizeImportsOnSave = snapshot.organizeImportsOnSave
-        fixAllOnSave = snapshot.fixAllOnSave
-        trimTrailingWhitespaceOnSave = snapshot.trimTrailingWhitespaceOnSave
-        insertFinalNewlineOnSave = snapshot.insertFinalNewlineOnSave
-        wrapLines = snapshot.wrapLines
-        showMinimap = snapshot.showMinimap
-        showGutter = snapshot.showGutter
-        showFoldingRibbon = snapshot.showFoldingRibbon
-        sidePanelWidth = snapshot.sidePanelWidth
-        currentThemeId = snapshot.currentThemeId
-        currentTheme = resolveTheme(for: currentThemeId)
+        let snapshot = configController.resolveConfig(
+            for: EditorConfigContext(
+                workspacePath: projectRootPath,
+                languageId: detectedLanguage?.tsName
+            ),
+            clampedSidePanelWidth: appearanceController.clampedSidePanelWidth(_:)
+        )
+        applyConfigSnapshot(snapshot)
     }
     
     /// 持久化当前配置
@@ -999,6 +1561,24 @@ final class EditorState: ObservableObject, SuperLog {
                 sidePanelWidth: sidePanelWidth
             )
         )
+    }
+
+    private func applyConfigSnapshot(_ snapshot: EditorConfigSnapshot) {
+        fontSize = snapshot.fontSize
+        tabWidth = snapshot.tabWidth
+        useSpaces = snapshot.useSpaces
+        formatOnSave = snapshot.formatOnSave
+        organizeImportsOnSave = snapshot.organizeImportsOnSave
+        fixAllOnSave = snapshot.fixAllOnSave
+        trimTrailingWhitespaceOnSave = snapshot.trimTrailingWhitespaceOnSave
+        insertFinalNewlineOnSave = snapshot.insertFinalNewlineOnSave
+        wrapLines = snapshot.wrapLines
+        showMinimap = snapshot.showMinimap
+        showGutter = snapshot.showGutter
+        showFoldingRibbon = snapshot.showFoldingRibbon
+        sidePanelWidth = snapshot.sidePanelWidth
+        currentThemeId = snapshot.currentThemeId
+        currentTheme = resolveTheme(for: currentThemeId)
     }
     
     /// 切换主题
@@ -1189,6 +1769,7 @@ final class EditorState: ObservableObject, SuperLog {
 
         multiCursorState = restore.multiCursorState
         panelController.restore(from: restore.panelState)
+        pendingFoldingStateRestore = session.foldingState
         applyResolvedInteractionUpdate(restore.resolvedInteraction)
         sessionController.restoreScrollState(restore.scrollState, in: focusedTextView)
     }
@@ -1375,6 +1956,11 @@ final class EditorState: ObservableObject, SuperLog {
         syncActiveSessionState()
     }
 
+    func presentBottomPanel(_ panel: EditorBottomPanelKind?) {
+        panelController.presentBottomPanel(panel)
+        syncActiveSessionState()
+    }
+
     func updateSelectedProblemDiagnostic(for cursor: CursorPosition?) {
         panelController.updateSelectedProblemDiagnostic(
             line: cursor?.start.line,
@@ -1428,6 +2014,9 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 执行导航请求并在目标文件/位置落点
     func performNavigation(_ request: EditorNavigationRequest) {
+        dismissPeek()
+        dismissInlineRename()
+        dismissCodeActionPanel()
         let resolved = EditorNavigationController.resolve(request)
         loadFile(from: resolved.url)
         Task { @MainActor [weak self] in
@@ -1460,7 +2049,7 @@ final class EditorState: ObservableObject, SuperLog {
                 showStatusToast("无法打开符号位置", level: .warning)
             case .callHierarchyItem:
                 showStatusToast("无法打开调用层级目标", level: .warning)
-            case .problem, .reference:
+            case .documentSymbol, .problem, .reference:
                 break
             }
             return
@@ -1468,6 +2057,12 @@ final class EditorState: ObservableObject, SuperLog {
 
         if let diagnostic = resolved.selectedProblemDiagnostic {
             panelController.setSelectedProblemDiagnostic(diagnostic)
+        }
+        if let reference = resolved.selectedReferenceResult {
+            panelController.setSelectedReferenceResult(reference)
+        }
+        if let panel = resolved.presentBottomPanel {
+            presentBottomPanel(panel)
         }
         if !resolved.cursorPositions.isEmpty {
             navigateToCursorPositions(resolved.cursorPositions)
@@ -1477,6 +2072,91 @@ final class EditorState: ObservableObject, SuperLog {
         }
         if let navigationRequest = resolved.navigationRequest {
             performNavigation(navigationRequest)
+        }
+    }
+
+    func refreshDocumentOutline() {
+        guard currentFileURL != nil, !isBinaryFile else {
+            documentSymbolProvider.clear()
+            return
+        }
+        documentSymbolProvider.refresh()
+    }
+
+    func refreshFoldingRanges() {
+        guard showFoldingRibbon,
+              !largeFileMode.isFoldingDisabled,
+              let currentFileURL,
+              !isBinaryFile else {
+            foldingRangeProvider.clear()
+            return
+        }
+        Task { @MainActor [weak self] in
+            await self?.foldingRangeProvider.requestRanges(uri: currentFileURL.absoluteString)
+            self?.restorePersistedFoldingStateIfNeeded()
+        }
+    }
+
+    func collapseCurrentFold() {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.collapseCurrent(
+            cursorLine: cursorLine,
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
+        }
+    }
+
+    func expandCurrentFold() {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.expandCurrent(
+            cursorLine: cursorLine,
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
+        }
+    }
+
+    func collapseAllFolds() {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.collapseAll(
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
+        }
+    }
+
+    func expandAllFolds() {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.expandAll(
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
+        }
+    }
+
+    func collapseFolds(toLevel level: Int) {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.collapseToLevel(
+            level,
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
         }
     }
     
@@ -1496,6 +2176,12 @@ final class EditorState: ObservableObject, SuperLog {
             fileExtension = ""
             fileName = ""
             hasUnsavedChanges = false
+            currentPeekPresentation = nil
+            currentInlineRenameState = nil
+            activeSnippetSession = nil
+            isCodeActionPanelPresented = false
+            selectedCodeActionIndex = 0
+            selectedCodeActionIdentity = nil
             saveState = .idle
             detectedLanguage = nil
             largeFileMode = .normal
@@ -1715,6 +2401,10 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 执行文档格式化（LSP formatting）
     func formatDocumentWithLSP() async {
+        if let preflightMessage = projectLanguagePreflightMessage(operation: "格式化文档") {
+            showStatusToast(preflightMessage, level: .warning, duration: 2.4)
+            return
+        }
         await languageActionFacade.formatDocument(
             formattingController: formattingController,
             canPreview: canPreview,
@@ -2097,6 +2787,10 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func handleInsertTabInput(textViewSelections: [NSRange]) -> Bool {
+        if advanceActiveSnippetSession(forward: true, currentSelections: textViewSelections) {
+            return true
+        }
+
         if multiCursorState.all.count > 1 {
             let indentUnit = useSpaces ? String(repeating: " ", count: tabWidth) : "\t"
             return applyMultiCursorOperation(.indent(indentUnit)) != nil
@@ -2122,6 +2816,10 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func handleInsertBacktabInput(textViewSelections: [NSRange]) -> Bool {
+        if advanceActiveSnippetSession(forward: false, currentSelections: textViewSelections) {
+            return true
+        }
+
         if multiCursorState.all.count > 1 {
             return applyMultiCursorOperation(.outdent(tabSize: tabWidth, useSpaces: useSpaces)) != nil
         }
@@ -2159,6 +2857,27 @@ final class EditorState: ObservableObject, SuperLog {
               ) else { return false }
 
         applyEditorTransaction(transaction, reason: "completion_apply")
+        return true
+    }
+
+    func applySnippetCompletionEdit(
+        replacementRange: NSRange,
+        snippetText: String,
+        additionalTextEdits: [TextEdit]?
+    ) -> Bool {
+        guard let text = documentController.currentText ?? content?.string else { return false }
+        let snippet = EditorSnippetParser.parse(snippetText)
+        guard let payload = transactionController.transactionForSnippetEdit(
+            text: text,
+            replacementRange: replacementRange,
+            snippet: snippet,
+            additionalTextEdits: additionalTextEdits
+        ) else {
+            return false
+        }
+
+        activeSnippetSession = payload.session
+        applyEditorTransaction(payload.transaction, reason: "completion_apply_snippet")
         return true
     }
 
@@ -2247,6 +2966,54 @@ final class EditorState: ObservableObject, SuperLog {
         return true
     }
 
+    func cancelActiveSnippetSession() -> Bool {
+        guard let session = activeSnippetSession else { return false }
+        activeSnippetSession = nil
+        setSelections([MultiCursorSelection(location: session.exitSelection.location, length: session.exitSelection.length)])
+        return true
+    }
+
+    private func advanceActiveSnippetSession(
+        forward: Bool,
+        currentSelections: [NSRange]
+    ) -> Bool {
+        guard var session = activeSnippetSession else { return false }
+
+        if let currentGroup = session.currentGroup {
+            let expected = currentGroup.ranges.sorted(by: rangeSort)
+            let actual = currentSelections.sorted(by: rangeSort)
+            if expected != actual {
+                activeSnippetSession = nil
+                return false
+            }
+        }
+
+        let nextIndex = session.activeGroupIndex + (forward ? 1 : -1)
+        if session.groups.indices.contains(nextIndex) {
+            session.activeGroupIndex = nextIndex
+            activeSnippetSession = session
+            setSelections(
+                session.groups[nextIndex].ranges.map {
+                    MultiCursorSelection(location: $0.location, length: $0.length)
+                }
+            )
+            return true
+        }
+
+        if forward {
+            activeSnippetSession = nil
+            setSelections([MultiCursorSelection(location: session.exitSelection.location, length: session.exitSelection.length)])
+            return true
+        }
+
+        return true
+    }
+
+    private func rangeSort(_ lhs: NSRange, _ rhs: NSRange) -> Bool {
+        if lhs.location != rhs.location { return lhs.location < rhs.location }
+        return lhs.length < rhs.length
+    }
+
     func commitDocumentEditResult(_ result: EditorEditResult, reason: String) {
         let payload = transactionController.commitPayload(from: result)
         content = documentController.textStorage
@@ -2299,6 +3066,7 @@ final class EditorState: ObservableObject, SuperLog {
         let scrollState = scrollStateOverride ?? focusedTextView.map { textView in
             EditorScrollState(viewportOrigin: textView.visibleRect.origin)
         } ?? activeSession.scrollState
+        let foldingState = currentFoldingState()
 
         sessionController.syncActiveSessionState(
             activeSession: activeSession,
@@ -2308,6 +3076,7 @@ final class EditorState: ObservableObject, SuperLog {
             isDirty: hasUnsavedChanges,
             bridgeState: bridgeState,
             scrollState: scrollState,
+            foldingState: foldingState,
             onChanged: onActiveSessionChanged
         )
     }
@@ -2318,6 +3087,43 @@ final class EditorState: ObservableObject, SuperLog {
 
     private func applyFindReplaceState(_ state: EditorFindReplaceState) {
         EditorFindReplaceStateController.apply(state, to: &editorState)
+    }
+
+    private func currentFoldingState() -> EditorFoldingState {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }),
+              showFoldingRibbon,
+              !largeFileMode.isFoldingDisabled else {
+            return activeSession.foldingState
+        }
+        return EditorFoldingController.captureState(
+            textView: textView,
+            ranges: foldingRangeProvider.ranges,
+            lineTable: lineTable
+        )
+    }
+
+    private func restorePersistedFoldingStateIfNeeded() {
+        guard let pendingFoldingStateRestore,
+              !pendingFoldingStateRestore.isEmpty,
+              let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }),
+              showFoldingRibbon,
+              !largeFileMode.isFoldingDisabled,
+              !foldingRangeProvider.ranges.isEmpty else {
+            return
+        }
+
+        let restored = EditorFoldingController.restore(
+            pendingFoldingStateRestore,
+            textView: textView,
+            ranges: foldingRangeProvider.ranges,
+            lineTable: lineTable
+        )
+        if restored {
+            self.pendingFoldingStateRestore = nil
+            syncActiveSessionState()
+        }
     }
 
     private func applyBridgeState(_ state: EditorBridgeState) {
@@ -2334,9 +3140,11 @@ final class EditorState: ObservableObject, SuperLog {
     private func syncPublishedPanelDataFromPanelState() {
         isOpenEditorsPanelPresented = panelState.isOpenEditorsPanelPresented
         problemDiagnostics = panelState.problemDiagnostics
+        semanticProblems = panelState.semanticProblems
         selectedProblemDiagnostic = panelState.selectedProblemDiagnostic
         isProblemsPanelPresented = panelState.isProblemsPanelPresented
         referenceResults = panelState.referenceResults.map(Self.referenceResult(from:))
+        selectedReferenceResult = panelState.selectedReferenceResult.map(Self.referenceResult(from:))
         isReferencePanelPresented = panelState.isReferencePanelPresented
         isWorkspaceSymbolSearchPresented = panelState.isWorkspaceSymbolSearchPresented
         isCallHierarchyPresented = panelState.isCallHierarchyPresented
@@ -2370,6 +3178,62 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
+    func openProblem(atLine line: Int) {
+        guard let diagnostic = panelState.problemDiagnostics
+            .filter({ Self.diagnostic($0, coversLine: line) })
+            .max(by: { Self.diagnosticSeverityRank($0.severity) < Self.diagnosticSeverityRank($1.severity) }) else {
+            return
+        }
+        performOpenItem(.problem(diagnostic))
+    }
+
+    private func updateSemanticReadinessFeedback() {
+        let nextState = semanticReadinessState()
+        guard nextState != lastSemanticReadinessState else { return }
+        let previous = lastSemanticReadinessState
+        lastSemanticReadinessState = nextState
+        guard previous != .ready, nextState == .ready else { return }
+        showStatusToast("Swift 语义索引已就绪", level: .success, duration: 1.6)
+    }
+
+    private func semanticReadinessState() -> EditorSemanticReadinessState {
+        guard projectContextSnapshot?.isStructuredProject == true else { return .idle }
+        if lspService.progressProvider.hasActiveWork {
+            return .indexing
+        }
+        switch currentProjectContextStatus {
+        case .available:
+            return .ready
+        case .resolving:
+            return .resolvingBuildContext
+        case .needsResync:
+            return .needsResync
+        case .unavailable:
+            return .unavailable
+        case .unknown:
+            return .idle
+        }
+    }
+
+    private static func diagnostic(_ diagnostic: Diagnostic, coversLine line: Int) -> Bool {
+        let startLine = Int(diagnostic.range.start.line) + 1
+        let endLine = Int(diagnostic.range.end.line) + 1
+        return startLine <= line && line <= endLine
+    }
+
+    private static func diagnosticSeverityRank(_ severity: DiagnosticSeverity?) -> Int {
+        switch severity {
+        case .error:
+            return 3
+        case .warning:
+            return 2
+        case .information:
+            return 1
+        default:
+            return 0
+        }
+    }
+
     private func currentBridgeState() -> EditorBridgeState {
         sessionController.currentBridgeState(
             from: editorState,
@@ -2380,21 +3244,29 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     private func currentLegacyCommandContext() -> EditorCommandContext {
-        let line = max(cursorLine - 1, 0)
-        let character = max(cursorColumn - 1, 0)
-        let hasSelection = focusedTextView?.selectionManager.textSelections.contains(where: { !$0.range.isEmpty }) ?? false
-        return EditorCommandContext(
-            languageId: detectedLanguage?.tsName ?? "swift",
-            hasSelection: hasSelection,
-            line: line,
-            character: character
-        )
+        makeLegacyCommandContext(for: focusedTextView)
     }
 
     private func currentCommandContext() -> CommandContext {
         CommandRouter.commandContext(
             state: self,
             legacyContext: currentLegacyCommandContext()
+        )
+    }
+
+    private func makeLegacyCommandContext(for textView: TextView?) -> EditorCommandContext {
+        let fallbackLine = max(cursorLine - 1, 0)
+        let fallbackCharacter = max(cursorColumn - 1, 0)
+        let selection = textView?.selectionManager.textSelections.first?.range
+        let hasSelection = textView?.selectionManager.textSelections.contains(where: { !$0.range.isEmpty }) ?? false
+        let cursorOffset = max(selection?.location ?? 0, 0)
+        let position = textView.flatMap { editorPosition(utf16Offset: cursorOffset, in: $0.string) }
+
+        return EditorCommandContext(
+            languageId: detectedLanguage?.tsName ?? "swift",
+            hasSelection: hasSelection,
+            line: position.map { Int($0.line) } ?? fallbackLine,
+            character: position.map { Int($0.character) } ?? fallbackCharacter
         )
     }
 
@@ -2494,4 +3366,55 @@ final class EditorState: ObservableObject, SuperLog {
         guard clampedLength > 0 else { return nil }
         return nsText.substring(with: NSRange(location: clampedLocation, length: clampedLength))
     }
+
+    func currentSymbolNameForRename() -> String? {
+        if let selected = currentSelectedPlainText()?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !selected.isEmpty {
+            return selected
+        }
+
+        guard let text = content?.string as NSString?,
+              let selection = multiCursorState.all.first else {
+            return nil
+        }
+
+        let cursor = max(0, min(selection.location, text.length))
+        guard text.length > 0 else { return nil }
+        let characterSet = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+
+        var start = min(cursor, text.length - 1)
+        if selection.length == 0, start > 0, !isIdentifierCharacter(text.character(at: start), set: characterSet) {
+            start -= 1
+        }
+
+        guard isIdentifierCharacter(text.character(at: start), set: characterSet) else { return nil }
+
+        var lowerBound = start
+        while lowerBound > 0, isIdentifierCharacter(text.character(at: lowerBound - 1), set: characterSet) {
+            lowerBound -= 1
+        }
+
+        var upperBound = start
+        while upperBound + 1 < text.length, isIdentifierCharacter(text.character(at: upperBound + 1), set: characterSet) {
+            upperBound += 1
+        }
+
+        let range = NSRange(location: lowerBound, length: upperBound - lowerBound + 1)
+        let symbol = text.substring(with: range).trimmingCharacters(in: .whitespacesAndNewlines)
+        return symbol.isEmpty ? nil : symbol
+    }
+
+    private func isIdentifierCharacter(_ value: unichar, set: CharacterSet) -> Bool {
+        UnicodeScalar(Int(value)).map(set.contains) ?? false
+    }
+
+}
+
+private enum EditorSemanticReadinessState: Equatable {
+    case idle
+    case resolvingBuildContext
+    case indexing
+    case needsResync
+    case unavailable
+    case ready
 }

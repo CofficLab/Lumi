@@ -12,7 +12,7 @@ struct LumiThemeContribution: Identifiable {
     let description: String
     let iconName: String
     let iconColor: SwiftUI.Color
-    let appTheme: any ThemeProtocol
+    let appTheme: any SuperTheme
     let editorThemeId: String
     let editorThemeContributor: AnyObject?
     let order: Int
@@ -20,12 +20,12 @@ struct LumiThemeContribution: Identifiable {
     /// 创建主题贡献。
     ///
     /// - Parameters:
-    ///   - appTheme: App 全局主题（实现 `ThemeProtocol`）
+    ///   - appTheme: App 全局主题（实现 `SuperTheme`）
     ///   - editorThemeId: 编辑器主题唯一标识
     ///   - editorThemeContributor: 编辑器主题贡献者（遵循 `EditorThemeContributor`，类型擦除为 `AnyObject` 避免内核依赖编辑器库）
     ///   - order: 排序权重
     init(
-        appTheme: any ThemeProtocol,
+        appTheme: any SuperTheme,
         editorThemeId: String,
         editorThemeContributor: AnyObject? = nil,
         order: Int = 0

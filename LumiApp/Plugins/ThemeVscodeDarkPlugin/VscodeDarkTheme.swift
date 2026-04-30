@@ -5,7 +5,7 @@ import SwiftUI
 /// 严格遵循 Visual Studio Code Dark+ (Dark Modern) 默认配色方案。
 /// 特点：专业开发者的经典深色 IDE 体验
 ///
-struct VscodeDarkTheme: ThemeProtocol {
+struct VscodeDarkTheme: SuperTheme {
     // MARK: - 主题信息
     let identifier = "vscode-dark"
     let displayName = "VS Code 深色"

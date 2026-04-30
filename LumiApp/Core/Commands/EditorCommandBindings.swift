@@ -96,6 +96,7 @@ enum EditorCommandBindings {
     static let undo = EditorCommandBinding(key: "z", modifiers: [.command])
     static let redo = EditorCommandBinding(key: "z", modifiers: [.command, .shift])
     static let find = EditorCommandBinding(key: "f", modifiers: [.command])
+    static let searchInFiles = EditorCommandBinding(key: "f", modifiers: [.command, .shift])
     static let commandPalette = EditorCommandBinding(key: "p", modifiers: [.command, .shift])
     static let findNext = EditorCommandBinding(key: "g", modifiers: [.command])
     static let findPrevious = EditorCommandBinding(key: "g", modifiers: [.command, .shift])
@@ -111,6 +112,7 @@ enum EditorCommandBindings {
 
     static let formatDocument = EditorCommandBinding(key: "f", modifiers: [.command, .shift, .option])
     static let findReferences = EditorCommandBinding(key: "r", modifiers: [.command, .option])
+    static let quickFix = EditorCommandBinding(key: ".", modifiers: [.command])
     static let renameSymbol = EditorCommandBinding(key: "r", modifiers: [.command, .shift])
     static let workspaceSymbols = EditorCommandBinding(key: "o", modifiers: [.command, .shift])
     static let callHierarchy = EditorCommandBinding(key: "h", modifiers: [.command, .option])
