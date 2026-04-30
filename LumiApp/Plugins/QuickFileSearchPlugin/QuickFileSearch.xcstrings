@@ -1,106 +1,142 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Fast file search with Cmd+P" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fast file search with Cmd+P"
+  "sourceLanguage": "en",
+  "strings": {
+    "Fast file search with Cmd+P": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fast file search with Cmd+P"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 Cmd+P 快速搜索文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Cmd+P 快速搜索文件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Cmd+P 快速搜索文件"
           }
         }
       }
     },
-    "Indexing files..." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Indexing files..."
+    "Indexing files...": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indexing files..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在索引文件..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在索引文件..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在索引文件..."
           }
         }
       }
     },
-    "No matching files found" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No matching files found"
+    "No matching files found": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching files found"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到匹配文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到匹配文件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到匹配文件"
           }
         }
       }
     },
-    "Quick File Search" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quick File Search"
+    "Quick File Search": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick File Search"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快速文件搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速文件搜索"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速文件搜索"
           }
         }
       }
     },
-    "Search files..." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search files..."
+    "Search files...": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search files..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索文件..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索文件..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索文件..."
           }
         }
       }
     },
-    "Type filename to search" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Type filename to search"
+    "Type filename to search": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type filename to search"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入文件名进行搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入文件名进行搜索"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入文件名進行搜索"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

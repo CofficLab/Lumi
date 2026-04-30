@@ -1,74 +1,92 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Agent 回合已结束" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Agent turn finished"
+  "sourceLanguage": "en",
+  "strings": {
+    "Agent 回合已结束": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent turn finished"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Agent 回合已结束"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 回合已结束"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 回合已結束"
           }
         }
       }
     },
-    "Lumi Agent" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi Agent"
+    "Lumi Agent": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi Agent"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi Agent"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi Agent"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi Agent"
           }
         }
       }
     },
-    "Send a system notification when an Agent turn finishes." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send a system notification when an Agent turn finishes."
+    "Send a system notification when an Agent turn finishes.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send a system notification when an Agent turn finishes."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当 Agent 回合结束时发送系统通知。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当 Agent 回合结束时发送系统通知。"
           }
         }
       }
     },
-    "Turn Notification" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn Notification"
+    "Turn Notification": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn Notification"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "回合通知"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回合通知"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輪次通知"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

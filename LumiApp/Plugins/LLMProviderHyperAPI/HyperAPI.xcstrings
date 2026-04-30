@@ -1,12 +1,12 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "HyperAPI" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HyperAPI"
+  "sourceLanguage": "en",
+  "strings": {
+    "HyperAPI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HyperAPI"
           }
         },
         "zh-Hans": {
@@ -14,15 +14,21 @@
             "state": "translated",
             "value": "HyperAPI"
           }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HyperAPI"
+          }
         }
       }
     },
-    "LLM Router by hyperapi.cc" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LLM Router by hyperapi.cc"
+    "LLM Router by hyperapi.cc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM Router by hyperapi.cc"
           }
         },
         "zh-Hans": {
@@ -30,9 +36,15 @@
             "state": "translated",
             "value": "hyperapi.cc 提供的 LLM 路由服务"
           }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hyperapi.cc 提供的 LLM 路由服務"
+          }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

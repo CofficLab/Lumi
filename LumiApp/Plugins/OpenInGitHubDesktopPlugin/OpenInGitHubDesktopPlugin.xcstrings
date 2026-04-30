@@ -1,60 +1,70 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Open current project in GitHub Desktop" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open current project in GitHub Desktop"
+  "sourceLanguage": "en",
+  "strings": {
+    "Open current project in GitHub Desktop": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open current project in GitHub Desktop"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitHub Desktop 中打开当前项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitHub Desktop 中打开当前项目"
           }
         }
       }
     },
-    "Open in GitHub Desktop" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open in GitHub Desktop"
+    "Open in GitHub Desktop": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in GitHub Desktop"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitHub Desktop 中打开"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitHub Desktop 中打开"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitHub Desktop 中打開"
           }
         }
       }
     },
-    "在 GitHub Desktop 中打开当前项目" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open current project in GitHub Desktop"
+    "在 GitHub Desktop 中打开当前项目": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open current project in GitHub Desktop"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitHub Desktop 中打开当前项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitHub Desktop 中打开当前项目"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitHub Desktop 中打開當前項目"
           }
         }
       }
     },
-    "无项目" : {
-
-    }
+    "无项目": {}
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
