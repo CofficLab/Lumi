@@ -35,8 +35,11 @@ actor EditorSidebarRailPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 提供 Rail 视图：编辑器侧边栏 workspace
-    @MainActor func addRailView() -> AnyView? {
-        AnyView(EditorSidebarRailView())
+    ///
+    /// 仅在 EditorPlugin（icon: `chevron.left.forwardslash.chevron.right`）被激活时提供。
+    @MainActor func addRailView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
+        return AnyView(EditorSidebarRailView())
     }
 }
 

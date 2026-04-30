@@ -141,12 +141,15 @@ protocol SuperPlugin: Actor {
     /// Rail 适合放置上下文相关的辅助导航或浏览内容，
     /// 例如文件浏览器树、符号大纲、书签列表等。
     ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件可据此判断是否提供 Rail 视图（例如仅在特定插件激活时显示）。
+    ///
     /// ## 互斥规则
     ///
     /// ⚠️ 全局最多只能有一个插件提供 Rail 视图。
     /// 如果多个插件同时提供，会显示冲突错误视图。
     /// 请确保只有一个启用的插件实现了此方法。
-    @MainActor func addRailView() -> AnyView?
+    @MainActor func addRailView(activeIcon: String?) -> AnyView?
 
     /// 添加右侧栏视图
     ///

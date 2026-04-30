@@ -554,10 +554,11 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: Rail 视图项数组
     func getRailItems() -> [RailItem] {
-        plugins
+        let activeIcon = activePanelIcon
+        return plugins
             .filter { isPluginEnabled($0) }
             .compactMap { plugin -> RailItem? in
-                guard let view = plugin.addRailView() else { return nil }
+                guard let view = plugin.addRailView(activeIcon: activeIcon) else { return nil }
                 return RailItem(
                     id: plugin.instanceLabel,
                     view: view
@@ -567,9 +568,10 @@ final class PluginVM: ObservableObject, SuperLog {
 
     /// 当前是否有 Rail 视图
     func hasRail() -> Bool {
-        plugins
+        let activeIcon = activePanelIcon
+        return plugins
             .filter { isPluginEnabled($0) }
-            .contains { $0.addRailView() != nil }
+            .contains { $0.addRailView(activeIcon: activeIcon) != nil }
     }
 
     /// 获取所有插件提供的右侧栏视图
