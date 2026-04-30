@@ -153,9 +153,9 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
 
                 if Self.verbose {
                     if case .success(let data) = result.status {
-                        ZhipuQuotaStatusBarPlugin.logger.info("\(Self.t)配额刷新成功: \(data.statusText)")
+                        ZhipuPlugin.logger.info("\(Self.t)配额刷新成功: \(data.statusText)")
                     } else {
-                        ZhipuQuotaStatusBarPlugin.logger.warning("\(Self.t)配额刷新失败")
+                        ZhipuPlugin.logger.warning("\(Self.t)配额刷新失败")
                     }
                 }
             }

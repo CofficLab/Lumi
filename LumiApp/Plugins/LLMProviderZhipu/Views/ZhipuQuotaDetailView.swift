@@ -21,7 +21,7 @@ struct ZhipuQuotaDetailView: View {
                     .font(.system(size: 16))
                     .foregroundColor(DesignTokens.Color.semantic.primary)
 
-                Text(String(localized: "Zhipu GLM Quota", table: "ZhipuQuotaStatusBar"))
+                Text(String(localized: "Zhipu GLM Quota", table: "Zhipu"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -61,7 +61,7 @@ struct ZhipuQuotaDetailView: View {
             ProgressView()
                 .scaleEffect(0.8)
 
-            Text(String(localized: "Loading...", table: "ZhipuQuotaStatusBar"))
+            Text(String(localized: "Loading...", table: "Zhipu"))
                 .font(.system(size: 13))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
         }
@@ -74,14 +74,14 @@ struct ZhipuQuotaDetailView: View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             // 等级
             QuotaInfoRow(
-                label: String(localized: "Level", table: "ZhipuQuotaStatusBar"),
+                label: String(localized: "Level", table: "Zhipu"),
                 value: data.levelDisplay
             )
 
             // 进度条
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(String(localized: "Usage Progress", table: "ZhipuQuotaStatusBar"))
+                    Text(String(localized: "Usage Progress", table: "Zhipu"))
                         .font(.system(size: 12))
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
@@ -96,13 +96,13 @@ struct ZhipuQuotaDetailView: View {
                     .progressViewStyle(LinearProgressViewStyle(tint: progressColor(data.usedPercent)))
 
                 HStack {
-                    Text(String(localized: "Remaining \(data.leftPercent)%", table: "ZhipuQuotaStatusBar"))
+                    Text(String(localized: "Remaining \(data.leftPercent)%", table: "Zhipu"))
                         .font(.system(size: 11))
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
                     Spacer()
 
-                    Text(String(localized: "Total 5 hours", table: "ZhipuQuotaStatusBar"))
+                    Text(String(localized: "Total 5 hours", table: "Zhipu"))
                         .font(.system(size: 11))
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
@@ -113,7 +113,7 @@ struct ZhipuQuotaDetailView: View {
             // 重置时间（显示完整日期和相对时间）
             VStack(alignment: .leading, spacing: 4) {
                 QuotaInfoRow(
-                    label: String(localized: "Reset Time", table: "ZhipuQuotaStatusBar"),
+                    label: String(localized: "Reset Time", table: "Zhipu"),
                     value: data.resetTime
                 )
                 Text("（\(data.resetTimeRelative)）")
@@ -126,7 +126,7 @@ struct ZhipuQuotaDetailView: View {
             // MCP 每月额度
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(String(localized: "MCP Monthly Quota", table: "ZhipuQuotaStatusBar"))
+                    Text(String(localized: "MCP Monthly Quota", table: "Zhipu"))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -136,7 +136,7 @@ struct ZhipuQuotaDetailView: View {
                 HStack(spacing: DesignTokens.Spacing.md) {
                     // 剩余额度百分比
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(String(localized: "Remaining", table: "ZhipuQuotaStatusBar"))
+                        Text(String(localized: "Remaining", table: "Zhipu"))
                             .font(.system(size: 10))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Text("\(data.mcpLeftPercent)%")
@@ -148,7 +148,7 @@ struct ZhipuQuotaDetailView: View {
 
                     // 重置时间
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text(String(localized: "Reset", table: "ZhipuQuotaStatusBar"))
+                        Text(String(localized: "Reset", table: "Zhipu"))
                             .font(.system(size: 10))
                             .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                         Text(data.mcpResetTime)
@@ -173,11 +173,11 @@ struct ZhipuQuotaDetailView: View {
                 .font(.system(size: 32))
                 .foregroundColor(DesignTokens.Color.semantic.warning)
 
-            Text(String(localized: "Auth expired", table: "ZhipuQuotaStatusBar"))
+            Text(String(localized: "Auth expired", table: "Zhipu"))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-            Text(String(localized: "Please check if Zhipu AI API Key is correctly configured", table: "ZhipuQuotaStatusBar"))
+            Text(String(localized: "Please check if Zhipu AI API Key is correctly configured", table: "Zhipu"))
                 .font(.system(size: 12))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 .multilineTextAlignment(.center)
@@ -193,11 +193,11 @@ struct ZhipuQuotaDetailView: View {
                 .font(.system(size: 32))
                 .foregroundColor(DesignTokens.Color.semantic.warning)
 
-            Text(String(localized: "Quota unavailable", table: "ZhipuQuotaStatusBar"))
+            Text(String(localized: "Quota unavailable", table: "Zhipu"))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-            Text(String(localized: "Please check network connection or try again later", table: "ZhipuQuotaStatusBar"))
+            Text(String(localized: "Please check network connection or try again later", table: "Zhipu"))
                 .font(.system(size: 12))
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
         }
