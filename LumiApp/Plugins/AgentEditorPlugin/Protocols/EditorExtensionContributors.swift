@@ -14,22 +14,91 @@ struct EditorContributionContext {
     let character: Int
     let isEditorActive: Bool
     let isLargeFileMode: Bool
+
+    func value(for key: EditorContextKey) -> EditorContextValue {
+        switch key {
+        case .languageId:
+            .string(languageId)
+        case .hasFileURL:
+            .bool(fileURL != nil)
+        case .hasSelection:
+            .bool(hasSelection)
+        case .line:
+            .int(line)
+        case .character:
+            .int(character)
+        case .isEditorActive:
+            .bool(isEditorActive)
+        case .isLargeFileMode:
+            .bool(isLargeFileMode)
+        }
+    }
+}
+
+enum EditorContextValue: Equatable {
+    case bool(Bool)
+    case int(Int)
+    case string(String)
+}
+
+enum EditorContextKey: String, CaseIterable, Equatable {
+    case languageId = "editor.languageId"
+    case hasFileURL = "editor.hasFileURL"
+    case hasSelection = "editor.hasSelection"
+    case line = "editor.line"
+    case character = "editor.character"
+    case isEditorActive = "editor.isEditorActive"
+    case isLargeFileMode = "editor.isLargeFileMode"
+}
+
+indirect enum EditorWhenClause: Equatable {
+    case key(EditorContextKey)
+    case equals(EditorContextKey, EditorContextValue)
+    case not(EditorWhenClause)
+    case all([EditorWhenClause])
+    case any([EditorWhenClause])
+
+    @MainActor
+    func evaluate(in context: EditorContributionContext) -> Bool {
+        switch self {
+        case .key(let key):
+            guard case .bool(let value) = context.value(for: key) else { return false }
+            return value
+        case .equals(let key, let expected):
+            return context.value(for: key) == expected
+        case .not(let clause):
+            return !clause.evaluate(in: context)
+        case .all(let clauses):
+            return clauses.allSatisfy { $0.evaluate(in: context) }
+        case .any(let clauses):
+            return clauses.contains { $0.evaluate(in: context) }
+        }
+    }
 }
 
 @MainActor
 struct EditorContributionMetadata {
     let priority: Int
     let dedupeKey: String?
-    let isEnabled: (EditorContributionContext) -> Bool
+    let whenClause: EditorWhenClause?
+    let enablement: (EditorContributionContext) -> Bool
 
     init(
         priority: Int = 0,
         dedupeKey: String? = nil,
+        whenClause: EditorWhenClause? = nil,
         isEnabled: @escaping (EditorContributionContext) -> Bool = { _ in true }
     ) {
         self.priority = priority
         self.dedupeKey = dedupeKey
-        self.isEnabled = isEnabled
+        self.whenClause = whenClause
+        self.enablement = isEnabled
+    }
+
+    @MainActor
+    func matches(_ context: EditorContributionContext) -> Bool {
+        let whenMatches = whenClause?.evaluate(in: context) ?? true
+        return whenMatches && enablement(context)
     }
 }
 

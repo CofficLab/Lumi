@@ -106,7 +106,7 @@ final class EditorExtensionRegistryTests: XCTestCase {
                     systemImage: "selection.pin.in.out",
                     order: 10,
                     isEnabled: true,
-                    metadata: .init(isEnabled: { $0.hasSelection }),
+                    metadata: .init(whenClause: .key(.hasSelection)),
                     action: {}
                 )
             ])
@@ -125,6 +125,36 @@ final class EditorExtensionRegistryTests: XCTestCase {
 
         XCTAssertTrue(withoutSelection.isEmpty)
         XCTAssertEqual(withSelection.map(\.id), ["custom.selection-only"])
+    }
+
+    func testQuickOpenSuggestionsSupportComposedWhenClauses() async {
+        let registry = EditorExtensionRegistry()
+        let state = EditorState()
+        registry.registerQuickOpenContributor(
+            TestQuickOpenContributor(id: "quick-open-when", items: [
+                EditorQuickOpenItemSuggestion(
+                    id: "symbol.swift-only",
+                    sectionTitle: "Symbols",
+                    title: "Swift Only",
+                    subtitle: nil,
+                    systemImage: "swift",
+                    badge: nil,
+                    order: 10,
+                    isEnabled: true,
+                    metadata: .init(
+                        whenClause: .all([
+                            .equals(.languageId, .string("swift")),
+                            .not(.key(.isLargeFileMode)),
+                        ])
+                    ),
+                    action: {}
+                )
+            ])
+        )
+
+        let items = await registry.quickOpenSuggestions(matching: "swift", state: state)
+
+        XCTAssertEqual(items.map(\.id), ["symbol.swift-only"])
     }
 
     func testPanelSuggestionsFilterByPlacementAndDeduplicateIDs() {

@@ -395,6 +395,10 @@ final class MultiCursorInputHelper: NSObject {
 
     func handleCancelOperation() -> Bool {
         guard let textView, let state else { return false }
+        if state.cancelActiveSnippetSession() {
+            textView.selectionManager.setSelectedRanges(state.currentSelectionsAsNSRanges())
+            return true
+        }
         guard state.multiCursorState.isEnabled else { return false }
 
         state.logMultiCursorInput(

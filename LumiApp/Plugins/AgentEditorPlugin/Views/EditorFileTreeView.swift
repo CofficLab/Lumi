@@ -48,9 +48,6 @@ struct EditorFileTreeView: View {
         .onReceive(coordinator.$refreshToken) { newToken in
             onCoordinatorRefresh(newToken)
         }
-        .onAppear {
-            // 文件树出现在面板中，确保编辑器也可见
-        }
     }
 
     // MARK: - Event Handler

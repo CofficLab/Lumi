@@ -29,6 +29,7 @@ enum CoreCommandRegistrations {
         registerSaveCommands(state: state)
         registerLineEditingCommands(state: state)
         registerCursorMotionCommands(state: state)
+        registerFoldingCommands(state: state)
     }
 
     // MARK: - Format
@@ -174,6 +175,74 @@ enum CoreCommandRegistrations {
             Task { @MainActor in
                 await state.openCallHierarchy()
             }
+        })
+    }
+
+    private static func registerFoldingCommands(state: EditorState) {
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.fold-current",
+            title: String(localized: "Fold Current Block", table: "LumiEditor"),
+            icon: "arrow.up.left.and.arrow.down.right",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 560,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.collapseCurrentFold()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.unfold-current",
+            title: String(localized: "Unfold Current Block", table: "LumiEditor"),
+            icon: "arrow.down.right.and.arrow.up.left",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 561,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.expandCurrentFold()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.fold-all",
+            title: String(localized: "Fold All", table: "LumiEditor"),
+            icon: "rectangle.compress.vertical",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 562,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.collapseAllFolds()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.unfold-all",
+            title: String(localized: "Unfold All", table: "LumiEditor"),
+            icon: "rectangle.expand.vertical",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 563,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.expandAllFolds()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.fold-level-1",
+            title: String(localized: "Fold Level 1", table: "LumiEditor"),
+            icon: "1.circle",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 564,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.collapseFolds(toLevel: 1)
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.fold-level-2",
+            title: String(localized: "Fold Level 2", table: "LumiEditor"),
+            icon: "2.circle",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 565,
+            enablement: .custom { _ in state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled }
+        ) {
+            state.collapseFolds(toLevel: 2)
         })
     }
 

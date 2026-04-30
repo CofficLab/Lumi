@@ -933,6 +933,8 @@ final class EditorState: ObservableObject, SuperLog {
     @Published var currentInlineRenameState: EditorInlineRenameState?
     @Published private(set) var isCodeActionPanelPresented: Bool = false
     @Published private(set) var selectedCodeActionIndex: Int = 0
+    private var pendingFoldingStateRestore: EditorFoldingState?
+    private(set) var activeSnippetSession: EditorSnippetSession?
 
     /// 鼠标悬停 Hover 内容（Markdown 格式）
     @Published private(set) var mouseHoverContent: String?
@@ -1717,6 +1719,7 @@ final class EditorState: ObservableObject, SuperLog {
 
         multiCursorState = restore.multiCursorState
         panelController.restore(from: restore.panelState)
+        pendingFoldingStateRestore = session.foldingState
         applyResolvedInteractionUpdate(restore.resolvedInteraction)
         sessionController.restoreScrollState(restore.scrollState, in: focusedTextView)
     }
@@ -2034,6 +2037,70 @@ final class EditorState: ObservableObject, SuperLog {
         }
         Task { @MainActor [weak self] in
             await self?.foldingRangeProvider.requestRanges(uri: currentFileURL.absoluteString)
+            self?.restorePersistedFoldingStateIfNeeded()
+        }
+    }
+
+    func collapseCurrentFold() {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.collapseCurrent(
+            cursorLine: cursorLine,
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
+        }
+    }
+
+    func expandCurrentFold() {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.expandCurrent(
+            cursorLine: cursorLine,
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
+        }
+    }
+
+    func collapseAllFolds() {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.collapseAll(
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
+        }
+    }
+
+    func expandAllFolds() {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.expandAll(
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
+        }
+    }
+
+    func collapseFolds(toLevel level: Int) {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }) else { return }
+        if EditorFoldingController.collapseToLevel(
+            level,
+            ranges: foldingRangeProvider.ranges,
+            textView: textView,
+            lineTable: lineTable
+        ) {
+            syncActiveSessionState()
         }
     }
     
@@ -2055,6 +2122,7 @@ final class EditorState: ObservableObject, SuperLog {
             hasUnsavedChanges = false
             currentPeekPresentation = nil
             currentInlineRenameState = nil
+            activeSnippetSession = nil
             isCodeActionPanelPresented = false
             selectedCodeActionIndex = 0
             selectedCodeActionIdentity = nil
@@ -2663,6 +2731,10 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func handleInsertTabInput(textViewSelections: [NSRange]) -> Bool {
+        if advanceActiveSnippetSession(forward: true, currentSelections: textViewSelections) {
+            return true
+        }
+
         if multiCursorState.all.count > 1 {
             let indentUnit = useSpaces ? String(repeating: " ", count: tabWidth) : "\t"
             return applyMultiCursorOperation(.indent(indentUnit)) != nil
@@ -2688,6 +2760,10 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func handleInsertBacktabInput(textViewSelections: [NSRange]) -> Bool {
+        if advanceActiveSnippetSession(forward: false, currentSelections: textViewSelections) {
+            return true
+        }
+
         if multiCursorState.all.count > 1 {
             return applyMultiCursorOperation(.outdent(tabSize: tabWidth, useSpaces: useSpaces)) != nil
         }
@@ -2725,6 +2801,27 @@ final class EditorState: ObservableObject, SuperLog {
               ) else { return false }
 
         applyEditorTransaction(transaction, reason: "completion_apply")
+        return true
+    }
+
+    func applySnippetCompletionEdit(
+        replacementRange: NSRange,
+        snippetText: String,
+        additionalTextEdits: [TextEdit]?
+    ) -> Bool {
+        guard let text = documentController.currentText ?? content?.string else { return false }
+        let snippet = EditorSnippetParser.parse(snippetText)
+        guard let payload = transactionController.transactionForSnippetEdit(
+            text: text,
+            replacementRange: replacementRange,
+            snippet: snippet,
+            additionalTextEdits: additionalTextEdits
+        ) else {
+            return false
+        }
+
+        activeSnippetSession = payload.session
+        applyEditorTransaction(payload.transaction, reason: "completion_apply_snippet")
         return true
     }
 
@@ -2813,6 +2910,54 @@ final class EditorState: ObservableObject, SuperLog {
         return true
     }
 
+    func cancelActiveSnippetSession() -> Bool {
+        guard let session = activeSnippetSession else { return false }
+        activeSnippetSession = nil
+        setSelections([MultiCursorSelection(location: session.exitSelection.location, length: session.exitSelection.length)])
+        return true
+    }
+
+    private func advanceActiveSnippetSession(
+        forward: Bool,
+        currentSelections: [NSRange]
+    ) -> Bool {
+        guard var session = activeSnippetSession else { return false }
+
+        if let currentGroup = session.currentGroup {
+            let expected = currentGroup.ranges.sorted(by: rangeSort)
+            let actual = currentSelections.sorted(by: rangeSort)
+            if expected != actual {
+                activeSnippetSession = nil
+                return false
+            }
+        }
+
+        let nextIndex = session.activeGroupIndex + (forward ? 1 : -1)
+        if session.groups.indices.contains(nextIndex) {
+            session.activeGroupIndex = nextIndex
+            activeSnippetSession = session
+            setSelections(
+                session.groups[nextIndex].ranges.map {
+                    MultiCursorSelection(location: $0.location, length: $0.length)
+                }
+            )
+            return true
+        }
+
+        if forward {
+            activeSnippetSession = nil
+            setSelections([MultiCursorSelection(location: session.exitSelection.location, length: session.exitSelection.length)])
+            return true
+        }
+
+        return true
+    }
+
+    private func rangeSort(_ lhs: NSRange, _ rhs: NSRange) -> Bool {
+        if lhs.location != rhs.location { return lhs.location < rhs.location }
+        return lhs.length < rhs.length
+    }
+
     func commitDocumentEditResult(_ result: EditorEditResult, reason: String) {
         let payload = transactionController.commitPayload(from: result)
         content = documentController.textStorage
@@ -2865,6 +3010,7 @@ final class EditorState: ObservableObject, SuperLog {
         let scrollState = scrollStateOverride ?? focusedTextView.map { textView in
             EditorScrollState(viewportOrigin: textView.visibleRect.origin)
         } ?? activeSession.scrollState
+        let foldingState = currentFoldingState()
 
         sessionController.syncActiveSessionState(
             activeSession: activeSession,
@@ -2874,6 +3020,7 @@ final class EditorState: ObservableObject, SuperLog {
             isDirty: hasUnsavedChanges,
             bridgeState: bridgeState,
             scrollState: scrollState,
+            foldingState: foldingState,
             onChanged: onActiveSessionChanged
         )
     }
@@ -2884,6 +3031,43 @@ final class EditorState: ObservableObject, SuperLog {
 
     private func applyFindReplaceState(_ state: EditorFindReplaceState) {
         EditorFindReplaceStateController.apply(state, to: &editorState)
+    }
+
+    private func currentFoldingState() -> EditorFoldingState {
+        guard let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }),
+              showFoldingRibbon,
+              !largeFileMode.isFoldingDisabled else {
+            return activeSession.foldingState
+        }
+        return EditorFoldingController.captureState(
+            textView: textView,
+            ranges: foldingRangeProvider.ranges,
+            lineTable: lineTable
+        )
+    }
+
+    private func restorePersistedFoldingStateIfNeeded() {
+        guard let pendingFoldingStateRestore,
+              !pendingFoldingStateRestore.isEmpty,
+              let textView = focusedTextView,
+              let lineTable = content.map({ LineOffsetTable(content: $0.string) }),
+              showFoldingRibbon,
+              !largeFileMode.isFoldingDisabled,
+              !foldingRangeProvider.ranges.isEmpty else {
+            return
+        }
+
+        let restored = EditorFoldingController.restore(
+            pendingFoldingStateRestore,
+            textView: textView,
+            ranges: foldingRangeProvider.ranges,
+            lineTable: lineTable
+        )
+        if restored {
+            self.pendingFoldingStateRestore = nil
+            syncActiveSessionState()
+        }
     }
 
     private func applyBridgeState(_ state: EditorBridgeState) {

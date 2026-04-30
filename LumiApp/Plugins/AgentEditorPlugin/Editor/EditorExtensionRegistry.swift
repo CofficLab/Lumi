@@ -277,7 +277,7 @@ final class EditorExtensionRegistry: ObservableObject {
             }
         }
         return deduplicateContextMenuSuggestions(
-            merged.filter { $0.isEnabled && $0.metadata.isEnabled(contributionContext) }
+            merged.filter { $0.isEnabled && $0.metadata.matches(contributionContext) }
         )
     }
 
@@ -350,7 +350,7 @@ final class EditorExtensionRegistry: ObservableObject {
             }
         }
         return deduplicatePanels(
-            merged.filter { $0.metadata.isEnabled(contributionContext) }
+            merged.filter { $0.metadata.matches(contributionContext) }
         )
     }
 
@@ -365,7 +365,7 @@ final class EditorExtensionRegistry: ObservableObject {
             }
         }
         return deduplicateSettingsItems(
-            merged.filter { $0.metadata.isEnabled(contributionContext) }
+            merged.filter { $0.metadata.matches(contributionContext) }
         )
     }
 
@@ -395,7 +395,7 @@ final class EditorExtensionRegistry: ObservableObject {
             }
         }
         return deduplicateStatusItems(
-            merged.filter { $0.metadata.isEnabled(contributionContext) }
+            merged.filter { $0.metadata.matches(contributionContext) }
         )
     }
 
@@ -415,7 +415,7 @@ final class EditorExtensionRegistry: ObservableObject {
             }
         }
         return deduplicateQuickOpenItems(
-            merged.filter { $0.isEnabled && $0.metadata.isEnabled(contributionContext) }
+            merged.filter { $0.isEnabled && $0.metadata.matches(contributionContext) }
         )
     }
 

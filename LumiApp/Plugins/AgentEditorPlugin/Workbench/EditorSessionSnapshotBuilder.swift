@@ -12,7 +12,8 @@ enum EditorSessionSnapshotBuilder {
         isDirty: Bool,
         findReplaceState: EditorFindReplaceState,
         scrollState: EditorScrollState,
-        viewState: EditorViewState
+        viewState: EditorViewState,
+        foldingState: EditorFoldingState
     ) -> EditorSession {
         EditorSession(
             id: sessionID,
@@ -22,7 +23,8 @@ enum EditorSessionSnapshotBuilder {
             isDirty: isDirty,
             findReplaceState: findReplaceState,
             scrollState: scrollState,
-            viewState: viewState
+            viewState: viewState,
+            foldingState: foldingState
         )
     }
 
@@ -33,7 +35,8 @@ enum EditorSessionSnapshotBuilder {
         panelState: EditorPanelSessionState,
         isDirty: Bool,
         bridgeState: EditorBridgeState,
-        scrollState: EditorScrollState
+        scrollState: EditorScrollState,
+        foldingState: EditorFoldingState
     ) -> EditorSession {
         snapshot(
             preserving: sessionID,
@@ -43,7 +46,8 @@ enum EditorSessionSnapshotBuilder {
             isDirty: isDirty,
             findReplaceState: bridgeState.findReplaceState ?? EditorFindReplaceState(),
             scrollState: scrollState,
-            viewState: bridgeState.viewState
+            viewState: bridgeState.viewState,
+            foldingState: foldingState
         )
     }
 }

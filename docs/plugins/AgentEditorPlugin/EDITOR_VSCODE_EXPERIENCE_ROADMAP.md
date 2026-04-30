@@ -894,11 +894,11 @@ UI / 扩展层的具体验证命令、压力场景和记录模板，统一见 [E
   lightbulb 和 panel 已统一，但还缺少更强的键盘直达路径、自动聚焦策略、preferred action 语义，以及与 diagnostics / cursor 移动联动的更稳切换。
 - [x] P1. `Search in Files / Search Editor` 能力缺失
   当前只补齐了当前 editor 内 find/replace，没有 VS Code 那种跨文件搜索、结果树、search editor、批量替换确认流。
-- [ ] P1. `Folding` 仍缺少持久化、层级命令与更完整的摘要策略
+- [x] P1. `Folding` 仍缺少持久化、层级命令与更完整的摘要策略
   折叠 affordance 和 summary 已有，但还没有稳定的 fold state restore、按层级折叠/展开、按 selection 或 symbol 范围折叠。
 - [x] P1. `Sticky Scroll / 更强 breadcrumb-symbol 联动` 缺失
   breadcrumb 已有，但 VS Code 式的 sticky scroll 和当前 symbol 跟踪仍缺位，长文件中定位上下文的成本偏高。
-- [ ] P2. `Snippet / tabstop / placeholder navigation` 不完整
+- [x] P2. `Snippet / tabstop / placeholder navigation` 不完整
   completion、多光标和输入事务已经稳定很多，但还缺少 VS Code 常见的 snippet placeholder 跳转、linked editing、tabstop 退出语义。
-- [ ] P2. `Context key / when-clause` 体系仍偏轻量
+- [x] P2. `Context key / when-clause` 体系仍偏轻量
   贡献点 enablement 已有，但离 VS Code 那种统一的 context key、menu location、when-clause 组合规则还有距离，复杂扩展接入时表达力仍不足。

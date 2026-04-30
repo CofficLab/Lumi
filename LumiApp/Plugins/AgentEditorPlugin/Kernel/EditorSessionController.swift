@@ -76,6 +76,7 @@ final class EditorSessionController {
         isDirty: Bool,
         bridgeState: EditorBridgeState,
         scrollState: EditorScrollState,
+        foldingState: EditorFoldingState,
         onChanged: ((EditorSession) -> Void)?
     ) {
         let snapshot = EditorSessionSnapshotBuilder.snapshot(
@@ -85,7 +86,8 @@ final class EditorSessionController {
             panelState: panelState,
             isDirty: isDirty,
             bridgeState: bridgeState,
-            scrollState: scrollState
+            scrollState: scrollState,
+            foldingState: foldingState
         )
 
         guard requiresSync(activeSession, snapshot: snapshot) else {
@@ -127,6 +129,7 @@ final class EditorSessionController {
         current.isDirty != snapshot.isDirty ||
         current.findReplaceState != snapshot.findReplaceState ||
         current.scrollState != snapshot.scrollState ||
-        current.viewState != snapshot.viewState
+        current.viewState != snapshot.viewState ||
+        current.foldingState != snapshot.foldingState
     }
 }

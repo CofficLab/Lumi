@@ -9,6 +9,7 @@ private protocol ApplicableCompletionEntry: CodeEditSourceEditor.CodeSuggestionE
     var replacementText: String { get }
     var replaceRange: LSPRange? { get }
     var additionalTextEdits: [TextEdit]? { get }
+    var snippetText: String? { get }
 }
 
 @MainActor
@@ -284,6 +285,19 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             replacementRange = NSRange(location: anchorOffset, length: 0)
         } else {
             replacementRange = NSRange(location: view.string.utf16.count, length: 0)
+        }
+
+        if let snippetText = item.snippetText,
+           let state = editorState,
+           state.applySnippetCompletionEdit(
+                replacementRange: replacementRange,
+                snippetText: snippetText,
+                additionalTextEdits: item.additionalTextEdits
+           ) {
+            if let first = state.currentSelectionsAsNSRanges().first {
+                view.selectionManager.setSelectedRange(first)
+            }
+            return
         }
 
         if let selections = editorState?.applyMultiCursorReplacement(item.replacementText),
@@ -782,6 +796,9 @@ private struct EditorCodeSuggestionEntry: ApplicableCompletionEntry {
         }
     }
     var additionalTextEdits: [TextEdit]? { item.additionalTextEdits }
+    var snippetText: String? {
+        item.insertTextFormat == .snippet ? replacementText : nil
+    }
 
     static func icon(for kind: CompletionItemKind?) -> Image {
         switch kind {
@@ -833,6 +850,7 @@ private struct EditorPluginSuggestionEntry: ApplicableCompletionEntry {
     var replacementText: String { suggestion.insertText }
     var replaceRange: LSPRange? { nil }
     var additionalTextEdits: [TextEdit]? { nil }
+    var snippetText: String? { nil }
     var priority: Int { suggestion.priority }
 }
 
@@ -850,4 +868,5 @@ private struct LocalTypeSuggestionEntry: ApplicableCompletionEntry {
     var replacementText: String { label }
     var replaceRange: LSPRange? { nil }
     var additionalTextEdits: [TextEdit]? { nil }
+    var snippetText: String? { nil }
 }
