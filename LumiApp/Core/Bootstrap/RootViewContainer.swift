@@ -74,6 +74,7 @@ final class RootViewContainer: ObservableObject {
         // 初始化供应商注册表（从插件中收集 LLM Provider）
         let providerRegistry = LLMProviderRegistry()
         pluginVM.registerLLMProviders(to: providerRegistry)
+        let registeredProviderIDs = providerRegistry.providerTypes.map { $0.id }
 
         // 初始化 LLM 服务
         self.llmService = LLMService(registry: providerRegistry)

@@ -108,8 +108,11 @@ struct ContentView: View, SuperLog {
     private var mainContent: some View {
         Group {
             if providerRegistry.providerTypes.isEmpty {
-                ActivityBar()
-                AgentModeUnavailableGuideView()
+                HSplitView {
+                    ActivityBar()
+                    AgentModeUnavailableGuideView()
+                }
+                .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
             } else {
                 let sidebarViews = pluginProvider.getSidebarViews()
                 let shouldShowSidebar = !sidebarViews.isEmpty && currentPanelNeedsSidebar

@@ -1,7 +1,7 @@
 import Foundation
 import CodeEditSourceEditor
 
-struct EditorBridgeState {
+struct EditorBridgeState: Equatable {
     let viewState: EditorViewState
     let findReplaceState: EditorFindReplaceState?
 }

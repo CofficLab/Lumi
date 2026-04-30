@@ -70,6 +70,9 @@ extension Notification.Name {
 
     /// Xcode 项目上下文已更新
     static let lumiEditorXcodeContextDidChange = Notification.Name("LumiEditorXcodeContextDidChange")
+
+    /// 当前编辑器文件对应的 Xcode 上下文快照已更新
+    static let lumiEditorXcodeSnapshotDidChange = Notification.Name("LumiEditorXcodeSnapshotDidChange")
 }
 
 // MARK: - NotificationCenter Helpers

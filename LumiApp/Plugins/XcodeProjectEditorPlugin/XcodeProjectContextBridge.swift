@@ -257,8 +257,9 @@ final class XcodeProjectContextBridge: SuperLog {
     }
 
     func updateLatestEditorSnapshot(_ snapshot: XcodeEditorContextSnapshot?) {
+        guard latestEditorSnapshot != snapshot else { return }
         latestEditorSnapshot = snapshot
-        NotificationCenter.default.post(name: .lumiEditorXcodeContextDidChange, object: nil)
+        NotificationCenter.default.post(name: .lumiEditorXcodeSnapshotDidChange, object: nil)
     }
 }
 

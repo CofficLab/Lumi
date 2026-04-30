@@ -245,6 +245,16 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
                 self?.latestEditorSnapshot = bridge.latestEditorSnapshot
                 self?.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString })
             }
+
+        NotificationCenter.default
+            .publisher(for: .lumiEditorXcodeSnapshotDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                let bridge = XcodeProjectContextBridge.shared
+                self?.latestEditorSnapshot = bridge.latestEditorSnapshot
+                self?.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString })
+            }
+            .store(in: &cancellables)
     }
     
     func setActiveScheme(_ schemeName: String) {

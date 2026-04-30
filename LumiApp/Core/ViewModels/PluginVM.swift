@@ -267,10 +267,13 @@ final class PluginVM: ObservableObject, SuperLog {
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
         defer { free(UnsafeMutableRawPointer(classList)) }
+
+        AppLogger.core.info("\(self.t)开始扫描运行时插件类，总类数: \(count)")
         
         let classes = UnsafeBufferPointer(start: classList, count: Int(count))
         // 临时存储，包含 (实例，类名，顺序)
         var discoveredItems: [(instance: any SuperPlugin, className: String, order: Int)] = []
+        var pluginClassNames: [String] = []
         
         for i in 0 ..< classes.count {
             let cls: AnyClass = classes[i]
@@ -288,11 +291,15 @@ final class PluginVM: ObservableObject, SuperLog {
             let pluginType = type(of: instance)
             if pluginType.enable {
                 discoveredItems.append((instance, className, pluginType.order))
+                pluginClassNames.append(className)
                 if Self.verbose {
                     AppLogger.core.info("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
                 }
             }
         }
+
+        let sortedPluginClassNames = pluginClassNames.sorted()
+        AppLogger.core.info("\(self.t)运行时发现 \(sortedPluginClassNames.count) 个插件类: \(sortedPluginClassNames.joined(separator: ", "))")
         
         // 按 order 升序排序，确保核心插件先加载
         discoveredItems.sort { $0.order < $1.order }
@@ -309,12 +316,21 @@ final class PluginVM: ObservableObject, SuperLog {
 
         // 从插件中收集 LLM 供应商类型
         var providerTypes: [any SuperLLMProvider.Type] = []
+        var providerDiagnostics: [String] = []
         for plugin in sortedPlugins {
+            let pluginType = type(of: plugin)
             if let providerType = plugin.llmProviderType() {
                 providerTypes.append(providerType)
+                providerDiagnostics.append("\(pluginType.id)->\(providerType.id)")
+            } else {
+                providerDiagnostics.append("\(pluginType.id)->nil")
             }
         }
         self.discoveredLLMProviderTypes = providerTypes
+
+        let discoveredProviderIDs = providerTypes.map { $0.id }
+        AppLogger.core.info("\(self.t)插件扫描结束，共加载 \(sortedPlugins.count) 个插件；LLM provider 映射: \(providerDiagnostics.joined(separator: ", "))")
+        AppLogger.core.info("\(self.t)最终发现 \(discoveredProviderIDs.count) 个 LLM provider type: \(discoveredProviderIDs.joined(separator: ", "))")
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {

@@ -87,6 +87,11 @@ final class EditorSessionController {
             bridgeState: bridgeState,
             scrollState: scrollState
         )
+
+        guard requiresSync(activeSession, snapshot: snapshot) else {
+            return
+        }
+
         activeSession.applySnapshot(from: snapshot)
         onChanged?(activeSession)
     }
@@ -110,5 +115,18 @@ final class EditorSessionController {
         let clipView = scrollView.contentView
         clipView.scroll(to: state.viewportOrigin)
         scrollView.reflectScrolledClipView(clipView)
+    }
+
+    private func requiresSync(
+        _ current: EditorSession,
+        snapshot: EditorSession
+    ) -> Bool {
+        current.fileURL != snapshot.fileURL ||
+        current.multiCursorState != snapshot.multiCursorState ||
+        current.panelState != snapshot.panelState ||
+        current.isDirty != snapshot.isDirty ||
+        current.findReplaceState != snapshot.findReplaceState ||
+        current.scrollState != snapshot.scrollState ||
+        current.viewState != snapshot.viewState
     }
 }

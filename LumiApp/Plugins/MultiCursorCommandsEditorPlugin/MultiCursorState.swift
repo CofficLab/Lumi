@@ -10,7 +10,7 @@ struct MultiCursorSelection: Hashable {
 }
 
 /// 多光标编辑状态
-struct MultiCursorState {
+struct MultiCursorState: Equatable {
     var primary: MultiCursorSelection = .init(location: 0, length: 0)
     var secondary: [MultiCursorSelection] = []
 
