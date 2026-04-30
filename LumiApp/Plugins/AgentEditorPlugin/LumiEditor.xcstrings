@@ -709,6 +709,18 @@
     "Focus Previous Editor Group" : {
 
     },
+    "Fold All" : {
+
+    },
+    "Fold Current Block" : {
+
+    },
+    "Fold Level 1" : {
+
+    },
+    "Fold Level 2" : {
+
+    },
     "Folder name" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1552,6 +1564,9 @@
     "Other Open Editors (%lld)" : {
 
     },
+    "Outline" : {
+
+    },
     "Peek Definition" : {
 
     },
@@ -2272,6 +2287,12 @@
       }
     },
     "Undo" : {
+
+    },
+    "Unfold All" : {
+
+    },
+    "Unfold Current Block" : {
 
     },
     "Unpin Tab" : {

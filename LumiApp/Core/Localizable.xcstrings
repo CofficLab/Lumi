@@ -518,10 +518,16 @@
         }
       }
     },
+    "^[%lld Available Skill](inflect: true)" : {
+
+    },
     "^[%lld Chunk](inflect: true)" : {
 
     },
     "^[%lld File](inflect: true)" : {
+
+    },
+    "^[%lld Skill](inflect: true)" : {
 
     },
     "↑%@" : {
@@ -2363,6 +2369,9 @@
     "Esc" : {
 
     },
+    "Explorer" : {
+
+    },
     "Export Backup..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -3642,6 +3651,9 @@
           }
         }
       }
+    },
+    "Open diagnostic" : {
+
     },
     "Open Search Editor" : {
 
@@ -5299,7 +5311,13 @@
         }
       }
     },
+    "Use Lumi Version" : {
+
+    },
     "Use Regular Expression" : {
+
+    },
+    "Use Xcode Version" : {
 
     },
     "user" : {
