@@ -46,7 +46,6 @@ actor EditorPlugin: SuperPlugin, SuperLog {
 
     /// 在工具栏显示 Xcode 项目状态
     @MainActor func addToolBarLeadingView() -> AnyView? {
-        guard XcodeProjectContextBridge.shared.isXcodeProject else { return nil }
         return AnyView(XcodeProjectStatusBar())
     }
 

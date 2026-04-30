@@ -26,6 +26,15 @@ final class LSPRealtimeInteractionContributor: EditorInteractionContributor {
             return
         }
         if let fileURL = state.currentFileURL, let content = state.content {
+            if XcodeSemanticAvailability.preflightError(
+                uri: fileURL.absoluteString,
+                operation: "文档高亮",
+                strength: .soft
+            ) != nil {
+                state.documentHighlightProvider.clear()
+                state.scheduleInlayHintsRefreshIfNeeded(controller: controller)
+                return
+            }
             await state.documentHighlightProvider.requestHighlight(
                 uri: fileURL.absoluteString,
                 line: context.line,

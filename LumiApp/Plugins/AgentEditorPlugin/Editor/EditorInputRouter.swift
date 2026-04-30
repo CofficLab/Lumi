@@ -105,6 +105,10 @@ final class EditorInputRouter {
             return
         }
         guard let fileURL = state.currentFileURL else { return }
+        if state.xcodeLanguagePreflightError(operation: "代码操作") != nil {
+            state.codeActionProvider.clear()
+            return
+        }
 
         let diagnostics = state.panelState.problemDiagnostics.filter { diag in
             Int(diag.range.start.line) + 1 == cursor.start.line ||

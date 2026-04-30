@@ -5,6 +5,10 @@ import LanguageServerProtocol
 @MainActor
 extension EditorState {
     func showReferencesFromCurrentCursor() async {
+        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "查找引用") {
+            showStatusToast(preflightMessage, level: .warning, duration: 2.4)
+            return
+        }
         await languageActionFacade.showReferences(
             currentFileURL: currentFileURL,
             relativeFilePath: relativeFilePath,
@@ -68,6 +72,10 @@ extension EditorState {
     }
 
     func openCallHierarchy() async {
+        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "调用层级") {
+            showStatusToast(preflightMessage, level: .warning, duration: 2.4)
+            return
+        }
         await languageActionFacade.openCallHierarchy(
             callHierarchyController: callHierarchyController,
             currentFileURL: currentFileURL,
@@ -164,6 +172,10 @@ extension EditorState {
     }
 
     private func renameSymbolWithLSP(to newName: String) async {
+        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "重命名符号") {
+            showStatusToast(preflightMessage, level: .warning, duration: 2.4)
+            return
+        }
         await languageActionFacade.rename(
             newName: newName,
             currentURI: currentFileURL?.absoluteString,
@@ -187,6 +199,30 @@ extension EditorState {
             showStatus: { [weak self] message, level, duration in
                 self?.showStatusToast(message, level: level, duration: duration)
             }
+        )
+    }
+
+    func xcodeLanguagePreflightMessage(
+        operation: String,
+        symbolName: String? = nil
+    ) -> String? {
+        XcodeSemanticAvailability.preflightMessage(
+            uri: currentFileURL?.absoluteString,
+            operation: operation,
+            symbolName: symbolName,
+            strength: .hard
+        )
+    }
+
+    func xcodeLanguagePreflightError(
+        operation: String,
+        symbolName: String? = nil
+    ) -> XcodeLSPError? {
+        XcodeSemanticAvailability.preflightError(
+            uri: currentFileURL?.absoluteString,
+            operation: operation,
+            symbolName: symbolName,
+            strength: .hard
         )
     }
 }
