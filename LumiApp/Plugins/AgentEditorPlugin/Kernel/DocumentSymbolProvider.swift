@@ -2,7 +2,7 @@ import Foundation
 import LanguageServerProtocol
 
 @MainActor
-final class DocumentSymbolProvider: ObservableObject {
+final class DocumentSymbolProvider: ObservableObject, SuperEditorDocumentSymbolProvider {
     private let requestLifecycle = LSPRequestLifecycle()
     private let requestDocumentSymbols: @Sendable () async -> [DocumentSymbol]
 

@@ -13,6 +13,7 @@ actor LSPInlayHintEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        // Provided via InlayHintProvider
+        let provider = InlayHintProvider(lspService: .shared)
+        registry.registerInlayHintProvider(provider)
     }
 }

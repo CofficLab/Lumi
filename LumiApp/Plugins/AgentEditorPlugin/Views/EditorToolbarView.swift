@@ -327,7 +327,7 @@ struct EditorToolbarView: View {
 
     private var externalFileConflictControl: some View {
         Menu {
-            Button(state.isEditingProjectPBXProj ? "Use Xcode Version" : "Reload from Disk") {
+            Button(state.isEditingProjectPBXProj ? "Use Project Version" : "Reload from Disk") {
                 state.reloadExternalFileConflict()
             }
 

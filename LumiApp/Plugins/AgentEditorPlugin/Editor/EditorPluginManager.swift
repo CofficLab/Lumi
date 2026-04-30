@@ -2,6 +2,27 @@ import Foundation
 import os
 import MagicKit
 
+/// 编辑器支持的语言 ID（内核定义，不依赖具体 LSP 实现）
+enum EditorLanguageID {
+    static let all: [String] = [
+        "swift",
+        "python",
+        "typescript",
+        "javascript",
+        "html",
+        "css",
+        "scss",
+        "sass",
+        "less",
+        "rust",
+        "go",
+        "cpp",
+        "c",
+        "objective-c",
+        "objective-cpp",
+    ]
+}
+
 /// 编辑器插件管理器（纯安装器）。
 ///
 /// Phase 4: 已精简为纯安装器，不再维护插件开关状态。

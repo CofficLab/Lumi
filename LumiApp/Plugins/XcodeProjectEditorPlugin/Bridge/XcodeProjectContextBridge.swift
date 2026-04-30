@@ -159,7 +159,8 @@ final class XcodeProjectContextBridge: SuperLog {
         )
         cachedState = state
         NotificationCenter.default.post(name: .lumiEditorProjectContextDidChange, object: nil)
-        NotificationCenter.default.post(name: .lumiEditorXcodeContextDidChange, object: nil)
+        // Xcode 专用的项目上下文变更通知（兼容旧监听者）
+        NotificationCenter.default.post(name: .lumiEditorProjectSnapshotDidChange, object: nil)
     }
     
     // MARK: - Build Context 初始化
@@ -259,7 +260,7 @@ final class XcodeProjectContextBridge: SuperLog {
     func updateLatestEditorSnapshot(_ snapshot: XcodeEditorContextSnapshot?) {
         guard latestEditorSnapshot != snapshot else { return }
         latestEditorSnapshot = snapshot
-        NotificationCenter.default.post(name: .lumiEditorXcodeSnapshotDidChange, object: nil)
+        NotificationCenter.default.post(name: .lumiEditorProjectSnapshotDidChange, object: nil)
     }
 }
 

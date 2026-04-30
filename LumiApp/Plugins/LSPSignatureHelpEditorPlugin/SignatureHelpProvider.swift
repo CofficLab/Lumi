@@ -6,7 +6,7 @@ import LanguageServerProtocol
 /// 签名帮助提供者
 /// 监听输入触发字符，在光标位置显示函数签名信息
 @MainActor
-final class SignatureHelpProvider: ObservableObject {
+final class SignatureHelpProvider: ObservableObject, SuperEditorSignatureHelpProvider {
     
     private let lspService: LSPService
     private let requestLifecycle = LSPRequestLifecycle()

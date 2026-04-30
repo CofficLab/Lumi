@@ -341,10 +341,14 @@ struct EditorRootView: View {
                 isPresented: { $0.panelState.isOutlinePanelPresented },
                 content: { state in
                     AnyView(
-                        EditorOutlinePanelView(
-                            state: state,
-                            provider: state.documentSymbolProvider
-                        )
+                        Group {
+                            if let provider = state.documentSymbolProvider as? DocumentSymbolProvider {
+                                EditorOutlinePanelView(
+                                    state: state,
+                                    provider: provider
+                                )
+                            }
+                        }
                     )
                 }
             )

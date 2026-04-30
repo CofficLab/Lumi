@@ -6,7 +6,7 @@ import LanguageServerProtocol
 /// Inlay Hint 提供者
 /// 在编辑器中显示类型推断、参数名等内联提示
 @MainActor
-final class InlayHintProvider: ObservableObject {
+final class InlayHintProvider: ObservableObject, SuperEditorInlayHintProvider {
     
     private let lspService: LSPService
     private let requestLifecycle = LSPRequestLifecycle()

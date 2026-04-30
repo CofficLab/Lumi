@@ -207,12 +207,17 @@ struct EditorSidebarWorkspaceView: View {
                 showsResizeHandle: false
             )
         case .outline:
-            EditorOutlinePanelView(
-                state: state,
-                provider: state.documentSymbolProvider,
-                showsHeader: false,
-                showsResizeHandle: false
-            )
+            if let provider = state.documentSymbolProvider as? DocumentSymbolProvider {
+                EditorOutlinePanelView(
+                    state: state,
+                    provider: provider,
+                    showsHeader: false,
+                    showsResizeHandle: false
+                )
+            } else {
+                Text("Outline not available")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         case .problems:
             EditorProblemsPanelView(state: state, showsHeader: false)
         case .searchResults:
@@ -343,7 +348,7 @@ struct EditorSidebarWorkspaceView: View {
             if fileCount > 0 {
                 return "\(problemCount) issues for current file context"
             }
-            return "\(problemCount) issues from current Xcode context"
+            return "\(problemCount) issues from current project context"
         case .searchResults:
             if state.panelState.isWorkspaceSearchLoading {
                 return "Searching workspace"

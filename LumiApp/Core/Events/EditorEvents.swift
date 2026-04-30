@@ -80,11 +80,8 @@ extension Notification.Name {
     /// 项目上下文已更新
     static let lumiEditorProjectContextDidChange = Notification.Name("LumiEditorProjectContextDidChange")
 
-    /// 向后兼容旧的 Xcode 上下文事件名
-    static let lumiEditorXcodeContextDidChange = Notification.Name("LumiEditorXcodeContextDidChange")
-
-    /// 当前编辑器文件对应的 Xcode 上下文快照已更新
-    static let lumiEditorXcodeSnapshotDidChange = Notification.Name("LumiEditorXcodeSnapshotDidChange")
+    /// 当前编辑器文件对应的项目上下文快照已更新
+    static let lumiEditorProjectSnapshotDidChange = Notification.Name("LumiEditorProjectSnapshotDidChange")
 
     /// 编辑器设置已更新
     static let lumiEditorSettingsDidChange = Notification.Name("LumiEditorSettingsDidChange")

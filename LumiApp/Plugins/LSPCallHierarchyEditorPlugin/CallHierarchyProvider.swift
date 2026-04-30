@@ -4,7 +4,7 @@ import LanguageServerProtocol
 
 /// 调用层级提供者
 @MainActor
-final class CallHierarchyProvider: ObservableObject {
+final class CallHierarchyProvider: ObservableObject, SuperEditorCallHierarchyProvider {
     
     private let lspService: LSPService
     private let prepareLifecycle = LSPRequestLifecycle()

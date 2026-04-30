@@ -7,7 +7,7 @@ import AppKit
 /// Code Action 提供者
 /// 为诊断问题提供快速修复建议（灯泡图标）
 @MainActor
-final class CodeActionProvider: ObservableObject {
+final class CodeActionProvider: ObservableObject, SuperEditorCodeActionProvider {
 
     private let lspService: LSPService
     private let requestLifecycle = LSPRequestLifecycle()

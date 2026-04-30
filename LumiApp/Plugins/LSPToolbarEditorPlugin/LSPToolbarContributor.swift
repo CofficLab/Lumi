@@ -37,9 +37,9 @@ private struct LSPStatusToolbarItem: View {
 
     init(state: EditorState) {
         self._state = ObservedObject(wrappedValue: state)
-        self._lspService = ObservedObject(wrappedValue: state.lspServiceInstance)
+        self._lspService = ObservedObject(wrappedValue: LSPService.shared)
         self._diagnosticsManager = StateObject(
-            wrappedValue: DiagnosticsManager(lspService: state.lspServiceInstance)
+            wrappedValue: DiagnosticsManager(lspService: LSPService.shared)
         )
     }
 
@@ -99,7 +99,7 @@ private struct LSPProgressToolbarItem: View {
 
     init(state: EditorState) {
         self._state = ObservedObject(wrappedValue: state)
-        self._lspService = ObservedObject(wrappedValue: state.lspServiceInstance)
+        self._lspService = ObservedObject(wrappedValue: LSPService.shared)
     }
 
     var body: some View {

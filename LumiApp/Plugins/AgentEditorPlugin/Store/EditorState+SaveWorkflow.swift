@@ -46,7 +46,7 @@ extension EditorState {
             scheduleSuccessClear: { [weak self] in self?.scheduleSuccessClear() },
             notifyDidSave: { [weak self] content in
                 guard let self, let uri = self.currentFileURL?.absoluteString else { return }
-                self.lspService.documentDidSave(uri: uri, text: content)
+                self.lspClient.documentDidSave(uri: uri, text: content)
             },
             setHasUnsavedChanges: { [weak self] value in self?.hasUnsavedChanges = value }
         )
@@ -62,7 +62,7 @@ extension EditorState {
             insertSpaces: insertSpaces
         ) { [weak self] tabSize, insertSpaces in
             guard let self else { return nil }
-            return await self.lspCoordinator.requestFormatting(
+            return await self.lspClient.requestFormatting(
                 tabSize: tabSize,
                 insertSpaces: insertSpaces
             )
@@ -78,7 +78,7 @@ extension EditorState {
         )
         content = documentController.textStorage
         totalLines = replacePayload.commitPayload.totalLines
-        lspCoordinator.replaceDocument(
+        lspClient.replaceDocument(
             replacePayload.commitPayload.text,
             version: replacePayload.commitPayload.version
         )
@@ -123,7 +123,7 @@ extension EditorState {
                 if self.projectLanguagePreflightError(operation: "保存时代码修复") != nil {
                     return []
                 }
-                return await self.lspCoordinator.requestCodeAction(
+                return await self.lspClient.requestCodeAction(
                     range: range,
                     diagnostics: diagnostics,
                     triggerKinds: triggerKinds
@@ -131,9 +131,9 @@ extension EditorState {
             },
             resolveCodeAction: { [weak self] action in
                 guard let self else { return nil }
-                return await self.lspService.resolveCodeAction(action)
+                return await self.lspClient.resolveCodeAction(action)
             },
-            isCodeActionResolveSupported: lspService.codeActionResolveSupported,
+            isCodeActionResolveSupported: lspClient.codeActionResolveSupported,
             applyWorkspaceEdit: { [weak self] edit in
                 self?.applyCodeActionWorkspaceEdit(edit)
             },
@@ -296,7 +296,7 @@ extension EditorState {
         saveState = .idle
         refreshFindMatches()
 
-        lspCoordinator.replaceDocument(
+        lspClient.replaceDocument(
             replacePayload.commitPayload.text,
             version: replacePayload.commitPayload.version
         )

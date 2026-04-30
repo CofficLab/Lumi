@@ -13,6 +13,7 @@ actor LSPCallHierarchyEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        // Provided via CallHierarchyProvider
+        let provider = CallHierarchyProvider(lspService: .shared)
+        registry.registerCallHierarchyProvider(provider)
     }
 }

@@ -7,7 +7,7 @@ import Foundation
 /// Document Highlight 提供者
 /// 高亮当前光标所在位置的所有符号引用
 @MainActor
-final class DocumentHighlightProvider: ObservableObject {
+final class DocumentHighlightProvider: ObservableObject, SuperEditorDocumentHighlightProvider {
     
     private let lspService: LSPService
     private let requestLifecycle = LSPRequestLifecycle()

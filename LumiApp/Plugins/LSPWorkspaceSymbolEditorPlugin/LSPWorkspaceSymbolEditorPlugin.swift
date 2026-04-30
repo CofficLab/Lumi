@@ -13,6 +13,8 @@ actor LSPWorkspaceSymbolEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        let provider = WorkspaceSymbolProvider(lspService: .shared)
+        registry.registerWorkspaceSymbolProvider(provider)
         registry.registerQuickOpenContributor(LSPWorkspaceSymbolQuickOpenContributor())
     }
 }

@@ -13,6 +13,7 @@ actor LSPDocumentHighlightEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        // Provided via DocumentHighlightProvider
+        let provider = DocumentHighlightProvider(lspService: .shared)
+        registry.registerDocumentHighlightProvider(provider)
     }
 }

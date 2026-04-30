@@ -51,9 +51,9 @@ struct EditorProblemsPanelView: View {
                     emptyState("No Problems", systemImage: "checkmark.circle")
                 } else {
                     if !state.panelState.semanticProblems.isEmpty {
-                        sectionLabel("Xcode Context")
+                        sectionLabel("Project Context")
                         ForEach(state.panelState.semanticProblems) { problem in
-                            panelCard(title: problem.title, subtitle: problem.message, badge: "Xcode")
+                            panelCard(title: problem.title, subtitle: problem.message, badge: "Project")
                         }
                     }
 

@@ -30,7 +30,7 @@ final class EditorPanelState: ObservableObject {
     /// 当前文件的诊断列表
     @Published var problemDiagnostics: [Diagnostic] = []
 
-    /// 当前文件的 Xcode 工程语义问题
+    /// 当前文件的项目语义问题
     @Published var semanticProblems: [EditorSemanticProblem] = []
 
     /// 当前选中的问题

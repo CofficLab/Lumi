@@ -4,7 +4,7 @@ import LanguageServerProtocol
 
 /// 工作区符号搜索提供者
 @MainActor
-final class WorkspaceSymbolProvider: ObservableObject {
+final class WorkspaceSymbolProvider: ObservableObject, SuperEditorWorkspaceSymbolProvider {
     
     private let lspService: LSPService
     private let requestLifecycle = LSPRequestLifecycle()

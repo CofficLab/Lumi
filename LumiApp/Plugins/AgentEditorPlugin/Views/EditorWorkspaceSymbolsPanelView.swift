@@ -10,10 +10,15 @@ struct EditorWorkspaceSymbolsPanelView: View {
                 header
                 Divider()
             }
-            WorkspaceSymbolItemSearchView(provider: state.workspaceSymbolProvider) { symbol in
-                state.performOpenItem(.workspaceSymbol(symbol))
+            if let provider = state.workspaceSymbolProvider as? WorkspaceSymbolProvider {
+                WorkspaceSymbolItemSearchView(provider: provider) { symbol in
+                    state.performOpenItem(.workspaceSymbol(symbol))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Text("Workspace symbols not available")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -13,6 +13,7 @@ actor LSPFoldingRangeEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        // Provided via FoldingRangeProvider
+        let provider = FoldingRangeProvider(lspService: .shared)
+        registry.registerFoldingRangeProvider(provider)
     }
 }

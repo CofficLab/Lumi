@@ -70,7 +70,7 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前文件的诊断列表（Problems 面板数据源）
     @Published private(set) var problemDiagnostics: [Diagnostic] = []
 
-    /// 当前文件的 Xcode 工程语义问题（Problems 面板附加数据源）
+    /// 当前文件的项目语义问题（Problems 面板附加数据源）
     @Published private(set) var semanticProblems: [EditorSemanticProblem] = []
 
     /// 是否正在重新解析项目上下文
@@ -153,7 +153,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     private func bindDiagnostics() {
         diagnosticsCancellable?.cancel()
-        diagnosticsCancellable = lspService.$currentDiagnostics
+        diagnosticsCancellable = diagnosticsProvider.diagnosticsPublisher
             .receive(on: RunLoop.main)
             .sink { [weak self] diags in
                 self?.panelController.setProblemDiagnostics(diags)
@@ -282,19 +282,13 @@ final class EditorState: ObservableObject, SuperLog {
     /// Phase 1: 文档文本控制器，逐步收拢 buffer/textStorage 同步与事务应用
     let documentController = EditorDocumentController()
     
-    /// LSP 服务实例（支持依赖注入，默认仍使用共享实例）
-    let lspService: LSPService
-    
-    /// LSP 协调器（用于语言服务器集成）
-    let lspCoordinator: LSPCoordinator
-    /// 编辑器可消费的 LSP 抽象客户端（用于解耦具体实现）
-    var lspClient: any EditorLSPClient { lspCoordinator }
-    /// 当前编辑器链路绑定的 LSP 服务实例（供视图层注入）
-    var lspServiceInstance: LSPService { lspService }
+    /// 编辑器 LSP 客户端抽象（从 registry 获取）
+    private(set) var lspClient: any EditorLSPClient
     /// 编辑器子插件管理器（负责补全/悬停/code action 等扩展点）
     let editorPluginManager: EditorPluginManager
     /// 已安装的编辑器插件信息（Phase 4: 从 installedPlugins 派生）
     var editorFeaturePlugins: [EditorPluginInfo] {
+        // 已安装的插件均已通过 PluginVM 启用过滤，因此 isEnabled 恒为 true
         editorPluginManager.installedPlugins.map { plugin in
             let type = type(of: plugin)
             return EditorPluginInfo(
@@ -303,7 +297,7 @@ final class EditorState: ObservableObject, SuperLog {
                 description: type.description,
                 order: type.order,
                 isConfigurable: type.isConfigurable,
-                isEnabled: PluginVM.shared.isPluginEnabled(plugin)
+                isEnabled: true
             )
         }
     }
@@ -328,24 +322,26 @@ final class EditorState: ObservableObject, SuperLog {
     /// 后台扩展点解析器（异步聚合，去重/排序在后台线程执行）
     let editorExtensionResolver = ExtensionResolver.shared
     
-    // MARK: - New LSP Providers
+    // MARK: - New LSP Providers (协议接口)
     
     /// 签名帮助提供者
-    let signatureHelpProvider: SignatureHelpProvider
+    private(set) var signatureHelpProvider: any SuperEditorSignatureHelpProvider
     /// 内联提示提供者
-    let inlayHintProvider: InlayHintProvider
+    private(set) var inlayHintProvider: any SuperEditorInlayHintProvider
     /// 文档高亮提供者
-    let documentHighlightProvider: DocumentHighlightProvider
+    private(set) var documentHighlightProvider: any SuperEditorDocumentHighlightProvider
     /// 代码动作提供者
-    let codeActionProvider: CodeActionProvider
+    private(set) var codeActionProvider: any SuperEditorCodeActionProvider
     /// 工作区符号搜索提供者
-    let workspaceSymbolProvider: WorkspaceSymbolProvider
+    private(set) var workspaceSymbolProvider: any SuperEditorWorkspaceSymbolProvider
     /// 调用层级提供者
-    let callHierarchyProvider: CallHierarchyProvider
+    private(set) var callHierarchyProvider: any SuperEditorCallHierarchyProvider
     /// 当前文件文档符号提供者
-    let documentSymbolProvider: DocumentSymbolProvider
+    private(set) var documentSymbolProvider: any SuperEditorDocumentSymbolProvider
     /// 当前文件折叠范围提供者
-    let foldingRangeProvider: FoldingRangeProvider
+    private(set) var foldingRangeProvider: any SuperEditorFoldingRangeProvider
+    /// 诊断数据流提供者
+    private(set) var diagnosticsProvider: any SuperEditorLSPDiagnosticsProvider
     
     /// 跳转定义代理（右键和 Cmd+Click 共享）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
@@ -833,7 +829,7 @@ final class EditorState: ObservableObject, SuperLog {
     func scheduleInlayHintsRefreshIfNeeded(textView: TextView?) {
         runtimeModeController.scheduleInlayHintsRefreshIfNeeded(
             textView: textView,
-            lspSupportsInlayHints: lspService.supportsInlayHints,
+            lspSupportsInlayHints: lspClient.supportsInlayHints,
             isInlayHintsEnabledInViewport: { [weak self] in
                 self?.areInlayHintsEnabledInViewport ?? false
             },
@@ -1156,38 +1152,46 @@ final class EditorState: ObservableObject, SuperLog {
     
     // MARK: - Init
     
-    init(lspService: LSPService = .shared) {
-        self.lspService = lspService
-        let lspCoordinator = LSPCoordinator(lspService: lspService)
-        self.lspCoordinator = lspCoordinator
+    init() {
         self.editorPluginManager = EditorPluginManager()
-        self.signatureHelpProvider = SignatureHelpProvider(lspService: lspService)
-        self.inlayHintProvider = InlayHintProvider(lspService: lspService)
-        self.documentHighlightProvider = DocumentHighlightProvider(lspService: lspService)
-        self.codeActionProvider = CodeActionProvider(lspService: lspService)
-        self.workspaceSymbolProvider = WorkspaceSymbolProvider(lspService: lspService)
-        self.callHierarchyProvider = CallHierarchyProvider(lspService: lspService)
-        self.documentSymbolProvider = DocumentSymbolProvider(
-            requestDocumentSymbols: { [lspCoordinator] in
-                await lspCoordinator.requestDocumentSymbols()
-            }
-        )
-        self.foldingRangeProvider = FoldingRangeProvider(
-            lspService: lspService,
-            requestRangesOperation: { [lspCoordinator] _ in
-                await lspCoordinator.requestFoldingRangeDebounced()
-            }
-        )
-        self.codeActionProvider.editorExtensionRegistry = self.editorExtensions
-        self.workspaceSymbolProvider.preflightMessageProvider = { [weak self] operation, strength in
-            self?.semanticCapability?.preflightMessage(
-                uri: nil,
-                operation: operation,
-                symbolName: nil,
-                strength: strength
-            )
-        }
+
+        // Initialize all providers with null defaults first (required for Swift init safety)
+        self.signatureHelpProvider = NullSignatureHelpProvider()
+        self.inlayHintProvider = NullInlayHintProvider()
+        self.documentHighlightProvider = NullDocumentHighlightProvider()
+        self.codeActionProvider = NullCodeActionProvider()
+        self.workspaceSymbolProvider = NullWorkspaceSymbolProvider()
+        self.callHierarchyProvider = NullCallHierarchyProvider()
+        self.documentSymbolProvider = NullDocumentSymbolProvider()
+        self.foldingRangeProvider = NullFoldingRangeProvider()
+        self.diagnosticsProvider = NullDiagnosticsProvider()
+        self.lspClient = LSPCoordinator(lspService: .shared)
+
+        // Install plugins first, so providers are registered
         installEditorPluginsFromPluginVM()
+        
+        let registry = self.editorExtensions
+        
+        // Get or create LSP client from registry; fallback to LSPCoordinator
+        if let registeredClient = registry.editorLSPClient {
+            self.lspClient = registeredClient
+        } else {
+            let lspCoordinator = LSPCoordinator(lspService: .shared)
+            self.lspClient = lspCoordinator
+            registry.registerEditorLSPClient(lspCoordinator)
+        }
+        
+        // Get providers from registry (registered by LSP sub-plugins); fallback to null implementations
+        if let p = registry.signatureHelpProvider { self.signatureHelpProvider = p }
+        if let p = registry.inlayHintProvider { self.inlayHintProvider = p }
+        if let p = registry.documentHighlightProvider { self.documentHighlightProvider = p }
+        if let p = registry.codeActionProvider { self.codeActionProvider = p }
+        if let p = registry.workspaceSymbolProvider { self.workspaceSymbolProvider = p }
+        if let p = registry.callHierarchyProvider { self.callHierarchyProvider = p }
+        if let p = registry.documentSymbolProvider { self.documentSymbolProvider = p }
+        if let p = registry.foldingRangeProvider { self.foldingRangeProvider = p }
+        if let p = registry.diagnosticsProvider { self.diagnosticsProvider = p }
+        
         commandController.refreshCoreCommandRegistrations(in: self)
         bindKeybindings()
         bindPanelState()
@@ -1224,13 +1228,6 @@ final class EditorState: ObservableObject, SuperLog {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.refreshProjectContextSnapshot()
-                self?.updateSemanticReadinessFeedback()
-            }
-
-        semanticProgressCancellable?.cancel()
-        semanticProgressCancellable = lspService.progressProvider.$activeTasks
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
                 self?.updateSemanticReadinessFeedback()
             }
     }
@@ -1733,10 +1730,10 @@ final class EditorState: ObservableObject, SuperLog {
                             EditorPlugin.logger.info(
                                 "\(Self.t)LSP openFile 准备: file=\(loadingURL.path, privacy: .public), languageId=\(languageId, privacy: .public), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), chosenRoot=\(rootPath, privacy: .public)"
                             )
-                            self.lspCoordinator.setProjectRootPath(rootPath)
+                            self.lspClient.setProjectRootPath(rootPath)
                             let documentVersion = self.currentDocumentVersion
                             Task {
-                                await self.lspCoordinator.openFile(
+                                await self.lspClient.openFile(
                                     uri: loadingURL.absoluteString,
                                     languageId: languageId,
                                     content: content,
@@ -1852,7 +1849,7 @@ final class EditorState: ObservableObject, SuperLog {
     /// 对可见区域发起 inlay hint 请求（由 LSPViewportScheduler 调度后调用）
     private func requestInlayHintsForVisibleRange() {
         runtimeModeController.requestInlayHintsForVisibleRange(
-            lspSupportsInlayHints: lspService.supportsInlayHints,
+            lspSupportsInlayHints: lspClient.supportsInlayHints,
             areInlayHintsEnabledInViewport: areInlayHintsEnabledInViewport,
             currentFileURL: currentFileURL,
             focusedTextView: focusedTextView,
@@ -2206,7 +2203,7 @@ final class EditorState: ObservableObject, SuperLog {
         cleanupFileWatcher()
         
         // 关闭 LSP 文档
-        lspCoordinator.closeFile()
+        lspClient.closeFile()
         resetUndoHistory()
         syncActiveSessionState()
     }
@@ -2225,7 +2222,7 @@ final class EditorState: ObservableObject, SuperLog {
         referencesRequestGeneration.invalidate()
         saveController.cancelSuccessClear()
         cleanupFileWatcher()
-        lspCoordinator.closeFile()
+        lspClient.closeFile()
         
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         if isDirectory {
@@ -2295,7 +2292,7 @@ final class EditorState: ObservableObject, SuperLog {
         if changed {
             hasUnsavedChanges = true
             saveState = .editing
-            lspCoordinator.updateDocumentSnapshot(contentString)
+            lspClient.updateDocumentSnapshot(contentString)
         } else {
             hasUnsavedChanges = false
             saveState = .idle
@@ -2394,7 +2391,7 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 通知 LSP 发生增量文本变更（由编辑器 coordinator 转发）
     func notifyLSPIncrementalChange(range: LSPRange, text: String) {
-        lspCoordinator.contentDidChange(range: range, text: text, version: currentDocumentVersion)
+        lspClient.contentDidChange(range: range, text: text, version: currentDocumentVersion)
     }
 
     // MARK: - LSP Actions
@@ -2413,7 +2410,7 @@ final class EditorState: ObservableObject, SuperLog {
             insertSpaces: useSpaces,
             requestFormatting: { [weak self] tabSize, insertSpaces in
                 guard let self else { return nil }
-                return await self.lspCoordinator.requestFormatting(
+                return await self.lspClient.requestFormatting(
                     tabSize: tabSize,
                     insertSpaces: insertSpaces
                 )
@@ -3024,7 +3021,7 @@ final class EditorState: ObservableObject, SuperLog {
             canonicalSelectionSet = selectionSet
             setSelections(selections)
         }
-        lspCoordinator.replaceDocument(payload.text, version: payload.version)
+        lspClient.replaceDocument(payload.text, version: payload.version)
         notifyContentChangedAfterSynchronizedEdit(using: payload.text)
 
         if Self.verbose {
@@ -3047,7 +3044,7 @@ final class EditorState: ObservableObject, SuperLog {
         canonicalSelectionSet = EditorSelectionSet(selections: state.selections)
         setSelections(canonicalSelectionSet.toMultiCursorSelections())
         pushCanonicalSelectionToView()
-        lspCoordinator.replaceDocument(payload.text, version: payload.version)
+        lspClient.replaceDocument(payload.text, version: payload.version)
         notifyContentChangedAfterSynchronizedEdit(using: payload.text)
     }
 
@@ -3198,7 +3195,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     private func semanticReadinessState() -> EditorSemanticReadinessState {
         guard projectContextSnapshot?.isStructuredProject == true else { return .idle }
-        if lspService.progressProvider.hasActiveWork {
+        if LSPService.shared.progressProvider.hasActiveWork {
             return .indexing
         }
         switch currentProjectContextStatus {

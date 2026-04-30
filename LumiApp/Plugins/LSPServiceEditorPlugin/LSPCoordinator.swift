@@ -338,6 +338,16 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     func completionTriggerCharacters() -> Set<String> {
         lspService.completionTriggerCharacters
     }
+
+    // MARK: - EditorLSPClient 能力查询
+
+    var hasActiveWork: Bool { lspService.progressProvider.hasActiveWork }
+
+    var supportsInlayHints: Bool { lspService.supportsInlayHints }
+    var supportsWillSave: Bool { lspService.supportsWillSave }
+    var supportsWillSaveWaitUntil: Bool { lspService.supportsWillSaveWaitUntil }
+    var codeActionResolveSupported: Bool { lspService.codeActionResolveSupported }
+    var isAvailable: Bool { lspService.isAvailable }
     
     /// 请求代码动作（防抖版 — 300ms延迟，与诊断同步）
     func requestCodeActionDebounced(range: LSPRange, diagnostics: [Diagnostic], triggerKinds: [CodeActionKind]? = nil) async -> [CodeAction] {
@@ -445,6 +455,16 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     /// 执行 LSP 自定义命令
     func executeCommand(command: String, arguments: [LanguageServerProtocol.LSPAny]? = nil) async -> LanguageServerProtocol.LSPAny? {
         return await lspService.executeCommand(command: command, arguments: arguments)
+    }
+
+    /// 通知 LSP 服务文档已保存
+    func documentDidSave(uri: String, text: String? = nil) {
+        lspService.documentDidSave(uri: uri, text: text)
+    }
+
+    /// 解析代码动作
+    func resolveCodeAction(_ action: CodeAction) async -> CodeAction? {
+        await lspService.resolveCodeAction(action)
     }
 }
 
@@ -865,7 +885,7 @@ private final class SemanticTokenStorage {
 }
 
 @MainActor
-final class SemanticTokenHighlightProvider: HighlightProviding {
+final class SemanticTokenHighlightProvider: HighlightProviding, SuperEditorSemanticTokenProvider {
     private let lspService: LSPService
     private let uriProvider: () -> String?
     private let requestGeneration = RequestGeneration()

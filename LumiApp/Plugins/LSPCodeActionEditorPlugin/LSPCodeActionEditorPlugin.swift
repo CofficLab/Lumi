@@ -13,7 +13,8 @@ actor LSPCodeActionEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        // Code actions are provided via CodeActionProvider (injected into EditorState)
-        // This plugin serves as the registration entrypoint for the feature.
+        let provider = CodeActionProvider(lspService: .shared)
+        provider.editorExtensionRegistry = registry
+        registry.registerCodeActionProvider(provider)
     }
 }

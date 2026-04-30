@@ -78,7 +78,7 @@ final class EditorSettingsState: ObservableObject {
     }
 
     var availableLanguageIDs: [String] {
-        LSPConfig.supportedLanguageIds
+        EditorLanguageID.all
     }
 
     var canEditScopedOverrides: Bool {

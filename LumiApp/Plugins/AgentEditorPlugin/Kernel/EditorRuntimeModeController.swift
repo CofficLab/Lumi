@@ -148,10 +148,11 @@ final class EditorRuntimeModeController {
         lspSupportsInlayHints: Bool,
         isInlayHintsEnabledInViewport: @escaping @MainActor () -> Bool,
         currentFileURL: @escaping @MainActor () -> URL?,
-        inlayHintProvider: InlayHintProvider
+        inlayHintProvider: (any SuperEditorInlayHintProvider)?
     ) {
         cancelPendingInlayHintsRefresh()
         guard lspSupportsInlayHints else { return }
+        guard let inlayHintProvider else { return }
         guard isInlayHintsEnabledInViewport() else {
             inlayHintProvider.clear()
             return
@@ -183,18 +184,18 @@ final class EditorRuntimeModeController {
         areInlayHintsEnabledInViewport: Bool,
         currentFileURL: URL?,
         focusedTextView: TextView?,
-        inlayHintProvider: InlayHintProvider
+        inlayHintProvider: (any SuperEditorInlayHintProvider)?
     ) {
         guard lspSupportsInlayHints else { return }
         guard areInlayHintsEnabledInViewport else {
-            inlayHintProvider.clear()
+            inlayHintProvider?.clear()
             return
         }
         guard let uri = currentFileURL?.absoluteString else { return }
         guard let focusedTextView else { return }
         guard let range = EditorInlayHintLayout.visibleDocumentLSPRange(in: focusedTextView) else { return }
         Task { @MainActor in
-            await inlayHintProvider.requestHints(
+            await inlayHintProvider?.requestHints(
                 uri: uri,
                 startLine: range.start.line,
                 startCharacter: range.start.character,
@@ -206,38 +207,38 @@ final class EditorRuntimeModeController {
 
     func handleViewportRuntimeTransition(
         isPrimaryCursorRendered: Bool,
-        documentHighlightProvider: DocumentHighlightProvider,
-        signatureHelpProvider: SignatureHelpProvider,
-        codeActionProvider: CodeActionProvider
+        documentHighlightProvider: (any SuperEditorDocumentHighlightProvider)?,
+        signatureHelpProvider: (any SuperEditorSignatureHelpProvider)?,
+        codeActionProvider: (any SuperEditorCodeActionProvider)?
     ) {
         guard !isPrimaryCursorRendered else { return }
-        documentHighlightProvider.clear()
-        signatureHelpProvider.clear()
-        codeActionProvider.clear()
+        documentHighlightProvider?.clear()
+        signatureHelpProvider?.clear()
+        codeActionProvider?.clear()
     }
 
     func handleDocumentHighlightRuntimeAvailabilityChange(
         _ isEnabled: Bool,
-        documentHighlightProvider: DocumentHighlightProvider
+        documentHighlightProvider: (any SuperEditorDocumentHighlightProvider)?
     ) {
         guard !isEnabled else { return }
-        documentHighlightProvider.clear()
+        documentHighlightProvider?.clear()
     }
 
     func handleSignatureHelpRuntimeAvailabilityChange(
         _ isEnabled: Bool,
-        signatureHelpProvider: SignatureHelpProvider
+        signatureHelpProvider: (any SuperEditorSignatureHelpProvider)?
     ) {
         guard !isEnabled else { return }
-        signatureHelpProvider.clear()
+        signatureHelpProvider?.clear()
     }
 
     func handleCodeActionRuntimeAvailabilityChange(
         _ isEnabled: Bool,
-        codeActionProvider: CodeActionProvider
+        codeActionProvider: (any SuperEditorCodeActionProvider)?
     ) {
         guard !isEnabled else { return }
-        codeActionProvider.clear()
+        codeActionProvider?.clear()
     }
 
     func cancelPendingInlayHintsRefresh() {

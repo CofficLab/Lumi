@@ -34,6 +34,17 @@ final class EditorExtensionRegistry: ObservableObject {
     private var projectContextCapabilities: [any SuperEditorProjectContextCapability] = []
     private var languageIntegrationCapabilities: [any SuperEditorLanguageIntegrationCapability] = []
     private var semanticCapabilities: [any SuperEditorSemanticCapability] = []
+    private var _editorLSPClient: (any EditorLSPClient)?
+    private var _signatureHelpProvider: (any SuperEditorSignatureHelpProvider)?
+    private var _inlayHintProvider: (any SuperEditorInlayHintProvider)?
+    private var _documentHighlightProvider: (any SuperEditorDocumentHighlightProvider)?
+    private var _codeActionProvider: (any SuperEditorCodeActionProvider)?
+    private var _workspaceSymbolProvider: (any SuperEditorWorkspaceSymbolProvider)?
+    private var _callHierarchyProvider: (any SuperEditorCallHierarchyProvider)?
+    private var _foldingRangeProvider: (any SuperEditorFoldingRangeProvider)?
+    private var _documentSymbolProvider: (any SuperEditorDocumentSymbolProvider)?
+    private var _semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
+    private var _diagnosticsProvider: (any SuperEditorLSPDiagnosticsProvider)?
 
     func reset() {
         completionContributors.removeAll()
@@ -56,6 +67,17 @@ final class EditorExtensionRegistry: ObservableObject {
         projectContextCapabilities.removeAll()
         languageIntegrationCapabilities.removeAll()
         semanticCapabilities.removeAll()
+        _editorLSPClient = nil
+        _signatureHelpProvider = nil
+        _inlayHintProvider = nil
+        _documentHighlightProvider = nil
+        _codeActionProvider = nil
+        _workspaceSymbolProvider = nil
+        _callHierarchyProvider = nil
+        _foldingRangeProvider = nil
+        _documentSymbolProvider = nil
+        _semanticTokenProvider = nil
+        _diagnosticsProvider = nil
     }
 
     func registerCompletionContributor(_ contributor: any EditorCompletionContributor) {
@@ -215,6 +237,116 @@ final class EditorExtensionRegistry: ObservableObject {
     /// 按 URI 查找最匹配的语义可用性能力
     func semanticCapability(for uri: String?) -> (any SuperEditorSemanticCapability)? {
         bestMatch(in: semanticCapabilities.filter { $0.canHandle(uri: uri) })
+    }
+
+    // MARK: - LSP Client Registration
+
+    /// 注册编辑器 LSP 客户端
+    func registerEditorLSPClient(_ client: any EditorLSPClient) {
+        _editorLSPClient = client
+    }
+
+    /// 获取编辑器 LSP 客户端
+    var editorLSPClient: (any EditorLSPClient)? { _editorLSPClient }
+
+    // MARK: - LSP Provider Registration
+
+    /// 注册签名帮助提供者
+    func registerSignatureHelpProvider(_ provider: any SuperEditorSignatureHelpProvider) {
+        _signatureHelpProvider = provider
+    }
+
+    /// 注册内联提示提供者
+    func registerInlayHintProvider(_ provider: any SuperEditorInlayHintProvider) {
+        _inlayHintProvider = provider
+    }
+
+    /// 注册文档高亮提供者
+    func registerDocumentHighlightProvider(_ provider: any SuperEditorDocumentHighlightProvider) {
+        _documentHighlightProvider = provider
+    }
+
+    /// 注册代码动作提供者
+    func registerCodeActionProvider(_ provider: any SuperEditorCodeActionProvider) {
+        _codeActionProvider = provider
+    }
+
+    /// 注册工作区符号搜索提供者
+    func registerWorkspaceSymbolProvider(_ provider: any SuperEditorWorkspaceSymbolProvider) {
+        _workspaceSymbolProvider = provider
+    }
+
+    /// 注册调用层级提供者
+    func registerCallHierarchyProvider(_ provider: any SuperEditorCallHierarchyProvider) {
+        _callHierarchyProvider = provider
+    }
+
+    /// 注册折叠范围提供者
+    func registerFoldingRangeProvider(_ provider: any SuperEditorFoldingRangeProvider) {
+        _foldingRangeProvider = provider
+    }
+
+    /// 注册文档符号提供者
+    func registerDocumentSymbolProvider(_ provider: any SuperEditorDocumentSymbolProvider) {
+        _documentSymbolProvider = provider
+    }
+
+    /// 注册语义 Token 提供者
+    func registerSemanticTokenProvider(_ provider: any SuperEditorSemanticTokenProvider) {
+        _semanticTokenProvider = provider
+    }
+
+    /// 注册诊断数据流提供者
+    func registerDiagnosticsProvider(_ provider: any SuperEditorLSPDiagnosticsProvider) {
+        _diagnosticsProvider = provider
+    }
+
+    // MARK: - LSP Provider Queries
+
+    /// 获取签名帮助提供者
+    var signatureHelpProvider: (any SuperEditorSignatureHelpProvider)? { _signatureHelpProvider }
+
+    /// 获取内联提示提供者
+    var inlayHintProvider: (any SuperEditorInlayHintProvider)? { _inlayHintProvider }
+
+    /// 获取文档高亮提供者
+    var documentHighlightProvider: (any SuperEditorDocumentHighlightProvider)? { _documentHighlightProvider }
+
+    /// 获取代码动作提供者
+    var codeActionProvider: (any SuperEditorCodeActionProvider)? { _codeActionProvider }
+
+    /// 获取工作区符号搜索提供者
+    var workspaceSymbolProvider: (any SuperEditorWorkspaceSymbolProvider)? { _workspaceSymbolProvider }
+
+    /// 获取调用层级提供者
+    var callHierarchyProvider: (any SuperEditorCallHierarchyProvider)? { _callHierarchyProvider }
+
+    /// 获取折叠范围提供者
+    var foldingRangeProvider: (any SuperEditorFoldingRangeProvider)? { _foldingRangeProvider }
+
+    /// 获取文档符号提供者
+    var documentSymbolProvider: (any SuperEditorDocumentSymbolProvider)? { _documentSymbolProvider }
+
+    /// 获取语义 Token 提供者
+    var semanticTokenProvider: (any SuperEditorSemanticTokenProvider)? { _semanticTokenProvider }
+
+    /// 获取诊断数据流提供者
+    var diagnosticsProvider: (any SuperEditorLSPDiagnosticsProvider)? { _diagnosticsProvider }
+
+    /// 获取全部 LSP Provider 集合
+    func lspProviderSet() -> EditorLSPProviderSet {
+        EditorLSPProviderSet(
+            signatureHelpProvider: _signatureHelpProvider,
+            inlayHintProvider: _inlayHintProvider,
+            documentHighlightProvider: _documentHighlightProvider,
+            codeActionProvider: _codeActionProvider,
+            workspaceSymbolProvider: _workspaceSymbolProvider,
+            callHierarchyProvider: _callHierarchyProvider,
+            foldingRangeProvider: _foldingRangeProvider,
+            documentSymbolProvider: _documentSymbolProvider,
+            semanticTokenProvider: _semanticTokenProvider,
+            diagnosticsProvider: _diagnosticsProvider
+        )
     }
 
     // MARK: - Theme

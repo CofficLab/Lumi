@@ -33,18 +33,13 @@ struct SourceEditorViewBridge {
         if next.contextMenuCoordinator == nil {
             next.contextMenuCoordinator = ContextMenuCoordinator(state: state)
         }
-        if next.semanticTokenProvider == nil {
-            next.semanticTokenProvider = SemanticTokenHighlightProvider(
-                lspService: state.lspServiceInstance,
-                uriProvider: { [weak state] in
-                    state?.currentFileURL?.absoluteString
-                }
-            )
+        if next.semanticTokenProvider == nil, let semanticTokenProvider = state.editorExtensions.semanticTokenProvider {
+            next.semanticTokenProvider = semanticTokenProvider as? SemanticTokenHighlightProvider
             next.semanticTokenProvider?.setEnabled(state.isSyntaxHighlightingEnabledInViewport)
         }
-        if next.documentHighlightProvider == nil {
+        if next.documentHighlightProvider == nil, let highlightProvider = state.documentHighlightProvider as? DocumentHighlightProvider {
             next.documentHighlightProvider = DocumentHighlightHighlighter(
-                provider: state.documentHighlightProvider
+                provider: highlightProvider
             )
         }
         if next.hoverCoordinator == nil {

@@ -14,8 +14,12 @@ final class LSPSheetContributor: EditorSheetContributor {
                 onDismiss: { $0.performPanelCommand(.closeWorkspaceSymbolSearch) },
                 content: { state in
                     AnyView(
-                        WorkspaceSymbolItemSearchView(provider: state.workspaceSymbolProvider) { symbol in
-                            state.performOpenItem(.workspaceSymbol(symbol))
+                        Group {
+                            if let provider = state.workspaceSymbolProvider as? WorkspaceSymbolProvider {
+                                WorkspaceSymbolItemSearchView(provider: provider) { symbol in
+                                    state.performOpenItem(.workspaceSymbol(symbol))
+                                }
+                            }
                         }
                     )
                 }

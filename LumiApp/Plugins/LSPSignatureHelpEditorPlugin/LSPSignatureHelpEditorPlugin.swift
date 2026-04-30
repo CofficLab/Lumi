@@ -13,6 +13,7 @@ actor LSPSignatureHelpEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        // Provided via SignatureHelpProvider
+        let provider = SignatureHelpProvider(lspService: .shared)
+        registry.registerSignatureHelpProvider(provider)
     }
 }

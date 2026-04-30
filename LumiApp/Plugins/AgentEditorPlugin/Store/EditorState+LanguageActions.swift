@@ -90,7 +90,7 @@ extension EditorState {
         currentInlineRenameState = renameState
 
         let position = currentLSPPosition()
-        guard let edit = await lspCoordinator.requestRename(
+        guard let edit = await lspClient.requestRename(
             line: position.line,
             character: position.character,
             newName: newName
@@ -151,7 +151,7 @@ extension EditorState {
             return
         }
         let position = currentLSPPosition()
-        guard let location = await lspCoordinator.requestDefinition(line: position.line, character: position.character),
+        guard let location = await lspClient.requestDefinition(line: position.line, character: position.character),
               let presentation = peekController.buildDefinitionPresentation(
                 location: location,
                 currentFileURL: currentFileURL,
@@ -171,7 +171,7 @@ extension EditorState {
             return
         }
         let position = currentLSPPosition()
-        let locations = await lspCoordinator.requestReferences(line: position.line, character: position.character)
+        let locations = await lspClient.requestReferences(line: position.line, character: position.character)
         let presentation = peekController.buildReferencesPresentation(
             locations: locations,
             currentFileURL: currentFileURL,
@@ -205,7 +205,7 @@ extension EditorState {
             currentPosition: currentLSPPosition,
             requestReferences: { [weak self] line, character in
                 guard let self else { return [] }
-                return await self.lspCoordinator.requestReferences(line: line, character: character)
+                return await self.lspClient.requestReferences(line: line, character: character)
             },
             lspActionController: lspActionController,
             clearReferences: { [weak self] in
@@ -365,7 +365,7 @@ extension EditorState {
             currentPosition: currentLSPPosition,
             requestRename: { [weak self] line, character, newName in
                 guard let self else { return nil }
-                return await self.lspCoordinator.requestRename(
+                return await self.lspClient.requestRename(
                     line: line,
                     character: character,
                     newName: newName

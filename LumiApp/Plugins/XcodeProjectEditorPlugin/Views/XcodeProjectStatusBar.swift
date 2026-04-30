@@ -249,7 +249,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
             }
 
         NotificationCenter.default
-            .publisher(for: .lumiEditorXcodeSnapshotDidChange)
+            .publisher(for: .lumiEditorProjectSnapshotDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 let bridge = XcodeProjectContextBridge.shared
