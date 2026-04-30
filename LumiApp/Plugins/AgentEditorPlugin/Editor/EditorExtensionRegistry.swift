@@ -31,9 +31,9 @@ final class EditorExtensionRegistry: ObservableObject {
     private var sheetContributors: [any EditorSheetContributor] = []
     private var toolbarContributors: [any EditorToolbarContributor] = []
     private var themeContributors: [any EditorThemeContributor] = []
-    private var projectContextProviders: [any SuperEditorProjectContextCapability] = []
-    private var languageProjectIntegrationProviders: [any SuperEditorLanguageIntegrationCapability] = []
-    private var semanticAvailabilityProviders: [any SuperEditorSemanticCapability] = []
+    private var projectContextCapabilities: [any SuperEditorProjectContextCapability] = []
+    private var languageIntegrationCapabilities: [any SuperEditorLanguageIntegrationCapability] = []
+    private var semanticCapabilities: [any SuperEditorSemanticCapability] = []
 
     func reset() {
         completionContributors.removeAll()
@@ -53,9 +53,9 @@ final class EditorExtensionRegistry: ObservableObject {
         sheetContributors.removeAll()
         toolbarContributors.removeAll()
         themeContributors.removeAll()
-        projectContextProviders.removeAll()
-        languageProjectIntegrationProviders.removeAll()
-        semanticAvailabilityProviders.removeAll()
+        projectContextCapabilities.removeAll()
+        languageIntegrationCapabilities.removeAll()
+        semanticCapabilities.removeAll()
     }
 
     func registerCompletionContributor(_ contributor: any EditorCompletionContributor) {
@@ -174,68 +174,47 @@ final class EditorExtensionRegistry: ObservableObject {
         toolbarContributors.append(contributor)
     }
 
-    // MARK: - Project Integration Providers
+    // MARK: - Editor Capabilities (内核内部能力聚合)
 
     func registerProjectContextCapability(_ capability: any SuperEditorProjectContextCapability) {
-        if projectContextProviders.contains(where: { $0.id == capability.id }) {
+        if projectContextCapabilities.contains(where: { $0.id == capability.id }) {
             return
         }
-        projectContextProviders.append(capability)
+        projectContextCapabilities.append(capability)
     }
 
     func registerLanguageIntegrationCapability(_ capability: any SuperEditorLanguageIntegrationCapability) {
-        if languageProjectIntegrationProviders.contains(where: { $0.id == capability.id }) {
+        if languageIntegrationCapabilities.contains(where: { $0.id == capability.id }) {
             return
         }
-        languageProjectIntegrationProviders.append(capability)
+        languageIntegrationCapabilities.append(capability)
     }
 
     func registerSemanticCapability(_ capability: any SuperEditorSemanticCapability) {
-        if semanticAvailabilityProviders.contains(where: { $0.id == capability.id }) {
+        if semanticCapabilities.contains(where: { $0.id == capability.id }) {
             return
         }
-        semanticAvailabilityProviders.append(capability)
+        semanticCapabilities.append(capability)
     }
 
-    func registerProjectContextProvider(_ provider: any SuperEditorProjectContextCapability) {
-        registerProjectContextCapability(provider)
+    /// 按项目路径查找最匹配的项目上下文能力
+    func projectContextCapability(for projectPath: String?) -> (any SuperEditorProjectContextCapability)? {
+        bestMatch(in: projectContextCapabilities.filter { $0.canHandleProject(at: projectPath) })
     }
 
-    func registerLanguageProjectIntegrationProvider(_ provider: any SuperEditorLanguageIntegrationCapability) {
-        registerLanguageIntegrationCapability(provider)
-    }
-
-    func registerSemanticAvailabilityProvider(_ provider: any SuperEditorSemanticCapability) {
-        registerSemanticCapability(provider)
-    }
-
-    func projectContextProvider(for projectPath: String?) -> (any SuperEditorProjectContextCapability)? {
-        bestMatch(in: projectContextProviders.filter { $0.canHandleProject(at: projectPath) })
-    }
-
-    func languageProjectIntegrationProvider(
+    /// 按语言和项目路径查找最匹配的语言集成能力
+    func languageIntegrationCapability(
         for languageId: String,
         projectPath: String?
     ) -> (any SuperEditorLanguageIntegrationCapability)? {
         bestMatch(
-            in: languageProjectIntegrationProviders.filter { $0.supports(languageId: languageId, projectPath: projectPath) }
+            in: languageIntegrationCapabilities.filter { $0.supports(languageId: languageId, projectPath: projectPath) }
         )
     }
 
-    func semanticAvailabilityProvider(for uri: String?) -> (any SuperEditorSemanticCapability)? {
-        bestMatch(in: semanticAvailabilityProviders.filter { $0.canHandle(uri: uri) })
-    }
-
-    func allProjectContextProviders() -> [any SuperEditorProjectContextCapability] {
-        projectContextProviders
-    }
-
-    func allLanguageProjectIntegrationProviders() -> [any SuperEditorLanguageIntegrationCapability] {
-        languageProjectIntegrationProviders
-    }
-
-    func allSemanticAvailabilityProviders() -> [any SuperEditorSemanticCapability] {
-        semanticAvailabilityProviders
+    /// 按 URI 查找最匹配的语义可用性能力
+    func semanticCapability(for uri: String?) -> (any SuperEditorSemanticCapability)? {
+        bestMatch(in: semanticCapabilities.filter { $0.canHandle(uri: uri) })
     }
 
     // MARK: - Theme

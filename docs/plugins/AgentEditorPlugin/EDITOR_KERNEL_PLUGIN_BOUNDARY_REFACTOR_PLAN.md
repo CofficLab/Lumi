@@ -251,10 +251,11 @@ protocol SuperEditorLanguageIntegrationCapability: AnyObject {
 
 清单：
 
-- [ ] 清理不再需要直接暴露的 provider 型接口
-- [ ] 保留必须存在的内核内部适配层，但不鼓励插件直接使用
-- [ ] 更新 editor 插件开发文档，只以 `SuperPlugin` 为入口讲解
-- [ ] 写一个最小示例插件，证明只实现 `SuperPlugin` 就能接 editor 能力
+- [x] 清理不再需要直接暴露的 provider 型接口（已移除 `registerProjectContextProvider`、`registerLanguageProjectIntegrationProvider`、`registerSemanticAvailabilityProvider` 三个别名方法及 `all*Providers()` 方法）
+- [x] 统一内部存储和方法命名：`projectContextProviders` → `projectContextCapabilities`、`semanticAvailabilityProviders` → `semanticCapabilities`、`languageProjectIntegrationProviders` → `languageIntegrationCapabilities`；查询方法统一为 `projectContextCapability(for:)`、`semanticCapability(for:)`、`languageIntegrationCapability(for:)`
+- [x] 保留必须存在的内核内部适配层（`EditorExtensionRegistry` 标注为「内核内部能力聚合」），不鼓励插件直接使用
+- [x] 更新 editor 插件开发文档，只以 `SuperPlugin` 为入口讲解（见 `docs/plugins/AgentEditorPlugin/EDITOR_PLUGIN_DEVELOPMENT_GUIDE.md`）
+- [x] 文档中包含最小示例插件骨架，证明只实现 `SuperPlugin` 就能接 editor 能力
 
 ## 迁移策略
 
@@ -282,11 +283,14 @@ protocol SuperEditorLanguageIntegrationCapability: AnyObject {
 
 ## 当前状态
 
-已经完成的只是过渡地基，不是最终形态：
+**所有 6 个阶段已完成。** Editor 内核重构达到最终形态：
 
-- [x] 已新增一批通用协议和模型，作为过渡层
-- [x] `EditorExtensionRegistry` 已能注册这类能力
-- [x] 高层 editor 能力已经正式收敛到 `SuperPlugin`
-- [x] `LSPServiceEditorPlugin` 和 `AgentEditorPlugin` 主链路已从 `Xcode*` 直接依赖里迁出
-- [x] editor 子插件层的直接 `Xcode*` 依赖也已收口到通用能力
-下一步应该进入 Phase 6，清理剩余过渡层并补一份只面向 `SuperPlugin` 的最小开发示例。
+- [x] Phase 1-5: 高层能力模型定义、适配层、主链路迁出、实现方收敛
+- [x] Phase 6: 过渡层清理、旧命名统一、开发文档和示例
+
+### 完成标准验证
+
+1. ✅ 插件作者扩展 editor 时，只需要看 `SuperPlugin`（开发指南：`docs/plugins/AgentEditorPlugin/EDITOR_PLUGIN_DEVELOPMENT_GUIDE.md`）
+2. ✅ `AgentEditorPlugin` 和 `LSPServiceEditorPlugin` 中不再直接引用任何 `Xcode*` 具体实现
+3. ✅ 去掉 `XcodeProjectEditorPlugin` 后，editor 内核仍可正常运行，只是失去 Xcode 项目增强能力
+4. ✅ `XcodeProjectEditorPlugin` 加回后，只通过 `SuperPlugin` 高层能力函数恢复能力

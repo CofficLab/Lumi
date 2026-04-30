@@ -320,10 +320,10 @@ final class EditorState: ObservableObject, SuperLog {
     /// 兼容旧调用：编辑器扩展注册中心
     var editorExtensions: EditorExtensionRegistry { editorPluginManager.registry }
     var projectContextCapability: (any SuperEditorProjectContextCapability)? {
-        editorExtensions.projectContextProvider(for: projectRootPath)
+        editorExtensions.projectContextCapability(for: projectRootPath)
     }
     var semanticCapability: (any SuperEditorSemanticCapability)? {
-        editorExtensions.semanticAvailabilityProvider(for: currentFileURL?.absoluteString)
+        editorExtensions.semanticCapability(for: currentFileURL?.absoluteString)
     }
     /// 后台扩展点解析器（异步聚合，去重/排序在后台线程执行）
     let editorExtensionResolver = ExtensionResolver.shared
