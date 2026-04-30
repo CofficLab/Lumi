@@ -51,6 +51,14 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             EditorPlugin.logger.debug("\(self.t)跳转到定义: '\(word)' 位置=\(range.location)")
         }
 
+        if let includeLink = findXCConfigIncludeLink(forRange: range, content: content) {
+            return [includeLink]
+        }
+
+        if let packageLink = findSwiftPackageDependencyLink(forRange: range, content: content) {
+            return [packageLink]
+        }
+
         // 0. 优先：通过 LSP 查询定义（支持跨文件）
         if let link = await findDefinitionViaLSP(
             word: word,
@@ -150,6 +158,20 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             return
         }
 
+        if kind == .definition,
+           let includeLink = findXCConfigIncludeLink(forRange: range, content: content) {
+            guard requestGeneration.isCurrent(generation) else { return }
+            openNavigationLink(includeLink, textStorage: ts, controller: controller)
+            return
+        }
+
+        if kind == .definition,
+           let packageLink = findSwiftPackageDependencyLink(forRange: range, content: content) {
+            guard requestGeneration.isCurrent(generation) else { return }
+            openNavigationLink(packageLink, textStorage: ts, controller: controller)
+            return
+        }
+
         // 1. 优先通过 LSP 查找
         if let link = await findLocationViaLSP(
             kind: kind,
@@ -205,6 +227,10 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
     @MainActor
     private func openNavigationLink(_ link: JumpToDefinitionLink, textStorage: NSTextStorage, controller: TextViewController) {
         if let url = link.url {
+            guard url.isFileURL else {
+                NSWorkspace.shared.open(url)
+                return
+            }
             // 跨文件跳转
             onOpenExternalDefinition?(url, link.targetRange)
         } else {
@@ -222,6 +248,51 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
     }
 
     // MARK: - LSP 查找
+
+    private func findXCConfigIncludeLink(
+        forRange range: NSRange,
+        content: String
+    ) -> JumpToDefinitionLink? {
+        guard let currentFileURL = currentFileURLProvider?(),
+              currentFileURL.pathExtension.lowercased() == "xcconfig",
+              let directive = XCConfigSyntax.includeDirective(at: range.location, in: content),
+              let targetURL = XCConfigSyntax.resolveIncludedFileURL(
+                for: directive,
+                currentFileURL: currentFileURL
+              ) else {
+            return nil
+        }
+
+        return JumpToDefinitionLink(
+            url: targetURL,
+            targetRange: CursorPosition(start: .init(line: 1, column: 1), end: nil),
+            typeName: directive.path,
+            sourcePreview: targetURL.lastPathComponent,
+            documentation: nil,
+            image: Image(systemName: "link"),
+            imageColor: Color(NSColor.systemPurple)
+        )
+    }
+
+    private func findSwiftPackageDependencyLink(
+        forRange range: NSRange,
+        content: String
+    ) -> JumpToDefinitionLink? {
+        guard currentFileURLProvider?()?.lastPathComponent == "Package.swift",
+              let dependency = PackageManifestSyntax.dependencyLink(at: range.location, in: content) else {
+            return nil
+        }
+
+        return JumpToDefinitionLink(
+            url: dependency.url,
+            targetRange: CursorPosition(start: .init(line: 1, column: 1), end: nil),
+            typeName: dependency.rawURL,
+            sourcePreview: dependency.url.host ?? dependency.rawURL,
+            documentation: nil,
+            image: Image(systemName: "safari"),
+            imageColor: Color(NSColor.systemBlue)
+        )
+    }
 
     private func findDefinitionViaLSP(
         word: String,

@@ -38,6 +38,7 @@ final class LSPService: ObservableObject, SuperLog {
     private var changeDebounceTimer: Timer?
     private var pendingChanges: [LanguageServer.DocumentChange] = []
     private var latestDocumentSnapshot: String?
+    private var diagnosticsStabilizationDeadline: Date?
     
     var onHover: ((String?) -> Void)?
     
@@ -318,6 +319,22 @@ final class LSPService: ObservableObject, SuperLog {
                 try await server.documentDidChange(uri: uri, text: text, version: version)
             } catch {
                 Self.logger.error("\(Self.t)替换文档失败: \(error)")
+            }
+        }
+    }
+
+    func documentDidSave(uri: String, text: String? = nil) {
+        guard uri == currentURI else { return }
+        diagnosticsStabilizationDeadline = Date().addingTimeInterval(1.2)
+        if let text {
+            latestDocumentSnapshot = text
+        }
+        guard let server else { return }
+        Task {
+            do {
+                try await server.documentDidSave(uri: uri, text: text)
+            } catch {
+                Self.logger.error("\(Self.t)发送 didSave 失败: \(error)")
             }
         }
     }
@@ -943,6 +960,13 @@ final class LSPService: ObservableObject, SuperLog {
     private func handlePublishDiagnostics(_ params: PublishDiagnosticsParams) {
         guard let currentURI else { return }
         guard params.uri == currentURI else { return }
+        if let deadline = diagnosticsStabilizationDeadline,
+           Date() < deadline,
+           params.diagnostics.isEmpty,
+           currentDiagnostics.isEmpty == false {
+            return
+        }
+        diagnosticsStabilizationDeadline = nil
         currentDiagnostics = params.diagnostics
     }
 }

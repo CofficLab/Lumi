@@ -139,7 +139,7 @@
   - 仅在需要展开 build setting 变量（`$(SRCROOT)` 等）时才 fallback 到 `xcodebuild`
 - [ ] 用 `XcodeProj` 解析 PBXTargetDependency，暴露 target 间依赖关系
   - 用于 scheme 自动选择和依赖关系可视化
-- [ ] 为新的解析逻辑编写回归测试
+- [x] 为新的解析逻辑编写回归测试
   - 传统 Build Phase 项目 fixture
   - File System Synchronized Group 项目 fixture
   - 混合项目 fixture
@@ -152,11 +152,11 @@
 
 **目标**：补齐用户最敏感的编辑器导航体验，让跨文件跳转、返回、面板之间的联动形成完整闭环。
 
-- [ ] 实现导航返回栈 / 前进栈（Navigation Back / Forward Stack）
+- [x] 实现导航返回栈 / 前进栈（Navigation Back / Forward Stack）
   - 记录每次跨文件跳转的来源和目标
   - 支持快捷键和工具栏按钮
   - 栈深度上限（如 100 条），防止内存膨胀
-- [ ] references 面板与导航历史联动
+- [x] references 面板与导航历史联动
   - 从 references 面板跳转后，自动记入导航栈
   - 支持从导航栈回到 references 面板的上一次上下文
 - [ ] breadcrumb / outline / symbols 三者联动
@@ -181,11 +181,11 @@
 - [ ] 多文件 rename 端到端验证
   - 测试 Swift 跨文件 rename 在各种场景下的正确性
   - 覆盖：同 target rename、跨 target rename、protocol + extension rename、泛型 rename
-- [ ] 问题面板与编辑器 gutter 联动
+- [x] 问题面板与编辑器 gutter 联动
   - gutter 中的 diagnostic icon 点击后跳转到问题面板对应条目
   - 问题面板条目点击后跳转到编辑器对应行并高亮
   - 文件切换时 gutter diagnostic 同步更新
-- [ ] 保存前后 diagnostics 刷新策略统一
+- [x] 保存前后 diagnostics 刷新策略统一
   - 保存文件后自动触发 diagnostics 更新
   - 避免"保存后 diagnostics 消失又重现"的闪烁问题
 
@@ -197,21 +197,21 @@
 
 **目标**：让 Xcode 工程常见辅助文件的编辑体验不再是"普通文本框"。
 
-- [ ] xcconfig include 指令的文件跳转
+- [x] xcconfig include 指令的文件跳转
   - `#include "path"` 中的路径支持 Cmd+Click 跳转到目标文件
   - 支持相对路径解析（相对于当前 xcconfig 文件所在目录）
-- [ ] plist / entitlements 语法高亮与智能编辑
+- [x] plist / entitlements 语法高亮与智能编辑
   - XML plist 的 key / value / dict / array / string / data 等节点的语法高亮
   - 编辑 value 时自动补全常见 key 对应的 value 类型
   - 对已知 key 提供 hover 信息
-- [ ] `project.pbxproj` 风险控制策略
+- [x] `project.pbxproj` 风险控制策略
   - 检测 pbxproj 是否有外部修改（Xcode 同时打开时）
   - 提供"以 Xcode 版本为准 / 以 Lumi 版本为准"的冲突解决提示
   - pbxproj 编辑前确认提示
-- [ ] `Package.swift` 与 package dependency 体验对齐
+- [x] `Package.swift` 与 package dependency 体验对齐
   - 支持 `Package.swift` 中 `.package(url:)` 的 Cmd+Click 跳转到依赖仓库（浏览器）
   - package dependency 版本列表的 hover 信息
-- [ ] 工程文件 quick open / symbol 支持
+- [x] 工程文件 quick open / symbol 支持
   - quick open 中区分工程文件（xcconfig / plist / entitlements / pbxproj）的搜索权重
   - 支持搜索 plist key、xcconfig key
 
@@ -223,15 +223,15 @@
 
 **目标**：让用户对"编辑器现在处于什么状态"有完整的感知，不再出现"为什么跳转没有结果"的困惑。
 
-- [ ] "LSP 正在索引"的进度指示
+- [x] "LSP 正在索引"的进度指示
   - sourcekit-lsp 的 `window/workDoneProgress` 事件接入
   - 状态栏或编辑器底部显示索引进度条
   - 索引完成前的语义请求自动排队等待，而不是直接返回空结果
-- [ ] indexing / build context 状态的实时展示
+- [x] indexing / build context 状态的实时展示
   - 将 `BuildContextStatus` 和 indexing 状态统一到一个连续的状态机
   - 状态变化时的平滑过渡动画
   - 长时间未就绪时提供可操作的提示（如"检查 xcode-build-server 版本"）
-- [ ] 语义就绪状态的通知
+- [x] 语义就绪状态的通知
   - 从"解析中"变为"就绪"时发送用户可见的轻量通知（如编辑器底部 toast）
   - 避免用户在未就绪时困惑于语义功能为何不可用
 
@@ -250,11 +250,11 @@
   - 验证 scheme 切换后 build context 正确失效和重建
   - 验证 scheme 切换后缓存被清理
   - 验证 scheme 切换后 LSP 请求使用新上下文
-- [ ] build context cache correctness tests
+- [x] build context cache correctness tests
   - 验证缓存键 `workspace|scheme|configuration|destination` 的唯一性
   - 验证缓存失效的完整性
   - 验证缓存优先 → 实时获取 fallback 的正确性
-- [ ] Xcode project stress playbook
+- [x] Xcode project stress playbook
   - 大型项目（100+ targets / 1000+ source files）的打开和解析性能基准
   - 快速 scheme 切换（连续切换 10 次）的稳定性
   - build context 并发请求的安全性

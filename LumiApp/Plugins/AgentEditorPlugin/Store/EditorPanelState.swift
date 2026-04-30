@@ -44,6 +44,9 @@ final class EditorPanelState: ObservableObject {
     /// LSP 引用查询结果
     @Published var referenceResults: [EditorReferenceResult] = []
 
+    /// 当前选中的引用项
+    @Published var selectedReferenceResult: EditorReferenceResult?
+
     /// 是否展示 References 面板
     @Published var isReferencePanelPresented: Bool = false
 
@@ -53,6 +56,8 @@ final class EditorPanelState: ObservableObject {
     @Published var workspaceSearchResults: [EditorWorkspaceSearchFileResult] = []
     @Published var workspaceSearchSummary: EditorWorkspaceSearchSummary?
     @Published var workspaceSearchErrorMessage: String?
+    @Published var workspaceSearchCollapsedFilePaths = Set<String>()
+    @Published var selectedWorkspaceSearchMatchID: String?
     @Published var isWorkspaceSearchLoading: Bool = false
     @Published var isWorkspaceSearchPresented: Bool = false
 
@@ -91,6 +96,7 @@ final class EditorPanelState: ObservableObject {
             mouseHoverContent: mouseHoverContent,
             mouseHoverSymbolRect: mouseHoverSymbolRect,
             referenceResults: referenceResults.map(Self.referenceResult(from:)),
+            selectedReferenceResult: selectedReferenceResult.map(Self.referenceResult(from:)),
             isOpenEditorsPanelPresented: isOpenEditorsPanelPresented,
             isOutlinePanelPresented: isOutlinePanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
@@ -104,7 +110,9 @@ final class EditorPanelState: ObservableObject {
             workspaceSearchQuery: workspaceSearchQuery,
             workspaceSearchResults: workspaceSearchResults,
             workspaceSearchSummary: workspaceSearchSummary,
-            workspaceSearchErrorMessage: workspaceSearchErrorMessage
+            workspaceSearchErrorMessage: workspaceSearchErrorMessage,
+            workspaceSearchCollapsedFilePaths: Array(workspaceSearchCollapsedFilePaths).sorted(),
+            selectedWorkspaceSearchMatchID: selectedWorkspaceSearchMatchID
         )
     }
 
@@ -170,10 +178,13 @@ final class EditorPanelState: ObservableObject {
         semanticProblems = state.semanticProblems
         selectedProblemDiagnostic = state.selectedProblemDiagnostic
         referenceResults = state.referenceResults.map(Self.editorReferenceResult(from:))
+        selectedReferenceResult = state.selectedReferenceResult.map(Self.editorReferenceResult(from:))
         workspaceSearchQuery = state.workspaceSearchQuery
         workspaceSearchResults = state.workspaceSearchResults
         workspaceSearchSummary = state.workspaceSearchSummary
         workspaceSearchErrorMessage = state.workspaceSearchErrorMessage
+        workspaceSearchCollapsedFilePaths = Set(state.workspaceSearchCollapsedFilePaths)
+        selectedWorkspaceSearchMatchID = state.selectedWorkspaceSearchMatchID
         isWorkspaceSearchLoading = false
         if let content = state.mouseHoverContent {
             setMouseHover(content: content, symbolRect: state.mouseHoverSymbolRect)
@@ -199,11 +210,14 @@ final class EditorPanelState: ObservableObject {
         isOutlinePanelPresented = false
         isProblemsPanelPresented = false
         referenceResults = []
+        selectedReferenceResult = nil
         isReferencePanelPresented = false
         workspaceSearchQuery = ""
         workspaceSearchResults = []
         workspaceSearchSummary = nil
         workspaceSearchErrorMessage = nil
+        workspaceSearchCollapsedFilePaths = []
+        selectedWorkspaceSearchMatchID = nil
         isWorkspaceSearchLoading = false
         isWorkspaceSearchPresented = false
         isWorkspaceSymbolSearchPresented = false
@@ -235,12 +249,16 @@ final class EditorPanelState: ObservableObject {
 
 /// LSP 引用查询结果
 struct EditorReferenceResult: Identifiable, Equatable {
-    let id = UUID()
+    var id: String { stableIdentifier }
     let url: URL
     let line: Int
     let column: Int
     let path: String
     let preview: String
+
+    var stableIdentifier: String {
+        "\(url.standardizedFileURL.path)#\(line):\(column):\(preview)"
+    }
 }
 
 struct EditorSemanticProblem: Identifiable, Equatable, Sendable {
@@ -261,6 +279,7 @@ struct EditorPanelSessionState: Equatable {
     let mouseHoverContent: String?
     let mouseHoverSymbolRect: CGRect
     let referenceResults: [ReferenceResult]
+    let selectedReferenceResult: ReferenceResult?
     let isOpenEditorsPanelPresented: Bool
     let isOutlinePanelPresented: Bool
     let isReferencePanelPresented: Bool
@@ -275,6 +294,8 @@ struct EditorPanelSessionState: Equatable {
     let workspaceSearchResults: [EditorWorkspaceSearchFileResult]
     let workspaceSearchSummary: EditorWorkspaceSearchSummary?
     let workspaceSearchErrorMessage: String?
+    let workspaceSearchCollapsedFilePaths: [String]
+    let selectedWorkspaceSearchMatchID: String?
 
     var snapshot: EditorPanelSnapshot {
         EditorPanelSnapshot(
@@ -292,6 +313,7 @@ struct EditorPanelSessionState: Equatable {
         mouseHoverContent: String? = nil,
         mouseHoverSymbolRect: CGRect = .zero,
         referenceResults: [ReferenceResult] = [],
+        selectedReferenceResult: ReferenceResult? = nil,
         isOpenEditorsPanelPresented: Bool = false,
         isOutlinePanelPresented: Bool = false,
         isReferencePanelPresented: Bool = false,
@@ -305,11 +327,14 @@ struct EditorPanelSessionState: Equatable {
         workspaceSearchQuery: String = "",
         workspaceSearchResults: [EditorWorkspaceSearchFileResult] = [],
         workspaceSearchSummary: EditorWorkspaceSearchSummary? = nil,
-        workspaceSearchErrorMessage: String? = nil
+        workspaceSearchErrorMessage: String? = nil,
+        workspaceSearchCollapsedFilePaths: [String] = [],
+        selectedWorkspaceSearchMatchID: String? = nil
     ) {
         self.mouseHoverContent = mouseHoverContent
         self.mouseHoverSymbolRect = mouseHoverSymbolRect
         self.referenceResults = referenceResults
+        self.selectedReferenceResult = selectedReferenceResult
         self.isOpenEditorsPanelPresented = isOpenEditorsPanelPresented
         self.isOutlinePanelPresented = isOutlinePanelPresented
         self.isReferencePanelPresented = isReferencePanelPresented
@@ -324,6 +349,8 @@ struct EditorPanelSessionState: Equatable {
         self.workspaceSearchResults = workspaceSearchResults
         self.workspaceSearchSummary = workspaceSearchSummary
         self.workspaceSearchErrorMessage = workspaceSearchErrorMessage
+        self.workspaceSearchCollapsedFilePaths = workspaceSearchCollapsedFilePaths
+        self.selectedWorkspaceSearchMatchID = selectedWorkspaceSearchMatchID
     }
 
     @MainActor

@@ -327,11 +327,11 @@ struct EditorToolbarView: View {
 
     private var externalFileConflictControl: some View {
         Menu {
-            Button("Reload from Disk") {
+            Button(state.isEditingProjectPBXProj ? "Use Xcode Version" : "Reload from Disk") {
                 state.reloadExternalFileConflict()
             }
 
-            Button("Keep Editor Version") {
+            Button(state.isEditingProjectPBXProj ? "Use Lumi Version" : "Keep Editor Version") {
                 state.keepEditorVersionForExternalConflict()
             }
         } label: {

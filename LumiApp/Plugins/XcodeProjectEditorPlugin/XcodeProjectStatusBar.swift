@@ -37,15 +37,21 @@ struct XcodeProjectStatusBar: View {
     
     private var buildContextIndicator: some View {
         HStack(spacing: 4) {
-            Circle()
-                .fill(statusColor)
-                .frame(width: 8, height: 8)
+            if viewModel.isIndexing {
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.7)
+            } else {
+                Circle()
+                    .fill(statusColor)
+                    .frame(width: 8, height: 8)
+            }
             
             Text(statusText)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }
-        .help(viewModel.buildContextStatusDescription)
+        .help(viewModel.semanticStatusDescription)
     }
     
     @ViewBuilder
@@ -132,23 +138,11 @@ struct XcodeProjectStatusBar: View {
     }
 
     private var statusColor: Color {
-        switch viewModel.buildContextStatus {
-        case .unknown: return .gray
-        case .resolving: return .yellow
-        case .available: return .green
-        case .unavailable: return .red
-        case .needsResync: return .orange
-        }
+        viewModel.semanticStatusColor
     }
     
     private var statusText: String {
-        switch viewModel.buildContextStatus {
-        case .unknown: return "未检测"
-        case .resolving: return "解析中..."
-        case .available: return "就绪"
-        case .unavailable: return "错误"
-        case .needsResync: return "需同步"
-        }
+        viewModel.semanticStatusText
     }
 }
 
@@ -167,6 +161,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
     @Published var latestEditorSnapshot: XcodeEditorContextSnapshot?
     @Published var semanticReport: XcodeSemanticAvailability.Report = .init(reasons: [])
     @Published var isResyncingBuildContext = false
+    @Published var indexingTask: ProgressTask?
     private var notificationCancellable: AnyCancellable?
     
     private var provider: XcodeBuildContextProvider?
@@ -185,6 +180,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
         buildContextStatusDescription = bridge.buildContextStatusDescription
         latestEditorSnapshot = bridge.latestEditorSnapshot
         semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString })
+        indexingTask = LSPService.shared.progressProvider.primaryActiveTask
         
         guard let provider = bridge.buildContextProvider else { return }
         self.provider = provider
@@ -236,6 +232,13 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        LSPService.shared.progressProvider.$activeTasks
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.indexingTask = LSPService.shared.progressProvider.primaryActiveTask
+            }
+            .store(in: &cancellables)
+
         notificationCancellable = NotificationCenter.default
             .publisher(for: .lumiEditorXcodeContextDidChange)
             .receive(on: DispatchQueue.main)
@@ -284,6 +287,60 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
             self.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(
                 uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString }
             )
+        }
+    }
+
+    var isIndexing: Bool {
+        indexingTask != nil
+    }
+
+    var semanticStatusText: String {
+        if let indexingTask {
+            if let percentage = indexingTask.percentage {
+                return "索引中 \(Int(percentage))%"
+            }
+            if let message = indexingTask.message, !message.isEmpty {
+                return message
+            }
+            return indexingTask.title.isEmpty ? "索引中..." : indexingTask.title
+        }
+
+        switch buildContextStatus {
+        case .unknown:
+            return "未检测"
+        case .resolving:
+            return "解析中..."
+        case .available:
+            return "就绪"
+        case .unavailable:
+            return "错误"
+        case .needsResync:
+            return "需同步"
+        }
+    }
+
+    var semanticStatusDescription: String {
+        if let indexingTask {
+            var parts = ["Swift 语义索引进行中"]
+            if !indexingTask.title.isEmpty {
+                parts.append(indexingTask.title)
+            }
+            if let message = indexingTask.message, !message.isEmpty {
+                parts.append(message)
+            }
+            return parts.joined(separator: " · ")
+        }
+        return buildContextStatusDescription
+    }
+
+    var semanticStatusColor: Color {
+        if isIndexing { return .blue }
+        switch buildContextStatus {
+        case .unknown: return .gray
+        case .resolving: return .yellow
+        case .available: return .green
+        case .unavailable: return .red
+        case .needsResync: return .orange
         }
     }
 }

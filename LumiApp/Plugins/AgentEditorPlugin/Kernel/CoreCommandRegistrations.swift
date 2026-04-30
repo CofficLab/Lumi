@@ -88,7 +88,18 @@ enum CoreCommandRegistrations {
             category: EditorCommandCategory.navigation.rawValue,
             order: 200
         ) {
-            state.performPanelCommand(.toggleOpenEditors)
+            NotificationCenter.postLumiEditorToggleOpenEditorsPanel()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.outline-panel",
+            title: String(localized: "Outline", table: "LumiEditor"),
+            icon: "list.bullet.indent",
+            shortcut: nil,
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 205
+        ) {
+            NotificationCenter.postLumiEditorToggleOutlinePanel()
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(

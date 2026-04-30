@@ -37,6 +37,7 @@ struct BreadcrumbToolBarView: View {
 struct BreadcrumbPathView: View {
 
     @EnvironmentObject private var projectVM: ProjectVM
+    @ObservedObject private var editorBreadcrumbBridge = EditorBreadcrumbContextBridge.shared
 
     /// 面包屑路径段列表
     private var breadcrumbItems: [BreadcrumbItem] {
@@ -111,6 +112,19 @@ struct BreadcrumbPathView: View {
                                     projectVM.selectFile(at: url)
                                 }
                             )
+                        }
+                    }
+
+                    if !editorBreadcrumbBridge.activeSymbolTrail.isEmpty && !breadcrumbItems.isEmpty {
+                        Rectangle()
+                            .fill(AppUI.Color.semantic.textTertiary.opacity(0.12))
+                            .frame(width: 1, height: 14)
+                            .padding(.horizontal, 6)
+                    }
+
+                    ForEach(editorBreadcrumbBridge.activeSymbolTrail) { symbol in
+                        SymbolBreadcrumbComponent(symbol: symbol) {
+                            editorBreadcrumbBridge.openSymbol?(symbol)
                         }
                     }
                 }
@@ -203,6 +217,34 @@ struct BreadcrumbPathView: View {
                 firstCrumbWidth = availableForFirst
             }
         }
+    }
+}
+
+private struct SymbolBreadcrumbComponent: View {
+    let symbol: EditorDocumentSymbolItem
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 5) {
+                Image(systemName: symbol.iconSymbol)
+                    .font(.system(size: 10))
+                    .foregroundColor(AppUI.Color.semantic.primary)
+
+                Text(symbol.name)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(AppUI.Color.semantic.primary.opacity(0.08))
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 3)
     }
 }
 

@@ -173,6 +173,75 @@ final class EditorPanelControllerTests: XCTestCase {
         XCTAssertNil(panelState.activeBottomPanel)
     }
 
+    func testWorkspaceSearchResultsRetainCollapsedFileStateForVisibleFiles() {
+        let panelState = EditorPanelState()
+        let controller = EditorPanelController(panelState: panelState)
+        panelState.workspaceSearchCollapsedFilePaths = ["Sources/App.swift", "Sources/Old.swift"]
+
+        controller.setWorkspaceSearchResults(
+            [
+                .init(
+                    url: URL(fileURLWithPath: "/tmp/Sources/App.swift"),
+                    path: "Sources/App.swift",
+                    matches: [
+                        .init(
+                            url: URL(fileURLWithPath: "/tmp/Sources/App.swift"),
+                            line: 4,
+                            column: 3,
+                            path: "Sources/App.swift",
+                            preview: "target()"
+                        )
+                    ]
+                ),
+                .init(
+                    url: URL(fileURLWithPath: "/tmp/Tests/AppTests.swift"),
+                    path: "Tests/AppTests.swift",
+                    matches: [
+                        .init(
+                            url: URL(fileURLWithPath: "/tmp/Tests/AppTests.swift"),
+                            line: 9,
+                            column: 2,
+                            path: "Tests/AppTests.swift",
+                            preview: "XCTAssert(target)"
+                        )
+                    ]
+                )
+            ],
+            summary: .init(query: "target", totalMatches: 2, totalFiles: 2),
+            errorMessage: nil
+        )
+
+        XCTAssertEqual(panelState.workspaceSearchCollapsedFilePaths, ["Sources/App.swift"])
+    }
+
+    func testWorkspaceSearchResultsClearSelectedMatchWhenNoLongerVisible() {
+        let panelState = EditorPanelState()
+        let controller = EditorPanelController(panelState: panelState)
+        panelState.selectedWorkspaceSearchMatchID = "Sources/App.swift:4:3:target()"
+
+        controller.setWorkspaceSearchResults(
+            [
+                .init(
+                    url: URL(fileURLWithPath: "/tmp/Tests/AppTests.swift"),
+                    path: "Tests/AppTests.swift",
+                    matches: [
+                        .init(
+                            url: URL(fileURLWithPath: "/tmp/Tests/AppTests.swift"),
+                            line: 9,
+                            column: 2,
+                            path: "Tests/AppTests.swift",
+                            preview: "XCTAssert(target)"
+                        )
+                    ]
+                )
+            ],
+            summary: .init(query: "target", totalMatches: 1, totalFiles: 1),
+            errorMessage: nil
+        )
+
+        XCTAssertNil(panelState.selectedWorkspaceSearchMatchID)
+    }
+
     private func makeDiagnostic(
         startLine: Int,
         startCharacter: Int,

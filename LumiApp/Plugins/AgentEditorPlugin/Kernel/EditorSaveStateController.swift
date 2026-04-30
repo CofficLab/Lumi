@@ -8,12 +8,14 @@ final class EditorSaveStateController {
         clearConflict: () -> Void,
         syncSession: () -> Void,
         scheduleSuccessClear: () -> Void,
+        notifyDidSave: (_ content: String) -> Void,
         setHasUnsavedChanges: (Bool) -> Void,
         setSaveState: (EditorSaveState) -> Void
     ) {
         documentController.markPersistedText(content)
         setHasUnsavedChanges(false)
         clearConflict()
+        notifyDidSave(content)
         setSaveState(.saved)
         syncSession()
         scheduleSuccessClear()

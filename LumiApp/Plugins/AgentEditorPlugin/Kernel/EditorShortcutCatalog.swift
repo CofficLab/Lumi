@@ -22,6 +22,7 @@ enum EditorShortcutCatalog {
         .init(id: "builtin.redo", title: String(localized: "Redo", table: "LumiEditor"), category: .other, defaultShortcut: EditorCommandBindings.redo.defaultKernelShortcut),
         .init(id: "builtin.format-document", title: String(localized: "Format Document", table: "LumiEditor"), category: .format, defaultShortcut: EditorCommandBindings.formatDocument.defaultKernelShortcut),
         .init(id: "builtin.open-editors-panel", title: String(localized: "Open Editors", table: "LumiEditor"), category: .navigation, defaultShortcut: EditorCommandBindings.openEditors.defaultKernelShortcut),
+        .init(id: "builtin.outline-panel", title: String(localized: "Outline", table: "LumiEditor"), category: .navigation, defaultShortcut: nil),
         .init(id: "builtin.find-references", title: String(localized: "Find All References", table: "LumiEditor"), category: .navigation, defaultShortcut: EditorCommandBindings.findReferences.defaultKernelShortcut),
         .init(id: "builtin.quick-fix", title: String(localized: "Quick Fix", table: "LumiEditor"), category: .navigation, defaultShortcut: EditorCommandBindings.quickFix.defaultKernelShortcut),
         .init(id: "builtin.peek-references", title: String(localized: "Peek References", table: "LumiEditor"), category: .navigation, defaultShortcut: nil),

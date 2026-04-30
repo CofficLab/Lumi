@@ -225,6 +225,11 @@ final class XcodeProjectResolver: SuperLog {
     }
 
     private func enumerateFiles(in rootURL: URL, excluding excludedRelativePaths: Set<String>) -> Set<String> {
+        if let values = try? rootURL.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey]),
+           values.isRegularFile == true {
+            return excludedRelativePaths.isEmpty ? [rootURL.path] : []
+        }
+
         guard let enumerator = FileManager.default.enumerator(
             at: rootURL,
             includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey],

@@ -41,6 +41,7 @@
 		F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */; };
 		F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640862F3ED72C0039A761 /* MySQLNIO */; };
 		F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F5BE65D02F6BB1130091C1FD /* Markdown */; };
+		F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = F5DF6D172FA3461A00673F72 /* XcodeProj */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -246,6 +247,7 @@
 				0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */,
 				0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */,
 				F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */,
+				F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */,
 				0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */,
 				0B1A4F872F662D8500F15618 /* MLXNN in Frameworks */,
 				0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */,
@@ -385,6 +387,7 @@
 				0B6DF8552F8E77E100FA0CAC /* LanguageServerProtocol */,
 				0B6DF8582F8E780800FA0CAC /* LanguageClient */,
 				223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */,
+				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -467,6 +470,7 @@
 				0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */,
 				0B6DF8542F8E77E100FA0CAC /* XCRemoteSwiftPackageReference "LanguageServerProtocol" */,
 				0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */,
+				F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1188,6 +1192,14 @@
 				minimumVersion = 0.7.3;
 			};
 		};
+		F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tuist/XcodeProj";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.11.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1339,6 +1351,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */;
 			productName = Markdown;
+		};
+		F5DF6D172FA3461A00673F72 /* XcodeProj */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */;
+			productName = XcodeProj;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

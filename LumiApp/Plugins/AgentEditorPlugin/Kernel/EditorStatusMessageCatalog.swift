@@ -1,8 +1,18 @@
 import Foundation
 
 enum EditorStatusMessageCatalog {
-    static func externalFileChangedOnDisk() -> String {
-        "File changed on disk. Reload or keep the editor version."
+    static func externalFileChangedOnDisk(fileName: String? = nil, isProjectFile: Bool = false) -> String {
+        if isProjectFile {
+            return "project.pbxproj changed on disk. Prefer the Xcode version or keep the Lumi version before saving again."
+        }
+        if let fileName, !fileName.isEmpty {
+            return "\(fileName) changed on disk. Reload or keep the editor version."
+        }
+        return "File changed on disk. Reload or keep the editor version."
+    }
+
+    static func projectFileSaveConfirmation(fileName: String) -> String {
+        "\(fileName) is an Xcode project file. Saving from Lumi can conflict with concurrent Xcode edits."
     }
 
     static func saveFailed(_ detail: String? = nil) -> String {

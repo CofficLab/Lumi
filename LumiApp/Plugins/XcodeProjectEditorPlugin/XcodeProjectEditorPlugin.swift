@@ -19,5 +19,9 @@ actor XcodeProjectEditorPlugin: SuperPlugin {
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         // 向 Bridge 注册 buildContextProvider，让 LSPService 能读取 build context
         XcodeProjectContextBridge.shared.registerBuildContextProvider(buildContextProvider)
+        registry.registerCompletionContributor(XcodePlistCompletionContributor())
+        registry.registerHoverContributor(XcodePlistHoverContributor())
+        registry.registerHoverContributor(XcodePackageManifestHoverContributor())
+        registry.registerQuickOpenContributor(XcodeProjectQuickOpenContributor())
     }
 }

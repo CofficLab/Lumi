@@ -12,6 +12,8 @@ enum EditorOpenItemCommandController {
                 navigationRequest: nil,
                 cursorPositions: EditorNavigationController.cursorPositions(for: diagnostic),
                 selectedProblemDiagnostic: diagnostic,
+                selectedReferenceResult: nil,
+                presentBottomPanel: .problems,
                 closeWorkspaceSymbolSearch: false
             )
 
@@ -20,6 +22,8 @@ enum EditorOpenItemCommandController {
                 navigationRequest: .reference(reference),
                 cursorPositions: [],
                 selectedProblemDiagnostic: nil,
+                selectedReferenceResult: reference,
+                presentBottomPanel: .references,
                 closeWorkspaceSymbolSearch: false
             )
 
@@ -42,6 +46,8 @@ enum EditorOpenItemCommandController {
                 ),
                 cursorPositions: [],
                 selectedProblemDiagnostic: nil,
+                selectedReferenceResult: nil,
+                presentBottomPanel: nil,
                 closeWorkspaceSymbolSearch: true
             )
 
@@ -64,6 +70,8 @@ enum EditorOpenItemCommandController {
                 ),
                 cursorPositions: [],
                 selectedProblemDiagnostic: nil,
+                selectedReferenceResult: nil,
+                presentBottomPanel: nil,
                 closeWorkspaceSymbolSearch: false
             )
 
@@ -77,6 +85,8 @@ enum EditorOpenItemCommandController {
                     )
                 ],
                 selectedProblemDiagnostic: nil,
+                selectedReferenceResult: nil,
+                presentBottomPanel: nil,
                 closeWorkspaceSymbolSearch: false
             )
         }

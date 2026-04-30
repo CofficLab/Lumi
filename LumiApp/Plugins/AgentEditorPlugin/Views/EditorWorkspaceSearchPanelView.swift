@@ -4,11 +4,14 @@ import MagicKit
 struct EditorWorkspaceSearchPanelView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @ObservedObject var state: EditorState
+    var showsToolbar: Bool = true
 
     var body: some View {
         VStack(spacing: 0) {
-            toolbar
-            Divider()
+            if showsToolbar {
+                toolbar
+                Divider()
+            }
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -74,39 +77,56 @@ struct EditorWorkspaceSearchPanelView: View {
 
                     ForEach(state.panelState.workspaceSearchResults) { file in
                         VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(file.path)
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
-                                Spacer()
-                                Text("\(file.matchCount)")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
-                            }
+                            Button {
+                                state.panelController.toggleWorkspaceSearchFileCollapse(path: file.path)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: isCollapsed(file) ? "chevron.right" : "chevron.down")
+                                        .font(.system(size: 9, weight: .semibold))
+                                        .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
 
-                            ForEach(file.matches) { match in
-                                Button {
-                                    state.openWorkspaceSearchMatch(match)
-                                } label: {
-                                    HStack(alignment: .top, spacing: 10) {
-                                        Text("L\(match.line):C\(match.column)")
-                                            .font(.system(size: 10, design: .monospaced))
-                                            .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
-                                            .frame(width: 62, alignment: .leading)
+                                    Text(file.path)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
 
-                                        Text(match.preview)
-                                            .font(.system(size: 12, design: .monospaced))
-                                            .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                    }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(themeManager.activeAppTheme.workspaceTextColor().opacity(0.05))
-                                    )
+                                    Spacer()
+
+                                    Text(fileMatchSummary(file))
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
                                 }
-                                .buttonStyle(.plain)
+                            }
+                            .buttonStyle(.plain)
+
+                            if !isCollapsed(file) {
+                                ForEach(file.matches) { match in
+                                    Button {
+                                        state.openWorkspaceSearchMatch(match)
+                                    } label: {
+                                        HStack(alignment: .top, spacing: 10) {
+                                            Text("L\(match.line):C\(match.column)")
+                                                .font(.system(size: 10, design: .monospaced))
+                                                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                                                .frame(width: 62, alignment: .leading)
+
+                                            Text(match.preview)
+                                                .font(.system(size: 12, design: .monospaced))
+                                                .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                        }
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(rowBackground(for: match))
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(rowBorder(for: match), lineWidth: 1)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                         }
                         .padding(10)
@@ -119,6 +139,27 @@ struct EditorWorkspaceSearchPanelView: View {
                 .padding(10)
             }
         }
+    }
+
+    private func isCollapsed(_ file: EditorWorkspaceSearchFileResult) -> Bool {
+        state.panelState.workspaceSearchCollapsedFilePaths.contains(file.path)
+    }
+
+    private func fileMatchSummary(_ file: EditorWorkspaceSearchFileResult) -> String {
+        let noun = file.matchCount == 1 ? "match" : "matches"
+        return "\(file.matchCount) \(noun)"
+    }
+
+    private func rowBackground(for match: EditorWorkspaceSearchMatch) -> Color {
+        state.panelState.selectedWorkspaceSearchMatchID == match.id
+            ? themeManager.activeAppTheme.workspaceTextColor().opacity(0.1)
+            : themeManager.activeAppTheme.workspaceTextColor().opacity(0.05)
+    }
+
+    private func rowBorder(for match: EditorWorkspaceSearchMatch) -> Color {
+        state.panelState.selectedWorkspaceSearchMatchID == match.id
+            ? themeManager.activeAppTheme.workspaceTextColor().opacity(0.18)
+            : .clear
     }
 
     private func emptyState(_ title: String, systemImage: String) -> some View {

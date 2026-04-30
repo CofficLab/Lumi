@@ -15,7 +15,7 @@ struct TSProjectConfig: Sendable {
     /// 将 paths 映射转换为 [别名前缀: 真实相对路径前缀]
     /// 例如 `@/*` → `src/*` 变为 `@/` → `src/`
     var aliasMap: [String: String] {
-        var result: [String: String] = []
+        var result: [String: String] = [:]
         for (alias, targets) in paths {
             let cleanAlias = alias.replacingOccurrences(of: "/*", with: "")
             guard let firstTarget = targets.first else { continue }

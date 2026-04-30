@@ -47,6 +47,9 @@ extension Notification.Name {
     /// 请求切换 Open Editors 面板
     static let lumiEditorToggleOpenEditorsPanel = Notification.Name("LumiEditorToggleOpenEditorsPanel")
 
+    /// 请求切换 Outline 面板
+    static let lumiEditorToggleOutlinePanel = Notification.Name("LumiEditorToggleOutlinePanel")
+
     /// 请求向右分栏
     static let lumiEditorSplitRight = Notification.Name("LumiEditorSplitRight")
 
@@ -153,6 +156,10 @@ extension NotificationCenter {
 
     static func postLumiEditorToggleOpenEditorsPanel() {
         NotificationCenter.default.post(name: .lumiEditorToggleOpenEditorsPanel, object: nil)
+    }
+
+    static func postLumiEditorToggleOutlinePanel() {
+        NotificationCenter.default.post(name: .lumiEditorToggleOutlinePanel, object: nil)
     }
 
     static func postLumiEditorSplitRight() {

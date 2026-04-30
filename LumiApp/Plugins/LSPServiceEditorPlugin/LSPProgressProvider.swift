@@ -8,6 +8,22 @@ final class LSPProgressProvider: ObservableObject {
 
     @Published var activeTasks: [String: ProgressTask] = [:]
 
+    var hasActiveWork: Bool {
+        activeTasks.values.contains { $0.state == .inProgress }
+    }
+
+    var primaryActiveTask: ProgressTask? {
+        activeTasks.values
+            .filter { $0.state == .inProgress }
+            .sorted(by: { lhs, rhs in
+                let lhsPercentage = lhs.percentage ?? -1
+                let rhsPercentage = rhs.percentage ?? -1
+                if lhsPercentage != rhsPercentage { return lhsPercentage > rhsPercentage }
+                return lhs.token < rhs.token
+            })
+            .first
+    }
+
     func updateProgress(token: String, value: LanguageServerProtocol.LSPAny?) {
         guard let value else { return }
         guard case .hash(let dict) = value else { return }

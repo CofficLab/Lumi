@@ -335,13 +335,12 @@ struct SourceEditorView: View, SuperLog {
                         .offset(x: decoration.rect.minX, y: decoration.rect.minY)
                 }
             }
-            .allowsHitTesting(false)
         }
     }
 
     @ViewBuilder
     private func gutterDecorationView(_ decoration: EditorGutterDecoration) -> some View {
-        ZStack {
+        let content = ZStack {
             switch decoration.style.shape {
             case .circle:
                 Circle()
@@ -378,6 +377,20 @@ struct SourceEditorView: View, SuperLog {
                     .font(.system(size: 5.5, weight: .bold))
                     .foregroundColor(decoration.style.foregroundColor)
             }
+        }
+
+        if case .diagnostic = decoration.kind {
+            Button {
+                state.openProblem(atLine: decoration.line)
+            } label: {
+                content
+            }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+            .help("Open diagnostic")
+        } else {
+            content
+                .allowsHitTesting(false)
         }
     }
 

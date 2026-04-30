@@ -143,7 +143,26 @@ final class EditorSessionTests: XCTestCase {
             isCallHierarchyPresented: true,
             problemDiagnostics: [diagnostic],
             selectedProblemDiagnostic: diagnostic,
-            isProblemsPanelPresented: true
+            isProblemsPanelPresented: true,
+            workspaceSearchQuery: "needle",
+            workspaceSearchResults: [
+                .init(
+                    url: URL(fileURLWithPath: "/tmp/demo.swift"),
+                    path: "demo.swift",
+                    matches: [
+                        .init(
+                            url: URL(fileURLWithPath: "/tmp/demo.swift"),
+                            line: 5,
+                            column: 7,
+                            path: "demo.swift",
+                            preview: "let needle = 1"
+                        )
+                    ]
+                )
+            ],
+            workspaceSearchSummary: .init(query: "needle", totalMatches: 1, totalFiles: 1),
+            workspaceSearchCollapsedFilePaths: ["demo.swift"],
+            selectedWorkspaceSearchMatchID: "demo.swift:5:7:let needle = 1"
         )
 
         let restored = session.panelState
@@ -156,6 +175,11 @@ final class EditorSessionTests: XCTestCase {
         XCTAssertTrue(restored.isWorkspaceSymbolSearchPresented)
         XCTAssertTrue(restored.isCallHierarchyPresented)
         XCTAssertTrue(restored.isProblemsPanelPresented)
+        XCTAssertEqual(restored.workspaceSearchQuery, "needle")
+        XCTAssertEqual(restored.workspaceSearchResults.count, 1)
+        XCTAssertEqual(restored.workspaceSearchSummary?.totalMatches, 1)
+        XCTAssertEqual(restored.workspaceSearchCollapsedFilePaths, ["demo.swift"])
+        XCTAssertEqual(restored.selectedWorkspaceSearchMatchID, "demo.swift:5:7:let needle = 1")
         XCTAssertEqual(session.panelSnapshot, restored.snapshot)
     }
 

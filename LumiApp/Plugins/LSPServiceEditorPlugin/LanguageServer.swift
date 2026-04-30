@@ -262,6 +262,27 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
             LSPService.logger.debug("\(Self.t)已关闭: \(uri)")
         }
     }
+
+    func documentDidSave(uri: String, text: String? = nil) async throws {
+        let shouldSave = withDocumentState { openDocuments, documentContents in
+            guard openDocuments[uri] != nil else { return false }
+            if let text {
+                documentContents[uri] = text
+            }
+            return true
+        }
+        guard shouldSave else { return }
+
+        try await server.textDocumentDidSave(
+            DidSaveTextDocumentParams(
+                textDocument: TextDocumentIdentifier(uri: uri),
+                text: text
+            )
+        )
+        if LSPService.verbose {
+            LSPService.logger.debug("\(Self.t)已保存: \(uri)")
+        }
+    }
     
     func documentDidChange(uri: String, text: String, version explicitVersion: Int? = nil) async throws {
         let newVersion: Int? = withDocumentState { openDocuments, documentContents in

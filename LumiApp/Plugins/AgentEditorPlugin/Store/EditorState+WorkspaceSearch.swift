@@ -58,6 +58,7 @@ extension EditorState {
     }
 
     func openWorkspaceSearchMatch(_ match: EditorWorkspaceSearchMatch) {
+        panelController.setSelectedWorkspaceSearchMatchID(match.id)
         performNavigation(.definition(match.url, .init(line: match.line, column: match.column), highlightLine: true))
     }
 

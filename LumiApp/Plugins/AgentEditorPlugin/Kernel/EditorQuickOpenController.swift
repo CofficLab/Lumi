@@ -134,7 +134,8 @@ struct EditorQuickOpenController {
                     title: item.title,
                     subtitle: relativePath,
                     parentLabel: parentLabel(for: relativePath),
-                    score: 240 - index * 10 + (item.isActive ? 20 : 0) + (item.isPinned ? 10 : 0),
+                    score: 240 - index * 10 + (item.isActive ? 20 : 0) + (item.isPinned ? 10 : 0)
+                        + engineeringFilePriorityBonus(for: fileURL),
                     recentRank: item.recentActivationRank ?? .max
                 ),
                 into: &candidatesByPath
@@ -150,7 +151,8 @@ struct EditorQuickOpenController {
                         title: result.name,
                         subtitle: result.relativePath,
                         parentLabel: parentLabel(for: result.relativePath),
-                        score: max(result.score, 1) * 2 - index,
+                        score: max(result.score, 1) * 2 - index
+                            + engineeringFilePriorityBonus(for: result.url),
                         recentRank: candidatesByPath[result.url.standardizedFileURL.path]?.recentRank ?? .max
                     ),
                     into: &candidatesByPath
@@ -181,7 +183,7 @@ struct EditorQuickOpenController {
                 sectionTitle: sectionTitle,
                 title: candidate.title,
                 subtitle: candidate.subtitle,
-                systemImage: "doc",
+                systemImage: systemImage(for: candidate.fileURL),
                 badge: badge,
                 order: index,
                 isEnabled: true,
@@ -313,6 +315,52 @@ struct EditorQuickOpenController {
             candidatesByPath[key] = existing.merging(candidate)
         } else {
             candidatesByPath[key] = candidate
+        }
+    }
+
+    private func engineeringFilePriorityBonus(for fileURL: URL) -> Int {
+        switch fileURL.lastPathComponent.lowercased() {
+        case "package.swift":
+            return 20
+        case "project.pbxproj":
+            return 16
+        default:
+            break
+        }
+
+        switch fileURL.pathExtension.lowercased() {
+        case "xcconfig":
+            return 18
+        case "plist":
+            return 12
+        case "entitlements":
+            return 12
+        case "pbxproj":
+            return 16
+        default:
+            return 0
+        }
+    }
+
+    private func systemImage(for fileURL: URL) -> String {
+        switch fileURL.lastPathComponent.lowercased() {
+        case "package.swift":
+            return "shippingbox"
+        case "project.pbxproj":
+            return "hammer"
+        default:
+            break
+        }
+
+        switch fileURL.pathExtension.lowercased() {
+        case "xcconfig":
+            return "slider.horizontal.3"
+        case "plist", "entitlements":
+            return "list.bullet.rectangle"
+        case "pbxproj":
+            return "hammer"
+        default:
+            return "doc"
         }
     }
 }

@@ -111,5 +111,38 @@ final class EditorQuickOpenControllerTests: XCTestCase {
         XCTAssertEqual(openedTarget?.start.line, 18)
         XCTAssertEqual(openedTarget?.start.column, 3)
     }
+
+    func testFileSuggestionsPrioritizeEngineeringProjectFiles() {
+        let controller = EditorQuickOpenController(
+            fileSearch: { _, _, _ in
+                [
+                    FileResult(
+                        name: "AppDelegate.swift",
+                        path: "/tmp/AppDelegate.swift",
+                        relativePath: "AppDelegate.swift",
+                        isDirectory: false,
+                        score: 80
+                    ),
+                    FileResult(
+                        name: "Debug.xcconfig",
+                        path: "/tmp/Config/Debug.xcconfig",
+                        relativePath: "Config/Debug.xcconfig",
+                        isDirectory: false,
+                        score: 80
+                    )
+                ]
+            }
+        )
+
+        let items = controller.fileSuggestions(
+            for: controller.parse("debug"),
+            context: .init(projectRootPath: "/tmp", currentFileURL: nil),
+            openEditors: [],
+            onOpenFile: { _, _, _ in }
+        )
+
+        XCTAssertEqual(items.first?.title, "Debug.xcconfig")
+        XCTAssertEqual(items.first?.systemImage, "slider.horizontal.3")
+    }
 }
 #endif

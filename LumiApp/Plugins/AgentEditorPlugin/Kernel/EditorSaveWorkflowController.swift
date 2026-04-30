@@ -80,6 +80,7 @@ final class EditorSaveWorkflowController {
         clearConflict: @escaping () -> Void,
         syncSession: @escaping () -> Void,
         scheduleSuccessClear: @escaping () -> Void,
+        notifyDidSave: @escaping (_ content: String) -> Void,
         setHasUnsavedChanges: @escaping (Bool) -> Void
     ) {
         guard let url else {
@@ -126,6 +127,7 @@ final class EditorSaveWorkflowController {
                     clearConflict: clearConflict,
                     syncSession: syncSession,
                     scheduleSuccessClear: scheduleSuccessClear,
+                    notifyDidSave: notifyDidSave,
                     setHasUnsavedChanges: setHasUnsavedChanges,
                     setSaveState: setSaveState
                 )

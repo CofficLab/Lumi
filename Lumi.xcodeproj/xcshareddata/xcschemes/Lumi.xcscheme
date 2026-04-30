@@ -21,20 +21,6 @@
                ReferencedContainer = "container:Lumi.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "NO"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
-            buildForAnalyzing = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "A10000042F60000100AAA001"
-               BuildableName = "LumiTests.xctest"
-               BlueprintName = "LumiTests"
-               ReferencedContainer = "container:Lumi.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

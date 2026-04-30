@@ -132,12 +132,14 @@ final class EditorState: ObservableObject, SuperLog {
     private var keybindingCancellable: AnyCancellable?
     private var settingsCancellable: AnyCancellable?
     private var xcodeContextCancellable: AnyCancellable?
+    private var xcodeSemanticProgressCancellable: AnyCancellable?
     private var panelBindings = Set<AnyCancellable>()
     private var multiCursorSearchSession: EditorMultiCursorSearchSession?
     private let sessionSyncGate = SessionSyncGate()
     private var isRestoringUndoState = false
     let referencesRequestGeneration = RequestGeneration()
     private let editorUndoManager = EditorUndoManager()
+    private var lastSemanticReadinessState: EditorSemanticReadinessState = .idle
 
     var savePipelineOptions: EditorSavePipelineOptions {
         saveController.pipelineOptions(
@@ -209,6 +211,12 @@ final class EditorState: ObservableObject, SuperLog {
             }
             .store(in: &panelBindings)
 
+        panelState.$selectedReferenceResult
+            .sink { [weak self] result in
+                self?.selectedReferenceResult = result.map(Self.referenceResult(from:))
+            }
+            .store(in: &panelBindings)
+
         panelState.$isReferencePanelPresented
             .sink { [weak self] isPresented in
                 self?.isReferencePanelPresented = isPresented
@@ -253,12 +261,23 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前文件 URL
     @Published private(set) var currentFileURL: URL? {
         didSet {
+            XcodeProjectEditorRuntimeContext.shared.updateCurrentDocument(
+                fileURL: currentFileURL,
+                content: content?.string
+            )
             refreshXcodeContextSnapshot()
         }
     }
     
     /// 当前文件内容（NSTextStorage，CodeEditSourceEditor 要求）
-    @Published var content: NSTextStorage?
+    @Published var content: NSTextStorage? {
+        didSet {
+            XcodeProjectEditorRuntimeContext.shared.updateCurrentDocument(
+                fileURL: currentFileURL,
+                content: content?.string
+            )
+        }
+    }
 
     /// Phase 1: 文档文本控制器，逐步收拢 buffer/textStorage 同步与事务应用
     let documentController = EditorDocumentController()
@@ -850,6 +869,10 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 文件名
     @Published var fileName: String = ""
+
+    var isEditingProjectPBXProj: Bool {
+        currentFileURL?.lastPathComponent == "project.pbxproj"
+    }
     
     /// 当前项目根路径（由 EditorRootView 设置，用于计算相对路径）
     var projectRootPath: String? {
@@ -1021,6 +1044,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// References 结果列表（右侧面板）
     @Published private(set) var referenceResults: [ReferenceResult] = []
+    @Published private(set) var selectedReferenceResult: ReferenceResult?
 
     /// 是否展示 References 面板
     @Published private(set) var isReferencePanelPresented: Bool = false
@@ -1186,6 +1210,14 @@ final class EditorState: ObservableObject, SuperLog {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.refreshXcodeContextSnapshot()
+                self?.updateSemanticReadinessFeedback()
+            }
+
+        xcodeSemanticProgressCancellable?.cancel()
+        xcodeSemanticProgressCancellable = lspService.progressProvider.$activeTasks
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updateSemanticReadinessFeedback()
             }
     }
 
@@ -1446,7 +1478,11 @@ final class EditorState: ObservableObject, SuperLog {
             let settingsItems = resolvedQuery.searchText.isEmpty
                 ? []
                 : settingsQuickOpenController.suggestions(matching: resolvedQuery.searchText)
-            return fileItems + settingsItems
+            let extensionItems = await editorExtensions.quickOpenSuggestions(
+                matching: resolvedQuery.searchText,
+                state: self
+            )
+            return fileItems + extensionItems + settingsItems
 
         case .documentSymbols:
             return quickOpenController.documentSymbolSuggestions(
@@ -2007,6 +2043,12 @@ final class EditorState: ObservableObject, SuperLog {
 
         if let diagnostic = resolved.selectedProblemDiagnostic {
             panelController.setSelectedProblemDiagnostic(diagnostic)
+        }
+        if let reference = resolved.selectedReferenceResult {
+            panelController.setSelectedReferenceResult(reference)
+        }
+        if let panel = resolved.presentBottomPanel {
+            presentBottomPanel(panel)
         }
         if !resolved.cursorPositions.isEmpty {
             navigateToCursorPositions(resolved.cursorPositions)
@@ -3088,6 +3130,7 @@ final class EditorState: ObservableObject, SuperLog {
         selectedProblemDiagnostic = panelState.selectedProblemDiagnostic
         isProblemsPanelPresented = panelState.isProblemsPanelPresented
         referenceResults = panelState.referenceResults.map(Self.referenceResult(from:))
+        selectedReferenceResult = panelState.selectedReferenceResult.map(Self.referenceResult(from:))
         isReferencePanelPresented = panelState.isReferencePanelPresented
         isWorkspaceSymbolSearchPresented = panelState.isWorkspaceSymbolSearchPresented
         isCallHierarchyPresented = panelState.isCallHierarchyPresented
@@ -3119,6 +3162,62 @@ final class EditorState: ObservableObject, SuperLog {
             path: result.path,
             preview: result.preview
         )
+    }
+
+    func openProblem(atLine line: Int) {
+        guard let diagnostic = panelState.problemDiagnostics
+            .filter({ Self.diagnostic($0, coversLine: line) })
+            .max(by: { Self.diagnosticSeverityRank($0.severity) < Self.diagnosticSeverityRank($1.severity) }) else {
+            return
+        }
+        performOpenItem(.problem(diagnostic))
+    }
+
+    private func updateSemanticReadinessFeedback() {
+        let nextState = semanticReadinessState()
+        guard nextState != lastSemanticReadinessState else { return }
+        let previous = lastSemanticReadinessState
+        lastSemanticReadinessState = nextState
+        guard previous != .ready, nextState == .ready else { return }
+        showStatusToast("Swift 语义索引已就绪", level: .success, duration: 1.6)
+    }
+
+    private func semanticReadinessState() -> EditorSemanticReadinessState {
+        guard xcodeContextSnapshot?.isXcodeProject == true else { return .idle }
+        if lspService.progressProvider.hasActiveWork {
+            return .indexing
+        }
+        switch XcodeProjectContextBridge.shared.buildContextProvider?.buildContextStatus {
+        case .available:
+            return .ready
+        case .resolving:
+            return .resolvingBuildContext
+        case .needsResync:
+            return .needsResync
+        case .unavailable:
+            return .unavailable
+        case .unknown, .none:
+            return .idle
+        }
+    }
+
+    private static func diagnostic(_ diagnostic: Diagnostic, coversLine line: Int) -> Bool {
+        let startLine = Int(diagnostic.range.start.line) + 1
+        let endLine = Int(diagnostic.range.end.line) + 1
+        return startLine <= line && line <= endLine
+    }
+
+    private static func diagnosticSeverityRank(_ severity: DiagnosticSeverity?) -> Int {
+        switch severity {
+        case .error:
+            return 3
+        case .warning:
+            return 2
+        case .information:
+            return 1
+        default:
+            return 0
+        }
     }
 
     private func currentBridgeState() -> EditorBridgeState {
@@ -3323,4 +3422,13 @@ final class EditorState: ObservableObject, SuperLog {
         }
         return "Lines \(range.startLine + 1)-\(range.endLine + 1)"
     }
+}
+
+private enum EditorSemanticReadinessState: Equatable {
+    case idle
+    case resolvingBuildContext
+    case indexing
+    case needsResync
+    case unavailable
+    case ready
 }

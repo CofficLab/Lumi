@@ -14,5 +14,7 @@ struct ResolvedEditorOpenItemCommand: Equatable {
     let navigationRequest: EditorNavigationRequest?
     let cursorPositions: [CursorPosition]
     let selectedProblemDiagnostic: Diagnostic?
+    let selectedReferenceResult: ReferenceResult?
+    let presentBottomPanel: EditorBottomPanelKind?
     let closeWorkspaceSymbolSearch: Bool
 }

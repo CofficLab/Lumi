@@ -32,7 +32,7 @@ actor RuntimeBridge: SuperLog {
     func run(script: String, projectPath: String, arguments: [String] = []) async -> JSScriptResult {
         let packageManager = JSEnvResolver.detectPackageManager(projectPath: projectPath)
         guard let pmPath = JSEnvResolver.packageManagerPath(packageManager) else {
-            logger.error("\(Self.t)未找到 \(packageManager.rawValue) 可执行文件")
+            Self.logger.error("\(Self.t)未找到 \(packageManager.rawValue) 可执行文件")
             return JSScriptResult(exitCode: -1, stdout: "", stderr: "Package manager '\(packageManager.rawValue)' not found", duration: 0)
         }
 
@@ -45,13 +45,13 @@ actor RuntimeBridge: SuperLog {
         }
         args.append(contentsOf: arguments)
 
-        logger.info("\(Self.t)执行: \(pmPath) \(args.joined(separator: " "))")
+        Self.logger.info("\(Self.t)执行: \(pmPath) \(args.joined(separator: " "))")
 
         let startTime = Date()
         let result = await executeProcess(executable: pmPath, arguments: args, currentDirectory: projectPath)
         let duration = Date().timeIntervalSince(startTime)
 
-        logger.info("\(Self.t)完成: exitCode=\(result.exitCode), duration=\(String(format: "%.2f", duration))s")
+        Self.logger.info("\(Self.t)完成: exitCode=\(result.exitCode), duration=\(String(format: "%.2f", duration))s")
 
         return JSScriptResult(
             exitCode: result.exitCode,

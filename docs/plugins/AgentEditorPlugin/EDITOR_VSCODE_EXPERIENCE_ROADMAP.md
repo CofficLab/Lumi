@@ -14,8 +14,8 @@
 
 ## Phase 1: Search And Navigation Depth
 
-- [ ] 参考 Xcode，在文件树上方增加右侧工作区 tabs，把 `Explorer / Open Editors / Outline` 这类常驻辅助视图收进同一容器
-- [ ] 搜索结果树补齐文件级折叠、命中计数、结果状态保留
+- [x] 参考 Xcode，在文件树上方增加右侧工作区 tabs，把 `Explorer / Open Editors / Outline` 作为常驻工作区，把 `Problems / Search / References / Workspace Symbols / Call Hierarchy` 作为上下文工作区，逐步统一到同一 workbench 容器
+- [x] 搜索结果树补齐文件级折叠、命中计数、结果状态保留
 - [ ] `Search in Files` 增加 include / exclude / files to include / files to exclude 过滤模型
 - [ ] `Search in Files` 增加 replace preview、批量替换确认与失败反馈
 - [ ] `Search Editor` 从临时导出升级为稳定文档类型，支持 reopen / restore / rerun query

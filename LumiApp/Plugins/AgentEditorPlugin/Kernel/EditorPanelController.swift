@@ -42,7 +42,16 @@ final class EditorPanelController {
     }
 
     func setReferenceResults(_ results: [ReferenceResult]) {
-        panelState.referenceResults = results.map(Self.editorReferenceResult(from:))
+        let editorResults = results.map(Self.editorReferenceResult(from:))
+        panelState.referenceResults = editorResults
+        if let selected = panelState.selectedReferenceResult,
+           editorResults.contains(selected) == false {
+            panelState.selectedReferenceResult = nil
+        }
+    }
+
+    func setSelectedReferenceResult(_ result: ReferenceResult?) {
+        panelState.selectedReferenceResult = result.map(Self.editorReferenceResult(from:))
     }
 
     func setWorkspaceSearchQuery(_ query: String) {
@@ -58,9 +67,29 @@ final class EditorPanelController {
         summary: EditorWorkspaceSearchSummary?,
         errorMessage: String?
     ) {
+        let visiblePaths = Set(results.map(\.path))
+        panelState.workspaceSearchCollapsedFilePaths = panelState.workspaceSearchCollapsedFilePaths
+            .intersection(visiblePaths)
         panelState.workspaceSearchResults = results
         panelState.workspaceSearchSummary = summary
         panelState.workspaceSearchErrorMessage = errorMessage
+        let visibleMatchIDs = Set(results.flatMap { $0.matches.map(\.id) })
+        if let selectedWorkspaceSearchMatchID = panelState.selectedWorkspaceSearchMatchID,
+           !visibleMatchIDs.contains(selectedWorkspaceSearchMatchID) {
+            panelState.selectedWorkspaceSearchMatchID = nil
+        }
+    }
+
+    func toggleWorkspaceSearchFileCollapse(path: String) {
+        if panelState.workspaceSearchCollapsedFilePaths.contains(path) {
+            panelState.workspaceSearchCollapsedFilePaths.remove(path)
+        } else {
+            panelState.workspaceSearchCollapsedFilePaths.insert(path)
+        }
+    }
+
+    func setSelectedWorkspaceSearchMatchID(_ id: String?) {
+        panelState.selectedWorkspaceSearchMatchID = id
     }
 
     func setMouseHover(content: String, symbolRect: CGRect) {
@@ -89,6 +118,7 @@ final class EditorPanelController {
             setSemanticProblems([])
         }
         setSelectedProblemDiagnostic(nil)
+        setSelectedReferenceResult(nil)
         apply(
             snapshot: updatedSnapshot(
                 problems: closeProblems,

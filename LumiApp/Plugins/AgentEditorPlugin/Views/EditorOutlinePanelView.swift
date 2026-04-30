@@ -4,6 +4,8 @@ import MagicKit
 struct EditorOutlinePanelView: View {
     @ObservedObject var state: EditorState
     @ObservedObject var provider: DocumentSymbolProvider
+    var showsHeader: Bool = true
+    var showsResizeHandle: Bool = true
 
     @State private var filterText: String = ""
     @State private var collapsedIDs = Set<String>()
@@ -12,22 +14,27 @@ struct EditorOutlinePanelView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            resizeHandle
+            if showsResizeHandle {
+                resizeHandle
+            }
 
             VStack(spacing: 0) {
-                header
-                GlassDivider()
+                if showsHeader {
+                    header
+                    GlassDivider()
+                }
                 content
             }
-            .frame(width: state.sidePanelWidth)
-            .frame(maxHeight: .infinity)
+            .frame(width: showsResizeHandle ? state.sidePanelWidth : nil)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(nsColor: .textBackgroundColor))
-            .overlay(
-                Rectangle()
-                    .fill(AppUI.Color.semantic.textTertiary.opacity(0.12))
-                    .frame(width: 1),
-                alignment: .leading
-            )
+            .overlay(alignment: .leading) {
+                if showsResizeHandle {
+                    Rectangle()
+                        .fill(AppUI.Color.semantic.textTertiary.opacity(0.12))
+                        .frame(width: 1)
+                }
+            }
         }
     }
 

@@ -123,13 +123,10 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
     /// 设置 active scheme
     func setActiveScheme(_ scheme: XcodeSchemeContext) async {
         guard let workspace = currentWorkspace else { return }
-        var resolvedScheme = scheme
-        if resolvedScheme.activeConfiguration.isEmpty {
-            resolvedScheme.activeConfiguration = resolvedScheme.defaultConfiguration ?? "Debug"
-        }
-        if resolvedScheme.activeDestination == nil {
-            resolvedScheme.activeDestination = activeDestination ?? currentWorkspace?.activeDestination ?? Self.defaultDestination()
-        }
+        let resolvedScheme = Self.resolvedSchemeSelection(
+            scheme,
+            fallbackDestination: activeDestination ?? currentWorkspace?.activeDestination ?? Self.defaultDestination()
+        )
         
         Self.logger.info("\(Self.t)切换 Scheme: \(resolvedScheme.name, privacy: .public)")
         
@@ -152,7 +149,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
     /// 设置 active configuration
     func setActiveConfiguration(_ configurationName: String) async {
         guard var scheme = activeScheme else { return }
-        scheme.activeConfiguration = configurationName
+        scheme = Self.resolvedSchemeConfiguration(scheme, configuration: configurationName)
         activeScheme = scheme
         activeConfiguration = configurationName
         currentWorkspace?.activeScheme = scheme
@@ -290,7 +287,12 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         let destination = activeDestination?.destinationQuery ?? scheme.activeDestination?.destinationQuery
         
         // 先从缓存查找
-        let cacheKey = "\(workspace.id)|\(scheme.name)|\(configuration)|\(destination ?? "default")"
+        let cacheKey = Self.buildSettingsCacheKey(
+            workspaceID: workspace.id,
+            scheme: scheme.name,
+            configuration: configuration,
+            destination: destination
+        )
         if let cached = buildSettingsCache[cacheKey], !cached.isEmpty {
             let selectedSettings = selectBuildSettings(from: cached, preferredTargetNames: matchedTargets) ?? cached.first!
             updateActiveDestination(using: selectedSettings)
@@ -338,9 +340,10 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
     
     /// 使特定 scheme 的缓存失效
     func invalidateContext(for schemeName: String) {
-        buildSettingsCache = buildSettingsCache.filter { key, _ in
-            !key.contains(schemeName)
-        }
+        buildSettingsCache = Self.invalidatedBuildSettingsCache(
+            buildSettingsCache,
+            removingScheme: schemeName
+        )
         Self.logger.info("\(Self.t)Scheme '\(schemeName, privacy: .public)' 的 build context 已失效")
     }
     
@@ -396,6 +399,53 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     static func defaultDestination() -> XcodeDestinationContext {
         XcodeDestinationContext.macOSDefault()
+    }
+
+    static func resolvedSchemeSelection(
+        _ scheme: XcodeSchemeContext,
+        fallbackDestination: XcodeDestinationContext
+    ) -> XcodeSchemeContext {
+        var resolvedScheme = scheme
+        if resolvedScheme.activeConfiguration.isEmpty {
+            resolvedScheme.activeConfiguration = resolvedScheme.defaultConfiguration ?? "Debug"
+        }
+        if resolvedScheme.activeDestination == nil {
+            resolvedScheme.activeDestination = fallbackDestination
+        }
+        return resolvedScheme
+    }
+
+    static func resolvedSchemeConfiguration(
+        _ scheme: XcodeSchemeContext,
+        configuration: String
+    ) -> XcodeSchemeContext {
+        var resolved = scheme
+        resolved.activeConfiguration = configuration
+        return resolved
+    }
+
+    static func buildSettingsCacheKey(
+        workspaceID: String,
+        scheme: String,
+        configuration: String,
+        destination: String?
+    ) -> String {
+        "\(workspaceID)|\(scheme)|\(configuration)|\(destination ?? "default")"
+    }
+
+    static func cacheKey(_ key: String, matchesScheme scheme: String) -> Bool {
+        let components = key.split(separator: "|", omittingEmptySubsequences: false)
+        guard components.count >= 4 else { return false }
+        return String(components[1]) == scheme
+    }
+
+    static func invalidatedBuildSettingsCache(
+        _ cache: [String: [[String: String]]],
+        removingScheme scheme: String
+    ) -> [String: [[String: String]]] {
+        cache.filter { key, _ in
+            !cacheKey(key, matchesScheme: scheme)
+        }
     }
     
     // MARK: - 工具方法

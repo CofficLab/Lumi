@@ -32,7 +32,7 @@ final class EditorSessionStore: ObservableObject {
 
         if let existing = sessions.first(where: { $0.fileURL == fileURL }) {
             activeSessionID = existing.id
-            recordActivation(for: existing.id)
+            recordActivation(for: existing)
             return existing
         }
 
@@ -40,7 +40,7 @@ final class EditorSessionStore: ObservableObject {
         sessions.append(session)
         tabs.append(EditorTab(sessionID: session.id, fileURL: fileURL))
         activeSessionID = session.id
-        recordActivation(for: session.id)
+        recordActivation(for: session)
         return session
     }
 
@@ -54,13 +54,16 @@ final class EditorSessionStore: ObservableObject {
         session.applySnapshot(from: snapshot)
         updateTab(for: session)
         activeSessionID = session.id
+        if navigationHistory.currentSessionID == session.id {
+            navigationHistory.replaceCurrent(with: session)
+        }
     }
 
     @discardableResult
     func activate(sessionID: EditorSession.ID) -> EditorSession? {
         guard let session = sessions.first(where: { $0.id == sessionID }) else { return nil }
         activeSessionID = session.id
-        recordActivation(for: session.id)
+        recordActivation(for: session)
         return session
     }
 
@@ -126,7 +129,7 @@ final class EditorSessionStore: ObservableObject {
         let nextIndex = min(index, sessions.count - 1)
         let nextSession = sessions[nextIndex]
         activeSessionID = nextSession.id
-        recordActivation(for: nextSession.id)
+        recordActivation(for: nextSession)
         return nextSession
     }
 
@@ -137,24 +140,24 @@ final class EditorSessionStore: ObservableObject {
         tabs = tabs.filter { $0.sessionID == sessionID }
         activeSessionID = kept.id
         navigationHistory.clear()
-        recordActivation(for: kept.id)
+        recordActivation(for: kept)
         return kept
     }
 
     @discardableResult
     func goBack() -> EditorSession? {
-        guard let sessionID = navigationHistory.goBack() else { return nil }
-        activeSessionID = sessionID
-        bypassHistoryForSessionID = sessionID
-        return session(for: sessionID)
+        guard let entry = navigationHistory.goBack() else { return nil }
+        activeSessionID = entry.sessionID
+        bypassHistoryForSessionID = entry.sessionID
+        return entry.snapshot
     }
 
     @discardableResult
     func goForward() -> EditorSession? {
-        guard let sessionID = navigationHistory.goForward() else { return nil }
-        activeSessionID = sessionID
-        bypassHistoryForSessionID = sessionID
-        return session(for: sessionID)
+        guard let entry = navigationHistory.goForward() else { return nil }
+        activeSessionID = entry.sessionID
+        bypassHistoryForSessionID = entry.sessionID
+        return entry.snapshot
     }
 
     func closeAll() {
@@ -164,12 +167,12 @@ final class EditorSessionStore: ObservableObject {
         navigationHistory.clear()
     }
 
-    private func recordActivation(for sessionID: EditorSession.ID) {
-        if bypassHistoryForSessionID == sessionID {
+    private func recordActivation(for session: EditorSession) {
+        if bypassHistoryForSessionID == session.id {
             bypassHistoryForSessionID = nil
             return
         }
-        navigationHistory.recordVisit(sessionID)
+        navigationHistory.recordVisit(session)
     }
 
     private func updateTab(for session: EditorSession) {

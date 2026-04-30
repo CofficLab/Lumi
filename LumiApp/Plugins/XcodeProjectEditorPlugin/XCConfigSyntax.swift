@@ -4,6 +4,17 @@ import AppKit
 /// XCConfig 语法高亮和编辑支持
 /// 对应 Phase 7: xcconfig 语法与跳转
 enum XCConfigSyntax {
+
+    struct IncludeDirective: Equatable {
+        let path: String
+        let pathRange: NSRange
+    }
+
+    struct KeyOccurrence: Equatable {
+        let key: String
+        let range: NSRange
+        let line: Int
+    }
     
     /// 标记类型
     enum TokenType: String {
@@ -68,6 +79,53 @@ enum XCConfigSyntax {
         
         return tokens.sorted { $0.range.location < $1.range.location }
     }
+
+    static func includeDirective(
+        at location: Int,
+        in content: String
+    ) -> IncludeDirective? {
+        let nsRange = NSRange(location: 0, length: content.utf16.count)
+        let pattern = #"(?m)^\s*#include(?:_once)?\s+"([^"]+)""#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+
+        for match in regex.matches(in: content, range: nsRange) {
+            let pathRange = match.range(at: 1)
+            guard pathRange.location != NSNotFound else { continue }
+            let extendedRange = NSRange(location: pathRange.location - 1, length: pathRange.length + 2)
+            guard NSLocationInRange(location, extendedRange),
+                  let swiftRange = Range(pathRange, in: content) else { continue }
+            return IncludeDirective(path: String(content[swiftRange]), pathRange: pathRange)
+        }
+        return nil
+    }
+
+    static func resolveIncludedFileURL(
+        for directive: IncludeDirective,
+        currentFileURL: URL
+    ) -> URL? {
+        let candidate = currentFileURL.deletingLastPathComponent()
+            .appendingPathComponent(directive.path)
+            .standardizedFileURL
+        return FileManager.default.fileExists(atPath: candidate.path) ? candidate : nil
+    }
+
+    static func keyOccurrences(in content: String) -> [KeyOccurrence] {
+        let pattern = #"(?m)^\s*([A-Za-z_][A-Za-z0-9_]*)\s*([=+-]=?)\s*(.+)$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let nsRange = NSRange(location: 0, length: content.utf16.count)
+        return regex.matches(in: content, range: nsRange).compactMap { match in
+            let keyRange = match.range(at: 1)
+            guard keyRange.location != NSNotFound,
+                  let swiftRange = Range(keyRange, in: content) else {
+                return nil
+            }
+            return KeyOccurrence(
+                key: String(content[swiftRange]),
+                range: keyRange,
+                line: lineNumber(for: keyRange.location, in: content)
+            )
+        }
+    }
     
     private static func addTokens(for pattern: String, in content: String, nsContent: NSString, type: TokenType, to tokens: inout [Token]) {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines) else { return }
@@ -76,6 +134,17 @@ enum XCConfigSyntax {
             let range = match.range(at: 0)
             tokens.append(Token(type: type, range: range))
         }
+    }
+
+    private static func lineNumber(for utf16Offset: Int, in content: String) -> Int {
+        var line = 1
+        var offset = 0
+        for scalar in content.utf16 {
+            if offset >= utf16Offset { break }
+            if scalar == 10 { line += 1 }
+            offset += 1
+        }
+        return line
     }
     
     /// 应用语法高亮到 text storage
