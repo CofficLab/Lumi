@@ -93,6 +93,12 @@ final class PluginVM: ObservableObject, SuperLog {
     private var cachedAgentTools: [AgentTool]?
     private var cachedAgentToolFactories: [AnyAgentToolFactory]?
     private var cachedSendMiddlewares: [SendMiddleware]?
+    /// 已发现的 LLM 供应商类型
+    ///
+    /// 在插件自动发现阶段，从所有实现了 `llmProviderType()` 的插件中收集。
+    /// 需要在 `RootViewContainer` 初始化时通过 `registerLLMProviders(to:)` 注册到 `LLMProviderRegistry`。
+    private(set) var discoveredLLMProviderTypes: [any SuperLLMProvider.Type] = []
+
     /// 初始化插件 VM
     ///
     /// - Parameters:
@@ -301,6 +307,15 @@ final class PluginVM: ObservableObject, SuperLog {
         cachedAgentToolFactories = nil
         cachedSendMiddlewares = nil
 
+        // 从插件中收集 LLM 供应商类型
+        var providerTypes: [any SuperLLMProvider.Type] = []
+        for plugin in sortedPlugins {
+            if let providerType = plugin.llmProviderType() {
+                providerTypes.append(providerType)
+            }
+        }
+        self.discoveredLLMProviderTypes = providerTypes
+
         // 调用生命周期钩子
         for plugin in sortedPlugins {
             plugin.onRegister()
@@ -314,7 +329,7 @@ final class PluginVM: ObservableObject, SuperLog {
         NotificationCenter.postPluginsDidLoad()
         
         if Self.verbose {
-            AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins.")
+            AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins, \(providerTypes.count) LLM providers.")
         }
     }
     
@@ -576,6 +591,19 @@ final class PluginVM: ObservableObject, SuperLog {
                 let type = type(of: plugin)
                 return (type.id, type.displayName, type.iconName, view)
             }
+    }
+
+    /// 将已发现的 LLM 供应商注册到供应商注册表
+    ///
+    /// 在 `RootViewContainer` 初始化时调用，将所有通过插件发现的 LLM 供应商
+    /// 统一注册到 `LLMProviderRegistry`。
+    ///
+    /// - Parameter registry: 供应商注册表
+    func registerLLMProviders(to registry: LLMProviderRegistry) {
+        registry.register(discoveredLLMProviderTypes)
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)📦 Registered \(discoveredLLMProviderTypes.count) LLM providers from plugins.")
+        }
     }
 
     /// 获取所有启用插件提供的主题贡献（按插件顺序和主题顺序稳定排序）

@@ -69,9 +69,13 @@ final class RootViewContainer: ObservableObject {
         // 初始化上下文服务
         self.contextService = ContextService()
 
-        // 初始化供应商注册表（自动扫描并注册所有 SuperLLMProvider）
+        // 初始化插件 VM（自动发现所有插件，包含 LLM Provider 插件）
+        // 注意：pluginVM 在 init 开头赋值，后续代码可直接使用
+        self.pluginVM = PluginVM.shared
+
+        // 初始化供应商注册表（从插件中收集 LLM Provider）
         let providerRegistry = LLMProviderRegistry()
-        LLMProviderRegistration.registerAllProviders(to: providerRegistry)
+        pluginVM.registerLLMProviders(to: providerRegistry)
 
         // 初始化 LLM 服务（显式依赖 Registry）
         self.llmService = LLMService(registry: providerRegistry)
@@ -98,7 +102,6 @@ final class RootViewContainer: ObservableObject {
         // ========================================
 
         self.appProvider = GlobalVM()
-        self.pluginVM = PluginVM.shared
         self.messageRendererVM = MessageRendererVM.shared
         self.mystiqueThemeManager = appProvider.themeManager
         self.projectVM = Lumi.ProjectVM(
