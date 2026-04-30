@@ -34,8 +34,9 @@ actor AgentChatPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 右侧栏视图：消息列表 + 输入区
-    @MainActor func addSidebarView() -> AnyView? {
-        AnyView(AgentChatSidebarView())
+    @MainActor func addSidebarView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(AgentChatSidebarView())
     }
 }
 

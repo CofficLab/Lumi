@@ -116,7 +116,7 @@ struct ContentView: View, SuperLog {
                         RailView()
 
                         // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
-                        PanelContentView()
+                        PanelContentView().frame(maxWidth: .infinity)
 
                         // 右侧栏：聚合所有插件提供的侧边栏视图
                         RightSidebarContainerView(views: sidebarViews)
@@ -128,7 +128,7 @@ struct ContentView: View, SuperLog {
                         ActivityBar()
 
                         // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
-                        PanelContentView()
+                        PanelContentView().frame(maxWidth: .infinity)
 
                         // 右侧栏：聚合所有插件提供的侧边栏视图
                         RightSidebarContainerView(views: sidebarViews)
@@ -143,7 +143,7 @@ struct ContentView: View, SuperLog {
                         RailView()
 
                         // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
-                        PanelContentView()
+                        PanelContentView().frame(maxWidth: .infinity)
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
                 } else {
@@ -152,7 +152,7 @@ struct ContentView: View, SuperLog {
                         ActivityBar()
 
                         // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
-                        PanelContentView()
+                        PanelContentView().frame(maxWidth: .infinity)
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
                 }

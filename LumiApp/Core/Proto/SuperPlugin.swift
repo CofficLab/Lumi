@@ -160,8 +160,11 @@ protocol SuperPlugin: Actor {
     /// 会被水平堆叠，按插件的 `order` 升序排列（order 小的在左，大的在右）。
     /// 右侧栏与面板内容区之间支持拖拽调整宽度。
     ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件可据此判断是否提供侧边栏视图（例如仅在特定插件激活时显示）。
+    ///
     /// 典型用例：聊天栏、预览面板、属性检查器等。
-    @MainActor func addSidebarView() -> AnyView?
+    @MainActor func addSidebarView(activeIcon: String?) -> AnyView?
 
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?

@@ -599,16 +599,18 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 右侧栏视图数组
     func getSidebarViews() -> [AnyView] {
-        plugins
+        let activeIcon = activePanelIcon
+        return plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addSidebarView() }
+            .compactMap { $0.addSidebarView(activeIcon: activeIcon) }
     }
 
     /// 当前是否有右侧栏视图
     func hasSidebars() -> Bool {
-        plugins
+        let activeIcon = activePanelIcon
+        return plugins
             .filter { isPluginEnabled($0) }
-            .contains { $0.addSidebarView() != nil }
+            .contains { $0.addSidebarView(activeIcon: activeIcon) != nil }
     }
 
     /// 获取所有插件提供的状态栏弹窗视图

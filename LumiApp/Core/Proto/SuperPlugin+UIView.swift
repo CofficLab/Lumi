@@ -49,7 +49,7 @@ extension SuperPlugin {
     @MainActor func addRailView(activeIcon: String?) -> AnyView? { nil }
 
     /// 默认实现：不提供右侧栏视图
-    @MainActor func addSidebarView() -> AnyView? { nil }
+    @MainActor func addSidebarView(activeIcon: String?) -> AnyView? { nil }
 
     /// 默认实现：不提供设置视图
     @MainActor func addSettingsView() -> AnyView? { nil }

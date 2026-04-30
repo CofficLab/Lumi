@@ -88,6 +88,7 @@ struct PortManagerView: View {
         }, message: {
             Text(errorMessage ?? String(localized: "Unknown error"))
         })
+        .frame(maxWidth: .infinity)
     }
 
     func refresh() async {
