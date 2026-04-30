@@ -21,7 +21,7 @@ import Combine
 /// │   └── (已迁移到插件提供)
 /// │
 /// └── 插件工具 (Plugin Tools)
-///     ├── AgentCoreToolsPlugin
+///     ├── 内核工具插件
 ///     │   ├── ShellTool (执行命令)
 ///     │   ├── ListDirectoryTool (列出目录)
 ///     │   ├── ReadFileTool (读取文件)
@@ -114,7 +114,7 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - Setup
 
-    // 说明：原先 `setupBuiltInTools()` 已迁移到插件（见 `AgentCoreToolsPlugin`）。
+    // 说明：原先 `setupBuiltInTools()` 已迁移到插件提供。
 
     /// 设置插件工具监听
     ///
