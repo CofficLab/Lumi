@@ -54,201 +54,212 @@
 
 ---
 
-## Phase 1: Xcode Project Identity
+## 已完成基线（代码库现状）
 
-让编辑器明确知道"当前打开的是 Xcode 工程"，而不是把它当作普通文件夹。
+以下是当前代码库中**已经完整实现**的能力，作为新 Phase 的起点：
 
-### ✅ Phase 1 完成清单
+### 项目识别与解析
+- `XcodeWorkspaceContext` / `XcodeProjectContext` / `XcodeTargetContext` / `XcodeSchemeContext` / `XcodeDestinationContext` / `XcodeBuildConfigurationContext` — 完整的 Xcode 工程模型层
+- `XcodeProjectResolver` — 自动发现 `.xcworkspace` / `.xcodeproj`，调用 `xcodebuild -list -json` 解析
+- `XcodeBuildSettingsParser` — 解析 `xcodebuild -list -json` 和 `xcodebuild -showBuildSettings -json` 输出
+- `XcodePBXProjParser` — 轻量级 pbxproj 解析（支持 File System Synchronized Group 模式）
+- 文件归属查询 — `findTargetsForFile` / `resolvePreferredTarget` / `targetsCompatibleWithActiveScheme`
+- `XcodeEditorContextSnapshot` — Sendable 快照供编辑器消费
 
-- [x] `XcodeWorkspaceContext` — 工作空间模型，包含 projects / schemes / activeScheme / activeDestination
-- [x] `XcodeProjectContext` — 项目模型，包含 targets / buildConfigurations / schemes
-- [x] `XcodeTargetContext` — Target 模型，包含 sourceFiles / buildConfigurations
-- [x] `XcodeSchemeContext` — Scheme 模型，包含 buildableTargets / activeConfiguration / activeDestination
-- [x] `XcodeDestinationContext` — 构建目标模型（macOS / iOS / Simulator 等）
-- [x] `XcodeBuildConfigurationContext` — Build Configuration 模型
-- [x] `XcodeProjectResolver` — 自动发现 `.xcworkspace` / `.xcodeproj`，调用 `xcodebuild -list -json` 解析
-- [x] `XcodeBuildSettingsParser` — 解析 `xcodebuild -list -json` 和 `xcodebuild -showBuildSettings -json` 输出
-- [x] `.xcworkspace` / `.xcodeproj` 自动识别 — `findWorkspace(in:)` 优先 workspace 再 project
-- [x] 文件归属查询接口 — `findTargetsForFile(fileURL:)` / `resolvePreferredTarget(for:)`
-- [x] `XcodeEditorContextSnapshot` — 供编辑器主链路消费的 Sendable 快照
+### Build Context 生成
+- `XcodeBuildContextProvider` — 完整生命周期：项目发现 → 解析 → xcode-build-server 查找 → buildServer.json 生成 → 缓存 → 文件归属查询
+- `XcodeFileBuildContext` — 文件级编译上下文（SDK / toolchain / target triple / header search paths / framework search paths / active compilation conditions / module name）
+- build settings 缓存策略 — `workspace|scheme|configuration|destination` 缓存键
+- context 失效机制 — `invalidateAllContexts()` / scheme 切换自动失效
+- `BuildContextStatus` 枚举 — `unknown` / `resolving` / `available` / `unavailable` / `needsResync`
+
+### SourceKit-LSP 集成
+- `XcodeProjectContextBridge` — XcodeProjectEditorPlugin 与 LSPService 之间的桥梁
+- workspaceFolders 正确生成 — `makeWorkspaceFolders()` 为 sourcekit-lsp 生成参数
+- `LanguageServer` 接受 workspaceFolders，不再硬编码 nil
+- pending changes flush 策略 — definition / references / rename 前 flush
+- `LSPDebouncer` — 文档同步防抖和节流
+- LSP 自动恢复机制 — transport 断链检测 → 重启 → 重开文档
+
+### 语义导航
+- definition / type definition / implementation / declaration — 通过 LSP 请求完整实现
+- references / call hierarchy / workspace / document symbols — 已实现
+- `EditorJumpToDefinitionDelegate` — Cmd+Click 跳转 + AST 回退 + regex 回退
+- preflight 拦截 — `XcodeSemanticAvailability.preflightMessage()` / `preflightError()`
+- missing result 分类 — `missingResultMessage()` 区分"没结果"与"上下文不可用"
+
+### 诊断与重构
+- diagnostics 发布处理 — `handlePublishDiagnostics`
+- rename / code action / fix-it — 请求链路完整
+- 问题面板集成 — `ProblemsPanelView` 与 LSP diagnostics 分区显示
+
+### 错误处理与可用性
+- `XcodeLSPErrorTaxonomy` — 13 种错误分类，每种含 `errorDescription` + `suggestedAction` + `category`
+- `XcodeLSPErrorClassifier` — 通用错误 → Xcode 特定错误分类，含 `classifyPreflight` / `classify` / `classifyMissingResult`
+- `XcodeSemanticAvailability` — 统一语义可用性检查（workspace 级 + 文件级），9 种原因类型
+
+### 编辑器 UX
+- `XcodeProjectStatusBar` — scheme / configuration / destination 选择器 + build context 状态指示器
+- `XcodeProjectStatusDetailView` — 浮窗详情含完整上下文信息 + semantic availability 报告
+- `XcodeFileNotInTargetWarning` — 文件未绑定 target 提示
+- "需要重新解析" 提示 — needsResync 状态 + 重新解析按钮
+- `BridgeCachedState` — Sendable 缓存快照
+- 通知中心事件 — `lumiEditorXcodeContextDidChange` / `lumiEditorXcodeSnapshotDidChange`
+
+### 工程文件编辑
+- `XCConfigSyntax` — xcconfig 语法高亮（comment / include / key / value / operator / variable reference / string）
+- `XCConfigValidator` — xcconfig 验证器
+- `PlistEditing` — Info.plist key 参考（19 个）+ Entitlements key 参考（10 个）+ 基础验证 + key 定位
+
+### 测试
+- `XcodeProjectFixtureFactory` — Xcode 项目 fixture 工厂
+- `XcodePBXProjParserTests` — pbxproj 归属解析测试
+- `XcodeSemanticAvailabilityTests` — semantic availability 规则测试（9 个用例）
+- `WorkspaceSymbolProviderTests` — workspace symbols 消费层测试
+- `CallHierarchyProviderTests` — call hierarchy 消费层测试
+- `LSPCoordinatorDocumentSymbolsTests` — document symbols 消费层测试
 
 ---
 
-## Phase 2: Scheme / Target / Configuration Awareness
+## Phase 1: 全面工程解析（XcodeProj 集成）
 
-把会影响语义编辑结果的工程参数显式化。
+**目标**：引入 `tuist/XcodeProj` 替换手写的 `XcodePBXProjParser`，让 Lumi 能解析**所有类型**的 Xcode 项目（不仅是 Xcode 16 的 File System Synchronized Group 模式）。
 
-### ✅ Phase 2 完成清单
+当前 `XcodePBXProjParser` 仅支持 Xcode 16 新格式的 target → 文件归属，无法处理传统 PBXBuildFile / PBXSourcesBuildPhase 模式的项目，这会直接影响大量存量项目的语义编辑体验。
 
-- [x] scheme 列表解析 — `xcodebuild -list -json` 输出解析
-- [x] target 列表解析 — 同上
-- [x] configuration 列表解析 — 同上
-- [x] destination 基础模型 — `XcodeDestinationContext`，含 `destinationQuery` 和平台推导
-- [x] `setActiveScheme(_:)` — 切换 scheme，清理缓存，重新生成 `buildServer.json`
-- [x] `setActiveConfiguration(_:)` — 切换 configuration
-- [x] scheme 切换后的 context invalidation — `invalidateAllContexts()` / `invalidateContext(for:)`
-- [x] 智能 scheme 自动选择 — `selectBestScheme()`：同名 > target 同名 > 排除依赖包 > 兜底
-- [x] active scheme / target 状态栏入口 — 在 Phase 8 的 `XcodeProjectStatusBar` 中实现
-- [x] destination 从 build settings 推导 — `deriveDestination(from:)` 支持 macOS / iOS / tvOS / watchOS 及其 Simulator
-
----
-
-## Phase 3: Build Context Provider
-
-让 Lumi 能为 `sourcekit-lsp` 提供真实可用的 Xcode 编译上下文。
-
-### ✅ Phase 3 完成清单
-
-- [x] `XcodeBuildContextProvider` — 完整生命周期：项目发现 → 解析 → xcode-build-server 查找 → buildServer.json 生成 → 缓存 → 文件归属查询
-- [x] `XcodeFileBuildContext` — 文件级编译上下文（含 SDK / toolchain / target triple / header search paths / framework search paths / active compilation conditions / module name）
-- [x] `XcodePBXProjParser` — 轻量级 pbxproj 解析，支持 File System Synchronized Group 模式的 target → 文件归属和 membershipExceptions
-- [x] build settings 缓存 — 缓存键 `workspace|scheme|configuration|destination`，缓存优先 → 实时获取 fallback
-- [x] build context 失效策略 — `invalidateAllContexts()` / `invalidateContext(for:)` / scheme 切换自动失效
-- [x] `BuildContextStatus` 枚举 — `unknown` / `resolving` / `available` / `unavailable` / `needsResync`，含 `displayDescription`
-- [x] 缺失上下文时的明确错误提示 — 通过 `BuildContextStatus.unavailable(reason)` 和 `XcodeSemanticAvailability` 展示
-- [x] `xcode-build-server` 路径查找 — 支持多路径探测 + `which` fallback
-
-### ⚠️ Phase 3 待完善清单
-
-- [ ] 引入 [tuist/XcodeProj](https://github.com/tuist/XcodeProj)（2200⭐，MIT）替换手写的 `XcodePBXProjParser`
-  - 当前 `XcodePBXProjParser` 仅支持 Xcode 16 的 File System Synchronized Group 模式，无法解析传统 Build Phase 项目
-  - `XcodeProj` 支持所有 pbxproj section 的完整解析和读写，被 Tuist / XcodeGen / Sourcery 等项目生产使用
+- [ ] 引入 [tuist/XcodeProj](https://github.com/tuist/XcodeProj)（MIT）作为 SPM 依赖
   - SPM 集成：`.package(url: "https://github.com/tuist/XcodeProj.git", .upToNextMajor(from: "8.12.0"))`
-- [ ] 用 `XcodeProj` 重写 target → 文件归属查询，覆盖传统 PBXBuildFile / PBXSourcesBuildPhase 模式
-- [ ] 用 `XcodeProj` 解析 PBXGroup / PBXFileReference 树，为项目 navigator 提供数据源
-- [ ] 用 `XcodeProj` 直接读取 Build Configuration，减少对 `xcodebuild -showBuildSettings` 的进程调用依赖
-- [ ] 用 `XcodeProj` 解析 Target Dependency，支持 target 间依赖关系的可视化
+  - `XcodeProj` 被Tuist / XcodeGen / Sourcery 等项目生产使用，支持所有 pbxproj section 的完整解析和读写
+- [ ] 用 `XcodeProj` 重写 `XcodePBXProjParser`，覆盖传统 PBXBuildFile / PBXSourcesBuildPhase / PBXHeadersBuildPhase 模式
+  - 同时保留 File System Synchronized Group 模式的支持
+  - 确保 `MembershipGraph` 接口不变，上层调用方无需修改
+- [ ] 用 `XcodeProj` 解析 PBXGroup / PBXFileReference 树，暴露项目 navigator 数据源接口
+  - 提供 `ProjectNavigatorDataSource` 协议，为后续项目文件树 UI 提供数据
+- [ ] 用 `XcodeProj` 直接读取 Build Configuration 的 settings 字典，减少对 `xcodebuild -showBuildSettings` 的进程调用依赖
+  - 仅在需要展开 build setting 变量（`$(SRCROOT)` 等）时才 fallback 到 `xcodebuild`
+- [ ] 用 `XcodeProj` 解析 PBXTargetDependency，暴露 target 间依赖关系
+  - 用于 scheme 自动选择和依赖关系可视化
+- [ ] 为新的解析逻辑编写回归测试
+  - 传统 Build Phase 项目 fixture
+  - File System Synchronized Group 项目 fixture
+  - 混合项目 fixture
+
+**交付标准**：打开任意 `.xcodeproj`（无论新旧格式），target → 文件归属查询都能正确工作。
 
 ---
 
-## Phase 4: SourceKit-LSP Integration Hardening
+## Phase 2: 导航体验完善（返回栈 / 面板联动）
 
-把当前通用 LSP 接线提升为"面向 Xcode 项目的 Swift 语言服务接线"。
+**目标**：补齐用户最敏感的编辑器导航体验，让跨文件跳转、返回、面板之间的联动形成完整闭环。
 
-### ✅ Phase 4 完成清单
-
-- [x] `XcodeProjectContextBridge` — XcodeProjectEditorPlugin 与 LSPService 之间的桥梁，管理 provider 注册、缓存状态、workspace folders 生成
-- [x] `XcodeProjectEditorPlugin.register()` 向 Bridge 注册 buildContextProvider
-- [x] `LSPService.setProjectRootPath()` 触发 `XcodeProjectContextBridge.projectOpened(at:)`
-- [x] `workspaceFolders` 补齐 — `LSPService.makeWorkspaceFolders()` 为 sourcekit-lsp 生成正确的 workspaceFolders
-- [x] `LanguageServer.create()` 接受 `workspaceFolders` 参数
-- [x] `LanguageServer.makeInitParams()` 使用传入的 workspaceFolders，不再硬编码 `nil`
-- [x] definition / references / rename 前的 pending changes flush 策略 — `flushPendingChangesIfNeeded(uri:operation:)`
-- [x] `LSPDebouncer` — 文档同步防抖（debounce）和节流（throttle）
-- [x] `XcodeLSPErrorTaxonomy` — 13 种错误分类（server / project / build / semantic / timeout），每种含 `errorDescription` + `suggestedAction` + `category`
-- [x] `XcodeLSPErrorClassifier` — 将通用错误分类为 Xcode 特定错误，含 `classifyPreflight` / `classify` / `classifyMissingResult`
-- [x] LSP 自动恢复机制 — `recoverServerIfNeeded` 检测 transport 断链 → 重启 → 重开文档
-
----
-
-## Phase 5: Swift Semantic Navigation Parity
-
-补齐用户最敏感的 Swift 语义导航体验。
-
-### ✅ Phase 5 完成清单
-
-- [x] definition / type definition / implementation / declaration 请求已在 `LSPService` 中实现
-- [x] references / call hierarchy / workspace symbols 已实现
-- [x] 跳转失败原因细分 — `XcodeSemanticAvailability.preflightMessage()` / `missingResultMessage()` 区分 "没结果" 与 "上下文不可用"
-- [x] `JumpToDefinitionDelegate` 集成 `XcodeSemanticAvailability` preflight 和 missing result 分类
-- [x] workspace / document symbols 接入 Xcode semantic availability preflight
-- [x] call hierarchy 接入 Xcode semantic availability preflight
-
-### ⚠️ Phase 5 待完善清单
-
-- [ ] 返回栈 / 前进栈导航
-- [ ] references 面板与导航历史统一
-- [ ] breadcrumb / outline / symbols 联动
+- [ ] 实现导航返回栈 / 前进栈（Navigation Back / Forward Stack）
+  - 记录每次跨文件跳转的来源和目标
+  - 支持快捷键和工具栏按钮
+  - 栈深度上限（如 100 条），防止内存膨胀
+- [ ] references 面板与导航历史联动
+  - 从 references 面板跳转后，自动记入导航栈
+  - 支持从导航栈回到 references 面板的上一次上下文
+- [ ] breadcrumb / outline / symbols 三者联动
+  - 当前 breadcrumb 已有 `BreadcrumbToolBarView`，需与 document symbols 联动
+  - 光标移动时 breadcrumb 自动跟踪当前 scope
+  - 点击 breadcrumb 节点跳转到对应 outline / symbol 位置
 - [ ] Swift 跨文件 definition 稳定性回归集
+  - 编写针对真实 Xcode 工程的跨文件跳转测试用例
+  - 覆盖：同 target 内跳转、跨 target 跳转、系统框架跳转、SPM 依赖跳转
+
+**交付标准**：用户执行跨文件跳转后可以通过快捷键返回；breadcrumb 实时反映光标所在 scope。
 
 ---
 
-## Phase 6: Swift Diagnostics, Fix-It, and Rename
+## Phase 3: 诊断与重构稳定性
 
-把"能跳转"提升到"能做日常 Swift 编辑工作"。
+**目标**：把"能跳转"提升到"能做日常 Swift 编辑工作"——diagnostics 准确、rename 稳定、问题面板和编辑器 gutter 联动。
 
-### ✅ Phase 6 完成清单
-
-- [x] diagnostics 发布处理 — `handlePublishDiagnostics` 接收 LSP diagnostics
-- [x] rename / code action / fix-it 请求链路完整 — `LSPService` 中 rename 和 code action 前均 flush pending changes
-- [x] 自动恢复机制 — `recoverServerIfNeeded` 检测断链后重启并重开文档
-- [x] 问题面板集成 Xcode semantic problems — `ProblemsPanelView` 与 LSP diagnostics 分区显示
-
-### ⚠️ Phase 6 待完善清单
-
-- [ ] diagnostics 与 `xcodebuild` 一致性比对
+- [ ] diagnostics 与 `xcodebuild build` 输出的一致性比对
+  - 确认 sourcekit-lsp diagnostics 和 `xcodebuild` 输出的差异范围
+  - 对关键 diagnostic（error / warning）确保不会遗漏或误报
 - [ ] 多文件 rename 端到端验证
+  - 测试 Swift 跨文件 rename 在各种场景下的正确性
+  - 覆盖：同 target rename、跨 target rename、protocol + extension rename、泛型 rename
 - [ ] 问题面板与编辑器 gutter 联动
+  - gutter 中的 diagnostic icon 点击后跳转到问题面板对应条目
+  - 问题面板条目点击后跳转到编辑器对应行并高亮
+  - 文件切换时 gutter diagnostic 同步更新
 - [ ] 保存前后 diagnostics 刷新策略统一
+  - 保存文件后自动触发 diagnostics 更新
+  - 避免"保存后 diagnostics 消失又重现"的闪烁问题
+
+**交付标准**：用户在日常 Swift 编辑中，diagnostics 和 rename 的准确性和稳定性达到可信赖的水平。
 
 ---
 
-## Phase 7: Xcode Project File Editing
+## Phase 4: 工程文件编辑增强
 
-让 Xcode 工程常见辅助文件的编辑体验不再是"普通文本框"。
-
-### ✅ Phase 7 完成清单
-
-- [x] `XCConfigSyntax` — xcconfig 语法高亮（comment / include / key / value / operator / variable reference / string）
-- [x] `XCConfigValidator` — xcconfig 验证器（include 格式检查、键值对格式检查）
-- [x] `PlistEditing` — Info.plist 常见 key 参考（19 个）+ Entitlements key 参考（10 个）+ 基础验证 + key 定位
-
-### ⚠️ Phase 7 待完善清单
+**目标**：让 Xcode 工程常见辅助文件的编辑体验不再是"普通文本框"。
 
 - [ ] xcconfig include 指令的文件跳转
+  - `#include "path"` 中的路径支持 Cmd+Click 跳转到目标文件
+  - 支持相对路径解析（相对于当前 xcconfig 文件所在目录）
 - [ ] plist / entitlements 语法高亮与智能编辑
-- [ ] `project.pbxproj` 风险控制策略（当前仅有读取解析）
+  - XML plist 的 key / value / dict / array / string / data 等节点的语法高亮
+  - 编辑 value 时自动补全常见 key 对应的 value 类型
+  - 对已知 key 提供 hover 信息
+- [ ] `project.pbxproj` 风险控制策略
+  - 检测 pbxproj 是否有外部修改（Xcode 同时打开时）
+  - 提供"以 Xcode 版本为准 / 以 Lumi 版本为准"的冲突解决提示
+  - pbxproj 编辑前确认提示
 - [ ] `Package.swift` 与 package dependency 体验对齐
+  - 支持 `Package.swift` 中 `.package(url:)` 的 Cmd+Click 跳转到依赖仓库（浏览器）
+  - package dependency 版本列表的 hover 信息
 - [ ] 工程文件 quick open / symbol 支持
+  - quick open 中区分工程文件（xcconfig / plist / entitlements / pbxproj）的搜索权重
+  - 支持搜索 plist key、xcconfig key
+
+**交付标准**：xcconfig 的 include 可跳转；plist 编辑有基本高亮和补全；pbxproj 有修改冲突保护。
 
 ---
 
-## Phase 8: Xcode-Oriented Editor UX
+## Phase 5: 状态反馈与索引进度
 
-把和 Xcode 项目强相关的编辑器状态反馈做成一等体验。
+**目标**：让用户对"编辑器现在处于什么状态"有完整的感知，不再出现"为什么跳转没有结果"的困惑。
 
-### ✅ Phase 8 完成清单
-
-- [x] `XcodeProjectStatusBar` — 状态栏显示 scheme 选择器 + configuration 选择器 + destination 芯片 + build context 状态指示器（5 种状态 + 颜色编码）
-- [x] `XcodeProjectStatusDetailView` — 浮窗详情：workspace / scheme / config / destination / build context / current file target / matched targets / semantic availability
-- [x] 集成到 `EditorPlugin.addStatusBarTrailingView()`
-- [x] `XcodeFileNotInTargetWarning` — 文件未绑定到 target 的提示组件
-- [x] `XcodeSemanticAvailability` — 统一语义可用性检查（workspace 级 + 文件级），9 种原因类型，hard / soft 两种 preflight 强度
-- [x] `XcodeSemanticAvailability.preflightError` / `preflightMessage` — LSP 请求前 preflight 拦截
-- [x] `XcodeSemanticAvailability.missingResultMessage` — 区分 "符号不存在" 与 "上下文不可用"
-- [x] LSP isInitializing 状态追踪
-- [x] Problems 面板集成 Xcode semantic problems，支持手动 `重新解析` build context
-- [x] 通知中心事件 — `lumiEditorXcodeContextDidChange` / `lumiEditorXcodeSnapshotDidChange`
-- [x] 多消费方集成 — `WorkspaceSymbolProvider` / `LSPCoordinator` / `ProblemsPanelView` / `CallHierarchySheetView` / `EditorReferencesPanelView`
-- [x] `BridgeCachedState` — Sendable 缓存快照，供非主线程安全访问
-- [x] "当前文件未绑定有效 target" 提示 — 通过 `XcodeSemanticAvailability` 的 `file-not-in-target` reason 实现
-- [x] "语言服务需要重新解析" 提示 — 通过 `needsResync` 状态 + 重新解析按钮实现
-
-### ⚠️ Phase 8 待完善清单
-
-- [ ] "LSP 正在索引" 的进度指示
+- [ ] "LSP 正在索引"的进度指示
+  - sourcekit-lsp 的 `window/workDoneProgress` 事件接入
+  - 状态栏或编辑器底部显示索引进度条
+  - 索引完成前的语义请求自动排队等待，而不是直接返回空结果
 - [ ] indexing / build context 状态的实时展示
+  - 将 `BuildContextStatus` 和 indexing 状态统一到一个连续的状态机
+  - 状态变化时的平滑过渡动画
+  - 长时间未就绪时提供可操作的提示（如"检查 xcode-build-server 版本"）
+- [ ] 语义就绪状态的通知
+  - 从"解析中"变为"就绪"时发送用户可见的轻量通知（如编辑器底部 toast）
+  - 避免用户在未就绪时困惑于语义功能为何不可用
+
+**交付标准**：用户打开 Xcode 项目后，能清楚看到 build context 解析 → LSP 初始化 → 索引中 → 就绪的完整状态链路。
 
 ---
 
-## Phase 9: Reliability, Performance, and Regression Gates
+## Phase 6: 可靠性与回归基线
 
-为 Xcode 项目编辑体验建立专属回归基线。
-
-### ✅ Phase 9 完成清单
-
-- [x] `XcodeProjectFixtureFactory` — Xcode 项目 fixture 工厂（PBXProj 文本 fixture）
-- [x] `XcodePBXProjParserTests` — pbxproj 归属解析测试（2 个用例：正常解析 + 空 section fallback）
-- [x] `XcodeSemanticAvailabilityTests` — semantic availability / preflight 规则测试（9 个用例：覆盖 soft/hard preflight、file-not-in-target、scheme-mismatch、multi-target、needsResync 等）
-- [x] `WorkspaceSymbolProviderTests` — workspace symbols 消费层回归测试（2 个用例：preflight 拦截 + 符号映射）
-- [x] `CallHierarchyProviderTests` — call hierarchy 消费层回归测试（2 个用例：空结果清理 + incoming/outgoing 映射）
-- [x] `LSPCoordinatorDocumentSymbolsTests` — document symbols 消费层回归测试（2 个用例：soft preflight 拦截 + 符号返回）
-
-### ⚠️ Phase 9 待完善清单
+**目标**：为 Xcode 项目编辑体验建立专属回归基线，确保每次迭代不引入退化。
 
 - [ ] Swift cross-file navigation tests
+  - 基于 fixture 工程的跨文件 definition / declaration / typeDefinition / implementation 端到端测试
+  - 需要 LSP 测试基础设施（mock 或真实 sourcekit-lsp 实例）
 - [ ] scheme switch regression tests
+  - 验证 scheme 切换后 build context 正确失效和重建
+  - 验证 scheme 切换后缓存被清理
+  - 验证 scheme 切换后 LSP 请求使用新上下文
 - [ ] build context cache correctness tests
+  - 验证缓存键 `workspace|scheme|configuration|destination` 的唯一性
+  - 验证缓存失效的完整性
+  - 验证缓存优先 → 实时获取 fallback 的正确性
 - [ ] Xcode project stress playbook
+  - 大型项目（100+ targets / 1000+ source files）的打开和解析性能基准
+  - 快速 scheme 切换（连续切换 10 次）的稳定性
+  - build context 并发请求的安全性
 - [ ] 真实 Xcode 工程样本集
+  - 建立 3-5 个不同类型的真实 Xcode 工程样本（macOS app / iOS app / framework / SPM + Xcode 混合）
+  - 用于手动和自动化的端到端验证
 
+**交付标准**：每个 Phase 的 PR 都有对应的回归测试；大型项目打开和 scheme 切换不会出现回归。
