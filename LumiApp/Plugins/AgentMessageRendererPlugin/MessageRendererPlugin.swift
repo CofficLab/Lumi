@@ -22,26 +22,24 @@ actor MessageRendererPlugin: SuperPlugin {
     static let enable: Bool = true
     static var isConfigurable: Bool { false } // 核心插件，不可禁用
 
-    nonisolated func onRegister() {
-        // 注册所有内置渲染器
-        Task { @MainActor in
-            MessageRendererVM.shared.register([
-                // 系统消息渲染器（优先级最高）
-                TurnCompletedRenderer(),
-                LoadingLocalModelRenderer(),
-                ToolOutputRenderer(),
+    @MainActor
+    func messageRenderers() -> [any SuperMessageRenderer] {
+        [
+            // 系统消息渲染器（优先级最高）
+            TurnCompletedRenderer(),
+            LoadingLocalModelRenderer(),
+            ToolOutputRenderer(),
 
-                // 角色消息渲染器
-                UserMessageRenderer(),
-                AssistantMessageRenderer(),
-                SystemMessageRenderer(),
-                StatusMessageRenderer(),
-                ErrorMessageRenderer(),
+            // 角色消息渲染器
+            UserMessageRenderer(),
+            AssistantMessageRenderer(),
+            SystemMessageRenderer(),
+            StatusMessageRenderer(),
+            ErrorMessageRenderer(),
 
-                // 兜底渲染器（优先级最低）
-                DefaultMarkdownRenderer(),
-            ])
-        }
+            // 兜底渲染器（优先级最低）
+            DefaultMarkdownRenderer(),
+        ]
     }
 
     nonisolated func onEnable() {

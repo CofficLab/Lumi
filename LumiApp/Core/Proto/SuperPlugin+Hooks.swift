@@ -26,4 +26,22 @@ extension SuperPlugin {
     /// }
     /// ```
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)? { nil }
+
+    /// 插件提供的消息渲染器列表
+    ///
+    /// 如果插件提供自定义消息渲染器，返回 `SuperMessageRenderer` 实例数组。
+    /// `PluginVM` 会在插件注册阶段自动收集并注册到 `MessageRendererVM`。
+    ///
+    /// 默认返回空数组，表示该插件不提供消息渲染器。
+    ///
+    /// ## 使用示例
+    ///
+    /// ```swift
+    /// actor MyPlugin: SuperPlugin {
+    ///     func messageRenderers() -> [any SuperMessageRenderer] {
+    ///         [MyCustomRenderer(), AnotherRenderer()]
+    ///     }
+    /// }
+    /// ```
+    @MainActor func messageRenderers() -> [any SuperMessageRenderer] { [] }
 }

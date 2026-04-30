@@ -324,12 +324,22 @@ final class PluginVM: ObservableObject, SuperLog {
                 plugin.onEnable()
             }
         }
+
+        // 从插件中收集消息渲染器并注册到 MessageRendererVM
+        var allRenderers: [any SuperMessageRenderer] = []
+        for plugin in sortedPlugins {
+            let pluginRenderers = plugin.messageRenderers()
+            allRenderers.append(contentsOf: pluginRenderers)
+        }
+        if !allRenderers.isEmpty {
+            MessageRendererVM.shared.register(allRenderers)
+        }
         
         // 发送通知，告知其他组件插件加载完成
         NotificationCenter.postPluginsDidLoad()
         
         if Self.verbose {
-            AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins, \(providerTypes.count) LLM providers.")
+            AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins, \(providerTypes.count) LLM providers, \(allRenderers.count) message renderers.")
         }
     }
     
