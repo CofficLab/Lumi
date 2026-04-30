@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// 列出最近项目工具
-struct ListRecentProjectsTool: AgentTool, SuperLog {
+struct ListRecentProjectsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = true
     let name = "list_recent_projects"

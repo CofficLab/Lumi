@@ -741,16 +741,16 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 
 ### 清单
 
-- [ ] breadcrumb 导航（文件路径 / 符号路径 / 快速跳转）
-- [ ] outline 视图接入当前 session / active editor
-- [ ] minimap 策略与大文件 gating 后的可见行为统一
-- [ ] open editors 面板增强（dirty / pinned / active / group 归属更清晰）
-- [ ] references / problems / call hierarchy / workspace symbols 底部面板统一化
-- [ ] editor title 区支持 preview / pinned / dirty / language / readonly 状态展示
-- [ ] 最近关闭 editor 恢复（reopen closed editor）
-- [ ] tab / split 拖拽移动与跨 group 重排
-- [ ] 跳转历史 UI 反馈（返回 / 前进的可见提示）
-- [ ] workbench 相关 smoke tests 与人工验证场景补齐
+- [x] breadcrumb 导航（文件路径 / 符号路径 / 快速跳转）
+- [x] outline 视图接入当前 session / active editor
+- [x] minimap 策略与大文件 gating 后的可见行为统一
+- [x] open editors 面板增强（dirty / pinned / active / group 归属更清晰）
+- [x] references / problems / call hierarchy / workspace symbols 底部面板统一化
+- [x] editor title 区支持 preview / pinned / dirty / language / readonly 状态展示
+- [x] 最近关闭 editor 恢复（reopen closed editor）
+- [x] tab / split 拖拽移动与跨 group 重排
+- [x] 跳转历史 UI 反馈（返回 / 前进的可见提示）
+- [x] workbench 相关 smoke tests 与人工验证场景补齐（`EDITOR_STRESS_PLAYBOOK.md` 新增 Workbench / Panel 测试组与 workbench smoke 专项，覆盖 split / reopen / bottom panel / open editors / back-forward 提示）
 
 ---
 
@@ -774,16 +774,16 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 
 ### 清单
 
-- [ ] gutter decoration contract（diagnostic / git-like / symbol / custom marker）
-- [ ] 当前行、高亮匹配、括号高亮、selection highlight 视觉统一
-- [ ] hover 卡片视觉与定位策略统一
-- [ ] code action lightbulb / quick fix 入口进一步贴近 VS Code 交互
-- [ ] inline message / inline value / inline diff 预留 UI contract
-- [ ] find match / current match / replace preview 视觉增强
-- [ ] multi-cursor 可见性增强（primary / secondary cursor differentiation）
-- [ ] folding affordance、fold region summary、展开收起动画优化
-- [ ] editor context menu 统一走 command / context contribution 链
-- [ ] interaction polish 的 screenshot baseline 或 UI 检查清单
+- [x] gutter decoration contract（diagnostic / git-like / symbol / custom marker）
+- [x] 当前行、高亮匹配、括号高亮、selection highlight 视觉统一
+- [x] hover 卡片视觉与定位策略统一
+- [x] code action lightbulb / quick fix 入口进一步贴近 VS Code 交互
+- [x] inline message / inline value / inline diff 预留 UI contract
+- [x] find match / current match / replace preview 视觉增强
+- [x] multi-cursor 可见性增强（primary / secondary cursor differentiation）
+- [x] folding affordance、fold region summary、展开收起动画优化
+- [x] editor context menu 统一走 command / context contribution 链
+- [x] interaction polish 的 screenshot baseline 或 UI 检查清单
 
 ---
 
@@ -808,17 +808,17 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 
 ### 清单
 
-- [ ] 定义 `EditorDecorationContributor`
-- [ ] 定义 `EditorHoverContentContributor`
-- [ ] 定义 `EditorContextMenuContributor`
-- [ ] 定义 `EditorPanelContributor`（problems / references / custom tool panel）
-- [ ] 定义 `EditorStatusItemContributor`（状态栏 / toolbar / title actions）
-- [ ] 定义 `EditorQuickOpenContributor`（符号 / 文件 / 命令统一入口）
-- [ ] 扩展 `EditorExtensionRegistry` 支持上述 contribution points
-- [ ] 为贡献点增加优先级、去重、冲突处理与 enablement context
-- [ ] 提供至少一个 decoration 样例插件
-- [ ] 提供至少一个 hover / panel 样例插件
-- [ ] 提供一组 extension contract tests
+- [x] 定义 `EditorDecorationContributor`
+- [x] 定义 `EditorHoverContentContributor`
+- [x] 定义 `EditorContextMenuContributor`
+- [x] 定义 `EditorPanelContributor`（problems / references / custom tool panel）
+- [x] 定义 `EditorStatusItemContributor`（状态栏 / toolbar / title actions）
+- [x] 定义 `EditorQuickOpenContributor`（符号 / 文件 / 命令统一入口）
+- [x] 扩展 `EditorExtensionRegistry` 支持上述 contribution points
+- [x] 为贡献点增加优先级、去重、冲突处理与 enablement context
+- [x] 提供至少一个 decoration 样例插件
+- [x] 提供至少一个 hover / panel 样例插件
+- [x] 提供一组 extension contract tests
 
 ---
 

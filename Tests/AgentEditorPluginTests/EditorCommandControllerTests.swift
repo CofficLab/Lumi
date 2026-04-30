@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+import CodeEditTextView
 @testable import Lumi
 
 @MainActor
@@ -49,6 +50,23 @@ final class EditorCommandControllerTests: XCTestCase {
 
         XCTAssertEqual(model.recentCommands.first?.id, "editor.save")
         XCTAssertFalse(model.sections.isEmpty)
+    }
+
+    func testInvocationContextUsesProvidedTextViewSelectionCoordinates() {
+        let state = EditorState()
+        state.detectedLanguage = .swift
+        let textView = TextView(string: "alpha\nbeta\n")
+        textView.selectionManager.setSelectedRange(NSRange(location: 7, length: 2))
+
+        let invocationContext = state.editorCommandInvocationContext(for: textView)
+
+        XCTAssertEqual(invocationContext.legacyContext.languageId, "swift")
+        XCTAssertTrue(invocationContext.legacyContext.hasSelection)
+        XCTAssertEqual(invocationContext.legacyContext.line, 1)
+        XCTAssertEqual(invocationContext.legacyContext.character, 1)
+        XCTAssertEqual(invocationContext.registryContext.line, 1)
+        XCTAssertEqual(invocationContext.registryContext.character, 1)
+        XCTAssertTrue(invocationContext.registryContext.hasSelection)
     }
 }
 #endif

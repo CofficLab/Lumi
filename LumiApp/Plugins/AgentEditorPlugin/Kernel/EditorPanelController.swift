@@ -79,6 +79,7 @@ final class EditorPanelController {
 
     func updateVisibility(
         openEditors: Bool? = nil,
+        outline: Bool? = nil,
         problems: Bool? = nil,
         references: Bool? = nil,
         workspaceSymbols: Bool? = nil,
@@ -87,12 +88,28 @@ final class EditorPanelController {
         apply(
             snapshot: updatedSnapshot(
                 openEditors: openEditors,
+                outline: outline,
                 problems: problems,
                 references: references,
                 workspaceSymbols: workspaceSymbols,
                 callHierarchy: callHierarchy
             )
         )
+    }
+
+    func presentBottomPanel(_ panel: EditorBottomPanelKind?) {
+        switch panel {
+        case .problems:
+            updateVisibility(problems: true, references: false, workspaceSymbols: false, callHierarchy: false)
+        case .references:
+            updateVisibility(problems: false, references: true, workspaceSymbols: false, callHierarchy: false)
+        case .workspaceSymbols:
+            updateVisibility(problems: false, references: false, workspaceSymbols: true, callHierarchy: false)
+        case .callHierarchy:
+            updateVisibility(problems: false, references: false, workspaceSymbols: false, callHierarchy: true)
+        case nil:
+            updateVisibility(problems: false, references: false, workspaceSymbols: false, callHierarchy: false)
+        }
     }
 
     func updateSelectedProblemDiagnostic(line: Int?, column: Int?) {
@@ -128,6 +145,7 @@ final class EditorPanelController {
 
     private func updatedSnapshot(
         openEditors: Bool? = nil,
+        outline: Bool? = nil,
         problems: Bool? = nil,
         references: Bool? = nil,
         workspaceSymbols: Bool? = nil,
@@ -136,6 +154,7 @@ final class EditorPanelController {
         let snapshot = panelState.snapshot
         return EditorPanelSnapshot(
             isOpenEditorsPanelPresented: openEditors ?? snapshot.isOpenEditorsPanelPresented,
+            isOutlinePanelPresented: outline ?? snapshot.isOutlinePanelPresented,
             isProblemsPanelPresented: problems ?? snapshot.isProblemsPanelPresented,
             isReferencePanelPresented: references ?? snapshot.isReferencePanelPresented,
             isWorkspaceSymbolSearchPresented: workspaceSymbols ?? snapshot.isWorkspaceSymbolSearchPresented,

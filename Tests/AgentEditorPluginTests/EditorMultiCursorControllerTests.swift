@@ -68,5 +68,19 @@ final class EditorMultiCursorControllerTests: XCTestCase {
         XCTAssertTrue(stateMessage.contains("#0{loc=2,len=1}"))
         XCTAssertTrue(inputMessage.contains("{2, 1}"))
     }
+
+    func testMultiCursorStateExposesPrimaryAndSecondarySelections() {
+        let state = MultiCursorState(
+            primary: .init(location: 2, length: 0),
+            secondary: [
+                .init(location: 6, length: 4),
+                .init(location: 12, length: 0)
+            ]
+        )
+
+        XCTAssertTrue(state.isEnabled)
+        XCTAssertEqual(state.all.count, 3)
+        XCTAssertEqual(state.secondary.count, 2)
+    }
 }
 #endif

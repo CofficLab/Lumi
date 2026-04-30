@@ -71,7 +71,7 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func agentTools() -> [AgentTool] { [] }
+    func agentTools() -> [SuperAgentTool] { [] }
 
     @MainActor
     func agentToolFactories() -> [AnySuperAgentToolFactory] { [] }

@@ -86,7 +86,7 @@ private struct DelayMessageToolFactory: SuperAgentToolFactory {
     let id: String = "delay.message.factory"
     let order: Int = 0
 
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [
             GetCurrentConversationTool(),
             DelayMessageTool(),

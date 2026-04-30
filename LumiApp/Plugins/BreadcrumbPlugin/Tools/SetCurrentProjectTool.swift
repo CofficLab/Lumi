@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// 设置当前项目工具
-struct SetCurrentProjectTool: AgentTool, SuperLog {
+struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
     let name = "set_current_project"

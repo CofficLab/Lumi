@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// 获取当前文件工具
-struct GetCurrentFileTool: AgentTool, SuperLog {
+struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = true
     let name = "get_current_file"

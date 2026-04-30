@@ -84,6 +84,19 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
   -only-testing:LumiTests/SourceEditorViewBridgeTests
 ```
 
+### Workbench / Panel 测试组
+
+```bash
+DISABLE_SWIFTLINT=1 xcodebuild test \
+  -project Lumi.xcodeproj \
+  -scheme Lumi \
+  -destination 'platform=macOS' \
+  -parallel-testing-enabled NO \
+  -only-testing:LumiTests/EditorSessionStoreTests \
+  -only-testing:LumiTests/EditorPanelControllerTests \
+  -only-testing:LumiTests/EditorCommandPaletteTests
+```
+
 ## 人工压力场景
 
 ### 1. 大文件打开延迟
@@ -149,7 +162,22 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
   - active editor / active group 不错乱
   - 面板内容与当前 session 保持一致
 
-### 8. 扩展贡献点一致性
+### 8. Workbench Smoke 专项
+
+- 打开至少 4 个 editor tab，并为其中 2 个 tab 制造 `dirty` 状态。
+- 执行一次 `Split Editor Right`，再执行一次 `Split Editor Down`。
+- 在不同 group 中切换当前 tab，确认 title 区会更新 `language / dirty / pinned / preview / read-only` 状态。
+- 关闭一个非 pinned tab，然后执行 `Reopen Closed Editor`。
+- 打开 `Open Editors` 面板，确认能看见 `group / recent / preview / pinned / dirty / active / path` 信息。
+- 打开 `References`、`Problems`、`Workspace Symbols`、`Call Hierarchy`，确认它们进入同一个底部 panel host，并能互相切换。
+- 使用返回 / 前进按钮，确认按钮旁的目标提示文本与实际跳转目标一致。
+- 验证：
+  - recently closed restore 会回到原来的 group
+  - open editors 列表和 tab/title 状态不串
+  - 底部 panel 切换不会误弹旧 sheet 或侧边 panel
+  - split / unsplit / reopen / navigate back-forward 组合操作后，active session 仍正确
+
+### 9. 扩展贡献点一致性
 
 - 安装或启用至少一组 editor 扩展贡献（如 highlight / code action / command / panel）。
 - 验证其入口是否同时出现在正确的 UI 中，例如 command palette、context menu、overlay、panel 或状态栏。
@@ -158,6 +186,41 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
   - 不需要写特判 UI 逻辑也能稳定呈现
   - 扩展贡献在不同 session / group 中不会串态
   - 扩展禁用或不可用时 UI 能自然退场
+
+### 10. Interaction Polish Screenshot Checklist
+
+这组检查不要求固定像素级 screenshot baseline，但要求在同一套场景下记录截图并逐项确认视觉与交互一致性。建议至少保存 6 张截图，命名为：
+
+- `editor-surface-current-line.png`
+- `editor-surface-hover-and-code-action.png`
+- `editor-surface-inline-and-find.png`
+- `editor-surface-multi-cursor.png`
+- `editor-surface-folding-summary.png`
+- `editor-surface-context-menu.png`
+
+检查步骤：
+
+- 打开一个普通源码文件，确认当前行高亮、括号高亮、普通查找匹配、当前匹配的层级关系清晰，没有互相吃掉描边。
+- 触发 hover，并在同一附近行触发 quick fix lightbulb，确认 hover 卡片、lightbulb、code action panel 不会重叠错位，也不会跑出 viewport。
+- 打开 find/replace，切到一个当前匹配项，确认 replace preview、inline diagnostic message、inline value hint 可以同时存在，且 badge、边框、间距属于同一视觉系统。
+- 进入 multi-cursor 模式，制造至少一个 secondary caret 和一个 secondary selection，确认 primary / secondary 的区分一眼可见，且滚动后 overlay 不漂移。
+- 在可折叠区域内移动光标，确认 folding summary 会出现；切到大文件 gating 场景时，确认 minimap / folding 的禁用提示明确，但 header 和 overlay 不突兀。
+- 右键打开 editor context menu，确认 command section、recent section、扩展贡献命令都能进入同一菜单，不出现重复项，也不会因为切换 selection / cursor 而保留过期 enablement。
+
+每张截图请额外记录：
+
+- 文件类型
+- 是否在 split group 中
+- 是否处于 large file / long-line gating
+- 是否存在 selection / multi-cursor / active hover / active quick fix
+
+通过标准：
+
+- overlay、inline card、hover、code action、folding summary 的圆角、描边、阴影、badge 风格一致
+- 所有浮层都能在 viewport 内被裁剪或回退，不出现明显越界
+- selection、find、diagnostic、multi-cursor 的层级关系稳定，不因滚动或切文件产生残影
+- context menu 的 enablement 与当前 selection / cursor / language 上下文一致
+- 同一场景重复 2 次截图时，视觉结果不应出现明显随机漂移
 
 ## 记录模板
 
@@ -177,4 +240,5 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
 1. bridge-layer suites
 2. kernel-focused suites
 3. 至少手动执行场景 3、4、5
-4. 如果改动涉及工作台 UI 或扩展入口，再手动执行场景 7、8
+4. 如果改动涉及工作台 UI 或扩展入口，再手动执行场景 7、8、9
+5. 如果改动涉及 overlay、hover、code action、inline UI 或 context menu，再手动执行场景 10

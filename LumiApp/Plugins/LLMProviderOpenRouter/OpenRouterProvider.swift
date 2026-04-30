@@ -69,7 +69,7 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
     func buildRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
         let conversationMessages = messages.map { transformMessage($0) }
@@ -109,7 +109,7 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
     func buildStreamingRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
         var body = try buildRequestBody(
@@ -255,7 +255,7 @@ extension OpenRouterProvider {
 // MARK: - 工具格式
 
 extension OpenRouterProvider {
-    func formatTool(_ tool: AgentTool) -> [String: Any] {
+    func formatTool(_ tool: SuperAgentTool) -> [String: Any] {
         [
             "type": "function",
             "function": [

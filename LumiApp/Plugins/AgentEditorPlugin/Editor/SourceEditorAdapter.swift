@@ -85,53 +85,36 @@ struct SourceEditorAdapter {
             ),
             peripherals: .init(
                 showGutter: state.showGutter,
-                showMinimap: state.showMinimap && !state.largeFileMode.isMinimapDisabled,
+                showMinimap: state.minimapPolicy.isVisible,
                 showFoldingRibbon: state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled,
                 codeSuggestionTriggerCharacters: completionDelegate.completionTriggerCharacters()
             )
         )
     }
 
-    func visibleFindMatchHighlights(
+    func visibleSurfaceHighlights(
         for state: EditorState,
         textView: TextView?,
         lineTable: LineOffsetTable?
-    ) -> [SourceEditorFindMatchHighlight] {
+    ) -> [EditorSurfaceHighlight] {
         guard let textView,
               let lineTable else {
             return []
         }
 
-        return state.renderedFindMatchHighlights(textView: textView, lineTable: lineTable).map { highlight in
-            SourceEditorFindMatchHighlight(
-                range: highlight.range,
-                rect: highlight.rect,
-                isSelected: highlight.isSelected
-            )
-        }
-    }
-}
-
-struct SourceEditorFindMatchHighlight: Identifiable {
-    let range: EditorRange
-    let rect: CGRect
-    let isSelected: Bool
-
-    var id: String {
-        "\(range.location):\(range.length):\(rect.minX):\(rect.minY):\(isSelected)"
+        return state.renderedSurfaceHighlights(textView: textView, lineTable: lineTable)
     }
 
-    var color: Color {
-        if isSelected {
-            return AppUI.Color.semantic.primary.opacity(0.28)
+    func visibleGutterDecorations(
+        for state: EditorState,
+        textView: TextView?,
+        lineTable: LineOffsetTable?
+    ) -> [EditorGutterDecoration] {
+        guard let textView,
+              let lineTable else {
+            return []
         }
-        return AppUI.Color.semantic.warning.opacity(0.18)
-    }
 
-    var borderColor: Color {
-        if isSelected {
-            return AppUI.Color.semantic.primary.opacity(0.72)
-        }
-        return AppUI.Color.semantic.warning.opacity(0.42)
+        return state.renderedGutterDecorations(textView: textView, lineTable: lineTable)
     }
 }

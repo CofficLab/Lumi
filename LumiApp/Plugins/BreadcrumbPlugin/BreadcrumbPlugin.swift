@@ -52,7 +52,7 @@ actor BreadcrumbPlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tools
 
     @MainActor
-    func agentTools() -> [AgentTool] {
+    func agentTools() -> [SuperAgentTool] {
         [
             ListRecentProjectsTool(),
             GetCurrentProjectTool(),

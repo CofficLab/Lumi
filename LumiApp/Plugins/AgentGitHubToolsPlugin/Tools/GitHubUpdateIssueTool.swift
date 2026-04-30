@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// GitHub 更新 Issue 工具
-struct GitHubUpdateIssueTool: AgentTool, SuperLog {
+struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✏️"
     nonisolated static let verbose: Bool = false
     let name = "github_update_issue"

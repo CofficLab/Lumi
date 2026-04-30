@@ -3,7 +3,7 @@ import MagicKit
 import os
 
 /// 列出可用 LLM 模型工具
-struct ListAvailableModelsTool: AgentTool, SuperLog {
+struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🤖"
     nonisolated static let verbose: Bool = true
 

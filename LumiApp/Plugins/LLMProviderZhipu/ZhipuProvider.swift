@@ -55,7 +55,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     func buildRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
         // 合并所有 system 消息：预设提示词 + transient 注入的上下文提示词
@@ -111,7 +111,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     func buildStreamingRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
         var body = try buildRequestBody(
@@ -388,7 +388,7 @@ extension ZhipuProvider {
 // MARK: - 工具格式
 
 extension ZhipuProvider {
-    func formatTool(_ tool: AgentTool) -> [String: Any] {
+    func formatTool(_ tool: SuperAgentTool) -> [String: Any] {
         ["name": tool.name, "description": tool.description, "input_schema": tool.inputSchema]
     }
 }

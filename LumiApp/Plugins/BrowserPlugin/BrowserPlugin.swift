@@ -41,7 +41,7 @@ private struct BrowserToolFactory: SuperAgentToolFactory {
     let id: String = "browser.screenshot.factory"
     let order: Int = 0
 
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [BrowserScreenshotTool()]
     }
 }

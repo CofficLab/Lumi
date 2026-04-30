@@ -43,7 +43,7 @@ actor GitToolsPlugin: SuperPlugin, SuperLog {
 private struct GitToolsFactory: SuperAgentToolFactory {
     let id: String = "git.tools.factory"
     let order: Int = 0
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [
             GitStatusTool(),
             GitDiffTool(),

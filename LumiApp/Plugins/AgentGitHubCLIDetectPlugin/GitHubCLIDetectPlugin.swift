@@ -41,7 +41,7 @@ private struct CLIDetectToolsFactory: SuperAgentToolFactory {
     let id: String = "github.cli.detect.factory"
     let order: Int = 0
 
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [GitHubCLICheckTool()]
     }
 }

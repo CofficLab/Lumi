@@ -3,6 +3,36 @@ import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI
 
+// MARK: - Contribution Context
+
+@MainActor
+struct EditorContributionContext {
+    let languageId: String
+    let fileURL: URL?
+    let hasSelection: Bool
+    let line: Int
+    let character: Int
+    let isEditorActive: Bool
+    let isLargeFileMode: Bool
+}
+
+@MainActor
+struct EditorContributionMetadata {
+    let priority: Int
+    let dedupeKey: String?
+    let isEnabled: (EditorContributionContext) -> Bool
+
+    init(
+        priority: Int = 0,
+        dedupeKey: String? = nil,
+        isEnabled: @escaping (EditorContributionContext) -> Bool = { _ in true }
+    ) {
+        self.priority = priority
+        self.dedupeKey = dedupeKey
+        self.isEnabled = isEnabled
+    }
+}
+
 // MARK: - Completion
 
 /// 编辑器补全上下文
@@ -47,6 +77,13 @@ struct EditorHoverContext {
 struct EditorHoverSuggestion: Hashable {
     let markdown: String
     let priority: Int
+    let dedupeKey: String?
+
+    init(markdown: String, priority: Int, dedupeKey: String? = nil) {
+        self.markdown = markdown
+        self.priority = priority
+        self.dedupeKey = dedupeKey
+    }
 }
 
 /// 编辑器悬停扩展点
@@ -54,6 +91,16 @@ struct EditorHoverSuggestion: Hashable {
 protocol EditorHoverContributor: AnyObject {
     var id: String { get }
     func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion]
+}
+
+/// 编辑器悬停内容扩展点
+///
+/// 相比旧的 `EditorHoverContributor`，这个命名更明确地强调它只负责贡献 hover 内容，
+/// 不负责 hover 的触发时机、请求生命周期或卡片布局。
+@MainActor
+protocol EditorHoverContentContributor: AnyObject {
+    var id: String { get }
+    func provideHoverContent(context: EditorHoverContext) async -> [EditorHoverSuggestion]
 }
 
 // MARK: - Code Action
@@ -176,6 +223,201 @@ protocol EditorCommandContributor: AnyObject {
     ) -> [EditorCommandSuggestion]
 }
 
+/// 编辑器右键菜单建议
+@MainActor
+struct EditorContextMenuItemSuggestion: Identifiable {
+    let id: String
+    let title: String
+    let systemImage: String
+    let category: String?
+    let shortcut: EditorCommandShortcut?
+    let order: Int
+    let isEnabled: Bool
+    let metadata: EditorContributionMetadata
+    let action: () -> Void
+
+    init(
+        id: String,
+        title: String,
+        systemImage: String,
+        category: String? = nil,
+        shortcut: EditorCommandShortcut? = nil,
+        order: Int,
+        isEnabled: Bool,
+        metadata: EditorContributionMetadata = .init(),
+        action: @escaping () -> Void
+    ) {
+        self.id = id
+        self.title = title
+        self.systemImage = systemImage
+        self.category = category
+        self.shortcut = shortcut
+        self.order = order
+        self.isEnabled = isEnabled
+        self.metadata = metadata
+        self.action = action
+    }
+
+    init(command suggestion: EditorCommandSuggestion) {
+        self.init(
+            id: suggestion.id,
+            title: suggestion.title,
+            systemImage: suggestion.systemImage,
+            category: suggestion.category,
+            shortcut: suggestion.shortcut,
+            order: suggestion.order,
+            isEnabled: suggestion.isEnabled,
+            metadata: .init(priority: suggestion.order, dedupeKey: suggestion.id),
+            action: suggestion.action
+        )
+    }
+
+    var asCommandSuggestion: EditorCommandSuggestion {
+        EditorCommandSuggestion(
+            id: id,
+            title: title,
+            systemImage: systemImage,
+            category: category,
+            shortcut: shortcut,
+            order: order,
+            isEnabled: isEnabled,
+            metadata: metadata,
+            action: action
+        )
+    }
+}
+
+/// 编辑器右键菜单扩展点
+@MainActor
+protocol EditorContextMenuContributor: AnyObject {
+    var id: String { get }
+    func provideContextMenuItems(
+        context: EditorCommandContext,
+        state: EditorState,
+        textView: TextView?
+    ) -> [EditorContextMenuItemSuggestion]
+}
+
+// MARK: - Gutter Decoration
+
+/// 编辑器 decoration 扩展点
+///
+/// 当前先以 gutter decoration 作为第一批稳定 surface。
+/// 后续如果扩展到 inline / block / overlay decoration，可以继续在这个语义层上外扩。
+@MainActor
+protocol EditorDecorationContributor: EditorGutterDecorationContributor {}
+
+@MainActor
+protocol EditorGutterDecorationContributor: AnyObject {
+    var id: String { get }
+    func provideGutterDecorations(
+        context: EditorGutterDecorationContext,
+        state: EditorState
+    ) -> [EditorGutterDecorationSuggestion]
+}
+
+// MARK: - Panel
+
+@MainActor
+enum EditorPanelPlacement: String, Equatable {
+    case side
+    case sheet
+    case bottom
+}
+
+/// 编辑器统一面板建议
+///
+/// 用于把 side panel、sheet 与 bottom panel 收口到一个统一 contribution point。
+/// 旧的 `EditorSidePanelContributor` / `EditorSheetContributor` 仍然保留，便于渐进迁移。
+@MainActor
+struct EditorPanelSuggestion: Identifiable {
+    let id: String
+    let title: String
+    let systemImage: String
+    let placement: EditorPanelPlacement
+    let order: Int
+    let metadata: EditorContributionMetadata
+    let isPresented: (EditorState) -> Bool
+    let onDismiss: (EditorState) -> Void
+    let content: (EditorState) -> AnyView
+
+    init(
+        id: String,
+        title: String,
+        systemImage: String,
+        placement: EditorPanelPlacement,
+        order: Int,
+        metadata: EditorContributionMetadata = .init(),
+        isPresented: @escaping (EditorState) -> Bool,
+        onDismiss: @escaping (EditorState) -> Void,
+        content: @escaping (EditorState) -> AnyView
+    ) {
+        self.id = id
+        self.title = title
+        self.systemImage = systemImage
+        self.placement = placement
+        self.order = order
+        self.metadata = metadata
+        self.isPresented = isPresented
+        self.onDismiss = onDismiss
+        self.content = content
+    }
+}
+
+/// 编辑器统一面板扩展点
+@MainActor
+protocol EditorPanelContributor: AnyObject {
+    var id: String { get }
+    func providePanels(state: EditorState) -> [EditorPanelSuggestion]
+}
+
+// MARK: - Settings
+
+/// 编辑器设置项建议
+///
+/// 用于把内置 editor settings 与插件贡献设置收口到统一展示模型。
+@MainActor
+struct EditorSettingsItemSuggestion: Identifiable {
+    let id: String
+    let sectionTitle: String
+    let sectionSummary: String?
+    let title: String
+    let subtitle: String?
+    let keywords: [String]
+    let order: Int
+    let metadata: EditorContributionMetadata
+    let content: (EditorSettingsState) -> AnyView
+
+    init(
+        id: String,
+        sectionTitle: String,
+        sectionSummary: String? = nil,
+        title: String,
+        subtitle: String? = nil,
+        keywords: [String] = [],
+        order: Int,
+        metadata: EditorContributionMetadata = .init(),
+        content: @escaping (EditorSettingsState) -> AnyView
+    ) {
+        self.id = id
+        self.sectionTitle = sectionTitle
+        self.sectionSummary = sectionSummary
+        self.title = title
+        self.subtitle = subtitle
+        self.keywords = keywords
+        self.order = order
+        self.metadata = metadata
+        self.content = content
+    }
+}
+
+/// 编辑器设置项扩展点
+@MainActor
+protocol EditorSettingsContributor: AnyObject {
+    var id: String { get }
+    func provideSettingsItems(state: EditorSettingsState) -> [EditorSettingsItemSuggestion]
+}
+
 // MARK: - Side Panel
 
 /// 编辑器侧边面板建议（如 References / Problems）
@@ -213,6 +455,101 @@ protocol EditorSheetContributor: AnyObject {
     func provideSheets(state: EditorState) -> [EditorSheetSuggestion]
 }
 
+// MARK: - Status Item
+
+/// 编辑器状态项建议
+///
+/// 统一描述 toolbar 与 title 区的可插拔状态项。旧的 `EditorToolbarContributor`
+/// 仍然保留，并由注册中心桥接到这个 contract，便于渐进迁移。
+@MainActor
+struct EditorStatusItemSuggestion: Identifiable {
+    enum Placement: String, Equatable {
+        case toolbarCenter
+        case toolbarTrailing
+        case titleTrailing
+    }
+
+    let id: String
+    let order: Int
+    let placement: Placement
+    let metadata: EditorContributionMetadata
+    let content: (EditorState) -> AnyView
+
+    init(
+        id: String,
+        order: Int,
+        placement: Placement,
+        metadata: EditorContributionMetadata = .init(),
+        content: @escaping (EditorState) -> AnyView
+    ) {
+        self.id = id
+        self.order = order
+        self.placement = placement
+        self.metadata = metadata
+        self.content = content
+    }
+}
+
+/// 编辑器状态项扩展点
+@MainActor
+protocol EditorStatusItemContributor: AnyObject {
+    var id: String { get }
+    func provideStatusItems(state: EditorState) -> [EditorStatusItemSuggestion]
+}
+
+// MARK: - Quick Open
+
+/// 编辑器 Quick Open 建议
+///
+/// 用于统一文件、符号、命令等可搜索入口在 command palette 风格界面中的展示合同。
+@MainActor
+struct EditorQuickOpenItemSuggestion: Identifiable {
+    let id: String
+    let sectionTitle: String
+    let title: String
+    let subtitle: String?
+    let systemImage: String
+    let badge: String?
+    let order: Int
+    let isEnabled: Bool
+    let metadata: EditorContributionMetadata
+    let action: () -> Void
+
+    init(
+        id: String,
+        sectionTitle: String,
+        title: String,
+        subtitle: String?,
+        systemImage: String,
+        badge: String? = nil,
+        order: Int,
+        isEnabled: Bool,
+        metadata: EditorContributionMetadata = .init(),
+        action: @escaping () -> Void
+    ) {
+        self.id = id
+        self.sectionTitle = sectionTitle
+        self.title = title
+        self.subtitle = subtitle
+        self.systemImage = systemImage
+        self.badge = badge
+        self.order = order
+        self.isEnabled = isEnabled
+        self.metadata = metadata
+        self.action = action
+    }
+}
+
+/// 编辑器 Quick Open 扩展点
+@MainActor
+protocol EditorQuickOpenContributor: AnyObject {
+    var id: String { get }
+    func provideQuickOpenItems(
+        query: String,
+        state: EditorState
+    ) async -> [EditorQuickOpenItemSuggestion]
+}
+
 // MARK: - Toolbar
 
 /// 编辑器工具栏项建议
@@ -227,6 +564,27 @@ struct EditorToolbarItemSuggestion: Identifiable {
     let order: Int
     let placement: Placement
     let content: (EditorState) -> AnyView
+
+    init(
+        id: String,
+        order: Int,
+        placement: Placement,
+        content: @escaping (EditorState) -> AnyView
+    ) {
+        self.id = id
+        self.order = order
+        self.placement = placement
+        self.content = content
+    }
+
+    init(statusItem suggestion: EditorStatusItemSuggestion) {
+        self.init(
+            id: suggestion.id,
+            order: suggestion.order,
+            placement: suggestion.placement == .toolbarCenter ? .center : .trailing,
+            content: suggestion.content
+        )
+    }
 }
 
 /// 编辑器工具栏扩展点

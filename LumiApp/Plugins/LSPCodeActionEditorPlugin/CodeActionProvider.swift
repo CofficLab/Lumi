@@ -413,18 +413,18 @@ struct CodeActionPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Image(systemName: "lightbulb")
-                    .foregroundColor(.yellow)
+                Image(systemName: "lightbulb.fill")
+                    .foregroundColor(AppUI.Color.semantic.warning)
                 Text("Code Actions")
                     .font(.system(size: 12, weight: .semibold))
                 Spacer()
                 Text("\(actions.count) available")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.95))
+            .background(AppUI.Color.semantic.textTertiary.opacity(0.08))
 
             Divider().opacity(0.3)
 
@@ -449,9 +449,22 @@ struct CodeActionPanel: View {
         }
         .frame(width: 380, height: min(CGFloat(actions.count) * 36 + 60, 300))
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .shadow(color: .black.opacity(0.2), radius: 12, x: 0, y: 4)
+            RoundedRectangle(cornerRadius: 10)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            AppUI.Color.semantic.textPrimary.opacity(0.06),
+                            AppUI.Color.semantic.textTertiary.opacity(0.08)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.75)
+                )
+                .shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 6)
         )
     }
 }
@@ -468,27 +481,27 @@ struct CodeActionRow: View {
             HStack(spacing: 8) {
                 Image(systemName: action.icon)
                     .font(.system(size: 12))
-                    .foregroundColor(isSelected ? .white : .secondary)
+                    .foregroundColor(isSelected ? .white : AppUI.Color.semantic.textSecondary)
                     .frame(width: 16)
 
                 Text(action.title)
                     .font(.system(size: 12))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                    .foregroundColor(isSelected ? .white : .primary)
+                    .foregroundColor(isSelected ? .white : AppUI.Color.semantic.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 if action.isPreferred {
                     Image(systemName: "star.fill")
                         .font(.system(size: 8))
-                        .foregroundColor(isSelected ? .yellow : .yellow.opacity(0.7))
+                        .foregroundColor(isSelected ? .yellow : AppUI.Color.semantic.warning.opacity(0.8))
                 }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
                 isSelected
-                    ? RoundedRectangle(cornerRadius: 4).fill(Color.accentColor)
+                    ? RoundedRectangle(cornerRadius: 6).fill(AppUI.Color.semantic.primary.opacity(0.9))
                     : RoundedRectangle(cornerRadius: 4).fill(Color.clear)
             )
             .contentShape(Rectangle())
@@ -508,7 +521,7 @@ struct LightbulbIndicator: View {
         Button(action: onTap) {
             Image(systemName: "lightbulb")
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(hasActions ? .yellow : .secondary)
+                .foregroundColor(hasActions ? AppUI.Color.semantic.warning : AppUI.Color.semantic.textSecondary)
                 .opacity(hasActions ? 1 : 0.3)
                 .frame(width: 16, height: 16)
         }

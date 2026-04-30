@@ -77,7 +77,7 @@ private struct ShowImageToolFactory: SuperAgentToolFactory {
     let id: String = "show.image.factory"
     let order: Int = 0
 
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [ShowImageTool()]
     }
 }

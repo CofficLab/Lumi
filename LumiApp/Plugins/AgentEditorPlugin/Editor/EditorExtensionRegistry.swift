@@ -16,9 +16,16 @@ import SwiftUI
 final class EditorExtensionRegistry: ObservableObject {
     private var completionContributors: [any EditorCompletionContributor] = []
     private var hoverContributors: [any EditorHoverContributor] = []
+    private var hoverContentContributors: [any EditorHoverContentContributor] = []
     private var codeActionContributors: [any EditorCodeActionContributor] = []
     private var highlightProviderContributors: [any EditorHighlightProviderContributor] = []
     private var commandContributors: [any EditorCommandContributor] = []
+    private var contextMenuContributors: [any EditorContextMenuContributor] = []
+    private var gutterDecorationContributors: [any EditorGutterDecorationContributor] = []
+    private var panelContributors: [any EditorPanelContributor] = []
+    private var settingsContributors: [any EditorSettingsContributor] = []
+    private var statusItemContributors: [any EditorStatusItemContributor] = []
+    private var quickOpenContributors: [any EditorQuickOpenContributor] = []
     private var interactionContributors: [any EditorInteractionContributor] = []
     private var sidePanelContributors: [any EditorSidePanelContributor] = []
     private var sheetContributors: [any EditorSheetContributor] = []
@@ -28,9 +35,16 @@ final class EditorExtensionRegistry: ObservableObject {
     func reset() {
         completionContributors.removeAll()
         hoverContributors.removeAll()
+        hoverContentContributors.removeAll()
         codeActionContributors.removeAll()
         highlightProviderContributors.removeAll()
         commandContributors.removeAll()
+        contextMenuContributors.removeAll()
+        gutterDecorationContributors.removeAll()
+        panelContributors.removeAll()
+        settingsContributors.removeAll()
+        statusItemContributors.removeAll()
+        quickOpenContributors.removeAll()
         interactionContributors.removeAll()
         sidePanelContributors.removeAll()
         sheetContributors.removeAll()
@@ -52,6 +66,13 @@ final class EditorExtensionRegistry: ObservableObject {
         hoverContributors.append(contributor)
     }
 
+    func registerHoverContentContributor(_ contributor: any EditorHoverContentContributor) {
+        if hoverContentContributors.contains(where: { $0.id == contributor.id }) {
+            return
+        }
+        hoverContentContributors.append(contributor)
+    }
+
     func registerCodeActionContributor(_ contributor: any EditorCodeActionContributor) {
         if codeActionContributors.contains(where: { $0.id == contributor.id }) {
             return
@@ -71,6 +92,52 @@ final class EditorExtensionRegistry: ObservableObject {
             return
         }
         commandContributors.append(contributor)
+    }
+
+    func registerContextMenuContributor(_ contributor: any EditorContextMenuContributor) {
+        if contextMenuContributors.contains(where: { $0.id == contributor.id }) {
+            return
+        }
+        contextMenuContributors.append(contributor)
+    }
+
+    func registerGutterDecorationContributor(_ contributor: any EditorGutterDecorationContributor) {
+        if gutterDecorationContributors.contains(where: { $0.id == contributor.id }) {
+            return
+        }
+        gutterDecorationContributors.append(contributor)
+    }
+
+    func registerDecorationContributor(_ contributor: any EditorDecorationContributor) {
+        registerGutterDecorationContributor(contributor)
+    }
+
+    func registerPanelContributor(_ contributor: any EditorPanelContributor) {
+        if panelContributors.contains(where: { $0.id == contributor.id }) {
+            return
+        }
+        panelContributors.append(contributor)
+    }
+
+    func registerSettingsContributor(_ contributor: any EditorSettingsContributor) {
+        if settingsContributors.contains(where: { $0.id == contributor.id }) {
+            return
+        }
+        settingsContributors.append(contributor)
+    }
+
+    func registerStatusItemContributor(_ contributor: any EditorStatusItemContributor) {
+        if statusItemContributors.contains(where: { $0.id == contributor.id }) {
+            return
+        }
+        statusItemContributors.append(contributor)
+    }
+
+    func registerQuickOpenContributor(_ contributor: any EditorQuickOpenContributor) {
+        if quickOpenContributors.contains(where: { $0.id == contributor.id }) {
+            return
+        }
+        quickOpenContributors.append(contributor)
     }
 
     func registerInteractionContributor(_ contributor: any EditorInteractionContributor) {
@@ -134,10 +201,16 @@ final class EditorExtensionRegistry: ObservableObject {
     }
 
     func hoverSuggestions(for context: EditorHoverContext) async -> [EditorHoverSuggestion] {
-        guard !hoverContributors.isEmpty else { return [] }
+        guard !hoverContributors.isEmpty || !hoverContentContributors.isEmpty else { return [] }
         var merged: [EditorHoverSuggestion] = []
         for contributor in hoverContributors {
             let items = await contributor.provideHover(context: context)
+            if !items.isEmpty {
+                merged.append(contentsOf: items)
+            }
+        }
+        for contributor in hoverContentContributors {
+            let items = await contributor.provideHoverContent(context: context)
             if !items.isEmpty {
                 merged.append(contentsOf: items)
             }
@@ -177,9 +250,64 @@ final class EditorExtensionRegistry: ObservableObject {
         return deduplicateCommands(merged)
     }
 
+    func contextMenuSuggestions(
+        for context: EditorCommandContext,
+        state: EditorState,
+        textView: TextView?
+    ) -> [EditorContextMenuItemSuggestion] {
+        let contributionContext = makeContributionContext(
+            state: state,
+            legacyContext: context
+        )
+
+        var merged = commandSuggestions(
+            for: context,
+            state: state,
+            textView: textView
+        ).map(EditorContextMenuItemSuggestion.init(command:))
+
+        for contributor in contextMenuContributors {
+            let items = contributor.provideContextMenuItems(
+                context: context,
+                state: state,
+                textView: textView
+            )
+            if !items.isEmpty {
+                merged.append(contentsOf: items)
+            }
+        }
+        return deduplicateContextMenuSuggestions(
+            merged.filter { $0.isEnabled && $0.metadata.isEnabled(contributionContext) }
+        )
+    }
+
+    func gutterDecorationSuggestions(
+        for context: EditorGutterDecorationContext,
+        state: EditorState
+    ) -> [EditorGutterDecorationSuggestion] {
+        guard !gutterDecorationContributors.isEmpty else { return [] }
+        var merged: [EditorGutterDecorationSuggestion] = []
+        for contributor in gutterDecorationContributors {
+            let items = contributor.provideGutterDecorations(context: context, state: state)
+            if !items.isEmpty {
+                merged.append(contentsOf: items)
+            }
+        }
+        return deduplicateGutterDecorations(merged)
+    }
+
     func sidePanelSuggestions(state: EditorState) -> [EditorSidePanelSuggestion] {
-        guard !sidePanelContributors.isEmpty else { return [] }
         var merged: [EditorSidePanelSuggestion] = []
+        for panel in panelSuggestions(state: state) where panel.placement == .side {
+            merged.append(
+                EditorSidePanelSuggestion(
+                    id: panel.id,
+                    order: panel.order,
+                    isPresented: panel.isPresented,
+                    content: panel.content
+                )
+            )
+        }
         for contributor in sidePanelContributors {
             let items = contributor.provideSidePanels(state: state)
             if !items.isEmpty {
@@ -190,8 +318,18 @@ final class EditorExtensionRegistry: ObservableObject {
     }
 
     func sheetSuggestions(state: EditorState) -> [EditorSheetSuggestion] {
-        guard !sheetContributors.isEmpty else { return [] }
         var merged: [EditorSheetSuggestion] = []
+        for panel in panelSuggestions(state: state) where panel.placement == .sheet {
+            merged.append(
+                EditorSheetSuggestion(
+                    id: panel.id,
+                    order: panel.order,
+                    isPresented: panel.isPresented,
+                    onDismiss: panel.onDismiss,
+                    content: panel.content
+                )
+            )
+        }
         for contributor in sheetContributors {
             let items = contributor.provideSheets(state: state)
             if !items.isEmpty {
@@ -201,9 +339,42 @@ final class EditorExtensionRegistry: ObservableObject {
         return deduplicateSheets(merged)
     }
 
+    func panelSuggestions(state: EditorState) -> [EditorPanelSuggestion] {
+        guard !panelContributors.isEmpty else { return [] }
+        let contributionContext = makeContributionContext(state: state)
+        var merged: [EditorPanelSuggestion] = []
+        for contributor in panelContributors {
+            let items = contributor.providePanels(state: state)
+            if !items.isEmpty {
+                merged.append(contentsOf: items)
+            }
+        }
+        return deduplicatePanels(
+            merged.filter { $0.metadata.isEnabled(contributionContext) }
+        )
+    }
+
+    func settingsSuggestions(state: EditorSettingsState) -> [EditorSettingsItemSuggestion] {
+        guard !settingsContributors.isEmpty else { return [] }
+        let contributionContext = makeContributionContext(state: state)
+        var merged: [EditorSettingsItemSuggestion] = []
+        for contributor in settingsContributors {
+            let items = contributor.provideSettingsItems(state: state)
+            if !items.isEmpty {
+                merged.append(contentsOf: items)
+            }
+        }
+        return deduplicateSettingsItems(
+            merged.filter { $0.metadata.isEnabled(contributionContext) }
+        )
+    }
+
     func toolbarItemSuggestions(state: EditorState) -> [EditorToolbarItemSuggestion] {
-        guard !toolbarContributors.isEmpty else { return [] }
         var merged: [EditorToolbarItemSuggestion] = []
+        for item in statusItemSuggestions(state: state)
+        where item.placement == .toolbarCenter || item.placement == .toolbarTrailing {
+            merged.append(EditorToolbarItemSuggestion(statusItem: item))
+        }
         for contributor in toolbarContributors {
             let items = contributor.provideToolbarItems(state: state)
             if !items.isEmpty {
@@ -211,6 +382,68 @@ final class EditorExtensionRegistry: ObservableObject {
             }
         }
         return deduplicateToolbarItems(merged)
+    }
+
+    func statusItemSuggestions(state: EditorState) -> [EditorStatusItemSuggestion] {
+        guard !statusItemContributors.isEmpty else { return [] }
+        let contributionContext = makeContributionContext(state: state)
+        var merged: [EditorStatusItemSuggestion] = []
+        for contributor in statusItemContributors {
+            let items = contributor.provideStatusItems(state: state)
+            if !items.isEmpty {
+                merged.append(contentsOf: items)
+            }
+        }
+        return deduplicateStatusItems(
+            merged.filter { $0.metadata.isEnabled(contributionContext) }
+        )
+    }
+
+    func quickOpenSuggestions(
+        matching query: String,
+        state: EditorState
+    ) async -> [EditorQuickOpenItemSuggestion] {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty, !quickOpenContributors.isEmpty else { return [] }
+        let contributionContext = makeContributionContext(state: state)
+
+        var merged: [EditorQuickOpenItemSuggestion] = []
+        for contributor in quickOpenContributors {
+            let items = await contributor.provideQuickOpenItems(query: trimmedQuery, state: state)
+            if !items.isEmpty {
+                merged.append(contentsOf: items)
+            }
+        }
+        return deduplicateQuickOpenItems(
+            merged.filter { $0.isEnabled && $0.metadata.isEnabled(contributionContext) }
+        )
+    }
+
+    private func makeContributionContext(
+        state: EditorState,
+        legacyContext: EditorCommandContext? = nil
+    ) -> EditorContributionContext {
+        EditorContributionContext(
+            languageId: legacyContext?.languageId ?? state.detectedLanguage?.tsName ?? "swift",
+            fileURL: state.currentFileURL,
+            hasSelection: legacyContext?.hasSelection ?? false,
+            line: legacyContext?.line ?? max(state.cursorLine - 1, 0),
+            character: legacyContext?.character ?? max(state.cursorColumn - 1, 0),
+            isEditorActive: state.currentFileURL != nil,
+            isLargeFileMode: state.largeFileMode != .normal
+        )
+    }
+
+    private func makeContributionContext(state: EditorSettingsState) -> EditorContributionContext {
+        EditorContributionContext(
+            languageId: "settings",
+            fileURL: nil,
+            hasSelection: false,
+            line: 0,
+            character: 0,
+            isEditorActive: false,
+            isLargeFileMode: false
+        )
     }
 
     func highlightProviders(for languageId: String) -> [any HighlightProviding] {
@@ -288,7 +521,7 @@ final class EditorExtensionRegistry: ObservableObject {
         }
 
         for item in sorted {
-            let key = item.markdown.trimmingCharacters(in: .whitespacesAndNewlines)
+            let key = (item.dedupeKey ?? item.markdown).trimmingCharacters(in: .whitespacesAndNewlines)
             if key.isEmpty || seen.contains(key) { continue }
             seen.insert(key)
             result.append(item)
@@ -328,6 +561,49 @@ final class EditorExtensionRegistry: ObservableObject {
         return result
     }
 
+    private func deduplicateContextMenuSuggestions(_ suggestions: [EditorContextMenuItemSuggestion]) -> [EditorContextMenuItemSuggestion] {
+        var seen: Set<String> = []
+        var result: [EditorContextMenuItemSuggestion] = []
+        let sorted = suggestions.sorted { lhs, rhs in
+            if lhs.metadata.priority != rhs.metadata.priority {
+                return lhs.metadata.priority > rhs.metadata.priority
+            }
+            let lhsCommand = lhs.asCommandSuggestion
+            let rhsCommand = rhs.asCommandSuggestion
+            if lhsCommand.order != rhsCommand.order {
+                return lhsCommand.order < rhsCommand.order
+            }
+            return lhsCommand.title.localizedCaseInsensitiveCompare(rhsCommand.title) == .orderedAscending
+        }
+
+        for item in sorted {
+            let key = (item.metadata.dedupeKey ?? item.id).lowercased()
+            if key.isEmpty || seen.contains(key) { continue }
+            seen.insert(key)
+            result.append(item)
+        }
+        return result
+    }
+
+    private func deduplicateGutterDecorations(_ suggestions: [EditorGutterDecorationSuggestion]) -> [EditorGutterDecorationSuggestion] {
+        var seen: Set<String> = []
+        var result: [EditorGutterDecorationSuggestion] = []
+        let sorted = suggestions.sorted { lhs, rhs in
+            if lhs.line != rhs.line { return lhs.line < rhs.line }
+            if lhs.lane != rhs.lane { return lhs.lane < rhs.lane }
+            if lhs.priority != rhs.priority { return lhs.priority > rhs.priority }
+            return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
+        }
+
+        for item in sorted {
+            let key = "\(item.line):\(item.lane):\(item.id.lowercased())"
+            if seen.contains(key) { continue }
+            seen.insert(key)
+            result.append(item)
+        }
+        return result
+    }
+
     private func deduplicateSidePanels(_ suggestions: [EditorSidePanelSuggestion]) -> [EditorSidePanelSuggestion] {
         var seen: Set<String> = []
         var result: [EditorSidePanelSuggestion] = []
@@ -339,6 +615,30 @@ final class EditorExtensionRegistry: ObservableObject {
 
         for item in sorted {
             let key = item.id.lowercased()
+            if key.isEmpty || seen.contains(key) { continue }
+            seen.insert(key)
+            result.append(item)
+        }
+        return result
+    }
+
+    private func deduplicatePanels(_ suggestions: [EditorPanelSuggestion]) -> [EditorPanelSuggestion] {
+        var seen: Set<String> = []
+        var result: [EditorPanelSuggestion] = []
+
+        let sorted = suggestions.sorted { lhs, rhs in
+            if lhs.placement != rhs.placement {
+                return lhs.placement.rawValue.localizedCaseInsensitiveCompare(rhs.placement.rawValue) == .orderedAscending
+            }
+            if lhs.metadata.priority != rhs.metadata.priority {
+                return lhs.metadata.priority > rhs.metadata.priority
+            }
+            if lhs.order != rhs.order { return lhs.order < rhs.order }
+            return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
+        }
+
+        for item in sorted {
+            let key = "\(item.placement.rawValue):\((item.metadata.dedupeKey ?? item.id).lowercased())"
             if key.isEmpty || seen.contains(key) { continue }
             seen.insert(key)
             result.append(item)
@@ -375,6 +675,79 @@ final class EditorExtensionRegistry: ObservableObject {
 
         for item in sorted {
             let key = item.id.lowercased()
+            if key.isEmpty || seen.contains(key) { continue }
+            seen.insert(key)
+            result.append(item)
+        }
+        return result
+    }
+
+    private func deduplicateSettingsItems(_ suggestions: [EditorSettingsItemSuggestion]) -> [EditorSettingsItemSuggestion] {
+        var seen: Set<String> = []
+        var result: [EditorSettingsItemSuggestion] = []
+        let sorted = suggestions.sorted { lhs, rhs in
+            if lhs.metadata.priority != rhs.metadata.priority {
+                return lhs.metadata.priority > rhs.metadata.priority
+            }
+            if lhs.sectionTitle != rhs.sectionTitle {
+                return lhs.sectionTitle.localizedCaseInsensitiveCompare(rhs.sectionTitle) == .orderedAscending
+            }
+            if lhs.order != rhs.order {
+                return lhs.order < rhs.order
+            }
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+
+        for item in sorted {
+            let key = (item.metadata.dedupeKey ?? item.id).lowercased()
+            if key.isEmpty || seen.contains(key) { continue }
+            seen.insert(key)
+            result.append(item)
+        }
+        return result
+    }
+
+    private func deduplicateStatusItems(_ suggestions: [EditorStatusItemSuggestion]) -> [EditorStatusItemSuggestion] {
+        var seen: Set<String> = []
+        var result: [EditorStatusItemSuggestion] = []
+
+        let sorted = suggestions.sorted { lhs, rhs in
+            if lhs.placement != rhs.placement {
+                return lhs.placement.rawValue.localizedCaseInsensitiveCompare(rhs.placement.rawValue) == .orderedAscending
+            }
+            if lhs.metadata.priority != rhs.metadata.priority {
+                return lhs.metadata.priority > rhs.metadata.priority
+            }
+            if lhs.order != rhs.order { return lhs.order < rhs.order }
+            return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
+        }
+
+        for item in sorted {
+            let key = "\(item.placement.rawValue):\((item.metadata.dedupeKey ?? item.id).lowercased())"
+            if key.isEmpty || seen.contains(key) { continue }
+            seen.insert(key)
+            result.append(item)
+        }
+        return result
+    }
+
+    private func deduplicateQuickOpenItems(_ suggestions: [EditorQuickOpenItemSuggestion]) -> [EditorQuickOpenItemSuggestion] {
+        var seen: Set<String> = []
+        var result: [EditorQuickOpenItemSuggestion] = []
+
+        let sorted = suggestions.sorted { lhs, rhs in
+            if lhs.sectionTitle != rhs.sectionTitle {
+                return lhs.sectionTitle.localizedCaseInsensitiveCompare(rhs.sectionTitle) == .orderedAscending
+            }
+            if lhs.metadata.priority != rhs.metadata.priority {
+                return lhs.metadata.priority > rhs.metadata.priority
+            }
+            if lhs.order != rhs.order { return lhs.order < rhs.order }
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+
+        for item in sorted {
+            let key = (item.metadata.dedupeKey ?? item.id).lowercased()
             if key.isEmpty || seen.contains(key) { continue }
             seen.insert(key)
             result.append(item)

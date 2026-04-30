@@ -309,18 +309,9 @@ final class ContextMenuHelper: NSObject {
 
         currentTargets.removeAll()
 
-        // 从插件注册中心获取所有命令（包括多光标、Chat 集成、LSP 命令等）
-        let (line, character) = Self.cursorLSPLineCharacter(textView: textView, state: state)
-        let hasSelection = textView.selectionManager.textSelections.contains { !$0.range.isEmpty }
-        let commandContext = EditorCommandContext(
-            languageId: state.detectedLanguage?.tsName ?? "swift",
-            hasSelection: hasSelection,
-            line: line,
-            character: character
-        )
-        let presentationModel = state.editorCommandPresentationModel(
-            for: commandContext,
-            textView: textView,
+        let invocationContext = state.editorCommandInvocationContext(for: textView)
+        let presentationModel = state.editorContextMenuPresentationModel(
+            for: invocationContext,
             categories: EditorCommandCategoryScope.editorContextMenu
         )
         guard !presentationModel.flattenedCommands.isEmpty else { return }
@@ -336,7 +327,10 @@ final class ContextMenuHelper: NSObject {
             menu.insertItem(buildSectionHeader(title: "Recently Used"), at: insertIndex)
             insertIndex += 1
             for command in presentationModel.recentCommands {
-                menu.insertItem(buildInjectedItem(for: command, state: state), at: insertIndex)
+                menu.insertItem(
+                    buildInjectedItem(for: command, state: state, invocationContext: invocationContext),
+                    at: insertIndex
+                )
                 insertIndex += 1
             }
             let separator = NSMenuItem.separator()
@@ -349,7 +343,10 @@ final class ContextMenuHelper: NSObject {
             menu.insertItem(buildSectionHeader(title: section.title), at: insertIndex)
             insertIndex += 1
             for command in section.commands {
-                menu.insertItem(buildInjectedItem(for: command, state: state), at: insertIndex)
+                menu.insertItem(
+                    buildInjectedItem(for: command, state: state, invocationContext: invocationContext),
+                    at: insertIndex
+                )
                 insertIndex += 1
             }
             if sectionIndex < presentationModel.sections.count - 1 {
@@ -366,10 +363,11 @@ final class ContextMenuHelper: NSObject {
 
     private func buildInjectedItem(
         for command: EditorCommandSuggestion,
-        state: EditorState
+        state: EditorState,
+        invocationContext: EditorCommandInvocationContext
     ) -> NSMenuItem {
         let target = ContextMenuTarget(action: {
-            state.performEditorCommand(id: command.id)
+            state.performEditorContextMenuCommand(id: command.id, invocationContext: invocationContext)
         })
         currentTargets.append(target)
 
@@ -390,38 +388,6 @@ final class ContextMenuHelper: NSObject {
         item.tag = injectedItemTag
         item.isEnabled = false
         return item
-    }
-
-    private static func cursorLSPLineCharacter(textView: TextView, state: EditorState) -> (Int, Int) {
-        let selection = textView.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
-        let offset = max(selection.location, 0)
-        guard let position = lspPosition(utf16Offset: offset, in: textView.string) else {
-            return (max(state.cursorLine - 1, 0), max(state.cursorColumn - 1, 0))
-        }
-        return (Int(position.line), Int(position.character))
-    }
-
-    private static func lspPosition(utf16Offset: Int, in text: String) -> Position? {
-        guard utf16Offset >= 0, utf16Offset <= text.utf16.count else { return nil }
-
-        var line = 0
-        var character = 0
-        var consumed = 0
-
-        for unit in text.utf16 {
-            if consumed >= utf16Offset {
-                break
-            }
-            if unit == 0x0A {
-                line += 1
-                character = 0
-            } else {
-                character += 1
-            }
-            consumed += 1
-        }
-
-        return Position(line: line, character: character)
     }
 }
 

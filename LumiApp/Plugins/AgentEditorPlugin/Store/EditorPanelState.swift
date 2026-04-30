@@ -22,6 +22,9 @@ final class EditorPanelState: ObservableObject {
     /// 是否展示 Open Editors 面板
     @Published var isOpenEditorsPanelPresented: Bool = false
 
+    /// 是否展示 Outline 面板
+    @Published var isOutlinePanelPresented: Bool = false
+
     // MARK: - Problems 面板
 
     /// 当前文件的诊断列表
@@ -65,6 +68,7 @@ final class EditorPanelState: ObservableObject {
     var snapshot: EditorPanelSnapshot {
         EditorPanelSnapshot(
             isOpenEditorsPanelPresented: isOpenEditorsPanelPresented,
+            isOutlinePanelPresented: isOutlinePanelPresented,
             isProblemsPanelPresented: isProblemsPanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
@@ -78,6 +82,7 @@ final class EditorPanelState: ObservableObject {
             mouseHoverSymbolRect: mouseHoverSymbolRect,
             referenceResults: referenceResults.map(Self.referenceResult(from:)),
             isOpenEditorsPanelPresented: isOpenEditorsPanelPresented,
+            isOutlinePanelPresented: isOutlinePanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
             isCallHierarchyPresented: isCallHierarchyPresented,
@@ -119,6 +124,7 @@ final class EditorPanelState: ObservableObject {
 
     func apply(_ snapshot: EditorPanelSnapshot) {
         isOpenEditorsPanelPresented = snapshot.isOpenEditorsPanelPresented
+        isOutlinePanelPresented = snapshot.isOutlinePanelPresented
         isProblemsPanelPresented = snapshot.isProblemsPanelPresented
         isReferencePanelPresented = snapshot.isReferencePanelPresented
         isWorkspaceSymbolSearchPresented = snapshot.isWorkspaceSymbolSearchPresented
@@ -140,6 +146,7 @@ final class EditorPanelState: ObservableObject {
             clearMouseHover()
         }
         isOpenEditorsPanelPresented = state.isOpenEditorsPanelPresented
+        isOutlinePanelPresented = state.isOutlinePanelPresented
         isReferencePanelPresented = state.isReferencePanelPresented
         isWorkspaceSymbolSearchPresented = state.isWorkspaceSymbolSearchPresented
         isCallHierarchyPresented = state.isCallHierarchyPresented
@@ -153,6 +160,7 @@ final class EditorPanelState: ObservableObject {
         semanticProblems = []
         selectedProblemDiagnostic = nil
         isOpenEditorsPanelPresented = false
+        isOutlinePanelPresented = false
         isProblemsPanelPresented = false
         referenceResults = []
         isReferencePanelPresented = false
@@ -212,6 +220,7 @@ struct EditorPanelSessionState: Equatable {
     let mouseHoverSymbolRect: CGRect
     let referenceResults: [ReferenceResult]
     let isOpenEditorsPanelPresented: Bool
+    let isOutlinePanelPresented: Bool
     let isReferencePanelPresented: Bool
     let isWorkspaceSymbolSearchPresented: Bool
     let isCallHierarchyPresented: Bool
@@ -223,6 +232,7 @@ struct EditorPanelSessionState: Equatable {
     var snapshot: EditorPanelSnapshot {
         EditorPanelSnapshot(
             isOpenEditorsPanelPresented: isOpenEditorsPanelPresented,
+            isOutlinePanelPresented: isOutlinePanelPresented,
             isProblemsPanelPresented: isProblemsPanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
@@ -235,6 +245,7 @@ struct EditorPanelSessionState: Equatable {
         mouseHoverSymbolRect: CGRect = .zero,
         referenceResults: [ReferenceResult] = [],
         isOpenEditorsPanelPresented: Bool = false,
+        isOutlinePanelPresented: Bool = false,
         isReferencePanelPresented: Bool = false,
         isWorkspaceSymbolSearchPresented: Bool = false,
         isCallHierarchyPresented: Bool = false,
@@ -247,6 +258,7 @@ struct EditorPanelSessionState: Equatable {
         self.mouseHoverSymbolRect = mouseHoverSymbolRect
         self.referenceResults = referenceResults
         self.isOpenEditorsPanelPresented = isOpenEditorsPanelPresented
+        self.isOutlinePanelPresented = isOutlinePanelPresented
         self.isReferencePanelPresented = isReferencePanelPresented
         self.isWorkspaceSymbolSearchPresented = isWorkspaceSymbolSearchPresented
         self.isCallHierarchyPresented = isCallHierarchyPresented

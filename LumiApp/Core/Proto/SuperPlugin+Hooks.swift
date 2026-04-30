@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Agent Tools Default Implementation
 
 extension SuperPlugin {
-    @MainActor func agentTools() -> [AgentTool] { [] }
+    @MainActor func agentTools() -> [SuperAgentTool] { [] }
 
     @MainActor func agentToolFactories() -> [AnySuperAgentToolFactory] { [] }
 

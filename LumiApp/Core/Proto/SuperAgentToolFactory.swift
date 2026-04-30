@@ -5,5 +5,5 @@ import Foundation
 protocol SuperAgentToolFactory {
     var id: String { get }
     var order: Int { get }
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool]
+    func makeTools(env: SuperSuperAgentToolEnvironment) -> [SuperAgentTool]
 }

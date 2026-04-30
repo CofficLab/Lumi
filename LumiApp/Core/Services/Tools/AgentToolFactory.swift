@@ -1,6 +1,6 @@
 import Foundation
 
-/// AgentTool 构建环境（在主线程构建，避免并发隔离问题）。
+/// SuperAgentTool 构建环境（在主线程构建，避免并发隔离问题）。
 @MainActor
 struct SuperAgentToolEnvironment {
     let toolService: ToolService

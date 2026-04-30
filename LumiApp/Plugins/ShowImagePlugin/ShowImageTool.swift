@@ -32,7 +32,7 @@ import os
 ///   "caption": "2024 年 Q1 数据"
 /// }
 /// ```
-struct ShowImageTool: AgentTool, SuperLog {
+struct ShowImageTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🖼️"
     nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.show-image")

@@ -60,7 +60,7 @@ final class FlyMuxProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     func buildRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
         let finalMessages = messages.map { transformMessage($0) }
@@ -100,7 +100,7 @@ final class FlyMuxProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     func buildStreamingRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
         var body = try buildRequestBody(
@@ -246,7 +246,7 @@ extension FlyMuxProvider {
 // MARK: - 工具格式
 
 extension FlyMuxProvider {
-    func formatTool(_ tool: AgentTool) -> [String: Any] {
+    func formatTool(_ tool: SuperAgentTool) -> [String: Any] {
         [
             "type": "function",
             "function": [

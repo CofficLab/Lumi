@@ -75,6 +75,29 @@ final class EditorSessionStore: ObservableObject {
     }
 
     @discardableResult
+    func reorderSession(
+        sessionID: EditorSession.ID,
+        before targetSessionID: EditorSession.ID?
+    ) -> Bool {
+        guard let fromIndex = tabs.firstIndex(where: { $0.sessionID == sessionID }) else { return false }
+
+        let movingTab = tabs[fromIndex]
+        tabs.remove(at: fromIndex)
+
+        let insertionIndex: Int
+        if let targetSessionID,
+           let targetIndex = tabs.firstIndex(where: { $0.sessionID == targetSessionID }) {
+            insertionIndex = targetIndex
+        } else {
+            insertionIndex = tabs.endIndex
+        }
+
+        tabs.insert(movingTab, at: max(0, min(insertionIndex, tabs.count)))
+        normalizeTabOrder()
+        return true
+    }
+
+    @discardableResult
     func close(sessionID: EditorSession.ID) -> EditorSession? {
         guard let index = sessions.firstIndex(where: { $0.id == sessionID }) else {
             return activeSession
@@ -167,11 +190,17 @@ final class EditorSessionStore: ObservableObject {
     }
 
     private func normalizeTabOrder() {
-        tabs.sort { lhs, rhs in
-            if lhs.isPinned != rhs.isPinned {
-                return lhs.isPinned && !rhs.isPinned
-            }
-            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        let pinned = tabs.filter(\.isPinned)
+        let unpinned = tabs.filter { !$0.isPinned }
+        tabs = pinned + unpinned
+        syncSessionsToTabOrder()
+    }
+
+    private func syncSessionsToTabOrder() {
+        let sessionMap = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
+        let orderedSessions = tabs.compactMap { sessionMap[$0.sessionID] }
+        if orderedSessions.count == sessions.count {
+            sessions = orderedSessions
         }
     }
 }

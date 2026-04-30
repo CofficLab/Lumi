@@ -48,7 +48,7 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
     func buildRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
         let conversationMessages = messages.map { transformMessage($0) }
@@ -88,7 +88,7 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
     func buildStreamingRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any] {
         var body = try buildRequestBody(
@@ -237,7 +237,7 @@ extension DeepSeekProvider {
 // MARK: - 工具格式
 
 extension DeepSeekProvider {
-    func formatTool(_ tool: AgentTool) -> [String: Any] {
+    func formatTool(_ tool: SuperAgentTool) -> [String: Any] {
         [
             "type": "function",
             "function": [

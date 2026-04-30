@@ -56,7 +56,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         URLRequest(url: url)
     }
 
-    func buildRequestBody(messages: [ChatMessage], model: String, tools: [AgentTool]?, systemPrompt: String) throws -> [String: Any] {
+    func buildRequestBody(messages: [ChatMessage], model: String, tools: [SuperAgentTool]?, systemPrompt: String) throws -> [String: Any] {
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
@@ -68,7 +68,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         nil
     }
 
-    func buildStreamingRequestBody(messages: [ChatMessage], model: String, tools: [AgentTool]?, systemPrompt: String) throws -> [String: Any] {
+    func buildStreamingRequestBody(messages: [ChatMessage], model: String, tools: [SuperAgentTool]?, systemPrompt: String) throws -> [String: Any] {
         throw MLXError.notSupported("本地模型请使用流式或本地 sendMessage")
     }
 
@@ -198,7 +198,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     func streamChat(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String?,
         images: [ImageAttachment],
         onChunk: @Sendable (StreamChunk) async -> Void
@@ -314,7 +314,7 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
         return list
     }
 
-    private static func agentToolsToMLX(_ tools: [AgentTool]?) -> [[String: Sendable]]? {
+    private static func agentToolsToMLX(_ tools: [SuperAgentTool]?) -> [[String: Sendable]]? {
         guard let tools, !tools.isEmpty else { return nil }
         return tools.map { t in
             let paramsJson = (try? JSONSerialization.data(withJSONObject: t.inputSchema)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"

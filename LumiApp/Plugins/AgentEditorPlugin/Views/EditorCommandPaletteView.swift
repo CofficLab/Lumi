@@ -6,8 +6,10 @@ struct EditorCommandPaletteView: View {
     let onDismiss: () -> Void
 
     @State private var query = ""
-    @State private var selectedCommandID: String?
+    @State private var selectedItemID: String?
     @State private var selectedCategory: EditorCommandCategory?
+    @State private var quickOpenItems: [EditorQuickOpenItemSuggestion] = []
+    @State private var quickOpenRefreshTask: Task<Void, Never>?
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
@@ -22,10 +24,20 @@ struct EditorCommandPaletteView: View {
         .background(Color(nsColor: .textBackgroundColor))
         .onAppear {
             isSearchFocused = true
-            selectFirstCommandIfNeeded()
+            refreshQuickOpenItems()
+            selectFirstItemIfNeeded()
         }
         .onChange(of: flattenedCommands.map(\.id)) { _, _ in
             normalizeSelection()
+        }
+        .onChange(of: query) { _, _ in
+            refreshQuickOpenItems()
+        }
+        .onChange(of: selectedCategory) { _, _ in
+            refreshQuickOpenItems()
+        }
+        .onDisappear {
+            quickOpenRefreshTask?.cancel()
         }
         .onKeyPress { keyPress in
             handleKeyPress(keyPress)
@@ -61,7 +73,7 @@ struct EditorCommandPaletteView: View {
             .textFieldStyle(.roundedBorder)
             .focused($isSearchFocused)
             .onSubmit {
-                executeSelectedCommand()
+                executeSelectedItem()
             }
 
             categoryFilterStrip
@@ -85,9 +97,11 @@ struct EditorCommandPaletteView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    if commandSections.isEmpty {
+                    if quickOpenSections.isEmpty && commandSections.isEmpty && recentCommands.isEmpty {
                         emptyState
                     } else {
+                        quickOpenSectionViews
+
                         if !recentCommands.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(String(localized: "Recently Used", table: "LumiEditor"))
@@ -99,14 +113,14 @@ struct EditorCommandPaletteView: View {
                                     Button {
                                         execute(command)
                                     } label: {
-                                        row(for: command, emphasizeRecent: true)
+                                        commandRow(for: command, emphasizeRecent: true)
                                     }
-                                    .id(command.id)
+                                    .id(commandSelectionID(for: command))
                                     .buttonStyle(.plain)
                                     .disabled(!command.isEnabled)
                                     .onHover { hovering in
                                         if hovering {
-                                            selectedCommandID = command.id
+                                            selectedItemID = commandSelectionID(for: command)
                                         }
                                     }
                                 }
@@ -124,14 +138,14 @@ struct EditorCommandPaletteView: View {
                                     Button {
                                         execute(command)
                                     } label: {
-                                        row(for: command)
+                                        commandRow(for: command)
                                     }
-                                    .id(command.id)
+                                    .id(commandSelectionID(for: command))
                                     .buttonStyle(.plain)
                                     .disabled(!command.isEnabled)
                                     .onHover { hovering in
                                         if hovering {
-                                            selectedCommandID = command.id
+                                            selectedItemID = commandSelectionID(for: command)
                                         }
                                     }
                                 }
@@ -141,10 +155,38 @@ struct EditorCommandPaletteView: View {
                 }
                 .padding(12)
             }
-            .onChange(of: selectedCommandID) { _, commandID in
-                guard let commandID else { return }
+            .onChange(of: selectedItemID) { _, itemID in
+                guard let itemID else { return }
                 withAnimation(.easeInOut(duration: 0.12)) {
-                    proxy.scrollTo(commandID, anchor: .center)
+                    proxy.scrollTo(itemID, anchor: .center)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var quickOpenSectionViews: some View {
+        ForEach(quickOpenSections) { section in
+            VStack(alignment: .leading, spacing: 6) {
+                Text(section.title)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .padding(.horizontal, 4)
+
+                ForEach(section.items) { item in
+                    Button {
+                        execute(item)
+                    } label: {
+                        quickOpenRow(for: item)
+                    }
+                    .id(quickOpenSelectionID(for: item))
+                    .buttonStyle(.plain)
+                    .disabled(!item.isEnabled)
+                    .onHover { hovering in
+                        if hovering {
+                            selectedItemID = quickOpenSelectionID(for: item)
+                        }
+                    }
                 }
             }
         }
@@ -158,7 +200,7 @@ struct EditorCommandPaletteView: View {
 
             Spacer(minLength: 0)
 
-            Text("\(flattenedCommands.count)")
+            Text("\(flattenedSelectionIDs.count)")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
         }
@@ -198,8 +240,29 @@ struct EditorCommandPaletteView: View {
         return state.editorCommandPresentationModel(matching: query)
     }
 
+    private var quickOpenSections: [QuickOpenSection] {
+        guard selectedCategory == nil else { return [] }
+
+        let grouped = Dictionary(grouping: quickOpenItems, by: \.sectionTitle)
+        return grouped.keys.sorted().map { title in
+            QuickOpenSection(
+                title: title,
+                items: grouped[title, default: []].sorted { lhs, rhs in
+                    if lhs.order != rhs.order { return lhs.order < rhs.order }
+                    return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+                }
+            )
+        }
+    }
+
     private var flattenedCommands: [EditorCommandSuggestion] {
         presentationModel.flattenedCommands
+    }
+
+    private var flattenedSelectionIDs: [String] {
+        quickOpenSections.flatMap { section in
+            section.items.map(quickOpenSelectionID(for:))
+        } + flattenedCommands.map(commandSelectionID(for:))
     }
 
     private func footerHint(_ key: String, _ label: String) -> some View {
@@ -225,7 +288,7 @@ struct EditorCommandPaletteView: View {
 
         return Button {
             selectedCategory = category
-            selectFirstCommandIfNeeded(force: true)
+            selectFirstItemIfNeeded(force: true)
         } label: {
             Text(title)
                 .font(.system(size: 11, weight: .medium))
@@ -257,7 +320,7 @@ struct EditorCommandPaletteView: View {
         .buttonStyle(.plain)
     }
 
-    private func row(for command: EditorCommandSuggestion, emphasizeRecent: Bool = false) -> some View {
+    private func commandRow(for command: EditorCommandSuggestion, emphasizeRecent: Bool = false) -> some View {
         HStack(spacing: 10) {
             Image(systemName: command.systemImage)
                 .font(.system(size: 11))
@@ -286,7 +349,7 @@ struct EditorCommandPaletteView: View {
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(
-                    selectedCommandID == command.id
+                    selectedItemID == commandSelectionID(for: command)
                         ? AppUI.Color.semantic.primary.opacity(command.isEnabled ? 0.14 : 0.08)
                         : AppUI.Color.semantic.textTertiary.opacity(command.isEnabled ? 0.06 : 0.03)
                 )
@@ -294,7 +357,7 @@ struct EditorCommandPaletteView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(
-                    selectedCommandID == command.id
+                    selectedItemID == commandSelectionID(for: command)
                         ? AppUI.Color.semantic.primary.opacity(0.35)
                         : .clear,
                     lineWidth: 1
@@ -303,42 +366,133 @@ struct EditorCommandPaletteView: View {
         .opacity(command.isEnabled ? 1 : 0.6)
     }
 
+    private func quickOpenRow(for item: EditorQuickOpenItemSuggestion) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 11))
+                .foregroundColor(item.isEnabled ? AppUI.Color.semantic.textSecondary : AppUI.Color.semantic.textTertiary)
+                .frame(width: 16)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title)
+                    .font(.system(size: 12, weight: item.isEnabled ? .medium : .regular))
+                    .foregroundColor(item.isEnabled ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let subtitle = item.subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 10))
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .lineLimit(1)
+                }
+            }
+
+            if let badge = item.badge {
+                Text(badge)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(AppUI.Color.semantic.textTertiary.opacity(0.08))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    selectedItemID == quickOpenSelectionID(for: item)
+                        ? AppUI.Color.semantic.primary.opacity(item.isEnabled ? 0.14 : 0.08)
+                        : AppUI.Color.semantic.textTertiary.opacity(item.isEnabled ? 0.06 : 0.03)
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(
+                    selectedItemID == quickOpenSelectionID(for: item)
+                        ? AppUI.Color.semantic.primary.opacity(0.35)
+                        : .clear,
+                    lineWidth: 1
+                )
+        )
+        .opacity(item.isEnabled ? 1 : 0.6)
+    }
+
     private func execute(_ command: EditorCommandSuggestion) {
         guard command.isEnabled else { return }
-        selectedCommandID = command.id
+        selectedItemID = commandSelectionID(for: command)
         state.performEditorCommand(id: command.id)
         onDismiss()
     }
 
-    private func executeSelectedCommand() {
-        guard let selectedCommand = flattenedCommands.first(where: { $0.id == selectedCommandID }) else {
+    private func execute(_ item: EditorQuickOpenItemSuggestion) {
+        guard item.isEnabled else { return }
+        selectedItemID = quickOpenSelectionID(for: item)
+        item.action()
+        onDismiss()
+    }
+
+    private func executeSelectedItem() {
+        guard let selectedItemID else { return }
+
+        if let quickOpenItem = quickOpenItems.first(where: { quickOpenSelectionID(for: $0) == selectedItemID }) {
+            execute(quickOpenItem)
+            return
+        }
+
+        guard let selectedCommand = flattenedCommands.first(where: { commandSelectionID(for: $0) == selectedItemID }) else {
             return
         }
         execute(selectedCommand)
     }
 
-    private func selectFirstCommandIfNeeded(force: Bool = false) {
-        guard force || selectedCommandID == nil else { return }
-        selectedCommandID = flattenedCommands.first?.id
+    private func selectFirstItemIfNeeded(force: Bool = false) {
+        guard force || selectedItemID == nil else { return }
+        selectedItemID = flattenedSelectionIDs.first
     }
 
     private func normalizeSelection() {
-        if let selectedCommandID,
-           flattenedCommands.contains(where: { $0.id == selectedCommandID }) {
+        if let selectedItemID, flattenedSelectionIDs.contains(selectedItemID) {
             return
         }
-        selectedCommandID = flattenedCommands.first?.id
+        selectedItemID = flattenedSelectionIDs.first
     }
 
     private func moveSelection(by offset: Int) {
-        guard !flattenedCommands.isEmpty else { return }
-        guard let currentSelectionID = selectedCommandID,
-              let currentIndex = flattenedCommands.firstIndex(where: { $0.id == currentSelectionID }) else {
-            self.selectedCommandID = flattenedCommands.first?.id
+        guard !flattenedSelectionIDs.isEmpty else { return }
+        guard let currentSelectionID = selectedItemID,
+              let currentIndex = flattenedSelectionIDs.firstIndex(of: currentSelectionID) else {
+            selectedItemID = flattenedSelectionIDs.first
             return
         }
-        let nextIndex = max(0, min(flattenedCommands.count - 1, currentIndex + offset))
-        selectedCommandID = flattenedCommands[nextIndex].id
+        let nextIndex = max(0, min(flattenedSelectionIDs.count - 1, currentIndex + offset))
+        selectedItemID = flattenedSelectionIDs[nextIndex]
+    }
+
+    private func refreshQuickOpenItems() {
+        quickOpenRefreshTask?.cancel()
+
+        guard selectedCategory == nil else {
+            quickOpenItems = []
+            return
+        }
+
+        let currentQuery = query
+        quickOpenRefreshTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(180))
+            guard !Task.isCancelled else { return }
+            quickOpenItems = await state.editorQuickOpenItems(matching: currentQuery)
+            normalizeSelection()
+        }
+    }
+
+    private func commandSelectionID(for command: EditorCommandSuggestion) -> String {
+        "command:\(command.id)"
+    }
+
+    private func quickOpenSelectionID(for item: EditorQuickOpenItemSuggestion) -> String {
+        "quick:\(item.id)"
     }
 
     private func handleKeyPress(_ keyPress: KeyPress) -> KeyPress.Result {
@@ -350,7 +504,7 @@ struct EditorCommandPaletteView: View {
             moveSelection(by: 1)
             return .handled
         case .return:
-            executeSelectedCommand()
+            executeSelectedItem()
             return .handled
         case .escape:
             onDismiss()
@@ -359,4 +513,11 @@ struct EditorCommandPaletteView: View {
             return .ignored
         }
     }
+}
+
+private struct QuickOpenSection: Identifiable {
+    let title: String
+    let items: [EditorQuickOpenItemSuggestion]
+
+    var id: String { title }
 }

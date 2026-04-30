@@ -66,6 +66,19 @@ enum EditorOpenItemCommandController {
                 selectedProblemDiagnostic: nil,
                 closeWorkspaceSymbolSearch: false
             )
+
+        case let .documentSymbol(item):
+            return ResolvedEditorOpenItemCommand(
+                navigationRequest: nil,
+                cursorPositions: [
+                    CursorPosition(
+                        start: .init(line: item.line, column: item.column),
+                        end: nil
+                    )
+                ],
+                selectedProblemDiagnostic: nil,
+                closeWorkspaceSymbolSearch: false
+            )
         }
     }
 }

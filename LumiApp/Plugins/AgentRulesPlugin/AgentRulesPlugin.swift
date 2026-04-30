@@ -65,7 +65,7 @@ private struct AgentRulesToolFactory: SuperAgentToolFactory {
     let id: String = "agent-rules.factory"
     let order: Int = 0
 
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [
             ListAgentRulesTool(),
             CreateAgentRuleTool()

@@ -44,7 +44,7 @@ private struct WebSearchToolFactory: SuperAgentToolFactory {
     let id: String = "web.search.factory"
     let order: Int = 0
 
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [WebSearchTool()]
     }
 }

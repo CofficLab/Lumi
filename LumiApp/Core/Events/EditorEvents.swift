@@ -73,6 +73,9 @@ extension Notification.Name {
 
     /// 当前编辑器文件对应的 Xcode 上下文快照已更新
     static let lumiEditorXcodeSnapshotDidChange = Notification.Name("LumiEditorXcodeSnapshotDidChange")
+
+    /// 编辑器设置已更新
+    static let lumiEditorSettingsDidChange = Notification.Name("LumiEditorSettingsDidChange")
 }
 
 // MARK: - NotificationCenter Helpers
@@ -128,6 +131,10 @@ extension NotificationCenter {
 
     static func postLumiEditorReplaceAll() {
         NotificationCenter.default.post(name: .lumiEditorReplaceAll, object: nil)
+    }
+
+    static func postLumiEditorSettingsDidChange() {
+        NotificationCenter.default.post(name: .lumiEditorSettingsDidChange, object: nil)
     }
 
     static func postLumiEditorToggleOpenEditorsPanel() {

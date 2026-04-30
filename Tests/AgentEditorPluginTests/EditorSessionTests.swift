@@ -597,6 +597,7 @@ final class EditorSessionTests: XCTestCase {
     func testPanelCommandControllerTogglesProblemsAndClosesReferences() {
         let snapshot = EditorPanelSnapshot(
             isOpenEditorsPanelPresented: false,
+            isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: true,
             isWorkspaceSymbolSearchPresented: false,
@@ -612,6 +613,7 @@ final class EditorSessionTests: XCTestCase {
     func testPanelCommandControllerOpensAndClosesWorkspaceSymbolSearch() {
         let snapshot = EditorPanelSnapshot(
             isOpenEditorsPanelPresented: false,
+            isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: false,
             isWorkspaceSymbolSearchPresented: false,
@@ -629,6 +631,7 @@ final class EditorSessionTests: XCTestCase {
     func testPanelCommandControllerOpensAndClosesCallHierarchy() {
         let snapshot = EditorPanelSnapshot(
             isOpenEditorsPanelPresented: false,
+            isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: false,
             isWorkspaceSymbolSearchPresented: true,
@@ -641,6 +644,24 @@ final class EditorSessionTests: XCTestCase {
         XCTAssertTrue(opened.isCallHierarchyPresented)
         XCTAssertTrue(opened.isWorkspaceSymbolSearchPresented)
         XCTAssertFalse(closed.isCallHierarchyPresented)
+    }
+
+    func testPanelCommandControllerTogglesOutlineAndClosesOpenEditors() {
+        let snapshot = EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: true,
+            isOutlinePanelPresented: false,
+            isProblemsPanelPresented: false,
+            isReferencePanelPresented: false,
+            isWorkspaceSymbolSearchPresented: false,
+            isCallHierarchyPresented: false
+        )
+
+        let opened = EditorPanelCommandController.apply(.toggleOutline, to: snapshot)
+        let closed = EditorPanelCommandController.apply(.closeOutline, to: opened)
+
+        XCTAssertTrue(opened.isOutlinePanelPresented)
+        XCTAssertFalse(opened.isOpenEditorsPanelPresented)
+        XCTAssertFalse(closed.isOutlinePanelPresented)
     }
 
     func testBridgeStateControllerBuildsCombinedBridgeState() {
@@ -984,6 +1005,7 @@ final class EditorSessionTests: XCTestCase {
         let snapshot = sessionState.snapshot
 
         XCTAssertTrue(snapshot.isProblemsPanelPresented)
+        XCTAssertFalse(snapshot.isOutlinePanelPresented)
         XCTAssertTrue(snapshot.isReferencePanelPresented)
         XCTAssertTrue(snapshot.isWorkspaceSymbolSearchPresented)
         XCTAssertFalse(snapshot.isCallHierarchyPresented)

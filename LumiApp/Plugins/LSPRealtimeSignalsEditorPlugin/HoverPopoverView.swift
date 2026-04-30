@@ -3,25 +3,47 @@ import SwiftUI
 /// 悬浮提示气泡视图
 struct HoverPopoverView: View {
     let markdownText: String
+    private let style = EditorHoverOverlayStyle.standard
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            MarkdownBlockRenderer(
-                markdown: markdownText,
-                theme: hoverTheme
-            )
-            .padding(10)
+        VStack(alignment: .leading, spacing: style.headerSpacing) {
+            HStack(spacing: 6) {
+                Text("Hover")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundColor(style.labelForeground)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(style.labelBackground)
+                    )
+                Spacer(minLength: 0)
+            }
+
+            ScrollView(.vertical, showsIndicators: false) {
+                MarkdownBlockRenderer(
+                    markdown: markdownText,
+                    theme: hoverTheme
+                )
+            }
         }
-        .frame(maxHeight: 300)
+        .padding(style.contentPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+            RoundedRectangle(cornerRadius: style.cornerRadius)
+                .fill(
+                    LinearGradient(
+                        colors: [style.backgroundTop, style.backgroundBottom],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: style.cornerRadius)
+                        .stroke(style.borderColor, lineWidth: style.borderWidth)
                 )
         )
+        .shadow(color: style.shadowColor, radius: style.shadowRadius, x: 0, y: style.shadowYOffset)
     }
 
     private var hoverTheme: MarkdownTheme {

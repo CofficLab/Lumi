@@ -168,7 +168,7 @@ protocol SuperPlugin: Actor {
     // MARK: - Agent Tools Hooks
 
     /// 提供 Agent 工具列表。
-    @MainActor func agentTools() -> [AgentTool]
+    @MainActor func agentTools() -> [SuperAgentTool]
 
     /// 提供 Agent 工具工厂列表（带依赖注入）。
     @MainActor func agentToolFactories() -> [AnySuperAgentToolFactory]

@@ -31,7 +31,7 @@ actor AgentMCPToolsPlugin: SuperPlugin {
     nonisolated func onDisable() {}
 
     @MainActor
-    func agentTools() -> [AgentTool] {
+    func agentTools() -> [SuperAgentTool] {
         // 当前版本暂不启用 MCP 工具，返回空列表以避免访问未初始化状态导致崩溃
         return []
     }

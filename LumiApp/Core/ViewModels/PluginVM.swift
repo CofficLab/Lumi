@@ -90,7 +90,7 @@ final class PluginVM: ObservableObject, SuperLog {
 
     // MARK: - Tools Cache
 
-    private var cachedAgentTools: [AgentTool]?
+    private var cachedAgentTools: [SuperAgentTool]?
     private var cachedAgentToolFactories: [AnySuperAgentToolFactory]?
     private var cachedSuperSendMiddlewares: [SuperSendMiddleware]?
     /// 已发现的 LLM 供应商类型
@@ -139,13 +139,13 @@ final class PluginVM: ObservableObject, SuperLog {
 
     // MARK: - Agent Tools Aggregation
 
-    func getAgentTools() -> [AgentTool] {
+    func getAgentTools() -> [SuperAgentTool] {
         if let cachedAgentTools {
             return cachedAgentTools
         }
 
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var tools: [(pluginOrder: Int, tool: AgentTool)] = []
+        var tools: [(pluginOrder: Int, tool: SuperAgentTool)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order

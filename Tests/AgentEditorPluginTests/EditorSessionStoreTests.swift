@@ -119,6 +119,64 @@ final class EditorSessionStoreTests: XCTestCase {
         XCTAssertEqual(store.tabs.last?.sessionID, second?.id)
     }
 
+    func testManualReorderPreservesRequestedTabOrder() {
+        let store = EditorSessionStore()
+        let first = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/a.swift"))
+        let second = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/b.swift"))
+        let third = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/c.swift"))
+
+        let reordered = store.reorderSession(
+            sessionID: third!.id,
+            before: first?.id
+        )
+
+        XCTAssertTrue(reordered)
+        XCTAssertEqual(store.tabs.map(\.sessionID), [third?.id, first?.id, second?.id])
+        XCTAssertEqual(store.sessions.map(\.id), [third?.id, first?.id, second?.id])
+    }
+
+    func testPinnedTabsStayAheadAfterManualReorder() {
+        let store = EditorSessionStore()
+        let first = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/a.swift"))
+        let second = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/b.swift"))
+        let third = store.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/c.swift"))
+        store.togglePinned(sessionID: first!.id)
+
+        let reordered = store.reorderSession(
+            sessionID: third!.id,
+            before: first?.id
+        )
+
+        XCTAssertTrue(reordered)
+        XCTAssertEqual(store.tabs.map(\.sessionID), [first?.id, third?.id, second?.id])
+    }
+
+    func testWorkbenchCanMoveSessionAcrossGroupsBeforeTargetTab() {
+        let workbench = EditorWorkbenchState()
+        let first = workbench.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/a.swift"))
+        let second = workbench.openOrActivate(fileURL: URL(fileURLWithPath: "/tmp/b.swift"))
+
+        workbench.splitActiveGroup(.horizontal)
+
+        let leftGroup = workbench.leafGroups[0]
+        let rightGroup = workbench.leafGroups[1]
+        let third = workbench.openInGroup(
+            fileURL: URL(fileURLWithPath: "/tmp/c.swift"),
+            groupID: rightGroup.id
+        )
+
+        let moved = workbench.moveSession(
+            sessionID: first!.id,
+            toGroupID: rightGroup.id,
+            before: third?.id
+        )
+
+        XCTAssertTrue(moved)
+        XCTAssertEqual(leftGroup.tabs.map(\.sessionID), [second?.id])
+        XCTAssertEqual(Array(rightGroup.tabs.map(\.sessionID).suffix(2)), [first?.id, third?.id])
+        XCTAssertEqual(rightGroup.activeSessionID, first?.id)
+    }
+
     func testUnsplitActiveLeafCollapsesNearestSplitAncestor() {
         let workbench = EditorWorkbenchState()
         let fileURL = URL(fileURLWithPath: "/tmp/demo.swift")

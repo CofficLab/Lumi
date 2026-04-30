@@ -3,27 +3,27 @@ import SwiftUI
 import MagicKit
 
 @MainActor
-final class LSPToolbarContributor: EditorToolbarContributor {
+final class LSPToolbarContributor: EditorStatusItemContributor {
     let id: String = "builtin.lsp.toolbar"
 
-    func provideToolbarItems(state: EditorState) -> [EditorToolbarItemSuggestion] {
+    func provideStatusItems(state: EditorState) -> [EditorStatusItemSuggestion] {
         [
             .init(
                 id: "builtin.lsp.status-indicator",
                 order: 10,
-                placement: .center,
+                placement: .toolbarCenter,
                 content: { AnyView(LSPStatusToolbarItem(state: $0)) }
             ),
             .init(
                 id: "builtin.lsp.progress-indicator",
                 order: 20,
-                placement: .center,
+                placement: .toolbarCenter,
                 content: { AnyView(LSPProgressToolbarItem(state: $0)) }
             ),
             .init(
                 id: "builtin.lsp.actions-menu",
                 order: 30,
-                placement: .center,
+                placement: .toolbarCenter,
                 content: { AnyView(LSPActionsToolbarItem(state: $0)) }
             )
         ]

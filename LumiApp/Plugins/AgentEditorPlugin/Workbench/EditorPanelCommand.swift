@@ -3,6 +3,8 @@ import Foundation
 enum EditorPanelCommand: Equatable {
     case toggleOpenEditors
     case closeOpenEditors
+    case toggleOutline
+    case closeOutline
     case toggleProblems
     case closeProblems
     case closeReferences
@@ -14,6 +16,7 @@ enum EditorPanelCommand: Equatable {
 
 struct EditorPanelSnapshot: Equatable {
     let isOpenEditorsPanelPresented: Bool
+    let isOutlinePanelPresented: Bool
     let isProblemsPanelPresented: Bool
     let isReferencePanelPresented: Bool
     let isWorkspaceSymbolSearchPresented: Bool

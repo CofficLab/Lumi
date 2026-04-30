@@ -37,8 +37,9 @@ struct SourceEditorView: View, SuperLog {
     @State private var cachedConfig: SourceEditorConfiguration?
     @State private var contentLineTable: LineOffsetTable?
     
-    /// 缓存的 popover 高度，用于在上方定位时避免遮挡
-    @State private var hoverPopoverHeight: CGFloat = 100
+    /// 缓存的 hover 卡片尺寸，用于统一定位策略
+    @State private var hoverPopoverSize: CGSize = CGSize(width: 320, height: 100)
+    @State private var isCodeActionPanelExpanded: Bool = false
     
     init(state: EditorState) {
         self._state = ObservedObject(wrappedValue: state)
@@ -54,6 +55,7 @@ struct SourceEditorView: View, SuperLog {
                 initializeCoordinators()
                 wireDelegates()
                 updateContentLineTable()
+                state.refreshFoldingRanges()
             }
 
         let appearanceObserved = base
@@ -97,9 +99,17 @@ struct SourceEditorView: View, SuperLog {
             .onChange(of: state.content) { _, newContent in
                 jumpDelegate.textStorage = newContent
                 updateContentLineTable()
+                state.refreshFoldingRanges()
+            }
+            .onChange(of: state.currentCodeActionOverlayActions.map(\.id)) { _, ids in
+                if ids.isEmpty {
+                    isCodeActionPanelExpanded = false
+                }
             }
             .onChange(of: state.currentFileURL) { _, _ in
                 updateConfigCache()
+                isCodeActionPanelExpanded = false
+                state.refreshFoldingRanges()
             }
     }
 
@@ -128,15 +138,26 @@ struct SourceEditorView: View, SuperLog {
                 inlayHintsStrip
             }
             .overlay(alignment: .topLeading) {
-                findMatchesOverlay
+                gutterDecorationsOverlay
             }
             .overlay(alignment: .topLeading) {
-                bracketMatchOverlay
+                surfaceHighlightsOverlay
+            }
+            .overlay(alignment: .topLeading) {
+                secondaryCursorOverlay
+            }
+            .overlay(alignment: .topLeading) {
+                GeometryReader { proxy in
+                    inlinePresentationsOverlay(in: proxy.size)
+                }
             }
             .overlay(alignment: .topLeading) {
                 GeometryReader { proxy in
                     hoverPreview(in: proxy.size)
                 }
+            }
+            .overlay(alignment: .topTrailing) {
+                foldingSummaryOverlay
             }
             .overlay(alignment: .bottomLeading) {
                 signatureHelpOverlay
@@ -163,17 +184,71 @@ struct SourceEditorView: View, SuperLog {
     
     @ViewBuilder
     private var codeActionOverlay: some View {
-        if state.shouldPresentCodeActionOverlay {
-            CodeActionPanel(
-                actions: state.currentCodeActionOverlayActions
-            ) { action in
-                Task { @MainActor in
-                    await state.performCodeActionOverlayAction(action)
+        GeometryReader { proxy in
+            if let textView = state.focusedTextView,
+               let lineTable = contentLineTable,
+               let placement = state.codeActionIndicatorPlacement(
+                    textView: textView,
+                    lineTable: lineTable,
+                    containerSize: proxy.size
+               ) {
+                let actions = state.currentCodeActionOverlayActions
+                VStack(alignment: .leading, spacing: 0) {
+                    codeActionIndicatorButton(actionCount: actions.count)
+                        .offset(x: placement.origin.x, y: placement.origin.y)
+
+                    if isCodeActionPanelExpanded {
+                        CodeActionPanel(
+                            actions: actions
+                        ) { action in
+                            Task { @MainActor in
+                                await state.performCodeActionOverlayAction(action)
+                                isCodeActionPanelExpanded = false
+                            }
+                        }
+                        .offset(x: placement.panelOrigin.x, y: placement.panelOrigin.y)
+                        .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .topLeading)))
+                    }
+                }
+                .animation(.easeOut(duration: 0.14), value: isCodeActionPanelExpanded)
+            }
+        }
+    }
+
+    private func codeActionIndicatorButton(actionCount: Int) -> some View {
+        let style = EditorCodeActionOverlayStyle.standard
+        return Button {
+            isCodeActionPanelExpanded.toggle()
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                RoundedRectangle(cornerRadius: style.indicatorCornerRadius)
+                    .fill(AppUI.Color.semantic.warning.opacity(0.16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: style.indicatorCornerRadius)
+                            .stroke(AppUI.Color.semantic.warning.opacity(0.45), lineWidth: 1)
+                    )
+                    .frame(width: style.indicatorSize, height: style.indicatorSize)
+
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.warning)
+
+                if actionCount > 1 {
+                    Text("\(actionCount)")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(
+                            Capsule()
+                                .fill(AppUI.Color.semantic.primary)
+                        )
+                        .offset(x: 8, y: -6)
                 }
             }
-            .padding(.leading, 12)
-            .padding(.top, 48)
         }
+        .buttonStyle(.plain)
+        .help("Quick Fix")
     }
 
     @ViewBuilder
@@ -198,16 +273,107 @@ struct SourceEditorView: View, SuperLog {
     }
 
     @ViewBuilder
-    private var findMatchesOverlay: some View {
-        let highlights = visibleFindMatchHighlights
+    private var gutterDecorationsOverlay: some View {
+        let decorations = visibleGutterDecorations
+        if !decorations.isEmpty {
+            ZStack(alignment: .topLeading) {
+                ForEach(decorations) { decoration in
+                    gutterDecorationView(decoration)
+                        .frame(width: decoration.rect.width, height: decoration.rect.height)
+                        .offset(x: decoration.rect.minX, y: decoration.rect.minY)
+                }
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder
+    private func gutterDecorationView(_ decoration: EditorGutterDecoration) -> some View {
+        ZStack {
+            switch decoration.style.shape {
+            case .circle:
+                Circle()
+                    .fill(decoration.style.fillColor)
+                    .overlay(
+                        Circle()
+                            .stroke(decoration.style.strokeColor, lineWidth: 1)
+                    )
+            case .roundedRect:
+                RoundedRectangle(cornerRadius: decoration.style.cornerRadius)
+                    .fill(decoration.style.fillColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: decoration.style.cornerRadius)
+                            .stroke(decoration.style.strokeColor, lineWidth: 1)
+                    )
+            case .bar:
+                Capsule()
+                    .fill(decoration.style.fillColor)
+                    .overlay(
+                        Capsule()
+                            .stroke(decoration.style.strokeColor, lineWidth: 0.75)
+                    )
+            }
+
+            if let badgeText = decoration.badgeText {
+                let isBarShape: Bool
+                switch decoration.style.shape {
+                case .bar:
+                    isBarShape = true
+                case .circle, .roundedRect:
+                    isBarShape = false
+                }
+                Text(badgeText)
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundColor(decoration.style.foregroundColor)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .padding(.horizontal, isBarShape ? 0 : 1)
+            } else if let symbolName = decoration.symbolName {
+                Image(systemName: symbolName)
+                    .font(.system(size: 5.5, weight: .bold))
+                    .foregroundColor(decoration.style.foregroundColor)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var surfaceHighlightsOverlay: some View {
+        let highlights = visibleSurfaceHighlights
         if !highlights.isEmpty {
             ZStack(alignment: .topLeading) {
                 ForEach(highlights) { highlight in
-                    RoundedRectangle(cornerRadius: highlight.isSelected ? 4 : 3)
-                        .fill(highlight.color)
+                    RoundedRectangle(cornerRadius: highlight.style.cornerRadius)
+                        .fill(highlight.style.fillColor)
                         .overlay(
-                            RoundedRectangle(cornerRadius: highlight.isSelected ? 4 : 3)
-                                .stroke(highlight.borderColor, lineWidth: highlight.isSelected ? 1 : 0.5)
+                            RoundedRectangle(cornerRadius: highlight.style.cornerRadius)
+                                .stroke(highlight.style.strokeColor, lineWidth: highlight.style.lineWidth)
+                        )
+                        .frame(
+                            width: max(highlight.rect.width, highlight.style.minimumWidth),
+                            height: max(highlight.rect.height, highlight.style.minimumHeight)
+                        )
+                        .offset(x: highlight.rect.minX, y: highlight.rect.minY)
+                        .zIndex(highlight.style.zIndex)
+                }
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder
+    private var secondaryCursorOverlay: some View {
+        let highlights = visibleSecondaryCursorHighlights
+        if !highlights.isEmpty {
+            ZStack(alignment: .topLeading) {
+                ForEach(highlights) { highlight in
+                    RoundedRectangle(cornerRadius: highlight.cornerRadius)
+                        .fill(highlight.fillColor)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: highlight.cornerRadius)
+                                .stroke(
+                                    highlight.strokeColor,
+                                    style: StrokeStyle(lineWidth: highlight.lineWidth, dash: highlight.dash)
+                                )
                         )
                         .frame(width: max(highlight.rect.width, 2), height: max(highlight.rect.height, 2))
                         .offset(x: highlight.rect.minX, y: highlight.rect.minY)
@@ -218,32 +384,117 @@ struct SourceEditorView: View, SuperLog {
     }
 
     @ViewBuilder
-    private var bracketMatchOverlay: some View {
+    private func inlinePresentationsOverlay(in containerSize: CGSize) -> some View {
         if let textView = state.focusedTextView,
-           let lineTable = contentLineTable,
-           let overlayRects = state.renderedBracketOverlayRects(textView: textView, lineTable: lineTable) {
+           let lineTable = contentLineTable {
+            let style = EditorInlinePresentationStyle.standard
+            let presentations = state.inlinePresentations(
+                textView: textView,
+                lineTable: lineTable,
+                containerSize: containerSize
+            )
 
-            let bracketColor = AppUI.Color.semantic.primary
             ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(bracketColor.opacity(0.2))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 2)
-                            .stroke(bracketColor.opacity(0.6), lineWidth: 1)
-                    )
-                    .frame(width: overlayRects.open.width, height: overlayRects.open.height)
-                    .offset(x: overlayRects.open.minX, y: overlayRects.open.minY)
+                ForEach(presentations) { presentation in
+                    HStack(spacing: 6) {
+                        Image(systemName: presentation.iconName)
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(presentation.style.accentColor)
 
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(bracketColor.opacity(0.2))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 2)
-                            .stroke(bracketColor.opacity(0.6), lineWidth: 1)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(presentation.title)
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .lineLimit(1)
+
+                            if let detail = presentation.detail {
+                                Text(detail)
+                                    .font(.system(size: 9))
+                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                    .lineLimit(1)
+                            }
+                        }
+
+                        if let badgeText = presentation.badgeText {
+                            Text(badgeText)
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(presentation.style.accentColor)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(
+                                    Capsule()
+                                        .fill(presentation.style.accentColor.opacity(0.12))
+                                )
+                        }
+                    }
+                    .foregroundColor(presentation.style.foregroundColor)
+                    .padding(.horizontal, style.horizontalPadding)
+                    .padding(.vertical, style.verticalPadding)
+                    .frame(width: presentation.size.width, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: style.cornerRadius)
+                            .fill(presentation.style.backgroundColor)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: style.cornerRadius)
+                                    .stroke(
+                                        presentation.style.borderColor,
+                                        lineWidth: style.borderWidth
+                                    )
+                            )
                     )
-                    .frame(width: overlayRects.close.width, height: overlayRects.close.height)
-                    .offset(x: overlayRects.close.minX, y: overlayRects.close.minY)
+                    .offset(x: presentation.origin.x, y: presentation.origin.y)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .leading)))
+                }
             }
             .allowsHitTesting(false)
+            .animation(.easeOut(duration: 0.14), value: presentations.map(\.id))
+        }
+    }
+
+    @ViewBuilder
+    private var foldingSummaryOverlay: some View {
+        if let summary = state.currentFoldingSummary {
+            HStack(spacing: 8) {
+                Image(systemName: "chevron.left.forwardslash.chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.primary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(summary.title)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    Text(summary.subtitle)
+                        .font(.system(size: 10))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .lineLimit(1)
+                }
+
+                Text(summary.badgeText)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(AppUI.Color.semantic.primary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(
+                        Capsule()
+                            .fill(AppUI.Color.semantic.primary.opacity(0.12))
+                    )
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(AppUI.Color.semantic.textTertiary.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(AppUI.Color.semantic.textTertiary.opacity(0.16), lineWidth: 1)
+                    )
+            )
+            .padding(.top, 10)
+            .padding(.trailing, 14)
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .trailing)),
+                removal: .opacity
+            ))
+            .animation(.easeOut(duration: 0.16), value: summary)
         }
     }
 
@@ -252,39 +503,47 @@ struct SourceEditorView: View, SuperLog {
     @ViewBuilder
     private func hoverPreview(in containerSize: CGSize) -> some View {
         if let hoverText = state.currentHoverOverlayText {
+            let style = EditorHoverOverlayStyle.standard
+            let placement = state.hoverOverlayPlacement(
+                in: containerSize,
+                popoverSize: hoverPopoverSize,
+                style: style
+            )
+
             HoverPopoverView(markdownText: hoverText)
+                .frame(
+                    width: placement.cardSize.width,
+                    height: placement.cardSize.height,
+                    alignment: .topLeading
+                )
                 .onAppear {
                     if EditorPlugin.verbose {
                         EditorPlugin.logger.debug("\(Self.t)悬停预览: 内容长度=\(hoverText.count), 矩形=\(String(describing: state.currentHoverOverlayRect))")
                         EditorPlugin.logger.debug("\(Self.t)悬停预览: 原始内容=\n\(hoverText)")
                     }
                 }
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 440, alignment: .leading)
-                // 使用 GeometryReader 测量实际高度后调整位置
+                .fixedSize(horizontal: false, vertical: false)
                 .background(
                     GeometryReader { popoverGeo in
                         Color.clear
                             .onAppear {
-                                hoverPopoverHeight = popoverGeo.size.height
+                                hoverPopoverSize = popoverGeo.size
                             }
-                            .onChange(of: popoverGeo.size.height) { _, newHeight in
-                                hoverPopoverHeight = newHeight
+                            .onChange(of: popoverGeo.size) { _, newSize in
+                                hoverPopoverSize = newSize
                             }
                     }
                 )
                 .offset(
-                    state.hoverOverlayOffset(
-                        in: containerSize,
-                        popoverHeight: hoverPopoverHeight
-                    )
+                    x: placement.origin.x,
+                    y: placement.origin.y
                 )
                 .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .scale(scale: 0.96, anchor: .bottomLeading)),
+                    insertion: .opacity.combined(with: .scale(scale: 0.97, anchor: placement.isPresentedAboveSymbol ? .bottomLeading : .topLeading)),
                     removal: .opacity
                 ))
                 .animation(.easeOut(duration: 0.14), value: state.currentHoverOverlayText)
-                .animation(.easeOut(duration: 0.12), value: state.currentHoverOverlayRect)
+                .animation(.easeOut(duration: 0.12), value: placement.origin)
         }
     }
 
@@ -362,12 +621,28 @@ struct SourceEditorView: View, SuperLog {
         )
     }
 
-    private var visibleFindMatchHighlights: [SourceEditorFindMatchHighlight] {
-        adapter.visibleFindMatchHighlights(
+    private var visibleSurfaceHighlights: [EditorSurfaceHighlight] {
+        adapter.visibleSurfaceHighlights(
             for: state,
             textView: state.focusedTextView,
             lineTable: contentLineTable
         )
+    }
+
+    private var visibleGutterDecorations: [EditorGutterDecoration] {
+        adapter.visibleGutterDecorations(
+            for: state,
+            textView: state.focusedTextView,
+            lineTable: contentLineTable
+        )
+    }
+
+    private var visibleSecondaryCursorHighlights: [EditorMultiCursorHighlight] {
+        guard let textView = state.focusedTextView,
+              let lineTable = contentLineTable else {
+            return []
+        }
+        return state.secondaryCursorHighlights(textView: textView, lineTable: lineTable)
     }
     
     // MARK: - Configuration

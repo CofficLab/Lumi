@@ -40,7 +40,7 @@ private struct WebFetchToolFactory: SuperAgentToolFactory {
     let id: String = "web.fetch.factory"
     let order: Int = 0
 
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [WebFetchTool()]
     }
 }

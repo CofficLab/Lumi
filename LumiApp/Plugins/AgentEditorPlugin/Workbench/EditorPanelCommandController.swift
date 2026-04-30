@@ -10,6 +10,7 @@ enum EditorPanelCommandController {
             if snapshot.isOpenEditorsPanelPresented {
                 return EditorPanelSnapshot(
                     isOpenEditorsPanelPresented: false,
+                    isOutlinePanelPresented: snapshot.isOutlinePanelPresented,
                     isProblemsPanelPresented: snapshot.isProblemsPanelPresented,
                     isReferencePanelPresented: snapshot.isReferencePanelPresented,
                     isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
@@ -18,6 +19,7 @@ enum EditorPanelCommandController {
             }
             return EditorPanelSnapshot(
                 isOpenEditorsPanelPresented: true,
+                isOutlinePanelPresented: false,
                 isProblemsPanelPresented: false,
                 isReferencePanelPresented: false,
                 isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
@@ -27,6 +29,37 @@ enum EditorPanelCommandController {
         case .closeOpenEditors:
             return EditorPanelSnapshot(
                 isOpenEditorsPanelPresented: false,
+                isOutlinePanelPresented: snapshot.isOutlinePanelPresented,
+                isProblemsPanelPresented: snapshot.isProblemsPanelPresented,
+                isReferencePanelPresented: snapshot.isReferencePanelPresented,
+                isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
+                isCallHierarchyPresented: snapshot.isCallHierarchyPresented
+            )
+
+        case .toggleOutline:
+            if snapshot.isOutlinePanelPresented {
+                return EditorPanelSnapshot(
+                    isOpenEditorsPanelPresented: snapshot.isOpenEditorsPanelPresented,
+                    isOutlinePanelPresented: false,
+                    isProblemsPanelPresented: snapshot.isProblemsPanelPresented,
+                    isReferencePanelPresented: snapshot.isReferencePanelPresented,
+                    isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
+                    isCallHierarchyPresented: snapshot.isCallHierarchyPresented
+                )
+            }
+            return EditorPanelSnapshot(
+                isOpenEditorsPanelPresented: false,
+                isOutlinePanelPresented: true,
+                isProblemsPanelPresented: false,
+                isReferencePanelPresented: false,
+                isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
+                isCallHierarchyPresented: snapshot.isCallHierarchyPresented
+            )
+
+        case .closeOutline:
+            return EditorPanelSnapshot(
+                isOpenEditorsPanelPresented: snapshot.isOpenEditorsPanelPresented,
+                isOutlinePanelPresented: false,
                 isProblemsPanelPresented: snapshot.isProblemsPanelPresented,
                 isReferencePanelPresented: snapshot.isReferencePanelPresented,
                 isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
@@ -37,6 +70,7 @@ enum EditorPanelCommandController {
             if snapshot.isProblemsPanelPresented {
                 return EditorPanelSnapshot(
                     isOpenEditorsPanelPresented: snapshot.isOpenEditorsPanelPresented,
+                    isOutlinePanelPresented: snapshot.isOutlinePanelPresented,
                     isProblemsPanelPresented: false,
                     isReferencePanelPresented: snapshot.isReferencePanelPresented,
                     isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
@@ -45,6 +79,7 @@ enum EditorPanelCommandController {
             }
             return EditorPanelSnapshot(
                 isOpenEditorsPanelPresented: false,
+                isOutlinePanelPresented: false,
                 isProblemsPanelPresented: true,
                 isReferencePanelPresented: false,
                 isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
@@ -54,6 +89,7 @@ enum EditorPanelCommandController {
         case .closeProblems:
             return EditorPanelSnapshot(
                 isOpenEditorsPanelPresented: snapshot.isOpenEditorsPanelPresented,
+                isOutlinePanelPresented: snapshot.isOutlinePanelPresented,
                 isProblemsPanelPresented: false,
                 isReferencePanelPresented: snapshot.isReferencePanelPresented,
                 isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
@@ -63,6 +99,7 @@ enum EditorPanelCommandController {
         case .closeReferences:
             return EditorPanelSnapshot(
                 isOpenEditorsPanelPresented: snapshot.isOpenEditorsPanelPresented,
+                isOutlinePanelPresented: snapshot.isOutlinePanelPresented,
                 isProblemsPanelPresented: snapshot.isProblemsPanelPresented,
                 isReferencePanelPresented: false,
                 isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
@@ -72,6 +109,7 @@ enum EditorPanelCommandController {
         case .openWorkspaceSymbolSearch:
             return EditorPanelSnapshot(
                 isOpenEditorsPanelPresented: snapshot.isOpenEditorsPanelPresented,
+                isOutlinePanelPresented: snapshot.isOutlinePanelPresented,
                 isProblemsPanelPresented: snapshot.isProblemsPanelPresented,
                 isReferencePanelPresented: snapshot.isReferencePanelPresented,
                 isWorkspaceSymbolSearchPresented: true,
@@ -81,6 +119,7 @@ enum EditorPanelCommandController {
         case .closeWorkspaceSymbolSearch:
             return EditorPanelSnapshot(
                 isOpenEditorsPanelPresented: snapshot.isOpenEditorsPanelPresented,
+                isOutlinePanelPresented: snapshot.isOutlinePanelPresented,
                 isProblemsPanelPresented: snapshot.isProblemsPanelPresented,
                 isReferencePanelPresented: snapshot.isReferencePanelPresented,
                 isWorkspaceSymbolSearchPresented: false,
@@ -90,6 +129,7 @@ enum EditorPanelCommandController {
         case .openCallHierarchy:
             return EditorPanelSnapshot(
                 isOpenEditorsPanelPresented: snapshot.isOpenEditorsPanelPresented,
+                isOutlinePanelPresented: snapshot.isOutlinePanelPresented,
                 isProblemsPanelPresented: snapshot.isProblemsPanelPresented,
                 isReferencePanelPresented: snapshot.isReferencePanelPresented,
                 isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,
@@ -99,6 +139,7 @@ enum EditorPanelCommandController {
         case .closeCallHierarchy:
             return EditorPanelSnapshot(
                 isOpenEditorsPanelPresented: snapshot.isOpenEditorsPanelPresented,
+                isOutlinePanelPresented: snapshot.isOutlinePanelPresented,
                 isProblemsPanelPresented: snapshot.isProblemsPanelPresented,
                 isReferencePanelPresented: snapshot.isReferencePanelPresented,
                 isWorkspaceSymbolSearchPresented: snapshot.isWorkspaceSymbolSearchPresented,

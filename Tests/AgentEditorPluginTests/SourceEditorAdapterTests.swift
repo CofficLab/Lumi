@@ -27,5 +27,12 @@ final class SourceEditorAdapterTests: XCTestCase {
 
         XCTAssertEqual(coordinators.count, 2)
     }
+
+    func testVisibleSurfaceHighlightsFallsBackToEmptyWhenEditorContextIsMissing() {
+        let adapter = SourceEditorAdapter()
+        let state = EditorState()
+
+        XCTAssertTrue(adapter.visibleSurfaceHighlights(for: state, textView: nil, lineTable: nil).isEmpty)
+    }
 }
 #endif

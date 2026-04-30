@@ -9,7 +9,7 @@ import MagicKit
 /// - 智能引号匹配
 /// - 原子性文件操作
 /// - 详细的 diff 输出
-struct EditFileTool: AgentTool, SuperLog {
+struct EditFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔧"
     nonisolated static let verbose: Bool = false
     let name = "edit_file"

@@ -20,7 +20,7 @@ import MagicKit
 /// - `DelayMessageState`：@MainActor 单例，存储从 Environment 同步来的 VM 引用
 /// - `MessageQueueVM`：消息入队，触发已有的发送闭环
 /// - 不依赖 `RootViewContainer.shared`
-struct DelayMessageTool: AgentTool, SuperLog {
+struct DelayMessageTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "⏳"
     nonisolated static let verbose: Bool = false
     let name = "delay_message"

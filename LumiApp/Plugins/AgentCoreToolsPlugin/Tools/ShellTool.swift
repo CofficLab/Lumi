@@ -6,10 +6,10 @@ import MagicKit
 /// 允许 AI 助手执行 Shell 命令。
 ///
 /// 架构说明：
-/// - ShellTool 作为工具定义，遵循 AgentTool 协议
+/// - ShellTool 作为工具定义，遵循 SuperAgentTool 协议
 /// - 实际的 Shell 执行由插件内的 ShellService.shared 单例处理
 /// - 内核只认识 Tool 抽象，不关心具体实现细节
-struct ShellTool: AgentTool, SuperLog {
+struct ShellTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💻"
     nonisolated static let verbose: Bool = false
     let name = "run_command"

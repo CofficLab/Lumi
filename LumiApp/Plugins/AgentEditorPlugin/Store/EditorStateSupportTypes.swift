@@ -1,16 +1,4 @@
 import Foundation
-import CoreGraphics
-
-struct BracketOverlayRects: Equatable {
-    let open: CGRect
-    let close: CGRect
-}
-
-struct FindMatchOverlayHighlight: Equatable {
-    let range: EditorRange
-    let rect: CGRect
-    let isSelected: Bool
-}
 
 enum EditorStatusLevel {
     case info

@@ -28,7 +28,7 @@ private struct ProjectOverviewToolsFactory: SuperAgentToolFactory {
     let id: String = "project.overview.factory"
     let order: Int = 0
 
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [ProjectOverviewTool()]
     }
 }

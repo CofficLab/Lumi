@@ -29,7 +29,7 @@ private struct CoreToolsFactory: SuperAgentToolFactory {
     let id: String = "core.tools.factory"
     let order: Int = 0
 
-    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [
             // 文件系统工具
             ListDirectoryTool(),

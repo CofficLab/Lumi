@@ -1,6 +1,7 @@
 import MagicKit
 import SwiftUI
 import Combine
+import UniformTypeIdentifiers
 
 /// 编辑器主视图（根入口）
 /// 组合面包屑、工具栏、编辑器、状态栏
@@ -30,6 +31,7 @@ struct EditorRootView: View {
     @StateObject private var hostStore = EditorGroupHostStore()
     @State private var pendingActivationIntent: ActivationIntent?
     @State private var isCommandPalettePresented = false
+    @State private var draggedTabSessionID: EditorSession.ID?
 
     var body: some View {
         eventBoundRootView
@@ -49,6 +51,9 @@ struct EditorRootView: View {
             .onChange(of: projectVM.selectedFileURL) { _, newURL in
                 openOrActivateSession(for: newURL)
             }
+            .onChange(of: state.currentFileURL) { _, _ in
+                state.refreshDocumentOutline()
+            }
             .onChange(of: workbench.activeGroupID) { _, _ in
                 guard !consumePendingActivationIntent(for: workbench.activeGroupID) else { return }
                 syncEditorToActiveGroup()
@@ -65,6 +70,7 @@ struct EditorRootView: View {
                 hostStore.retainOnly(Set(workbench.leafGroups.map(\.id)))
                 if projectVM.isFileSelected {
                     openOrActivateSession(for: projectVM.selectedFileURL)
+                    state.refreshDocumentOutline()
                 }
             }
             .onDisappear {
@@ -164,6 +170,9 @@ struct EditorRootView: View {
                     headerArea
                     fileInfoBanner
                     workbenchContent
+                    if shouldShowBottomPanel {
+                        EditorBottomPanelHostView(state: state)
+                    }
                 } else {
                     emptyState
                 }
@@ -193,18 +202,38 @@ struct EditorRootView: View {
                         )
                     )
                 }
+            ),
+            .init(
+                id: "builtin.outline-panel",
+                order: 1,
+                isPresented: { $0.panelState.isOutlinePanelPresented },
+                content: { state in
+                    AnyView(
+                        EditorOutlinePanelView(
+                            state: state,
+                            provider: state.documentSymbolProvider
+                        )
+                    )
+                }
             )
         ]
     }
 
     private var activeSidePanel: EditorSidePanelSuggestion? {
         (builtinSidePanels + state.editorExtensions.sidePanelSuggestions(state: state))
+            .filter { suggestion in
+                suggestion.id != "builtin.references-panel" &&
+                suggestion.id != "builtin.problems-panel"
+            }
             .sorted { $0.order < $1.order }
             .first(where: { $0.isPresented(state) })
     }
 
     private var editorSheetHosts: some View {
-        let sheets = builtinSheets + state.editorExtensions.sheetSuggestions(state: state)
+        let sheets = builtinSheets + state.editorExtensions.sheetSuggestions(state: state).filter {
+            $0.id != "builtin.workspace-symbol-sheet" &&
+            $0.id != "builtin.call-hierarchy-sheet"
+        }
         return ZStack {
             ForEach(sheets) { sheet in
                 EmptyView()
@@ -261,7 +290,29 @@ struct EditorRootView: View {
                     onSelect: activateSession,
                     onClose: closeSession,
                     onCloseOthers: closeOtherSessions,
-                    onTogglePinned: togglePinned
+                    onTogglePinned: togglePinned,
+                    onStartDrag: beginTabDrag,
+                    onDropBefore: dropDraggedTabInActiveStrip
+                )
+            }
+
+            if let titleMetadata {
+                EditorTitleSummaryView(
+                    state: state,
+                    metadata: titleMetadata,
+                    trailingItems: titleTrailingStatusItems
+                )
+            }
+
+            if projectVM.isFileSelected {
+                EditorBreadcrumbBarView(
+                    cursorLine: state.cursorLine,
+                    cursorColumn: state.cursorColumn,
+                    activeGroupIndex: activeLeafGroupIndex,
+                    groupCount: workbench.leafGroups.count,
+                    minimapPolicy: state.minimapPolicy,
+                    isOutlinePresented: state.isOutlinePanelPresented,
+                    onToggleOutline: { state.performPanelCommand(.toggleOutline) }
                 )
             }
 
@@ -285,6 +336,40 @@ struct EditorRootView: View {
 
     private var visibleActiveSessionID: EditorSession.ID? {
         workbench.activeGroup?.activeSessionID ?? sessionStore.activeSessionID
+    }
+
+    private var shouldShowBottomPanel: Bool {
+        state.panelState.activeBottomPanel != nil ||
+            state.editorExtensions.panelSuggestions(state: state).contains {
+                $0.placement == .bottom && $0.isPresented(state)
+            }
+    }
+
+    private var activeLeafGroupIndex: Int? {
+        workbench.leafGroups.firstIndex(where: { $0.id == workbench.activeGroupID })
+    }
+
+    private var titleMetadata: EditorTitleMetadata? {
+        guard state.currentFileURL != nil || !state.fileName.isEmpty else { return nil }
+
+        let activeTab = visibleTabs.first(where: { $0.sessionID == visibleActiveSessionID })
+            ?? sessionStore.tabs.first(where: { $0.sessionID == visibleActiveSessionID })
+
+        return EditorTitleMetadata.build(
+            fileURL: state.currentFileURL,
+            projectRootPath: state.projectRootPath,
+            fileName: state.fileName,
+            fileExtension: state.fileExtension,
+            detectedLanguageName: state.detectedLanguage?.id.rawValue ?? state.detectedLanguage?.tsName,
+            isPreview: activeTab?.isPreview ?? false,
+            isPinned: activeTab?.isPinned ?? false,
+            isDirty: activeTab?.isDirty ?? state.hasUnsavedChanges,
+            isEditable: state.isEditable
+        )
+    }
+
+    private var titleTrailingStatusItems: [EditorStatusItemSuggestion] {
+        state.editorStatusItems().filter { $0.placement == .titleTrailing }
     }
 
     private var openEditorItems: [EditorOpenEditorItem] {
@@ -349,7 +434,9 @@ struct EditorRootView: View {
                     onCloseSession: closeSession,
                     onCloseOthers: closeOtherSessions,
                     onTogglePinned: togglePinned,
-                    onMoveSessionToGroup: moveSessionToGroup
+                    onMoveSessionToGroup: moveSessionToGroup,
+                    onStartTabDrag: beginTabDrag,
+                    onDropTabBefore: dropDraggedTab(before:in:)
                 )
             }
         }
@@ -771,6 +858,75 @@ struct EditorRootView: View {
         workbench.groupContainingSession(sessionID: tab.sessionID)?.togglePinned(sessionID: tab.sessionID)
     }
 
+    private func beginTabDrag(_ tab: EditorTab) {
+        draggedTabSessionID = tab.sessionID
+    }
+
+    private func dropDraggedTabInActiveStrip(before targetTab: EditorTab?) {
+        guard let activeGroup = workbench.activeGroup else {
+            draggedTabSessionID = nil
+            return
+        }
+        dropDraggedTab(before: targetTab, in: activeGroup.id)
+    }
+
+    private func dropDraggedTab(before targetTab: EditorTab?, in groupID: EditorGroup.ID) {
+        guard let draggedTabSessionID else { return }
+        defer { self.draggedTabSessionID = nil }
+
+        if targetTab?.sessionID == draggedTabSessionID {
+            return
+        }
+
+        let sourceGroupID = workbench.groupContainingSession(sessionID: draggedTabSessionID)?.id
+        let targetSessionID = targetTab?.sessionID
+        let sourceSnapshot = sourceSnapshotForDraggedSession(draggedTabSessionID)
+
+        if sourceGroupID == groupID {
+            guard workbench.reorderSession(
+                sessionID: draggedTabSessionID,
+                in: groupID,
+                before: targetSessionID
+            ) else { return }
+            _ = sessionStore.reorderSession(
+                sessionID: draggedTabSessionID,
+                before: targetSessionID
+            )
+            return
+        }
+
+        guard workbench.moveSession(
+            sessionID: draggedTabSessionID,
+            toGroupID: groupID,
+            before: targetSessionID
+        ) else { return }
+        workbench.activateGroup(groupID)
+
+        if let targetSessionID {
+            _ = sessionStore.reorderSession(
+                sessionID: draggedTabSessionID,
+                before: targetSessionID
+            )
+        } else {
+            _ = sessionStore.reorderSession(
+                sessionID: draggedTabSessionID,
+                before: nil
+            )
+        }
+
+        if let sourceSnapshot {
+            syncGroupHost(groupID, from: sourceSnapshot, seedSession: true)
+        }
+        syncEditorToActiveGroup()
+    }
+
+    private func sourceSnapshotForDraggedSession(_ sessionID: EditorSession.ID) -> EditorSession? {
+        if sessionID == state.activeSession.id, state.activeSession.fileURL != nil {
+            return state.activeSession
+        }
+        return sessionStore.session(for: sessionID)
+    }
+
     private func closeOpenEditorItem(_ item: EditorOpenEditorItem) {
         closeSession(
             EditorTab(
@@ -1032,6 +1188,8 @@ struct EditorGroupView: View {
     let onCloseOthers: (EditorTab) -> Void
     let onTogglePinned: (EditorTab) -> Void
     let onMoveSessionToGroup: (EditorGroup.ID) -> Void
+    let onStartTabDrag: (EditorTab) -> Void
+    let onDropTabBefore: (EditorTab?, EditorGroup.ID) -> Void
 
     var body: some View {
         if group.isLeaf {
@@ -1068,6 +1226,10 @@ struct EditorGroupView: View {
         .onTapGesture {
             workbench.activateGroup(group.id)
         }
+        .onDrop(of: [UTType.plainText]) { _ in
+            onDropTabBefore(nil, group.id)
+            return true
+        }
     }
 
     @ViewBuilder
@@ -1088,7 +1250,9 @@ struct EditorGroupView: View {
                         onCloseSession: onCloseSession,
                         onCloseOthers: onCloseOthers,
                         onTogglePinned: onTogglePinned,
-                        onMoveSessionToGroup: onMoveSessionToGroup
+                        onMoveSessionToGroup: onMoveSessionToGroup,
+                        onStartTabDrag: onStartTabDrag,
+                        onDropTabBefore: onDropTabBefore
                     )
                 }
             }
@@ -1105,7 +1269,9 @@ struct EditorGroupView: View {
                         onCloseSession: onCloseSession,
                         onCloseOthers: onCloseOthers,
                         onTogglePinned: onTogglePinned,
-                        onMoveSessionToGroup: onMoveSessionToGroup
+                        onMoveSessionToGroup: onMoveSessionToGroup,
+                        onStartTabDrag: onStartTabDrag,
+                        onDropTabBefore: onDropTabBefore
                     )
                 }
             }
@@ -1144,6 +1310,10 @@ struct EditorGroupView: View {
                         ForEach(group.tabs) { tab in
                             groupTabItem(for: tab)
                         }
+                    }
+                    .onDrop(of: [UTType.plainText]) { _ in
+                        onDropTabBefore(nil, group.id)
+                        return true
                     }
                 }
             }
@@ -1224,6 +1394,28 @@ struct EditorGroupView: View {
         .onTapGesture {
             workbench.activateGroup(group.id)
             onActivateHostedSession(group.id, tab)
+        }
+        .onDrag {
+            onStartTabDrag(tab)
+            return NSItemProvider(object: tab.sessionID.uuidString as NSString)
+        } preview: {
+            if let fileURL = tab.fileURL {
+                DragPreview(fileURL: fileURL)
+            } else {
+                Text(tab.title)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.orange.opacity(0.95))
+                    )
+            }
+        }
+        .onDrop(of: [UTType.plainText]) { _ in
+            onDropTabBefore(tab, group.id)
+            return true
         }
         .contextMenu {
             Button(

@@ -99,6 +99,7 @@ final class EditorPanelControllerTests: XCTestCase {
                 )
             ],
             isOpenEditorsPanelPresented: true,
+            isOutlinePanelPresented: true,
             isReferencePanelPresented: true,
             isWorkspaceSymbolSearchPresented: true,
             isCallHierarchyPresented: false,
@@ -119,6 +120,8 @@ final class EditorPanelControllerTests: XCTestCase {
 
         controller.restore(from: sessionState)
 
+        XCTAssertTrue(panelState.isOutlinePanelPresented)
+
         XCTAssertEqual(panelState.mouseHoverContent, "hover")
         XCTAssertEqual(panelState.referenceResults.count, 1)
         XCTAssertEqual(panelState.problemDiagnostics, [diagnostic])
@@ -128,6 +131,37 @@ final class EditorPanelControllerTests: XCTestCase {
         XCTAssertTrue(panelState.isReferencePanelPresented)
         XCTAssertTrue(panelState.isWorkspaceSymbolSearchPresented)
         XCTAssertTrue(panelState.isProblemsPanelPresented)
+    }
+
+    func testPresentBottomPanelSwitchesToExclusivePanelVisibility() {
+        let panelState = EditorPanelState()
+        let controller = EditorPanelController(panelState: panelState)
+
+        controller.presentBottomPanel(.references)
+        XCTAssertTrue(panelState.isReferencePanelPresented)
+        XCTAssertFalse(panelState.isProblemsPanelPresented)
+        XCTAssertEqual(panelState.activeBottomPanel, .references)
+
+        controller.presentBottomPanel(.callHierarchy)
+        XCTAssertFalse(panelState.isReferencePanelPresented)
+        XCTAssertFalse(panelState.isProblemsPanelPresented)
+        XCTAssertTrue(panelState.isCallHierarchyPresented)
+        XCTAssertEqual(panelState.activeBottomPanel, .callHierarchy)
+    }
+
+    func testPresentBottomPanelNilClosesAllBottomPanels() {
+        let panelState = EditorPanelState()
+        let controller = EditorPanelController(panelState: panelState)
+        panelState.isProblemsPanelPresented = true
+        panelState.isWorkspaceSymbolSearchPresented = true
+
+        controller.presentBottomPanel(nil)
+
+        XCTAssertFalse(panelState.isProblemsPanelPresented)
+        XCTAssertFalse(panelState.isReferencePanelPresented)
+        XCTAssertFalse(panelState.isWorkspaceSymbolSearchPresented)
+        XCTAssertFalse(panelState.isCallHierarchyPresented)
+        XCTAssertNil(panelState.activeBottomPanel)
     }
 
     private func makeDiagnostic(
