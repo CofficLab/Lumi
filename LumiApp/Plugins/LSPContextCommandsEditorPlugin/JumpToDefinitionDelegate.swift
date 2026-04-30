@@ -28,8 +28,10 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
     weak var textStorage: NSTextStorage?
     weak var lspClient: (any EditorLSPClient)?
     weak var textViewController: TextViewController?
+    var semanticCapabilityProvider: (() -> (any SuperEditorSemanticCapability)?)?
     var currentFileURLProvider: (() -> URL?)?
     var onOpenExternalDefinition: ((URL, CursorPosition) -> Void)?
+    var allowsLocalFallbackProvider: (() -> Bool)?
     private let requestGeneration = RequestGeneration()
     
     // MARK: - JumpToDefinitionDelegate
@@ -381,7 +383,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
 
     @MainActor
     private func navigationFailureMessage(kind: LSPNavigationKind, symbolName: String) -> String {
-        XcodeSemanticAvailability.missingResultMessage(
+        semanticCapabilityProvider?()?.missingResultMessage(
             uri: currentFileURLProvider?()?.absoluteString,
             operation: operationName(for: kind),
             symbolName: symbolName
@@ -390,7 +392,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
 
     @MainActor
     private func navigationPreflightFailureMessage(kind: LSPNavigationKind, symbolName: String) -> String? {
-        XcodeSemanticAvailability.preflightMessage(
+        semanticCapabilityProvider?()?.preflightMessage(
             uri: currentFileURLProvider?()?.absoluteString,
             operation: operationName(for: kind),
             symbolName: symbolName,
@@ -513,11 +515,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
 
     private func allowsLocalFallbackForDefinition() async -> Bool {
         await MainActor.run {
-        // In Xcode projects, definition should reflect the active build context.
-        // Local AST/regex fallback is kept for non-Xcode files so lightweight files
-        // can still offer basic jump behavior without pretending semantic support.
-            let bridge = XcodeProjectContextBridge.shared
-            return !(bridge.cachedState?.isXcodeProject ?? bridge.isXcodeProject)
+            allowsLocalFallbackProvider?() ?? true
         }
     }
     

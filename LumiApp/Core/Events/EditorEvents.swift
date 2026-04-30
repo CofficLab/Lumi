@@ -77,7 +77,10 @@ extension Notification.Name {
     /// 请求触发参数提示
     static let lumiEditorTriggerSignatureHelp = Notification.Name("LumiEditorTriggerSignatureHelp")
 
-    /// Xcode 项目上下文已更新
+    /// 项目上下文已更新
+    static let lumiEditorProjectContextDidChange = Notification.Name("LumiEditorProjectContextDidChange")
+
+    /// 向后兼容旧的 Xcode 上下文事件名
     static let lumiEditorXcodeContextDidChange = Notification.Name("LumiEditorXcodeContextDidChange")
 
     /// 当前编辑器文件对应的 Xcode 上下文快照已更新

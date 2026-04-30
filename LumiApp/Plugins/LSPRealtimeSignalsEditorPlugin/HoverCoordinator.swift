@@ -144,7 +144,7 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
 
             let symbol = self.symbolAt(line: line, character: character, in: state.content?.string ?? "")
             let hover: Hover?
-            if XcodeSemanticAvailability.preflightError(
+            if state.semanticCapability?.preflightError(
                 uri: state.currentFileURL?.absoluteString,
                 operation: "悬停信息",
                 symbolName: symbol,

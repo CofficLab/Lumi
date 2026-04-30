@@ -7,7 +7,7 @@ extension EditorState {
     func showQuickFixesFromCurrentCursor() async {
         guard canPreview, isEditable else { return }
         guard let currentFileURL else { return }
-        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "快速修复") {
+        if let preflightMessage = projectLanguagePreflightMessage(operation: "快速修复") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
         }
@@ -77,7 +77,7 @@ extension EditorState {
             currentInlineRenameState = renameState
             return
         }
-        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "重命名符号", symbolName: renameState.originalName) {
+        if let preflightMessage = projectLanguagePreflightMessage(operation: "重命名符号", symbolName: renameState.originalName) {
             renameState.errorMessage = preflightMessage
             currentInlineRenameState = renameState
             return
@@ -146,7 +146,7 @@ extension EditorState {
     }
 
     func showPeekDefinitionFromCurrentCursor() async {
-        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "Peek Definition") {
+        if let preflightMessage = projectLanguagePreflightMessage(operation: "Peek Definition") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
         }
@@ -166,7 +166,7 @@ extension EditorState {
     }
 
     func showPeekReferencesFromCurrentCursor() async {
-        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "Peek References") {
+        if let preflightMessage = projectLanguagePreflightMessage(operation: "Peek References") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
         }
@@ -188,7 +188,7 @@ extension EditorState {
     }
 
     func showReferencesFromCurrentCursor() async {
-        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "查找引用") {
+        if let preflightMessage = projectLanguagePreflightMessage(operation: "查找引用") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
         }
@@ -255,7 +255,7 @@ extension EditorState {
     }
 
     func openCallHierarchy() async {
-        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "调用层级") {
+        if let preflightMessage = projectLanguagePreflightMessage(operation: "调用层级") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
         }
@@ -355,7 +355,7 @@ extension EditorState {
     }
 
     private func renameSymbolWithLSP(to newName: String) async {
-        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "重命名符号") {
+        if let preflightMessage = projectLanguagePreflightMessage(operation: "重命名符号") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
         }
@@ -385,11 +385,11 @@ extension EditorState {
         )
     }
 
-    func xcodeLanguagePreflightMessage(
+    func projectLanguagePreflightMessage(
         operation: String,
         symbolName: String? = nil
     ) -> String? {
-        guard let message = XcodeSemanticAvailability.preflightMessage(
+        guard let message = semanticCapability?.preflightMessage(
             uri: currentFileURL?.absoluteString,
             operation: operation,
             symbolName: symbolName,
@@ -403,11 +403,11 @@ extension EditorState {
         )
     }
 
-    func xcodeLanguagePreflightError(
+    func projectLanguagePreflightError(
         operation: String,
         symbolName: String? = nil
-    ) -> XcodeLSPError? {
-        XcodeSemanticAvailability.preflightError(
+    ) -> EditorLanguageFeatureError? {
+        semanticCapability?.preflightError(
             uri: currentFileURL?.absoluteString,
             operation: operation,
             symbolName: symbolName,
@@ -415,28 +415,27 @@ extension EditorState {
         )
     }
 
-    func resyncXcodeBuildContext() {
+    func resyncProjectContext() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard !self.isResyncingXcodeBuildContext else { return }
-            self.isResyncingXcodeBuildContext = true
-            defer { self.isResyncingXcodeBuildContext = false }
+            guard !self.isResyncingProjectContext else { return }
+            self.isResyncingProjectContext = true
+            defer { self.isResyncingProjectContext = false }
 
-            await XcodeProjectContextBridge.shared.resyncBuildContext()
-            self.refreshXcodeContextSnapshot()
+            await self.projectContextCapability?.resyncProjectContext()
+            self.refreshProjectContextSnapshot()
 
-            let status = XcodeProjectContextBridge.shared.buildContextProvider?.buildContextStatus
-            switch status {
+            switch self.currentProjectContextStatus {
             case .available:
-                self.showStatusToast("Xcode build context 已重新解析", level: .success, duration: 1.8)
+                self.showStatusToast("项目语义上下文已重新解析", level: .success, duration: 1.8)
             case .resolving:
-                self.showStatusToast("Xcode build context 仍在解析中", level: .info, duration: 1.8)
+                self.showStatusToast("项目语义上下文仍在解析中", level: .info, duration: 1.8)
             case .needsResync:
-                self.showStatusToast("Xcode build context 仍需要重新同步", level: .warning, duration: 2.2)
+                self.showStatusToast("项目语义上下文仍需要重新同步", level: .warning, duration: 2.2)
             case .unavailable(let reason):
-                self.showStatusToast("Xcode build context 重新解析失败：\(reason)", level: .error, duration: 2.6)
-            case .unknown, .none:
-                self.showStatusToast("已触发 Xcode build context 重新解析", level: .info, duration: 1.8)
+                self.showStatusToast("项目语义上下文重新解析失败：\(reason)", level: .error, duration: 2.6)
+            case .unknown:
+                self.showStatusToast("已触发项目语义上下文重新解析", level: .info, duration: 1.8)
             }
         }
     }

@@ -50,9 +50,10 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         let line = lspPosition.line
         let character = lspPosition.character
         let context = Self.completionContext(atOffset: cursorOffset, in: content)
-        if XcodeSemanticAvailability.preflightError(
+        if editorState?.semanticCapability?.preflightError(
             uri: editorState?.currentFileURL?.absoluteString,
             operation: "代码补全",
+            symbolName: nil,
             strength: .soft
         ) != nil {
             if let extensionRegistry = editorExtensionRegistry {

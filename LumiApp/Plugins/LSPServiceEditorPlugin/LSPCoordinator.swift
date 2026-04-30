@@ -16,7 +16,7 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
     private let lspService: LSPService
-    private let documentSymbolsPreflight: @MainActor (_ uri: String) -> XcodeLSPError?
+    private let documentSymbolsPreflight: @MainActor (_ uri: String) -> EditorLanguageFeatureError?
     private let requestDocumentSymbolsOperation: @Sendable (_ uri: String) async -> [DocumentSymbol]
     private let requestDefinitionOperation: @Sendable (_ uri: String, _ line: Int, _ character: Int) async -> Location?
     
@@ -52,12 +52,15 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
 
     init(
         lspService: LSPService = .shared,
-        documentSymbolsPreflight: @escaping @MainActor (_ uri: String) -> XcodeLSPError? = { uri in
-            XcodeSemanticAvailability.preflightError(
-                uri: uri,
-                operation: "Document Symbols",
-                strength: .soft
-            )
+        documentSymbolsPreflight: @escaping @MainActor (_ uri: String) -> EditorLanguageFeatureError? = { uri in
+            EditorPluginManager.activeRegistry?
+                .semanticAvailabilityProvider(for: uri)?
+                .preflightError(
+                    uri: uri,
+                    operation: "Document Symbols",
+                    symbolName: nil,
+                    strength: .soft
+                )
         },
         requestDocumentSymbolsOperation: (@Sendable (_ uri: String) async -> [DocumentSymbol])? = nil,
         requestDefinitionOperation: (@Sendable (_ uri: String, _ line: Int, _ character: Int) async -> Location?)? = nil

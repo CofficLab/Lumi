@@ -263,11 +263,11 @@ struct EditorReferenceResult: Identifiable, Equatable {
 
 struct EditorSemanticProblem: Identifiable, Equatable, Sendable {
     let id: String
-    let severity: XcodeSemanticAvailability.ReasonSeverity
+    let severity: EditorSemanticAvailabilitySeverity
     let title: String
     let message: String
 
-    init(reason: XcodeSemanticAvailability.Reason) {
+    init(reason: EditorSemanticAvailabilityReason) {
         self.id = reason.id
         self.severity = reason.severity
         self.title = reason.title

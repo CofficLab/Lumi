@@ -8,14 +8,12 @@ final class WorkspaceSymbolProvider: ObservableObject {
     
     private let lspService: LSPService
     private let requestLifecycle = LSPRequestLifecycle()
-    private let preflightMessageProvider: @MainActor (_ operation: String, _ strength: XcodeSemanticAvailability.Strength) -> String?
     private let requestSymbols: @Sendable (_ query: String) async -> WorkspaceSymbolResponse
+    var preflightMessageProvider: @MainActor (_ operation: String, _ strength: EditorSemanticPreflightStrength) -> String?
 
     init(
         lspService: LSPService = .shared,
-        preflightMessageProvider: @escaping @MainActor (_ operation: String, _ strength: XcodeSemanticAvailability.Strength) -> String? = { operation, strength in
-            XcodeSemanticAvailability.workspacePreflightMessage(operation: operation, strength: strength)
-        },
+        preflightMessageProvider: @escaping @MainActor (_ operation: String, _ strength: EditorSemanticPreflightStrength) -> String? = { _, _ in nil },
         requestSymbols: (@Sendable (_ query: String) async -> WorkspaceSymbolResponse)? = nil
     ) {
         self.lspService = lspService

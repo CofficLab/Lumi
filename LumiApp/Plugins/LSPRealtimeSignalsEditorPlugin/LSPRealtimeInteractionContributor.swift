@@ -26,9 +26,10 @@ final class LSPRealtimeInteractionContributor: EditorInteractionContributor {
             return
         }
         if let fileURL = state.currentFileURL, let content = state.content {
-            if XcodeSemanticAvailability.preflightError(
+            if state.semanticCapability?.preflightError(
                 uri: fileURL.absoluteString,
                 operation: "文档高亮",
+                symbolName: nil,
                 strength: .soft
             ) != nil {
                 state.documentHighlightProvider.clear()
@@ -58,9 +59,10 @@ final class LSPRealtimeInteractionContributor: EditorInteractionContributor {
             state.signatureHelpProvider.clear()
             return
         }
-        if XcodeSemanticAvailability.preflightError(
+        if state.semanticCapability?.preflightError(
             uri: uri,
             operation: "签名帮助",
+            symbolName: nil,
             strength: .soft
         ) != nil {
             state.signatureHelpProvider.clear()
@@ -81,10 +83,11 @@ final class LSPRealtimeInteractionContributor: EditorInteractionContributor {
             uri: uri,
             line: context.line,
             character: context.character,
-            preflight: {
-                XcodeSemanticAvailability.preflightError(
+            preflight: { [weak state] in
+                state?.semanticCapability?.preflightError(
                     uri: uri,
                     operation: "签名帮助",
+                    symbolName: nil,
                     strength: .soft
                 ) == nil
             }

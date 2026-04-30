@@ -31,9 +31,9 @@ final class EditorExtensionRegistry: ObservableObject {
     private var sheetContributors: [any EditorSheetContributor] = []
     private var toolbarContributors: [any EditorToolbarContributor] = []
     private var themeContributors: [any EditorThemeContributor] = []
-    private var projectContextProviders: [any EditorProjectContextProvider] = []
-    private var languageProjectIntegrationProviders: [any EditorLanguageProjectIntegrationProvider] = []
-    private var semanticAvailabilityProviders: [any EditorSemanticAvailabilityProvider] = []
+    private var projectContextProviders: [any SuperEditorProjectContextCapability] = []
+    private var languageProjectIntegrationProviders: [any SuperEditorLanguageIntegrationCapability] = []
+    private var semanticAvailabilityProviders: [any SuperEditorSemanticCapability] = []
 
     func reset() {
         completionContributors.removeAll()
@@ -176,53 +176,65 @@ final class EditorExtensionRegistry: ObservableObject {
 
     // MARK: - Project Integration Providers
 
-    func registerProjectContextProvider(_ provider: any EditorProjectContextProvider) {
-        if projectContextProviders.contains(where: { $0.id == provider.id }) {
+    func registerProjectContextCapability(_ capability: any SuperEditorProjectContextCapability) {
+        if projectContextProviders.contains(where: { $0.id == capability.id }) {
             return
         }
-        projectContextProviders.append(provider)
+        projectContextProviders.append(capability)
     }
 
-    func registerLanguageProjectIntegrationProvider(_ provider: any EditorLanguageProjectIntegrationProvider) {
-        if languageProjectIntegrationProviders.contains(where: { $0.id == provider.id }) {
+    func registerLanguageIntegrationCapability(_ capability: any SuperEditorLanguageIntegrationCapability) {
+        if languageProjectIntegrationProviders.contains(where: { $0.id == capability.id }) {
             return
         }
-        languageProjectIntegrationProviders.append(provider)
+        languageProjectIntegrationProviders.append(capability)
     }
 
-    func registerSemanticAvailabilityProvider(_ provider: any EditorSemanticAvailabilityProvider) {
-        if semanticAvailabilityProviders.contains(where: { $0.id == provider.id }) {
+    func registerSemanticCapability(_ capability: any SuperEditorSemanticCapability) {
+        if semanticAvailabilityProviders.contains(where: { $0.id == capability.id }) {
             return
         }
-        semanticAvailabilityProviders.append(provider)
+        semanticAvailabilityProviders.append(capability)
     }
 
-    func projectContextProvider(for projectPath: String?) -> (any EditorProjectContextProvider)? {
+    func registerProjectContextProvider(_ provider: any SuperEditorProjectContextCapability) {
+        registerProjectContextCapability(provider)
+    }
+
+    func registerLanguageProjectIntegrationProvider(_ provider: any SuperEditorLanguageIntegrationCapability) {
+        registerLanguageIntegrationCapability(provider)
+    }
+
+    func registerSemanticAvailabilityProvider(_ provider: any SuperEditorSemanticCapability) {
+        registerSemanticCapability(provider)
+    }
+
+    func projectContextProvider(for projectPath: String?) -> (any SuperEditorProjectContextCapability)? {
         bestMatch(in: projectContextProviders.filter { $0.canHandleProject(at: projectPath) })
     }
 
     func languageProjectIntegrationProvider(
         for languageId: String,
         projectPath: String?
-    ) -> (any EditorLanguageProjectIntegrationProvider)? {
+    ) -> (any SuperEditorLanguageIntegrationCapability)? {
         bestMatch(
             in: languageProjectIntegrationProviders.filter { $0.supports(languageId: languageId, projectPath: projectPath) }
         )
     }
 
-    func semanticAvailabilityProvider(for uri: String?) -> (any EditorSemanticAvailabilityProvider)? {
+    func semanticAvailabilityProvider(for uri: String?) -> (any SuperEditorSemanticCapability)? {
         bestMatch(in: semanticAvailabilityProviders.filter { $0.canHandle(uri: uri) })
     }
 
-    func allProjectContextProviders() -> [any EditorProjectContextProvider] {
+    func allProjectContextProviders() -> [any SuperEditorProjectContextCapability] {
         projectContextProviders
     }
 
-    func allLanguageProjectIntegrationProviders() -> [any EditorLanguageProjectIntegrationProvider] {
+    func allLanguageProjectIntegrationProviders() -> [any SuperEditorLanguageIntegrationCapability] {
         languageProjectIntegrationProviders
     }
 
-    func allSemanticAvailabilityProviders() -> [any EditorSemanticAvailabilityProvider] {
+    func allSemanticAvailabilityProviders() -> [any SuperEditorSemanticCapability] {
         semanticAvailabilityProviders
     }
 
@@ -814,8 +826,8 @@ final class EditorExtensionRegistry: ObservableObject {
     }
 
     private func bestMatch(
-        in providers: [any EditorProjectContextProvider]
-    ) -> (any EditorProjectContextProvider)? {
+        in providers: [any SuperEditorProjectContextCapability]
+    ) -> (any SuperEditorProjectContextCapability)? {
         providers.sorted {
             if $0.priority != $1.priority {
                 return $0.priority > $1.priority
@@ -825,8 +837,8 @@ final class EditorExtensionRegistry: ObservableObject {
     }
 
     private func bestMatch(
-        in providers: [any EditorLanguageProjectIntegrationProvider]
-    ) -> (any EditorLanguageProjectIntegrationProvider)? {
+        in providers: [any SuperEditorLanguageIntegrationCapability]
+    ) -> (any SuperEditorLanguageIntegrationCapability)? {
         providers.sorted {
             if $0.priority != $1.priority {
                 return $0.priority > $1.priority
@@ -836,8 +848,8 @@ final class EditorExtensionRegistry: ObservableObject {
     }
 
     private func bestMatch(
-        in providers: [any EditorSemanticAvailabilityProvider]
-    ) -> (any EditorSemanticAvailabilityProvider)? {
+        in providers: [any SuperEditorSemanticCapability]
+    ) -> (any SuperEditorSemanticCapability)? {
         providers.sorted {
             if $0.priority != $1.priority {
                 return $0.priority > $1.priority

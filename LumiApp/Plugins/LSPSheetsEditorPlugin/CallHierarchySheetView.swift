@@ -58,12 +58,12 @@ struct CallHierarchySheetView: View {
                 }
                 Spacer(minLength: 0)
                 Button("重新解析") {
-                    state.resyncXcodeBuildContext()
+                    state.resyncProjectContext()
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.accentColor)
-                .disabled(state.isResyncingXcodeBuildContext)
+                .disabled(state.isResyncingProjectContext)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -110,7 +110,7 @@ struct CallHierarchySheetView: View {
         }
     }
 
-    private func icon(for severity: XcodeSemanticAvailability.ReasonSeverity) -> String {
+    private func icon(for severity: EditorSemanticAvailabilitySeverity) -> String {
         switch severity {
         case .info:
             return "info.circle.fill"
@@ -121,7 +121,7 @@ struct CallHierarchySheetView: View {
         }
     }
 
-    private func color(for severity: XcodeSemanticAvailability.ReasonSeverity) -> Color {
+    private func color(for severity: EditorSemanticAvailabilitySeverity) -> Color {
         switch severity {
         case .info:
             return .accentColor

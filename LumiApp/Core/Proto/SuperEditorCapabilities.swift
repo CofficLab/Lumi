@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-protocol EditorProjectContextProvider: AnyObject {
+protocol SuperEditorProjectContextCapability: AnyObject {
     var id: String { get }
     var priority: Int { get }
     func canHandleProject(at path: String?) -> Bool
@@ -12,7 +12,7 @@ protocol EditorProjectContextProvider: AnyObject {
     func updateLatestEditorSnapshot(_ snapshot: EditorProjectContextSnapshot?)
 }
 
-extension EditorProjectContextProvider {
+extension SuperEditorProjectContextCapability {
     var priority: Int { 0 }
 
     func canHandleProject(at path: String?) -> Bool {
@@ -22,7 +22,7 @@ extension EditorProjectContextProvider {
 }
 
 @MainActor
-protocol EditorLanguageProjectIntegrationProvider: AnyObject {
+protocol SuperEditorLanguageIntegrationCapability: AnyObject {
     var id: String { get }
     var priority: Int { get }
     func supports(languageId: String, projectPath: String?) -> Bool
@@ -30,12 +30,12 @@ protocol EditorLanguageProjectIntegrationProvider: AnyObject {
     func initializationOptions(for languageId: String, projectPath: String) -> [String: String]?
 }
 
-extension EditorLanguageProjectIntegrationProvider {
+extension SuperEditorLanguageIntegrationCapability {
     var priority: Int { 0 }
 }
 
 @MainActor
-protocol EditorSemanticAvailabilityProvider: AnyObject {
+protocol SuperEditorSemanticCapability: AnyObject {
     var id: String { get }
     var priority: Int { get }
     func canHandle(uri: String?) -> Bool
@@ -52,14 +52,27 @@ protocol EditorSemanticAvailabilityProvider: AnyObject {
         symbolName: String?,
         strength: EditorSemanticPreflightStrength
     ) -> EditorLanguageFeatureError?
+    func missingResultMessage(
+        uri: String?,
+        operation: String,
+        symbolName: String?
+    ) -> String?
 }
 
-extension EditorSemanticAvailabilityProvider {
+extension SuperEditorSemanticCapability {
     var priority: Int { 0 }
 
     func canHandle(uri: String?) -> Bool {
         guard let uri else { return false }
         return !uri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    func missingResultMessage(
+        uri: String?,
+        operation: String,
+        symbolName: String?
+    ) -> String? {
+        nil
     }
 }
 
@@ -68,14 +81,40 @@ struct EditorProjectContextSnapshot: Equatable, Sendable {
     let workspaceName: String
     let workspacePath: String
     let activeScheme: String?
+    let activeSchemeBuildableTargets: [String]
     let activeConfiguration: String?
     let activeDestination: String?
-    let contextStatus: String
+    let contextStatus: EditorProjectContextStatus
     let isStructuredProject: Bool
+    let schemes: [String]
+    let configurations: [String]
     let currentFilePath: String?
     let currentFilePrimaryTarget: String?
     let currentFileMatchedTargets: [String]
     let currentFileIsInTarget: Bool
+}
+
+enum EditorProjectContextStatus: Equatable, Sendable {
+    case unknown
+    case resolving
+    case available(String?)
+    case unavailable(String)
+    case needsResync
+
+    var displayDescription: String {
+        switch self {
+        case .unknown:
+            return "未初始化"
+        case .resolving:
+            return "解析中"
+        case .available(let detail):
+            return detail ?? "可用"
+        case .unavailable(let reason):
+            return "不可用: \(reason)"
+        case .needsResync:
+            return "需要重新同步"
+        }
+    }
 }
 
 struct EditorWorkspaceFolder: Equatable, Sendable {

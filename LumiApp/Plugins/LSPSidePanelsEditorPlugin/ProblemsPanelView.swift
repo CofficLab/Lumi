@@ -255,14 +255,14 @@ struct ProblemsPanelView: View {
 
     private var semanticSectionHeader: some View {
         HStack(spacing: 8) {
-            problemSectionHeader("Xcode Context")
+            problemSectionHeader("Project Context")
 
             Spacer(minLength: 0)
 
             Button {
-                state.resyncXcodeBuildContext()
+                state.resyncProjectContext()
             } label: {
-                if state.isResyncingXcodeBuildContext {
+                if state.isResyncingProjectContext {
                     HStack(spacing: 4) {
                         ProgressView()
                             .controlSize(.mini)
@@ -276,7 +276,7 @@ struct ProblemsPanelView: View {
             .buttonStyle(.plain)
             .font(.system(size: 10, weight: .medium))
             .foregroundColor(AppUI.Color.semantic.primary)
-            .disabled(state.isResyncingXcodeBuildContext)
+            .disabled(state.isResyncingProjectContext)
         }
         .padding(.horizontal, 2)
         .padding(.bottom, 2)
@@ -310,7 +310,7 @@ struct ProblemsPanelView: View {
         }
     }
 
-    private func iconAndColor(for severity: XcodeSemanticAvailability.ReasonSeverity) -> (String, SwiftUI.Color) {
+    private func iconAndColor(for severity: EditorSemanticAvailabilitySeverity) -> (String, SwiftUI.Color) {
         switch severity {
         case .info:
             return ("info.circle.fill", AppUI.Color.semantic.primary)

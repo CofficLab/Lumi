@@ -73,8 +73,8 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前文件的 Xcode 工程语义问题（Problems 面板附加数据源）
     @Published private(set) var semanticProblems: [EditorSemanticProblem] = []
 
-    /// 是否正在重新解析 Xcode build context
-    @Published var isResyncingXcodeBuildContext: Bool = false
+    /// 是否正在重新解析项目上下文
+    @Published var isResyncingProjectContext: Bool = false
 
     /// 当前选中的问题，用于列表高亮与编辑器同步
     @Published private(set) var selectedProblemDiagnostic: Diagnostic?
@@ -131,8 +131,8 @@ final class EditorState: ObservableObject, SuperLog {
     private var diagnosticsCancellable: AnyCancellable?
     private var keybindingCancellable: AnyCancellable?
     private var settingsCancellable: AnyCancellable?
-    private var xcodeContextCancellable: AnyCancellable?
-    private var xcodeSemanticProgressCancellable: AnyCancellable?
+    private var projectContextCancellable: AnyCancellable?
+    private var semanticProgressCancellable: AnyCancellable?
     private var panelBindings = Set<AnyCancellable>()
     private var multiCursorSearchSession: EditorMultiCursorSearchSession?
     private let sessionSyncGate = SessionSyncGate()
@@ -261,18 +261,18 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前文件 URL
     @Published private(set) var currentFileURL: URL? {
         didSet {
-            XcodeProjectEditorRuntimeContext.shared.updateCurrentDocument(
+            SuperEditorRuntimeContext.shared.updateCurrentDocument(
                 fileURL: currentFileURL,
                 content: content?.string
             )
-            refreshXcodeContextSnapshot()
+            refreshProjectContextSnapshot()
         }
     }
     
     /// 当前文件内容（NSTextStorage，CodeEditSourceEditor 要求）
     @Published var content: NSTextStorage? {
         didSet {
-            XcodeProjectEditorRuntimeContext.shared.updateCurrentDocument(
+            SuperEditorRuntimeContext.shared.updateCurrentDocument(
                 fileURL: currentFileURL,
                 content: content?.string
             )
@@ -319,6 +319,12 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 兼容旧调用：编辑器扩展注册中心
     var editorExtensions: EditorExtensionRegistry { editorPluginManager.registry }
+    var projectContextCapability: (any SuperEditorProjectContextCapability)? {
+        editorExtensions.projectContextProvider(for: projectRootPath)
+    }
+    var semanticCapability: (any SuperEditorSemanticCapability)? {
+        editorExtensions.semanticAvailabilityProvider(for: currentFileURL?.absoluteString)
+    }
     /// 后台扩展点解析器（异步聚合，去重/排序在后台线程执行）
     let editorExtensionResolver = ExtensionResolver.shared
     
@@ -878,12 +884,12 @@ final class EditorState: ObservableObject, SuperLog {
     var projectRootPath: String? {
         didSet {
             restoreConfig()
-            refreshXcodeContextSnapshot()
+            refreshProjectContextSnapshot()
         }
     }
 
-    /// 当前 Xcode 工程上下文快照（供 UI / 语言链路读取）
-    @Published private(set) var xcodeContextSnapshot: XcodeEditorContextSnapshot?
+    /// 当前项目上下文快照（供 UI / 语言链路读取）
+    @Published private(set) var projectContextSnapshot: EditorProjectContextSnapshot?
     
     /// 当前文件相对于项目根目录的路径（用于构建选区位置信息）
     /// 若无项目则返回文件名
@@ -904,37 +910,51 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     @MainActor
-    func refreshXcodeContextSnapshot() {
+    func refreshProjectContextSnapshot() {
         guard let projectRootPath, !projectRootPath.isEmpty else {
-            xcodeContextSnapshot = nil
+            projectContextSnapshot = nil
             panelController.setSemanticProblems([])
             syncActiveSessionState()
             return
         }
-        let bridge = XcodeProjectContextBridge.shared
-        if let snapshot = bridge.makeEditorContextSnapshot(currentFileURL: currentFileURL),
-           snapshot.projectPath == projectRootPath || snapshot.workspacePath.hasPrefix(projectRootPath) || projectRootPath.hasPrefix(snapshot.workspacePath) {
-            xcodeContextSnapshot = snapshot
-            bridge.updateLatestEditorSnapshot(snapshot)
-            refreshXcodeSemanticProblems()
-        } else {
-            xcodeContextSnapshot = nil
-            bridge.updateLatestEditorSnapshot(nil)
+        guard let capability = projectContextCapability,
+              let snapshot = capability.makeEditorContextSnapshot(currentFileURL: currentFileURL),
+              snapshot.projectPath == projectRootPath ||
+                snapshot.workspacePath.hasPrefix(projectRootPath) ||
+                projectRootPath.hasPrefix(snapshot.workspacePath) else {
+            projectContextSnapshot = nil
+            projectContextCapability?.updateLatestEditorSnapshot(nil)
             panelController.setSemanticProblems([])
             syncActiveSessionState()
+            return
         }
+        projectContextSnapshot = snapshot
+        capability.updateLatestEditorSnapshot(snapshot)
+        refreshSemanticProblems()
     }
 
     @MainActor
-    private func refreshXcodeSemanticProblems() {
-        guard let snapshot = xcodeContextSnapshot, snapshot.isXcodeProject else {
+    private func refreshSemanticProblems() {
+        guard let snapshot = projectContextSnapshot, snapshot.isStructuredProject else {
             panelController.setSemanticProblems([])
             syncActiveSessionState()
             return
         }
-        let report = XcodeSemanticAvailability.inspectCurrentFileContext(uri: currentFileURL?.absoluteString)
+        let report = semanticCapability?.inspectCurrentFileContext(uri: currentFileURL?.absoluteString) ?? .empty
+        projectContextCapability?.updateLatestEditorSnapshot(snapshot)
         panelController.setSemanticProblems(report.reasons.map(EditorSemanticProblem.init(reason:)))
         syncActiveSessionState()
+    }
+
+    var currentProjectContextStatus: EditorProjectContextStatus {
+        guard projectContextSnapshot?.isStructuredProject == true else {
+            return .unknown
+        }
+        return projectContextSnapshot?.contextStatus ?? .unknown
+    }
+
+    var currentProjectContextStatusDescription: String {
+        currentProjectContextStatus.displayDescription
     }
     
     // MARK: - Editor State
@@ -1159,6 +1179,14 @@ final class EditorState: ObservableObject, SuperLog {
             }
         )
         self.codeActionProvider.editorExtensionRegistry = self.editorExtensions
+        self.workspaceSymbolProvider.preflightMessageProvider = { [weak self] operation, strength in
+            self?.semanticCapability?.preflightMessage(
+                uri: nil,
+                operation: operation,
+                symbolName: nil,
+                strength: strength
+            )
+        }
         installEditorPluginsFromPluginVM()
         commandController.refreshCoreCommandRegistrations(in: self)
         bindKeybindings()
@@ -1167,7 +1195,7 @@ final class EditorState: ObservableObject, SuperLog {
         restoreConfig()
         observeSettingsChanges()
         observeThemeChanges()
-        observeXcodeContextChanges()
+        observeProjectContextChanges()
     }
 
     /// 从 PluginVM 过滤并安装编辑器插件（Phase 2）
@@ -1189,18 +1217,18 @@ final class EditorState: ObservableObject, SuperLog {
         commandController.refreshCoreCommandRegistrations(in: self)
     }
 
-    private func observeXcodeContextChanges() {
-        xcodeContextCancellable?.cancel()
-        xcodeContextCancellable = NotificationCenter.default
-            .publisher(for: .lumiEditorXcodeContextDidChange)
+    private func observeProjectContextChanges() {
+        projectContextCancellable?.cancel()
+        projectContextCancellable = NotificationCenter.default
+            .publisher(for: .lumiEditorProjectContextDidChange)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.refreshXcodeContextSnapshot()
+                self?.refreshProjectContextSnapshot()
                 self?.updateSemanticReadinessFeedback()
             }
 
-        xcodeSemanticProgressCancellable?.cancel()
-        xcodeSemanticProgressCancellable = lspService.progressProvider.$activeTasks
+        semanticProgressCancellable?.cancel()
+        semanticProgressCancellable = lspService.progressProvider.$activeTasks
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.updateSemanticReadinessFeedback()
@@ -2373,7 +2401,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 执行文档格式化（LSP formatting）
     func formatDocumentWithLSP() async {
-        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "格式化文档") {
+        if let preflightMessage = projectLanguagePreflightMessage(operation: "格式化文档") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
         }
@@ -3169,11 +3197,11 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     private func semanticReadinessState() -> EditorSemanticReadinessState {
-        guard xcodeContextSnapshot?.isXcodeProject == true else { return .idle }
+        guard projectContextSnapshot?.isStructuredProject == true else { return .idle }
         if lspService.progressProvider.hasActiveWork {
             return .indexing
         }
-        switch XcodeProjectContextBridge.shared.buildContextProvider?.buildContextStatus {
+        switch currentProjectContextStatus {
         case .available:
             return .ready
         case .resolving:
@@ -3182,7 +3210,7 @@ final class EditorState: ObservableObject, SuperLog {
             return .needsResync
         case .unavailable:
             return .unavailable
-        case .unknown, .none:
+        case .unknown:
             return .idle
         }
     }

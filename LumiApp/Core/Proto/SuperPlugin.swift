@@ -215,6 +215,22 @@ protocol SuperPlugin: Actor {
     /// 默认实现为空操作。只有需要贡献编辑器能力的插件才需要重写此方法。
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry)
 
+    /// 提供项目上下文能力。
+    ///
+    /// 用于项目打开/关闭、上下文同步、当前文件项目快照等高层能力。
+    /// 这是 editor 内核面向插件的高层入口，插件作者不需要直接理解内核内部 registry 或 bridge。
+    @MainActor func editorProjectContextCapability() -> (any SuperEditorProjectContextCapability)?
+
+    /// 提供语义可用性能力。
+    ///
+    /// 用于 preflight、当前文件语义环境检查，以及语言能力不可用时的错误归类。
+    @MainActor func editorSemanticCapability() -> (any SuperEditorSemanticCapability)?
+
+    /// 提供语言服务项目集成能力列表。
+    ///
+    /// 用于按语言生成 workspace folders、initialization options 等项目型语言服务集成参数。
+    @MainActor func editorLanguageIntegrationCapabilities() -> [any SuperEditorLanguageIntegrationCapability]
+
     // MARK: - Lifecycle Hooks
 
     /// 插件注册完成后的回调

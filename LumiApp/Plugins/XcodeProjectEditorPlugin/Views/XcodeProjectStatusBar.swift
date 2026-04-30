@@ -239,7 +239,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
             .store(in: &cancellables)
 
         notificationCancellable = NotificationCenter.default
-            .publisher(for: .lumiEditorXcodeContextDidChange)
+            .publisher(for: .lumiEditorProjectContextDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 let bridge = XcodeProjectContextBridge.shared

@@ -612,7 +612,7 @@ struct EditorRootView: View {
 
     @ViewBuilder
     private var fileInfoBanner: some View {
-        if state.isTruncated || !state.isEditable || shouldShowXcodeContextWarning {
+        if state.isTruncated || !state.isEditable || shouldShowProjectContextWarning {
             VStack(alignment: .leading, spacing: 4) {
                 if state.isTruncated {
                     HStack(spacing: 4) {
@@ -644,7 +644,7 @@ struct EditorRootView: View {
                             .foregroundColor(AppUI.Color.semantic.warning)
                     }
                 }
-                if let warning = xcodeContextWarningMessage {
+                if let warning = projectContextWarningMessage {
                     HStack(spacing: 4) {
                         Image(systemName: "hammer.circle.fill")
                             .font(.system(size: 9))
@@ -665,28 +665,31 @@ struct EditorRootView: View {
         }
     }
 
-    private var shouldShowXcodeContextWarning: Bool {
-        xcodeContextWarningMessage != nil
+    private var shouldShowProjectContextWarning: Bool {
+        projectContextWarningMessage != nil
     }
 
-    private var xcodeContextWarningMessage: String? {
-        guard let snapshot = state.xcodeContextSnapshot, snapshot.isXcodeProject else { return nil }
-        if snapshot.buildContextStatus.contains("不可用") || snapshot.buildContextStatus.contains("需要重新同步") {
-            return "Xcode build context 未就绪，跨文件语义能力可能不稳定。"
+    private var projectContextWarningMessage: String? {
+        guard let snapshot = state.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
+        switch snapshot.contextStatus {
+        case .unavailable, .needsResync:
+            return "项目语义上下文未就绪，跨文件语义能力可能不稳定。"
+        default:
+            break
         }
         guard state.currentFileURL != nil else { return nil }
         if !snapshot.currentFileIsInTarget {
             return "当前文件未绑定到任何编译 target，跨文件跳转和诊断可能不可用。"
         }
         if let activeScheme = snapshot.activeScheme,
-           let currentTarget = snapshot.currentFileTarget,
+           let currentTarget = snapshot.currentFilePrimaryTarget,
            !currentTarget.isEmpty,
            !snapshot.activeSchemeBuildableTargets.isEmpty,
            !snapshot.activeSchemeBuildableTargets.contains(currentTarget) {
             return "当前文件属于 target '\(currentTarget)'，但当前 scheme '\(activeScheme)' 可能没有覆盖它。"
         }
         if snapshot.currentFileMatchedTargets.count > 1 {
-            if let preferredTarget = snapshot.currentFileTarget, !preferredTarget.isEmpty {
+            if let preferredTarget = snapshot.currentFilePrimaryTarget, !preferredTarget.isEmpty {
                 return "当前文件属于多个 target，编辑器当前按 '\(preferredTarget)' 的语义上下文解析。"
             }
             let targets = snapshot.currentFileMatchedTargets.joined(separator: ", ")
@@ -1123,12 +1126,12 @@ struct EditorRootView: View {
     private func refreshProjectContext(for projectPath: String) {
         let trimmedPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPath.isEmpty else {
-            state.refreshXcodeContextSnapshot()
+            state.refreshProjectContextSnapshot()
             return
         }
         Task { @MainActor in
-            await XcodeProjectContextBridge.shared.projectOpened(at: trimmedPath)
-            state.refreshXcodeContextSnapshot()
+            await state.projectContextCapability?.projectOpened(at: trimmedPath)
+            state.refreshProjectContextSnapshot()
         }
     }
 

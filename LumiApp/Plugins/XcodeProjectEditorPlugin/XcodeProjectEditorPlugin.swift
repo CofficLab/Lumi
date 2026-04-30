@@ -15,6 +15,9 @@ actor XcodeProjectEditorPlugin: SuperPlugin {
 
     /// Build Context Provider 实例
     @MainActor let buildContextProvider = XcodeBuildContextProvider()
+    @MainActor private let projectContextCapability = XcodeProjectContextCapabilityAdapter()
+    @MainActor private let semanticCapability = XcodeSemanticCapabilityAdapter()
+    @MainActor private let languageIntegrationCapability = XcodeLanguageIntegrationCapabilityAdapter()
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         // 向 Bridge 注册 buildContextProvider，让 LSPService 能读取 build context
@@ -28,5 +31,17 @@ actor XcodeProjectEditorPlugin: SuperPlugin {
     /// 在工具栏显示 Xcode 项目状态
     @MainActor func addToolBarLeadingView() -> AnyView? {
         return AnyView(XcodeProjectStatusBar())
+    }
+
+    @MainActor func editorProjectContextCapability() -> (any SuperEditorProjectContextCapability)? {
+        projectContextCapability
+    }
+
+    @MainActor func editorSemanticCapability() -> (any SuperEditorSemanticCapability)? {
+        semanticCapability
+    }
+
+    @MainActor func editorLanguageIntegrationCapabilities() -> [any SuperEditorLanguageIntegrationCapability] {
+        [languageIntegrationCapability]
     }
 }

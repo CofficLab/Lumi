@@ -5,7 +5,7 @@ final class XcodePackageManifestHoverContributor: EditorHoverContributor {
     let id = "builtin.xcode.package-manifest-hover"
 
     func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion] {
-        let runtimeContext = XcodeProjectEditorRuntimeContext.shared
+        let runtimeContext = SuperEditorRuntimeContext.shared
         guard let fileURL = runtimeContext.currentFileURL,
               fileURL.lastPathComponent == "Package.swift",
               let markdown = PackageManifestSyntax.hoverMarkdown(

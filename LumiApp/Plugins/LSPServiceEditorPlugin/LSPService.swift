@@ -114,8 +114,8 @@ final class LSPService: ObservableObject, SuperLog {
     }
 
     private func startServerInternal(for languageId: String, projectPath: String) async -> LanguageServer? {
-        if languageId == "swift" || languageId == "sourcekit" {
-            await XcodeProjectContextBridge.shared.projectOpened(at: projectPath)
+        if let capability = Self.projectContextCapability(for: projectPath) {
+            await capability.projectOpened(at: projectPath)
         }
         if let existing = server {
             if Self.verbose {
@@ -138,7 +138,7 @@ final class LSPService: ObservableObject, SuperLog {
         projectRootPath = projectPath
         
         let workspaceFolders = Self.makeWorkspaceFolders(for: languageId, projectPath: projectPath)
-        let initializationOptions = Self.makeInitializationOptions(for: languageId)
+        let initializationOptions = Self.makeInitializationOptions(for: languageId, projectPath: projectPath)
         
         do {
             let newServer = try await LanguageServer.create(
@@ -175,26 +175,21 @@ final class LSPService: ObservableObject, SuperLog {
         }
     }
     
-    /// 为 Xcode 项目生成 workspaceFolders
-    /// 对应 Phase 4: 补齐 workspaceFolders
+    /// 为项目型语言服务生成 workspaceFolders
     static func makeWorkspaceFolders(for languageId: String, projectPath: String) -> [LanguageServerProtocol.WorkspaceFolder]? {
-        // 仅对 Swift（sourcekit-lsp）且当前是 Xcode 项目时，使用 bridge 提供的 workspaceFolders
-        // 注意：系统中 languageId 统一使用 "swift"，而非 "sourcekit"
-        guard (languageId == "swift" || languageId == "sourcekit"),
-              XcodeProjectContextBridge.shared.isXcodeProject,
-              let folders = XcodeProjectContextBridge.shared.makeWorkspaceFolders(),
+        guard let capability = languageIntegrationCapability(for: languageId, projectPath: projectPath),
+              let folders = capability.workspaceFolders(for: languageId, projectPath: projectPath),
               !folders.isEmpty else {
             return nil
         }
-        return folders.compactMap { dict in
-            guard let uri = dict["uri"], let name = dict["name"] else { return nil }
-            return LanguageServerProtocol.WorkspaceFolder(uri: uri, name: name)
+        return folders.map {
+            LanguageServerProtocol.WorkspaceFolder(uri: $0.uri, name: $0.name)
         }
     }
 
-    static func makeInitializationOptions(for languageId: String) -> LanguageServerProtocol.LSPAny? {
-        guard languageId == "swift" || languageId == "sourcekit" else { return nil }
-        guard let options = XcodeProjectContextBridge.shared.makeInitializationOptions(),
+    static func makeInitializationOptions(for languageId: String, projectPath: String) -> LanguageServerProtocol.LSPAny? {
+        guard let capability = languageIntegrationCapability(for: languageId, projectPath: projectPath),
+              let options = capability.initializationOptions(for: languageId, projectPath: projectPath),
               !options.isEmpty else {
             return nil
         }
@@ -210,10 +205,23 @@ final class LSPService: ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)设置项目根目录: \(projectPath ?? "<nil>", privacy: .public)")
         }
-        // 通知 Xcode Bridge 项目已打开
         if projectPath == nil {
-            XcodeProjectContextBridge.shared.projectClosed()
+            Self.projectContextCapability(for: nil)?.projectClosed()
         }
+    }
+
+    private static func projectContextCapability(for projectPath: String?) -> (any SuperEditorProjectContextCapability)? {
+        EditorPluginManager.activeRegistry?.projectContextProvider(for: projectPath)
+    }
+
+    private static func languageIntegrationCapability(
+        for languageId: String,
+        projectPath: String?
+    ) -> (any SuperEditorLanguageIntegrationCapability)? {
+        EditorPluginManager.activeRegistry?.languageProjectIntegrationProvider(
+            for: languageId,
+            projectPath: projectPath
+        )
     }
     
     func openDocument(uri: String, languageId: String, text: String, version: Int = 0) async {

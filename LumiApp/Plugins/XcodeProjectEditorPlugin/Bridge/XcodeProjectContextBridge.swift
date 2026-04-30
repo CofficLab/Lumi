@@ -158,6 +158,7 @@ final class XcodeProjectContextBridge: SuperLog {
             projectPath: currentProjectPath
         )
         cachedState = state
+        NotificationCenter.default.post(name: .lumiEditorProjectContextDidChange, object: nil)
         NotificationCenter.default.post(name: .lumiEditorXcodeContextDidChange, object: nil)
     }
     

@@ -53,7 +53,7 @@ extension EditorState {
     }
 
     func prepareSaveFormatting(_ text: String, tabSize: Int, insertSpaces: Bool) async -> String? {
-        if xcodeLanguagePreflightError(operation: "保存时格式化") != nil {
+        if projectLanguagePreflightError(operation: "保存时格式化") != nil {
             return nil
         }
         return await formattingController.prepareSaveFormatting(
@@ -120,7 +120,7 @@ extension EditorState {
             },
             requestCodeActions: { [weak self] range, diagnostics, triggerKinds in
                 guard let self else { return [] }
-                if self.xcodeLanguagePreflightError(operation: "保存时代码修复") != nil {
+                if self.projectLanguagePreflightError(operation: "保存时代码修复") != nil {
                     return []
                 }
                 return await self.lspCoordinator.requestCodeAction(

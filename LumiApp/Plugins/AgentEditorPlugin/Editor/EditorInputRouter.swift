@@ -105,7 +105,7 @@ final class EditorInputRouter {
             return
         }
         guard let fileURL = state.currentFileURL else { return }
-        if state.xcodeLanguagePreflightError(operation: "代码操作") != nil {
+        if state.projectLanguagePreflightError(operation: "代码操作") != nil {
             state.codeActionProvider.clear()
             return
         }

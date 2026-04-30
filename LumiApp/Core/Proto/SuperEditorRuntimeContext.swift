@@ -1,8 +1,8 @@
 import Foundation
 
 @MainActor
-final class XcodeProjectEditorRuntimeContext {
-    static let shared = XcodeProjectEditorRuntimeContext()
+final class SuperEditorRuntimeContext {
+    static let shared = SuperEditorRuntimeContext()
 
     private(set) var currentFileURL: URL?
     private(set) var currentContent: String = ""

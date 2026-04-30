@@ -5,7 +5,7 @@ final class XcodePlistCompletionContributor: EditorCompletionContributor {
     let id = "builtin.xcode.plist-completion"
 
     func provideSuggestions(context: EditorCompletionContext) async -> [EditorCompletionSuggestion] {
-        let runtimeContext = XcodeProjectEditorRuntimeContext.shared
+        let runtimeContext = SuperEditorRuntimeContext.shared
         guard let fileURL = runtimeContext.currentFileURL else { return [] }
         return PlistEditing.completionSuggestions(
             prefix: context.prefix,

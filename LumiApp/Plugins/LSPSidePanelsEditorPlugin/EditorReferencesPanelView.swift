@@ -115,12 +115,12 @@ struct EditorReferencesPanelView: View {
                         .foregroundColor(AppUI.Color.semantic.textPrimary)
                     Spacer(minLength: 0)
                     Button("重新解析") {
-                        state.resyncXcodeBuildContext()
+                        state.resyncProjectContext()
                     }
                     .buttonStyle(.plain)
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(AppUI.Color.semantic.primary)
-                    .disabled(state.isResyncingXcodeBuildContext)
+                    .disabled(state.isResyncingProjectContext)
                 }
 
                 Text(issue.message)
@@ -184,7 +184,7 @@ struct EditorReferencesPanelView: View {
             )
     }
 
-    private func icon(for severity: XcodeSemanticAvailability.ReasonSeverity) -> String {
+    private func icon(for severity: EditorSemanticAvailabilitySeverity) -> String {
         switch severity {
         case .info:
             return "info.circle.fill"
@@ -195,7 +195,7 @@ struct EditorReferencesPanelView: View {
         }
     }
 
-    private func color(for severity: XcodeSemanticAvailability.ReasonSeverity) -> Color {
+    private func color(for severity: EditorSemanticAvailabilitySeverity) -> Color {
         switch severity {
         case .info:
             return AppUI.Color.semantic.primary

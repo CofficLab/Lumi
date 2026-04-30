@@ -1,78 +1,96 @@
-# Editor Kernel Plugin Boundary Refactor Plan
+# Editor Kernel Refactor Plan
 
 ## 目标
 
-把 `AgentEditorPlugin` 和编辑器相关基础设施收敛成纯内核层。
+把 Editor 内核收敛到和 Lumi 整体插件体系一致的模式：
 
-重构完成后，内核只负责：
+1. 插件开发者只面向 `SuperPlugin`
+2. 插件通过实现 `SuperPlugin` 上的高层 editor 能力函数来扩展编辑器
+3. Editor 内核只认识 `SuperPlugin`
+4. Editor 内核不直接依赖任何具体插件类型
+5. `EditorExtensionRegistry`、provider、bridge 这类机制只作为内核内部实现细节存在
 
-1. 定义编辑器扩展点
-2. 定义通用协议和数据模型
-3. 提供插件注册、发现、调用机制
+## 目标架构
 
-内核不再负责：
+最终希望插件作者的心智模型是：
 
-1. 直接引用任何具体插件类型
-2. 直接调用任何插件单例
-3. 直接持有任何插件专属命名的数据模型
+```swift
+actor MyEditorPlugin: SuperPlugin {
+    nonisolated var providesEditorExtensions: Bool { true }
 
-## 目标状态
+    @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        // 常规补全 / hover / code action / toolbar 等
+    }
 
-目标架构是：
+    @MainActor func editorProjectContextCapability() -> (any SuperEditorProjectContextCapability)? { ... }
+    @MainActor func editorSemanticCapability() -> (any SuperEditorSemanticCapability)? { ... }
+    @MainActor func editorLanguageIntegrationCapabilities() -> [any SuperEditorLanguageIntegrationCapability] { ... }
+}
+```
 
-- `AgentEditorPlugin`
-  - 定义 `EditorExtensionRegistry`
-  - 定义编辑器扩展协议
-  - 定义项目上下文、语义可用性、语言服务初始化所需的通用协议
-- `LSPServiceEditorPlugin`
-  - 只依赖编辑器内核协议
-  - 不知道 `XcodeProjectEditorPlugin` 是否存在
-- `XcodeProjectEditorPlugin`
-  - 实现 Xcode 项目识别、build context、semantic preflight、workspace folders、initialization options
-  - 通过协议注册到内核
+也就是说：
+
+- 对插件作者公开的是 `SuperPlugin`
+- 对内核公开的是“高层能力函数”
+- registry / provider 只是内核拿来聚合插件能力的实现方式
 
 ## 当前问题
 
-目前还没有达到这个边界，主要耦合点如下：
+现在编辑器体系只做到了“一部分一致”。
+
+一致的地方：
+
+- `SuperPlugin` 已经定义了 `providesEditorExtensions`
+- 插件已经能通过 `registerEditorExtensions(into:)` 注入 editor 能力
+
+不一致的地方：
 
 1. `LSPServiceEditorPlugin` 直接依赖 `XcodeProjectContextBridge`
    - [LSPService.swift](/Users/colorfy/Code/CofficLab/Lumi/LumiApp/Plugins/LSPServiceEditorPlugin/LSPService.swift)
-   - 直接调用 `projectOpened`、`projectClosed`、`makeWorkspaceFolders`、`makeInitializationOptions`
 
-2. `AgentEditorPlugin` 直接依赖 Xcode 具体类型
+2. `AgentEditorPlugin` 直接依赖 Xcode 具体实现
    - [EditorState.swift](/Users/colorfy/Code/CofficLab/Lumi/LumiApp/Plugins/AgentEditorPlugin/Store/EditorState.swift)
    - [EditorState+LanguageActions.swift](/Users/colorfy/Code/CofficLab/Lumi/LumiApp/Plugins/AgentEditorPlugin/Store/EditorState+LanguageActions.swift)
    - [EditorRootView.swift](/Users/colorfy/Code/CofficLab/Lumi/LumiApp/Plugins/AgentEditorPlugin/Views/EditorRootView.swift)
 
-3. 内核状态模型带有 Xcode 专属命名
+3. 内核状态模型和流程里仍然带有 `Xcode*` 命名
    - `xcodeContextSnapshot`
-   - `refreshXcodeContextSnapshot`
+   - `XcodeSemanticAvailability`
    - `XcodeEditorContextSnapshot`
 
-4. 语义预检能力没有抽象成内核协议
-   - `XcodeSemanticAvailability`
-   - `XcodeLSPErrorTaxonomy`
+这意味着现在还是：
 
-这说明当前是“扩展点注册是插件式的”，但“项目上下文主链路仍然是内核知道 Xcode 插件实现”。
+- 插件入口抽象了
+- 运行时主链路还没有抽象
 
 ## 设计原则
 
-1. 内核只面向能力，不面向插件名
-2. 通用模型不使用 `Xcode*` 命名
-3. 一个能力一组协议，不把所有职责塞进一个大接口
-4. 插件可以缺席，内核照常工作
-5. 先加抽象层，再迁调用点，最后删旧入口
+1. `SuperPlugin` 是插件作者唯一需要理解的公开入口
+2. editor 能力要提升到高层语义，而不是让插件作者理解内核细节
+3. 内核只聚合能力，不认识插件名
+4. 能力缺席时内核必须自然退化
+5. 先做适配层，再迁主链路，最后删旧耦合
 
-## 核心抽象
+## 高层能力设计
 
-建议在 `AgentEditorPlugin` 内核层新增以下协议和模型。
+建议把 editor 能力收敛成三类高层能力函数，直接挂在 `SuperPlugin` 上。
 
-### 项目上下文
+### 1. 项目上下文能力
+
+职责：
+
+- 项目打开 / 关闭
+- 项目上下文重同步
+- 当前文件的项目上下文快照
+
+建议形态：
 
 ```swift
 @MainActor
-protocol EditorProjectContextProvider: AnyObject {
+protocol SuperEditorProjectContextCapability: AnyObject {
     var id: String { get }
+    var priority: Int { get }
+    func canHandleProject(at path: String?) -> Bool
     func projectOpened(at path: String) async
     func projectClosed()
     func resyncProjectContext() async
@@ -81,170 +99,194 @@ protocol EditorProjectContextProvider: AnyObject {
 }
 ```
 
+然后在 `SuperPlugin` 上新增：
+
 ```swift
-struct EditorProjectContextSnapshot: Equatable, Sendable {
-    let projectPath: String
-    let workspaceName: String
-    let workspacePath: String
-    let activeScheme: String?
-    let activeConfiguration: String?
-    let activeDestination: String?
-    let contextStatus: String
-    let isStructuredProject: Bool
-    let currentFilePath: String?
-    let currentFilePrimaryTarget: String?
-    let currentFileMatchedTargets: [String]
-    let currentFileIsInTarget: Bool
-}
+@MainActor func editorProjectContextCapability() -> (any SuperEditorProjectContextCapability)?
 ```
 
-### 语言服务项目集成
+### 2. 语义可用性能力
+
+职责：
+
+- 当前文件语义环境检查
+- preflight message / error
+- 语言能力不可用时的错误归类
+
+建议形态：
 
 ```swift
 @MainActor
-protocol EditorLanguageProjectIntegrationProvider: AnyObject {
+protocol SuperEditorSemanticCapability: AnyObject {
     var id: String { get }
-    func supports(languageId: String) -> Bool
-    func workspaceFolders(for languageId: String, projectPath: String) -> [EditorWorkspaceFolder]?
-    func initializationOptions(for languageId: String) -> [String: String]?
-}
-```
-
-### 语义可用性
-
-```swift
-@MainActor
-protocol EditorSemanticAvailabilityProvider: AnyObject {
-    var id: String { get }
+    var priority: Int { get }
+    func canHandle(uri: String?) -> Bool
     func inspectCurrentFileContext(uri: String?) -> EditorSemanticAvailabilityReport
-    func preflightMessage(
-        uri: String?,
-        operation: String,
-        symbolName: String?,
-        strength: EditorSemanticPreflightStrength
-    ) -> String?
-    func preflightError(
-        uri: String?,
-        operation: String,
-        symbolName: String?,
-        strength: EditorSemanticPreflightStrength
-    ) -> EditorLanguageFeatureError?
+    func preflightMessage(uri: String?, operation: String, symbolName: String?, strength: EditorSemanticPreflightStrength) -> String?
+    func preflightError(uri: String?, operation: String, symbolName: String?, strength: EditorSemanticPreflightStrength) -> EditorLanguageFeatureError?
 }
 ```
 
-### 内核注册中心
+然后在 `SuperPlugin` 上新增：
 
-建议给 `EditorExtensionRegistry` 或平级内核容器补这几类注册入口：
+```swift
+@MainActor func editorSemanticCapability() -> (any SuperEditorSemanticCapability)?
+```
 
-- `registerProjectContextProvider`
-- `registerLanguageProjectIntegrationProvider`
-- `registerSemanticAvailabilityProvider`
+### 3. 语言服务项目集成能力
 
-同时提供当前激活 provider 的解析策略：
+职责：
 
-1. 按 `languageId` / `projectPath` 过滤
-2. 多个 provider 时按 `priority` 或注册顺序选一个
-3. 没有 provider 时返回空能力
+- 为某种语言生成 workspace folders
+- 为某种语言生成 initialization options
+- 控制项目型语言服务如何接到 editor 内核
 
-## 分阶段方案
+建议形态：
 
-## Phase 1: 先定义内核协议和通用模型
+```swift
+@MainActor
+protocol SuperEditorLanguageIntegrationCapability: AnyObject {
+    var id: String { get }
+    var priority: Int { get }
+    func supports(languageId: String, projectPath: String?) -> Bool
+    func workspaceFolders(for languageId: String, projectPath: String) -> [EditorWorkspaceFolder]?
+    func initializationOptions(for languageId: String, projectPath: String) -> [String: String]?
+}
+```
 
-目标：先把边界定义出来，不急着迁实现。
+然后在 `SuperPlugin` 上新增：
 
-清单：
+```swift
+@MainActor func editorLanguageIntegrationCapabilities() -> [any SuperEditorLanguageIntegrationCapability]
+```
 
-- [x] 新增 `EditorProjectContextProvider`
-- [x] 新增 `EditorLanguageProjectIntegrationProvider`
-- [x] 新增 `EditorSemanticAvailabilityProvider`
-- [x] 新增 `EditorProjectContextSnapshot`
-- [x] 新增 `EditorWorkspaceFolder`
-- [x] 新增 `EditorLanguageFeatureError`
-- [x] 在内核注册中心增加对应 provider 注册入口
-- [x] 允许 provider 缺席时内核退化为 no-op
+## 内核应该怎么消费这些能力
 
-## Phase 2: 把 `LSPServiceEditorPlugin` 改成只依赖协议
+内核以后不该这样做：
 
-目标：先切掉语言服务层对 Xcode 具体实现的直接依赖。
+- 直接写 `XcodeProjectContextBridge.shared`
+- 直接写 `XcodeSemanticAvailability`
+- 直接写 `XcodeLSPErrorTaxonomy`
 
-清单：
+内核应该这样做：
 
-- [ ] `LSPService` 不再直接调用 `XcodeProjectContextBridge.shared`
-- [ ] `LSPService` 改为读取 `EditorLanguageProjectIntegrationProvider`
-- [ ] `projectOpened` / `projectClosed` 生命周期改为经由 `EditorProjectContextProvider`
-- [ ] `workspaceFolders` 生成改为经由协议
-- [ ] `initializationOptions` 生成改为经由协议
-- [ ] 确认没有 `Xcode*` 类型出现在 `LSPServiceEditorPlugin`
+1. 从所有已启用 `SuperPlugin` 中收集高层能力
+2. 按 `priority` 选择最匹配的能力实现
+3. 通过能力接口驱动 editor 内核行为
 
-## Phase 3: 把 `AgentEditorPlugin` 状态层改成通用命名
+也就是说，`EditorExtensionRegistry` 的角色会变成：
 
-目标：清掉内核状态模型里的 Xcode 专属命名和直接依赖。
+- 继续处理 completion / hover / code action / toolbar 这类 contributor 型能力
+- 额外作为内核内部的能力聚合缓存
+- 但它不再是插件作者需要直接理解的主要编程模型
 
-清单：
+## 重构阶段
 
-- [ ] `xcodeContextSnapshot` 重命名为通用上下文字段
-- [ ] `refreshXcodeContextSnapshot()` 改为通用刷新入口
-- [ ] `EditorRootView` 不再直接调用 `XcodeProjectContextBridge`
-- [ ] `EditorState+LanguageActions` 改为调用 `EditorSemanticAvailabilityProvider`
-- [ ] `EditorPanelState` 不再依赖 `XcodeSemanticAvailability.Reason`
-- [ ] 确认 `AgentEditorPlugin` 不再直接引用 `XcodeProjectContextBridge`
+## Phase 1: 定义高层能力模型
 
-## Phase 4: 让 `XcodeProjectEditorPlugin` 实现协议
-
-目标：把现有 Xcode 能力收敛成插件实现，而不是内核特例。
+目标：先把最终要暴露给 `SuperPlugin` 的高层能力形状定下来。
 
 清单：
 
-- [ ] `XcodeProjectContextBridge` 实现 `EditorProjectContextProvider`
-- [ ] Xcode build context / workspace folders 适配到 `EditorLanguageProjectIntegrationProvider`
-- [ ] `XcodeSemanticAvailability` 适配到 `EditorSemanticAvailabilityProvider`
-- [ ] `XcodeLSPErrorTaxonomy` 输出适配到通用 `EditorLanguageFeatureError`
-- [ ] `XcodeProjectEditorPlugin` 在注册阶段完成这些 provider 注入
+- [x] 定义 `EditorProjectContextCapability`
+- [x] 定义 `EditorSemanticCapability`
+- [x] 定义 `EditorLanguageIntegrationCapability`
+- [x] 定义通用模型：`EditorProjectContextSnapshot`
+- [x] 定义通用模型：`EditorWorkspaceFolder`
+- [x] 定义通用模型：`EditorLanguageFeatureError`
+- [x] 在 `SuperPlugin` 上新增对应高层能力函数
+- [x] 给这些函数补默认空实现
 
-## Phase 5: 删除旧耦合入口
+## Phase 2: 用内核内部适配层承接能力
 
-目标：完成收尾，防止未来回流耦合。
+目标：让内核先能从 `SuperPlugin` 聚合能力，但不要求插件作者立刻全部迁移。
 
 清单：
 
-- [ ] 删除内核中残留的 `Xcode*` 直接引用
-- [ ] 禁止新的插件专属类型进入 `AgentEditorPlugin`
-- [ ] 为内核协议层补单元测试
-- [ ] 为“无项目集成插件”场景补回归测试
-- [ ] 为“Xcode 插件存在”场景补集成测试
+- [x] `EditorPluginManager` 在安装插件时收集高层能力
+- [x] `EditorExtensionRegistry` 内部支持缓存这些能力
+- [x] `EditorExtensionRegistry` 提供统一的能力解析入口
+- [x] 保留现有 registry contributor 机制不动
+- [x] 明确 registry 是内核内部机制，不作为长期对外主模型
 
-## 实施顺序建议
+## Phase 3: 让 `LSPServiceEditorPlugin` 只依赖高层能力
 
-建议按下面顺序推进：
+目标：先切掉最关键的主链路耦合。
 
-1. 先做 Phase 1
-2. 再做 Phase 2
-3. 然后做 Phase 3
-4. 再做 Phase 4
-5. 最后做 Phase 5
+清单：
 
-这样做的原因是：
+- [x] `LSPService` 不再直接调用 `XcodeProjectContextBridge`
+- [x] `projectOpened` / `projectClosed` 改走 `EditorProjectContextCapability`
+- [x] `workspaceFolders` 改走 `EditorLanguageIntegrationCapability`
+- [x] `initializationOptions` 改走 `EditorLanguageIntegrationCapability`
+- [x] `LSPServiceEditorPlugin` 中不再出现 `Xcode*` 直接引用
 
-- 先稳定协议，再迁调用点，风险最小
-- `LSPService` 是最关键的解耦点，应先脱离 Xcode 具体实现
-- `EditorState` 的命名和状态迁移会更大，放在第二波更安全
+## Phase 4: 让 `AgentEditorPlugin` 只依赖高层能力
+
+目标：把 editor 状态层从 Xcode 具体实现里抽出来。
+
+清单：
+
+- [x] `EditorState` 使用通用项目上下文快照
+- [x] `EditorRootView` 不再直接调用 `XcodeProjectContextBridge`
+- [x] `EditorState+LanguageActions` 改走 `SuperEditorSemanticCapability`
+- [x] `EditorPanelState` 不再直接依赖 Xcode 语义 reason 类型
+- [x] 内核中移除 `xcodeContextSnapshot` 这类专有命名
+
+## Phase 5: 让 `XcodeProjectEditorPlugin` 只做实现
+
+目标：把 Xcode 插件收敛成纯实现方。
+
+清单：
+
+- [x] `XcodeProjectEditorPlugin` 返回 `editorProjectContextCapability()`
+- [x] `XcodeProjectEditorPlugin` 返回 `editorSemanticCapability()`
+- [x] `XcodeProjectEditorPlugin` 返回 `editorLanguageIntegrationCapabilities()`
+- [x] `XcodeProjectContextBridge` 从“全局入口”退化成插件内部实现细节
+- [x] `XcodeSemanticAvailability` / `XcodeLSPErrorTaxonomy` 只作为插件内部实现
+
+## Phase 6: 清理过渡层
+
+目标：让插件作者真正只需要看 `SuperPlugin`。
+
+清单：
+
+- [ ] 清理不再需要直接暴露的 provider 型接口
+- [ ] 保留必须存在的内核内部适配层，但不鼓励插件直接使用
+- [ ] 更新 editor 插件开发文档，只以 `SuperPlugin` 为入口讲解
+- [ ] 写一个最小示例插件，证明只实现 `SuperPlugin` 就能接 editor 能力
+
+## 迁移策略
+
+这轮重构建议采用“双轨迁移”：
+
+1. 先在 `SuperPlugin` 上加高层能力函数
+2. 内核内部暂时仍可用适配层承接旧实现
+3. `XcodeProjectEditorPlugin` 先通过适配器把现有 bridge / semantic / build context 包起来
+4. 等主链路都切完，再删旧直接耦合
+
+这样做的好处是：
+
+- 不会一次性打碎现有 editor 能力
+- 能边迁移边保持构建通过
+- 能避免为了追求“纯”而在中途停机
 
 ## 完成标准
 
-满足以下条件，才算这个内核重构完成：
+只有满足下面条件，才算这轮 editor 内核重构真正完成：
 
-1. `AgentEditorPlugin` 和 `LSPServiceEditorPlugin` 中不再出现对 `XcodeProjectEditorPlugin` 具体类型的直接引用
-2. 内核层不再出现 `Xcode*` 命名的公共状态模型
-3. 移除 `XcodeProjectEditorPlugin` 后，编辑器仍能正常运行，只是没有 Xcode 项目增强能力
-4. 加回 `XcodeProjectEditorPlugin` 后，Xcode 项目能力通过协议恢复
+1. 插件作者扩展 editor 时，只需要看 `SuperPlugin`
+2. `AgentEditorPlugin` 和 `LSPServiceEditorPlugin` 中不再直接引用任何 `Xcode*` 具体实现
+3. 去掉 `XcodeProjectEditorPlugin` 后，editor 内核仍可正常运行，只是失去 Xcode 项目增强能力
+4. `XcodeProjectEditorPlugin` 加回后，只通过 `SuperPlugin` 高层能力函数恢复能力
 
-## 暂不处理
+## 当前状态
 
-本轮内核重构先不处理以下问题：
+已经完成的只是过渡地基，不是最终形态：
 
-- [ ] `Cmd+Click` 真实工程可用性细节
-- [ ] scheme switch 具体行为优化
-- [ ] sourcekit-lsp 失败恢复细节
-- [ ] Xcode 项目功能继续扩展
-
-这些都应放在内核边界清理完成后，再专注推进插件实现。
+- [x] 已新增一批通用协议和模型，作为过渡层
+- [x] `EditorExtensionRegistry` 已能注册这类能力
+- [x] 高层 editor 能力已经正式收敛到 `SuperPlugin`
+- [x] `LSPServiceEditorPlugin` 和 `AgentEditorPlugin` 主链路已从 `Xcode*` 直接依赖里迁出
+- [x] editor 子插件层的直接 `Xcode*` 依赖也已收口到通用能力
+下一步应该进入 Phase 6，清理剩余过渡层并补一份只面向 `SuperPlugin` 的最小开发示例。
