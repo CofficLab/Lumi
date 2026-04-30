@@ -28,7 +28,6 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 该面板不需要右侧栏
-    nonisolated var panelNeedsSidebar: Bool { false }
 
     @MainActor func addPanelView() -> AnyView? {
         AnyView(DockerImagesView())

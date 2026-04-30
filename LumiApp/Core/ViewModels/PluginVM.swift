@@ -41,8 +41,6 @@ final class PluginVM: ObservableObject, SuperLog {
         let title: String
         let icon: String
         let view: AnyView
-        /// 该面板是否需要右侧栏
-        let panelNeedsSidebar: Bool
         
         static func == (lhs: PanelItem, rhs: PanelItem) -> Bool {
             lhs.id == rhs.id
@@ -481,8 +479,7 @@ final class PluginVM: ObservableObject, SuperLog {
                     id: plugin.instanceLabel,
                     title: pluginType.displayName,
                     icon: pluginType.iconName,
-                    view: view,
-                    panelNeedsSidebar: plugin.panelNeedsSidebar
+                    view: view
                 )
             }
     }

@@ -118,13 +118,6 @@ protocol SuperPlugin: Actor {
     /// 点击活动栏图标后，该视图会在左侧面板或中间栏中展示。
     @MainActor func addPanelView() -> AnyView?
 
-    /// 面板是否需要右侧栏
-    ///
-    /// 返回 true 表示该面板视图需要显示右侧栏（如 Agent 编辑器需要聊天栏）。
-    /// 返回 false 表示该面板视图不需要右侧栏。
-    /// 默认返回 false，只有 EditorPlugin 声明为 true。
-    nonisolated var panelNeedsSidebar: Bool { get }
-
     /// 添加右侧栏视图
     ///
     /// 提供一个在窗口右侧显示的侧边栏视图。多个插件提供的侧边栏视图

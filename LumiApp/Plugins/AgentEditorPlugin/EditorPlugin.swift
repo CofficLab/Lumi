@@ -42,5 +42,4 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     }
 
     /// 编辑器面板需要右侧栏（聊天）
-    nonisolated var panelNeedsSidebar: Bool { true }
 }

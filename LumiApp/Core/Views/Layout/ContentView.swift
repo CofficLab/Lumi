@@ -93,17 +93,7 @@ struct ContentView: View, SuperLog {
         .environment(\.windowState, windowState)
     }
 
-    // MARK: - Main Content
-
-    /// 当前选中的面板是否需要右侧栏
-    private var currentPanelNeedsSidebar: Bool {
-        let panelItems = pluginProvider.getPanelItems()
-        let selectedId = layoutVM.selectedAgentSidebarTabId
-        let selected = panelItems.first(where: { $0.id == selectedId }) ?? panelItems.first
-        return selected?.panelNeedsSidebar ?? true
-    }
-
-    /// 主内容区域：活动栏 + 面板 + 右侧栏（按当前面板需求动态显示）
+    /// 主内容区域：活动栏 + 面板 + 右侧栏（只要有插件提供右侧视图就显示）
     @ViewBuilder
     private var mainContent: some View {
         Group {
@@ -115,9 +105,8 @@ struct ContentView: View, SuperLog {
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
             } else {
                 let sidebarViews = pluginProvider.getSidebarViews()
-                let shouldShowSidebar = !sidebarViews.isEmpty && currentPanelNeedsSidebar
 
-                if shouldShowSidebar {
+                if !sidebarViews.isEmpty {
                     HSplitView {
                         // 图标栏（固定 48px）
                         ActivityBar()

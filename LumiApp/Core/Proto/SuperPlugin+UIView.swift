@@ -42,9 +42,6 @@ extension SuperPlugin {
     /// 默认实现：不提供面板视图
     @MainActor func addPanelView() -> AnyView? { nil }
 
-    /// 默认实现：面板不需要右侧栏
-    nonisolated var panelNeedsSidebar: Bool { false }
-
     /// 默认实现：不提供右侧栏视图
     @MainActor func addSidebarView() -> AnyView? { nil }
 
