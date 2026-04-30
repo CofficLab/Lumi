@@ -29,7 +29,7 @@ actor InputPlugin: SuperPlugin, SuperLog {
         }
     }
 
-    /// 该面板不需要右侧栏
+    
     
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {

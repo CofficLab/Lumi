@@ -28,7 +28,7 @@ actor AgentNewChatHeaderPlugin: SuperPlugin {
 
     /// 工具栏右侧：新建对话按钮
     @MainActor
-    func addToolBarTrailingView() -> AnyView? {
+    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(NewChatButton())
     }
 }

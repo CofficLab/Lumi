@@ -39,8 +39,9 @@ actor BreadcrumbPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 在工具栏前导位置显示面包屑导航（左：项目选择器 + 右：面包屑路径）
-    @MainActor func addToolBarCenterView() -> AnyView? {
-        AnyView(BreadcrumbToolBarView())
+    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(BreadcrumbToolBarView())
     }
 
     /// 根视图包裹：用于持久化最近项目列表和当前项目/文件

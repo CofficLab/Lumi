@@ -464,9 +464,10 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 工具栏前导视图数组
     func getToolbarLeadingViews() -> [AnyView] {
-        plugins
+        let activeIcon = activePanelIcon
+        return plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addToolBarLeadingView() }
+            .compactMap { $0.addToolBarLeadingView(activeIcon: activeIcon) }
     }
 
     /// 获取所有插件的工具栏中间视图
@@ -476,9 +477,10 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 工具栏中间视图数组
     func getToolbarCenterViews() -> [AnyView] {
-        plugins
+        let activeIcon = activePanelIcon
+        return plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addToolBarCenterView() }
+            .compactMap { $0.addToolBarCenterView(activeIcon: activeIcon) }
     }
 
     /// 获取所有插件的工具栏右侧视图
@@ -488,9 +490,10 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 工具栏右侧视图数组
     func getToolbarTrailingViews() -> [AnyView] {
-        plugins
+        let activeIcon = activePanelIcon
+        return plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addToolBarTrailingView() }
+            .compactMap { $0.addToolBarTrailingView(activeIcon: activeIcon) }
     }
 
     /// 获取所有面板图标项（用于左侧活动栏）

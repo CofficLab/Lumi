@@ -31,7 +31,7 @@ actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
 
     /// 工具栏右侧：可用工具按钮
     @MainActor
-    func addToolBarTrailingView() -> AnyView? {
+    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(AvailableToolsButton())
     }
 }

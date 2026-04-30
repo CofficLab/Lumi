@@ -32,7 +32,7 @@ actor AgentAutoApprovePlugin: SuperPlugin, SuperLog {
 
     /// 工具栏右侧：自动批准开关
     @MainActor
-    func addToolBarTrailingView() -> AnyView? {
+    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(AutoApproveToggle())
     }
 }

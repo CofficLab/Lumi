@@ -28,7 +28,7 @@ actor AgentLanguagePlugin: SuperPlugin {
 
     /// 工具栏右侧：语言选择器
     @MainActor
-    func addToolBarTrailingView() -> AnyView? {
+    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(LanguageSelector())
     }
 }

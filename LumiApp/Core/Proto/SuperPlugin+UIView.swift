@@ -31,13 +31,13 @@ extension SuperPlugin {
     }
 
     /// 默认实现：不提供工具栏前导视图
-    @MainActor func addToolBarLeadingView() -> AnyView? { nil }
+    @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView? { nil }
 
     /// 默认实现：不提供工具栏中间视图
-    @MainActor func addToolBarCenterView() -> AnyView? { nil }
+    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView? { nil }
 
     /// 默认实现：不提供工具栏右侧视图
-    @MainActor func addToolBarTrailingView() -> AnyView? { nil }
+    @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView? { nil }
 
     /// 默认实现：不提供面板图标（使用插件默认 iconName）
     nonisolated func addPanelIcon() -> String? { nil }

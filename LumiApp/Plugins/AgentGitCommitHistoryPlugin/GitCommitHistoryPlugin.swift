@@ -30,8 +30,6 @@ actor GitCommitHistoryPlugin: SuperPlugin {
         AnyView(GitCommitHistoryRootOverlay(content: content()))
     }
 
-    /// 该面板不需要右侧栏
-
     /// 统一面板视图：左侧历史列表 + 右侧详情
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {

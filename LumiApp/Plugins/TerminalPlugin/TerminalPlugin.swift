@@ -29,7 +29,7 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     
     // MARK: - UI
 
-    /// 该面板不需要右侧栏
+    
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {

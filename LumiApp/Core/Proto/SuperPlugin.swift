@@ -103,13 +103,16 @@ protocol SuperPlugin: Actor {
     @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View
 
     /// 添加工具栏前导视图
-    @MainActor func addToolBarLeadingView() -> AnyView?
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
+    @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView?
 
     /// 添加工具栏中间视图
-    @MainActor func addToolBarCenterView() -> AnyView?
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
+    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView?
 
     /// 添加工具栏右侧视图
-    @MainActor func addToolBarTrailingView() -> AnyView?
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
+    @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView?
 
     /// 提供面板图标（SF Symbol 名称）
     ///

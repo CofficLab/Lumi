@@ -1,6 +1,6 @@
 import MagicKit
-import SwiftUI
 import os
+import SwiftUI
 
 actor ClipboardManagerPlugin: SuperPlugin {
     /// 插件专用 Logger
@@ -18,8 +18,8 @@ actor ClipboardManagerPlugin: SuperPlugin {
     nonisolated static let isConfigurable: Bool = true
 
     static let shared = ClipboardManagerPlugin()
-    nonisolated private static let settingsStore = ClipboardManagerPluginLocalStore.shared
-    nonisolated private static let monitoringKey = "ClipboardMonitoringEnabled"
+    private nonisolated static let settingsStore = ClipboardManagerPluginLocalStore.shared
+    private nonisolated static let monitoringKey = "ClipboardMonitoringEnabled"
 
     // MARK: - Lifecycle
 
@@ -46,8 +46,6 @@ actor ClipboardManagerPlugin: SuperPlugin {
     }
 
     // MARK: - UI
-
-    /// 该面板不需要右侧栏
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {

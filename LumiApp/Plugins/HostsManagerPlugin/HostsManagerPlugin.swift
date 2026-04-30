@@ -25,7 +25,7 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 该面板不需要右侧栏
+    
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {

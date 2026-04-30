@@ -29,7 +29,7 @@ actor XcodeProjectEditorPlugin: SuperPlugin {
     }
     
     /// 在工具栏显示 Xcode 项目状态
-    @MainActor func addToolBarLeadingView() -> AnyView? {
+    @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView? {
         return AnyView(XcodeProjectStatusBar())
     }
 
