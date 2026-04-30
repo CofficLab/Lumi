@@ -13,6 +13,7 @@ class CPUManagerViewModel: ObservableObject {
     @Published var cpuUsage: Double = 0.0
     @Published var perCoreUsage: [Double] = []
     @Published var loadAverage: [Double] = [0, 0, 0]
+    @Published var topProcesses: [ProcessMetric] = []
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -25,6 +26,7 @@ class CPUManagerViewModel: ObservableObject {
     deinit {
         Task { @MainActor in
             CPUService.shared.stopMonitoring()
+            ProcessService.shared.stopMonitoring()
         }
     }
     
@@ -32,7 +34,8 @@ class CPUManagerViewModel: ObservableObject {
     
     func startMonitoring() {
         CPUService.shared.startMonitoring()
-        
+        ProcessService.shared.startMonitoring()
+
         Publishers.CombineLatest3(
             CPUService.shared.$cpuUsage,
             CPUService.shared.$perCoreUsage,
@@ -45,6 +48,10 @@ class CPUManagerViewModel: ObservableObject {
             self?.loadAverage = load
         }
         .store(in: &cancellables)
+
+        ProcessService.shared.$topProcesses
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$topProcesses)
     }
     
     // MARK: - Computed Properties
