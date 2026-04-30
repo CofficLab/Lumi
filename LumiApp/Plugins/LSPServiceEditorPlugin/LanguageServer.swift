@@ -21,6 +21,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     private(set) var documentContents: [String: String] = [:]
     private(set) var semanticTokenMap: SemanticTokenMap?
     private var eventTask: Task<Void, Never>?
+    private let documentStateLock = NSLock()
     var onPublishDiagnostics: ((PublishDiagnosticsParams) -> Void)?
     var onProgressUpdate: ((String, LanguageServerProtocol.LSPAny?) -> Void)?
     
@@ -214,23 +215,47 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     }
     
     // MARK: - Document Lifecycle
+
+    private func withDocumentState<T>(
+        _ body: (_ openDocuments: inout [String: Int], _ documentContents: inout [String: String]) -> T
+    ) -> T {
+        documentStateLock.lock()
+        defer { documentStateLock.unlock() }
+        return body(&openDocuments, &documentContents)
+    }
     
     func openDocument(uri: String, languageId: String, text: String, version: Int = 0) async throws {
-        guard !openDocuments.keys.contains(uri) else { return }
-        openDocuments[uri] = version
-        documentContents[uri] = text
+        let shouldOpen = withDocumentState { openDocuments, documentContents in
+            guard openDocuments[uri] == nil else { return false }
+            openDocuments[uri] = version
+            documentContents[uri] = text
+            return true
+        }
+        guard shouldOpen else { return }
         
         let doc = TextDocumentItem(uri: uri, languageId: languageId, version: version, text: text)
-        try await server.textDocumentDidOpen(DidOpenTextDocumentParams(textDocument: doc))
+        do {
+            try await server.textDocumentDidOpen(DidOpenTextDocumentParams(textDocument: doc))
+        } catch {
+            withDocumentState { openDocuments, documentContents in
+                openDocuments.removeValue(forKey: uri)
+                documentContents.removeValue(forKey: uri)
+            }
+            throw error
+        }
         if LSPService.verbose {
             LSPService.logger.debug("\(Self.t)已打开: \(uri)")
         }
     }
     
     func closeDocument(uri: String) async throws {
-        guard openDocuments.keys.contains(uri) else { return }
-        openDocuments.removeValue(forKey: uri)
-        documentContents.removeValue(forKey: uri)
+        let shouldClose = withDocumentState { openDocuments, documentContents in
+            guard openDocuments[uri] != nil else { return false }
+            openDocuments.removeValue(forKey: uri)
+            documentContents.removeValue(forKey: uri)
+            return true
+        }
+        guard shouldClose else { return }
         
         try await server.textDocumentDidClose(DidCloseTextDocumentParams(textDocument: TextDocumentIdentifier(uri: uri)))
         if LSPService.verbose {
@@ -239,10 +264,14 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     }
     
     func documentDidChange(uri: String, text: String, version explicitVersion: Int? = nil) async throws {
-        guard let currentVersion = openDocuments[uri] else { return }
-        let newVersion = explicitVersion ?? (currentVersion + 1)
-        openDocuments[uri] = newVersion
-        documentContents[uri] = text
+        let newVersion: Int? = withDocumentState { openDocuments, documentContents in
+            guard let currentVersion = openDocuments[uri] else { return nil }
+            let newVersion = explicitVersion ?? (currentVersion + 1)
+            openDocuments[uri] = newVersion
+            documentContents[uri] = text
+            return newVersion
+        }
+        guard let newVersion else { return }
         
         let event = TextDocumentContentChangeEvent(range: nil, rangeLength: nil, text: text)
         let params = DidChangeTextDocumentParams(
@@ -259,11 +288,31 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     
     func documentDidChange(uri: String, changes: [DocumentChange], fullText: String?, version explicitVersion: Int? = nil) async throws {
         guard !changes.isEmpty else { return }
-        guard let currentVersion = openDocuments[uri] else { return }
         
         let syncKind = resolveDocumentSyncKind()
-        let newVersion = explicitVersion ?? (currentVersion + 1)
-        openDocuments[uri] = newVersion
+        let snapshot: (Int, String?, String?)? = withDocumentState { openDocuments, documentContents in
+            guard let currentVersion = openDocuments[uri] else { return nil }
+            let newVersion = explicitVersion ?? (currentVersion + 1)
+            let existingContent = documentContents[uri]
+            let textToStore: String?
+
+            switch syncKind {
+            case .incremental:
+                textToStore = applyChanges(changes, to: existingContent) ?? fullText
+            case .full:
+                textToStore = fullText ?? existingContent.flatMap { applyChanges(changes, to: $0) }
+            case .none:
+                textToStore = existingContent
+            }
+
+            openDocuments[uri] = newVersion
+            if let textToStore {
+                documentContents[uri] = textToStore
+            }
+
+            return (newVersion, existingContent, textToStore)
+        }
+        guard let (newVersion, existingContent, storedText) = snapshot else { return }
         
         switch syncKind {
         case .incremental:
@@ -276,21 +325,15 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
                     contentChanges: events
                 )
             )
-            if let content = applyChanges(changes, to: documentContents[uri]) {
-                documentContents[uri] = content
-            } else if let fullText {
-                documentContents[uri] = fullText
-            }
         case .full:
             let textToSend: String
-            if let fullText {
-                textToSend = fullText
-            } else if let existing = documentContents[uri], let updated = applyChanges(changes, to: existing) {
+            if let storedText {
+                textToSend = storedText
+            } else if let existingContent, let updated = applyChanges(changes, to: existingContent) {
                 textToSend = updated
             } else {
                 return
             }
-            documentContents[uri] = textToSend
             let event = TextDocumentContentChangeEvent(range: nil, rangeLength: nil, text: textToSend)
             try await server.textDocumentDidChange(
                 DidChangeTextDocumentParams(
