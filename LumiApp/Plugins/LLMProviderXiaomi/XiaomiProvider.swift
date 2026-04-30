@@ -22,14 +22,14 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     static let defaultModel = "mimo-v2.5-pro"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "mimo-v2.5-pro", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "mimo-v2.5", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "mimo-v2-pro", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "mimo-v2-omni", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "mimo-v2.5-tts", spec: .init(contextWindowSize: 32_768, supportsVision: false, supportsTools: false)),
-        .init(id: "mimo-v2.5-tts-voiceclone", spec: .init(contextWindowSize: 32_768, supportsVision: false, supportsTools: false)),
-        .init(id: "mimo-v2.5-tts-voicedesign", spec: .init(contextWindowSize: 32_768, supportsVision: false, supportsTools: false)),
-        .init(id: "mimo-v2-tts", spec: .init(contextWindowSize: 32_768, supportsVision: false, supportsTools: false)),
+        .init(id: "mimo-v2.5-pro", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "mimo-v2.5", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "mimo-v2-pro", spec: .init(contextWindowSize: 1_000_000, supportsVision: false, supportsTools: true)),
+        .init(id: "mimo-v2-omni", spec: .init(contextWindowSize: 256_000, supportsVision: true, supportsTools: true)),
+        .init(id: "mimo-v2.5-tts", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
+        .init(id: "mimo-v2.5-tts-voiceclone", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
+        .init(id: "mimo-v2.5-tts-voicedesign", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
+        .init(id: "mimo-v2-tts", spec: .init(contextWindowSize: 8_000, supportsVision: false, supportsTools: false)),
     ]
 
     // MARK: - SuperLLMProvider
