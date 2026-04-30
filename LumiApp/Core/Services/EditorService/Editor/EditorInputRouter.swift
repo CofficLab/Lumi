@@ -3,9 +3,12 @@ import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
+import os
 
 @MainActor
 final class EditorInputRouter {
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.input-router")
+
     func handleTextDidChange(
         state: EditorState?,
         controller: TextViewController,
@@ -14,7 +17,7 @@ final class EditorInputRouter {
         bridge: TextViewBridge
     ) {
         if state == nil {
-            EditorPlugin.logger.warning("\(EditorState.t)Coordinator 已被释放，state 为 nil")
+            logger.warning("\(EditorState.t)Coordinator 已被释放，state 为 nil")
         }
         if !shouldSuppressReconciliation {
             state?.notifyContentChanged(fromTextViewString: currentText)

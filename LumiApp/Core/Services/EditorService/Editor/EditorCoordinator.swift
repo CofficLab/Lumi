@@ -10,11 +10,14 @@ import os
 /// 监听 CodeEditSourceEditor 的文本与焦点事件，通知 EditorState 更新脏状态并在失焦时保存
 final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked Sendable {
     /// 弱引用状态管理器
+    nonisolated static let verbose = false
+
     private weak var state: EditorState?
     private weak var textViewController: TextViewController?
     private var endEditingObserver: NSObjectProtocol?
     private let bridge = TextViewBridge()
     private let inputRouter = EditorInputRouter()
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.coordinator")
     /// 跳转定义代理（由外部注入）
     weak var jumpDelegate: EditorJumpToDefinitionDelegate?
     
@@ -39,8 +42,8 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked
     nonisolated func textViewDidChangeText(controller: TextViewController) {
         let payload = MainActor.assumeIsolated {
             let currentText = controller.textView?.string ?? ""
-            if EditorPlugin.verbose {
-                EditorPlugin.logger.info("\(EditorState.t)文本变更: state=\(self.state != nil), 长度=\(controller.textView?.string.count ?? -1)")
+            if Self.verbose {
+                logger.info("\(EditorState.t)文本变更: state=\(self.state != nil), 长度=\(controller.textView?.string.count ?? -1)")
             }
             return (
                 state: state,
@@ -84,8 +87,8 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked
     
     nonisolated func destroy() {
         MainActor.assumeIsolated {
-            if EditorPlugin.verbose {
-                EditorPlugin.logger.info("\(EditorState.t)Coordinator 销毁: state=\(self.state != nil)")
+            if Self.verbose {
+                logger.info("\(EditorState.t)Coordinator 销毁: state=\(self.state != nil)")
             }
             bridge.teardown(
                 state: &state,

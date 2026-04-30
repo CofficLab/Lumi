@@ -23,6 +23,8 @@ import MagicKit
 @preconcurrency
 final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDelegate, SuperLog {
     nonisolated static let emoji = "🔗"
+    nonisolated static let verbose = false
+    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.jump-to-definition")
     
     weak var treeSitterClient: TreeSitterClient?
     weak var textStorage: NSTextStorage?
@@ -49,8 +51,8 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             return nil
         }
         
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(self.t)跳转到定义: '\(word)' 位置=\(range.location)")
+        if Self.verbose {
+            logger.debug("\(self.t)跳转到定义: '\(word)' 位置=\(range.location)")
         }
 
         if let includeLink = findXCConfigIncludeLink(forRange: range, content: content) {
@@ -68,8 +70,8 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             content: content
         ) {
             guard requestGeneration.isCurrent(generation) else { return nil }
-            if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(self.t)LSP 匹配: '\(word)'")
+            if Self.verbose {
+                logger.debug("\(self.t)LSP 匹配: '\(word)'")
             }
             return [link]
         }
@@ -83,8 +85,8 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             ) {
                 guard requestGeneration.isCurrent(generation) else { return nil }
                 let position = CursorPosition(range: definitionRange)
-                if EditorPlugin.verbose {
-                    EditorPlugin.logger.debug("\(self.t)AST 匹配: '\(word)' -> \(definitionRange.location)")
+                if Self.verbose {
+                    logger.debug("\(self.t)AST 匹配: '\(word)' -> \(definitionRange.location)")
                 }
                 return [createLink(for: word, targetRange: position, content: content)]
             }
@@ -97,23 +99,23 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             ) {
                 guard requestGeneration.isCurrent(generation) else { return nil }
                 let position = CursorPosition(range: fallbackRange)
-                if EditorPlugin.verbose {
-                    EditorPlugin.logger.debug("\(self.t)正则匹配: '\(word)' -> \(fallbackRange.location)")
+                if Self.verbose {
+                    logger.debug("\(self.t)正则匹配: '\(word)' -> \(fallbackRange.location)")
                 }
                 return [createLink(for: word, targetRange: position, content: content)]
             }
         }
         
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(self.t)未找到定义: '\(word)'")
+        if Self.verbose {
+            logger.debug("\(self.t)未找到定义: '\(word)'")
         }
         return nil
     }
     
     /// 打开链接（本地跳转由引擎自动处理，这里仅记录日志）
     func openLink(link: JumpToDefinitionLink) {
-        if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(self.t)打开链接: \(link.label) -> \(link.url?.absoluteString ?? "本地")")
+        if Self.verbose {
+            logger.debug("\(self.t)打开链接: \(link.label) -> \(link.url?.absoluteString ?? "本地")")
         }
         guard let url = link.url else { return }
         onOpenExternalDefinition?(url, link.targetRange)
@@ -422,16 +424,16 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         content: String
     ) async -> JumpToDefinitionLink? {
         guard let lspClient else {
-            EditorPlugin.logger.warning("\(self.t)LSP 跳转取消: lspClient 不存在, kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public)")
+            logger.warning("\(self.t)LSP 跳转取消: lspClient 不存在, kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public)")
             return nil
         }
 
         guard let lspPosition = Self.lspPosition(utf16Offset: cursorRange.location, in: content) else {
-            EditorPlugin.logger.warning("\(self.t)LSP 跳转取消: 无法换算 LSP 位置, kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), range=\(cursorRange.location)-\(cursorRange.length)")
+            logger.warning("\(self.t)LSP 跳转取消: 无法换算 LSP 位置, kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), range=\(cursorRange.location)-\(cursorRange.length)")
             return nil
         }
         let currentURI = currentFileURLProvider?()?.absoluteString
-        EditorPlugin.logger.info(
+        logger.info(
             "\(self.t)LSP 跳转请求: kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), currentURI=\(currentURI ?? "<nil>", privacy: .public), utf16Offset=\(cursorRange.location), lspLine=\(lspPosition.line), lspCharacter=\(lspPosition.character)"
         )
 
@@ -460,12 +462,12 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         }
 
         guard let location else {
-            EditorPlugin.logger.warning(
+            logger.warning(
                 "\(self.t)LSP 跳转无结果: kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), currentURI=\(currentURI ?? "<nil>", privacy: .public), lspLine=\(lspPosition.line), lspCharacter=\(lspPosition.character)"
             )
             return nil
         }
-        EditorPlugin.logger.info(
+        logger.info(
             "\(self.t)LSP 跳转命中: kind=\(String(describing: kind), privacy: .public), word=\(word, privacy: .public), targetURI=\(location.uri, privacy: .public), start=\(location.range.start.line):\(location.range.start.character), end=\(location.range.end.line):\(location.range.end.character)"
         )
 
@@ -544,8 +546,8 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
                 }
             }
         } catch {
-            if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(self.t)AST 查询失败: \(error)")
+            if Self.verbose {
+                logger.debug("\(self.t)AST 查询失败: \(error.localizedDescription, privacy: .public)")
             }
         }
         

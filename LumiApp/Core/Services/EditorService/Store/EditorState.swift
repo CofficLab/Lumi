@@ -1009,7 +1009,7 @@ final class EditorState: ObservableObject, SuperLog {
     func clearMouseHover() {
         guard panelState.hasActiveHover else { return }
         if Self.verbose {
-            EditorPlugin.logger.debug("\(Self.t)🚫 清除鼠标悬停")
+            logger.debug("\(Self.t)🚫 清除鼠标悬停")
         }
         panelController.clearMouseHover()
         syncActiveSessionState()
@@ -1727,7 +1727,7 @@ final class EditorState: ObservableObject, SuperLog {
                         let languageId = self.detectedLanguage?.id.rawValue ?? self.lspActionController.languageID(for: self.fileExtension)
                         if let languageId {
                             let rootPath = self.projectRootPath ?? loadingURL.deletingLastPathComponent().path
-                            EditorPlugin.logger.info(
+                            self.logger.info(
                                 "\(Self.t)LSP openFile 准备: file=\(loadingURL.path, privacy: .public), languageId=\(languageId, privacy: .public), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), chosenRoot=\(rootPath, privacy: .public)"
                             )
                             self.lspClient.setProjectRootPath(rootPath)
@@ -2523,7 +2523,7 @@ final class EditorState: ObservableObject, SuperLog {
             selections: multiCursorState.all,
             note: note
         )
-        EditorPlugin.logger.info("[UI] | ✏️ 编辑器状态 | 多光标状态 | \(message, privacy: .public)")
+        logger.info("[UI] | ✏️ 编辑器状态 | 多光标状态 | \(message, privacy: .public)")
     }
 
     func logMultiCursorInput(action: String, textViewSelections: [NSRange], note: String? = nil) {
@@ -2532,7 +2532,7 @@ final class EditorState: ObservableObject, SuperLog {
             textViewSelections: textViewSelections,
             note: note
         )
-        EditorPlugin.logger.info("[UI] | ✏️ 编辑器状态 | 多光标输入 | \(details, privacy: .public)")
+        logger.info("[UI] | ✏️ 编辑器状态 | 多光标输入 | \(details, privacy: .public)")
         logMultiCursorState(action: "input-state-sync", note: action)
     }
 
