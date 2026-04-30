@@ -93,6 +93,8 @@ final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var viewportRenderLineRange: Range<Int> = 0..<0
     private let runtimeModeController = EditorRuntimeModeController()
     private let commandController = EditorCommandController()
+    private let quickOpenController = EditorQuickOpenController()
+    let peekController = EditorPeekController()
     private let settingsQuickOpenController = EditorSettingsQuickOpenController()
     let saveController = EditorSaveController()
     let externalFileController = EditorExternalFileController()
@@ -843,6 +845,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 当前 LSP Hover 文本（光标移动触发，已废弃，保留兼容）
     @Published private(set) var hoverText: String?
+    @Published var currentPeekPresentation: EditorPeekPresentation?
 
     /// 鼠标悬停 Hover 内容（Markdown 格式）
     @Published private(set) var mouseHoverContent: String?
@@ -1327,10 +1330,60 @@ final class EditorState: ObservableObject, SuperLog {
         editorExtensions.statusItemSuggestions(state: self)
     }
 
-    func editorQuickOpenItems(matching query: String) async -> [EditorQuickOpenItemSuggestion] {
-        let builtinItems = settingsQuickOpenController.suggestions(matching: query)
-        let extensionItems = await editorExtensions.quickOpenSuggestions(matching: query, state: self)
-        return builtinItems + extensionItems
+    func quickOpenQuery(for rawQuery: String) -> EditorQuickOpenQuery {
+        quickOpenController.parse(rawQuery)
+    }
+
+    func editorQuickOpenItems(
+        matching query: String,
+        openEditors: [EditorOpenEditorItem],
+        onOpenFile: @escaping (URL, CursorPosition?, Bool) -> Void
+    ) async -> [EditorQuickOpenItemSuggestion] {
+        let resolvedQuery = quickOpenQuery(for: query)
+
+        switch resolvedQuery.scope {
+        case .files:
+            let fileItems = quickOpenController.fileSuggestions(
+                for: resolvedQuery,
+                context: EditorQuickOpenFileContext(
+                    projectRootPath: projectRootPath,
+                    currentFileURL: currentFileURL
+                ),
+                openEditors: openEditors,
+                onOpenFile: onOpenFile
+            )
+            let settingsItems = resolvedQuery.searchText.isEmpty
+                ? []
+                : settingsQuickOpenController.suggestions(matching: resolvedQuery.searchText)
+            return fileItems + settingsItems
+
+        case .documentSymbols:
+            return quickOpenController.documentSymbolSuggestions(
+                for: resolvedQuery,
+                symbols: documentSymbolProvider.symbols,
+                onOpenSymbol: { [weak self] symbol in
+                    self?.performOpenItem(.documentSymbol(symbol))
+                }
+            )
+
+        case .workspaceSymbols:
+            return await editorExtensions.quickOpenSuggestions(
+                matching: resolvedQuery.searchText,
+                state: self
+            )
+
+        case .line:
+            return quickOpenController.lineSuggestions(
+                for: resolvedQuery,
+                currentFileURL: currentFileURL,
+                fileName: fileName,
+                relativeFilePath: relativeFilePath,
+                onOpenFile: onOpenFile
+            )
+
+        case .commands:
+            return []
+        }
     }
 
     // MARK: - Config Persistence
@@ -1819,6 +1872,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 执行导航请求并在目标文件/位置落点
     func performNavigation(_ request: EditorNavigationRequest) {
+        dismissPeek()
         let resolved = EditorNavigationController.resolve(request)
         loadFile(from: resolved.url)
         Task { @MainActor [weak self] in
@@ -1908,6 +1962,7 @@ final class EditorState: ObservableObject, SuperLog {
             fileExtension = ""
             fileName = ""
             hasUnsavedChanges = false
+            currentPeekPresentation = nil
             saveState = .idle
             detectedLanguage = nil
             largeFileMode = .normal

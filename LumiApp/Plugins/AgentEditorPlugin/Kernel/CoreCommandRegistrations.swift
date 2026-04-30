@@ -104,6 +104,18 @@ enum CoreCommandRegistrations {
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.peek-references",
+            title: String(localized: "Peek References", table: "LumiEditor"),
+            icon: "arrow.triangle.branch",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 515
+        ) {
+            Task { @MainActor in
+                await state.showPeekReferencesFromCurrentCursor()
+            }
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
             id: "builtin.rename-symbol",
             title: String(localized: "Rename Symbol", table: "LumiEditor"),
             icon: "pencil",
@@ -112,6 +124,18 @@ enum CoreCommandRegistrations {
             order: 520
         ) {
             state.promptRenameSymbol()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.peek-definition",
+            title: String(localized: "Peek Definition", table: "LumiEditor"),
+            icon: "arrow.turn.down.right",
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 525
+        ) {
+            Task { @MainActor in
+                await state.showPeekDefinitionFromCurrentCursor()
+            }
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(

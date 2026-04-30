@@ -1,6 +1,7 @@
 import MagicKit
 import SwiftUI
 import Combine
+import CodeEditSourceEditor
 import UniformTypeIdentifiers
 
 /// 编辑器主视图（根入口）
@@ -262,7 +263,11 @@ struct EditorRootView: View {
                 onDismiss: { _ in isCommandPalettePresented = false },
                 content: { state in
                     AnyView(
-                        EditorCommandPaletteView(state: state) {
+                        EditorCommandPaletteView(
+                            state: state,
+                            openEditors: openEditorItems,
+                            onOpenFile: openFileFromQuickOpen
+                        ) {
                             isCommandPalettePresented = false
                         }
                     )
@@ -1004,6 +1009,16 @@ struct EditorRootView: View {
             sessionID: item.sessionID,
             preferredGroupID: item.groupID
         )
+    }
+
+    private func openFileFromQuickOpen(
+        _ url: URL,
+        target: CursorPosition?,
+        highlightLine: Bool
+    ) {
+        openOrActivateSession(for: url)
+        guard let target else { return }
+        state.performNavigation(.definition(url, target, highlightLine: highlightLine))
     }
 
     private func activateSessionIntent(

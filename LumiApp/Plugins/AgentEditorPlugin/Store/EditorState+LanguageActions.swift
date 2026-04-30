@@ -4,6 +4,57 @@ import LanguageServerProtocol
 
 @MainActor
 extension EditorState {
+    func dismissPeek() {
+        currentPeekPresentation = nil
+    }
+
+    func openPeekItem(_ item: EditorPeekItem) {
+        performNavigation(item.navigationRequest)
+        dismissPeek()
+    }
+
+    func showPeekDefinitionFromCurrentCursor() async {
+        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "Peek Definition") {
+            showStatusToast(preflightMessage, level: .warning, duration: 2.4)
+            return
+        }
+        let position = currentLSPPosition()
+        guard let location = await lspCoordinator.requestDefinition(line: position.line, character: position.character),
+              let presentation = peekController.buildDefinitionPresentation(
+                location: location,
+                currentFileURL: currentFileURL,
+                projectRootPath: projectRootPath,
+                currentContent: content?.string
+              ) else {
+            dismissPeek()
+            showStatusToast("No definition found", level: .info)
+            return
+        }
+        currentPeekPresentation = presentation
+    }
+
+    func showPeekReferencesFromCurrentCursor() async {
+        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "Peek References") {
+            showStatusToast(preflightMessage, level: .warning, duration: 2.4)
+            return
+        }
+        let position = currentLSPPosition()
+        let locations = await lspCoordinator.requestReferences(line: position.line, character: position.character)
+        let presentation = peekController.buildReferencesPresentation(
+            locations: locations,
+            currentFileURL: currentFileURL,
+            relativeFilePath: relativeFilePath,
+            projectRootPath: projectRootPath,
+            currentContent: content?.string
+        )
+        guard !presentation.items.isEmpty else {
+            dismissPeek()
+            showStatusToast("No references found", level: .info)
+            return
+        }
+        currentPeekPresentation = presentation
+    }
+
     func showReferencesFromCurrentCursor() async {
         if let preflightMessage = xcodeLanguagePreflightMessage(operation: "查找引用") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)

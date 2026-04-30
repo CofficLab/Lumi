@@ -884,9 +884,9 @@ UI / 扩展层的具体验证命令、压力场景和记录模板，统一见 [E
 
 ### 清单
 
-- [ ] P0. `Quick Open` 仍未补齐 VS Code 的 `file / symbol / line / command` 一体化语法与排序策略
+- [x] P0. `Quick Open` 仍未补齐 VS Code 的 `file / symbol / line / command` 一体化语法与排序策略
   当前更像“command palette + 若干 section 拼接”，缺少 `@`、`#`、`:`、最近文件权重、同名文件 disambiguation 这类高频肌肉记忆入口。
-- [ ] P0. `Peek` 体验缺失，definition / references 仍以跳转或底部 panel 为主
+- [x] P0. `Peek` 体验缺失，definition / references 仍以跳转或底部 panel 为主
   VS Code 常用的 peek definition / peek references 能减少上下文切换；当前只能在跳转和面板之间选，编辑流会被打断。
 - [ ] P0. `Rename` 仍缺少更完整的 in-place flow
   现在请求链和事务是通的，但还缺少更接近 VS Code 的 inline rename 输入框、批量影响预期反馈、失败回退提示和多文件 rename 的可视确认。

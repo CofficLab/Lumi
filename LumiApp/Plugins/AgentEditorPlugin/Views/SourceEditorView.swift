@@ -109,6 +109,7 @@ struct SourceEditorView: View, SuperLog {
             .onChange(of: state.currentFileURL) { _, _ in
                 updateConfigCache()
                 isCodeActionPanelExpanded = false
+                state.dismissPeek()
                 state.refreshFoldingRanges()
             }
     }
@@ -156,6 +157,9 @@ struct SourceEditorView: View, SuperLog {
                     hoverPreview(in: proxy.size)
                 }
             }
+            .overlay(alignment: .bottomTrailing) {
+                peekOverlay
+            }
             .overlay(alignment: .topTrailing) {
                 foldingSummaryOverlay
             }
@@ -172,6 +176,20 @@ struct SourceEditorView: View, SuperLog {
     }
     
     // MARK: - Overlays
+
+    @ViewBuilder
+    private var peekOverlay: some View {
+        if let presentation = state.currentPeekPresentation {
+            EditorPeekOverlayView(state: state, presentation: presentation)
+                .padding(.trailing, 14)
+                .padding(.bottom, 38)
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .bottom)),
+                    removal: .opacity
+                ))
+                .animation(.easeOut(duration: 0.16), value: presentation)
+        }
+    }
 
     @ViewBuilder
     private var signatureHelpOverlay: some View {

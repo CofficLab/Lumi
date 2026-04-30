@@ -1,8 +1,11 @@
 import SwiftUI
 import MagicKit
+import CodeEditSourceEditor
 
 struct EditorCommandPaletteView: View {
     @ObservedObject var state: EditorState
+    let openEditors: [EditorOpenEditorItem]
+    let onOpenFile: (URL, CursorPosition?, Bool) -> Void
     let onDismiss: () -> Void
 
     @State private var query = ""
@@ -69,7 +72,7 @@ struct EditorCommandPaletteView: View {
             }
 
             TextField(
-                String(localized: "Search commands", table: "LumiEditor"),
+                String(localized: "Quick Open: files, @symbols, #workspace, :line, >commands", table: "LumiEditor"),
                 text: $query
             )
             .textFieldStyle(.roundedBorder)
@@ -78,7 +81,9 @@ struct EditorCommandPaletteView: View {
                 executeSelectedItem()
             }
 
-            categoryFilterStrip
+            if shouldShowCategoryFilter {
+                categoryFilterStrip
+            }
         }
         .padding(14)
     }
@@ -241,7 +246,7 @@ struct EditorCommandPaletteView: View {
                 .font(.system(size: 24, weight: .thin))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
 
-            Text(String(localized: "No Matching Commands", table: "LumiEditor"))
+            Text(String(localized: "No Matching Results", table: "LumiEditor"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(AppUI.Color.semantic.textSecondary)
         }
@@ -249,26 +254,39 @@ struct EditorCommandPaletteView: View {
         .padding(.vertical, 40)
     }
 
+    private var quickOpenQuery: EditorQuickOpenQuery {
+        state.quickOpenQuery(for: query)
+    }
+
+    private var shouldShowCategoryFilter: Bool {
+        quickOpenQuery.scope == .commands || !quickOpenQuery.hasExplicitScope
+    }
+
     private var commandSections: [EditorCommandSection] {
-        presentationModel.sections
+        shouldShowCommandResults ? presentationModel.sections : []
     }
 
     private var recentCommands: [EditorCommandSuggestion] {
-        presentationModel.recentCommands
+        shouldShowCommandResults ? presentationModel.recentCommands : []
     }
 
     private var frequentCommands: [EditorCommandSuggestion] {
-        presentationModel.frequentCommands
+        shouldShowCommandResults ? presentationModel.frequentCommands : []
     }
 
     private var presentationModel: EditorCommandPresentationModel {
+        let commandQuery = quickOpenQuery.scope == .commands ? quickOpenQuery.searchText : query
         if let selectedCategory {
             return state.editorCommandPresentationModel(
                 categories: [selectedCategory],
-                matching: query
+                matching: commandQuery
             )
         }
-        return state.editorCommandPresentationModel(matching: query)
+        return state.editorCommandPresentationModel(matching: commandQuery)
+    }
+
+    private var shouldShowCommandResults: Bool {
+        quickOpenQuery.scope == .commands || !quickOpenQuery.hasExplicitScope
     }
 
     private var quickOpenSections: [QuickOpenSection] {
@@ -514,16 +532,21 @@ struct EditorCommandPaletteView: View {
     private func refreshQuickOpenItems() {
         quickOpenRefreshTask?.cancel()
 
-        guard selectedCategory == nil else {
+        guard selectedCategory == nil || quickOpenQuery.hasExplicitScope else {
             quickOpenItems = []
             return
         }
 
         let currentQuery = query
+        let currentOpenEditors = openEditors
         quickOpenRefreshTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(180))
             guard !Task.isCancelled else { return }
-            quickOpenItems = await state.editorQuickOpenItems(matching: currentQuery)
+            quickOpenItems = await state.editorQuickOpenItems(
+                matching: currentQuery,
+                openEditors: currentOpenEditors,
+                onOpenFile: onOpenFile
+            )
             normalizeSelection()
         }
     }

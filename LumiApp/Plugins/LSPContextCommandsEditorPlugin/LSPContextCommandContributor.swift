@@ -38,6 +38,19 @@ final class LSPContextCommandContributor: EditorCommandContributor {
                 }
             ),
             .init(
+                id: "builtin.peek-definition",
+                title: String(localized: "Peek Definition", table: "LumiEditor"),
+                systemImage: "arrow.turn.down.right",
+                category: EditorCommandCategory.navigation.rawValue,
+                order: 25,
+                isEnabled: state.canPreview,
+                action: {
+                    Task { @MainActor in
+                        await state.showPeekDefinitionFromCurrentCursor()
+                    }
+                }
+            ),
+            .init(
                 id: "builtin.go-to-declaration",
                 title: String(localized: "Go to Declaration", table: "LSPContextCommandsEditor"),
                 systemImage: "doc.badge.plus",
@@ -86,6 +99,19 @@ final class LSPContextCommandContributor: EditorCommandContributor {
                 action: {
                     Task { @MainActor in
                         await state.showReferencesFromCurrentCursor()
+                    }
+                }
+            ),
+            .init(
+                id: "builtin.peek-references",
+                title: String(localized: "Peek References", table: "LumiEditor"),
+                systemImage: "arrow.triangle.branch",
+                category: EditorCommandCategory.navigation.rawValue,
+                order: 65,
+                isEnabled: state.canPreview,
+                action: {
+                    Task { @MainActor in
+                        await state.showPeekReferencesFromCurrentCursor()
                     }
                 }
             ),
