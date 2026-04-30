@@ -46,4 +46,15 @@ enum XcodeSemanticAvailability {
         }
         return XcodeLSPErrorClassifier.userMessage(for: error, operation: operation)
     }
+
+    static func missingResultMessage(
+        uri: String?,
+        operation: String,
+        symbolName: String? = nil
+    ) -> String? {
+        let context = LSPErrorContext(uri: uri, symbolName: symbolName, operation: operation)
+        let classified = XcodeLSPErrorClassifier.classifyMissingResult(context: context)
+        guard classified != .symbolNotFound else { return nil }
+        return XcodeLSPErrorClassifier.userMessage(for: classified, operation: operation)
+    }
 }

@@ -306,19 +306,11 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
 
     @MainActor
     private func navigationFailureMessage(kind: LSPNavigationKind, symbolName: String) -> String {
-        guard let currentURI = currentFileURLProvider?()?.absoluteString else {
-            return kind.toastNotFound
-        }
-        let context = LSPErrorContext(
-            uri: currentURI,
-            symbolName: symbolName,
-            operation: operationName(for: kind)
-        )
-        let classified = XcodeLSPErrorClassifier.classifyMissingResult(context: context)
-        guard classified != .symbolNotFound else {
-            return kind.toastNotFound
-        }
-        return XcodeLSPErrorClassifier.userMessage(for: classified, operation: operationName(for: kind))
+        XcodeSemanticAvailability.missingResultMessage(
+            uri: currentFileURLProvider?()?.absoluteString,
+            operation: operationName(for: kind),
+            symbolName: symbolName
+        ) ?? kind.toastNotFound
     }
 
     @MainActor
