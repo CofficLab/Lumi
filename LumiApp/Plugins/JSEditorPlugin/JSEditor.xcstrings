@@ -1,0 +1,40 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "JS/TS Editor" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JS/TS Editor"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JS/TS 编辑器"
+          }
+        }
+      }
+    },
+    "JavaScript and TypeScript project support: package.json parsing, tsconfig resolution, and script execution." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JavaScript and TypeScript project support: package.json parsing, tsconfig resolution, and script execution."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JavaScript 和 TypeScript 项目支持：package.json 解析、tsconfig 路径映射和脚本执行。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
