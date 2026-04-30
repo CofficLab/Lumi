@@ -9,10 +9,10 @@
             "value" : "FlyMux"
           }
         },
-        "zh" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FlyMux"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FlyMux"
           }
         }
       }
@@ -25,10 +25,10 @@
             "value" : "AI API Gateway by flymux.com"
           }
         },
-        "zh" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "flymux.com 提供的 AI API 网关"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "flymux.com 提供的 AI API 网关"
           }
         }
       }
