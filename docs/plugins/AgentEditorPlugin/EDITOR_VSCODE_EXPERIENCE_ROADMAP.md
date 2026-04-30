@@ -844,15 +844,15 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 ### 清单
 
 - [x] editor 专属设置页（字体、tab size、wrap、minimap、folding、line numbers、render whitespace）
-- [ ] settings search 与 command palette / quick open 联动
-- [ ] command palette 支持最近命令、常用命令、分类记忆
-- [ ] 欢迎或空状态页补 editor 功能 discoverability
-- [ ] 保存冲突、外部修改、格式化失败、LSP 不可用等状态提示文案统一
-- [ ] 语言特定设置覆盖策略（global / workspace / language override）
+- [x] settings search 与 command palette / quick open 联动
+- [x] command palette 支持最近命令、常用命令、分类记忆
+- [x] 欢迎或空状态页补 editor 功能 discoverability
+- [x] 保存冲突、外部修改、格式化失败、LSP 不可用等状态提示文案统一
+- [x] 语言特定设置覆盖策略（global / workspace / language override）
 - [x] 插件贡献设置项的统一注册与展示
-- [ ] “用例驱动”的 UI 回归手册（打开文件、查找、rename、split、quick fix、restore）
-- [ ] UI / 扩展层 smoke tests 命令清单写回文档
-- [ ] 梳理与 VS Code 仍有明显差距的前 10 项体验缺口，并按优先级排序
+- [x] “用例驱动”的 UI 回归手册（打开文件、查找、rename、split、quick fix、restore）
+- [x] UI / 扩展层 smoke tests 命令清单写回文档
+- [x] 梳理与 VS Code 仍有明显差距的前 10 项体验缺口，并按优先级排序
 
 UI / 扩展层的具体验证命令、压力场景和记录模板，统一见 [EDITOR_STRESS_PLAYBOOK.md](/Users/colorfy/Code/CofficLab/Lumi/docs/plugins/AgentEditorPlugin/EDITOR_STRESS_PLAYBOOK.md:1)。
 
@@ -863,3 +863,44 @@ UI / 扩展层的具体验证命令、压力场景和记录模板，统一见 [E
 3. 2-way / 3-way split 切换与 unsplit
 4. 多光标高频编辑
 5. LSP 快速切换下的 stale rejection
+
+## Phase 19: Remaining VS Code Parity Gaps
+
+### 目标
+
+把“已经能用”的 editor 进一步推进到“默认工作流不露怯”，优先补齐仍然最影响真实日用体验的差距。
+
+### 任务
+
+1. 按真实工作流而不是按模块罗列剩余缺口
+2. 给每项缺口分配优先级，避免后续实现顺序失真
+3. 只保留会直接影响 editor 主工作流的差距，不把更大 workbench 范围的问题混进来
+
+### 验收
+
+1. 团队能清楚知道“下一步为什么做这几项，而不是别的”
+2. 每个缺口都能映射到具体的用户动作和可观察症状
+3. 后续 phase 能直接从这份优先级表里摘任务，不需要重新盘点
+
+### 清单
+
+- [ ] P0. `Quick Open` 仍未补齐 VS Code 的 `file / symbol / line / command` 一体化语法与排序策略
+  当前更像“command palette + 若干 section 拼接”，缺少 `@`、`#`、`:`、最近文件权重、同名文件 disambiguation 这类高频肌肉记忆入口。
+- [ ] P0. `Peek` 体验缺失，definition / references 仍以跳转或底部 panel 为主
+  VS Code 常用的 peek definition / peek references 能减少上下文切换；当前只能在跳转和面板之间选，编辑流会被打断。
+- [ ] P0. `Rename` 仍缺少更完整的 in-place flow
+  现在请求链和事务是通的，但还缺少更接近 VS Code 的 inline rename 输入框、批量影响预期反馈、失败回退提示和多文件 rename 的可视确认。
+- [ ] P0. `Code Action / Quick Fix` 仍未覆盖更完整的 keyboard-first 体验
+  lightbulb 和 panel 已统一，但还缺少更强的键盘直达路径、自动聚焦策略、preferred action 语义，以及与 diagnostics / cursor 移动联动的更稳切换。
+- [ ] P1. `Search in Files / Search Editor` 能力缺失
+  当前只补齐了当前 editor 内 find/replace，没有 VS Code 那种跨文件搜索、结果树、search editor、批量替换确认流。
+- [ ] P1. `Folding` 仍缺少持久化、层级命令与更完整的摘要策略
+  折叠 affordance 和 summary 已有，但还没有稳定的 fold state restore、按层级折叠/展开、按 selection 或 symbol 范围折叠。
+- [ ] P1. `Sticky Scroll / 更强 breadcrumb-symbol 联动` 缺失
+  breadcrumb 已有，但 VS Code 式的 sticky scroll 和当前 symbol 跟踪仍缺位，长文件中定位上下文的成本偏高。
+- [ ] P1. `Gutter / diff / source control decoration` 只完成了 contract，未接入真实工作流
+  现在只是把 lane、优先级和 custom marker contract 搭起来了，真实的 git diff add/modify/delete 标记、点击跳转、hover 摘要还没形成闭环。
+- [ ] P2. `Snippet / tabstop / placeholder navigation` 不完整
+  completion、多光标和输入事务已经稳定很多，但还缺少 VS Code 常见的 snippet placeholder 跳转、linked editing、tabstop 退出语义。
+- [ ] P2. `Context key / when-clause` 体系仍偏轻量
+  贡献点 enablement 已有，但离 VS Code 那种统一的 context key、menu location、when-clause 组合规则还有距离，复杂扩展接入时表达力仍不足。

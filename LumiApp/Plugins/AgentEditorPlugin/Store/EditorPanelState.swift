@@ -97,6 +97,19 @@ final class EditorPanelState: ObservableObject {
         mouseHoverContent?.isEmpty == false || mouseHoverSymbolRect != .zero
     }
 
+    var visibleBottomPanels: [EditorBottomPanelKind] {
+        var panels: [EditorBottomPanelKind] = []
+        if isProblemsPanelPresented { panels.append(.problems) }
+        if isReferencePanelPresented { panels.append(.references) }
+        if isWorkspaceSymbolSearchPresented { panels.append(.workspaceSymbols) }
+        if isCallHierarchyPresented { panels.append(.callHierarchy) }
+        return panels
+    }
+
+    var activeBottomPanel: EditorBottomPanelKind? {
+        visibleBottomPanels.last
+    }
+
     // MARK: - 便捷方法
 
     /// 设置鼠标悬停状态

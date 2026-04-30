@@ -1,6 +1,96 @@
 import Foundation
 import CoreGraphics
 
+struct EditorConfigContext: Equatable {
+    var workspacePath: String?
+    var languageId: String?
+
+    var normalizedWorkspacePath: String? {
+        Self.normalizePath(workspacePath)
+    }
+
+    var normalizedLanguageId: String? {
+        Self.normalizeLanguageId(languageId)
+    }
+
+    static func normalizePath(_ path: String?) -> String? {
+        guard let trimmed = path?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: trimmed).standardizedFileURL.path
+    }
+
+    static func normalizeLanguageId(_ languageId: String?) -> String? {
+        guard let trimmed = languageId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed.lowercased()
+    }
+}
+
+enum EditorConfigOverrideScope: Equatable {
+    case workspace(String)
+    case language(String)
+
+    var normalizedKey: String {
+        switch self {
+        case let .workspace(path):
+            return EditorConfigContext.normalizePath(path) ?? path
+        case let .language(languageId):
+            return EditorConfigContext.normalizeLanguageId(languageId) ?? languageId.lowercased()
+        }
+    }
+}
+
+struct EditorScopedOverrideSnapshot: Equatable {
+    var tabWidth: Int?
+    var useSpaces: Bool?
+    var wrapLines: Bool?
+    var formatOnSave: Bool?
+
+    var isEmpty: Bool {
+        tabWidth == nil &&
+        useSpaces == nil &&
+        wrapLines == nil &&
+        formatOnSave == nil
+    }
+
+    func applying(to snapshot: EditorConfigSnapshot) -> EditorConfigSnapshot {
+        var resolved = snapshot
+        if let tabWidth { resolved.tabWidth = tabWidth }
+        if let useSpaces { resolved.useSpaces = useSpaces }
+        if let wrapLines { resolved.wrapLines = wrapLines }
+        if let formatOnSave { resolved.formatOnSave = formatOnSave }
+        return resolved
+    }
+
+    static func from(dictionary: [String: Any]) -> EditorScopedOverrideSnapshot {
+        EditorScopedOverrideSnapshot(
+            tabWidth: dictionary["tabWidth"] as? Int,
+            useSpaces: dictionary["useSpaces"] as? Bool,
+            wrapLines: dictionary["wrapLines"] as? Bool,
+            formatOnSave: dictionary["formatOnSave"] as? Bool
+        )
+    }
+
+    var dictionaryRepresentation: [String: Any] {
+        var dictionary: [String: Any] = [:]
+        if let tabWidth { dictionary["tabWidth"] = tabWidth }
+        if let useSpaces { dictionary["useSpaces"] = useSpaces }
+        if let wrapLines { dictionary["wrapLines"] = wrapLines }
+        if let formatOnSave { dictionary["formatOnSave"] = formatOnSave }
+        return dictionary
+    }
+}
+
+struct EditorScopedConfigSnapshot: Equatable {
+    var global: EditorConfigSnapshot
+    var workspaceOverrides: [String: EditorScopedOverrideSnapshot]
+    var languageOverrides: [String: EditorScopedOverrideSnapshot]
+}
+
 struct EditorConfigSnapshot: Equatable {
     var fontSize: Double
     var tabWidth: Int
@@ -20,6 +110,8 @@ struct EditorConfigSnapshot: Equatable {
 
 @MainActor
 final class EditorConfigController {
+    private let scopedOverridesKey = "scopedOverrides.v1"
+
     func restoreConfig(
         clampedSidePanelWidth: (Double) -> CGFloat
     ) -> EditorConfigSnapshot {
@@ -65,6 +157,40 @@ final class EditorConfigController {
         return snapshot
     }
 
+    func restoreScopedConfig(
+        clampedSidePanelWidth: (Double) -> CGFloat
+    ) -> EditorScopedConfigSnapshot {
+        let global = restoreConfig(clampedSidePanelWidth: clampedSidePanelWidth)
+        let rawScopes = EditorConfigStore.loadDictionary(forKey: scopedOverridesKey) ?? [:]
+        let workspaceOverrides = decodeOverrideMap(rawScopes["workspace"] as? [String: Any])
+        let languageOverrides = decodeOverrideMap(rawScopes["language"] as? [String: Any])
+        return EditorScopedConfigSnapshot(
+            global: global,
+            workspaceOverrides: workspaceOverrides,
+            languageOverrides: languageOverrides
+        )
+    }
+
+    func resolveConfig(
+        for context: EditorConfigContext,
+        clampedSidePanelWidth: (Double) -> CGFloat
+    ) -> EditorConfigSnapshot {
+        let scoped = restoreScopedConfig(clampedSidePanelWidth: clampedSidePanelWidth)
+        var resolved = scoped.global
+
+        if let workspacePath = context.normalizedWorkspacePath,
+           let workspaceOverride = scoped.workspaceOverrides[workspacePath] {
+            resolved = workspaceOverride.applying(to: resolved)
+        }
+
+        if let languageId = context.normalizedLanguageId,
+           let languageOverride = scoped.languageOverrides[languageId] {
+            resolved = languageOverride.applying(to: resolved)
+        }
+
+        return resolved
+    }
+
     func persistConfig(_ snapshot: EditorConfigSnapshot) {
         EditorConfigStore.saveValue(snapshot.fontSize, forKey: EditorConfigStore.fontSizeKey)
         EditorConfigStore.saveValue(snapshot.tabWidth, forKey: EditorConfigStore.tabWidthKey)
@@ -80,6 +206,44 @@ final class EditorConfigController {
         EditorConfigStore.saveValue(snapshot.showFoldingRibbon, forKey: EditorConfigStore.showFoldingRibbonKey)
         EditorConfigStore.saveValue(snapshot.currentThemeId, forKey: EditorConfigStore.themeNameKey)
         EditorConfigStore.saveValue(snapshot.sidePanelWidth, forKey: EditorConfigStore.sidePanelWidthKey)
+    }
+
+    func overrideSnapshot(
+        for scope: EditorConfigOverrideScope,
+        clampedSidePanelWidth: (Double) -> CGFloat
+    ) -> EditorScopedOverrideSnapshot {
+        let scoped = restoreScopedConfig(clampedSidePanelWidth: clampedSidePanelWidth)
+        switch scope {
+        case let .workspace(path):
+            return scoped.workspaceOverrides[EditorConfigContext.normalizePath(path) ?? path] ?? EditorScopedOverrideSnapshot()
+        case let .language(languageId):
+            return scoped.languageOverrides[EditorConfigContext.normalizeLanguageId(languageId) ?? languageId.lowercased()] ?? EditorScopedOverrideSnapshot()
+        }
+    }
+
+    func persistOverrideSnapshot(
+        _ overrideSnapshot: EditorScopedOverrideSnapshot,
+        for scope: EditorConfigOverrideScope,
+        clampedSidePanelWidth: (Double) -> CGFloat
+    ) {
+        var scoped = restoreScopedConfig(clampedSidePanelWidth: clampedSidePanelWidth)
+        switch scope {
+        case let .workspace(path):
+            let normalized = EditorConfigContext.normalizePath(path) ?? path
+            if overrideSnapshot.isEmpty {
+                scoped.workspaceOverrides.removeValue(forKey: normalized)
+            } else {
+                scoped.workspaceOverrides[normalized] = overrideSnapshot
+            }
+        case let .language(languageId):
+            let normalized = EditorConfigContext.normalizeLanguageId(languageId) ?? languageId.lowercased()
+            if overrideSnapshot.isEmpty {
+                scoped.languageOverrides.removeValue(forKey: normalized)
+            } else {
+                scoped.languageOverrides[normalized] = overrideSnapshot
+            }
+        }
+        persistScopedOverrides(scoped)
     }
 
     func observeThemeChanges(
@@ -107,6 +271,38 @@ final class EditorConfigController {
             Task { @MainActor in
                 applyResolvedThemeID(themeId, false)
             }
+        }
+    }
+
+    private func persistScopedOverrides(_ scopedSnapshot: EditorScopedConfigSnapshot) {
+        let workspaceOverrides = encodeOverrideMap(scopedSnapshot.workspaceOverrides)
+        let languageOverrides = encodeOverrideMap(scopedSnapshot.languageOverrides)
+        if workspaceOverrides.isEmpty && languageOverrides.isEmpty {
+            EditorConfigStore.removeValue(forKey: scopedOverridesKey)
+            return
+        }
+
+        EditorConfigStore.saveValue(
+            [
+                "workspace": workspaceOverrides,
+                "language": languageOverrides,
+            ],
+            forKey: scopedOverridesKey
+        )
+    }
+
+    private func decodeOverrideMap(_ raw: [String: Any]?) -> [String: EditorScopedOverrideSnapshot] {
+        guard let raw else { return [:] }
+        return raw.reduce(into: [:]) { partialResult, pair in
+            guard let dictionary = pair.value as? [String: Any] else { return }
+            partialResult[pair.key] = EditorScopedOverrideSnapshot.from(dictionary: dictionary)
+        }
+    }
+
+    private func encodeOverrideMap(_ overrides: [String: EditorScopedOverrideSnapshot]) -> [String: Any] {
+        overrides.reduce(into: [:]) { partialResult, pair in
+            guard !pair.value.isEmpty else { return }
+            partialResult[pair.key] = pair.value.dictionaryRepresentation
         }
     }
 }

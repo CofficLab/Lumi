@@ -315,19 +315,12 @@ struct SourceEditorView: View, SuperLog {
             }
 
             if let badgeText = decoration.badgeText {
-                let isBarShape: Bool
-                switch decoration.style.shape {
-                case .bar:
-                    isBarShape = true
-                case .circle, .roundedRect:
-                    isBarShape = false
-                }
                 Text(badgeText)
                     .font(.system(size: 7, weight: .bold))
                     .foregroundColor(decoration.style.foregroundColor)
                     .minimumScaleFactor(0.7)
                     .lineLimit(1)
-                    .padding(.horizontal, isBarShape ? 0 : 1)
+                    .padding(.horizontal, decoration.style.shape == .bar ? 0 : 1)
             } else if let symbolName = decoration.symbolName {
                 Image(systemName: symbolName)
                     .font(.system(size: 5.5, weight: .bold))

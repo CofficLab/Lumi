@@ -75,9 +75,9 @@ enum EditorGutterDecorationShape {
 }
 
 struct EditorGutterDecorationResolvedStyle {
-    let fillColor: Color
-    let strokeColor: Color
-    let foregroundColor: Color
+    let fillColor: SwiftUI.Color
+    let strokeColor: SwiftUI.Color
+    let foregroundColor: SwiftUI.Color
     let shape: EditorGutterDecorationShape
     let size: CGSize
     let cornerRadius: CGFloat
@@ -104,7 +104,7 @@ struct EditorGutterDecorationStyle {
             return EditorGutterDecorationResolvedStyle(
                 fillColor: AppUI.Color.semantic.error,
                 strokeColor: AppUI.Color.semantic.error.opacity(0.55),
-                foregroundColor: .white,
+                foregroundColor: SwiftUI.Color.white,
                 shape: .circle,
                 size: CGSize(width: size, height: size),
                 cornerRadius: size / 2
@@ -113,7 +113,7 @@ struct EditorGutterDecorationStyle {
             return EditorGutterDecorationResolvedStyle(
                 fillColor: AppUI.Color.semantic.warning,
                 strokeColor: AppUI.Color.semantic.warning.opacity(0.55),
-                foregroundColor: .white,
+                foregroundColor: SwiftUI.Color.white,
                 shape: .circle,
                 size: CGSize(width: size, height: size),
                 cornerRadius: size / 2
@@ -122,13 +122,13 @@ struct EditorGutterDecorationStyle {
             return EditorGutterDecorationResolvedStyle(
                 fillColor: AppUI.Color.semantic.info,
                 strokeColor: AppUI.Color.semantic.info.opacity(0.55),
-                foregroundColor: .white,
+                foregroundColor: SwiftUI.Color.white,
                 shape: .circle,
                 size: CGSize(width: size, height: size),
                 cornerRadius: size / 2
             )
         case .gitChange(let change):
-            let tone: Color
+            let tone: SwiftUI.Color
             switch change {
             case .added:
                 tone = AppUI.Color.semantic.success
@@ -140,13 +140,13 @@ struct EditorGutterDecorationStyle {
             return EditorGutterDecorationResolvedStyle(
                 fillColor: tone,
                 strokeColor: tone.opacity(0.55),
-                foregroundColor: .white,
+                foregroundColor: SwiftUI.Color.white,
                 shape: .bar,
                 size: CGSize(width: barWidth, height: size + 3),
                 cornerRadius: barWidth / 2
             )
         case .symbol(let kind):
-            let tint: Color
+            let tint: SwiftUI.Color
             switch kind {
             case .class, .struct, .interface, .enum, .namespace, .module:
                 tint = AppUI.Color.semantic.primary
@@ -164,7 +164,7 @@ struct EditorGutterDecorationStyle {
                 cornerRadius: 3
             )
         case .custom(_, let tone, _):
-            let tint: Color
+            let tint: SwiftUI.Color
             switch tone {
             case .neutral:
                 tint = AppUI.Color.semantic.textSecondary

@@ -80,9 +80,19 @@ enum EditorConfigStore {
         loadDict()[key] as? String
     }
 
+    static func loadDictionary(forKey key: String) -> [String: Any]? {
+        loadDict()[key] as? [String: Any]
+    }
+
     static func saveValue(_ value: Any, forKey key: String) {
         var dict = loadDict()
         dict[key] = value
+        saveDict(dict)
+    }
+
+    static func removeValue(forKey key: String) {
+        var dict = loadDict()
+        dict.removeValue(forKey: key)
         saveDict(dict)
     }
 

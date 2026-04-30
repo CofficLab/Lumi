@@ -58,7 +58,7 @@ struct EditorTabStripView: View {
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
-                .onDrop(of: [UTType.plainText]) { _ in
+                .onDrop(of: [.plainText], isTargeted: nil) { _ in
                     onDropBefore(nil)
                     return true
                 }
@@ -254,7 +254,7 @@ struct EditorTabStripView: View {
         } preview: {
             tabDragPreview(for: tab)
         }
-        .onDrop(of: [UTType.plainText]) { _ in
+        .onDrop(of: [.plainText], isTargeted: nil) { _ in
             onDropBefore(tab)
             return true
         }

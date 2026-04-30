@@ -25,7 +25,7 @@ final class EditorSaveStateController {
         scheduleSuccessClear: () -> Void,
         setSaveState: (EditorSaveState) -> Void
     ) {
-        setSaveState(.error(String(localized: "Save failed", table: "LumiEditor") + ": \(error.localizedDescription)"))
+        setSaveState(.error(EditorStatusMessageCatalog.saveFailed(error.localizedDescription)))
         syncSession()
         scheduleSuccessClear()
     }
@@ -34,7 +34,7 @@ final class EditorSaveStateController {
         scheduleSuccessClear: () -> Void,
         setSaveState: (EditorSaveState) -> Void
     ) {
-        setSaveState(.error(String(localized: "File not found", table: "LumiEditor")))
+        setSaveState(.error(EditorStatusMessageCatalog.fileNotFound()))
         scheduleSuccessClear()
     }
 }

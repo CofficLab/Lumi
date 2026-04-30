@@ -340,7 +340,7 @@ struct EditorToolbarView: View {
                 .foregroundColor(.orange)
                 .frame(width: 22, height: 22)
         }
-        .help("File changed on disk")
+        .help(state.saveState.label)
         .menuStyle(.borderlessButton)
         .frame(width: 22, height: 20)
         .fixedSize()

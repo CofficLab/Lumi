@@ -98,6 +98,10 @@ enum AppSettingStore {
 
     private static let settingsSelectionTypeKey = "App_SettingsSelectionType"
     private static let settingsSelectionValueKey = "App_SettingsSelectionValue"
+    private static let pendingEditorSettingsSearchQueryKey = "App_PendingEditorSettingsSearchQuery"
+    private static let editorRecentCommandIDsKey = "App_EditorRecentCommandIDs"
+    private static let editorCommandUsageCountsKey = "App_EditorCommandUsageCounts"
+    private static let editorCommandPaletteCategoryKey = "App_EditorCommandPaletteCategory"
 
     /// 加载设置界面的上次选中项
     /// - Returns: 元组 (类型，值)，类型为 "core" 或 "plugin"
@@ -122,6 +126,44 @@ enum AppSettingStore {
     static func clearSettingsSelection() {
         set(nil, forKey: settingsSelectionTypeKey)
         set(nil, forKey: settingsSelectionValueKey)
+    }
+
+    static func loadPendingEditorSettingsSearchQuery() -> String? {
+        object(forKey: pendingEditorSettingsSearchQueryKey) as? String
+    }
+
+    static func savePendingEditorSettingsSearchQuery(_ query: String?) {
+        set(query, forKey: pendingEditorSettingsSearchQueryKey)
+    }
+
+    static func consumePendingEditorSettingsSearchQuery() -> String? {
+        let query = loadPendingEditorSettingsSearchQuery()
+        savePendingEditorSettingsSearchQuery(nil)
+        return query
+    }
+
+    static func loadEditorRecentCommandIDs() -> [String] {
+        object(forKey: editorRecentCommandIDsKey) as? [String] ?? []
+    }
+
+    static func saveEditorRecentCommandIDs(_ ids: [String]) {
+        set(ids, forKey: editorRecentCommandIDsKey)
+    }
+
+    static func loadEditorCommandUsageCounts() -> [String: Int] {
+        object(forKey: editorCommandUsageCountsKey) as? [String: Int] ?? [:]
+    }
+
+    static func saveEditorCommandUsageCounts(_ counts: [String: Int]) {
+        set(counts, forKey: editorCommandUsageCountsKey)
+    }
+
+    static func loadEditorCommandPaletteCategory() -> String? {
+        object(forKey: editorCommandPaletteCategoryKey) as? String
+    }
+
+    static func saveEditorCommandPaletteCategory(_ rawValue: String?) {
+        set(rawValue, forKey: editorCommandPaletteCategoryKey)
     }
 
     // MARK: - Plugin Settings

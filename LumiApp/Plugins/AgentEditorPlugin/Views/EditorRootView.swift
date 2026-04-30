@@ -587,20 +587,290 @@ struct EditorRootView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "chevron.left.forwardslash.chevron.right")
-                .font(.system(size: 36, weight: .thin))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                discoverabilityHeroCard
 
-            Text(String(localized: "Code Editor", table: "LumiEditor"))
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                HStack(spacing: 12) {
+                    primaryDiscoverabilityAction(
+                        title: "Quick Open",
+                        subtitle: "在同一入口里搜文件、符号、设置与命令",
+                        systemImage: "magnifyingglass",
+                        accent: AppUI.Color.semantic.primary,
+                        action: { NotificationCenter.postLumiEditorShowCommandPalette() }
+                    )
 
-            Text(String(localized: "Select a file to start editing", table: "LumiEditor"))
-                .font(.system(size: 12))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    primaryDiscoverabilityAction(
+                        title: "编辑器设置",
+                        subtitle: "调整字体、tab size、wrap、minimap 与保存策略",
+                        systemImage: "slider.horizontal.3",
+                        accent: AppUI.Color.semantic.warning,
+                        action: openEditorSettings
+                    )
+                }
+
+                discoverabilitySection(
+                    title: "常用起点",
+                    subtitle: "第一次进入 editor 时，最常用的几条工作流入口。"
+                ) {
+                    VStack(spacing: 10) {
+                        discoverabilityActionRow(
+                            title: "Command Palette",
+                            subtitle: "执行 editor 命令，或直接搜到 settings / workspace symbols",
+                            shortcut: "⌘⇧P",
+                            systemImage: "command",
+                            action: { NotificationCenter.postLumiEditorShowCommandPalette() }
+                        )
+                        discoverabilityActionRow(
+                            title: "Workspace Symbols",
+                            subtitle: "跨文件跳转到工作区里的类型、函数和符号",
+                            shortcut: "⌘T",
+                            systemImage: "text.magnifyingglass",
+                            action: { state.performEditorCommand(id: "builtin.workspace-symbols") }
+                        )
+                        discoverabilityActionRow(
+                            title: "Open Editors",
+                            subtitle: "查看当前打开项、最近激活顺序和 group 分布",
+                            shortcut: "⌘B",
+                            systemImage: "sidebar.left",
+                            action: { state.performEditorCommand(id: "builtin.open-editors-panel") }
+                        )
+                    }
+                }
+
+                discoverabilitySection(
+                    title: "Workbench 能力",
+                    subtitle: "这些能力是当前 editor surface 和 VS Code 对齐最明显的部分。"
+                ) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        capabilityCard(
+                            title: "Split Editor",
+                            subtitle: "向右或向下分栏，适合对照阅读和多文件编辑。",
+                            systemImage: "rectangle.split.2x1",
+                            shortcut: "⌘\\",
+                            action: { NotificationCenter.postLumiEditorSplitRight() }
+                        )
+                        capabilityCard(
+                            title: "Outline",
+                            subtitle: "基于当前 session 的 document symbols，直接跳到函数或类型。",
+                            systemImage: "list.bullet.indent",
+                            shortcut: nil,
+                            action: { state.performPanelCommand(.toggleOutline) }
+                        )
+                        capabilityCard(
+                            title: "Find / Replace",
+                            subtitle: "支持当前匹配高亮、replace preview 与多结果导航。",
+                            systemImage: "text.magnifyingglass",
+                            shortcut: "⌘F",
+                            action: { state.performEditorCommand(id: "builtin.find") }
+                        )
+                        capabilityCard(
+                            title: "Session Restore",
+                            subtitle: "tab、split、最近关闭恢复、back-forward 都会保留工作台状态。",
+                            systemImage: "clock.arrow.circlepath",
+                            shortcut: nil,
+                            action: { state.performEditorCommand(id: "builtin.command-palette") }
+                        )
+                    }
+                }
+            }
+            .padding(28)
+            .frame(maxWidth: 920)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+    }
+
+    private var discoverabilityHeroCard: some View {
+        GlassCard(glowColor: AppUI.Color.semantic.primary.opacity(0.22), borderIntensity: 0.12) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Code Editor")
+                            .font(.system(size: 26, weight: .semibold))
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        Text("不需要读路线图，也能直接发现 editor 的主要入口、工作台能力和可调参数。")
+                            .font(.system(size: 13))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.left.forwardslash.chevron.right")
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundColor(AppUI.Color.semantic.primary)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(AppUI.Color.semantic.primary.opacity(0.12))
+                        )
+                }
+
+                HStack(spacing: 10) {
+                    quickHintChip("Open a file from the project tree")
+                    quickHintChip("Use Quick Open for files / symbols / settings")
+                    quickHintChip("Restore sessions and split workbench state")
+                }
+            }
+        }
+    }
+
+    private func primaryDiscoverabilityAction(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        accent: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            GlassCard(showShadow: false, glowColor: accent.opacity(0.18), borderIntensity: 0.1) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(accent)
+                            .frame(width: 34, height: 34)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(accent.opacity(0.12))
+                            )
+                        Spacer(minLength: 0)
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    }
+
+                    Text(title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func discoverabilitySection<Content: View>(
+        title: String,
+        subtitle: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        GlassCard(showShadow: false, borderIntensity: 0.08) {
+            VStack(alignment: .leading, spacing: 14) {
+                GlassSectionHeader(
+                    icon: "sparkles",
+                    title: title,
+                    subtitle: subtitle
+                )
+
+                GlassDivider()
+
+                content()
+            }
+        }
+    }
+
+    private func discoverabilityActionRow(
+        title: String,
+        subtitle: String,
+        shortcut: String?,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            GlassRow {
+                HStack(spacing: 12) {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(AppUI.Color.semantic.primary)
+                        .frame(width: 18)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(title)
+                            .font(AppUI.Typography.bodyEmphasized)
+                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        Text(subtitle)
+                            .font(AppUI.Typography.caption1)
+                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    }
+
+                    Spacer()
+
+                    if let shortcut {
+                        Text(shortcut)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(AppUI.Color.semantic.textTertiary.opacity(0.08))
+                            )
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func capabilityCard(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        shortcut: String?,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            GlassCard(showShadow: false, borderIntensity: 0.08) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(AppUI.Color.semantic.primary)
+                        Spacer(minLength: 0)
+                        if let shortcut {
+                            Text(shortcut)
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        }
+                    }
+
+                    Text(title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func quickHintChip(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(AppUI.Color.semantic.textTertiary.opacity(0.08))
+            )
+    }
+
+    private func openEditorSettings() {
+        AppSettingStore.saveSettingsSelection(type: "core", value: SettingTab.editor.rawValue)
+        AppSettingStore.savePendingEditorSettingsSearchQuery(nil)
+        NotificationCenter.postOpenSettings()
     }
 
     // MARK: - Unsupported File
@@ -1226,7 +1496,7 @@ struct EditorGroupView: View {
         .onTapGesture {
             workbench.activateGroup(group.id)
         }
-        .onDrop(of: [UTType.plainText]) { _ in
+        .onDrop(of: [.plainText], isTargeted: nil) { _ in
             onDropTabBefore(nil, group.id)
             return true
         }
@@ -1311,7 +1581,7 @@ struct EditorGroupView: View {
                             groupTabItem(for: tab)
                         }
                     }
-                    .onDrop(of: [UTType.plainText]) { _ in
+                    .onDrop(of: [.plainText], isTargeted: nil) { _ in
                         onDropTabBefore(nil, group.id)
                         return true
                     }
@@ -1413,7 +1683,7 @@ struct EditorGroupView: View {
                     )
             }
         }
-        .onDrop(of: [UTType.plainText]) { _ in
+        .onDrop(of: [.plainText], isTargeted: nil) { _ in
             onDropTabBefore(tab, group.id)
             return true
         }

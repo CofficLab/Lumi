@@ -24,6 +24,7 @@ struct EditorCommandPaletteView: View {
         .background(Color(nsColor: .textBackgroundColor))
         .onAppear {
             isSearchFocused = true
+            selectedCategory = state.preferredCommandPaletteCategory()
             refreshQuickOpenItems()
             selectFirstItemIfNeeded()
         }
@@ -34,6 +35,7 @@ struct EditorCommandPaletteView: View {
             refreshQuickOpenItems()
         }
         .onChange(of: selectedCategory) { _, _ in
+            state.setPreferredCommandPaletteCategory(selectedCategory)
             refreshQuickOpenItems()
         }
         .onDisappear {
@@ -114,6 +116,31 @@ struct EditorCommandPaletteView: View {
                                         execute(command)
                                     } label: {
                                         commandRow(for: command, emphasizeRecent: true)
+                                    }
+                                    .id(commandSelectionID(for: command))
+                                    .buttonStyle(.plain)
+                                    .disabled(!command.isEnabled)
+                                    .onHover { hovering in
+                                        if hovering {
+                                            selectedItemID = commandSelectionID(for: command)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if !frequentCommands.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(String(localized: "Frequently Used", table: "LumiEditor"))
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                    .padding(.horizontal, 4)
+
+                                ForEach(frequentCommands) { command in
+                                    Button {
+                                        execute(command)
+                                    } label: {
+                                        commandRow(for: command, emphasizeFrequent: true)
                                     }
                                     .id(commandSelectionID(for: command))
                                     .buttonStyle(.plain)
@@ -230,6 +257,10 @@ struct EditorCommandPaletteView: View {
         presentationModel.recentCommands
     }
 
+    private var frequentCommands: [EditorCommandSuggestion] {
+        presentationModel.frequentCommands
+    }
+
     private var presentationModel: EditorCommandPresentationModel {
         if let selectedCategory {
             return state.editorCommandPresentationModel(
@@ -320,7 +351,11 @@ struct EditorCommandPaletteView: View {
         .buttonStyle(.plain)
     }
 
-    private func commandRow(for command: EditorCommandSuggestion, emphasizeRecent: Bool = false) -> some View {
+    private func commandRow(
+        for command: EditorCommandSuggestion,
+        emphasizeRecent: Bool = false,
+        emphasizeFrequent: Bool = false
+    ) -> some View {
         HStack(spacing: 10) {
             Image(systemName: command.systemImage)
                 .font(.system(size: 11))
@@ -331,6 +366,12 @@ struct EditorCommandPaletteView: View {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 10))
                     .foregroundColor(AppUI.Color.semantic.primary)
+            }
+
+            if emphasizeFrequent {
+                Image(systemName: "flame")
+                    .font(.system(size: 10))
+                    .foregroundColor(.orange)
             }
 
             Text(command.title)

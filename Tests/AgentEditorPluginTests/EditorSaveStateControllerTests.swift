@@ -18,6 +18,7 @@ final class EditorSaveStateControllerTests: XCTestCase {
         } else {
             XCTFail("Expected error save state")
         }
+        XCTAssertEqual(saveState, .error(EditorStatusMessageCatalog.fileNotFound()))
         XCTAssertTrue(scheduled)
     }
 }

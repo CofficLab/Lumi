@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct EditorSettingsCatalogSection: Identifiable {
     let id: String
     let title: String
@@ -7,6 +8,7 @@ struct EditorSettingsCatalogSection: Identifiable {
     let entries: [EditorSettingsCatalogEntry]
 }
 
+@MainActor
 struct EditorSettingsCatalogEntry: Identifiable {
     let id: String
     let title: String
@@ -15,6 +17,7 @@ struct EditorSettingsCatalogEntry: Identifiable {
     let content: (EditorSettingsState) -> AnyView
 }
 
+@MainActor
 enum EditorSettingsCatalog {
     static func builtInSections() -> [EditorSettingsCatalogSection] {
         [

@@ -87,11 +87,13 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前激活会话（Phase 2 起逐步替代散落的会话级状态）
     @Published private(set) var activeSession = EditorSession()
     @Published private(set) var findMatches: [EditorFindMatch] = []
-    @Published private(set) var recentCommandIDs: [String] = []
+    @Published private(set) var recentCommandIDs: [String] = AppSettingStore.loadEditorRecentCommandIDs()
+    @Published private(set) var commandUsageCounts: [String: Int] = AppSettingStore.loadEditorCommandUsageCounts()
     @Published private(set) var viewportVisibleLineRange: Range<Int> = 0..<0
     @Published private(set) var viewportRenderLineRange: Range<Int> = 0..<0
     private let runtimeModeController = EditorRuntimeModeController()
     private let commandController = EditorCommandController()
+    private let settingsQuickOpenController = EditorSettingsQuickOpenController()
     let saveController = EditorSaveController()
     let externalFileController = EditorExternalFileController()
     private let configController = EditorConfigController()
@@ -766,6 +768,7 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前项目根路径（由 EditorRootView 设置，用于计算相对路径）
     var projectRootPath: String? {
         didSet {
+            restoreConfig()
             refreshXcodeContextSnapshot()
         }
     }
@@ -936,7 +939,11 @@ final class EditorState: ObservableObject, SuperLog {
     @Published var totalLines: Int = 0
     
     /// 检测到的语言
-    @Published var detectedLanguage: CodeLanguage?
+    @Published var detectedLanguage: CodeLanguage? {
+        didSet {
+            restoreConfig()
+        }
+    }
     
     // MARK: - Theme
     
@@ -1093,10 +1100,8 @@ final class EditorState: ObservableObject, SuperLog {
         settingsCancellable = NotificationCenter.default
             .publisher(for: .lumiEditorSettingsDidChange)
             .receive(on: RunLoop.main)
-            .sink { [weak self] notification in
-                guard let self,
-                      let snapshot = notification.userInfo?["snapshot"] as? EditorConfigSnapshot else { return }
-                self.applyConfigSnapshot(snapshot)
+            .sink { [weak self] _ in
+                self?.restoreConfig()
             }
     }
 
@@ -1223,6 +1228,7 @@ final class EditorState: ObservableObject, SuperLog {
         commandController.presentationModel(
             from: suggestions,
             recentCommandIDs: recentCommandIDs,
+            commandUsageCounts: commandUsageCounts,
             query: query,
             categories: categories
         )
@@ -1287,11 +1293,30 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func recordCommandExecution(id: String) {
-        commandController.recordExecution(id: id, recentCommandIDs: &recentCommandIDs)
+        commandController.recordExecution(
+            id: id,
+            recentCommandIDs: &recentCommandIDs,
+            commandUsageCounts: &commandUsageCounts
+        )
+        AppSettingStore.saveEditorRecentCommandIDs(recentCommandIDs)
+        AppSettingStore.saveEditorCommandUsageCounts(commandUsageCounts)
     }
 
     func recentCommandSuggestions(matching query: String = "", limit: Int = 5) -> [EditorCommandSuggestion] {
         Array(editorCommandPresentationModel(matching: query).recentCommands.prefix(limit))
+    }
+
+    func frequentCommandSuggestions(matching query: String = "", limit: Int = 5) -> [EditorCommandSuggestion] {
+        Array(editorCommandPresentationModel(matching: query).frequentCommands.prefix(limit))
+    }
+
+    func preferredCommandPaletteCategory() -> EditorCommandCategory? {
+        guard let rawValue = AppSettingStore.loadEditorCommandPaletteCategory() else { return nil }
+        return EditorCommandCategory(rawValue: rawValue)
+    }
+
+    func setPreferredCommandPaletteCategory(_ category: EditorCommandCategory?) {
+        AppSettingStore.saveEditorCommandPaletteCategory(category?.rawValue)
     }
 
     func editorToolbarItems() -> [EditorToolbarItemSuggestion] {
@@ -1303,14 +1328,22 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func editorQuickOpenItems(matching query: String) async -> [EditorQuickOpenItemSuggestion] {
-        await editorExtensions.quickOpenSuggestions(matching: query, state: self)
+        let builtinItems = settingsQuickOpenController.suggestions(matching: query)
+        let extensionItems = await editorExtensions.quickOpenSuggestions(matching: query, state: self)
+        return builtinItems + extensionItems
     }
 
     // MARK: - Config Persistence
     
     /// 从持久化存储恢复配置
     private func restoreConfig() {
-        let snapshot = appearanceController.applyRestoredConfig(using: configController)
+        let snapshot = configController.resolveConfig(
+            for: EditorConfigContext(
+                workspacePath: projectRootPath,
+                languageId: detectedLanguage?.tsName
+            ),
+            clampedSidePanelWidth: appearanceController.clampedSidePanelWidth(_:)
+        )
         applyConfigSnapshot(snapshot)
     }
     

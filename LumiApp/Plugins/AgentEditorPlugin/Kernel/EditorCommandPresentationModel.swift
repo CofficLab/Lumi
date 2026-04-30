@@ -2,17 +2,20 @@ import Foundation
 
 struct EditorCommandPresentationModel {
     let recentCommands: [EditorCommandSuggestion]
+    let frequentCommands: [EditorCommandSuggestion]
     let sections: [EditorCommandSection]
 
     var flattenedCommands: [EditorCommandSuggestion] {
-        recentCommands + sections.flatMap(\.commands)
+        recentCommands + frequentCommands + sections.flatMap(\.commands)
     }
 
     static func build(
         from suggestions: [EditorCommandSuggestion],
         recentCommandIDs: [String],
+        commandUsageCounts: [String: Int] = [:],
         query: String = "",
         recentLimit: Int = 5,
+        frequentLimit: Int = 5,
         allowedCategories: Set<EditorCommandCategory>? = nil
     ) -> EditorCommandPresentationModel {
         let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -40,8 +43,22 @@ struct EditorCommandPresentationModel {
             .prefix(recentLimit)
             .map { $0 }
         let recentIDs = Set(recentCommands.map(\.id))
+        let frequentCommands = filteredSuggestions
+            .filter { !recentIDs.contains($0.id) && (commandUsageCounts[$0.id] ?? 0) > 1 }
+            .sorted { lhs, rhs in
+                let lhsCount = commandUsageCounts[lhs.id] ?? 0
+                let rhsCount = commandUsageCounts[rhs.id] ?? 0
+                if lhsCount != rhsCount { return lhsCount > rhsCount }
+                if lhs.order != rhs.order { return lhs.order < rhs.order }
+                return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+            }
+            .prefix(frequentLimit)
+            .map { $0 }
+        let frequentIDs = Set(frequentCommands.map(\.id))
 
-        let grouped = Dictionary(grouping: filteredSuggestions.filter { !recentIDs.contains($0.id) }) { suggestion in
+        let grouped = Dictionary(grouping: filteredSuggestions.filter {
+            !recentIDs.contains($0.id) && !frequentIDs.contains($0.id)
+        }) { suggestion in
             EditorCommandCategory(rawValue: suggestion.category ?? "") ?? .other
         }
 
@@ -51,6 +68,10 @@ struct EditorCommandPresentationModel {
             return EditorCommandSection(category: category, commands: sortedCommands)
         }
 
-        return EditorCommandPresentationModel(recentCommands: recentCommands, sections: sections)
+        return EditorCommandPresentationModel(
+            recentCommands: recentCommands,
+            frequentCommands: frequentCommands,
+            sections: sections
+        )
     }
 }

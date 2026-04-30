@@ -1,11 +1,17 @@
 import Foundation
 import CoreGraphics
+import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
 
 @MainActor
 final class EditorOverlayController {
+    private struct GutterSuggestionLaneKey: Hashable {
+        let line: Int
+        let lane: Int
+    }
+
     func surfaceHighlights(
         matches: [EditorFindMatch],
         selectedRange: EditorRange?,
@@ -315,7 +321,7 @@ final class EditorOverlayController {
         let availableBelow = containerSize.height - symbolRect.maxY - outerPadding
         let presentAbove = availableAbove >= height + style.verticalGap || availableAbove >= availableBelow
 
-        let anchor: UnitPoint = presentAbove ? .bottomLeading : .topLeading
+        let anchor: SwiftUI.UnitPoint = presentAbove ? .bottomLeading : .topLeading
         let targetY = presentAbove
             ? max(outerPadding, symbolRect.minY - style.verticalGap)
             : min(containerSize.height - outerPadding, symbolRect.maxY + style.verticalGap)
@@ -644,7 +650,9 @@ final class EditorOverlayController {
     private func coalescedGutterSuggestions(
         _ suggestions: [EditorGutterDecorationSuggestion]
     ) -> [EditorGutterDecorationSuggestion] {
-        let grouped = Dictionary(grouping: suggestions) { ($0.line, $0.lane) }
+        let grouped = Dictionary(grouping: suggestions) {
+            GutterSuggestionLaneKey(line: $0.line, lane: $0.lane)
+        }
         return grouped.values.compactMap { suggestionsOnLane in
             suggestionsOnLane.max { lhs, rhs in
                 if lhs.priority != rhs.priority {

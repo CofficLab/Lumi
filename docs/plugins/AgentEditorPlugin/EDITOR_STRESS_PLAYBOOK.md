@@ -222,6 +222,158 @@ DISABLE_SWIFTLINT=1 xcodebuild test \
 - context menu 的 enablement 与当前 selection / cursor / language 上下文一致
 - 同一场景重复 2 次截图时，视觉结果不应出现明显随机漂移
 
+### 11. 用例驱动 UI 回归手册
+
+这组手册不按内部模块划分，而按真实用户动作来走。执行时建议从一个全新启动的 app 开始，确保没有上一次会话残留。
+
+#### 用例 A. 打开文件与进入编辑
+
+- 从欢迎或空状态页进入 `Quick Open / Command Palette`。
+- 打开一个普通源码文件，再打开一个不同语言文件。
+- 验证：
+  - title summary、breadcrumb、language 标签会随文件切换同步更新
+  - `Open Editors`、tab strip、outline 的 active item 指向同一个 session
+  - minimap / gutter / folding 的可见状态符合当前文件与 gating 条件
+
+#### 用例 B. 查找、替换与当前匹配
+
+- 打开 find/replace。
+- 输入一个至少命中 3 次的 query，再切换当前匹配。
+- 为当前匹配输入 replacement text，但先不要执行 replace all。
+- 验证：
+  - 普通匹配、当前匹配、selection highlight 的层级稳定
+  - toolbar 的 find 状态摘要、编辑区 replace preview、inline card 一致
+  - 切 tab、再切回时，当前 session 的 find state 能恢复
+
+#### 用例 C. Rename 与语言动作
+
+- 在有 LSP 支持的文件中触发 `Rename Symbol`。
+- 在 rename UI 展开期间移动光标或切换到相邻 symbol，再决定确认或取消。
+- 验证：
+  - rename 请求只作用于当前 symbol，上下文切换后不会把旧结果落到新位置
+  - rename 完成后 selection、scroll、dirty state 仍稳定
+  - 若语言前置条件不满足，状态提示文案统一且可理解
+
+#### 用例 D. Split、移动与返回
+
+- 执行 `Split Editor Right`，再执行 `Split Editor Down`。
+- 在不同 group 打开不同文件，至少在一个 group 内制造 `dirty` 状态。
+- 拖动 tab 做一次组内重排，再做一次跨 group 移动。
+- 最后执行一次 `Close Split Editor` 或 `Unsplit`。
+- 验证：
+  - active group、breadcrumb、title summary 总是跟当前焦点 leaf 对齐
+  - tab 重排后 `pinned / preview / dirty` 状态不会错位
+  - unsplit 后保留下来的 leaf 仍保有原 session、selection 和 dirty state
+
+#### 用例 E. Quick Fix 与 Hover 叠加
+
+- 找到一个可触发 diagnostic 与 code action 的位置。
+- 先触发 hover，再确认 lightbulb 出现，随后展开 quick fix panel。
+- 如果存在多个 code action，再切换 selection 或移动一两行重复一次。
+- 验证：
+  - hover、lightbulb、quick fix panel 的定位不会互相打架
+  - quick fix 列表只反映当前 selection / cursor 的有效 actions
+  - 执行 quick fix 后 diagnostics、inline message、dirty state 会连贯更新
+
+#### 用例 F. Restore、Reopen 与导航历史
+
+- 打开至少 4 个 tab，并关闭其中 1 个非 pinned tab。
+- 执行 `Reopen Closed Editor`。
+- 再执行一次 definition / references 跳转，然后使用 back / forward 返回。
+- 如有条件，重启 app 或触发 session restore 路径再验证一次。
+- 验证：
+  - reopen closed editor 会回到原 group，title / tab / open editors 信息同步恢复
+  - back / forward 按钮旁的目标提示与实际跳转目标一致
+  - session restore 后 selection、scroll、find state 不会串到别的 tab 或 group
+
+### 12. UI / 扩展层 Smoke Tests 命令清单
+
+这份清单用来回答“这次改动至少要手动点哪些命令”。每次改动不需要全走全部命令，但应至少覆盖与改动面最接近的一组。
+
+#### A. 文件与入口 smoke
+
+- `Quick Open / Command Palette`
+- `Open Editors`
+- `Editor Settings`
+- `Outline`
+
+适用改动：
+
+- 欢迎页 / 空状态
+- command palette / quick open
+- settings discoverability
+- outline / breadcrumb / title summary
+
+#### B. 查找与替换 smoke
+
+- `Find`
+- `Replace`
+- `Find Next Match`
+- `Find Previous Match`
+- `Replace One`
+- `Replace All`
+
+适用改动：
+
+- find/replace UI
+- current match / selection highlight
+- inline preview / inline message
+- multi-cursor 与 in-selection find
+
+#### C. 语言动作 smoke
+
+- `Rename Symbol`
+- `Go to Definition`
+- `Find References`
+- `Show Hover`
+- `Quick Fix`
+- `Format Document`
+
+适用改动：
+
+- LSP 请求链
+- hover / code action / rename
+- diagnostics / references / problems
+- 语言前置条件与失败提示
+
+#### D. Workbench smoke
+
+- `Split Editor Right`
+- `Split Editor Down`
+- `Close Split Editor`
+- `Reopen Closed Editor`
+- `Navigate Back`
+- `Navigate Forward`
+
+适用改动：
+
+- tab / split / drag-reorder
+- reopen closed editor
+- bottom panel host
+- session restore / navigation history
+
+#### E. 扩展贡献 smoke
+
+- `Command Palette` 中检查扩展命令 section
+- editor `Context Menu`
+- 自定义 `Panel` tab
+- toolbar / title trailing `Status Item`
+- quick open 的扩展 section
+
+适用改动：
+
+- contributor protocol
+- registry priority / dedupe / enablement
+- sample plugin 或真实扩展接入
+
+#### F. 推荐最小执行矩阵
+
+- 如果只改 overlay / hover / code action：执行 `B + C`，再补场景 `10`
+- 如果只改 workbench / panel / restore：执行 `A + D`，再补场景 `8`
+- 如果只改 extension registry / sample plugin：执行 `A + E`，再补场景 `9`
+- 如果改设置 / discoverability / command palette：执行 `A`，再补场景 `11A` 与 `11F`
+- 如果改跨层链路，或不确定影响面：执行 `A + B + C + D + E`
+
 ## 记录模板
 
 每次执行请记录：

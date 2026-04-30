@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 struct EditorClosedSessionRecord {
     let snapshot: EditorSession
     let tab: EditorTab

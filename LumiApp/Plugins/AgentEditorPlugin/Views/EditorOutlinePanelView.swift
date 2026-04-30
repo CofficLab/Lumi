@@ -163,65 +163,67 @@ struct EditorOutlinePanelView: View {
         )
     }
 
-    private func outlineRow(_ item: EditorDocumentSymbolItem, depth: Int) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 6) {
-                if !item.children.isEmpty {
+    private func outlineRow(_ item: EditorDocumentSymbolItem, depth: Int) -> AnyView {
+        AnyView(
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    if !item.children.isEmpty {
+                        Button {
+                            toggleCollapse(item.id)
+                        } label: {
+                            Image(systemName: collapsedIDs.contains(item.id) ? "chevron.right" : "chevron.down")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                .frame(width: 12)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Color.clear.frame(width: 12)
+                    }
+
                     Button {
-                        toggleCollapse(item.id)
+                        state.performOpenItem(.documentSymbol(item))
                     } label: {
-                        Image(systemName: collapsedIDs.contains(item.id) ? "chevron.right" : "chevron.down")
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
-                            .frame(width: 12)
+                        HStack(spacing: 8) {
+                            Image(systemName: item.iconSymbol)
+                                .font(.system(size: 10))
+                                .foregroundColor(activePathIDs.contains(item.id) ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textSecondary)
+                                .frame(width: 14)
+
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(item.name)
+                                    .font(.system(size: 11, weight: activePathIDs.contains(item.id) ? .semibold : .regular))
+                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                    .lineLimit(1)
+
+                                Text("L\(item.line)" + (item.detail.map { " · \($0)" } ?? ""))
+                                    .font(.system(size: 9))
+                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                    .lineLimit(1)
+                            }
+
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(activePathIDs.contains(item.id)
+                                    ? AppUI.Color.semantic.primary.opacity(0.08)
+                                    : Color.clear)
+                        )
                     }
                     .buttonStyle(.plain)
-                } else {
-                    Color.clear.frame(width: 12)
                 }
+                .padding(.leading, CGFloat(depth) * 14)
 
-                Button {
-                    state.performOpenItem(.documentSymbol(item))
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: item.iconSymbol)
-                            .font(.system(size: 10))
-                            .foregroundColor(activePathIDs.contains(item.id) ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textSecondary)
-                            .frame(width: 14)
-
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(item.name)
-                                .font(.system(size: 11, weight: activePathIDs.contains(item.id) ? .semibold : .regular))
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
-                                .lineLimit(1)
-
-                            Text("L\(item.line)" + (item.detail.map { " · \($0)" } ?? ""))
-                                .font(.system(size: 9))
-                                .foregroundColor(AppUI.Color.semantic.textTertiary)
-                                .lineLimit(1)
-                        }
-
-                        Spacer(minLength: 0)
+                if !item.children.isEmpty && !collapsedIDs.contains(item.id) {
+                    ForEach(item.children) { child in
+                        outlineRow(child, depth: depth + 1)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(activePathIDs.contains(item.id)
-                                ? AppUI.Color.semantic.primary.opacity(0.08)
-                                : Color.clear)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.leading, CGFloat(depth) * 14)
-
-            if !item.children.isEmpty && !collapsedIDs.contains(item.id) {
-                ForEach(item.children) { child in
-                    outlineRow(child, depth: depth + 1)
                 }
             }
-        }
+        )
     }
 
     private func toggleCollapse(_ id: String) {

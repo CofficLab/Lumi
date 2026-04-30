@@ -6,6 +6,7 @@ import LanguageServerProtocol
 /// 代码折叠范围提供者
 @MainActor
 final class FoldingRangeProvider: ObservableObject {
+    private let lspService: LSPService
     private let requestRangesOperation: @Sendable (_ uri: String) async -> [FoldingRange]
     private let requestLifecycle = LSPRequestLifecycle()
 
@@ -13,6 +14,7 @@ final class FoldingRangeProvider: ObservableObject {
         lspService: LSPService = .shared,
         requestRangesOperation: (@Sendable (_ uri: String) async -> [FoldingRange])? = nil
     ) {
+        self.lspService = lspService
         self.requestRangesOperation = requestRangesOperation ?? { [lspService] uri in
             await lspService.requestFoldingRange(uri: uri)
         }

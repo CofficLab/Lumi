@@ -281,7 +281,6 @@ struct EditorContextMenuItemSuggestion: Identifiable {
             shortcut: shortcut,
             order: order,
             isEnabled: isEnabled,
-            metadata: metadata,
             action: action
         )
     }

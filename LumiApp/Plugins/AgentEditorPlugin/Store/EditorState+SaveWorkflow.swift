@@ -224,7 +224,7 @@ extension EditorState {
             return
         }
         hasExternalFileConflict = true
-        saveState = .conflict(String(localized: "File changed on disk", table: "LumiEditor"))
+        saveState = .conflict(EditorStatusMessageCatalog.externalFileChangedOnDisk())
         syncActiveSessionState()
     }
 

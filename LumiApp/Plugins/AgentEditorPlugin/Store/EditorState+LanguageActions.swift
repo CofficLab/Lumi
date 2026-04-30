@@ -206,11 +206,17 @@ extension EditorState {
         operation: String,
         symbolName: String? = nil
     ) -> String? {
-        XcodeSemanticAvailability.preflightMessage(
+        guard let message = XcodeSemanticAvailability.preflightMessage(
             uri: currentFileURL?.absoluteString,
             operation: operation,
             symbolName: symbolName,
             strength: .hard
+        ) else {
+            return nil
+        }
+        return EditorStatusMessageCatalog.languageFeatureUnavailable(
+            operation: operation,
+            reason: message
         )
     }
 

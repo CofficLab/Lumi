@@ -24,7 +24,7 @@ final class DocumentSymbolProvider: ObservableObject {
             apply: { [weak self] result in
                 guard let self else { return }
                 isLoading = false
-                symbols = result?.map(EditorDocumentSymbolItem.init(symbol:)) ?? []
+                symbols = result.map { EditorDocumentSymbolItem(symbol: $0) }
             }
         )
     }
