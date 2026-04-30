@@ -18,6 +18,7 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     private let lspService: LSPService
     private let documentSymbolsPreflight: @MainActor (_ uri: String) -> XcodeLSPError?
     private let requestDocumentSymbolsOperation: @Sendable (_ uri: String) async -> [DocumentSymbol]
+    private let requestDefinitionOperation: @Sendable (_ uri: String, _ line: Int, _ character: Int) async -> Location?
     
     /// LSP 请求防抖器 — 避免快速连续请求导致主线程阻塞
     private let debouncer = LSPDebouncer()
@@ -58,12 +59,16 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
                 strength: .soft
             )
         },
-        requestDocumentSymbolsOperation: (@Sendable (_ uri: String) async -> [DocumentSymbol])? = nil
+        requestDocumentSymbolsOperation: (@Sendable (_ uri: String) async -> [DocumentSymbol])? = nil,
+        requestDefinitionOperation: (@Sendable (_ uri: String, _ line: Int, _ character: Int) async -> Location?)? = nil
     ) {
         self.lspService = lspService
         self.documentSymbolsPreflight = documentSymbolsPreflight
         self.requestDocumentSymbolsOperation = requestDocumentSymbolsOperation ?? { [lspService] uri in
             await lspService.requestDocumentSymbols(uri: uri)
+        }
+        self.requestDefinitionOperation = requestDefinitionOperation ?? { [lspService] uri, line, character in
+            await lspService.requestDefinition(uri: uri, line: line, character: character)
         }
     }
     
@@ -220,7 +225,7 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     func requestDefinition(line: Int, character: Int) async -> Location? {
         guard let uri = fileURI else { return nil }
         let context = cursorRequestContext(uri: uri, line: line, character: character)
-        let result = await lspService.requestDefinition(uri: uri, line: line, character: character)
+        let result = await requestDefinitionOperation(uri, line, character)
         guard isCurrent(context, line: line, character: character) else { return nil }
         return result
     }

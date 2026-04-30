@@ -76,13 +76,24 @@ struct EditorOutlinePanelView: View {
         if provider.symbols.isEmpty {
             emptyState
         } else {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 2) {
-                    ForEach(filteredSymbols) { item in
-                        outlineRow(item, depth: 0)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        ForEach(filteredSymbols) { item in
+                            outlineRow(item, depth: 0)
+                        }
                     }
+                    .padding(8)
                 }
-                .padding(8)
+                .onAppear {
+                    syncActiveSymbolPresentation(using: proxy)
+                }
+                .onChange(of: state.cursorLine) { _, _ in
+                    syncActiveSymbolPresentation(using: proxy)
+                }
+                .onChange(of: provider.symbols.map(\.id)) { _, _ in
+                    syncActiveSymbolPresentation(using: proxy)
+                }
             }
         }
     }
@@ -230,6 +241,7 @@ struct EditorOutlinePanelView: View {
                     }
                 }
             }
+            .id(item.id)
         )
     }
 
@@ -238,6 +250,26 @@ struct EditorOutlinePanelView: View {
             collapsedIDs.remove(id)
         } else {
             collapsedIDs.insert(id)
+        }
+    }
+
+    private func syncActiveSymbolPresentation(using proxy: ScrollViewProxy) {
+        let activePathIDs = provider.activePathIDs(for: state.cursorLine)
+        guard !activePathIDs.isEmpty else { return }
+
+        let ancestorIDs = provider.activeAncestorIDs(for: state.cursorLine)
+        collapsedIDs.subtract(ancestorIDs)
+
+        guard filterText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let activeSymbolID = activePathIDs.last
+        else {
+            return
+        }
+
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                proxy.scrollTo(activeSymbolID, anchor: .center)
+            }
         }
     }
 }

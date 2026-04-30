@@ -165,9 +165,6 @@ struct SourceEditorView: View, SuperLog {
             .overlay(alignment: .top) {
                 inlineRenameOverlay
             }
-            .overlay(alignment: .topTrailing) {
-                foldingSummaryOverlay
-            }
             .overlay(alignment: .bottomLeading) {
                 signatureHelpOverlay
             }
@@ -505,54 +502,6 @@ struct SourceEditorView: View, SuperLog {
             }
             .allowsHitTesting(false)
             .animation(.easeOut(duration: 0.14), value: presentations.map(\.id))
-        }
-    }
-
-    @ViewBuilder
-    private var foldingSummaryOverlay: some View {
-        if let summary = state.currentFoldingSummary {
-            HStack(spacing: 8) {
-                Image(systemName: "chevron.left.forwardslash.chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.primary)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(summary.title)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
-                    Text(summary.subtitle)
-                        .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
-                        .lineLimit(1)
-                }
-
-                Text(summary.badgeText)
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(AppUI.Color.semantic.primary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule()
-                            .fill(AppUI.Color.semantic.primary.opacity(0.12))
-                    )
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(AppUI.Color.semantic.textTertiary.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(AppUI.Color.semantic.textTertiary.opacity(0.16), lineWidth: 1)
-                    )
-            )
-            .padding(.top, 10)
-            .padding(.trailing, 14)
-            .transition(.asymmetric(
-                insertion: .opacity.combined(with: .move(edge: .trailing)),
-                removal: .opacity
-            ))
-            .animation(.easeOut(duration: 0.16), value: summary)
         }
     }
 

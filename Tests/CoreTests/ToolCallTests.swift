@@ -41,7 +41,7 @@ final class ToolCallTests: XCTestCase {
             id: "call_abc",
             name: "write_file",
             arguments: #"{"path":"/tmp/test.swift","content":"hello"}"#,
-            authorizationState: .authorized
+            authorizationState: .userApproved
         )
 
         let data = try JSONEncoder().encode(original)

@@ -24,7 +24,7 @@ final class DocumentSymbolProvider: ObservableObject {
             apply: { [weak self] result in
                 guard let self else { return }
                 isLoading = false
-                symbols = result.map { EditorDocumentSymbolItem(symbol: $0) }
+                applySymbols(result.map { EditorDocumentSymbolItem(symbol: $0) })
             }
         )
     }
@@ -39,9 +39,21 @@ final class DocumentSymbolProvider: ObservableObject {
         requestLifecycle.reset()
     }
 
+    func applySymbols(_ symbols: [EditorDocumentSymbolItem]) {
+        self.symbols = symbols
+    }
+
     func activeItems(for line: Int) -> [EditorDocumentSymbolItem] {
         symbols.compactMap { $0.activeItems(for: line) }
             .max(by: { $0.count < $1.count }) ?? []
+    }
+
+    func activePathIDs(for line: Int) -> [String] {
+        activeItems(for: line).map(\.id)
+    }
+
+    func activeAncestorIDs(for line: Int) -> Set<String> {
+        Set(activePathIDs(for: line).dropLast())
     }
 }
 

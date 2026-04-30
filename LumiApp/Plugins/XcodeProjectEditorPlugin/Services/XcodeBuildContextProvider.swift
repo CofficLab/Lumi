@@ -260,16 +260,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         if matches.count == 1 {
             return matches[0]
         }
-        if let activeScheme {
-            if let exactMatch = matches.first(where: { $0.name == activeScheme.name }) {
-                return exactMatch
-            }
-            let buildableMatches = matches.filter { activeScheme.buildableTargets.contains($0.name) }
-            if buildableMatches.count == 1 {
-                return buildableMatches[0]
-            }
-        }
-        return nil
+        return preferredTargets(for: matches).first
     }
 
     func targetsCompatibleWithActiveScheme(for fileURL: URL) -> [XcodeTargetContext] {
@@ -283,7 +274,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         guard let workspace = currentWorkspace,
               let scheme = activeScheme else { return nil }
         let configuration = activeConfiguration ?? scheme.activeConfiguration
-        let matchedTargets = findTargetsForFile(fileURL: fileURL).map(\.name)
+        let matchedTargets = preferredTargets(for: findTargetsForFile(fileURL: fileURL)).map(\.name)
         let destination = activeDestination?.destinationQuery ?? scheme.activeDestination?.destinationQuery
         
         // 先从缓存查找
@@ -593,10 +584,62 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         preferredTargetNames: [String]
     ) -> [String: String]? {
         guard !preferredTargetNames.isEmpty else { return settingsList.first }
-        return settingsList.first { settings in
-            guard let targetName = settings["TARGET_NAME"] else { return false }
-            return preferredTargetNames.contains(targetName)
-        } ?? settingsList.first
+        for preferredTargetName in preferredTargetNames {
+            if let match = settingsList.first(where: { $0["TARGET_NAME"] == preferredTargetName }) {
+                return match
+            }
+        }
+        return settingsList.first
+    }
+
+    private func preferredTargets(for matches: [XcodeTargetContext]) -> [XcodeTargetContext] {
+        guard matches.count > 1 else { return matches }
+
+        let schemeName = activeScheme?.name
+        let buildableTargets = activeScheme?.buildableTargets ?? []
+        let buildableOrder = Dictionary(uniqueKeysWithValues: buildableTargets.enumerated().map { ($1, $0) })
+
+        return matches.sorted { lhs, rhs in
+            let lhsPriority = targetPriority(lhs, schemeName: schemeName, buildableOrder: buildableOrder)
+            let rhsPriority = targetPriority(rhs, schemeName: schemeName, buildableOrder: buildableOrder)
+            if lhsPriority != rhsPriority {
+                return lhsPriority > rhsPriority
+            }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+    }
+
+    private func targetPriority(
+        _ target: XcodeTargetContext,
+        schemeName: String?,
+        buildableOrder: [String: Int]
+    ) -> Int {
+        var score = 0
+        if target.name == schemeName {
+            score += 10_000
+        }
+        if let order = buildableOrder[target.name] {
+            score += 5_000 - order
+        }
+        score += productTypePriority(target.productType)
+        return score
+    }
+
+    private func productTypePriority(_ productType: String?) -> Int {
+        guard let productType = productType?.lowercased() else { return 0 }
+        if productType.contains("application") {
+            return 400
+        }
+        if productType.contains("app-extension") || productType.contains("extension") {
+            return 300
+        }
+        if productType.contains("framework") || productType.contains("library") {
+            return 250
+        }
+        if productType.contains("bundle.unit-test") || productType.contains("ui-testing") || productType.contains("test") {
+            return 100
+        }
+        return 200
     }
 }
 

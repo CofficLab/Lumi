@@ -72,32 +72,34 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
             return [link]
         }
         
-        // 1. 优先：通过 AST 查找定义（精确）
-        if let definitionRange = await findDefinitionViaAST(
-            word: word,
-            cursorRange: range,
-            content: content
-        ) {
-            guard requestGeneration.isCurrent(generation) else { return nil }
-            let position = CursorPosition(range: definitionRange)
-            if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(self.t)AST 匹配: '\(word)' -> \(definitionRange.location)")
+        if await allowsLocalFallbackForDefinition() {
+            // 1. 优先：通过 AST 查找定义（精确）
+            if let definitionRange = await findDefinitionViaAST(
+                word: word,
+                cursorRange: range,
+                content: content
+            ) {
+                guard requestGeneration.isCurrent(generation) else { return nil }
+                let position = CursorPosition(range: definitionRange)
+                if EditorPlugin.verbose {
+                    EditorPlugin.logger.debug("\(self.t)AST 匹配: '\(word)' -> \(definitionRange.location)")
+                }
+                return [createLink(for: word, targetRange: position, content: content)]
             }
-            return [createLink(for: word, targetRange: position, content: content)]
-        }
-        
-        // 2. 回退：通过正则匹配（快速但不够精确）
-        if let fallbackRange = findDefinitionViaRegex(
-            word: word,
-            cursorRange: range,
-            content: content
-        ) {
-            guard requestGeneration.isCurrent(generation) else { return nil }
-            let position = CursorPosition(range: fallbackRange)
-            if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(self.t)正则匹配: '\(word)' -> \(fallbackRange.location)")
+
+            // 2. 回退：通过正则匹配（快速但不够精确）
+            if let fallbackRange = findDefinitionViaRegex(
+                word: word,
+                cursorRange: range,
+                content: content
+            ) {
+                guard requestGeneration.isCurrent(generation) else { return nil }
+                let position = CursorPosition(range: fallbackRange)
+                if EditorPlugin.verbose {
+                    EditorPlugin.logger.debug("\(self.t)正则匹配: '\(word)' -> \(fallbackRange.location)")
+                }
+                return [createLink(for: word, targetRange: position, content: content)]
             }
-            return [createLink(for: word, targetRange: position, content: content)]
         }
         
         if EditorPlugin.verbose {
@@ -186,6 +188,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
 
         // 2. 回退：通过 AST（仅 Definition 支持）
         if fallbackToAST,
+           await allowsLocalFallbackForDefinition(),
            let definitionRange = await findDefinitionViaAST(
                word: word,
                cursorRange: range,
@@ -200,6 +203,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
 
         // 3. 回退：通过正则（仅 Definition 支持）
         if fallbackToRegex,
+           await allowsLocalFallbackForDefinition(),
            let fallbackRange = findDefinitionViaRegex(
                word: word,
                cursorRange: range,
@@ -504,6 +508,16 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
         case .declaration: return Image(systemName: "doc.badge.plus.fill")
         case .typeDefinition: return Image(systemName: "square.on.square.fill")
         case .implementation: return Image(systemName: "arrowtriangle.right.fill")
+        }
+    }
+
+    private func allowsLocalFallbackForDefinition() async -> Bool {
+        await MainActor.run {
+        // In Xcode projects, definition should reflect the active build context.
+        // Local AST/regex fallback is kept for non-Xcode files so lightweight files
+        // can still offer basic jump behavior without pretending semantic support.
+            let bridge = XcodeProjectContextBridge.shared
+            return !(bridge.cachedState?.isXcodeProject ?? bridge.isXcodeProject)
         }
     }
     

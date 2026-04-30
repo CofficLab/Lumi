@@ -46,6 +46,49 @@ final class DocumentSymbolProviderTests: XCTestCase {
         XCTAssertEqual(item.activeItems(for: 6)?.map(\.name), ["Container", "render"])
     }
 
+    func testProviderExposesActivePathAndAncestorIDs() {
+        let provider = DocumentSymbolProvider {
+            []
+        }
+
+        provider.applySymbols([
+            EditorDocumentSymbolItem(
+                id: "Container",
+                name: "Container",
+                detail: "class",
+                kind: .class,
+                range: .init(
+                    start: .init(line: 0, character: 0),
+                    end: .init(line: 20, character: 0)
+                ),
+                selectionRange: .init(
+                    start: .init(line: 0, character: 6),
+                    end: .init(line: 0, character: 15)
+                ),
+                children: [
+                    EditorDocumentSymbolItem(
+                        id: "Container/render",
+                        name: "render",
+                        detail: "method",
+                        kind: .method,
+                        range: .init(
+                            start: .init(line: 4, character: 0),
+                            end: .init(line: 8, character: 0)
+                        ),
+                        selectionRange: .init(
+                            start: .init(line: 4, character: 4),
+                            end: .init(line: 4, character: 10)
+                        ),
+                        children: []
+                    )
+                ]
+            )
+        ])
+
+        XCTAssertEqual(provider.activePathIDs(for: 6), ["Container", "Container/render"])
+        XCTAssertEqual(provider.activeAncestorIDs(for: 6), ["Container"])
+    }
+
     func testOpenItemCommandControllerResolvesDocumentSymbolToCursorPosition() {
         let item = EditorDocumentSymbolItem(
             id: "Container/render",

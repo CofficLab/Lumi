@@ -1111,20 +1111,6 @@ final class EditorState: ObservableObject, SuperLog {
     /// 是否显示代码折叠
     @Published var showFoldingRibbon: Bool = true
 
-    var currentFoldingSummary: EditorFoldingSummary? {
-        guard showFoldingRibbon,
-              !largeFileMode.isFoldingDisabled,
-              let range = currentFoldingRange else {
-            return nil
-        }
-
-        return EditorFoldingSummary(
-            title: foldingSummaryTitle(for: range),
-            subtitle: foldingSummarySubtitle(for: range),
-            hiddenLineCount: range.hiddenLineCount
-        )
-    }
-
     var minimapPolicy: EditorMinimapPolicy {
         EditorMinimapPolicy(
             userRequestedVisible: showMinimap,
@@ -3394,34 +3380,6 @@ final class EditorState: ObservableObject, SuperLog {
         UnicodeScalar(Int(value)).map(set.contains) ?? false
     }
 
-    private var currentFoldingRange: FoldingRangeItem? {
-        let zeroBasedLine = max(cursorLine - 1, 0)
-        return foldingRangeProvider.ranges.last { range in
-            range.hiddenLineCount > 0 &&
-            range.startLine <= zeroBasedLine &&
-            zeroBasedLine <= range.endLine
-        }
-    }
-
-    private func foldingSummaryTitle(for range: FoldingRangeItem) -> String {
-        if range.isImports { return "Imports Fold" }
-        if range.isComment { return "Comment Fold" }
-        if range.isRegion { return "Region Fold" }
-        return "Code Fold"
-    }
-
-    private func foldingSummarySubtitle(for range: FoldingRangeItem) -> String {
-        guard let content else { return "Lines \(range.startLine + 1)-\(range.endLine + 1)" }
-        let lines = content.string.components(separatedBy: .newlines)
-        guard lines.indices.contains(range.startLine) else {
-            return "Lines \(range.startLine + 1)-\(range.endLine + 1)"
-        }
-        let trimmed = lines[range.startLine].trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty {
-            return trimmed.count > 32 ? String(trimmed.prefix(32)) + "..." : trimmed
-        }
-        return "Lines \(range.startLine + 1)-\(range.endLine + 1)"
-    }
 }
 
 private enum EditorSemanticReadinessState: Equatable {

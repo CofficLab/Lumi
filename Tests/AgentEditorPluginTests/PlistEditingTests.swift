@@ -2,6 +2,7 @@
 import XCTest
 @testable import Lumi
 
+@MainActor
 final class PlistEditingTests: XCTestCase {
     func testHoverMarkdownReturnsKnownPlistKeyDocumentation() {
         let fileURL = URL(fileURLWithPath: "/tmp/Info.plist")

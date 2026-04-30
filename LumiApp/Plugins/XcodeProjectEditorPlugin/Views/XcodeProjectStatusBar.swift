@@ -2,7 +2,6 @@ import Combine
 import SwiftUI
 
 /// Xcode 项目状态栏视图
-/// 对应 Phase 8: scheme / destination / configuration 状态栏
 struct XcodeProjectStatusBar: View {
     
     @StateObject private var viewModel = XcodeProjectStatusBarViewModel()

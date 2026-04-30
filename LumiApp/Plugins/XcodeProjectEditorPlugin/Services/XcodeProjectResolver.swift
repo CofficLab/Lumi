@@ -3,7 +3,6 @@ import MagicKit
 import os
 
 /// Xcode 项目解析器：发现并解析 .xcodeproj / .xcworkspace
-/// 对应 Roadmap Phase 1 & Phase 2
 @MainActor
 final class XcodeProjectResolver: SuperLog {
     
@@ -217,7 +216,12 @@ final class XcodeProjectResolver: SuperLog {
         let projectRoot = projectURL.deletingLastPathComponent()
         return graph.targetRoots.reduce(into: [String: Set<String>]()) { result, item in
             let files = item.value.reduce(into: Set<String>()) { partial, root in
-                let rootURL = projectRoot.appendingPathComponent(root.rootPath)
+                let rootURL: URL
+                if root.rootPath.hasPrefix("/") {
+                    rootURL = URL(filePath: root.rootPath)
+                } else {
+                    rootURL = projectRoot.appendingPathComponent(root.rootPath)
+                }
                 partial.formUnion(enumerateFiles(in: rootURL, excluding: root.excludedRelativePaths))
             }
             result[item.key] = files

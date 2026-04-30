@@ -1,5 +1,6 @@
 #if canImport(XCTest)
 import XCTest
+import CodeEditSourceEditor
 @testable import Lumi
 
 @MainActor
