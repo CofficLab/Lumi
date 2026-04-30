@@ -339,9 +339,6 @@
     "Current Group" : {
 
     },
-    "Current Group (%lld)" : {
-
-    },
     "Cursor Document End" : {
 
     },
@@ -841,16 +838,6 @@
     },
     "Group %lld" : {
 
-    },
-    "Group %lld (%lld)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Group %1$lld (%2$lld)"
-          }
-        }
-      }
     },
     "Insert Line Above" : {
 
@@ -1559,9 +1546,6 @@
 
     },
     "Other Open Editors" : {
-
-    },
-    "Other Open Editors (%lld)" : {
 
     },
     "Outline" : {

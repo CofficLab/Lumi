@@ -418,13 +418,10 @@ struct EditorRootView: View {
                 EditorTabStripView(
                     tabs: visibleTabs,
                     activeSessionID: visibleActiveSessionID,
-                    openEditors: openEditorItems,
                     canNavigateBack: sessionStore.canNavigateBack,
                     canNavigateForward: sessionStore.canNavigateForward,
                     onNavigateBack: navigateBack,
                     onNavigateForward: navigateForward,
-                    onToggleOpenEditorsPanel: { toggleSidebarTab(.openEditors) },
-                    onSelectOpenEditor: activateOpenEditor,
                     onSelect: activateSession,
                     onClose: closeSession,
                     onCloseOthers: closeOtherSessions,
