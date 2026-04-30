@@ -1,143 +1,61 @@
 import Foundation
 import os
-import ObjectiveC.runtime
 import MagicKit
 
-/// 编辑器子插件管理器。
-/// 负责插件自动发现、注册去重和扩展点注入。
+/// 编辑器插件管理器（纯安装器）。
+///
+/// Phase 4: 已精简为纯安装器，不再维护插件开关状态。
+/// 插件发现由 `PluginVM` 统一负责，开关由 `PluginSettingsVM` 统一管理。
+/// 此管理器只负责接收已过滤的插件列表并安装到 `EditorExtensionRegistry`。
 @MainActor
 final class EditorPluginManager: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"
-    struct PluginInfo: Identifiable, Equatable {
-        let id: String
-        let displayName: String
-        let description: String
-        let order: Int
-        let isConfigurable: Bool
-        let isEnabled: Bool
-    }
 
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.plugin-manager")
 
     /// 扩展点注册中心（由具体插件写入能力）
     let registry: EditorExtensionRegistry
 
-    /// 已注册的编辑器插件（按 order 排序）
-    @Published private(set) var plugins: [any EditorFeaturePlugin] = []
-    /// 已发现的编辑器插件元信息（包含已禁用插件）
-    @Published private(set) var discoveredPluginInfos: [PluginInfo] = []
-    private var discoveredPluginInstances: [any EditorFeaturePlugin] = []
+    /// 已安装的编辑器插件（按 order 排序，完全由外部传入）
+    @Published private(set) var installedPlugins: [any SuperPlugin] = []
 
     init(registry: EditorExtensionRegistry = EditorExtensionRegistry()) {
         self.registry = registry
     }
 
-    func register(_ plugin: any EditorFeaturePlugin) {
-        if plugins.contains(where: { $0.id == plugin.id }) {
-            logger.debug("\(self.t)跳过重复插件: \(plugin.id)")
-            return
-        }
-
-        plugins.append(plugin)
-        plugins.sort { lhs, rhs in
-            if lhs.order != rhs.order { return lhs.order < rhs.order }
-            return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
-        }
-
-        plugin.register(into: registry)
-        logger.info("\(self.t)注册插件: \(plugin.id) (\(plugin.displayName))")
-    }
-
-    func isPluginEnabled(_ plugin: any EditorFeaturePlugin) -> Bool {
-        if !plugin.isConfigurable { return true }
-        return EditorConfigStore.loadEditorPluginEnabled(plugin.id) ?? plugin.isEnabledByDefault
-    }
-
-    func setPluginEnabled(_ pluginID: String, enabled: Bool) {
-        EditorConfigStore.saveEditorPluginEnabled(pluginID, enabled: enabled)
-        applyEnabledPlugins()
-    }
-
-    /// 自动发现并注册编辑器内部插件。
+    /// 安装一组编辑器插件（纯安装器，不维护开关状态）
     ///
-    /// 扫描规则：
-    /// 1. 类名（去掉命名空间后）以 `EditorPlugin` 结尾
-    /// 2. 能实例化并实现 `EditorFeaturePlugin`
+    /// 调用方（如 `EditorState`）负责从 `PluginVM` 过滤出已启用的编辑器插件，
+    /// 然后调用此方法将它们安装到 `EditorExtensionRegistry`。
     ///
-    /// 说明：编辑器子插件普遍使用了 `@objc(LumiXXXEditorPlugin)`。
-    /// 这会让运行时类名变成 `LumiXXXEditorPlugin`（无 `Lumi.` 命名空间），
-    /// 因此不能依赖 `Lumi.` 前缀过滤。
-    func autoDiscoverAndRegisterPlugins() {
-        var count: UInt32 = 0
-        guard let classList = objc_copyClassList(&count) else { return }
-        defer { free(UnsafeMutableRawPointer(classList)) }
-
-        let classes = UnsafeBufferPointer(start: classList, count: Int(count))
-        var discovered: [any EditorFeaturePlugin] = []
-
-        for cls in classes {
-            let className = NSStringFromClass(cls)
-            let shortClassName = className.split(separator: ".").last.map(String.init) ?? className
-            guard shortClassName.hasSuffix("EditorPlugin") else { continue }
-            guard let object = createInstance(of: cls) else { continue }
-            guard let plugin = object as? any EditorFeaturePlugin else { continue }
-            discovered.append(plugin)
-        }
-
-        discovered.sort { lhs, rhs in
-            if lhs.order != rhs.order { return lhs.order < rhs.order }
-            return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
-        }
-
-        discoveredPluginInstances = discovered
-        applyEnabledPlugins()
-    }
-
-    private func applyEnabledPlugins() {
+    /// - Parameter plugins: 已过滤的编辑器插件列表（仅包含 `providesEditorExtensions == true` 且已启用的插件）
+    func install(plugins: [any SuperPlugin]) {
+        // Reset registry before reinstalling
         registry.reset()
-        plugins.removeAll()
 
-        var infos: [PluginInfo] = []
-        for plugin in discoveredPluginInstances {
-            let enabled = isPluginEnabled(plugin)
-            infos.append(
-                PluginInfo(
-                    id: plugin.id,
-                    displayName: plugin.displayName,
-                    description: plugin.description,
-                    order: plugin.order,
-                    isConfigurable: plugin.isConfigurable,
-                    isEnabled: enabled
-                )
-            )
-            if enabled {
-                register(plugin)
-            } else {
-                logger.info("\(self.t)跳过禁用插件: \(plugin.id)")
+        // Sort by order, then by id
+        let sorted = plugins.sorted { a, b in
+            if type(of: a).order != type(of: b).order {
+                return type(of: a).order < type(of: b).order
             }
+            return type(of: a).id.localizedCaseInsensitiveCompare(type(of: b).id) == .orderedAscending
         }
-        discoveredPluginInfos = infos
+
+        installedPlugins = sorted
+
+        // Register editor extensions for each plugin
+        for plugin in sorted {
+            plugin.registerEditorExtensions(into: registry)
+            logger.info("\(self.t)安装编辑器插件: \(type(of: plugin).id) (\(type(of: plugin).displayName))")
+        }
+
+        logger.info("\(self.t)安装完成: \(sorted.count) 个编辑器插件")
     }
 
-    private func createInstance(of cls: AnyClass) -> AnyObject? {
-        let allocSelector = NSSelectorFromString("alloc")
-        guard let allocMethod = class_getClassMethod(cls, allocSelector) else {
-            return nil
-        }
-
-        typealias AllocMethod = @convention(c) (AnyClass, Selector) -> AnyObject?
-        let allocImpl = unsafeBitCast(method_getImplementation(allocMethod), to: AllocMethod.self)
-        guard let instance = allocImpl(cls, allocSelector) else {
-            return nil
-        }
-
-        let initSelector = NSSelectorFromString("init")
-        guard let initMethod = class_getInstanceMethod(cls, initSelector) else {
-            return instance
-        }
-
-        typealias InitMethod = @convention(c) (AnyObject, Selector) -> AnyObject?
-        let initImpl = unsafeBitCast(method_getImplementation(initMethod), to: InitMethod.self)
-        return initImpl(instance, initSelector) ?? instance
+    /// 卸载所有已安装的编辑器插件
+    func uninstallAll() {
+        installedPlugins.removeAll()
+        registry.reset()
+        logger.info("\(self.t)已卸载所有编辑器插件")
     }
 }

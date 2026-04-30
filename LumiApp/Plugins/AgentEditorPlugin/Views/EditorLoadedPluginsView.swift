@@ -105,12 +105,27 @@ struct EditorLoadedPluginsDetailView: View {
 
 @MainActor
 final class EditorLoadedPluginsViewModel: ObservableObject {
-    @Published var enabledPlugins: [EditorPluginManager.PluginInfo] = []
+    struct PluginInfo: Identifiable {
+        let id: String
+        let displayName: String
+        let description: String
+    }
+
+    @Published var enabledPlugins: [PluginInfo] = []
 
     func refresh() {
-        let manager = EditorPluginManager()
-        manager.autoDiscoverAndRegisterPlugins()
-        enabledPlugins = manager.discoveredPluginInfos
-            .filter(\.isEnabled)
+        // 从 PluginVM 过滤出已启用的编辑器插件
+        enabledPlugins = PluginVM.shared.plugins
+            .filter { plugin in
+                PluginVM.shared.isPluginEnabled(plugin) && plugin.providesEditorExtensions
+            }
+            .map { plugin in
+                let type = type(of: plugin)
+                return PluginInfo(
+                    id: type.id,
+                    displayName: type.displayName,
+                    description: type.description
+                )
+            }
     }
 }

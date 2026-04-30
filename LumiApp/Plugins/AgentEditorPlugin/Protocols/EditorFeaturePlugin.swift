@@ -2,8 +2,9 @@ import Foundation
 
 /// 编辑器内部插件协议。
 ///
-/// 这是一层"编辑器子插件"能力，用于承载适合插件化的编辑器功能
-/// （补全、hover、code action 等），避免所有能力都耦合在 EditorState 中。
+/// @deprecated Phase 5: 所有编辑器插件已迁移到 `SuperPlugin` 协议。
+/// 请使用 `actor XXX: SuperPlugin` + `providesEditorExtensions` 替代。
+@available(*, deprecated, message: "Use SuperPlugin with providesEditorExtensions instead")
 @MainActor
 protocol EditorFeaturePlugin: AnyObject {
     /// 唯一标识

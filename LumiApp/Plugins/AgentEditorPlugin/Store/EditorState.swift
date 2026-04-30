@@ -119,6 +119,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     private var diagnosticsCancellable: AnyCancellable?
     private var keybindingCancellable: AnyCancellable?
+    private var xcodeContextCancellable: AnyCancellable?
     private var panelBindings = Set<AnyCancellable>()
     private var multiCursorSearchSession: EditorMultiCursorSearchSession?
     private let sessionSyncGate = SessionSyncGate()
@@ -226,7 +227,11 @@ final class EditorState: ObservableObject, SuperLog {
     // MARK: - File State
     
     /// 当前文件 URL
-    @Published private(set) var currentFileURL: URL?
+    @Published private(set) var currentFileURL: URL? {
+        didSet {
+            refreshXcodeContextSnapshot()
+        }
+    }
     
     /// 当前文件内容（NSTextStorage，CodeEditSourceEditor 要求）
     @Published var content: NSTextStorage?
@@ -245,12 +250,34 @@ final class EditorState: ObservableObject, SuperLog {
     var lspServiceInstance: LSPService { lspService }
     /// 编辑器子插件管理器（负责补全/悬停/code action 等扩展点）
     let editorPluginManager: EditorPluginManager
+    /// 已安装的编辑器插件信息（Phase 4: 从 installedPlugins 派生）
+    var editorFeaturePlugins: [EditorPluginInfo] {
+        editorPluginManager.installedPlugins.map { plugin in
+            let type = type(of: plugin)
+            return EditorPluginInfo(
+                id: type.id,
+                displayName: type.displayName,
+                description: type.description,
+                order: type.order,
+                isConfigurable: type.isConfigurable,
+                isEnabled: PluginVM.shared.isPluginEnabled(plugin)
+            )
+        }
+    }
+
+    struct EditorPluginInfo: Identifiable, Equatable {
+        let id: String
+        let displayName: String
+        let description: String
+        let order: Int
+        let isConfigurable: Bool
+        let isEnabled: Bool
+    }
+
     /// 兼容旧调用：编辑器扩展注册中心
     var editorExtensions: EditorExtensionRegistry { editorPluginManager.registry }
     /// 后台扩展点解析器（异步聚合，去重/排序在后台线程执行）
     let editorExtensionResolver = ExtensionResolver.shared
-    /// 已发现的编辑器内部插件（含禁用项）
-    var editorFeaturePlugins: [EditorPluginManager.PluginInfo] { editorPluginManager.discoveredPluginInfos }
     
     // MARK: - New LSP Providers
     
@@ -613,7 +640,14 @@ final class EditorState: ObservableObject, SuperLog {
     @Published var fileName: String = ""
     
     /// 当前项目根路径（由 EditorRootView 设置，用于计算相对路径）
-    var projectRootPath: String?
+    var projectRootPath: String? {
+        didSet {
+            refreshXcodeContextSnapshot()
+        }
+    }
+
+    /// 当前 Xcode 工程上下文快照（供 UI / 语言链路读取）
+    @Published private(set) var xcodeContextSnapshot: XcodeEditorContextSnapshot?
     
     /// 当前文件相对于项目根目录的路径（用于构建选区位置信息）
     /// 若无项目则返回文件名
@@ -631,6 +665,21 @@ final class EditorState: ObservableObject, SuperLog {
             relative = String(relative.dropFirst())
         }
         return relative
+    }
+
+    @MainActor
+    func refreshXcodeContextSnapshot() {
+        guard let projectRootPath, !projectRootPath.isEmpty else {
+            xcodeContextSnapshot = nil
+            return
+        }
+        let bridge = XcodeProjectContextBridge.shared
+        if let snapshot = bridge.makeEditorContextSnapshot(currentFileURL: currentFileURL),
+           snapshot.projectPath == projectRootPath || snapshot.workspacePath.hasPrefix(projectRootPath) || projectRootPath.hasPrefix(snapshot.workspacePath) {
+            xcodeContextSnapshot = snapshot
+        } else {
+            xcodeContextSnapshot = nil
+        }
     }
     
     // MARK: - Editor State
@@ -822,14 +871,23 @@ final class EditorState: ObservableObject, SuperLog {
         self.codeActionProvider = CodeActionProvider(lspService: lspService)
         self.workspaceSymbolProvider = WorkspaceSymbolProvider(lspService: lspService)
         self.callHierarchyProvider = CallHierarchyProvider(lspService: lspService)
-        self.editorPluginManager.autoDiscoverAndRegisterPlugins()
         self.codeActionProvider.editorExtensionRegistry = self.editorExtensions
+        installEditorPluginsFromPluginVM()
         commandController.refreshCoreCommandRegistrations(in: self)
         bindKeybindings()
         bindPanelState()
         bindDiagnostics()
         restoreConfig()
         observeThemeChanges()
+        observeXcodeContextChanges()
+    }
+
+    /// 从 PluginVM 过滤并安装编辑器插件（Phase 2）
+    private func installEditorPluginsFromPluginVM() {
+        let editorPlugins = PluginVM.shared.plugins.filter {
+            PluginVM.shared.isPluginEnabled($0) && $0.providesEditorExtensions
+        }
+        editorPluginManager.install(plugins: editorPlugins)
     }
 
     private func bindKeybindings() {
@@ -843,8 +901,18 @@ final class EditorState: ObservableObject, SuperLog {
         commandController.refreshCoreCommandRegistrations(in: self)
     }
 
+    private func observeXcodeContextChanges() {
+        xcodeContextCancellable?.cancel()
+        xcodeContextCancellable = NotificationCenter.default
+            .publisher(for: .lumiEditorXcodeContextDidChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.refreshXcodeContextSnapshot()
+            }
+    }
+
     func setEditorFeaturePluginEnabled(_ pluginID: String, enabled: Bool) {
-        editorPluginManager.setPluginEnabled(pluginID, enabled: enabled)
+        PluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
     }
 
     func editorCommandSuggestions() -> [EditorCommandSuggestion] {
@@ -1715,6 +1783,10 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 执行文档格式化（LSP formatting）
     func formatDocumentWithLSP() async {
+        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "格式化文档") {
+            showStatusToast(preflightMessage, level: .warning, duration: 2.4)
+            return
+        }
         await languageActionFacade.formatDocument(
             formattingController: formattingController,
             canPreview: canPreview,
