@@ -6,10 +6,6 @@ struct EditorTabStripView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     let tabs: [EditorTab]
     let activeSessionID: EditorSession.ID?
-    let canNavigateBack: Bool
-    let canNavigateForward: Bool
-    let onNavigateBack: () -> Void
-    let onNavigateForward: () -> Void
     let onSelect: (EditorTab) -> Void
     let onClose: (EditorTab) -> Void
     let onCloseOthers: (EditorTab) -> Void
@@ -24,18 +20,6 @@ struct EditorTabStripView: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            navigationButton(
-                systemName: "chevron.left",
-                isEnabled: canNavigateBack,
-                action: onNavigateBack
-            )
-
-            navigationButton(
-                systemName: "chevron.right",
-                isEnabled: canNavigateForward,
-                action: onNavigateForward
-            )
-
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
                     ForEach(tabs) { tab in
@@ -138,21 +122,5 @@ struct EditorTabStripView: View {
                     )
             }
         }
-    }
-
-    private func navigationButton(systemName: String, isEnabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(isEnabled ? theme.workspaceSecondaryTextColor() : theme.workspaceTertiaryTextColor().opacity(0.5))
-                .frame(width: 24, height: 24)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(isEnabled ? theme.workspaceTextColor().opacity(0.05) : Color.clear)
-                )
-        }
-        .buttonStyle(.plain)
-        .disabled(!isEnabled)
-        .padding(.leading, systemName == "chevron.left" ? 8 : 0)
     }
 }

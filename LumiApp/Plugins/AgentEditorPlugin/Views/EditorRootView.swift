@@ -418,10 +418,6 @@ struct EditorRootView: View {
                 EditorTabStripView(
                     tabs: visibleTabs,
                     activeSessionID: visibleActiveSessionID,
-                    canNavigateBack: sessionStore.canNavigateBack,
-                    canNavigateForward: sessionStore.canNavigateForward,
-                    onNavigateBack: navigateBack,
-                    onNavigateForward: navigateForward,
                     onSelect: activateSession,
                     onClose: closeSession,
                     onCloseOthers: closeOtherSessions,
