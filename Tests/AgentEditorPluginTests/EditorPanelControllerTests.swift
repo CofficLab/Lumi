@@ -101,6 +101,7 @@ final class EditorPanelControllerTests: XCTestCase {
             isOpenEditorsPanelPresented: true,
             isOutlinePanelPresented: true,
             isReferencePanelPresented: true,
+            isWorkspaceSearchPresented: true,
             isWorkspaceSymbolSearchPresented: true,
             isCallHierarchyPresented: false,
             problemDiagnostics: [diagnostic],
@@ -129,6 +130,7 @@ final class EditorPanelControllerTests: XCTestCase {
         XCTAssertEqual(panelState.selectedProblemDiagnostic, diagnostic)
         XCTAssertTrue(panelState.isOpenEditorsPanelPresented)
         XCTAssertTrue(panelState.isReferencePanelPresented)
+        XCTAssertTrue(panelState.isWorkspaceSearchPresented)
         XCTAssertTrue(panelState.isWorkspaceSymbolSearchPresented)
         XCTAssertTrue(panelState.isProblemsPanelPresented)
     }
@@ -140,11 +142,17 @@ final class EditorPanelControllerTests: XCTestCase {
         controller.presentBottomPanel(.references)
         XCTAssertTrue(panelState.isReferencePanelPresented)
         XCTAssertFalse(panelState.isProblemsPanelPresented)
+        XCTAssertFalse(panelState.isWorkspaceSearchPresented)
         XCTAssertEqual(panelState.activeBottomPanel, .references)
 
-        controller.presentBottomPanel(.callHierarchy)
+        controller.presentBottomPanel(.searchResults)
         XCTAssertFalse(panelState.isReferencePanelPresented)
         XCTAssertFalse(panelState.isProblemsPanelPresented)
+        XCTAssertTrue(panelState.isWorkspaceSearchPresented)
+        XCTAssertEqual(panelState.activeBottomPanel, .searchResults)
+
+        controller.presentBottomPanel(.callHierarchy)
+        XCTAssertFalse(panelState.isWorkspaceSearchPresented)
         XCTAssertTrue(panelState.isCallHierarchyPresented)
         XCTAssertEqual(panelState.activeBottomPanel, .callHierarchy)
     }
@@ -159,6 +167,7 @@ final class EditorPanelControllerTests: XCTestCase {
 
         XCTAssertFalse(panelState.isProblemsPanelPresented)
         XCTAssertFalse(panelState.isReferencePanelPresented)
+        XCTAssertFalse(panelState.isWorkspaceSearchPresented)
         XCTAssertFalse(panelState.isWorkspaceSymbolSearchPresented)
         XCTAssertFalse(panelState.isCallHierarchyPresented)
         XCTAssertNil(panelState.activeBottomPanel)

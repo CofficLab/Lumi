@@ -6,8 +6,6 @@ import UniformTypeIdentifiers
 
 /// 编辑器主视图（根入口）
 /// 组合面包屑、工具栏、编辑器、状态栏
-///
-/// Phase 4: 支持 workbench group 树，实现 split editor
 struct EditorRootView: View {
 
     private struct SessionActivation {
@@ -103,6 +101,9 @@ struct EditorRootView: View {
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindReferences)) { _ in
                 handleEditorCommandEvent("builtin.find-references")
             }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorQuickFix)) { _ in
+                handleEditorCommandEvent("builtin.quick-fix")
+            }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorRenameSymbol)) { _ in
                 handleEditorCommandEvent("builtin.rename-symbol")
             }
@@ -114,6 +115,9 @@ struct EditorRootView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleFind)) { _ in
                 handleEditorCommandEvent("builtin.find")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorSearchInFiles)) { _ in
+                handleEditorCommandEvent("builtin.search-in-files")
             }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorShowCommandPalette)) { _ in
                 isCommandPalettePresented = true
@@ -309,15 +313,10 @@ struct EditorRootView: View {
                 )
             }
 
-            if projectVM.isFileSelected {
-                EditorBreadcrumbBarView(
-                    cursorLine: state.cursorLine,
-                    cursorColumn: state.cursorColumn,
-                    activeGroupIndex: activeLeafGroupIndex,
-                    groupCount: workbench.leafGroups.count,
-                    minimapPolicy: state.minimapPolicy,
-                    isOutlinePresented: state.isOutlinePanelPresented,
-                    onToggleOutline: { state.performPanelCommand(.toggleOutline) }
+            if !activeDocumentSymbolTrail.isEmpty {
+                EditorStickySymbolBarView(
+                    state: state,
+                    symbols: activeDocumentSymbolTrail
                 )
             }
 
@@ -350,10 +349,6 @@ struct EditorRootView: View {
             }
     }
 
-    private var activeLeafGroupIndex: Int? {
-        workbench.leafGroups.firstIndex(where: { $0.id == workbench.activeGroupID })
-    }
-
     private var titleMetadata: EditorTitleMetadata? {
         guard state.currentFileURL != nil || !state.fileName.isEmpty else { return nil }
 
@@ -375,6 +370,10 @@ struct EditorRootView: View {
 
     private var titleTrailingStatusItems: [EditorStatusItemSuggestion] {
         state.editorStatusItems().filter { $0.placement == .titleTrailing }
+    }
+
+    private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
+        state.documentSymbolProvider.activeItems(for: state.cursorLine)
     }
 
     private var openEditorItems: [EditorOpenEditorItem] {

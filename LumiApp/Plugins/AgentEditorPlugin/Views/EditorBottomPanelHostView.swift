@@ -133,6 +133,8 @@ struct EditorBottomPanelHostView: View {
                 bottomProblemsContent
             case .references:
                 bottomReferencesContent
+            case .searchResults:
+                EditorWorkspaceSearchPanelView(state: state)
             case .workspaceSymbols:
                 workspaceSymbolsContent
             case .callHierarchy:
@@ -153,6 +155,9 @@ struct EditorBottomPanelHostView: View {
             return "\(panel.title) (\(count))"
         case .references:
             return "\(panel.title) (\(state.panelState.referenceResults.count))"
+        case .searchResults:
+            let count = state.panelState.workspaceSearchSummary?.totalMatches ?? 0
+            return count > 0 ? "\(panel.title) (\(count))" : panel.title
         case .workspaceSymbols:
             let count = state.workspaceSymbolProvider.symbols.count
             return count > 0 ? "\(panel.title) (\(count))" : panel.title

@@ -588,6 +588,81 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
+    var selectedCodeAction: CodeActionItem? {
+        let actions = codeActionProvider.actions
+        guard actions.indices.contains(selectedCodeActionIndex) else { return nil }
+        return actions[selectedCodeActionIndex]
+    }
+
+    func toggleCodeActionPanel() {
+        if isCodeActionPanelPresented {
+            dismissCodeActionPanel()
+        } else {
+            _ = presentCodeActionPanel(preferPreferred: true)
+        }
+    }
+
+    @discardableResult
+    func presentCodeActionPanel(preferPreferred: Bool) -> Bool {
+        let actions = codeActionProvider.actions
+        guard !actions.isEmpty else {
+            dismissCodeActionPanel()
+            return false
+        }
+        isCodeActionPanelPresented = true
+        reconcileCodeActionPanelState(preferPreferred: preferPreferred)
+        return true
+    }
+
+    func dismissCodeActionPanel() {
+        isCodeActionPanelPresented = false
+        selectedCodeActionIndex = 0
+        selectedCodeActionIdentity = nil
+    }
+
+    func reconcileCodeActionPanelState(preferPreferred: Bool = false) {
+        let actions = codeActionProvider.actions
+        guard !actions.isEmpty else {
+            dismissCodeActionPanel()
+            return
+        }
+
+        if let identity = selectedCodeActionIdentity,
+           let retainedIndex = actions.firstIndex(where: { codeActionIdentity(for: $0) == identity }) {
+            selectedCodeActionIndex = retainedIndex
+            return
+        }
+
+        let fallbackIndex = preferredCodeActionIndex(in: actions) ?? 0
+        if preferPreferred || !actions.indices.contains(selectedCodeActionIndex) {
+            selectedCodeActionIndex = fallbackIndex
+        } else {
+            selectedCodeActionIndex = min(selectedCodeActionIndex, actions.count - 1)
+        }
+        selectedCodeActionIdentity = actions.indices.contains(selectedCodeActionIndex)
+            ? codeActionIdentity(for: actions[selectedCodeActionIndex])
+            : nil
+    }
+
+    func selectCodeAction(at index: Int) {
+        let actions = codeActionProvider.actions
+        guard actions.indices.contains(index) else { return }
+        selectedCodeActionIndex = index
+        selectedCodeActionIdentity = codeActionIdentity(for: actions[index])
+    }
+
+    func moveCodeActionSelection(delta: Int) {
+        let actions = codeActionProvider.actions
+        guard !actions.isEmpty else { return }
+        let nextIndex = min(max(selectedCodeActionIndex + delta, 0), actions.count - 1)
+        selectCodeAction(at: nextIndex)
+    }
+
+    func applySelectedCodeAction() async {
+        guard let action = selectedCodeAction else { return }
+        await performCodeActionOverlayAction(action)
+    }
+
     func performCodeActionOverlayAction(_ action: CodeActionItem) async {
         await codeActionProvider.performAction(
             action,
@@ -599,6 +674,7 @@ final class EditorState: ObservableObject, SuperLog {
         ) { [weak self] message in
             self?.showStatusToast(message, level: .warning)
         }
+        dismissCodeActionPanel()
         codeActionProvider.clear()
     }
 
@@ -683,6 +759,14 @@ final class EditorState: ObservableObject, SuperLog {
             containerSize: containerSize,
             style: style
         )
+    }
+
+    private func preferredCodeActionIndex(in actions: [CodeActionItem]) -> Int? {
+        actions.firstIndex(where: \.isPreferred)
+    }
+
+    private func codeActionIdentity(for action: CodeActionItem) -> String {
+        "\(action.kind)|\(action.title)"
     }
 
     /// 在光标稳定后刷新可见区域内的 Inlay Hints
@@ -846,6 +930,9 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前 LSP Hover 文本（光标移动触发，已废弃，保留兼容）
     @Published private(set) var hoverText: String?
     @Published var currentPeekPresentation: EditorPeekPresentation?
+    @Published var currentInlineRenameState: EditorInlineRenameState?
+    @Published private(set) var isCodeActionPanelPresented: Bool = false
+    @Published private(set) var selectedCodeActionIndex: Int = 0
 
     /// 鼠标悬停 Hover 内容（Markdown 格式）
     @Published private(set) var mouseHoverContent: String?
@@ -927,6 +1014,8 @@ final class EditorState: ObservableObject, SuperLog {
 
     /// 多光标编辑状态
     @Published var multiCursorState = MultiCursorState()
+
+    private var selectedCodeActionIdentity: String?
 
     /// References 结果列表（右侧面板）
     @Published private(set) var referenceResults: [ReferenceResult] = []
@@ -1873,6 +1962,8 @@ final class EditorState: ObservableObject, SuperLog {
     /// 执行导航请求并在目标文件/位置落点
     func performNavigation(_ request: EditorNavigationRequest) {
         dismissPeek()
+        dismissInlineRename()
+        dismissCodeActionPanel()
         let resolved = EditorNavigationController.resolve(request)
         loadFile(from: resolved.url)
         Task { @MainActor [weak self] in
@@ -1963,6 +2054,10 @@ final class EditorState: ObservableObject, SuperLog {
             fileName = ""
             hasUnsavedChanges = false
             currentPeekPresentation = nil
+            currentInlineRenameState = nil
+            isCodeActionPanelPresented = false
+            selectedCodeActionIndex = 0
+            selectedCodeActionIdentity = nil
             saveState = .idle
             detectedLanguage = nil
             largeFileMode = .normal
@@ -2973,6 +3068,47 @@ final class EditorState: ObservableObject, SuperLog {
         let clampedLength = max(0, min(selection.length, nsText.length - clampedLocation))
         guard clampedLength > 0 else { return nil }
         return nsText.substring(with: NSRange(location: clampedLocation, length: clampedLength))
+    }
+
+    func currentSymbolNameForRename() -> String? {
+        if let selected = currentSelectedPlainText()?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !selected.isEmpty {
+            return selected
+        }
+
+        guard let text = content?.string as NSString?,
+              let selection = multiCursorState.all.first else {
+            return nil
+        }
+
+        let cursor = max(0, min(selection.location, text.length))
+        guard text.length > 0 else { return nil }
+        let characterSet = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+
+        var start = min(cursor, text.length - 1)
+        if selection.length == 0, start > 0, !isIdentifierCharacter(text.character(at: start), set: characterSet) {
+            start -= 1
+        }
+
+        guard isIdentifierCharacter(text.character(at: start), set: characterSet) else { return nil }
+
+        var lowerBound = start
+        while lowerBound > 0, isIdentifierCharacter(text.character(at: lowerBound - 1), set: characterSet) {
+            lowerBound -= 1
+        }
+
+        var upperBound = start
+        while upperBound + 1 < text.length, isIdentifierCharacter(text.character(at: upperBound + 1), set: characterSet) {
+            upperBound += 1
+        }
+
+        let range = NSRange(location: lowerBound, length: upperBound - lowerBound + 1)
+        let symbol = text.substring(with: range).trimmingCharacters(in: .whitespacesAndNewlines)
+        return symbol.isEmpty ? nil : symbol
+    }
+
+    private func isIdentifierCharacter(_ value: unichar, set: CharacterSet) -> Bool {
+        UnicodeScalar(Int(value)).map(set.contains) ?? false
     }
 
     private var currentFoldingRange: FoldingRangeItem? {

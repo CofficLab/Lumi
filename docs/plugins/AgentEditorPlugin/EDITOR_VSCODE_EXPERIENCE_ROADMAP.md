@@ -888,18 +888,16 @@ UI / 扩展层的具体验证命令、压力场景和记录模板，统一见 [E
   当前更像“command palette + 若干 section 拼接”，缺少 `@`、`#`、`:`、最近文件权重、同名文件 disambiguation 这类高频肌肉记忆入口。
 - [x] P0. `Peek` 体验缺失，definition / references 仍以跳转或底部 panel 为主
   VS Code 常用的 peek definition / peek references 能减少上下文切换；当前只能在跳转和面板之间选，编辑流会被打断。
-- [ ] P0. `Rename` 仍缺少更完整的 in-place flow
+- [x] P0. `Rename` 仍缺少更完整的 in-place flow
   现在请求链和事务是通的，但还缺少更接近 VS Code 的 inline rename 输入框、批量影响预期反馈、失败回退提示和多文件 rename 的可视确认。
-- [ ] P0. `Code Action / Quick Fix` 仍未覆盖更完整的 keyboard-first 体验
+- [x] P0. `Code Action / Quick Fix` 仍未覆盖更完整的 keyboard-first 体验
   lightbulb 和 panel 已统一，但还缺少更强的键盘直达路径、自动聚焦策略、preferred action 语义，以及与 diagnostics / cursor 移动联动的更稳切换。
-- [ ] P1. `Search in Files / Search Editor` 能力缺失
+- [x] P1. `Search in Files / Search Editor` 能力缺失
   当前只补齐了当前 editor 内 find/replace，没有 VS Code 那种跨文件搜索、结果树、search editor、批量替换确认流。
 - [ ] P1. `Folding` 仍缺少持久化、层级命令与更完整的摘要策略
   折叠 affordance 和 summary 已有，但还没有稳定的 fold state restore、按层级折叠/展开、按 selection 或 symbol 范围折叠。
-- [ ] P1. `Sticky Scroll / 更强 breadcrumb-symbol 联动` 缺失
+- [x] P1. `Sticky Scroll / 更强 breadcrumb-symbol 联动` 缺失
   breadcrumb 已有，但 VS Code 式的 sticky scroll 和当前 symbol 跟踪仍缺位，长文件中定位上下文的成本偏高。
-- [ ] P1. `Gutter / diff / source control decoration` 只完成了 contract，未接入真实工作流
-  现在只是把 lane、优先级和 custom marker contract 搭起来了，真实的 git diff add/modify/delete 标记、点击跳转、hover 摘要还没形成闭环。
 - [ ] P2. `Snippet / tabstop / placeholder navigation` 不完整
   completion、多光标和输入事务已经稳定很多，但还缺少 VS Code 常见的 snippet placeholder 跳转、linked editing、tabstop 退出语义。
 - [ ] P2. `Context key / when-clause` 体系仍偏轻量

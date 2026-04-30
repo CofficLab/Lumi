@@ -8,6 +8,8 @@ enum EditorPanelCommand: Equatable {
     case toggleProblems
     case closeProblems
     case closeReferences
+    case toggleWorkspaceSearch
+    case closeWorkspaceSearch
     case openWorkspaceSymbolSearch
     case closeWorkspaceSymbolSearch
     case openCallHierarchy
@@ -19,6 +21,7 @@ struct EditorPanelSnapshot: Equatable {
     let isOutlinePanelPresented: Bool
     let isProblemsPanelPresented: Bool
     let isReferencePanelPresented: Bool
+    let isWorkspaceSearchPresented: Bool
     let isWorkspaceSymbolSearchPresented: Bool
     let isCallHierarchyPresented: Bool
 }

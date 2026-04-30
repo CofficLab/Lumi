@@ -45,6 +45,24 @@ final class EditorPanelController {
         panelState.referenceResults = results.map(Self.editorReferenceResult(from:))
     }
 
+    func setWorkspaceSearchQuery(_ query: String) {
+        panelState.workspaceSearchQuery = query
+    }
+
+    func setWorkspaceSearchLoading(_ isLoading: Bool) {
+        panelState.isWorkspaceSearchLoading = isLoading
+    }
+
+    func setWorkspaceSearchResults(
+        _ results: [EditorWorkspaceSearchFileResult],
+        summary: EditorWorkspaceSearchSummary?,
+        errorMessage: String?
+    ) {
+        panelState.workspaceSearchResults = results
+        panelState.workspaceSearchSummary = summary
+        panelState.workspaceSearchErrorMessage = errorMessage
+    }
+
     func setMouseHover(content: String, symbolRect: CGRect) {
         panelState.setMouseHover(content: content, symbolRect: symbolRect)
     }
@@ -57,11 +75,15 @@ final class EditorPanelController {
         clearDiagnostics: Bool = false,
         closeProblems: Bool? = nil,
         closeReferences: Bool? = nil,
+        closeWorkspaceSearch: Bool? = nil,
         closeWorkspaceSymbols: Bool? = nil,
         closeCallHierarchy: Bool? = nil
     ) {
         panelState.clearMouseHover()
         setReferenceResults([])
+        if closeWorkspaceSearch != nil {
+            setWorkspaceSearchLoading(false)
+        }
         if clearDiagnostics {
             setProblemDiagnostics([])
             setSemanticProblems([])
@@ -71,6 +93,7 @@ final class EditorPanelController {
             snapshot: updatedSnapshot(
                 problems: closeProblems,
                 references: closeReferences,
+                workspaceSearch: closeWorkspaceSearch,
                 workspaceSymbols: closeWorkspaceSymbols,
                 callHierarchy: closeCallHierarchy
             )
@@ -82,6 +105,7 @@ final class EditorPanelController {
         outline: Bool? = nil,
         problems: Bool? = nil,
         references: Bool? = nil,
+        workspaceSearch: Bool? = nil,
         workspaceSymbols: Bool? = nil,
         callHierarchy: Bool? = nil
     ) {
@@ -91,6 +115,7 @@ final class EditorPanelController {
                 outline: outline,
                 problems: problems,
                 references: references,
+                workspaceSearch: workspaceSearch,
                 workspaceSymbols: workspaceSymbols,
                 callHierarchy: callHierarchy
             )
@@ -100,15 +125,17 @@ final class EditorPanelController {
     func presentBottomPanel(_ panel: EditorBottomPanelKind?) {
         switch panel {
         case .problems:
-            updateVisibility(problems: true, references: false, workspaceSymbols: false, callHierarchy: false)
+            updateVisibility(problems: true, references: false, workspaceSearch: false, workspaceSymbols: false, callHierarchy: false)
         case .references:
-            updateVisibility(problems: false, references: true, workspaceSymbols: false, callHierarchy: false)
+            updateVisibility(problems: false, references: true, workspaceSearch: false, workspaceSymbols: false, callHierarchy: false)
+        case .searchResults:
+            updateVisibility(problems: false, references: false, workspaceSearch: true, workspaceSymbols: false, callHierarchy: false)
         case .workspaceSymbols:
-            updateVisibility(problems: false, references: false, workspaceSymbols: true, callHierarchy: false)
+            updateVisibility(problems: false, references: false, workspaceSearch: false, workspaceSymbols: true, callHierarchy: false)
         case .callHierarchy:
-            updateVisibility(problems: false, references: false, workspaceSymbols: false, callHierarchy: true)
+            updateVisibility(problems: false, references: false, workspaceSearch: false, workspaceSymbols: false, callHierarchy: true)
         case nil:
-            updateVisibility(problems: false, references: false, workspaceSymbols: false, callHierarchy: false)
+            updateVisibility(problems: false, references: false, workspaceSearch: false, workspaceSymbols: false, callHierarchy: false)
         }
     }
 
@@ -148,6 +175,7 @@ final class EditorPanelController {
         outline: Bool? = nil,
         problems: Bool? = nil,
         references: Bool? = nil,
+        workspaceSearch: Bool? = nil,
         workspaceSymbols: Bool? = nil,
         callHierarchy: Bool? = nil
     ) -> EditorPanelSnapshot {
@@ -157,6 +185,7 @@ final class EditorPanelController {
             isOutlinePanelPresented: outline ?? snapshot.isOutlinePanelPresented,
             isProblemsPanelPresented: problems ?? snapshot.isProblemsPanelPresented,
             isReferencePanelPresented: references ?? snapshot.isReferencePanelPresented,
+            isWorkspaceSearchPresented: workspaceSearch ?? snapshot.isWorkspaceSearchPresented,
             isWorkspaceSymbolSearchPresented: workspaceSymbols ?? snapshot.isWorkspaceSymbolSearchPresented,
             isCallHierarchyPresented: callHierarchy ?? snapshot.isCallHierarchyPresented
         )

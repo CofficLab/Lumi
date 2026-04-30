@@ -47,6 +47,15 @@ final class EditorPanelState: ObservableObject {
     /// 是否展示 References 面板
     @Published var isReferencePanelPresented: Bool = false
 
+    // MARK: - 工作区文本搜索
+
+    @Published var workspaceSearchQuery: String = ""
+    @Published var workspaceSearchResults: [EditorWorkspaceSearchFileResult] = []
+    @Published var workspaceSearchSummary: EditorWorkspaceSearchSummary?
+    @Published var workspaceSearchErrorMessage: String?
+    @Published var isWorkspaceSearchLoading: Bool = false
+    @Published var isWorkspaceSearchPresented: Bool = false
+
     // MARK: - 工作区符号搜索
 
     /// 是否展示工作区符号搜索面板
@@ -71,6 +80,7 @@ final class EditorPanelState: ObservableObject {
             isOutlinePanelPresented: isOutlinePanelPresented,
             isProblemsPanelPresented: isProblemsPanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
+            isWorkspaceSearchPresented: isWorkspaceSearchPresented,
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
             isCallHierarchyPresented: isCallHierarchyPresented
         )
@@ -84,12 +94,17 @@ final class EditorPanelState: ObservableObject {
             isOpenEditorsPanelPresented: isOpenEditorsPanelPresented,
             isOutlinePanelPresented: isOutlinePanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
+            isWorkspaceSearchPresented: isWorkspaceSearchPresented,
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
             isCallHierarchyPresented: isCallHierarchyPresented,
             problemDiagnostics: problemDiagnostics,
             semanticProblems: semanticProblems,
             selectedProblemDiagnostic: selectedProblemDiagnostic,
-            isProblemsPanelPresented: isProblemsPanelPresented
+            isProblemsPanelPresented: isProblemsPanelPresented,
+            workspaceSearchQuery: workspaceSearchQuery,
+            workspaceSearchResults: workspaceSearchResults,
+            workspaceSearchSummary: workspaceSearchSummary,
+            workspaceSearchErrorMessage: workspaceSearchErrorMessage
         )
     }
 
@@ -101,6 +116,7 @@ final class EditorPanelState: ObservableObject {
         var panels: [EditorBottomPanelKind] = []
         if isProblemsPanelPresented { panels.append(.problems) }
         if isReferencePanelPresented { panels.append(.references) }
+        if isWorkspaceSearchPresented { panels.append(.searchResults) }
         if isWorkspaceSymbolSearchPresented { panels.append(.workspaceSymbols) }
         if isCallHierarchyPresented { panels.append(.callHierarchy) }
         return panels
@@ -140,6 +156,7 @@ final class EditorPanelState: ObservableObject {
         isOutlinePanelPresented = snapshot.isOutlinePanelPresented
         isProblemsPanelPresented = snapshot.isProblemsPanelPresented
         isReferencePanelPresented = snapshot.isReferencePanelPresented
+        isWorkspaceSearchPresented = snapshot.isWorkspaceSearchPresented
         isWorkspaceSymbolSearchPresented = snapshot.isWorkspaceSymbolSearchPresented
         isCallHierarchyPresented = snapshot.isCallHierarchyPresented
     }
@@ -153,6 +170,11 @@ final class EditorPanelState: ObservableObject {
         semanticProblems = state.semanticProblems
         selectedProblemDiagnostic = state.selectedProblemDiagnostic
         referenceResults = state.referenceResults.map(Self.editorReferenceResult(from:))
+        workspaceSearchQuery = state.workspaceSearchQuery
+        workspaceSearchResults = state.workspaceSearchResults
+        workspaceSearchSummary = state.workspaceSearchSummary
+        workspaceSearchErrorMessage = state.workspaceSearchErrorMessage
+        isWorkspaceSearchLoading = false
         if let content = state.mouseHoverContent {
             setMouseHover(content: content, symbolRect: state.mouseHoverSymbolRect)
         } else {
@@ -161,6 +183,7 @@ final class EditorPanelState: ObservableObject {
         isOpenEditorsPanelPresented = state.isOpenEditorsPanelPresented
         isOutlinePanelPresented = state.isOutlinePanelPresented
         isReferencePanelPresented = state.isReferencePanelPresented
+        isWorkspaceSearchPresented = state.isWorkspaceSearchPresented
         isWorkspaceSymbolSearchPresented = state.isWorkspaceSymbolSearchPresented
         isCallHierarchyPresented = state.isCallHierarchyPresented
         isProblemsPanelPresented = state.isProblemsPanelPresented
@@ -177,6 +200,12 @@ final class EditorPanelState: ObservableObject {
         isProblemsPanelPresented = false
         referenceResults = []
         isReferencePanelPresented = false
+        workspaceSearchQuery = ""
+        workspaceSearchResults = []
+        workspaceSearchSummary = nil
+        workspaceSearchErrorMessage = nil
+        isWorkspaceSearchLoading = false
+        isWorkspaceSearchPresented = false
         isWorkspaceSymbolSearchPresented = false
         isCallHierarchyPresented = false
         mouseHoverContent = nil
@@ -235,12 +264,17 @@ struct EditorPanelSessionState: Equatable {
     let isOpenEditorsPanelPresented: Bool
     let isOutlinePanelPresented: Bool
     let isReferencePanelPresented: Bool
+    let isWorkspaceSearchPresented: Bool
     let isWorkspaceSymbolSearchPresented: Bool
     let isCallHierarchyPresented: Bool
     let problemDiagnostics: [Diagnostic]
     let semanticProblems: [EditorSemanticProblem]
     let selectedProblemDiagnostic: Diagnostic?
     let isProblemsPanelPresented: Bool
+    let workspaceSearchQuery: String
+    let workspaceSearchResults: [EditorWorkspaceSearchFileResult]
+    let workspaceSearchSummary: EditorWorkspaceSearchSummary?
+    let workspaceSearchErrorMessage: String?
 
     var snapshot: EditorPanelSnapshot {
         EditorPanelSnapshot(
@@ -248,6 +282,7 @@ struct EditorPanelSessionState: Equatable {
             isOutlinePanelPresented: isOutlinePanelPresented,
             isProblemsPanelPresented: isProblemsPanelPresented,
             isReferencePanelPresented: isReferencePanelPresented,
+            isWorkspaceSearchPresented: isWorkspaceSearchPresented,
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
             isCallHierarchyPresented: isCallHierarchyPresented
         )
@@ -260,12 +295,17 @@ struct EditorPanelSessionState: Equatable {
         isOpenEditorsPanelPresented: Bool = false,
         isOutlinePanelPresented: Bool = false,
         isReferencePanelPresented: Bool = false,
+        isWorkspaceSearchPresented: Bool = false,
         isWorkspaceSymbolSearchPresented: Bool = false,
         isCallHierarchyPresented: Bool = false,
         problemDiagnostics: [Diagnostic] = [],
         semanticProblems: [EditorSemanticProblem] = [],
         selectedProblemDiagnostic: Diagnostic? = nil,
-        isProblemsPanelPresented: Bool = false
+        isProblemsPanelPresented: Bool = false,
+        workspaceSearchQuery: String = "",
+        workspaceSearchResults: [EditorWorkspaceSearchFileResult] = [],
+        workspaceSearchSummary: EditorWorkspaceSearchSummary? = nil,
+        workspaceSearchErrorMessage: String? = nil
     ) {
         self.mouseHoverContent = mouseHoverContent
         self.mouseHoverSymbolRect = mouseHoverSymbolRect
@@ -273,12 +313,17 @@ struct EditorPanelSessionState: Equatable {
         self.isOpenEditorsPanelPresented = isOpenEditorsPanelPresented
         self.isOutlinePanelPresented = isOutlinePanelPresented
         self.isReferencePanelPresented = isReferencePanelPresented
+        self.isWorkspaceSearchPresented = isWorkspaceSearchPresented
         self.isWorkspaceSymbolSearchPresented = isWorkspaceSymbolSearchPresented
         self.isCallHierarchyPresented = isCallHierarchyPresented
         self.problemDiagnostics = problemDiagnostics
         self.semanticProblems = semanticProblems
         self.selectedProblemDiagnostic = selectedProblemDiagnostic
         self.isProblemsPanelPresented = isProblemsPanelPresented
+        self.workspaceSearchQuery = workspaceSearchQuery
+        self.workspaceSearchResults = workspaceSearchResults
+        self.workspaceSearchSummary = workspaceSearchSummary
+        self.workspaceSearchErrorMessage = workspaceSearchErrorMessage
     }
 
     @MainActor

@@ -37,7 +37,7 @@ struct InputView: View, SuperLog {
             )
         }
         .onAppear(perform: onAppear)
-        .popover(isPresented: $isModelSelectorPresented, arrowEdge: .bottom) {
+        .popover(isPresented: $isModelSelectorPresented, arrowEdge: .leading) {
             ModelSelectorView()
         }
         // 监听「添加到聊天」事件：将文件选区信息插入输入框

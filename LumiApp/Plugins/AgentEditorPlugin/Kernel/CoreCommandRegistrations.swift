@@ -104,6 +104,20 @@ enum CoreCommandRegistrations {
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.quick-fix",
+            title: String(localized: "Quick Fix", table: "LumiEditor"),
+            icon: "lightbulb",
+            shortcut: resolveShortcut(EditorCommandBindings.quickFix, for: "builtin.quick-fix"),
+            category: EditorCommandCategory.navigation.rawValue,
+            order: 512,
+            enablement: .custom { _ in state.canPreview && state.isEditable }
+        ) {
+            Task { @MainActor in
+                await state.showQuickFixesFromCurrentCursor()
+            }
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
             id: "builtin.peek-references",
             title: String(localized: "Peek References", table: "LumiEditor"),
             icon: "arrow.triangle.branch",
@@ -327,6 +341,17 @@ enum CoreCommandRegistrations {
         })
 
         CommandRegistry.shared.register(KernelEditorCommand.command(
+            id: "builtin.search-in-files",
+            title: String(localized: "Search in Files", table: "LumiEditor"),
+            icon: "doc.text.magnifyingglass",
+            shortcut: resolveShortcut(EditorCommandBindings.searchInFiles, for: "builtin.search-in-files"),
+            category: EditorCommandCategory.find.rawValue,
+            order: 405
+        ) {
+            state.openWorkspaceSearchPanel()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand.command(
             id: "builtin.find-next",
             title: String(localized: "Find Next", table: "LumiEditor"),
             icon: "arrow.down",
@@ -370,6 +395,17 @@ enum CoreCommandRegistrations {
             enablement: .custom { _ in !state.findMatches.isEmpty }
         ) {
             state.replaceAllFindMatches()
+        })
+
+        CommandRegistry.shared.register(KernelEditorCommand(
+            id: "builtin.open-search-editor",
+            title: String(localized: "Open Search Editor", table: "LumiEditor"),
+            icon: "doc.plaintext",
+            category: EditorCommandCategory.find.rawValue,
+            order: 445,
+            enablement: .custom { _ in state.panelState.workspaceSearchSummary?.totalMatches ?? 0 > 0 }
+        ) {
+            state.openWorkspaceSearchResultsInEditor()
         })
     }
 

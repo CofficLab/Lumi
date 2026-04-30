@@ -28,5 +28,37 @@ final class EditorWorkspaceEditControllerTests: XCTestCase {
         XCTAssertEqual(currentReasons, ["lsp_workspace_edit"])
         XCTAssertEqual(externalURLs.map(\.path), ["/tmp/other.swift"])
     }
+
+    func testSummarizeCountsFilesAndLocations() {
+        let controller = EditorWorkspaceEditController()
+        let summary = controller.summarize(
+            WorkspaceEdit(
+                changes: [
+                    "file:///workspace/current.swift": [
+                        TextEdit(
+                            range: .init(start: .init(line: 0, character: 0), end: .init(line: 0, character: 1)),
+                            newText: "value"
+                        ),
+                        TextEdit(
+                            range: .init(start: .init(line: 2, character: 0), end: .init(line: 2, character: 1)),
+                            newText: "value"
+                        )
+                    ],
+                    "file:///workspace/other.swift": [
+                        TextEdit(
+                            range: .init(start: .init(line: 1, character: 0), end: .init(line: 1, character: 1)),
+                            newText: "value"
+                        )
+                    ]
+                ]
+            ),
+            currentURI: "file:///workspace/current.swift",
+            projectRootPath: "/workspace"
+        )
+
+        XCTAssertEqual(summary.changedFiles, 2)
+        XCTAssertEqual(summary.changedLocations, 3)
+        XCTAssertEqual(summary.fileLabels, ["Current File", "other.swift"])
+    }
 }
 #endif

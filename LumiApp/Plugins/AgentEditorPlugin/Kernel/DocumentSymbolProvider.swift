@@ -38,6 +38,11 @@ final class DocumentSymbolProvider: ObservableObject {
     func reset() {
         requestLifecycle.reset()
     }
+
+    func activeItems(for line: Int) -> [EditorDocumentSymbolItem] {
+        symbols.compactMap { $0.activeItems(for: line) }
+            .max(by: { $0.count < $1.count }) ?? []
+    }
 }
 
 struct EditorDocumentSymbolItem: Identifiable, Equatable {
@@ -120,5 +125,15 @@ struct EditorDocumentSymbolItem: Identifiable, Equatable {
             }
         }
         return [id]
+    }
+
+    func activeItems(for line: Int) -> [EditorDocumentSymbolItem]? {
+        guard contains(line: line) else { return nil }
+        for child in children {
+            if let childItems = child.activeItems(for: line) {
+                return [self] + childItems
+            }
+        }
+        return [self]
     }
 }

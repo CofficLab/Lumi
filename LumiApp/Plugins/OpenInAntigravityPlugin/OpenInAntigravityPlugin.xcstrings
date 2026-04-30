@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Open current project in Antigravity editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -18,6 +19,7 @@
       }
     },
     "Open in Antigravity" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -32,9 +34,6 @@
           }
         }
       }
-    },
-    "无项目" : {
-
     }
   },
   "version" : "1.0"

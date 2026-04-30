@@ -1,50 +1,52 @@
 {
-  "sourceLanguage": "en",
-  "version": "1.1",
-  "strings": {
-    "Midnight": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Midnight"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Deep dark blue color scheme" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deep dark blue color scheme"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "午夜"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深邃的午夜蓝配色"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "午夜"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深邃的午夜藍配色"
           }
         }
       }
     },
-    "Deep dark blue color scheme": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deep dark blue color scheme"
+    "Midnight" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Midnight"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "深邃的午夜蓝配色"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "午夜"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "深邃的午夜藍配色"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "午夜"
           }
         }
       }
     }
-  }
+  },
+  "version" : "1.1"
 }

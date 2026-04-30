@@ -39,7 +39,6 @@ struct SourceEditorView: View, SuperLog {
     
     /// 缓存的 hover 卡片尺寸，用于统一定位策略
     @State private var hoverPopoverSize: CGSize = CGSize(width: 320, height: 100)
-    @State private var isCodeActionPanelExpanded: Bool = false
     
     init(state: EditorState) {
         self._state = ObservedObject(wrappedValue: state)
@@ -103,13 +102,16 @@ struct SourceEditorView: View, SuperLog {
             }
             .onChange(of: state.currentCodeActionOverlayActions.map(\.id)) { _, ids in
                 if ids.isEmpty {
-                    isCodeActionPanelExpanded = false
+                    state.dismissCodeActionPanel()
+                } else {
+                    state.reconcileCodeActionPanelState(preferPreferred: state.isCodeActionPanelPresented)
                 }
             }
             .onChange(of: state.currentFileURL) { _, _ in
                 updateConfigCache()
-                isCodeActionPanelExpanded = false
+                state.dismissCodeActionPanel()
                 state.dismissPeek()
+                state.dismissInlineRename()
                 state.refreshFoldingRanges()
             }
     }
@@ -160,6 +162,9 @@ struct SourceEditorView: View, SuperLog {
             .overlay(alignment: .bottomTrailing) {
                 peekOverlay
             }
+            .overlay(alignment: .top) {
+                inlineRenameOverlay
+            }
             .overlay(alignment: .topTrailing) {
                 foldingSummaryOverlay
             }
@@ -192,6 +197,32 @@ struct SourceEditorView: View, SuperLog {
     }
 
     @ViewBuilder
+    private var inlineRenameOverlay: some View {
+        if state.currentInlineRenameState != nil {
+            EditorInlineRenameOverlayView(
+                state: state,
+                renameState: Binding(
+                    get: { state.currentInlineRenameState ?? EditorInlineRenameState(
+                        originalName: "",
+                        draftName: "",
+                        isLoadingPreview: false,
+                        errorMessage: nil,
+                        previewSummary: nil,
+                        previewEdit: nil
+                    ) },
+                    set: { state.currentInlineRenameState = $0 }
+                )
+            )
+            .padding(.top, 14)
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .top)),
+                removal: .opacity
+            ))
+            .animation(.easeOut(duration: 0.16), value: state.currentInlineRenameState?.draftName)
+        }
+    }
+
+    @ViewBuilder
     private var signatureHelpOverlay: some View {
         if let help = state.currentSignatureHelpOverlayItem {
             SignatureHelpView(item: help)
@@ -215,20 +246,23 @@ struct SourceEditorView: View, SuperLog {
                     codeActionIndicatorButton(actionCount: actions.count)
                         .offset(x: placement.origin.x, y: placement.origin.y)
 
-                    if isCodeActionPanelExpanded {
+                    if state.isCodeActionPanelPresented {
                         CodeActionPanel(
-                            actions: actions
+                            actions: actions,
+                            selectedIndex: Binding(
+                                get: { state.selectedCodeActionIndex },
+                                set: { state.selectCodeAction(at: $0) }
+                            )
                         ) { action in
                             Task { @MainActor in
                                 await state.performCodeActionOverlayAction(action)
-                                isCodeActionPanelExpanded = false
                             }
                         }
                         .offset(x: placement.panelOrigin.x, y: placement.panelOrigin.y)
                         .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .topLeading)))
                     }
                 }
-                .animation(.easeOut(duration: 0.14), value: isCodeActionPanelExpanded)
+                .animation(.easeOut(duration: 0.14), value: state.isCodeActionPanelPresented)
             }
         }
     }
@@ -236,14 +270,14 @@ struct SourceEditorView: View, SuperLog {
     private func codeActionIndicatorButton(actionCount: Int) -> some View {
         let style = EditorCodeActionOverlayStyle.standard
         return Button {
-            isCodeActionPanelExpanded.toggle()
+            state.toggleCodeActionPanel()
         } label: {
             ZStack(alignment: .topTrailing) {
                 RoundedRectangle(cornerRadius: style.indicatorCornerRadius)
-                    .fill(AppUI.Color.semantic.warning.opacity(0.16))
+                    .fill(AppUI.Color.semantic.warning.opacity(state.isCodeActionPanelPresented ? 0.24 : 0.16))
                     .overlay(
                         RoundedRectangle(cornerRadius: style.indicatorCornerRadius)
-                            .stroke(AppUI.Color.semantic.warning.opacity(0.45), lineWidth: 1)
+                            .stroke(AppUI.Color.semantic.warning.opacity(state.isCodeActionPanelPresented ? 0.7 : 0.45), lineWidth: 1)
                     )
                     .frame(width: style.indicatorSize, height: style.indicatorSize)
 

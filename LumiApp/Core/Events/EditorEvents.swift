@@ -11,6 +11,9 @@ extension Notification.Name {
     /// 请求执行「查找引用」
     static let lumiEditorFindReferences = Notification.Name("LumiEditorFindReferences")
 
+    /// 请求执行「快速修复」
+    static let lumiEditorQuickFix = Notification.Name("LumiEditorQuickFix")
+
     /// 请求执行「重命名符号」
     static let lumiEditorRenameSymbol = Notification.Name("LumiEditorRenameSymbol")
 
@@ -22,6 +25,9 @@ extension Notification.Name {
 
     /// 请求切换查找面板
     static let lumiEditorToggleFind = Notification.Name("LumiEditorToggleFind")
+
+    /// 请求执行「在文件中搜索」
+    static let lumiEditorSearchInFiles = Notification.Name("LumiEditorSearchInFiles")
 
     /// 请求显示命令面板
     static let lumiEditorShowCommandPalette = Notification.Name("LumiEditorShowCommandPalette")
@@ -97,6 +103,10 @@ extension NotificationCenter {
         NotificationCenter.default.post(name: .lumiEditorFindReferences, object: nil)
     }
 
+    static func postLumiEditorQuickFix() {
+        NotificationCenter.default.post(name: .lumiEditorQuickFix, object: nil)
+    }
+
     static func postLumiEditorRenameSymbol() {
         NotificationCenter.default.post(name: .lumiEditorRenameSymbol, object: nil)
     }
@@ -111,6 +121,10 @@ extension NotificationCenter {
 
     static func postLumiEditorToggleFind() {
         NotificationCenter.default.post(name: .lumiEditorToggleFind, object: nil)
+    }
+
+    static func postLumiEditorSearchInFiles() {
+        NotificationCenter.default.post(name: .lumiEditorSearchInFiles, object: nil)
     }
 
     static func postLumiEditorShowCommandPalette() {

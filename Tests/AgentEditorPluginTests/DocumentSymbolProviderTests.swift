@@ -43,6 +43,7 @@ final class DocumentSymbolProviderTests: XCTestCase {
         XCTAssertEqual(item.children.count, 1)
         XCTAssertEqual(item.children.first?.line, 5)
         XCTAssertEqual(item.activePath(for: 6), ["Container", "Container/render"])
+        XCTAssertEqual(item.activeItems(for: 6)?.map(\.name), ["Container", "render"])
     }
 
     func testOpenItemCommandControllerResolvesDocumentSymbolToCursorPosition() {

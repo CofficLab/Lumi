@@ -406,9 +406,8 @@ struct CodeActionItem: Identifiable {
 struct CodeActionPanel: View {
 
     let actions: [CodeActionItem]
+    @Binding var selectedIndex: Int
     let onActionSelected: (CodeActionItem) -> Void
-
-    @State private var selectedIndex: Int = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -418,6 +417,18 @@ struct CodeActionPanel: View {
                 Text("Code Actions")
                     .font(.system(size: 12, weight: .semibold))
                 Spacer()
+                if actions.indices.contains(selectedIndex),
+                   actions[selectedIndex].isPreferred {
+                    Text("Preferred")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(AppUI.Color.semantic.warning)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(AppUI.Color.semantic.warning.opacity(0.14))
+                        )
+                }
                 Text("\(actions.count) available")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(AppUI.Color.semantic.textSecondary)

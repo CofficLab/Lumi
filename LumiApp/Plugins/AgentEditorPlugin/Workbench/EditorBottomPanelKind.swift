@@ -3,6 +3,7 @@ import Foundation
 enum EditorBottomPanelKind: String, CaseIterable, Equatable {
     case problems
     case references
+    case searchResults
     case workspaceSymbols
     case callHierarchy
 
@@ -12,6 +13,8 @@ enum EditorBottomPanelKind: String, CaseIterable, Equatable {
             return "Problems"
         case .references:
             return "References"
+        case .searchResults:
+            return "Search"
         case .workspaceSymbols:
             return "Workspace Symbols"
         case .callHierarchy:
@@ -25,6 +28,8 @@ enum EditorBottomPanelKind: String, CaseIterable, Equatable {
             return "exclamationmark.bubble"
         case .references:
             return "arrow.triangle.branch"
+        case .searchResults:
+            return "magnifyingglass"
         case .workspaceSymbols:
             return "text.magnifyingglass"
         case .callHierarchy:

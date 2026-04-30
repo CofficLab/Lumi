@@ -600,6 +600,7 @@ final class EditorSessionTests: XCTestCase {
             isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: true,
+            isWorkspaceSearchPresented: false,
             isWorkspaceSymbolSearchPresented: false,
             isCallHierarchyPresented: false
         )
@@ -616,6 +617,7 @@ final class EditorSessionTests: XCTestCase {
             isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: false,
+            isWorkspaceSearchPresented: false,
             isWorkspaceSymbolSearchPresented: false,
             isCallHierarchyPresented: true
         )
@@ -634,6 +636,7 @@ final class EditorSessionTests: XCTestCase {
             isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: false,
+            isWorkspaceSearchPresented: false,
             isWorkspaceSymbolSearchPresented: true,
             isCallHierarchyPresented: false
         )
@@ -652,6 +655,7 @@ final class EditorSessionTests: XCTestCase {
             isOutlinePanelPresented: false,
             isProblemsPanelPresented: false,
             isReferencePanelPresented: false,
+            isWorkspaceSearchPresented: false,
             isWorkspaceSymbolSearchPresented: false,
             isCallHierarchyPresented: false
         )
@@ -997,6 +1001,7 @@ final class EditorSessionTests: XCTestCase {
     func testEditorPanelSessionStateBuildsSnapshot() {
         let sessionState = EditorPanelSessionState(
             isReferencePanelPresented: true,
+            isWorkspaceSearchPresented: true,
             isWorkspaceSymbolSearchPresented: true,
             isCallHierarchyPresented: false,
             isProblemsPanelPresented: true
@@ -1007,6 +1012,7 @@ final class EditorSessionTests: XCTestCase {
         XCTAssertTrue(snapshot.isProblemsPanelPresented)
         XCTAssertFalse(snapshot.isOutlinePanelPresented)
         XCTAssertTrue(snapshot.isReferencePanelPresented)
+        XCTAssertTrue(snapshot.isWorkspaceSearchPresented)
         XCTAssertTrue(snapshot.isWorkspaceSymbolSearchPresented)
         XCTAssertFalse(snapshot.isCallHierarchyPresented)
     }

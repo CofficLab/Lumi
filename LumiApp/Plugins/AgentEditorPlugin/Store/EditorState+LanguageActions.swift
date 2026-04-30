@@ -4,8 +4,140 @@ import LanguageServerProtocol
 
 @MainActor
 extension EditorState {
+    func showQuickFixesFromCurrentCursor() async {
+        guard canPreview, isEditable else { return }
+        guard let currentFileURL else { return }
+        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "快速修复") {
+            showStatusToast(preflightMessage, level: .warning, duration: 2.4)
+            return
+        }
+
+        let position = currentLSPPosition()
+        let line = max(position.line, 0)
+        let diagnostics = panelState.problemDiagnostics.filter { diagnostic in
+            Int(diagnostic.range.start.line) <= line && Int(diagnostic.range.end.line) >= line
+        }
+
+        await codeActionProvider.requestCodeActionsForLine(
+            uri: currentFileURL.absoluteString,
+            line: line,
+            character: max(position.character, 0),
+            diagnostics: diagnostics,
+            languageId: detectedLanguage?.tsName ?? "swift",
+            selectedText: selectedTextForCodeActions()
+        )
+
+        guard presentCodeActionPanel(preferPreferred: true) else {
+            showStatusToast("No quick fixes available", level: .info, duration: 1.8)
+            return
+        }
+    }
+
     func dismissPeek() {
         currentPeekPresentation = nil
+    }
+
+    func dismissInlineRename() {
+        currentInlineRenameState = nil
+    }
+
+    func updateInlineRenameDraft(_ draft: String) {
+        guard var state = currentInlineRenameState else { return }
+        state.draftName = draft
+        state.invalidatePreview()
+        currentInlineRenameState = state
+    }
+
+    func startInlineRename() {
+        guard canPreview, isEditable else { return }
+        guard let originalName = currentSymbolNameForRename(), !originalName.isEmpty else {
+            showStatusToast("No symbol selected for rename", level: .warning, duration: 1.8)
+            return
+        }
+        currentInlineRenameState = EditorInlineRenameState(
+            originalName: originalName,
+            draftName: originalName,
+            isLoadingPreview: false,
+            errorMessage: nil,
+            previewSummary: nil,
+            previewEdit: nil
+        )
+    }
+
+    func previewInlineRename() async {
+        guard var renameState = currentInlineRenameState else { return }
+        let newName = renameState.trimmedDraftName
+        guard !newName.isEmpty else {
+            renameState.errorMessage = "Enter a new symbol name"
+            currentInlineRenameState = renameState
+            return
+        }
+        guard newName != renameState.originalName else {
+            renameState.errorMessage = "Choose a different symbol name"
+            currentInlineRenameState = renameState
+            return
+        }
+        if let preflightMessage = xcodeLanguagePreflightMessage(operation: "重命名符号", symbolName: renameState.originalName) {
+            renameState.errorMessage = preflightMessage
+            currentInlineRenameState = renameState
+            return
+        }
+
+        renameState.isLoadingPreview = true
+        renameState.errorMessage = nil
+        renameState.previewSummary = nil
+        renameState.previewEdit = nil
+        currentInlineRenameState = renameState
+
+        let position = currentLSPPosition()
+        guard let edit = await lspCoordinator.requestRename(
+            line: position.line,
+            character: position.character,
+            newName: newName
+        ) else {
+            renameState.isLoadingPreview = false
+            renameState.errorMessage = renameController.failedMessage()
+            currentInlineRenameState = renameState
+            return
+        }
+
+        let summary = workspaceEditController.summarize(
+            edit,
+            currentURI: currentFileURL?.absoluteString ?? "",
+            projectRootPath: projectRootPath
+        )
+        renameState.isLoadingPreview = false
+        renameState.previewEdit = edit
+        renameState.previewSummary = summary.changedFiles > 0 ? summary : nil
+        renameState.errorMessage = summary.changedFiles > 0 ? nil : renameController.notAppliedMessage()
+        currentInlineRenameState = renameState
+    }
+
+    func applyInlineRename() {
+        guard let renameState = currentInlineRenameState,
+              let edit = renameState.previewEdit,
+              let currentURI = currentFileURL?.absoluteString else {
+            return
+        }
+
+        let changedFiles = workspaceEditController.apply(
+            changes: edit.changes,
+            documentChanges: edit.documentChanges,
+            currentURI: currentURI,
+            applyCurrentDocumentEdits: { [weak self] edits, reason in
+                self?.applyTextEditsToCurrentDocument(edits, reason: reason)
+            },
+            applyExternalFileEdits: { [weak self] edits, url in
+                self?.applyTextEditsToFile(edits, url: url) ?? false
+            }
+        )
+
+        dismissInlineRename()
+        if changedFiles == 0 {
+            showStatusToast(renameController.notAppliedMessage(), level: .warning, duration: 1.8)
+            return
+        }
+        showStatusToast(renameController.completedMessage(changedFiles: changedFiles), level: .success, duration: 1.8)
     }
 
     func openPeekItem(_ item: EditorPeekItem) {
@@ -152,19 +284,19 @@ extension EditorState {
     }
 
     func promptRenameSymbol() {
-        languageActionFacade.promptRenameSymbol(
-            canPreview: canPreview,
-            isEditable: isEditable,
-            renameController: renameController,
-            showStatus: { [weak self] message, level, duration in
-                self?.showStatusToast(message, level: level, duration: duration)
-            },
-            runRename: { [weak self] newName in
-                Task { @MainActor [weak self] in
-                    await self?.renameSymbolWithLSP(to: newName)
-                }
-            }
-        )
+        startInlineRename()
+    }
+
+    private func selectedTextForCodeActions() -> String? {
+        guard let focusedTextView,
+              let selection = focusedTextView.selectionManager.textSelections.first else { return nil }
+        let range = selection.range
+        guard range.location != NSNotFound,
+              range.length > 0,
+              let selectedRange = Range(range, in: focusedTextView.string) else {
+            return nil
+        }
+        return String(focusedTextView.string[selectedRange])
     }
 
     func currentLSPPosition() -> (line: Int, character: Int) {

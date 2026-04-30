@@ -25,6 +25,19 @@ final class LSPContextCommandContributor: EditorCommandContributor {
                 }
             ),
             .init(
+                id: "builtin.quick-fix",
+                title: String(localized: "Quick Fix", table: "LumiEditor"),
+                systemImage: "lightbulb",
+                category: EditorCommandCategory.navigation.rawValue,
+                order: 15,
+                isEnabled: state.canPreview && state.isEditable,
+                action: {
+                    Task { @MainActor in
+                        await state.showQuickFixesFromCurrentCursor()
+                    }
+                }
+            ),
+            .init(
                 id: "builtin.go-to-definition",
                 title: String(localized: "Go to Definition", table: "LSPContextCommandsEditor"),
                 systemImage: "arrow.right.square",

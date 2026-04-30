@@ -1,50 +1,52 @@
 {
-  "sourceLanguage": "en",
-  "version": "1.1",
-  "strings": {
-    "Browser": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Browser"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Browser" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browser"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浏览器"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浏览器"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "瀏覽器"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽器"
           }
         }
       }
     },
-    "Provides web page screenshot rendering using WKWebView and returns screenshot file path.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provides web page screenshot rendering using WKWebView and returns screenshot file path."
+    "Provides web page screenshot rendering using WKWebView and returns screenshot file path." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provides web page screenshot rendering using WKWebView and returns screenshot file path."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供网页渲染截图功能，使用 WKWebView 渲染网页并返回截图文件路径。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供网页渲染截图功能，使用 WKWebView 渲染网页并返回截图文件路径。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供網頁渲染截圖功能，使用 WKWebView 渲染網頁並返回截圖文件路徑。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供網頁渲染截圖功能，使用 WKWebView 渲染網頁並返回截圖文件路徑。"
           }
         }
       }
     }
-  }
+  },
+  "version" : "1.1"
 }

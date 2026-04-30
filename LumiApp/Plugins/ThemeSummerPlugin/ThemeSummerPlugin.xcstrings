@@ -1,50 +1,52 @@
 {
-  "sourceLanguage": "en",
-  "version": "1.1",
-  "strings": {
-    "Summer": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Summer"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Summer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summer"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "夏日"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "夏日"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "夏日"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "夏日"
           }
         }
       }
     },
-    "Summer blue app theme": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Summer blue app theme"
+    "Summer blue app theme" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summer blue app theme"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "夏日蓝色主题"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "夏日蓝色主题"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "夏日藍色主題"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "夏日藍色主題"
           }
         }
       }
     }
-  }
+  },
+  "version" : "1.1"
 }
