@@ -31,6 +31,9 @@ final class EditorExtensionRegistry: ObservableObject {
     private var sheetContributors: [any EditorSheetContributor] = []
     private var toolbarContributors: [any EditorToolbarContributor] = []
     private var themeContributors: [any EditorThemeContributor] = []
+    private var projectContextProviders: [any EditorProjectContextProvider] = []
+    private var languageProjectIntegrationProviders: [any EditorLanguageProjectIntegrationProvider] = []
+    private var semanticAvailabilityProviders: [any EditorSemanticAvailabilityProvider] = []
 
     func reset() {
         completionContributors.removeAll()
@@ -50,6 +53,9 @@ final class EditorExtensionRegistry: ObservableObject {
         sheetContributors.removeAll()
         toolbarContributors.removeAll()
         themeContributors.removeAll()
+        projectContextProviders.removeAll()
+        languageProjectIntegrationProviders.removeAll()
+        semanticAvailabilityProviders.removeAll()
     }
 
     func registerCompletionContributor(_ contributor: any EditorCompletionContributor) {
@@ -166,6 +172,58 @@ final class EditorExtensionRegistry: ObservableObject {
             return
         }
         toolbarContributors.append(contributor)
+    }
+
+    // MARK: - Project Integration Providers
+
+    func registerProjectContextProvider(_ provider: any EditorProjectContextProvider) {
+        if projectContextProviders.contains(where: { $0.id == provider.id }) {
+            return
+        }
+        projectContextProviders.append(provider)
+    }
+
+    func registerLanguageProjectIntegrationProvider(_ provider: any EditorLanguageProjectIntegrationProvider) {
+        if languageProjectIntegrationProviders.contains(where: { $0.id == provider.id }) {
+            return
+        }
+        languageProjectIntegrationProviders.append(provider)
+    }
+
+    func registerSemanticAvailabilityProvider(_ provider: any EditorSemanticAvailabilityProvider) {
+        if semanticAvailabilityProviders.contains(where: { $0.id == provider.id }) {
+            return
+        }
+        semanticAvailabilityProviders.append(provider)
+    }
+
+    func projectContextProvider(for projectPath: String?) -> (any EditorProjectContextProvider)? {
+        bestMatch(in: projectContextProviders.filter { $0.canHandleProject(at: projectPath) })
+    }
+
+    func languageProjectIntegrationProvider(
+        for languageId: String,
+        projectPath: String?
+    ) -> (any EditorLanguageProjectIntegrationProvider)? {
+        bestMatch(
+            in: languageProjectIntegrationProviders.filter { $0.supports(languageId: languageId, projectPath: projectPath) }
+        )
+    }
+
+    func semanticAvailabilityProvider(for uri: String?) -> (any EditorSemanticAvailabilityProvider)? {
+        bestMatch(in: semanticAvailabilityProviders.filter { $0.canHandle(uri: uri) })
+    }
+
+    func allProjectContextProviders() -> [any EditorProjectContextProvider] {
+        projectContextProviders
+    }
+
+    func allLanguageProjectIntegrationProviders() -> [any EditorLanguageProjectIntegrationProvider] {
+        languageProjectIntegrationProviders
+    }
+
+    func allSemanticAvailabilityProviders() -> [any EditorSemanticAvailabilityProvider] {
+        semanticAvailabilityProviders
     }
 
     // MARK: - Theme
@@ -753,5 +811,38 @@ final class EditorExtensionRegistry: ObservableObject {
             result.append(item)
         }
         return result
+    }
+
+    private func bestMatch(
+        in providers: [any EditorProjectContextProvider]
+    ) -> (any EditorProjectContextProvider)? {
+        providers.sorted {
+            if $0.priority != $1.priority {
+                return $0.priority > $1.priority
+            }
+            return $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending
+        }.first
+    }
+
+    private func bestMatch(
+        in providers: [any EditorLanguageProjectIntegrationProvider]
+    ) -> (any EditorLanguageProjectIntegrationProvider)? {
+        providers.sorted {
+            if $0.priority != $1.priority {
+                return $0.priority > $1.priority
+            }
+            return $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending
+        }.first
+    }
+
+    private func bestMatch(
+        in providers: [any EditorSemanticAvailabilityProvider]
+    ) -> (any EditorSemanticAvailabilityProvider)? {
+        providers.sorted {
+            if $0.priority != $1.priority {
+                return $0.priority > $1.priority
+            }
+            return $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending
+        }.first
     }
 }

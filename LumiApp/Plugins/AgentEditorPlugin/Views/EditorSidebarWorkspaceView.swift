@@ -231,15 +231,14 @@ struct EditorSidebarWorkspaceView: View {
             onSelectTab(tab)
         } label: {
             VStack(spacing: 5) {
-                HStack(spacing: 5) {
+                ZStack(alignment: .topTrailing) {
                     Image(systemName: tab.systemImage)
-                        .font(.system(size: 10, weight: .semibold))
-                    Text(tab.title)
-                        .font(.system(size: 10, weight: .semibold))
-                        .lineLimit(1)
+                        .font(.system(size: 12, weight: .semibold))
+                        .frame(width: 22, height: 16)
+
                     if let badge = badgeValue(for: tab) {
                         Text(badge)
-                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
                             .background(
@@ -250,6 +249,7 @@ struct EditorSidebarWorkspaceView: View {
                                             : AppUI.Color.semantic.textTertiary.opacity(0.12)
                                     )
                             )
+                            .offset(x: 8, y: -4)
                     }
                 }
                 Rectangle()
@@ -261,10 +261,11 @@ struct EditorSidebarWorkspaceView: View {
                     ? AppUI.Color.semantic.textPrimary
                     : AppUI.Color.semantic.textSecondary
             )
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 6)
             .padding(.top, 2)
         }
         .buttonStyle(.plain)
+        .help(tab.title)
     }
 
     private func badgeValue(for tab: EditorSidebarWorkspaceTab) -> String? {
