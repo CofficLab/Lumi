@@ -43,6 +43,7 @@ struct EditorFileTreeView: View {
         .frame(maxHeight: .infinity)
         .onChange(of: projectVM.currentProjectPath, onProjectPathChanged)
         .onChange(of: projectVM.selectedFileURL, onSelectedFileChanged)
+        .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
         .onSyncSelectedFile(perform: onSyncSelectedFile)
         .onReceive(coordinator.$refreshToken) { newToken in
@@ -63,6 +64,17 @@ struct EditorFileTreeView: View {
         rootRefreshToken += 1
         if Self.verbose {
             Self.logger.info("🌳 项目路径变化，更新协调器并递增刷新令牌")
+        }
+    }
+
+    private func onAppear() {
+        // 首次渲染时初始化协调器（解决应用启动恢复上次项目时 onChange 不触发的问题）
+        if !projectVM.currentProjectPath.isEmpty {
+            coordinator.setProjectRootPath(projectVM.currentProjectPath)
+            rootRefreshToken += 1
+            if Self.verbose {
+                Self.logger.info("🌳 视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
+            }
         }
     }
 
