@@ -3,9 +3,9 @@ import SwiftUI
 import MagicKit
 import AppKit
 
-/// 项目文件树文件服务
+/// AgentEditor 文件树文件服务
 /// 负责处理文件相关的无状态逻辑：图标、名称、过滤、排序等
-enum ProjectTreeFileService {
+enum EditorFileTreeService {
     /// 过滤并排序目录内容
     /// - Parameter urls: 目录下的 URL 列表
     /// - Returns: 过滤并排序后的 URL 列表（文件夹在前）

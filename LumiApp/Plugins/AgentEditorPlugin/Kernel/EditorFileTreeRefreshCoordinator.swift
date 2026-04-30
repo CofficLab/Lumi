@@ -8,19 +8,19 @@ private final class WeakBox<T: AnyObject>: @unchecked Sendable {
     init(_ value: T? = nil) { self.value = value }
 }
 
-/// 文件树刷新协调器
+/// AgentEditor 文件树刷新协调器
 ///
-/// 作为 ProjectTreeWatcher 和 SwiftUI 视图之间的桥梁：
+/// 作为 EditorFileTreeWatcher 和 SwiftUI 视图之间的桥梁：
 /// - 接收 watcher 的文件系统变化通知
 /// - 跟踪当前已展开的目录列表
 /// - 通过刷新令牌驱动 SwiftUI 视图重新加载数据
 ///
 /// 使用方式：
-/// 1. ProjectTreeView 持有 coordinator
-/// 2. FileNodeView 展开/折叠时调用 coordinator 的 addExpandedPath / removeExpandedPath
+/// 1. EditorFileTreeView 持有 coordinator
+/// 2. EditorFileTreeNodeView 展开/折叠时调用 coordinator 的 addExpandedPath / removeExpandedPath
 /// 3. coordinator 自动更新 watcher 的监控列表
 /// 4. 文件系统变化时 coordinator 递增刷新令牌
-final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable, SuperLog {
+final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Sendable, SuperLog {
 
     // MARK: - Properties
 
@@ -37,7 +37,7 @@ final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable
     private var expandedPaths: Set<String> = []
 
     /// 文件系统监听器
-    private let watcher: ProjectTreeWatcher
+    private let watcher: EditorFileTreeWatcher
 
     /// 防抖任务
     private var debounceTask: Task<Void, Never>?
@@ -50,8 +50,8 @@ final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable
     // MARK: - Init
 
     init() {
-        let weakBox = WeakBox<ProjectTreeRefreshCoordinator>()
-        watcher = ProjectTreeWatcher { changedURL in
+        let weakBox = WeakBox<EditorFileTreeRefreshCoordinator>()
+        watcher = EditorFileTreeWatcher { changedURL in
             weakBox.value?.handleDirectoryChanged(url: changedURL)
         }
         weakBox.value = self
@@ -75,7 +75,7 @@ final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable
 
         // 从 store 恢复展开状态
         if !path.isEmpty {
-            let store = AgentFileTreePluginLocalStore.shared
+            let store = EditorFileTreeStore.shared
             expandedPaths = store.expandedPaths(for: path)
             updateWatcher()
         }
@@ -89,14 +89,14 @@ final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable
 
     // MARK: - Public - Expansion Tracking
 
-    /// 添加一个已展开的目录（FileNodeView 展开时调用）
+    /// 添加一个已展开的目录（EditorFileTreeNodeView 展开时调用）
     func addExpandedPath(_ relativePath: String) {
         guard !projectRootPath.isEmpty else { return }
         expandedPaths.insert(relativePath)
         updateWatcher()
     }
 
-    /// 移除一个已折叠的目录（FileNodeView 折叠时调用）
+    /// 移除一个已折叠的目录（EditorFileTreeNodeView 折叠时调用）
     func removeExpandedPath(_ relativePath: String) {
         guard !projectRootPath.isEmpty else { return }
         expandedPaths.remove(relativePath)
@@ -109,7 +109,7 @@ final class ProjectTreeRefreshCoordinator: ObservableObject, @unchecked Sendable
     /// 从 store 同步展开状态（用于初始化恢复）
     func syncExpandedPathsFromStore() {
         guard !projectRootPath.isEmpty else { return }
-        let store = AgentFileTreePluginLocalStore.shared
+        let store = EditorFileTreeStore.shared
         expandedPaths = store.expandedPaths(for: projectRootPath)
         updateWatcher()
     }

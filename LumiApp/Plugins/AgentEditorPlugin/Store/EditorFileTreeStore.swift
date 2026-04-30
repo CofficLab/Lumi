@@ -1,19 +1,19 @@
 import Foundation
 
-/// AgentFileTreePlugin 插件本地存储
+/// AgentEditor 文件树本地存储
 ///
-/// 负责持久化插件的配置和设置项。
-/// 存储位置：AppConfig.getDBFolderURL()/AgentFileTreePlugin/settings.plist
-final class AgentFileTreePluginLocalStore: @unchecked Sendable {
+/// 负责持久化文件树的配置和设置项。
+/// 存储位置：AppConfig.getDBFolderURL()/AgentEditorFileTree/settings.plist
+final class EditorFileTreeStore: @unchecked Sendable {
 
     // MARK: - Singleton
 
-    static let shared = AgentFileTreePluginLocalStore()
+    static let shared = EditorFileTreeStore()
 
     // MARK: - Properties
 
     private let fileManager = FileManager.default
-    private let queue = DispatchQueue(label: "AgentFileTreePluginLocalStore.queue", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "EditorFileTreeStore.queue", qos: .userInitiated)
     private let pluginDirectory: URL
     private let settingsFileURL: URL
 
@@ -30,7 +30,7 @@ final class AgentFileTreePluginLocalStore: @unchecked Sendable {
 
     private init() {
         let root = AppConfig.getDBFolderURL()
-            .appendingPathComponent("AgentFileTreePlugin", isDirectory: true)
+            .appendingPathComponent("AgentEditorFileTree", isDirectory: true)
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
         try? fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)

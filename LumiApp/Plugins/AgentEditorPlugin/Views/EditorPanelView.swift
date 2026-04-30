@@ -12,7 +12,7 @@ struct EditorPanelView: View {
     var body: some View {
         HSplitView {
             // 文件树
-            ProjectTreeView()
+            EditorFileTreeView()
                 .frame(minWidth: 180, idealWidth: 260)
                 .background(themeManager.activeAppTheme.sidebarBackgroundColor())
                 .background(SplitViewWidthPersistence(storageKey: storageKey))

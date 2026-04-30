@@ -2,7 +2,7 @@ import Foundation
 import os
 import MagicKit
 
-/// 文件树目录变化监听器
+/// AgentEditor 文件树目录变化监听器
 ///
 /// 使用 DispatchSource 监控已展开目录的文件系统变化，
 /// 检测到变化后通过回调通知上层进行刷新。
@@ -11,7 +11,7 @@ import MagicKit
 /// - 仅监听当前已展开的目录（懒监听，避免不必要的系统开销）
 /// - 同一目录短时间内多次事件会合并（防抖）
 /// - 所有公开方法线程安全
-final class ProjectTreeWatcher: @unchecked Sendable, SuperLog {
+final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
 
     // MARK: - Types
 
@@ -43,7 +43,7 @@ final class ProjectTreeWatcher: @unchecked Sendable, SuperLog {
     private let debounceInterval: UInt64
 
     /// 操作队列，确保 watches 字典的读写安全
-    private let queue = DispatchQueue(label: "ProjectTreeWatcher.queue", qos: .utility)
+    private let queue = DispatchQueue(label: "EditorFileTreeWatcher.queue", qos: .utility)
 
     // MARK: - Init
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// 文件树加载状态视图
-struct FileTreeLoadingView: View {
+struct EditorFileTreeLoadingView: View {
     var body: some View {
         HStack(spacing: 6) {
             ProgressView()
@@ -17,7 +17,7 @@ struct FileTreeLoadingView: View {
 }
 
 /// 文件树空目录视图
-struct FileTreeEmptyView: View {
+struct EditorFileTreeEmptyView: View {
     var body: some View {
         Text(String(localized: "Empty folder", table: "ProjectTree"))
             .font(.system(size: 10))
@@ -29,7 +29,7 @@ struct FileTreeEmptyView: View {
 }
 
 /// 文件树无项目视图（未选择项目）
-struct FileTreeNoProjectView: View {
+struct EditorFileTreeNoProjectView: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: "folder")
@@ -45,9 +45,9 @@ struct FileTreeNoProjectView: View {
 
 #Preview {
     VStack(spacing: 20) {
-        FileTreeLoadingView()
-        FileTreeEmptyView()
-        FileTreeNoProjectView()
+        EditorFileTreeLoadingView()
+        EditorFileTreeEmptyView()
+        EditorFileTreeNoProjectView()
     }
     .frame(width: 200)
 }

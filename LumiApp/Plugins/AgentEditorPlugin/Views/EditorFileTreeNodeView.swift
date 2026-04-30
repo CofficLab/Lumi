@@ -2,7 +2,7 @@ import MagicKit
 import SwiftUI
 
 /// 文件树节点视图 - 完全独立实现，无外部依赖
-struct FileNodeView: View {
+struct EditorFileTreeNodeView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     let url: URL
     let depth: Int
@@ -77,12 +77,12 @@ struct FileNodeView: View {
         self.onExpansionChange = onExpansionChange
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
-        self.isDirectory = ProjectTreeFileService.isDirectory(url)
+        self.isDirectory = EditorFileTreeService.isDirectory(url)
 
         // 从 store 恢复展开状态
         if !projectRootPath.isEmpty {
             let relativePath = url.path.replacingOccurrences(of: projectRootPath, with: "")
-            let store = AgentFileTreePluginLocalStore.shared
+            let store = EditorFileTreeStore.shared
             _isExpanded = State(initialValue: store.expandedPaths(for: projectRootPath).contains(relativePath))
         }
     }
@@ -161,7 +161,7 @@ struct FileNodeView: View {
             if isDirectory && isExpanded && !children.isEmpty {
                 VStack(spacing: 2) {
                     ForEach(children, id: \.self) { childURL in
-                        FileNodeView(
+                        EditorFileTreeNodeView(
                             url: childURL,
                             depth: depth + 1,
                             selectedURL: selectedURL,
@@ -259,7 +259,7 @@ struct FileNodeView: View {
         if isDirectory {
             return isExpanded ? "folder.fill" : "folder"
         }
-        return ProjectTreeFileService.getFileIcon(for: url)
+        return EditorFileTreeService.getFileIcon(for: url)
     }
 
     fileprivate func rowBackground(isSelected: Bool) -> Color {
@@ -274,7 +274,7 @@ struct FileNodeView: View {
 
 // MARK: - Actions
 
-extension FileNodeView {
+extension EditorFileTreeNodeView {
     // MARK: - Expansion Persistence
 
     /// 当前节点相对于项目根目录的路径
@@ -285,7 +285,7 @@ extension FileNodeView {
     /// 将当前展开/折叠状态持久化到 store
     private func persistExpansionState() {
         guard !projectRootPath.isEmpty else { return }
-        let store = AgentFileTreePluginLocalStore.shared
+        let store = EditorFileTreeStore.shared
         if isExpanded {
             store.addExpandedPath(relativePath, for: projectRootPath)
         } else {
@@ -304,7 +304,7 @@ extension FileNodeView {
         let currentURL = url
         Task.detached(priority: .userInitiated) { [self] in
             do {
-                let sorted = try ProjectTreeFileService.loadContents(of: currentURL)
+                let sorted = try EditorFileTreeService.loadContents(of: currentURL)
                 await MainActor.run { [self] in
                     self.children = sorted
                 }
@@ -319,41 +319,41 @@ extension FileNodeView {
     private func reloadChildren() { loadChildren() }
 
     private func createNewFile() {
-        ProjectTreeFileService.createFile(in: url, name: newItemName)
+        EditorFileTreeService.createFile(in: url, name: newItemName)
         reloadChildren()
     }
 
     private func createNewFolder() {
-        ProjectTreeFileService.createFolder(in: url, name: newItemName)
+        EditorFileTreeService.createFolder(in: url, name: newItemName)
         reloadChildren()
     }
 
     private func renameItem() {
-        if let newURL = ProjectTreeFileService.renameItem(at: url, newName: newItemName) {
+        if let newURL = EditorFileTreeService.renameItem(at: url, newName: newItemName) {
             onSelect(newURL)
         }
         reloadChildren()
     }
 
     private func deleteItem() {
-        ProjectTreeFileService.trashItem(at: url)
+        EditorFileTreeService.trashItem(at: url)
         reloadChildren()
     }
 
     private func openInFinder() {
-        ProjectTreeFileService.openInFinder(url)
+        EditorFileTreeService.openInFinder(url)
     }
 
     private func openInVSCode() {
-        ProjectTreeFileService.openInVSCode(url)
+        EditorFileTreeService.openInVSCode(url)
     }
 
     private func openInTerminal() {
-        ProjectTreeFileService.openInTerminal(url)
+        EditorFileTreeService.openInTerminal(url)
     }
 
     private func copyPath() {
-        ProjectTreeFileService.copyPath(url)
+        EditorFileTreeService.copyPath(url)
     }
 
     /// 与拖入输入区相同：图片走附件，其它文件插入路径
@@ -367,7 +367,7 @@ extension FileNodeView {
 #Preview {
     let testURL = URL(fileURLWithPath: NSHomeDirectory())
 
-    return FileNodeView(
+    return EditorFileTreeNodeView(
         url: testURL,
         depth: 0,
         selectedURL: nil,

@@ -1,9 +1,8 @@
-import MagicKit
 import os
 import SwiftUI
 
-/// 项目文件树视图
-struct ProjectTreeView: View {
+/// AgentEditor 主体系内的文件树视图
+struct EditorFileTreeView: View {
     @EnvironmentObject var projectVM: ProjectVM
 
     // MARK: - Logging Configuration
@@ -14,7 +13,7 @@ struct ProjectTreeView: View {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.view")
 
     /// 刷新协调器，管理文件系统监听和刷新令牌
-    @StateObject private var coordinator = ProjectTreeRefreshCoordinator()
+    @StateObject private var coordinator = EditorFileTreeRefreshCoordinator()
 
     /// 根节点刷新令牌（由协调器驱动 + 手动驱动）
     @State private var rootRefreshToken: Int = 0
@@ -22,10 +21,10 @@ struct ProjectTreeView: View {
     var body: some View {
         VStack(spacing: 0) {
             if projectVM.currentProjectPath.isEmpty {
-                FileTreeNoProjectView()
+                EditorFileTreeNoProjectView()
             } else {
                 ScrollView {
-                    FileNodeView(
+                    EditorFileTreeNodeView(
                         url: URL(fileURLWithPath: projectVM.currentProjectPath),
                         depth: 0,  // depth == 0 表示根节点
                         selectedURL: projectVM.selectedFileURL,
@@ -71,7 +70,7 @@ struct ProjectTreeView: View {
     }
 
     private func onSelectedFileChanged() {
-        // 自动展开到选中文件的逻辑需要在 FileNodeView 中处理
+        // 自动展开到选中文件的逻辑需要在 EditorFileTreeNodeView 中处理
     }
 
     private func onDisappear() {
@@ -109,7 +108,7 @@ struct ProjectTreeView: View {
 // MARK: - Preview
 
 #Preview {
-    ProjectTreeView()
+    EditorFileTreeView()
         .inRootView()
         .frame(width: 250, height: 400)
 }
