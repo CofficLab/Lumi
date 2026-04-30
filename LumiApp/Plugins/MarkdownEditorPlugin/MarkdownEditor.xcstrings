@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.1",
+  "strings": {
+    "Markdown Highlight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown Highlight"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown 高亮"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown 高亮"
+          }
+        }
+      }
+    },
+    "Provides Markdown-aware highlight ranges for headings, lists, quotes, links, and code spans.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides Markdown-aware highlight ranges for headings, lists, quotes, links, and code spans."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为 Markdown 的标题、列表、引用、链接和代码片段提供语法高亮。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為 Markdown 的標題、列表、引用、鏈接和代碼片段提供語法高亮。"
+          }
+        }
+      }
+    }
+  }
+}

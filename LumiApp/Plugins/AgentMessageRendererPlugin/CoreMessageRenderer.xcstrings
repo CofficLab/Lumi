@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.1",
+  "strings": {
+    "Core Message Renderer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Core Message Renderer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核心消息渲染器"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核心消息渲染器"
+          }
+        }
+      }
+    },
+    "Provides built-in message type rendering support": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides built-in message type rendering support"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供内置消息类型的渲染支持"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供內置消息類型的渲染支持"
+          }
+        }
+      }
+    }
+  }
+}

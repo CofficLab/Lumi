@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.1",
+  "strings": {
+    "CSS Language Tools": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CSS Language Tools"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CSS 语言工具"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CSS 語言工具"
+          }
+        }
+      }
+    },
+    "Provides CSS completions and hover help for common properties and values.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides CSS completions and hover help for common properties and values."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为常用 CSS 属性和值提供代码补全和悬浮提示。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為常用 CSS 屬性和值提供代碼補全和懸浮提示。"
+          }
+        }
+      }
+    }
+  }
+}
