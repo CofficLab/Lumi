@@ -25,7 +25,6 @@ final class LSPCoordinatorDocumentSymbolsTests: XCTestCase {
             name: "EditorPlugin",
             detail: "class",
             kind: .class,
-            tags: nil,
             deprecated: nil,
             range: .init(
                 start: .init(line: 3, character: 0),

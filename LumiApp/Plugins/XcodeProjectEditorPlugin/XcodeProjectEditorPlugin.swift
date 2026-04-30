@@ -14,7 +14,7 @@ actor XcodeProjectEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     /// Build Context Provider 实例
-    nonisolated let buildContextProvider = XcodeBuildContextProvider()
+    @MainActor let buildContextProvider = XcodeBuildContextProvider()
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         // 向 Bridge 注册 buildContextProvider，让 LSPService 能读取 build context

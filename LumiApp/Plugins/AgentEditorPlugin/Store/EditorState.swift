@@ -73,7 +73,7 @@ final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var semanticProblems: [EditorSemanticProblem] = []
 
     /// 是否正在重新解析 Xcode build context
-    @Published private(set) var isResyncingXcodeBuildContext: Bool = false
+    @Published var isResyncingXcodeBuildContext: Bool = false
 
     /// 当前选中的问题，用于列表高亮与编辑器同步
     @Published private(set) var selectedProblemDiagnostic: Diagnostic?

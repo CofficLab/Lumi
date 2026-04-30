@@ -43,7 +43,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
     // MARK: - 状态枚举
     
     /// Build context 状态（对应 Phase 8：需要 UI 可见）
-    enum BuildContextStatus: Sendable {
+    enum BuildContextStatus: Sendable, Equatable {
         case unknown
         case resolving
         case available(XcodeBuildServerConfig)
@@ -67,7 +67,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         }
     }
     
-    struct XcodeBuildServerConfig {
+    struct XcodeBuildServerConfig: Equatable, Sendable {
         let buildServerJSONPath: String
         let workspacePath: String
         let scheme: String

@@ -51,7 +51,7 @@ extension EditorState {
         if xcodeLanguagePreflightError(operation: "保存时格式化") != nil {
             return nil
         }
-        await formattingController.prepareSaveFormatting(
+        return await formattingController.prepareSaveFormatting(
             text: text,
             tabSize: tabSize,
             insertSpaces: insertSpaces

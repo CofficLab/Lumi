@@ -8,7 +8,7 @@ final class MarkdownEditorPluginTests: XCTestCase {
         let registry = EditorExtensionRegistry()
         let plugin = MarkdownEditorPlugin()
 
-        plugin.register(into: registry)
+        plugin.registerEditorExtensions(into: registry)
 
         let providers = registry.highlightProviders(for: "markdown")
         XCTAssertEqual(providers.count, 1)

@@ -20,9 +20,9 @@ enum XcodePBXProjParser {
     }
 
     static func parseMembershipGraph(contents: String) throws -> MembershipGraph {
-        let nativeTargetBlocks = parseSectionBlocks(named: "PBXNativeTarget", in: content)
-        let rootGroupBlocks = parseSectionBlocks(named: "PBXFileSystemSynchronizedRootGroup", in: content)
-        let exceptionBlocks = parseSectionBlocks(named: "PBXFileSystemSynchronizedBuildFileExceptionSet", in: content)
+        let nativeTargetBlocks = parseSectionBlocks(named: "PBXNativeTarget", in: contents)
+        let rootGroupBlocks = parseSectionBlocks(named: "PBXFileSystemSynchronizedRootGroup", in: contents)
+        let exceptionBlocks = parseSectionBlocks(named: "PBXFileSystemSynchronizedBuildFileExceptionSet", in: contents)
 
         let targets = nativeTargetBlocks.reduce(into: [String: ParsedTarget]()) { result, entry in
             let groups = parseIdentifierList(named: "fileSystemSynchronizedGroups", in: entry.body)
