@@ -12,11 +12,11 @@ struct CollapseButton: View {
     var body: some View {
         AppIconButton(
             systemImage: "chevron.up",
-            label: String(localized: "Collapse", table: "AgentInput"),
+            label: String(localized: "Collapse", table: "AgentChat"),
             tint: AppUI.Color.semantic.textSecondary.opacity(0.8),
             size: .compact,
             action: action
         )
-        .help(String(localized: "Collapse Message", table: "AgentInput"))
+        .help(String(localized: "Collapse Message", table: "AgentChat"))
     }
 }

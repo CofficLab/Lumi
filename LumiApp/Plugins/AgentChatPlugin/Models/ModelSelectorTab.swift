@@ -22,13 +22,13 @@ enum ModelSelectorTab: Equatable {
     var displayTitle: String {
         switch self {
         case .current:
-            return String(localized: "Current Provider", table: "AgentInput")
+            return String(localized: "Current Provider", table: "AgentChat")
         case .frequent:
-            return String(localized: "Frequent", table: "AgentInput")
+            return String(localized: "Frequent", table: "AgentChat")
         case .fast:
-            return String(localized: "Fast", table: "AgentInput")
+            return String(localized: "Fast", table: "AgentChat")
         case .all:
-            return String(localized: "All", table: "AgentInput")
+            return String(localized: "All", table: "AgentChat")
         case .provider:
             return ""  // 供应商标题由外部传入
         }

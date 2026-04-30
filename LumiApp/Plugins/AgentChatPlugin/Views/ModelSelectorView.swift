@@ -81,7 +81,7 @@ struct ModelSelectorView: View, SuperLog {
                     case .all:
                         providerList(
                             providers: filteredProviders(from: llmVM.allProviders),
-                            emptyMessage: String(localized: "No Providers", table: "AgentInput")
+                            emptyMessage: String(localized: "No Providers", table: "AgentChat")
                         )
                     case .provider(let providerId):
                         singleProviderList(providerId: providerId)
@@ -128,7 +128,7 @@ struct ModelSelectorView: View, SuperLog {
             }
         } else {
             ContentUnavailableView {
-                Label(String(localized: "No Matching Models", table: "AgentInput"), systemImage: "magnifyingglass")
+                Label(String(localized: "No Matching Models", table: "AgentChat"), systemImage: "magnifyingglass")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -148,13 +148,13 @@ struct ModelSelectorView: View, SuperLog {
                 }
             } else {
                 ContentUnavailableView {
-                    Label(String(localized: "No Matching Models", table: "AgentInput"), systemImage: "magnifyingglass")
+                    Label(String(localized: "No Matching Models", table: "AgentChat"), systemImage: "magnifyingglass")
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
             ContentUnavailableView {
-                Label(String(localized: "No Provider Selected", table: "AgentInput"), systemImage: "tray")
+                Label(String(localized: "No Provider Selected", table: "AgentChat"), systemImage: "tray")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -168,9 +168,9 @@ struct ModelSelectorView: View, SuperLog {
         let filteredEntries = filteredFrequentModels()
         if filteredEntries.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "No Frequent Models", table: "AgentInput"), systemImage: "clock.arrow.circlepath")
+                Label(String(localized: "No Frequent Models", table: "AgentChat"), systemImage: "clock.arrow.circlepath")
             } description: {
-                Text(String(localized: "No Frequent Models Description", table: "AgentInput"))
+                Text(String(localized: "No Frequent Models Description", table: "AgentChat"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -201,9 +201,9 @@ struct ModelSelectorView: View, SuperLog {
         let filteredEntries = filteredFastModels()
         if filteredEntries.isEmpty {
             ContentUnavailableView {
-                Label(String(localized: "No Fast Models", table: "AgentInput"), systemImage: "bolt.fill")
+                Label(String(localized: "No Fast Models", table: "AgentChat"), systemImage: "bolt.fill")
             } description: {
-                Text(String(localized: "No Fast Models Description", table: "AgentInput"))
+                Text(String(localized: "No Fast Models Description", table: "AgentChat"))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -254,7 +254,7 @@ struct ModelSelectorView: View, SuperLog {
             let filteredInfos = infos.filter {
                 matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
             }
-            let fallbackSeries = String(localized: "Other", table: "AgentInput")
+            let fallbackSeries = String(localized: "Other", table: "AgentChat")
             let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
                 Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {

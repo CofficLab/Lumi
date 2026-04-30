@@ -18,7 +18,7 @@ struct ChatMessagesView: View {
         }
         .background(themeManager.activeAppTheme.workspaceBackgroundColor().opacity(0.6))
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Chat Messages Area", table: "AgentMessages"))
+        .accessibilityLabel(String(localized: "Chat Messages Area", table: "AgentChat"))
     }
 }
 

@@ -108,7 +108,7 @@ struct ModelLatencyProgressBar: View {
         let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
         var text = """
         ⚡ TTFT: \(formatTTFT(ttft)) (\(ttftPercent)%)
-        🕐 \(String(localized: "Response Time", table: "AgentInput")): \(formatLatency(totalLatency)) (\(responsePercent)%)
+        🕐 \(String(localized: "Response Time", table: "AgentChat")): \(formatLatency(totalLatency)) (\(responsePercent)%)
         """
 
         if tps > 0 {
@@ -118,8 +118,8 @@ struct ModelLatencyProgressBar: View {
         text += """
 
 
-        \(String(localized: "TTFT Help", table: "AgentInput"))
-        \(String(localized: "Response Time Help", table: "AgentInput"))
+        \(String(localized: "TTFT Help", table: "AgentChat"))
+        \(String(localized: "Response Time Help", table: "AgentChat"))
         """
 
         if tps > 0 {

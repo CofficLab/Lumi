@@ -142,8 +142,8 @@ extension MessageListView {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .environment(\.preferOuterScroll, true)
-        .accessibilityLabel(String(localized: "Message List", table: "AgentMessages"))
-        .accessibilityHint(String(localized: "Message List Hint", table: "AgentMessages"))
+        .accessibilityLabel(String(localized: "Message List", table: "AgentChat"))
+        .accessibilityHint(String(localized: "Message List Hint", table: "AgentChat"))
         .overlay(alignment: .topLeading) {
             ScrollPositionObserver { atBottom, userInitiated in
                 handleScrollPositionChanged(atBottom: atBottom, userInitiated: userInitiated)
@@ -168,7 +168,7 @@ extension MessageListView {
             Spacer()
             AppButton(
                 String(
-                    format: String(localized: "Expand Earlier Loaded Messages (%lld)", table: "AgentMessages"),
+                    format: String(localized: "Expand Earlier Loaded Messages (%lld)", table: "AgentChat"),
                     hiddenCount
                 ),
                 systemImage: "clock.arrow.circlepath",
@@ -177,8 +177,8 @@ extension MessageListView {
             ) {
                 historyWindowLimit += Self.historyWindowStep
             }
-            .accessibilityLabel(String(localized: "Expand Earlier Messages", table: "AgentMessages"))
-            .accessibilityHint(String(localized: "Expand Earlier Messages Hint", table: "AgentMessages"))
+            .accessibilityLabel(String(localized: "Expand Earlier Messages", table: "AgentChat"))
+            .accessibilityHint(String(localized: "Expand Earlier Messages Hint", table: "AgentChat"))
             Spacer()
         }
         .padding(.vertical, 4)
@@ -187,7 +187,7 @@ extension MessageListView {
     private var loadingOverlay: some View {
         VStack(spacing: 12) {
             ProgressView()
-            Text(String(localized: "Loading History", table: "AgentMessages"))
+            Text(String(localized: "Loading History", table: "AgentChat"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -210,8 +210,8 @@ extension MessageListView {
                     RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
                         .fill(AppUI.Color.semantic.textSecondary.opacity(0.08))
                 )
-                .accessibilityLabel(String(localized: "Load Earlier Messages", table: "AgentMessages"))
-                .accessibilityHint(String(localized: "Load Earlier Messages Hint", table: "AgentMessages"))
+                .accessibilityLabel(String(localized: "Load Earlier Messages", table: "AgentChat"))
+                .accessibilityHint(String(localized: "Load Earlier Messages Hint", table: "AgentChat"))
             } else {
                 AppButton(
                     loadMoreButtonText,
@@ -221,8 +221,8 @@ extension MessageListView {
                 ) {
                     timelineViewModel.handleLoadMore()
                 }
-                .accessibilityLabel(String(localized: "Load Earlier Messages", table: "AgentMessages"))
-                .accessibilityHint(String(localized: "Load Earlier Messages Hint", table: "AgentMessages"))
+                .accessibilityLabel(String(localized: "Load Earlier Messages", table: "AgentChat"))
+                .accessibilityHint(String(localized: "Load Earlier Messages Hint", table: "AgentChat"))
             }
             Spacer()
         }
@@ -231,11 +231,11 @@ extension MessageListView {
 
     private var loadMoreButtonText: String {
         if timelineViewModel.isLoadingMore {
-            return String(localized: "Loading More Messages", table: "AgentMessages")
+            return String(localized: "Loading More Messages", table: "AgentChat")
         }
         let loadedCount = timelineViewModel.persistedMessages.count
         return String(
-            format: String(localized: "Load More Messages (%lld of %lld)", table: "AgentMessages"),
+            format: String(localized: "Load More Messages (%lld of %lld)", table: "AgentChat"),
             loadedCount,
             timelineViewModel.totalMessageCount
         )

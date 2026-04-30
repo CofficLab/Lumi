@@ -48,15 +48,15 @@ struct ModelSelectorModelRow: View {
                                 if let supportsVision {
                                     capabilityBadge(
                                         title: supportsVision
-                                            ? String(localized: "Image", table: "AgentInput")
-                                            : String(localized: "Text", table: "AgentInput"),
+                                            ? String(localized: "Image", table: "AgentChat")
+                                            : String(localized: "Text", table: "AgentChat"),
                                         systemImage: supportsVision ? "photo" : "text.bubble"
                                     )
                                 }
 
                                 if let supportsTools, supportsTools {
                                     capabilityBadge(
-                                        title: String(localized: "Tools", table: "AgentInput"),
+                                        title: String(localized: "Tools", table: "AgentChat"),
                                         systemImage: "wrench.and.screwdriver"
                                     )
                                 }

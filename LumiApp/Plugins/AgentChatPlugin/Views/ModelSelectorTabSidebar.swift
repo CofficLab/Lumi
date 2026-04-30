@@ -14,16 +14,16 @@ struct ModelSelectorTabSidebar: View {
         VStack(spacing: 4) {
             // MARK: - 上半区：快捷 Tab
 
-            quickTabButton(tab: .current, icon: "scope", title: String(localized: "Current Provider", table: "AgentInput"))
-            quickTabButton(tab: .frequent, icon: "clock.arrow.circlepath", title: String(localized: "Frequent", table: "AgentInput"))
-            quickTabButton(tab: .fast, icon: "bolt.fill", title: String(localized: "Fast", table: "AgentInput"))
+            quickTabButton(tab: .current, icon: "scope", title: String(localized: "Current Provider", table: "AgentChat"))
+            quickTabButton(tab: .frequent, icon: "clock.arrow.circlepath", title: String(localized: "Frequent", table: "AgentChat"))
+            quickTabButton(tab: .fast, icon: "bolt.fill", title: String(localized: "Fast", table: "AgentChat"))
 
             Divider()
                 .padding(.vertical, 4)
 
             // MARK: - 下半区：供应商列表（可滚动）
 
-            Text(String(localized: "Providers", table: "AgentInput"))
+            Text(String(localized: "Providers", table: "AgentChat"))
                 .font(AppUI.Typography.caption1)
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -40,7 +40,7 @@ struct ModelSelectorTabSidebar: View {
             Divider()
                 .padding(.vertical, 4)
 
-            quickTabButton(tab: .all, icon: "globe", title: String(localized: "All", table: "AgentInput"))
+            quickTabButton(tab: .all, icon: "globe", title: String(localized: "All", table: "AgentChat"))
         }
         .padding(8)
     }

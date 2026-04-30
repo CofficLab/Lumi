@@ -98,8 +98,8 @@ struct InputAreaView: View, SuperLog {
                 .padding(.top, 8)
                 .allowsHitTesting(canChat)
                 .opacity(canChat ? 1 : 0.6)
-                .accessibilityLabel(String(localized: "Message Input", table: "AgentInput"))
-                .accessibilityHint(String(localized: "Message Input Hint", table: "AgentInput"))
+                .accessibilityLabel(String(localized: "Message Input", table: "AgentChat"))
+                .accessibilityHint(String(localized: "Message Input Hint", table: "AgentChat"))
 
             // 工具栏
             ChatToolbarView(
@@ -108,8 +108,8 @@ struct InputAreaView: View, SuperLog {
             )
             .allowsHitTesting(canChat)
             .opacity(canChat ? 1 : 0.6)
-            .accessibilityLabel(String(localized: "Chat Toolbar", table: "AgentInput"))
-            .accessibilityHint(String(localized: "Chat Toolbar Hint", table: "AgentInput"))
+            .accessibilityLabel(String(localized: "Chat Toolbar", table: "AgentChat"))
+            .accessibilityHint(String(localized: "Chat Toolbar Hint", table: "AgentChat"))
         }
         .background(themeManager.activeAppTheme.workspaceBackgroundColor())
         .overlay(RoundedRectangle(cornerRadius: 0)
@@ -128,7 +128,7 @@ struct InputAreaView: View, SuperLog {
             handleFileDrop(fileURL: fileURL)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Input Area", table: "AgentInput"))
+        .accessibilityLabel(String(localized: "Input Area", table: "AgentChat"))
     }
 }
 
@@ -148,7 +148,7 @@ extension InputAreaView {
                     .font(.system(size: 18))
                     .foregroundStyle(theme.workspaceTertiaryTextColor())
 
-                Text(String(localized: "Please create or select a conversation first", table: "AgentInput"))
+                Text(String(localized: "Please create or select a conversation first", table: "AgentChat"))
                     .font(.subheadline)
                     .foregroundStyle(theme.workspaceSecondaryTextColor())
                     .multilineTextAlignment(.center)
@@ -218,7 +218,7 @@ extension InputAreaView {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.secondary)
 
-                Text(String(localized: "Release to add image to chat", table: "AgentInput"))
+                Text(String(localized: "Release to add image to chat", table: "AgentChat"))
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)

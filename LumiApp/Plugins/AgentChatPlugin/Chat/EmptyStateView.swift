@@ -19,36 +19,36 @@ struct EmptyStateView: View {
                         .font(.system(size: 60))
                         .foregroundStyle(.secondary)
 
-                    Text(String(localized: hasAnyConversation ? "Select Conversation" : "No Conversations", table: "AgentMessages"))
+                    Text(String(localized: hasAnyConversation ? "Select Conversation" : "No Conversations", table: "AgentChat"))
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
 
                     if hasAnyConversation {
-                        Text(String(localized: "Select or Create Conversation", table: "AgentMessages"))
+                        Text(String(localized: "Select or Create Conversation", table: "AgentChat"))
                             .font(.body)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
 
                     if !hasAnyConversation {
-                        AppButton(String(localized: "New Conversation", table: "AgentMessages"), systemImage: "plus.circle.fill", style: .primary) {
+                        AppButton(String(localized: "New Conversation", table: "AgentChat"), systemImage: "plus.circle.fill", style: .primary) {
                             Task {
                                 await conversationCreationVM.createNewConversation()
                             }
                         }
-                        .accessibilityLabel(String(localized: "New Conversation", table: "AgentMessages"))
-                        .accessibilityHint(String(localized: "New Conversation Hint", table: "AgentMessages"))
+                        .accessibilityLabel(String(localized: "New Conversation", table: "AgentChat"))
+                        .accessibilityHint(String(localized: "New Conversation Hint", table: "AgentChat"))
                     }
 
-                    AppButton(String(localized: "Onboarding Guide", table: "AgentMessages"), style: .ghost, size: .small) {
+                    AppButton(String(localized: "Onboarding Guide", table: "AgentChat"), style: .ghost, size: .small) {
                         NotificationCenter.default.post(
                             name: Notification.Name("AgentOnboarding.Show"),
                             object: nil
                         )
                     }
-                    .accessibilityLabel(String(localized: "Onboarding Guide", table: "AgentMessages"))
-                    .accessibilityHint(String(localized: "Onboarding Guide Hint", table: "AgentMessages"))
+                    .accessibilityLabel(String(localized: "Onboarding Guide", table: "AgentChat"))
+                    .accessibilityHint(String(localized: "Onboarding Guide Hint", table: "AgentChat"))
 
                     QuickStartActionsView(sendStrategy: .createConversationAndSend)
                         .padding(.top, 4)
@@ -62,7 +62,7 @@ struct EmptyStateView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Empty State Page", table: "AgentMessages"))
+        .accessibilityLabel(String(localized: "Empty State Page", table: "AgentChat"))
     }
 }
 
