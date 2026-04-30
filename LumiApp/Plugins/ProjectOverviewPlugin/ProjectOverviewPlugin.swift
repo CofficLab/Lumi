@@ -18,17 +18,17 @@ actor ProjectOverviewPlugin: SuperPlugin {
     static let shared = ProjectOverviewPlugin()
 
     @MainActor
-    func agentToolFactories() -> [AnyAgentToolFactory] {
-        [AnyAgentToolFactory(ProjectOverviewToolsFactory())]
+    func agentToolFactories() -> [AnySuperAgentToolFactory] {
+        [AnySuperAgentToolFactory(ProjectOverviewToolsFactory())]
     }
 }
 
 @MainActor
-private struct ProjectOverviewToolsFactory: AgentToolFactory {
+private struct ProjectOverviewToolsFactory: SuperAgentToolFactory {
     let id: String = "project.overview.factory"
     let order: Int = 0
 
-    func makeTools(env: AgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
         [ProjectOverviewTool()]
     }
 }

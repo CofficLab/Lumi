@@ -5,7 +5,7 @@ import SwiftUI
 /// 灵感来源于 Atom One Dark (One Dark Pro) 配色方案。
 /// 特点：深邃的蓝灰色基调，色彩平衡且舒适
 ///
-struct OneDarkTheme: ThemeProtocol {
+struct OneDarkTheme: SuperTheme {
     // MARK: - 主题信息
     let identifier = "one-dark"
     let displayName = "One Dark"

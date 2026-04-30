@@ -23,7 +23,7 @@ class ThemeManager: ObservableObject {
     }
 
     /// 当前 App 主题对象
-    var activeAppTheme: any ThemeProtocol {
+    var activeAppTheme: any SuperTheme {
         currentTheme?.appTheme ?? MidnightTheme()
     }
 

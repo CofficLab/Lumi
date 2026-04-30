@@ -5,7 +5,7 @@ import SwiftUI
 /// 纯粹的虚空黑，深邃而神秘。
 /// 特点：黑靛色调，极简主义
 ///
-struct VoidTheme: ThemeProtocol {
+struct VoidTheme: SuperTheme {
     // MARK: - 主题信息
 
     let identifier = "void"

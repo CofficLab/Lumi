@@ -91,8 +91,8 @@ final class PluginVM: ObservableObject, SuperLog {
     // MARK: - Tools Cache
 
     private var cachedAgentTools: [AgentTool]?
-    private var cachedAgentToolFactories: [AnyAgentToolFactory]?
-    private var cachedSendMiddlewares: [SendMiddleware]?
+    private var cachedAgentToolFactories: [AnySuperAgentToolFactory]?
+    private var cachedSuperSendMiddlewares: [SuperSendMiddleware]?
     /// 已发现的 LLM 供应商类型
     ///
     /// 在插件自动发现阶段，从所有实现了 `llmProviderType()` 的插件中收集。
@@ -122,7 +122,7 @@ final class PluginVM: ObservableObject, SuperLog {
                 self?.rightSidebarViewsCache = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
-                self?.cachedSendMiddlewares = nil
+                self?.cachedSuperSendMiddlewares = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -164,13 +164,13 @@ final class PluginVM: ObservableObject, SuperLog {
         return sorted
     }
 
-    func getAgentToolFactories() -> [AnyAgentToolFactory] {
+    func getAgentToolFactories() -> [AnySuperAgentToolFactory] {
         if let cachedAgentToolFactories {
             return cachedAgentToolFactories
         }
 
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var factories: [(pluginOrder: Int, f: AnyAgentToolFactory)] = []
+        var factories: [(pluginOrder: Int, f: AnySuperAgentToolFactory)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
@@ -192,13 +192,13 @@ final class PluginVM: ObservableObject, SuperLog {
 
     // MARK: - Send Middleware
 
-    func getSendMiddlewares() -> [SendMiddleware] {
-        if let cachedSendMiddlewares {
-            return cachedSendMiddlewares
+    func getSuperSendMiddlewares() -> [SuperSendMiddleware] {
+        if let cachedSuperSendMiddlewares {
+            return cachedSuperSendMiddlewares
         }
 
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var items: [(pluginOrder: Int, mwOrder: Int, middleware: SendMiddleware)] = []
+        var items: [(pluginOrder: Int, mwOrder: Int, middleware: SuperSendMiddleware)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
@@ -213,7 +213,7 @@ final class PluginVM: ObservableObject, SuperLog {
             return a.middleware.id < b.middleware.id
         }.map(\.middleware)
 
-        cachedSendMiddlewares = sorted
+        cachedSuperSendMiddlewares = sorted
         return sorted
     }
 
@@ -262,7 +262,7 @@ final class PluginVM: ObservableObject, SuperLog {
         rightSidebarViewsCache = nil
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
-        cachedSendMiddlewares = nil
+        cachedSuperSendMiddlewares = nil
 
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
@@ -312,7 +312,7 @@ final class PluginVM: ObservableObject, SuperLog {
         // 插件已更新，清空聚合缓存，避免在插件加载前被读取后永久缓存为空。
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
-        cachedSendMiddlewares = nil
+        cachedSuperSendMiddlewares = nil
 
         // 从插件中收集 LLM 供应商类型
         var providerTypes: [any SuperLLMProvider.Type] = []

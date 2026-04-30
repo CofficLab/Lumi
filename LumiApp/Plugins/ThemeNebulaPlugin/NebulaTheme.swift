@@ -13,7 +13,7 @@ import SwiftUI
 /// 浪漫的星云粉，柔和而温暖。
 /// 特点：粉紫色调，温馨浪漫
 ///
-struct NebulaTheme: ThemeProtocol {
+struct NebulaTheme: SuperTheme {
     // MARK: - 主题信息
 
     let identifier = "nebula"

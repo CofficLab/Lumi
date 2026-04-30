@@ -5,7 +5,7 @@ import SwiftUI
 /// 定义主题必须实现的接口，使主题系统更加灵活和可扩展。
 /// 每个主题文件都应遵循此协议，实现自己的颜色、渐变和效果。
 ///
-protocol ThemeProtocol {
+protocol SuperTheme {
     /// 主题唯一标识符
     var identifier: String { get }
 
@@ -84,7 +84,7 @@ protocol ThemeProtocol {
 }
 
 // MARK: - 主题协议默认实现
-extension ThemeProtocol {
+extension SuperTheme {
     // MARK: - 主题信息默认实现
 
     /// 默认为深色主题

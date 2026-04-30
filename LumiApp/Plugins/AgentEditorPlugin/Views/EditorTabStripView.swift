@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import UniformTypeIdentifiers
 
 struct EditorTabStripView: View {
     private struct OpenEditorSection: Identifiable {
@@ -22,9 +23,11 @@ struct EditorTabStripView: View {
     let onClose: (EditorTab) -> Void
     let onCloseOthers: (EditorTab) -> Void
     let onTogglePinned: (EditorTab) -> Void
+    let onStartDrag: (EditorTab) -> Void
+    let onDropBefore: (EditorTab?) -> Void
 
     /// 当前主题
-    private var theme: any ThemeProtocol {
+    private var theme: any SuperTheme {
         themeManager.activeAppTheme
     }
 
@@ -55,6 +58,10 @@ struct EditorTabStripView: View {
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
+                .onDrop(of: [UTType.plainText]) { _ in
+                    onDropBefore(nil)
+                    return true
+                }
             }
         }
         .background(theme.workspaceTertiaryTextColor().opacity(0.06))
@@ -241,6 +248,16 @@ struct EditorTabStripView: View {
         .onTapGesture {
             onSelect(tab)
         }
+        .onDrag {
+            onStartDrag(tab)
+            return NSItemProvider(object: tab.sessionID.uuidString as NSString)
+        } preview: {
+            tabDragPreview(for: tab)
+        }
+        .onDrop(of: [UTType.plainText]) { _ in
+            onDropBefore(tab)
+            return true
+        }
         .contextMenu {
             Button(
                 tab.isPinned
@@ -251,6 +268,24 @@ struct EditorTabStripView: View {
             }
             Button(String(localized: "Close Others", table: "LumiEditor")) {
                 onCloseOthers(tab)
+            }
+        }
+    }
+
+    private func tabDragPreview(for tab: EditorTab) -> some View {
+        Group {
+            if let fileURL = tab.fileURL {
+                DragPreview(fileURL: fileURL)
+            } else {
+                Text(tab.title)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.orange.opacity(0.95))
+                    )
             }
         }
     }

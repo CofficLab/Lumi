@@ -3,7 +3,7 @@ import MagicKit
 
 /// 在管线继续后异步生成标题，避免阻塞后续 `send`。
 @MainActor
-struct AutoConversationTitleSendMiddleware: SendMiddleware {
+struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
     let id: String = "auto.conversation.title"
     let order: Int = 0
 

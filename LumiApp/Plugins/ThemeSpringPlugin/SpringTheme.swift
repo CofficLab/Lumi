@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct SpringTheme: ThemeProtocol {
+struct SpringTheme: SuperTheme {
     let identifier = "spring"
     let displayName = "春芽绿"
     let compactName = "春"

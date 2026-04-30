@@ -46,26 +46,26 @@ actor AgentRulesPlugin: SuperPlugin, SuperLog {
     // MARK: - Agent 工具
 
     @MainActor
-    func agentToolFactories() -> [AnyAgentToolFactory] {
-        [AnyAgentToolFactory(AgentRulesToolFactory())]
+    func agentToolFactories() -> [AnySuperAgentToolFactory] {
+        [AnySuperAgentToolFactory(AgentRulesToolFactory())]
     }
 
     // MARK: - 发送中间件
 
     @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] {
-        [AnySendMiddleware(AgentRulesContextSendMiddleware())]
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
+        [AnySuperSendMiddleware(AgentRulesContextSuperSendMiddleware())]
     }
 }
 
 // MARK: - 工具工厂
 
 @MainActor
-private struct AgentRulesToolFactory: AgentToolFactory {
+private struct AgentRulesToolFactory: SuperAgentToolFactory {
     let id: String = "agent-rules.factory"
     let order: Int = 0
 
-    func makeTools(env: AgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [AgentTool] {
         [
             ListAgentRulesTool(),
             CreateAgentRuleTool()

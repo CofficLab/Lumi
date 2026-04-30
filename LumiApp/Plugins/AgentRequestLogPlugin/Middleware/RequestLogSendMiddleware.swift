@@ -5,11 +5,11 @@ import MagicKit
 ///
 /// 在 LLM 响应后记录完整的请求和响应数据到 SwiftData 数据库。
 @MainActor
-struct RequestLogSendMiddleware: SendMiddleware {
+struct RequestLogSuperSendMiddleware: SuperSendMiddleware {
     let id: String = "request.log"
     let order: Int = 1000  // 较晚执行，确保在其他处理后记录
 
-    // MARK: - SendMiddleware
+    // MARK: - SuperSendMiddleware
 
     func handle(
         ctx: SendMessageContext,

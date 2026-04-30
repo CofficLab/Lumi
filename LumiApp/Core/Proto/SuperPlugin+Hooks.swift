@@ -5,9 +5,9 @@ import Foundation
 extension SuperPlugin {
     @MainActor func agentTools() -> [AgentTool] { [] }
 
-    @MainActor func agentToolFactories() -> [AnyAgentToolFactory] { [] }
+    @MainActor func agentToolFactories() -> [AnySuperAgentToolFactory] { [] }
 
-    @MainActor func sendMiddlewares() -> [AnySendMiddleware] { [] }
+    @MainActor func sendMiddlewares() -> [AnySuperSendMiddleware] { [] }
 
     /// 插件提供的 LLM 供应商类型
     ///

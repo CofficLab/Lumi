@@ -171,12 +171,12 @@ protocol SuperPlugin: Actor {
     @MainActor func agentTools() -> [AgentTool]
 
     /// 提供 Agent 工具工厂列表（带依赖注入）。
-    @MainActor func agentToolFactories() -> [AnyAgentToolFactory]
+    @MainActor func agentToolFactories() -> [AnySuperAgentToolFactory]
 
     // MARK: - Send Pipeline
 
     /// 提供「用户消息入队 → 发送模型」管线中间件（按插件 `order` 与中间件 `order` 排序）。
-    @MainActor func sendMiddlewares() -> [AnySendMiddleware]
+    @MainActor func sendMiddlewares() -> [AnySuperSendMiddleware]
 
     /// 插件提供的 LLM 供应商类型
     ///

@@ -5,7 +5,7 @@ import SwiftUI
 /// 绚丽的极光紫，梦幻而优雅。
 /// 特点：紫色调，天空与自然的和谐
 ///
-struct AuroraTheme: ThemeProtocol {
+struct AuroraTheme: SuperTheme {
     // MARK: - 主题信息
 
     let identifier = "aurora"

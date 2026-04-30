@@ -147,7 +147,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 合并内置工具、MCP 工具和插件工具，通知观察者。
     @MainActor
     private func refreshAllTools() {
-        let env = AgentToolEnvironment(toolService: self, llmService: llmService)
+        let env = SuperAgentToolEnvironment(toolService: self, llmService: llmService)
         let directTools = PluginVM.shared.getAgentTools()
         let factories = PluginVM.shared.getAgentToolFactories()
         let factoryTools = factories.flatMap { $0.makeTools(env: env) }

@@ -42,7 +42,7 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     }
 
     @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] {
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
         []
     }
 }

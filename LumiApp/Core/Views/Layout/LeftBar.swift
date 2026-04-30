@@ -135,7 +135,7 @@ struct ActivityBarButton: View {
     // MARK: - Private
 
     /// 根据主题计算图标颜色
-    private func iconColor(theme: any ThemeProtocol) -> Color {
+    private func iconColor(theme: any SuperTheme) -> Color {
         if isSelected {
             return theme.workspaceTextColor()
         }

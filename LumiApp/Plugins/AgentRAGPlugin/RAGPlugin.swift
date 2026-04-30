@@ -55,11 +55,11 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Methods
 
     @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] {
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
         if Self.verbose {
             Self.logger.info("\(Self.t)🦞 RAG 中间件已注册")
         }
-        return [AnySendMiddleware(RAGSendMiddleware())]
+        return [AnySuperSendMiddleware(RAGSuperSendMiddleware())]
     }
 
     @MainActor

@@ -5,7 +5,7 @@ import SwiftUI
 /// 严格遵循 Dracula Official 配色方案。
 /// 特点：深邃的紫红色背景，高对比度的鲜艳色彩
 ///
-struct DraculaTheme: ThemeProtocol {
+struct DraculaTheme: SuperTheme {
     // MARK: - 主题信息
     let identifier = "dracula"
     let displayName = "Dracula"

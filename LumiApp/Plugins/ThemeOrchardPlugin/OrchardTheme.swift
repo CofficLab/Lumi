@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct OrchardTheme: ThemeProtocol {
+struct OrchardTheme: SuperTheme {
     let identifier = "orchard"
     let displayName = "果园红"
     let compactName = "果"

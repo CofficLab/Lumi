@@ -97,7 +97,7 @@ final class LLMRequester: SuperLog {
         let onStreamChunk = makeStreamChunkHandler(conversationId: conversationId)
         let startTime = CFAbsoluteTimeGetCurrent()
         let metadataHolder = MetadataHolder()
-        let middlewares = pluginVM.getSendMiddlewares()
+        let middlewares = pluginVM.getSuperSendMiddlewares()
 
         // ── 重试循环 ──
         var lastError: Error?
@@ -216,7 +216,7 @@ final class LLMRequester: SuperLog {
         conversationId: UUID,
         metadataHolder: MetadataHolder,
         startTime: CFAbsoluteTime,
-        middlewares: [SendMiddleware]
+        middlewares: [SuperSendMiddleware]
     ) -> LLMRequestResult {
         AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 发送已取消")
         statusVM.setStatus(conversationId: conversationId, content: "已停止生成")
@@ -240,7 +240,7 @@ final class LLMRequester: SuperLog {
         startTime: CFAbsoluteTime,
         response: ChatMessage?,
         error: Error?,
-        middlewares: [SendMiddleware]
+        middlewares: [SuperSendMiddleware]
     ) async {
         guard let metadata = await metadataHolder.get() else { return }
         var mutableMetadata = metadata

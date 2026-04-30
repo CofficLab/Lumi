@@ -63,7 +63,7 @@ actor BreadcrumbPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] {
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
         []
     }
 }
