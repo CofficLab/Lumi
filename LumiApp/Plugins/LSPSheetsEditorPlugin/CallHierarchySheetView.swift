@@ -6,6 +6,10 @@ struct CallHierarchySheetView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            if let semanticContextBanner {
+                Divider()
+                semanticContextBanner
+            }
             Divider()
             content
         }
@@ -34,6 +38,39 @@ struct CallHierarchySheetView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var semanticContextBanner: some View? {
+        guard let issue = state.semanticProblems.first(where: { $0.severity != .info }) ?? state.semanticProblems.first else {
+            return nil
+        }
+
+        let color = color(for: issue.severity)
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon(for: issue.severity))
+                .foregroundColor(color)
+                .padding(.top, 1)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(issue.title)
+                    .font(.system(size: 11, weight: .semibold))
+                Text(issue.message)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            Button("重新解析") {
+                state.resyncXcodeBuildContext()
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundColor(.accentColor)
+            .disabled(state.isResyncingXcodeBuildContext)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(color.opacity(0.06))
     }
 
     @ViewBuilder
@@ -72,6 +109,28 @@ struct CallHierarchySheetView: View {
                     state.performOpenItem(.callHierarchyItem(item))
                 }
             }
+        }
+    }
+
+    private func icon(for severity: XcodeSemanticAvailability.ReasonSeverity) -> String {
+        switch severity {
+        case .info:
+            return "info.circle.fill"
+        case .warning:
+            return "exclamationmark.triangle.fill"
+        case .error:
+            return "xmark.circle.fill"
+        }
+    }
+
+    private func color(for severity: XcodeSemanticAvailability.ReasonSeverity) -> Color {
+        switch severity {
+        case .info:
+            return .accentColor
+        case .warning:
+            return .orange
+        case .error:
+            return .red
         }
     }
 }

@@ -27,6 +27,9 @@ final class EditorPanelState: ObservableObject {
     /// 当前文件的诊断列表
     @Published var problemDiagnostics: [Diagnostic] = []
 
+    /// 当前文件的 Xcode 工程语义问题
+    @Published var semanticProblems: [EditorSemanticProblem] = []
+
     /// 当前选中的问题
     @Published var selectedProblemDiagnostic: Diagnostic?
 
@@ -79,6 +82,7 @@ final class EditorPanelState: ObservableObject {
             isWorkspaceSymbolSearchPresented: isWorkspaceSymbolSearchPresented,
             isCallHierarchyPresented: isCallHierarchyPresented,
             problemDiagnostics: problemDiagnostics,
+            semanticProblems: semanticProblems,
             selectedProblemDiagnostic: selectedProblemDiagnostic,
             isProblemsPanelPresented: isProblemsPanelPresented
         )
@@ -127,6 +131,7 @@ final class EditorPanelState: ObservableObject {
 
     func restore(from state: EditorPanelSessionState) {
         problemDiagnostics = state.problemDiagnostics
+        semanticProblems = state.semanticProblems
         selectedProblemDiagnostic = state.selectedProblemDiagnostic
         referenceResults = state.referenceResults.map(Self.editorReferenceResult(from:))
         if let content = state.mouseHoverContent {
@@ -145,6 +150,7 @@ final class EditorPanelState: ObservableObject {
 
     func reset() {
         problemDiagnostics = []
+        semanticProblems = []
         selectedProblemDiagnostic = nil
         isOpenEditorsPanelPresented = false
         isProblemsPanelPresented = false
@@ -187,6 +193,20 @@ struct EditorReferenceResult: Identifiable, Equatable {
     let preview: String
 }
 
+struct EditorSemanticProblem: Identifiable, Equatable, Sendable {
+    let id: String
+    let severity: XcodeSemanticAvailability.ReasonSeverity
+    let title: String
+    let message: String
+
+    init(reason: XcodeSemanticAvailability.Reason) {
+        self.id = reason.id
+        self.severity = reason.severity
+        self.title = reason.title
+        self.message = reason.message
+    }
+}
+
 struct EditorPanelSessionState: Equatable {
     let mouseHoverContent: String?
     let mouseHoverSymbolRect: CGRect
@@ -196,6 +216,7 @@ struct EditorPanelSessionState: Equatable {
     let isWorkspaceSymbolSearchPresented: Bool
     let isCallHierarchyPresented: Bool
     let problemDiagnostics: [Diagnostic]
+    let semanticProblems: [EditorSemanticProblem]
     let selectedProblemDiagnostic: Diagnostic?
     let isProblemsPanelPresented: Bool
 
@@ -218,6 +239,7 @@ struct EditorPanelSessionState: Equatable {
         isWorkspaceSymbolSearchPresented: Bool = false,
         isCallHierarchyPresented: Bool = false,
         problemDiagnostics: [Diagnostic] = [],
+        semanticProblems: [EditorSemanticProblem] = [],
         selectedProblemDiagnostic: Diagnostic? = nil,
         isProblemsPanelPresented: Bool = false
     ) {
@@ -229,6 +251,7 @@ struct EditorPanelSessionState: Equatable {
         self.isWorkspaceSymbolSearchPresented = isWorkspaceSymbolSearchPresented
         self.isCallHierarchyPresented = isCallHierarchyPresented
         self.problemDiagnostics = problemDiagnostics
+        self.semanticProblems = semanticProblems
         self.selectedProblemDiagnostic = selectedProblemDiagnostic
         self.isProblemsPanelPresented = isProblemsPanelPresented
     }

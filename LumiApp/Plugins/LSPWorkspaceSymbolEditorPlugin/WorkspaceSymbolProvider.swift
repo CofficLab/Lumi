@@ -8,9 +8,21 @@ final class WorkspaceSymbolProvider: ObservableObject {
     
     private let lspService: LSPService
     private let requestLifecycle = LSPRequestLifecycle()
+    private let preflightMessageProvider: @MainActor (_ operation: String, _ strength: XcodeSemanticAvailability.Strength) -> String?
+    private let requestSymbols: @Sendable (_ query: String) async -> WorkspaceSymbolResponse
 
-    init(lspService: LSPService = .shared) {
+    init(
+        lspService: LSPService = .shared,
+        preflightMessageProvider: @escaping @MainActor (_ operation: String, _ strength: XcodeSemanticAvailability.Strength) -> String? = { operation, strength in
+            XcodeSemanticAvailability.workspacePreflightMessage(operation: operation, strength: strength)
+        },
+        requestSymbols: (@Sendable (_ query: String) async -> WorkspaceSymbolResponse)? = nil
+    ) {
         self.lspService = lspService
+        self.preflightMessageProvider = preflightMessageProvider
+        self.requestSymbols = requestSymbols ?? { [lspService] query in
+            await lspService.requestWorkspaceSymbols(query: query)
+        }
     }
     
     @Published var symbols: [WorkspaceSymbolItem] = []
@@ -23,18 +35,28 @@ final class WorkspaceSymbolProvider: ObservableObject {
         isSearching = true
         searchError = nil
 
+        if let message = preflightMessageProvider("Workspace Symbols", .hard) {
+            isSearching = false
+            searchError = message
+            symbols = []
+            return
+        }
+
         requestLifecycle.run(
-            operation: { [lspService] in
-                await lspService.requestWorkspaceSymbols(query: query)
+            operation: { [requestSymbols] in
+                await requestSymbols(query)
             },
             apply: { [weak self] response in
                 guard let self else { return }
                 isSearching = false
 
                 guard let response else {
+                    searchError = nil
                     symbols = []
                     return
                 }
+
+                searchError = nil
 
                 switch response {
                 case .optionA(let infos):
@@ -181,9 +203,19 @@ struct WorkspaceSymbolItemSearchView: View {
             .padding(8).background(Color(nsColor: .textBackgroundColor))
             Divider()
             if filteredSymbols.isEmpty && !provider.isSearching && !query.isEmpty {
-                VStack {
-                    Image(systemName: "magnifyingglass").font(.system(size: 32)).foregroundColor(.secondary)
-                    Text("未找到匹配的符号").foregroundColor(.secondary).padding(.top, 8)
+                VStack(spacing: 10) {
+                    Image(systemName: provider.searchError == nil ? "magnifyingglass" : "exclamationmark.triangle")
+                        .font(.system(size: 32))
+                        .foregroundColor(.secondary)
+                    Text(provider.searchError == nil ? "未找到匹配的符号" : "工作区符号当前不可用")
+                        .foregroundColor(.secondary)
+                    if let searchError = provider.searchError {
+                        Text(searchError)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+                    }
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List(filteredSymbols.indices, id: \.self) { index in

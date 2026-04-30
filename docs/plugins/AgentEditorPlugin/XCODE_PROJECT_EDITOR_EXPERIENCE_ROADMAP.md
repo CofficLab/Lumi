@@ -523,22 +523,29 @@
 - ✅ `XcodeFileNotInTargetWarning` — 文件未绑定到 target 的提示
 - ✅ `BuildContextStatus.displayDescription` — 人类可读的状态描述
 - ✅ LSP isInitializing 状态追踪
+- ✅ Xcode context inspector — 展示 workspace / scheme / configuration / destination / current file target / semantic availability
+- ✅ Problems 面板集成 Xcode semantic problems，与 LSP diagnostics 分区显示
+- ✅ Xcode semantic problems 支持手动 `重新解析` build context
+- ✅ Workspace/document symbols 接入 Xcode semantic availability preflight
 
 ### 待完善
 
-#### Phase 9: Regression Gates ❌
-- ❌ Xcode 项目 fixture 集
-- ❌ Swift cross-file navigation tests
-- ❌ scheme switch regression tests
-- ❌ build context cache correctness tests
-- ❌ Xcode project stress playbook
+#### Phase 9: Regression Gates ⚠️ (脚手架已建立，尚未执行验证)
+- ✅ Xcode 项目 fixture 基础设施：`XcodeProjectFixtureFactory`
+- ✅ pbxproj 文件归属解析测试：`XcodePBXProjParserTests`
+- ✅ semantic availability / preflight 规则测试：`XcodeSemanticAvailabilityTests`
+- ✅ 消费层回归测试：`WorkspaceSymbolProviderTests`、`CallHierarchyProviderTests`、`LSPCoordinatorDocumentSymbolsTests`
+- ⚠️ 尚未统一执行：Swift cross-file navigation tests
+- ⚠️ 尚未统一执行：scheme switch regression tests
+- ⚠️ 尚未统一执行：build context cache correctness tests
+- ⚠️ 尚未完善：Xcode project stress playbook
 
 #### 仍需验证的功能
 
 1. **真实环境测试**：`workspaceFolders` 注入后，sourcekit-lsp 的跨文件 definition 是否真正稳定
 2. **xcode-build-server 安装检查**：需要用户运行 `brew install xcode-build-server`
 3. **scheme 切换后的 LSP 重建**：当前 `setActiveScheme` 会清除缓存，但需要验证 LSP 是否正确重建
-4. **多 scheme/多 target 场景**：当前只支持自动选择第一个 scheme
+4. **多 scheme/多 target 场景**：需要继续验证 scheme 收敛与 target 优选是否足够稳定
 
 ### 新增文件清单
 
@@ -547,8 +554,16 @@
 | `XcodeProjectContextBridge.swift` | Phase 4 | Xcode 项目与 LSP 之间的桥梁 |
 | `XcodeLSPErrorTaxonomy.swift` | Phase 4 | LSP 错误分类与用户友好提示 |
 | `XcodeProjectStatusBar.swift` | Phase 8 | 状态栏 scheme 选择器 + 状态指示 |
+| `XcodeSemanticAvailability.swift` | Phase 8 | 统一 Xcode 语义可用性检查与问题解释 |
+| `XcodePBXProjParser.swift` | Phase 3 | 解析 pbxproj 文件归属与 target 信息 |
 | `XCConfigSyntax.swift` | Phase 7 | xcconfig 语法高亮与验证 |
 | `PlistEditing.swift` | Phase 7 | plist/entitlements 编辑辅助 |
+| `XcodeProjectFixtureFactory.swift` | Phase 9 | Xcode 项目 fixture 工厂 |
+| `XcodePBXProjParserTests.swift` | Phase 9 | pbxproj 归属解析回归测试 |
+| `XcodeSemanticAvailabilityTests.swift` | Phase 9 | semantic availability / preflight 规则测试 |
+| `WorkspaceSymbolProviderTests.swift` | Phase 9 | workspace symbols 消费层回归测试 |
+| `CallHierarchyProviderTests.swift` | Phase 9 | call hierarchy 消费层回归测试 |
+| `LSPCoordinatorDocumentSymbolsTests.swift` | Phase 9 | document symbols 消费层回归测试 |
 
 ### 修改的文件清单
 
@@ -559,5 +574,10 @@
 | `LanguageServer.swift` | `create()` 接受 workspaceFolders 参数；`makeInitParams()` 使用传入的 workspaceFolders |
 | `EditorPlugin.swift` | `addStatusBarTrailingView()` 包含 XcodeProjectStatusBar |
 | `XcodeBuildContextProvider.swift` | BuildContextStatus 增加 Sendable + displayDescription |
-| `XcodeProjectResolver.swift` | 修复 $targetName 闭包捕获问题 |
+| `XcodeProjectResolver.swift` | 接入 pbxproj 文件归属解析与 target/sourceFiles 建模 |
+| `EditorState.swift` | 增加 Xcode context snapshot、semantic problems、resync 状态同步 |
+| `ProblemsPanelView.swift` | 增加 Xcode context section 与 resync 操作入口 |
+| `WorkspaceSymbolProvider.swift` | 增加 workspace 级 Xcode preflight 与错误呈现 |
+| `CallHierarchyProvider.swift` | 增加可注入请求链，支持消费层回归测试 |
+| `LSPCoordinator.swift` | `documentSymbols` 接入 soft preflight |
 | `XCODE_PROJECT_EDITOR_EXPERIENCE_ROADMAP.md` | 增加实现状态章节

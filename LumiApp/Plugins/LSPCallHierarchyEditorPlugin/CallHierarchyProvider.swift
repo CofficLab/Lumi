@@ -10,9 +10,26 @@ final class CallHierarchyProvider: ObservableObject {
     private let prepareLifecycle = LSPRequestLifecycle()
     private let incomingLifecycle = LSPRequestLifecycle()
     private let outgoingLifecycle = LSPRequestLifecycle()
+    private let requestPrepare: @Sendable (_ uri: String, _ line: Int, _ character: Int) async -> [LanguageServerProtocol.CallHierarchyItem]
+    private let requestIncoming: @Sendable (_ item: LanguageServerProtocol.CallHierarchyItem) async -> [CallHierarchyIncomingCall]
+    private let requestOutgoing: @Sendable (_ item: LanguageServerProtocol.CallHierarchyItem) async -> [CallHierarchyOutgoingCall]
 
-    init(lspService: LSPService = .shared) {
+    init(
+        lspService: LSPService = .shared,
+        requestPrepare: (@Sendable (_ uri: String, _ line: Int, _ character: Int) async -> [LanguageServerProtocol.CallHierarchyItem])? = nil,
+        requestIncoming: (@Sendable (_ item: LanguageServerProtocol.CallHierarchyItem) async -> [CallHierarchyIncomingCall])? = nil,
+        requestOutgoing: (@Sendable (_ item: LanguageServerProtocol.CallHierarchyItem) async -> [CallHierarchyOutgoingCall])? = nil
+    ) {
         self.lspService = lspService
+        self.requestPrepare = requestPrepare ?? { [lspService] uri, line, character in
+            await lspService.requestCallHierarchyPrepare(uri: uri, line: line, character: character)
+        }
+        self.requestIncoming = requestIncoming ?? { [lspService] item in
+            await lspService.requestCallHierarchyIncomingCalls(item: item)
+        }
+        self.requestOutgoing = requestOutgoing ?? { [lspService] item in
+            await lspService.requestCallHierarchyOutgoingCalls(item: item)
+        }
     }
     
     @Published var rootItem: EditorCallHierarchyItem?
@@ -28,8 +45,8 @@ final class CallHierarchyProvider: ObservableObject {
         outgoingCalls = []
 
         prepareLifecycle.run(
-            operation: { [lspService] in
-                await lspService.requestCallHierarchyPrepare(uri: uri, line: line, character: character)
+            operation: { [requestPrepare] in
+                await requestPrepare(uri, line, character)
             },
             apply: { [weak self] items in
                 guard let self else { return }
@@ -66,8 +83,8 @@ final class CallHierarchyProvider: ObservableObject {
             data: item.data
         )
         incomingLifecycle.run(
-            operation: { [lspService] in
-                await lspService.requestCallHierarchyIncomingCalls(item: lspItem)
+            operation: { [requestIncoming] in
+                await requestIncoming(lspItem)
             },
             apply: { [weak self] calls in
                 guard let self else { return }
@@ -91,8 +108,8 @@ final class CallHierarchyProvider: ObservableObject {
             data: item.data
         )
         outgoingLifecycle.run(
-            operation: { [lspService] in
-                await lspService.requestCallHierarchyOutgoingCalls(item: lspItem)
+            operation: { [requestOutgoing] in
+                await requestOutgoing(lspItem)
             },
             apply: { [weak self] calls in
                 guard let self else { return }

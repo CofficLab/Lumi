@@ -225,4 +225,30 @@ extension EditorState {
             strength: .hard
         )
     }
+
+    func resyncXcodeBuildContext() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard !self.isResyncingXcodeBuildContext else { return }
+            self.isResyncingXcodeBuildContext = true
+            defer { self.isResyncingXcodeBuildContext = false }
+
+            await XcodeProjectContextBridge.shared.resyncBuildContext()
+            self.refreshXcodeContextSnapshot()
+
+            let status = XcodeProjectContextBridge.shared.buildContextProvider?.buildContextStatus
+            switch status {
+            case .available:
+                self.showStatusToast("Xcode build context 已重新解析", level: .success, duration: 1.8)
+            case .resolving:
+                self.showStatusToast("Xcode build context 仍在解析中", level: .info, duration: 1.8)
+            case .needsResync:
+                self.showStatusToast("Xcode build context 仍需要重新同步", level: .warning, duration: 2.2)
+            case .unavailable(let reason):
+                self.showStatusToast("Xcode build context 重新解析失败：\(reason)", level: .error, duration: 2.6)
+            case .unknown, .none:
+                self.showStatusToast("已触发 Xcode build context 重新解析", level: .info, duration: 1.8)
+            }
+        }
+    }
 }

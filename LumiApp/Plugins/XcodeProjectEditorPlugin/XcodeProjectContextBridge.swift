@@ -30,6 +30,7 @@ final class XcodeProjectContextBridge: SuperLog {
     
     /// 缓存的状态快照（供非主线程安全访问）
     private(set) var cachedState: BridgeCachedState?
+    private(set) var latestEditorSnapshot: XcodeEditorContextSnapshot?
     
     /// buildServer.json 路径
     var buildServerJSONPath: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.buildServerJSONPath } }
@@ -121,7 +122,19 @@ final class XcodeProjectContextBridge: SuperLog {
         }
         
         cachedState = nil
+        latestEditorSnapshot = nil
         Self.logger.info("\(Self.t)项目已关闭，build context 已失效")
+    }
+
+    func resyncBuildContext() async {
+        guard let currentProjectPath, isXcodeProject else { return }
+        guard let provider = _buildContextProvider as? XcodeBuildContextProvider else { return }
+
+        Self.logger.info("\(Self.t)手动触发 build context 重解析: \(currentProjectPath, privacy: .public)")
+        provider.invalidateAllContexts()
+        await initializeXcodeBuildContext(at: currentProjectPath)
+        isInitialized = true
+        updateCache()
     }
     
     // MARK: - Cache
@@ -241,6 +254,11 @@ final class XcodeProjectContextBridge: SuperLog {
             currentFileMatchedTargets: matchedTargets,
             currentFileIsInTarget: !matchedTargets.isEmpty
         )
+    }
+
+    func updateLatestEditorSnapshot(_ snapshot: XcodeEditorContextSnapshot?) {
+        latestEditorSnapshot = snapshot
+        NotificationCenter.default.post(name: .lumiEditorXcodeContextDidChange, object: nil)
     }
 }
 

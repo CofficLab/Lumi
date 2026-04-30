@@ -33,6 +33,10 @@ final class EditorPanelController {
         panelState.problemDiagnostics = diagnostics
     }
 
+    func setSemanticProblems(_ problems: [EditorSemanticProblem]) {
+        panelState.semanticProblems = problems
+    }
+
     func setSelectedProblemDiagnostic(_ diagnostic: Diagnostic?) {
         panelState.selectedProblemDiagnostic = diagnostic
     }
@@ -60,6 +64,7 @@ final class EditorPanelController {
         setReferenceResults([])
         if clearDiagnostics {
             setProblemDiagnostics([])
+            setSemanticProblems([])
         }
         setSelectedProblemDiagnostic(nil)
         apply(

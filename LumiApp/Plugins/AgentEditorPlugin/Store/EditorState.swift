@@ -69,6 +69,12 @@ final class EditorState: ObservableObject, SuperLog {
     /// 当前文件的诊断列表（Problems 面板数据源）
     @Published private(set) var problemDiagnostics: [Diagnostic] = []
 
+    /// 当前文件的 Xcode 工程语义问题（Problems 面板附加数据源）
+    @Published private(set) var semanticProblems: [EditorSemanticProblem] = []
+
+    /// 是否正在重新解析 Xcode build context
+    @Published private(set) var isResyncingXcodeBuildContext: Bool = false
+
     /// 当前选中的问题，用于列表高亮与编辑器同步
     @Published private(set) var selectedProblemDiagnostic: Diagnostic?
 
@@ -158,6 +164,12 @@ final class EditorState: ObservableObject, SuperLog {
         panelState.$problemDiagnostics
             .sink { [weak self] diagnostics in
                 self?.problemDiagnostics = diagnostics
+            }
+            .store(in: &panelBindings)
+
+        panelState.$semanticProblems
+            .sink { [weak self] problems in
+                self?.semanticProblems = problems
             }
             .store(in: &panelBindings)
 
@@ -671,15 +683,34 @@ final class EditorState: ObservableObject, SuperLog {
     func refreshXcodeContextSnapshot() {
         guard let projectRootPath, !projectRootPath.isEmpty else {
             xcodeContextSnapshot = nil
+            panelController.setSemanticProblems([])
+            syncActiveSessionState()
             return
         }
         let bridge = XcodeProjectContextBridge.shared
         if let snapshot = bridge.makeEditorContextSnapshot(currentFileURL: currentFileURL),
            snapshot.projectPath == projectRootPath || snapshot.workspacePath.hasPrefix(projectRootPath) || projectRootPath.hasPrefix(snapshot.workspacePath) {
             xcodeContextSnapshot = snapshot
+            bridge.updateLatestEditorSnapshot(snapshot)
+            refreshXcodeSemanticProblems()
         } else {
             xcodeContextSnapshot = nil
+            bridge.updateLatestEditorSnapshot(nil)
+            panelController.setSemanticProblems([])
+            syncActiveSessionState()
         }
+    }
+
+    @MainActor
+    private func refreshXcodeSemanticProblems() {
+        guard let snapshot = xcodeContextSnapshot, snapshot.isXcodeProject else {
+            panelController.setSemanticProblems([])
+            syncActiveSessionState()
+            return
+        }
+        let report = XcodeSemanticAvailability.inspectCurrentFileContext(uri: currentFileURL?.absoluteString)
+        panelController.setSemanticProblems(report.reasons.map(EditorSemanticProblem.init(reason:)))
+        syncActiveSessionState()
     }
     
     // MARK: - Editor State
@@ -2406,6 +2437,7 @@ final class EditorState: ObservableObject, SuperLog {
     private func syncPublishedPanelDataFromPanelState() {
         isOpenEditorsPanelPresented = panelState.isOpenEditorsPanelPresented
         problemDiagnostics = panelState.problemDiagnostics
+        semanticProblems = panelState.semanticProblems
         selectedProblemDiagnostic = panelState.selectedProblemDiagnostic
         isProblemsPanelPresented = panelState.isProblemsPanelPresented
         referenceResults = panelState.referenceResults.map(Self.referenceResult(from:))

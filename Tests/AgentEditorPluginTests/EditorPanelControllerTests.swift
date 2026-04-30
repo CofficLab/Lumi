@@ -19,6 +19,16 @@ final class EditorPanelControllerTests: XCTestCase {
                 preview: "let value = 1"
             )
         ]
+        panelState.semanticProblems = [
+            EditorSemanticProblem(
+                reason: .init(
+                    id: "build-context-resync",
+                    severity: .warning,
+                    title: "Build Context 需要同步",
+                    message: "当前 build context 已失效。"
+                )
+            )
+        ]
         panelState.isReferencePanelPresented = true
 
         controller.clearData(closeReferences: false)
@@ -26,7 +36,29 @@ final class EditorPanelControllerTests: XCTestCase {
         XCTAssertNil(panelState.mouseHoverContent)
         XCTAssertEqual(panelState.mouseHoverSymbolRect, .zero)
         XCTAssertTrue(panelState.referenceResults.isEmpty)
+        XCTAssertEqual(panelState.semanticProblems.count, 1)
         XCTAssertFalse(panelState.isReferencePanelPresented)
+    }
+
+    func testClearDataWithDiagnosticsAlsoClearsSemanticProblems() {
+        let panelState = EditorPanelState()
+        let controller = EditorPanelController(panelState: panelState)
+        panelState.problemDiagnostics = [makeDiagnostic(startLine: 0, startCharacter: 0, endLine: 0, endCharacter: 1)]
+        panelState.semanticProblems = [
+            EditorSemanticProblem(
+                reason: .init(
+                    id: "file-not-in-target",
+                    severity: .error,
+                    title: "文件未进 Target",
+                    message: "demo.swift 不属于任何 target。"
+                )
+            )
+        ]
+
+        controller.clearData(clearDiagnostics: true)
+
+        XCTAssertTrue(panelState.problemDiagnostics.isEmpty)
+        XCTAssertTrue(panelState.semanticProblems.isEmpty)
     }
 
     func testUpdateSelectedProblemDiagnosticMatchesCursorRange() {
@@ -71,6 +103,16 @@ final class EditorPanelControllerTests: XCTestCase {
             isWorkspaceSymbolSearchPresented: true,
             isCallHierarchyPresented: false,
             problemDiagnostics: [diagnostic],
+            semanticProblems: [
+                EditorSemanticProblem(
+                    reason: .init(
+                        id: "multiple-targets-ambiguous",
+                        severity: .warning,
+                        title: "多 Target 歧义",
+                        message: "当前文件属于多个 target。"
+                    )
+                )
+            ],
             selectedProblemDiagnostic: diagnostic,
             isProblemsPanelPresented: true
         )
@@ -80,6 +122,7 @@ final class EditorPanelControllerTests: XCTestCase {
         XCTAssertEqual(panelState.mouseHoverContent, "hover")
         XCTAssertEqual(panelState.referenceResults.count, 1)
         XCTAssertEqual(panelState.problemDiagnostics, [diagnostic])
+        XCTAssertEqual(panelState.semanticProblems.count, 1)
         XCTAssertEqual(panelState.selectedProblemDiagnostic, diagnostic)
         XCTAssertTrue(panelState.isOpenEditorsPanelPresented)
         XCTAssertTrue(panelState.isReferencePanelPresented)

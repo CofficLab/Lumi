@@ -33,7 +33,7 @@ struct ProblemsPanelView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text(String(localized: "Problems", table: "LumiEditor") + " (\(state.panelState.problemDiagnostics.count))")
+            Text(String(localized: "Problems", table: "LumiEditor") + " (\(totalProblemCount))")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(AppUI.Color.semantic.textPrimary)
 
@@ -59,17 +59,31 @@ struct ProblemsPanelView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 6) {
-                    if state.panelState.problemDiagnostics.isEmpty {
+                    if totalProblemCount == 0 {
                         emptyState
                     } else {
-                        ForEach(Array(state.panelState.problemDiagnostics.enumerated()), id: \.offset) { index, diag in
-                            Button {
-                                state.performOpenItem(.problem(diag))
-                            } label: {
-                                row(for: diag)
+                        if !state.panelState.semanticProblems.isEmpty {
+                            semanticSectionHeader
+                            ForEach(state.panelState.semanticProblems) { problem in
+                                semanticRow(for: problem)
                             }
-                            .buttonStyle(.plain)
-                            .id(index)
+                        }
+
+                        if !state.panelState.problemDiagnostics.isEmpty {
+                            if !state.panelState.semanticProblems.isEmpty {
+                                Divider()
+                                    .padding(.vertical, 4)
+                            }
+                            problemSectionHeader("Diagnostics")
+                            ForEach(Array(state.panelState.problemDiagnostics.enumerated()), id: \.offset) { index, diag in
+                                Button {
+                                    state.performOpenItem(.problem(diag))
+                                } label: {
+                                    row(for: diag)
+                                }
+                                .buttonStyle(.plain)
+                                .id(index)
+                            }
                         }
                     }
                 }
@@ -96,6 +110,10 @@ struct ProblemsPanelView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
+    }
+
+    private var totalProblemCount: Int {
+        state.panelState.semanticProblems.count + state.panelState.problemDiagnostics.count
     }
 
     private var resizeHandle: some View {
@@ -195,6 +213,75 @@ struct ProblemsPanelView: View {
         )
     }
 
+    private func semanticRow(for problem: EditorSemanticProblem) -> some View {
+        let (icon, color) = iconAndColor(for: problem.severity)
+
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(color)
+
+                Text(problem.title)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+
+                Text("Xcode")
+                    .font(.system(size: 10))
+                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .lineLimit(1)
+            }
+
+            Text(problem.message)
+                .font(.system(size: 10))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(AppUI.Color.semantic.textTertiary.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(color.opacity(0.35), lineWidth: 1)
+        )
+    }
+
+    private var semanticSectionHeader: some View {
+        HStack(spacing: 8) {
+            problemSectionHeader("Xcode Context")
+
+            Spacer(minLength: 0)
+
+            Button {
+                state.resyncXcodeBuildContext()
+            } label: {
+                if state.isResyncingXcodeBuildContext {
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .scaleEffect(0.7)
+                        Text("解析中")
+                    }
+                } else {
+                    Text("重新解析")
+                }
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(AppUI.Color.semantic.primary)
+            .disabled(state.isResyncingXcodeBuildContext)
+        }
+        .padding(.horizontal, 2)
+        .padding(.bottom, 2)
+    }
+
     private func scrollToSelectedProblem(with proxy: ScrollViewProxy) {
         guard let selected = state.panelState.selectedProblemDiagnostic,
               let index = state.panelState.problemDiagnostics.firstIndex(of: selected) else {
@@ -221,6 +308,24 @@ struct ProblemsPanelView: View {
         case .none:
             return ("questionmark.circle", AppUI.Color.semantic.textTertiary)
         }
+    }
+
+    private func iconAndColor(for severity: XcodeSemanticAvailability.ReasonSeverity) -> (String, SwiftUI.Color) {
+        switch severity {
+        case .info:
+            return ("info.circle.fill", AppUI.Color.semantic.primary)
+        case .warning:
+            return ("exclamationmark.triangle.fill", AppUI.Color.semantic.warning)
+        case .error:
+            return ("xmark.circle.fill", AppUI.Color.semantic.error)
+        }
+    }
+
+    private func problemSectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundColor(AppUI.Color.semantic.textTertiary)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

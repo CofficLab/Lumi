@@ -602,7 +602,7 @@ final class PluginVM: ObservableObject, SuperLog {
     func registerLLMProviders(to registry: LLMProviderRegistry) {
         registry.register(discoveredLLMProviderTypes)
         if Self.verbose {
-            AppLogger.core.info("\(self.t)📦 Registered \(discoveredLLMProviderTypes.count) LLM providers from plugins.")
+            AppLogger.core.info("\(self.t)📦 Registered \(self.discoveredLLMProviderTypes.count) LLM providers from plugins.")
         }
     }
 

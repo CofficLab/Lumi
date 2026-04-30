@@ -16,7 +16,10 @@ enum XcodePBXProjParser {
     static func parseMembershipGraph(projectURL: URL) throws -> MembershipGraph {
         let pbxprojURL = projectURL.appendingPathComponent("project.pbxproj")
         let content = try String(contentsOf: pbxprojURL, encoding: .utf8)
+        return try parseMembershipGraph(contents: content)
+    }
 
+    static func parseMembershipGraph(contents: String) throws -> MembershipGraph {
         let nativeTargetBlocks = parseSectionBlocks(named: "PBXNativeTarget", in: content)
         let rootGroupBlocks = parseSectionBlocks(named: "PBXFileSystemSynchronizedRootGroup", in: content)
         let exceptionBlocks = parseSectionBlocks(named: "PBXFileSystemSynchronizedBuildFileExceptionSet", in: content)

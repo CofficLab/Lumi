@@ -16,6 +16,8 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
     private let lspService: LSPService
+    private let documentSymbolsPreflight: @MainActor (_ uri: String) -> XcodeLSPError?
+    private let requestDocumentSymbolsOperation: @Sendable (_ uri: String) async -> [DocumentSymbol]
     
     /// LSP 请求防抖器 — 避免快速连续请求导致主线程阻塞
     private let debouncer = LSPDebouncer()
@@ -47,8 +49,22 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
         let range: LSPRange
     }
 
-    init(lspService: LSPService = .shared) {
+    init(
+        lspService: LSPService = .shared,
+        documentSymbolsPreflight: @escaping @MainActor (_ uri: String) -> XcodeLSPError? = { uri in
+            XcodeSemanticAvailability.preflightError(
+                uri: uri,
+                operation: "Document Symbols",
+                strength: .soft
+            )
+        },
+        requestDocumentSymbolsOperation: (@Sendable (_ uri: String) async -> [DocumentSymbol])? = nil
+    ) {
         self.lspService = lspService
+        self.documentSymbolsPreflight = documentSymbolsPreflight
+        self.requestDocumentSymbolsOperation = requestDocumentSymbolsOperation ?? { [lspService] uri in
+            await lspService.requestDocumentSymbols(uri: uri)
+        }
     }
     
     // MARK: - Lifecycle
@@ -221,8 +237,11 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
     /// 请求文档符号
     func requestDocumentSymbols() async -> [DocumentSymbol] {
         guard let uri = fileURI else { return [] }
+        if documentSymbolsPreflight(uri) != nil {
+            return []
+        }
         let context = documentRequestContext(uri: uri)
-        let result = await lspService.requestDocumentSymbols(uri: uri)
+        let result = await requestDocumentSymbolsOperation(uri)
         guard isCurrent(context) else { return [] }
         return result
     }

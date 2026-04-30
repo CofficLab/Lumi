@@ -57,6 +57,9 @@ struct EditorReferencesPanelView: View {
     private var content: some View {
         ScrollView {
             LazyVStack(spacing: 6) {
+                if let semanticContextBanner {
+                    semanticContextBanner
+                }
                 ForEach(state.panelState.referenceResults) { item in
                     Button {
                         state.performOpenItem(
@@ -97,6 +100,47 @@ struct EditorReferencesPanelView: View {
             }
             .padding(8)
         }
+    }
+
+    @ViewBuilder
+    private var semanticContextBanner: some View? {
+        guard let issue = state.semanticProblems.first(where: { $0.severity != .info }) ?? state.semanticProblems.first else {
+            return nil
+        }
+
+        let color = color(for: issue.severity)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: icon(for: issue.severity))
+                    .foregroundColor(color)
+                Text(issue.title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                Spacer(minLength: 0)
+                Button("重新解析") {
+                    state.resyncXcodeBuildContext()
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(AppUI.Color.semantic.primary)
+                .disabled(state.isResyncingXcodeBuildContext)
+            }
+
+            Text(issue.message)
+                .font(.system(size: 10))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(color.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(color.opacity(0.32), lineWidth: 1)
+        )
     }
 
     private var resizeHandle: some View {
@@ -140,5 +184,27 @@ struct EditorReferencesPanelView: View {
                         state.persistSidePanelWidth()
                     }
             )
+    }
+
+    private func icon(for severity: XcodeSemanticAvailability.ReasonSeverity) -> String {
+        switch severity {
+        case .info:
+            return "info.circle.fill"
+        case .warning:
+            return "exclamationmark.triangle.fill"
+        case .error:
+            return "xmark.circle.fill"
+        }
+    }
+
+    private func color(for severity: XcodeSemanticAvailability.ReasonSeverity) -> Color {
+        switch severity {
+        case .info:
+            return AppUI.Color.semantic.primary
+        case .warning:
+            return AppUI.Color.semantic.warning
+        case .error:
+            return AppUI.Color.semantic.error
+        }
     }
 }

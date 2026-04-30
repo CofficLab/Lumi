@@ -51,7 +51,6 @@ final class RootViewContainer: ObservableObject {
     let chatTimelineViewModel: ChatTimelineViewModel
     let conversationSendStatusVM: ConversationStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
-
     let gitVM: GitVM
     let agentSessionConfig: LLMVM
     let captureThinkingContent: Bool
@@ -69,18 +68,17 @@ final class RootViewContainer: ObservableObject {
         // 初始化上下文服务
         self.contextService = ContextService()
 
-        // 初始化插件 VM（自动发现所有插件，包含 LLM Provider 插件）
-        // 注意：pluginVM 在 init 开头赋值，后续代码可直接使用
+        // 初始化插件 VM
         self.pluginVM = PluginVM.shared
 
         // 初始化供应商注册表（从插件中收集 LLM Provider）
         let providerRegistry = LLMProviderRegistry()
         pluginVM.registerLLMProviders(to: providerRegistry)
 
-        // 初始化 LLM 服务（显式依赖 Registry）
+        // 初始化 LLM 服务
         self.llmService = LLMService(registry: providerRegistry)
 
-        // 初始化提示词服务（依赖 ContextService）
+        // 初始化提示词服务
         self.promptService = PromptService(contextService: contextService)
 
         // 初始化 Slash 命令服务
@@ -94,7 +92,7 @@ final class RootViewContainer: ObservableObject {
             toolService: toolService
         )
 
-        // 复用 LLMService 中的供应商注册表（已通过插件完成注册）
+        // 供应商注册表
         self.providerRegistry = providerRegistry
 
         // ========================================

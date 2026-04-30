@@ -6,24 +6,29 @@ import SwiftUI
 struct XcodeProjectStatusBar: View {
     
     @StateObject private var viewModel = XcodeProjectStatusBarViewModel()
-    @State private var showSchemePicker = false
     
     var body: some View {
         Group {
             if viewModel.isXcodeProject {
-                HStack(spacing: 8) {
-                    Image(systemName: "hammer.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.blue)
+                StatusBarHoverContainer(
+                    detailView: XcodeProjectStatusDetailView(viewModel: viewModel),
+                    popoverWidth: 440,
+                    id: "lumi-xcode-project-status"
+                ) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "hammer.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.blue)
 
-                    schemeMenu
-                    configurationMenu
-                    destinationChip
+                        schemeMenu
+                        configurationMenu
+                        destinationChip
 
-                    buildContextIndicator
+                        buildContextIndicator
+                    }
+                    .padding(.horizontal, 4)
+                    .frame(width: 400, alignment: .leading)
                 }
-                .padding(.horizontal, 4)
-                .frame(width: 400, alignment: .leading)
             }
         }
     }
@@ -159,6 +164,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
     @Published var activeDestination: String?
     @Published var buildContextStatus: XcodeBuildContextProvider.BuildContextStatus = .unknown
     @Published var buildContextStatusDescription = "未初始化"
+    @Published var latestEditorSnapshot: XcodeEditorContextSnapshot?
+    @Published var semanticReport: XcodeSemanticAvailability.Report = .init(reasons: [])
+    @Published var isResyncingBuildContext = false
     private var notificationCancellable: AnyCancellable?
     
     private var provider: XcodeBuildContextProvider?
@@ -175,6 +183,8 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
         activeConfiguration = bridge.activeConfiguration
         activeDestination = bridge.activeDestination
         buildContextStatusDescription = bridge.buildContextStatusDescription
+        latestEditorSnapshot = bridge.latestEditorSnapshot
+        semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString })
         
         guard let provider = bridge.buildContextProvider else { return }
         self.provider = provider
@@ -230,7 +240,10 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
             .publisher(for: .lumiEditorXcodeContextDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.activeDestination = XcodeProjectContextBridge.shared.activeDestination
+                let bridge = XcodeProjectContextBridge.shared
+                self?.activeDestination = bridge.activeDestination
+                self?.latestEditorSnapshot = bridge.latestEditorSnapshot
+                self?.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString })
             }
     }
     
@@ -245,6 +258,138 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
         guard let provider else { return }
         Task {
             await provider.setActiveConfiguration(configurationName)
+        }
+    }
+
+    func resyncBuildContext() {
+        guard !isResyncingBuildContext else { return }
+        isResyncingBuildContext = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.isResyncingBuildContext = false }
+            await XcodeProjectContextBridge.shared.resyncBuildContext()
+            let bridge = XcodeProjectContextBridge.shared
+            self.activeDestination = bridge.activeDestination
+            self.latestEditorSnapshot = bridge.latestEditorSnapshot
+            self.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(
+                uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString }
+            )
+        }
+    }
+}
+
+struct XcodeProjectStatusDetailView: View {
+    @ObservedObject var viewModel: XcodeProjectStatusBarViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Xcode Context")
+                    .font(.system(size: 13, weight: .semibold))
+                Spacer()
+                buildStatusBadge
+            }
+
+            detailRow("Scheme", viewModel.activeScheme ?? "未选择")
+            detailRow("Configuration", viewModel.activeConfiguration ?? "未选择")
+            detailRow("Destination", viewModel.activeDestination ?? "未确定")
+            detailRow("Build Context", viewModel.buildContextStatusDescription)
+
+            HStack {
+                Spacer()
+                Button {
+                    viewModel.resyncBuildContext()
+                } label: {
+                    if viewModel.isResyncingBuildContext {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("重新解析中")
+                        }
+                    } else {
+                        Text("重新解析 Build Context")
+                    }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.blue)
+                .disabled(viewModel.isResyncingBuildContext)
+            }
+
+            Divider()
+
+            if let snapshot = viewModel.latestEditorSnapshot {
+                detailRow("Workspace", snapshot.workspaceName)
+                detailRow("Current File", snapshot.currentFilePath ?? "未打开文件")
+                detailRow("Preferred Target", snapshot.currentFileTarget ?? "未确定")
+                detailRow(
+                    "Matched Targets",
+                    snapshot.currentFileMatchedTargets.isEmpty ? "无" : snapshot.currentFileMatchedTargets.joined(separator: ", ")
+                )
+                detailRow(
+                    "Scheme Targets",
+                    snapshot.activeSchemeBuildableTargets.isEmpty ? "无" : snapshot.activeSchemeBuildableTargets.joined(separator: ", ")
+                )
+                if !viewModel.semanticReport.reasons.isEmpty {
+                    Divider()
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Semantic Availability")
+                            .font(.system(size: 12, weight: .semibold))
+                        ForEach(viewModel.semanticReport.reasons) { reason in
+                            reasonRow(reason)
+                        }
+                    }
+                }
+            } else {
+                Text("当前没有可用的编辑器上下文快照。")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var buildStatusBadge: some View {
+        Text(viewModel.buildContextStatusDescription)
+            .font(.system(size: 10, weight: .medium))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.white.opacity(0.08))
+            .cornerRadius(6)
+    }
+
+    private func detailRow(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.system(size: 12))
+                .textSelection(.enabled)
+        }
+    }
+
+    private func reasonRow(_ reason: XcodeSemanticAvailability.Reason) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Circle()
+                .fill(color(for: reason.severity))
+                .frame(width: 8, height: 8)
+                .padding(.top, 4)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(reason.title)
+                    .font(.system(size: 11, weight: .medium))
+                Text(reason.message)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func color(for severity: XcodeSemanticAvailability.ReasonSeverity) -> Color {
+        switch severity {
+        case .info: return .blue
+        case .warning: return .orange
+        case .error: return .red
         }
     }
 }
