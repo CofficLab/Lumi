@@ -3,7 +3,6 @@ import os
 import MagicKit
 
 /// Xcode Build Context Provider
-/// 对应 Roadmap Phase 3
 /// 职责：
 /// 1. 生成/管理 buildServer.json
 /// 2. 提供文件到 build context 的映射

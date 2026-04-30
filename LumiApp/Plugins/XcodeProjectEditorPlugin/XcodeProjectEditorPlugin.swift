@@ -24,4 +24,9 @@ actor XcodeProjectEditorPlugin: SuperPlugin {
         registry.registerHoverContributor(XcodePackageManifestHoverContributor())
         registry.registerQuickOpenContributor(XcodeProjectQuickOpenContributor())
     }
+    
+    /// 在工具栏显示 Xcode 项目状态
+    @MainActor func addToolBarLeadingView() -> AnyView? {
+        return AnyView(XcodeProjectStatusBar())
+    }
 }

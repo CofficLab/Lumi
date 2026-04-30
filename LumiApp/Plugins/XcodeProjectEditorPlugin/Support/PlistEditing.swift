@@ -2,7 +2,6 @@ import Foundation
 import AppKit
 
 /// Info.plist 和 .entitlements 编辑优化
-/// 对应 Phase 7: plist / entitlements 编辑优化
 enum PlistEditing {
     struct KnownEntry: Equatable {
         let key: String

@@ -2,7 +2,6 @@ import Foundation
 import AppKit
 
 /// XCConfig 语法高亮和编辑支持
-/// 对应 Phase 7: xcconfig 语法与跳转
 enum XCConfigSyntax {
 
     struct IncludeDirective: Equatable {

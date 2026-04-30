@@ -5,7 +5,6 @@ import MagicKit
 
 /// Xcode Project Context Bridge
 /// 职责：在 XcodeProjectEditorPlugin 和 LSPService 之间建立连接
-/// 对应 Roadmap Phase 4: SourceKit-LSP Integration Hardening
 @MainActor
 final class XcodeProjectContextBridge: SuperLog {
     

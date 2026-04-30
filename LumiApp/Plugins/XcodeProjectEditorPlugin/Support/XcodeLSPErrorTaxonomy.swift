@@ -3,7 +3,6 @@ import os
 import MagicKit
 
 /// LSP Error Taxonomy for Xcode Projects
-/// 对应 Phase 4: 对 LSP 错误分类
 /// 将统一的 "No definition found" 细分为可操作的错误类型
 enum XcodeLSPError: LocalizedError, Equatable {
     
