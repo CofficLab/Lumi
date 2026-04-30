@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.1",
+  "strings": {
+    "LLM Availability": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM Availability"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM 可用性检测"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM 可用性檢測"
+          }
+        }
+      }
+    },
+    "Detect available LLM providers and models via health checks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detect available LLM providers and models via health checks"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过健康检查检测可用的 LLM 提供商和模型"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通過健康檢查檢測可用的 LLM 提供商和模型"
+          }
+        }
+      }
+    }
+  }
+}
