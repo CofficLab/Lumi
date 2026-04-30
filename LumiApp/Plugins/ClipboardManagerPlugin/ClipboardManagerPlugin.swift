@@ -12,7 +12,7 @@ actor ClipboardManagerPlugin: SuperPlugin {
     static let navigationId = "clipboard_manager"
     static let displayName = String(localized: "Clipboard", table: "ClipboardManager")
     static let description = String(localized: "Manage clipboard history and snippets", table: "ClipboardManager")
-    static let iconName = "puzzlepiece"
+    static let iconName = "doc.on.clipboard"
     static var order: Int { 70 }
     nonisolated static let enable: Bool = true
     nonisolated static let isConfigurable: Bool = true
@@ -51,11 +51,11 @@ actor ClipboardManagerPlugin: SuperPlugin {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "doc.on.clipboard" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(ClipboardHistoryView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "doc.on.clipboard" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview

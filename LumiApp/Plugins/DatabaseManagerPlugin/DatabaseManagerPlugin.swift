@@ -16,7 +16,7 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "database_manager"
     static let displayName = String(localized: "Database", table: "DatabaseManager")
     static let description = String(localized: "Manage SQLite, MySQL, PostgreSQL, and Redis", table: "DatabaseManager")
-    static let iconName = "puzzlepiece"
+    static let iconName = "server.rack"
     static var order: Int { 50 }
     nonisolated var instanceLabel: String { Self.id }
     static let shared = DatabaseManagerPlugin()
@@ -27,11 +27,11 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "server.rack" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(DatabaseMainView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "server.rack" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 #Preview("App") {

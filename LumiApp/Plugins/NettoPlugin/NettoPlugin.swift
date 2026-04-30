@@ -14,7 +14,7 @@ actor NettoPlugin: SuperPlugin, SuperLog {
     static let navigationId = "netto_firewall"
     static let displayName = String(localized: "Netto Firewall", table: "Netto")
     static let description = String(localized: "Manage network permissions for macOS applications.", table: "Netto")
-    static let iconName = "puzzlepiece"
+    static let iconName = "shield.lefthalf.filled"
     static var order: Int { 99 }
     
     nonisolated var instanceLabel: String { Self.id }
@@ -26,9 +26,9 @@ actor NettoPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "shield.lefthalf.filled" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(NettoDashboardView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "shield.lefthalf.filled" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }

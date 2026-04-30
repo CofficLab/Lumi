@@ -12,7 +12,7 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     static let navigationId: String = "terminal"
     static let displayName = String(localized: "Terminal", table: "Terminal")
     static let description = String(localized: "Native interactive terminal powered by SwiftTerm", table: "Terminal")
-    static let iconName = "puzzlepiece"
+    static let iconName = "terminal"
     static let isConfigurable: Bool = false
     static var order: Int { 90 }
 
@@ -33,9 +33,9 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "terminal" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(TerminalMainView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "terminal" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }

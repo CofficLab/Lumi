@@ -17,7 +17,7 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "disk_manager"
     static let displayName = String(localized: "Disk Manager", table: "DiskManager")
     static let description = String(localized: "Disk space analysis and large file cleaning", table: "DiskManager")
-    static let iconName = "puzzlepiece"
+    static let iconName = "internaldrive"
     static var order: Int { 22 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -30,11 +30,11 @@ actor DiskManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "internaldrive" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(DiskManagerView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "internaldrive" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview

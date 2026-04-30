@@ -17,7 +17,7 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(localized: "Code Editor", table: "LumiEditor")
     static let description: String = String(
         localized: "Code editor with file tree", table: "LumiEditor")
-    static let iconName = "puzzlepiece"
+    static let iconName = "chevron.left.forwardslash.chevron.right"
     static var isConfigurable: Bool { false }
     static var order: Int { 77 }
 
@@ -39,11 +39,11 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     /// 面板视图：文件树 + 编辑器
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(EditorPanelView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "chevron.left.forwardslash.chevron.right" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 
     /// 编辑器面板需要右侧栏（聊天）
 }

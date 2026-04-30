@@ -14,7 +14,7 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "port_manager"
     static let displayName = String(localized: "Port Manager", table: "PortManager")
     static let description = String(localized: "View and manage port usage", table: "PortManager")
-    static let iconName = "puzzlepiece"
+    static let iconName = "arrow.up.arrow.down.circle"
     static var order: Int { 20 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -29,11 +29,11 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "arrow.up.arrow.down.circle" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(PortManagerView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "arrow.up.arrow.down.circle" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview

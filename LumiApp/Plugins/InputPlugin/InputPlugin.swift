@@ -16,7 +16,7 @@ actor InputPlugin: SuperPlugin, SuperLog {
     static let navigationId: String = "input_manager"
     static let displayName = String(localized: "Input Manager", table: "Input")
     static let description = String(localized: "Manage input-related behaviors", table: "Input")
-    static let iconName = "puzzlepiece"
+    static let iconName = "keyboard"
     static let isConfigurable: Bool = false
     static var order: Int { 70 }
 
@@ -33,11 +33,11 @@ actor InputPlugin: SuperPlugin, SuperLog {
     
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "keyboard" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(InputSettingsView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "keyboard" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview

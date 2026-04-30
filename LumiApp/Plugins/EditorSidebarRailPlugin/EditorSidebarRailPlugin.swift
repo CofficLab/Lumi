@@ -36,9 +36,9 @@ actor EditorSidebarRailPlugin: SuperPlugin, SuperLog {
 
     /// 提供 Rail 视图：编辑器侧边栏 workspace
     ///
-    /// 仅在 EditorPlugin（icon: `chevron.left.forwardslash.chevron.right`）被激活时提供。
+    /// 仅在 EditorPlugin 被激活时提供。
     @MainActor func addRailView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
+        guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorSidebarRailView())
     }
 }

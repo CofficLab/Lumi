@@ -17,7 +17,7 @@ actor CodeServerPlugin: SuperPlugin, SuperLog {
     static let navigationId: String = "code-server"
     static let displayName = String(localized: "Code Server", table: "CodeServer")
     static let description = String(localized: "在 Lumi 中通过 code-server 使用完整的 VS Code 编辑体验", table: "CodeServer")
-    static let iconName = "puzzlepiece"
+    static let iconName = "desktopcomputer"
     static let isConfigurable: Bool = false
     static var order: Int { 85 }
 
@@ -36,11 +36,11 @@ actor CodeServerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "desktopcomputer" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(CodeServerView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "desktopcomputer" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 
     // MARK: - Status Bar
 

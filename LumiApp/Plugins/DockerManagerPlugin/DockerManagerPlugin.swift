@@ -16,7 +16,7 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "docker_manager"
     static let displayName = String(localized: "Docker", table: "DockerManager")
     static let description = String(localized: "Local Docker image management and monitoring", table: "DockerManager")
-    static let iconName = "puzzlepiece"
+    static let iconName = "shippingbox"
     static var order: Int { 50 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -31,11 +31,11 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "shippingbox" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(DockerImagesView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "shippingbox" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview

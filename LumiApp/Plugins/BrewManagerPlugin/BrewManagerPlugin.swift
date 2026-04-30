@@ -16,7 +16,7 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "brew_manager"
     static let displayName = String(localized: "Package Management", table: "BrewManager")
     static let description = String(localized: "Manage Homebrew packages and casks", table: "BrewManager")
-    static let iconName = "puzzlepiece"
+    static let iconName = "mug.fill"
     static var order: Int { 60 }
     nonisolated var instanceLabel: String { Self.id }
     static let shared = BrewManagerPlugin()
@@ -27,11 +27,11 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == "mug.fill" else { return nil }
+        guard activeIcon == Self.iconName else { return nil }
         return AnyView(BrewManagerView())
     }
 
-    nonisolated func addPanelIcon() -> String? { "mug.fill" }
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 #Preview("App") {
