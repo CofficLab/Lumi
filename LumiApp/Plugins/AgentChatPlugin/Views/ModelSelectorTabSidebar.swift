@@ -21,7 +21,7 @@ struct ModelSelectorTabSidebar: View {
             Divider()
                 .padding(.vertical, 4)
 
-            // MARK: - 下半区：供应商列表
+            // MARK: - 下半区：供应商列表（可滚动）
 
             Text(String(localized: "Providers", table: "AgentInput"))
                 .font(AppUI.Typography.caption1)
@@ -29,13 +29,18 @@ struct ModelSelectorTabSidebar: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
 
-            ForEach(providers) { provider in
-                providerTabButton(provider: provider)
+            ScrollView {
+                VStack(spacing: 4) {
+                    ForEach(providers) { provider in
+                        providerTabButton(provider: provider)
+                    }
+                }
             }
 
-            quickTabButton(tab: .all, icon: "globe", title: String(localized: "All", table: "AgentInput"))
+            Divider()
+                .padding(.vertical, 4)
 
-            Spacer()
+            quickTabButton(tab: .all, icon: "globe", title: String(localized: "All", table: "AgentInput"))
         }
         .padding(8)
     }
