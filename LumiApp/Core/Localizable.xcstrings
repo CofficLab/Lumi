@@ -5079,6 +5079,9 @@
         }
       }
     },
+    "Top Processes" : {
+
+    },
     "Total: %@" : {
       "localizations" : {
         "zh-Hans" : {

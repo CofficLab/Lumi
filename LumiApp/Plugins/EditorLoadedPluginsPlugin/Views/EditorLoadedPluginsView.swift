@@ -31,7 +31,7 @@ struct EditorLoadedPluginsDetailView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(String(localized: "Editor Plugins", table: "LumiEditor"))
+                Text(String(localized: "Editor Plugins", table: "EditorLoadedPlugins"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
@@ -45,12 +45,12 @@ struct EditorLoadedPluginsDetailView: View {
                         .foregroundColor(DesignTokens.Color.semantic.textSecondary)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "Refresh", table: "LumiEditor"))
+                .help(String(localized: "Refresh", table: "EditorLoadedPlugins"))
             }
 
             Text(
                 String(
-                    format: String(localized: "Loaded %lld plugin(s)", table: "LumiEditor"),
+                    format: String(localized: "Loaded %lld plugin(s)", table: "EditorLoadedPlugins"),
                     Int64(viewModel.enabledPlugins.count)
                 )
             )
@@ -58,7 +58,7 @@ struct EditorLoadedPluginsDetailView: View {
                 .foregroundColor(DesignTokens.Color.semantic.textSecondary)
 
             if viewModel.enabledPlugins.isEmpty {
-                Text(String(localized: "No editor plugins loaded", table: "LumiEditor"))
+                Text(String(localized: "No editor plugins loaded", table: "EditorLoadedPlugins"))
                     .font(.system(size: 12))
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
                     .padding(.vertical, 8)
