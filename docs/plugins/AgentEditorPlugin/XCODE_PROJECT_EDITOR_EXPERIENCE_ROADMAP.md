@@ -108,6 +108,17 @@
 - [x] 缺失上下文时的明确错误提示 — 通过 `BuildContextStatus.unavailable(reason)` 和 `XcodeSemanticAvailability` 展示
 - [x] `xcode-build-server` 路径查找 — 支持多路径探测 + `which` fallback
 
+### ⚠️ Phase 3 待完善清单
+
+- [ ] 引入 [tuist/XcodeProj](https://github.com/tuist/XcodeProj)（2200⭐，MIT）替换手写的 `XcodePBXProjParser`
+  - 当前 `XcodePBXProjParser` 仅支持 Xcode 16 的 File System Synchronized Group 模式，无法解析传统 Build Phase 项目
+  - `XcodeProj` 支持所有 pbxproj section 的完整解析和读写，被 Tuist / XcodeGen / Sourcery 等项目生产使用
+  - SPM 集成：`.package(url: "https://github.com/tuist/XcodeProj.git", .upToNextMajor(from: "8.12.0"))`
+- [ ] 用 `XcodeProj` 重写 target → 文件归属查询，覆盖传统 PBXBuildFile / PBXSourcesBuildPhase 模式
+- [ ] 用 `XcodeProj` 解析 PBXGroup / PBXFileReference 树，为项目 navigator 提供数据源
+- [ ] 用 `XcodeProj` 直接读取 Build Configuration，减少对 `xcodebuild -showBuildSettings` 的进程调用依赖
+- [ ] 用 `XcodeProj` 解析 Target Dependency，支持 target 间依赖关系的可视化
+
 ---
 
 ## Phase 4: SourceKit-LSP Integration Hardening
