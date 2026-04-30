@@ -3696,6 +3696,9 @@
     "Outline" : {
 
     },
+    "Outline not available" : {
+
+    },
     "Override" : {
 
     },
@@ -5311,10 +5314,10 @@
     "Use Lumi Version" : {
 
     },
-    "Use Regular Expression" : {
+    "Use Project Version" : {
 
     },
-    "Use Xcode Version" : {
+    "Use Regular Expression" : {
 
     },
     "user" : {
@@ -5435,6 +5438,9 @@
           }
         }
       }
+    },
+    "Workspace symbols not available" : {
+
     },
     "Xcode" : {
 
