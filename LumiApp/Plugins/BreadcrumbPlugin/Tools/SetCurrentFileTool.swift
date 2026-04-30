@@ -31,7 +31,7 @@ struct SetCurrentFileTool: AgentTool, SuperLog {
         }
 
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)设置当前文件：\(path)")
+            BreadcrumbPlugin.logger.info("\(Self.t)设置当前文件：\(path)")
         }
 
         // 验证路径是否存在且为文件

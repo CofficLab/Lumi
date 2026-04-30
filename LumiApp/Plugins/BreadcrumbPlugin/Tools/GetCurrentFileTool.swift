@@ -1,12 +1,12 @@
 import Foundation
 import MagicKit
 
-/// 获取当前项目工具
-struct GetCurrentProjectTool: AgentTool, SuperLog {
-    nonisolated static let emoji = "📁"
+/// 获取当前文件工具
+struct GetCurrentFileTool: AgentTool, SuperLog {
+    nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = true
-    let name = "get_current_project"
-    let description = "获取当前选中的项目信息，包括项目名称和路径。如果没有选择项目，返回空信息。"
+    let name = "get_current_file"
+    let description = "获取当前选中的文件信息，包括文件路径和最后选择时间。如果没有选择文件，返回空信息。"
 
     var inputSchema: [String: Any] {
         [
@@ -21,28 +21,30 @@ struct GetCurrentProjectTool: AgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)获取当前项目")
+            BreadcrumbPlugin.logger.info("\(Self.t)获取当前文件")
         }
 
         let store = RecentProjectsStore()
-        guard let project = store.getCurrentProject() else {
+        guard let fileInfo = store.getCurrentFile() else {
             return """
-            ## 当前项目状态
+            ## 当前文件状态
             
-            **状态**: 未选择项目
+            **状态**: 未选择文件
             
-            使用 `set_current_project` 工具来选择一个项目。
+            使用 `set_current_file` 工具来选择一个文件。
             """
         }
 
+        let fileName = URL(fileURLWithPath: fileInfo.path).lastPathComponent
+
         return """
-        ## 当前项目信息
+        ## 当前文件信息
         
-        **项目名称**: \(project.name)
+        **文件名称**: \(fileName)
         
-        **项目路径**: \(project.path)
+        **文件路径**: \(fileInfo.path)
         
-        **最后使用**: \(formatDate(project.lastUsed))
+        **最后选择**: \(formatDate(fileInfo.lastSelected))
         """
     }
     

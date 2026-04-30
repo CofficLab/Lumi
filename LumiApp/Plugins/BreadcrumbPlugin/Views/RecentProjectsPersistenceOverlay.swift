@@ -131,7 +131,7 @@ extension RecentProjectsPersistenceOverlay {
         // 验证文件存在
         guard FileManager.default.fileExists(atPath: path) else {
             if Self.verbose {
-                RecentProjectsPlugin.logger.warning("\(Self.t)⚠️ 文件不存在：\(path)")
+                BreadcrumbPlugin.logger.warning("\(Self.t)⚠️ 文件不存在：\(path)")
             }
             return
         }
@@ -151,14 +151,14 @@ extension RecentProjectsPersistenceOverlay {
 
         if switched {
             if Self.verbose {
-                RecentProjectsPlugin.logger.info("\(Self.t)✅ 已切换到项目 [\(projectPath)] 的最近对话")
+                BreadcrumbPlugin.logger.info("\(Self.t)✅ 已切换到项目 [\(projectPath)] 的最近对话")
             }
             return
         }
 
         // 该项目没有关联对话 → 新建一个
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)📁 项目 [\(projectPath)] 无关联对话，创建新对话")
+            BreadcrumbPlugin.logger.info("\(Self.t)📁 项目 [\(projectPath)] 无关联对话，创建新对话")
         }
 
         Task {

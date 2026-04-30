@@ -97,7 +97,7 @@ private func handleFileImport(_ result: Result<[URL], Error>) {
                 }
             }
         case .failure(let error):
-            RecentProjectsPlugin.logger.error("File import 错误：\(error.localizedDescription)")
+            BreadcrumbPlugin.logger.error("File import 错误：\(error.localizedDescription)")
         }
     }
 }

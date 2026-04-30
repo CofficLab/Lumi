@@ -5,8 +5,36 @@ import SwiftUI
 // MARK: - Breadcrumb Toolbar View
 
 /// 工具栏面包屑导航视图
-/// 显示在应用顶部工具栏中，用于快速导航当前选中的文件路径
+/// 左侧显示项目选择器（最近项目），右侧显示文件路径面包屑
 struct BreadcrumbToolBarView: View {
+
+    @EnvironmentObject private var projectVM: ProjectVM
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // 左侧：项目选择器（最近项目下拉）
+            ProjectControlView()
+
+            // 分隔线
+            if projectVM.isProjectSelected {
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.2))
+                    .frame(width: 1, height: 16)
+                    .padding(.horizontal, 6)
+            }
+
+            // 右侧：面包屑路径导航
+            BreadcrumbPathView()
+                .layoutPriority(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - Breadcrumb Path View
+
+/// 面包屑路径视图（原 BreadcrumbToolBarView 的核心逻辑）
+struct BreadcrumbPathView: View {
 
     @EnvironmentObject private var projectVM: ProjectVM
 
