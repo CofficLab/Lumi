@@ -55,6 +55,10 @@ final class RootViewContainer: ObservableObject {
     let agentSessionConfig: LLMVM
     let captureThinkingContent: Bool
 
+    // MARK: - Editor
+
+    let editorVM: EditorVM
+
     // MARK: - 初始化
 
     private init() {
@@ -188,6 +192,22 @@ final class RootViewContainer: ObservableObject {
         )
 
         self.conversationSendStatusVM = ConversationStatusVM()
+
+        // ========================================
+        // 编辑器
+        // ========================================
+
+        let editorState = EditorState()
+        let editorSessionStore = EditorSessionStore()
+        let editorWorkbench = EditorWorkbenchState()
+        let editorHostStore = EditorGroupHostStore()
+
+        self.editorVM = EditorVM(
+            state: editorState,
+            sessionStore: editorSessionStore,
+            workbench: editorWorkbench,
+            hostStore: editorHostStore
+        )
 
         messageQueueVM.objectWillChange
             .sink { [weak self] _ in

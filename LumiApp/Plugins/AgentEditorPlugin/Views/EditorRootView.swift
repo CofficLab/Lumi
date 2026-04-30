@@ -22,12 +22,14 @@ struct EditorRootView: View {
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var layoutVM: LayoutVM
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var editorVM: EditorVM
 
-    /// 编辑器状态
-    @StateObject private var state = EditorState()
-    @StateObject private var sessionStore = EditorSessionStore()
-    @StateObject private var workbench = EditorWorkbenchState()
-    @StateObject private var hostStore = EditorGroupHostStore()
+    /// 便利访问
+    private var state: EditorState { editorVM.state }
+    private var sessionStore: EditorSessionStore { editorVM.sessionStore }
+    private var workbench: EditorWorkbenchState { editorVM.workbench }
+    private var hostStore: EditorGroupHostStore { editorVM.hostStore }
+
     @State private var pendingActivationIntent: ActivationIntent?
     @State private var isCommandPalettePresented = false
     @State private var draggedTabSessionID: EditorSession.ID?

@@ -68,6 +68,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.projectContextRequestVM)
             .environmentObject(container.gitVM)
             .environmentObject(container.mystiqueThemeManager)
+            .environmentObject(container.editorVM)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)
             .onChange(of: container.messageQueueVM.queueVersion, onQueueChanged)
