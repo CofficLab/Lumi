@@ -18,7 +18,7 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "app_manager"
     static let displayName = String(localized: "App Manager", table: "AppManager")
     static let description = String(localized: "Manage installed applications", table: "AppManager")
-    static let iconName = "apps.ipad"
+    static let iconName = "puzzlepiece"
     static var order: Int { 40 }
     
     nonisolated var instanceLabel: String { Self.id }
@@ -29,9 +29,12 @@ actor AppManagerPlugin: SuperPlugin, SuperLog {
     /// 该面板不需要右侧栏
 
     @MainActor
-    func addPanelView() -> AnyView? {
-        AnyView(AppManagerView())
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "apps.ipad" else { return nil }
+        return AnyView(AppManagerView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "apps.ipad" }
 }
 
 // MARK: - Preview

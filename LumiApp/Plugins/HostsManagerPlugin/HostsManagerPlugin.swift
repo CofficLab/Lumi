@@ -16,7 +16,7 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "hosts_manager"
     static let displayName = String(localized: "Hosts Manager", table: "HostsManager")
     static let description = String(localized: "Manage system hosts file configuration", table: "HostsManager")
-    static let iconName = "list.bullet.rectangle"
+    static let iconName = "puzzlepiece"
     static var order: Int { 21 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -27,9 +27,13 @@ actor HostsManagerPlugin: SuperPlugin, SuperLog {
 
     /// 该面板不需要右侧栏
 
-    @MainActor func addPanelView() -> AnyView? {
-        AnyView(HostsManagerView())
+    @MainActor
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "list.bullet.rectangle" else { return nil }
+        return AnyView(HostsManagerView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "list.bullet.rectangle" }
 }
 
 // MARK: - Preview

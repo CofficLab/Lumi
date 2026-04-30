@@ -111,12 +111,29 @@ protocol SuperPlugin: Actor {
     /// 添加工具栏右侧视图
     @MainActor func addToolBarTrailingView() -> AnyView?
 
+    /// 提供面板图标（SF Symbol 名称）
+    ///
+    /// 用于在左侧活动栏中显示该插件的面板入口图标。
+    /// 只有同时提供 `addPanelView()` 的插件才需要实现此方法。
+    /// 返回 nil 表示使用插件默认的 `iconName`。
+    ///
+    /// ## 注意
+    ///
+    /// 此方法与 `addPanelView()` 配对使用：
+    /// - `addPanelIcon()` 提供活动栏图标
+    /// - `addPanelView()` 提供面板内容视图
+    nonisolated func addPanelIcon() -> String?
+
     /// 添加面板视图
     ///
     /// 提供一个在左侧活动栏中注册的视图入口。插件自行决定视图的布局方式，
     /// 例如只读列表、可交互的管理界面、或者编辑器等。
     /// 点击活动栏图标后，该视图会在左侧面板或中间栏中展示。
-    @MainActor func addPanelView() -> AnyView?
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件应将其与自己的 `addPanelIcon()` 返回值比较，匹配时才提供面板视图。
+    ///   如果为 `nil`，表示没有任何图标被激活。
+    @MainActor func addPanelView(activeIcon: String?) -> AnyView?
 
     /// 添加 Rail 视图
     ///

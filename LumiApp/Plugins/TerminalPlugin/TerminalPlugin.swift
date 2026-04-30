@@ -12,7 +12,7 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     static let navigationId: String = "terminal"
     static let displayName = String(localized: "Terminal", table: "Terminal")
     static let description = String(localized: "Native interactive terminal powered by SwiftTerm", table: "Terminal")
-    static let iconName = "terminal"
+    static let iconName = "puzzlepiece"
     static let isConfigurable: Bool = false
     static var order: Int { 90 }
 
@@ -32,7 +32,10 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     /// 该面板不需要右侧栏
 
     @MainActor
-    func addPanelView() -> AnyView? {
-        AnyView(TerminalMainView())
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "terminal" else { return nil }
+        return AnyView(TerminalMainView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "terminal" }
 }

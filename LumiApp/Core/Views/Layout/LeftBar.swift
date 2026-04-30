@@ -3,8 +3,8 @@ import SwiftUI
 
 /// 活动栏：最左侧的窄图标导航栏（48px 固定宽度）
 ///
-/// 聚合所有提供 `addPanelView()` 的插件图标，
-/// 点击后通过 LayoutVM 驱动内容面板切换。
+/// 聚合所有提供 `addPanelIcon()` 的插件图标，
+/// 点击后更新 `PluginVM.activePanelIcon`，驱动内容面板切换。
 ///
 /// 主题适配：背景、图标颜色、选中指示条均跟随当前主题。
 struct ActivityBar: View {
@@ -16,19 +16,20 @@ struct ActivityBar: View {
     static let width: CGFloat = 48
 
     var body: some View {
-        let panelItems = pluginProvider.getPanelItems()
-        let selectedId = currentSelectedId(in: panelItems)
+        let iconItems = pluginProvider.getPanelIconItems()
+        let activeIcon = pluginProvider.activePanelIcon
         let theme = themeManager.activeAppTheme
 
         VStack(spacing: 0) {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 4) {
-                    ForEach(panelItems) { item in
+                    ForEach(iconItems) { item in
                         ActivityBarButton(
                             icon: item.icon,
                             title: item.title,
-                            isSelected: item.id == selectedId
+                            isSelected: item.icon == activeIcon
                         ) {
+                            pluginProvider.activePanelIcon = item.icon
                             layoutVM.selectAgentSidebarTab(item.id, reason: "Activity bar clicked")
                         }
                     }
@@ -50,40 +51,37 @@ struct ActivityBar: View {
         .frame(width: Self.width)
         .background(theme.sidebarBackgroundColor())
         .onAppear {
-            let items = pluginProvider.getPanelItems()
+            let items = pluginProvider.getPanelIconItems()
             layoutVM.restoreSelectedTab(from: items.map(\.id))
+            // 初始化时激活第一个图标的面板
+            if pluginProvider.activePanelIcon == nil, let first = items.first {
+                pluginProvider.activePanelIcon = first.icon
+            }
         }
-        .onChange(of: pluginProvider.getPanelItems()) { _, newItems in
+        .onChange(of: pluginProvider.getPanelIconItems()) { _, newItems in
             layoutVM.restoreSelectedTab(from: newItems.map(\.id))
         }
-    }
-
-    // MARK: - Helpers
-
-    private func currentSelectedId(in items: [PluginVM.PanelItem]) -> String {
-        let id = layoutVM.selectedAgentSidebarTabId
-        return items.contains(where: { $0.id == id }) ? id : (items.first?.id ?? "")
     }
 }
 
 // MARK: - Panel Content View
 
-/// 面板内容视图：显示当前选中插件的面板内容
+/// 面板内容视图：显示当前激活插件的面板内容
 ///
+/// 根据 `PluginVM.activePanelIcon` 找到匹配的插件，
+/// 通过 `getActivePanelItem()` 获取其面板视图。
 /// 每个插件的宽度比例独立持久化（UserDefaults key: `Split.Panel.<pluginId>`）。
 struct PanelContentView: View {
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var layoutVM: LayoutVM
 
     var body: some View {
-        let panelItems = pluginProvider.getPanelItems()
-        let selectedId = layoutVM.selectedAgentSidebarTabId
-        let selected = panelItems.first(where: { $0.id == selectedId }) ?? panelItems.first
+        let activeItem = pluginProvider.getActivePanelItem()
 
         Group {
-            if let selected {
-                selected.view
-                    .background(SplitViewWidthPersistence(storageKey: "Split.Panel.\(selected.id)"))
+            if let activeItem {
+                activeItem.view
+                    .background(SplitViewWidthPersistence(storageKey: "Split.Panel.\(activeItem.id)"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
                 Color.clear

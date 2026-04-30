@@ -16,7 +16,7 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "network_manager"
     static let displayName = String(localized: "Network Monitor", table: "NetworkManager")
     static let description = String(localized: "Real-time monitoring of network speed, traffic, and connection status", table: "NetworkManager")
-    static let iconName = "network"
+    static let iconName = "puzzlepiece"
     static var order: Int { 30 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -38,9 +38,13 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
         AnyView(NetworkStatusBarContentView())
     }
 
-    @MainActor func addPanelView() -> AnyView? {
-        AnyView(NetworkDashboardView())
+    @MainActor
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "network" else { return nil }
+        return AnyView(NetworkDashboardView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "network" }
 }
 
 #Preview("App") {

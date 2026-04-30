@@ -35,6 +35,17 @@ import Combine
 /// ```
 @MainActor
 final class PluginVM: ObservableObject, SuperLog {
+    /// 面板图标项（仅用于活动栏图标渲染，不包含视图）
+    struct PanelIconItem: Identifiable, Equatable {
+        let id: String
+        let title: String
+        let icon: String
+
+        static func == (lhs: PanelIconItem, rhs: PanelIconItem) -> Bool {
+            lhs.id == rhs.id
+        }
+    }
+
     /// 面板视图项（用于左侧活动栏注册的统一入口）
     struct PanelItem: Identifiable, Equatable {
         let id: String
@@ -80,6 +91,12 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 用于在 UI 中显示加载状态。
     /// 当插件正在加载时为 false，加载完成后为 true。
     @Published private(set) var isLoaded: Bool = false
+
+    /// 当前被激活的 ActivityBar 图标（SF Symbol 名称）
+    ///
+    /// 当用户点击活动栏图标时更新。内核将其传递给 `addPanelView(activeIcon:)`，
+    /// 插件通过比较 `activeIcon` 与自己的 `addPanelIcon()` 返回值来决定是否提供面板视图。
+    @Published var activePanelIcon: String?
 
     /// 插件设置存储
     ///
@@ -476,22 +493,45 @@ final class PluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addToolBarTrailingView() }
     }
 
-    /// 获取所有面板视图项（用于左侧活动栏）
+    /// 获取所有面板图标项（用于左侧活动栏）
     ///
-    /// 每个提供 `addPanelView()` 的插件都会生成一个活动栏图标入口。
-    func getPanelItems() -> [PanelItem] {
+    /// 仅收集各插件通过 `addPanelIcon()` 提供的图标信息，
+    /// 不触发 `addPanelView(activeIcon:)`。用于渲染活动栏图标按钮。
+    func getPanelIconItems() -> [PanelIconItem] {
         plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { plugin -> PanelItem? in
-                guard let view = plugin.addPanelView() else { return nil }
+            .compactMap { plugin -> PanelIconItem? in
+                guard let icon = plugin.addPanelIcon() else { return nil }
                 let pluginType = type(of: plugin)
-                return PanelItem(
+                return PanelIconItem(
                     id: plugin.instanceLabel,
                     title: pluginType.displayName,
-                    icon: pluginType.iconName,
-                    view: view
+                    icon: icon
                 )
             }
+    }
+
+    /// 获取当前激活插件的 PanelItem
+    ///
+    /// 根据 `activePanelIcon` 查找匹配的插件，调用其 `addPanelView(activeIcon:)` 获取视图。
+    /// 只会有一个插件匹配并返回面板视图。
+    func getActivePanelItem() -> PanelItem? {
+        guard let activeIcon = activePanelIcon else { return nil }
+        
+        for plugin in plugins where isPluginEnabled(plugin) {
+            guard let pluginIcon = plugin.addPanelIcon() else { continue }
+            guard pluginIcon == activeIcon else { continue }
+            
+            guard let view = plugin.addPanelView(activeIcon: activeIcon) else { continue }
+            let pluginType = type(of: plugin)
+            return PanelItem(
+                id: plugin.instanceLabel,
+                title: pluginType.displayName,
+                icon: pluginIcon,
+                view: view
+            )
+        }
+        return nil
     }
 
     /// 当前是否有面板视图
@@ -500,7 +540,10 @@ final class PluginVM: ObservableObject, SuperLog {
     func hasPanels() -> Bool {
         plugins
             .filter { isPluginEnabled($0) }
-            .contains { $0.addPanelView() != nil }
+            .contains { plugin -> Bool in
+                guard let icon = plugin.addPanelIcon() else { return false }
+                return plugin.addPanelView(activeIcon: icon) != nil
+            }
     }
 
     /// 获取所有插件提供的 Rail 视图项

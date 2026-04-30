@@ -16,7 +16,7 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "brew_manager"
     static let displayName = String(localized: "Package Management", table: "BrewManager")
     static let description = String(localized: "Manage Homebrew packages and casks", table: "BrewManager")
-    static let iconName = "shippingbox"
+    static let iconName = "puzzlepiece"
     static var order: Int { 60 }
     nonisolated var instanceLabel: String { Self.id }
     static let shared = BrewManagerPlugin()
@@ -25,9 +25,13 @@ actor BrewManagerPlugin: SuperPlugin, SuperLog {
 
     /// 该面板不需要右侧栏
 
-    @MainActor func addPanelView() -> AnyView? {
-        AnyView(BrewManagerView())
+    @MainActor
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "shippingbox" else { return nil }
+        return AnyView(BrewManagerView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "shippingbox" }
 }
 
 #Preview("App") {

@@ -16,7 +16,7 @@ actor RClickPlugin: SuperPlugin, SuperLog {
     static let navigationId: String? = "rclick"
     static let displayName = String(localized: "Right Click", table: "RClick")
     static let description = String(localized: "Customize Finder right-click menu actions", table: "RClick")
-    static let iconName = "cursorarrow.click.2"
+    static let iconName = "puzzlepiece"
     static let isConfigurable: Bool = false
     static var order: Int { 50 }
 
@@ -36,9 +36,12 @@ actor RClickPlugin: SuperPlugin, SuperLog {
     /// 该面板不需要右侧栏
 
     @MainActor
-    func addPanelView() -> AnyView? {
-        AnyView(RClickSettingsView())
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "cursorarrow.click.2" else { return nil }
+        return AnyView(RClickSettingsView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "cursorarrow.click.2" }
 }
 
 // MARK: - Preview

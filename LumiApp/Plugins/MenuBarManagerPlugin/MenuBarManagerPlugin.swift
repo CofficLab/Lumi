@@ -21,7 +21,7 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId: String = "menu_bar_manager"
     static let displayName: String = String(localized: "Menu Bar Manager", table: "MenuBarManager")
     static let description: String = String(localized: "Manage your menu bar items", table: "MenuBarManager")
-    static let iconName: String = "menubar.rectangle"
+    static let iconName = "puzzlepiece"
     static let isConfigurable: Bool = false
     static var order: Int { 20 }
 
@@ -35,9 +35,12 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
     /// 该面板不需要右侧栏
 
     @MainActor
-    func addPanelView() -> AnyView? {
-        AnyView(MenuBarSettingsView())
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "menubar.rectangle" else { return nil }
+        return AnyView(MenuBarSettingsView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "menubar.rectangle" }
 
     /// 添加状态栏弹窗视图
     /// 我们可以在这里放一个开关，或者一个"Thaw"按钮来显示隐藏的项目

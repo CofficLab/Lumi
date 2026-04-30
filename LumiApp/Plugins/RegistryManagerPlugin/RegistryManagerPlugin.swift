@@ -13,7 +13,7 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId: String = "registry_manager"
     static let displayName = String(localized: "Registry Manager", table: "RegistryManager")
     static let description = String(localized: "Manage Lumi registries", table: "RegistryManager")
-    static let iconName = "arrow.triangle.2.circlepath"
+    static let iconName = "puzzlepiece"
     static let isConfigurable: Bool = false
     static var order: Int { 80 }
 
@@ -25,9 +25,12 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
     /// 该面板不需要右侧栏
 
     @MainActor
-    func addPanelView() -> AnyView? {
-        AnyView(RegistryManagerView())
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "arrow.triangle.2.circlepath" else { return nil }
+        return AnyView(RegistryManagerView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "arrow.triangle.2.circlepath" }
 }
 
 // MARK: - Preview

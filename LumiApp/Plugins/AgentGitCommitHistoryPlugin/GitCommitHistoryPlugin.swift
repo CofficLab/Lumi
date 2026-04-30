@@ -13,7 +13,7 @@ actor GitCommitHistoryPlugin: SuperPlugin {
     static let id = "GitCommitHistory"
     static let displayName = String(localized: "Commit History", table: "GitCommitHistory")
     static let description = String(localized: "Display Git commit history and detail", table: "GitCommitHistory")
-    static let iconName = "clock.badge.checkmark"
+    static let iconName = "puzzlepiece"
     static var order: Int { 11 }
     static let enable: Bool = true
     static var isConfigurable: Bool { false }
@@ -34,7 +34,10 @@ actor GitCommitHistoryPlugin: SuperPlugin {
 
     /// 统一面板视图：左侧历史列表 + 右侧详情
     @MainActor
-    func addPanelView() -> AnyView? {
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "clock.badge.checkmark" else { return nil }
         return AnyView(GitCommitPanelView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "clock.badge.checkmark" }
 }

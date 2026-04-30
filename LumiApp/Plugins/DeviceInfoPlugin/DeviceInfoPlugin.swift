@@ -16,7 +16,7 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     static let navigationId: String = "device_info"
     static let displayName: String = String(localized: "Device Info", table: "DeviceInfo")
     static let description: String = String(localized: "Show system status like CPU, Memory, Disk, Battery, etc.", table: "DeviceInfo")
-    static let iconName: String = "macbook.and.iphone"
+    static let iconName = "puzzlepiece"
     static let isConfigurable: Bool = false
     static var order: Int { 10 }
 
@@ -48,11 +48,12 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func addPanelView() -> AnyView? {
-        AnyView(DeviceInfoView())
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "macbook.and.iphone" else { return nil }
+        return AnyView(DeviceInfoView())
     }
 
-    /// 该面板不需要右侧栏
+    nonisolated func addPanelIcon() -> String? { "macbook.and.iphone" }
 }
 
 // MARK: - Preview

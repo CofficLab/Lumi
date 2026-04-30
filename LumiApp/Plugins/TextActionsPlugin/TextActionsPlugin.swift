@@ -11,7 +11,7 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     static let navigationId = "text_actions"
     static let displayName = String(localized: "Text Actions", table: "TextActions")
     static let description = String(localized: "Selected text actions menu", table: "TextActions")
-    static let iconName = "cursorarrow.click.2"
+    static let iconName = "puzzlepiece"
     nonisolated static let enable: Bool = true
     static var order: Int { 60 }
     
@@ -86,9 +86,12 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     /// 该面板不需要右侧栏
 
     @MainActor
-    func addPanelView() -> AnyView? {
-        AnyView(TextActionsSettingsView())
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == "cursorarrow.click.2" else { return nil }
+        return AnyView(TextActionsSettingsView())
     }
+
+    nonisolated func addPanelIcon() -> String? { "cursorarrow.click.2" }
 }
 
 // MARK: - Preview
