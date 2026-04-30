@@ -843,13 +843,13 @@ VS Code 的核心体验不只是"编辑一个文件"，而是：多 tab、预览
 
 ### 清单
 
-- [ ] editor 专属设置页（字体、tab size、wrap、minimap、folding、line numbers、render whitespace）
+- [x] editor 专属设置页（字体、tab size、wrap、minimap、folding、line numbers、render whitespace）
 - [ ] settings search 与 command palette / quick open 联动
 - [ ] command palette 支持最近命令、常用命令、分类记忆
 - [ ] 欢迎或空状态页补 editor 功能 discoverability
 - [ ] 保存冲突、外部修改、格式化失败、LSP 不可用等状态提示文案统一
 - [ ] 语言特定设置覆盖策略（global / workspace / language override）
-- [ ] 插件贡献设置项的统一注册与展示
+- [x] 插件贡献设置项的统一注册与展示
 - [ ] “用例驱动”的 UI 回归手册（打开文件、查找、rename、split、quick fix、restore）
 - [ ] UI / 扩展层 smoke tests 命令清单写回文档
 - [ ] 梳理与 VS Code 仍有明显差距的前 10 项体验缺口，并按优先级排序

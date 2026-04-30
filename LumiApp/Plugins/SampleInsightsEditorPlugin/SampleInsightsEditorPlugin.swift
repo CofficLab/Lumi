@@ -15,6 +15,7 @@ actor SampleInsightsEditorPlugin: SuperPlugin {
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         registry.registerHoverContentContributor(SampleInsightsHoverContributor())
         registry.registerPanelContributor(SampleInsightsPanelContributor())
+        registry.registerSettingsContributor(SampleInsightsSettingsContributor())
         registry.registerStatusItemContributor(SampleInsightsStatusItemContributor())
     }
 }

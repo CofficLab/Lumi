@@ -1,4 +1,5 @@
 import Combine
+import CoreGraphics
 import Foundation
 
 @MainActor
@@ -26,7 +27,7 @@ final class EditorSettingsState: ObservableObject {
     private var suppressPersistence = true
     private var cancellables = Set<AnyCancellable>()
 
-    private init(
+    init(
         configController: EditorConfigController = EditorConfigController(),
         pluginManager: EditorPluginManager = EditorPluginManager()
     ) {
@@ -83,6 +84,7 @@ final class EditorSettingsState: ObservableObject {
 
     private func persistIfNeeded() {
         guard !suppressPersistence else { return }
+        refreshExternalSnapshotFields()
         let snapshot = snapshot
         configController.persistConfig(snapshot)
         NotificationCenter.default.post(
@@ -107,5 +109,11 @@ final class EditorSettingsState: ObservableObject {
                 self?.reinstallEditorPlugins()
             }
             .store(in: &cancellables)
+    }
+
+    private func refreshExternalSnapshotFields() {
+        let latest = configController.restoreConfig(clampedSidePanelWidth: { CGFloat($0) })
+        baseSnapshot.currentThemeId = latest.currentThemeId
+        baseSnapshot.sidePanelWidth = latest.sidePanelWidth
     }
 }

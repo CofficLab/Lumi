@@ -362,6 +362,46 @@ final class EditorExtensionRegistryTests: XCTestCase {
 
         XCTAssertEqual(items.map(\.id), ["symbol.high"])
     }
+
+    func testSettingsSuggestionsRespectPriorityAndDedupe() {
+        let registry = EditorExtensionRegistry()
+        let settingsState = EditorSettingsState()
+        registry.registerSettingsContributor(
+            TestSettingsContributor(id: "settings-priority", items: [
+                EditorSettingsItemSuggestion(
+                    id: "settings.low",
+                    sectionTitle: "Extensions",
+                    title: "Low Priority",
+                    keywords: ["demo"],
+                    order: 20,
+                    metadata: .init(priority: 10, dedupeKey: "shared-setting"),
+                    content: { _ in AnyView(EmptyView()) }
+                ),
+                EditorSettingsItemSuggestion(
+                    id: "settings.high",
+                    sectionTitle: "Extensions",
+                    title: "High Priority",
+                    keywords: ["demo"],
+                    order: 30,
+                    metadata: .init(priority: 80, dedupeKey: "shared-setting"),
+                    content: { _ in AnyView(EmptyView()) }
+                ),
+                EditorSettingsItemSuggestion(
+                    id: "settings.disabled",
+                    sectionTitle: "Extensions",
+                    title: "Disabled",
+                    keywords: ["demo"],
+                    order: 40,
+                    metadata: .init(isEnabled: { _ in false }),
+                    content: { _ in AnyView(EmptyView()) }
+                )
+            ])
+        )
+
+        let items = registry.settingsSuggestions(state: settingsState)
+
+        XCTAssertEqual(items.map(\.id), ["settings.high"])
+    }
 }
 
 @MainActor
@@ -507,6 +547,21 @@ private final class TestStatusItemContributor: EditorStatusItemContributor {
     }
 
     func provideStatusItems(state: EditorState) -> [EditorStatusItemSuggestion] {
+        items
+    }
+}
+
+@MainActor
+private final class TestSettingsContributor: EditorSettingsContributor {
+    let id: String
+    private let items: [EditorSettingsItemSuggestion]
+
+    init(id: String, items: [EditorSettingsItemSuggestion]) {
+        self.id = id
+        self.items = items
+    }
+
+    func provideSettingsItems(state: EditorSettingsState) -> [EditorSettingsItemSuggestion] {
         items
     }
 }
