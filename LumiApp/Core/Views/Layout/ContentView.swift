@@ -93,7 +93,7 @@ struct ContentView: View, SuperLog {
         .environment(\.windowState, windowState)
     }
 
-    /// 主内容区域：活动栏 + 面板 + 右侧栏（只要有插件提供右侧视图就显示）
+    /// 主内容区域：活动栏 + Rail + 面板 + 右侧栏（只要有插件提供右侧视图就显示）
     @ViewBuilder
     private var mainContent: some View {
         Group {
@@ -105,8 +105,24 @@ struct ContentView: View, SuperLog {
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
             } else {
                 let sidebarViews = pluginProvider.getSidebarViews()
+                let hasRail = pluginProvider.hasRail()
 
-                if !sidebarViews.isEmpty {
+                if !sidebarViews.isEmpty && hasRail {
+                    HSplitView {
+                        // 图标栏（固定 48px）
+                        ActivityBar()
+
+                        // Rail 栏（活动栏与面板之间的辅助栏，全局最多一个插件提供）
+                        RailView()
+
+                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
+                        PanelContentView()
+
+                        // 右侧栏：聚合所有插件提供的侧边栏视图
+                        RightSidebarContainerView(views: sidebarViews)
+                    }
+                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                } else if !sidebarViews.isEmpty {
                     HSplitView {
                         // 图标栏（固定 48px）
                         ActivityBar()
@@ -116,6 +132,18 @@ struct ContentView: View, SuperLog {
 
                         // 右侧栏：聚合所有插件提供的侧边栏视图
                         RightSidebarContainerView(views: sidebarViews)
+                    }
+                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                } else if hasRail {
+                    HSplitView {
+                        // 图标栏（固定 48px）
+                        ActivityBar()
+
+                        // Rail 栏（活动栏与面板之间的辅助栏，全局最多一个插件提供）
+                        RailView()
+
+                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
+                        PanelContentView()
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
                 } else {

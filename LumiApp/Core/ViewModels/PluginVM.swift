@@ -47,6 +47,16 @@ final class PluginVM: ObservableObject, SuperLog {
         }
     }
 
+    /// Rail 视图项（活动栏与面板之间的辅助栏，全局最多一个）
+    struct RailItem: Identifiable, Equatable {
+        let id: String
+        let view: AnyView
+
+        static func == (lhs: RailItem, rhs: RailItem) -> Bool {
+            lhs.id == rhs.id
+        }
+    }
+
     /// 全局单例
     ///
     /// 整个应用共享同一个 PluginVM 实例。
@@ -491,6 +501,32 @@ final class PluginVM: ObservableObject, SuperLog {
         plugins
             .filter { isPluginEnabled($0) }
             .contains { $0.addPanelView() != nil }
+    }
+
+    /// 获取所有插件提供的 Rail 视图项
+    ///
+    /// 收集所有启用插件提供的 Rail 视图。
+    /// ⚠️ Rail 视图全局互斥，最多只能有一个插件提供。
+    /// 如果超过一个，渲染层会显示冲突错误视图。
+    ///
+    /// - Returns: Rail 视图项数组
+    func getRailItems() -> [RailItem] {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { plugin -> RailItem? in
+                guard let view = plugin.addRailView() else { return nil }
+                return RailItem(
+                    id: plugin.instanceLabel,
+                    view: view
+                )
+            }
+    }
+
+    /// 当前是否有 Rail 视图
+    func hasRail() -> Bool {
+        plugins
+            .filter { isPluginEnabled($0) }
+            .contains { $0.addRailView() != nil }
     }
 
     /// 获取所有插件提供的右侧栏视图
