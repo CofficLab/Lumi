@@ -431,14 +431,6 @@ struct EditorRootView: View {
                 )
             }
 
-            if let titleMetadata {
-                EditorTitleSummaryView(
-                    state: state,
-                    metadata: titleMetadata,
-                    trailingItems: titleTrailingStatusItems
-                )
-            }
-
             if !activeDocumentSymbolTrail.isEmpty {
                 EditorStickySymbolBarView(
                     state: state,
@@ -479,29 +471,6 @@ struct EditorRootView: View {
             state.editorExtensions.panelSuggestions(state: state).contains {
                 $0.placement == .bottom && $0.isPresented(state)
             }
-    }
-
-    private var titleMetadata: EditorTitleMetadata? {
-        guard state.currentFileURL != nil || !state.fileName.isEmpty else { return nil }
-
-        let activeTab = visibleTabs.first(where: { $0.sessionID == visibleActiveSessionID })
-            ?? sessionStore.tabs.first(where: { $0.sessionID == visibleActiveSessionID })
-
-        return EditorTitleMetadata.build(
-            fileURL: state.currentFileURL,
-            projectRootPath: state.projectRootPath,
-            fileName: state.fileName,
-            fileExtension: state.fileExtension,
-            detectedLanguageName: state.detectedLanguage?.id.rawValue ?? state.detectedLanguage?.tsName,
-            isPreview: activeTab?.isPreview ?? false,
-            isPinned: activeTab?.isPinned ?? false,
-            isDirty: activeTab?.isDirty ?? state.hasUnsavedChanges,
-            isEditable: state.isEditable
-        )
-    }
-
-    private var titleTrailingStatusItems: [EditorStatusItemSuggestion] {
-        state.editorStatusItems().filter { $0.placement == .titleTrailing }
     }
 
     private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
