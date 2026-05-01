@@ -677,7 +677,7 @@ struct SourceEditorView: View, SuperLog {
     private func buildConfiguration() -> SourceEditorConfiguration {
         adapter.configuration(
             for: state,
-            completionDelegate: completionDelegate
+            completionTriggerCharacters: completionDelegate.completionTriggerCharacters()
         )
     }
 }

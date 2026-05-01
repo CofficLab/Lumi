@@ -56,7 +56,7 @@ struct SourceEditorAdapter {
     @MainActor
     func configuration(
         for state: EditorState,
-        completionDelegate: LSPCompletionDelegate
+        completionTriggerCharacters: Set<String>
     ) -> SourceEditorConfiguration {
         let fontSize = CGFloat(state.fontSize)
 
@@ -87,7 +87,7 @@ struct SourceEditorAdapter {
                 showGutter: state.showGutter,
                 showMinimap: state.minimapPolicy.isVisible,
                 showFoldingRibbon: state.showFoldingRibbon && !state.largeFileMode.isFoldingDisabled,
-                codeSuggestionTriggerCharacters: completionDelegate.completionTriggerCharacters()
+                codeSuggestionTriggerCharacters: completionTriggerCharacters
             )
         )
     }

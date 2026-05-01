@@ -29,16 +29,12 @@ struct EditorQuickOpenFileContext: Equatable {
 
 @MainActor
 struct EditorQuickOpenController {
+    /// 文件搜索闭包。默认返回空数组（内核不提供默认实现）。
+    /// 插件可通过注入实现来提供搜索能力。
     private let fileSearch: @MainActor (_ query: String, _ projectPath: String, _ limit: Int) -> [FileResult]
 
     init(
-        fileSearch: @escaping @MainActor (_ query: String, _ projectPath: String, _ limit: Int) -> [FileResult] = { query, projectPath, limit in
-            FileSearchService.shared.quickOpenResults(
-                matching: query,
-                projectPath: projectPath,
-                limit: limit
-            )
-        }
+        fileSearch: @escaping @MainActor (_ query: String, _ projectPath: String, _ limit: Int) -> [FileResult] = { _, _, _ in [] }
     ) {
         self.fileSearch = fileSearch
     }
@@ -293,8 +289,22 @@ struct EditorQuickOpenController {
         let lowercasedPath = relativePath.lowercased()
         return lowercasedTitle.contains(query)
             || lowercasedPath.contains(query)
-            || FileSearchHelpers.fuzzyMatch(lowercasedTitle, query: query)
-            || FileSearchHelpers.fuzzyMatch(lowercasedPath, query: query)
+            || Self.fuzzyMatch(lowercasedTitle, query: query)
+            || Self.fuzzyMatch(lowercasedPath, query: query)
+    }
+
+    /// 模糊匹配算法：检查 text 是否按顺序包含 query 的所有字符
+    private static func fuzzyMatch(_ text: String, query: String) -> Bool {
+        var queryIndex = query.startIndex
+        for char in text {
+            if char == query[queryIndex] {
+                queryIndex = query.index(after: queryIndex)
+                if queryIndex == query.endIndex {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     private func sortRecentEditors(_ lhs: EditorOpenEditorItem, _ rhs: EditorOpenEditorItem) -> Bool {

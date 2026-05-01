@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 
 /// 文件搜索结果模型
 struct FileResult: Identifiable, Equatable, Hashable {
