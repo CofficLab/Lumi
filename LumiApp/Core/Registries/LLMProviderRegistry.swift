@@ -43,17 +43,12 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     /// - Parameter providerType: 要注册的供应商类型
     func register<T: SuperLLMProvider>(_ providerType: T.Type) {
         providerTypes.append(providerType)
-        let status = providerType.isEnabled ? "enabled" : "disabled"
     }
 
     /// 批量注册供应商类型
     ///
     /// - Parameter providerTypes: 要注册的供应商类型数组
     func register(_ providerTypes: [any SuperLLMProvider.Type]) {
-        if providerTypes.isEmpty {
-        } else {
-            let providerIDs = providerTypes.map { $0.id }.joined(separator: ", ")
-        }
         for type in providerTypes {
             register(type)
         }

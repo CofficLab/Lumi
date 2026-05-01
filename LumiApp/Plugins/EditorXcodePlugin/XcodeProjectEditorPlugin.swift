@@ -26,22 +26,13 @@ actor XcodeProjectEditorPlugin: SuperPlugin {
         registry.registerHoverContributor(XcodePlistHoverContributor())
         registry.registerHoverContributor(XcodePackageManifestHoverContributor())
         registry.registerQuickOpenContributor(XcodeProjectQuickOpenContributor())
+        registry.registerProjectContextCapability(projectContextCapability)
+        registry.registerSemanticCapability(semanticCapability)
+        registry.registerLanguageIntegrationCapability(languageIntegrationCapability)
     }
-    
+
     /// 在工具栏显示 Xcode 项目状态
     @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView? {
         return AnyView(XcodeProjectStatusBar())
-    }
-
-    @MainActor func editorProjectContextCapability() -> (any SuperEditorProjectContextCapability)? {
-        projectContextCapability
-    }
-
-    @MainActor func editorSemanticCapability() -> (any SuperEditorSemanticCapability)? {
-        semanticCapability
-    }
-
-    @MainActor func editorLanguageIntegrationCapabilities() -> [any SuperEditorLanguageIntegrationCapability] {
-        [languageIntegrationCapability]
     }
 }

@@ -57,6 +57,8 @@ final class EditorPluginManager: ObservableObject, SuperLog {
         registry.reset()
         Self.activeRegistry = registry
 
+        logger.info("\(self.t)install: 收到 \(plugins.count) 个插件, ids=\(plugins.map { type(of: $0).id })")
+
         // Sort by order, then by id
         let sorted = plugins.sorted { a, b in
             if type(of: a).order != type(of: b).order {
@@ -70,16 +72,8 @@ final class EditorPluginManager: ObservableObject, SuperLog {
         // Register editor extensions for each plugin
         for plugin in sorted {
             plugin.registerEditorExtensions(into: registry)
-            if let capability = plugin.editorProjectContextCapability() {
-                registry.registerProjectContextCapability(capability)
-            }
-            if let capability = plugin.editorSemanticCapability() {
-                registry.registerSemanticCapability(capability)
-            }
-            for capability in plugin.editorLanguageIntegrationCapabilities() {
-                registry.registerLanguageIntegrationCapability(capability)
-            }
         }
+        logger.info("\(self.t)install: 完成, commandContributorsCount=\(self.registry.commandContributorsCount)")
     }
 
     /// 卸载所有已安装的编辑器插件

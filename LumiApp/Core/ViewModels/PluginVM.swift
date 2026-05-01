@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 import ObjectiveC.runtime
 import Combine
+import os
 
 /// 插件 VM，管理插件的生命周期和 UI 贡献
 ///
@@ -307,6 +308,8 @@ final class PluginVM: ObservableObject, SuperLog {
         var discoveredItems: [(instance: any SuperPlugin, className: String, order: Int)] = []
         var pluginClassNames: [String] = []
         
+        if Self.verbose { AppLogger.core.info("\(self.t)扫描 \(classes.count) 个类") }
+
         for i in 0 ..< classes.count {
             let cls: AnyClass = classes[i]
             let className = NSStringFromClass(cls)
@@ -325,7 +328,7 @@ final class PluginVM: ObservableObject, SuperLog {
                 discoveredItems.append((instance, className, pluginType.order))
                 pluginClassNames.append(className)
                 if Self.verbose {
-                    AppLogger.core.info("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
+                    AppLogger.core.info("\(self.t)发现插件: \(pluginType.id) (order: \(pluginType.order))")
                 }
             }
         }

@@ -2,6 +2,7 @@ import Foundation
 import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI
+import os
 
 /// 编辑器扩展注册中心
 /// 目前先开放补全扩展点，后续可继续添加 hover/code action/toolbar 等扩展点。
@@ -14,6 +15,8 @@ import SwiftUI
 ///   将聚合和去重放到后台线程。
 @MainActor
 final class EditorExtensionRegistry: ObservableObject {
+    private static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "editor.ext-registry")
+    nonisolated static let verbose = false
     private var completionContributors: [any SuperEditorCompletionContributor] = []
     private var hoverContributors: [any SuperEditorHoverContributor] = []
     private var hoverContentContributors: [any SuperEditorHoverContentContributor] = []
@@ -45,6 +48,9 @@ final class EditorExtensionRegistry: ObservableObject {
     private var _documentSymbolProvider: (any SuperEditorDocumentSymbolProvider)?
     private var _semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
     private var _diagnosticsProvider: (any SuperEditorLSPDiagnosticsProvider)?
+
+    /// 当前已注册的 commandContributors 数量（用于调试日志）
+    var commandContributorsCount: Int { commandContributors.count }
 
     func reset() {
         completionContributors.removeAll()
@@ -120,6 +126,7 @@ final class EditorExtensionRegistry: ObservableObject {
             return
         }
         commandContributors.append(contributor)
+        if Self.verbose { Self.logger.info("registerCommandContributor: id=\(contributor.id), count=\(self.commandContributors.count)") }
     }
 
     func registerContextMenuContributor(_ contributor: any SuperEditorContextMenuContributor) {
@@ -416,7 +423,11 @@ final class EditorExtensionRegistry: ObservableObject {
         state: EditorState,
         textView: TextView?
     ) -> [EditorCommandSuggestion] {
-        guard !commandContributors.isEmpty else { return [] }
+        guard !commandContributors.isEmpty else {
+            if Self.verbose { Self.logger.warning("commandSuggestions: commandContributors 为空") }
+            return []
+        }
+        if Self.verbose { Self.logger.info("commandSuggestions: contributors.count=\(self.commandContributors.count), ids=\(self.commandContributors.map(\.id))") }
         var merged: [EditorCommandSuggestion] = []
         for contributor in commandContributors {
             let items = contributor.provideCommands(
@@ -424,11 +435,14 @@ final class EditorExtensionRegistry: ObservableObject {
                 state: state,
                 textView: textView
             )
+            if Self.verbose { Self.logger.info("commandSuggestions: contributor=\(contributor.id) 返回 \(items.count) 个命令") }
             if !items.isEmpty {
                 merged.append(contentsOf: items)
             }
         }
-        return deduplicateCommands(merged)
+        let result = deduplicateCommands(merged)
+        if Self.verbose { Self.logger.info("commandSuggestions: 去重后共 \(result.count) 个命令") }
+        return result
     }
 
     func contextMenuSuggestions(
@@ -441,11 +455,15 @@ final class EditorExtensionRegistry: ObservableObject {
             legacyContext: context
         )
 
-        var merged = commandSuggestions(
+        let commandsBeforeFilter = commandSuggestions(
             for: context,
             state: state,
             textView: textView
         ).map(EditorContextMenuItemSuggestion.init(command:))
+
+        if Self.verbose { Self.logger.info("contextMenuSuggestions: commandSuggestions 返回 \(commandsBeforeFilter.count) 项, contextMenuContributors.count=\(self.contextMenuContributors.count)") }
+
+        var merged = commandsBeforeFilter
 
         for contributor in contextMenuContributors {
             let items = contributor.provideContextMenuItems(
@@ -453,13 +471,28 @@ final class EditorExtensionRegistry: ObservableObject {
                 state: state,
                 textView: textView
             )
+            if Self.verbose { Self.logger.info("contextMenuSuggestions: contributor=\(contributor.id) 返回 \(items.count) 项") }
             if !items.isEmpty {
                 merged.append(contentsOf: items)
             }
         }
-        return deduplicateContextMenuSuggestions(
-            merged.filter { $0.isEnabled && $0.metadata.matches(contributionContext) }
-        )
+
+        let beforeFilter = merged.count
+        let filtered = merged.filter { $0.isEnabled && $0.metadata.matches(contributionContext) }
+        if Self.verbose { Self.logger.info("contextMenuSuggestions: 合并后 \(beforeFilter) 项, 过滤后 \(filtered.count) 项") }
+
+        if beforeFilter > 0 && filtered.isEmpty {
+            if Self.verbose {
+                Self.logger.warning("contextMenuSuggestions: 所有命令被过滤掉了")
+                for item in merged.prefix(5) {
+                    Self.logger.warning("contextMenuSuggestions: 被过滤的命令: id=\(item.id), isEnabled=\(item.isEnabled), whenClause=\(item.metadata.whenClause != nil)")
+                }
+            }
+        }
+
+        let result = deduplicateContextMenuSuggestions(filtered)
+        if Self.verbose { Self.logger.info("contextMenuSuggestions: 去重后返回 \(result.count) 项") }
+        return result
     }
 
     func gutterDecorationSuggestions(
