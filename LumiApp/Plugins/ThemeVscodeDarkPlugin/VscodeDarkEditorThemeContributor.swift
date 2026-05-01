@@ -6,7 +6,7 @@ import AppKit
 /// 严格遵循 Visual Studio Code Dark Modern (Dark+) 默认主题
 /// 参考: https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes
 @MainActor
-final class VscodeDarkEditorThemeContributor: EditorThemeContributor {
+final class VscodeDarkSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "vscode-dark"
     let displayName: String = "VS Code Dark+"
     let icon: String? = "terminal.fill"

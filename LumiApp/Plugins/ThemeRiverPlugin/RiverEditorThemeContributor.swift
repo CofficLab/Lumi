@@ -5,7 +5,7 @@ import AppKit
 /// River 编辑器主题配色方案
 /// 江水蓝风格：青蓝色调 + 水波白点缀 + 江流蓝高亮
 @MainActor
-final class RiverEditorThemeContributor: EditorThemeContributor {
+final class RiverSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "river"
     let displayName: String = "River"
     let icon: String? = "water.waves"

@@ -2,7 +2,7 @@ import Foundation
 import CodeEditSourceEditor
 
 @MainActor
-final class XcodeProjectQuickOpenContributor: EditorQuickOpenContributor {
+final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
     let id = "builtin.xcode.quick-open"
 
     func provideQuickOpenItems(

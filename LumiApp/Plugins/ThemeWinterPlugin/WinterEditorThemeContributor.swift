@@ -5,7 +5,7 @@ import AppKit
 /// Winter 编辑器主题配色方案
 /// 冬日蓝风格：蓝色调 + 冰雪白点缀 + 霜花青高亮
 @MainActor
-final class WinterEditorThemeContributor: EditorThemeContributor {
+final class WinterSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "winter"
     let displayName: String = "Winter"
     let icon: String? = "snowflake"

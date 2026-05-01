@@ -23,7 +23,7 @@ actor GitBranchStatusBarPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addStatusBarTrailingView() -> AnyView? {
+    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
         return AnyView(GitBranchStatusBarView())
     }
 }

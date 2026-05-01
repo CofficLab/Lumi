@@ -168,7 +168,9 @@ extension EditorState {
                 self?.clearExternalFileConflict()
             },
             logInfo: { [logger] message in
-                logger.info("\(Self.t)\(message)")
+                if Self.verbose {
+                    logger.info("\(Self.t)\(message)")
+                }
             }
         )
     }
@@ -217,9 +219,7 @@ extension EditorState {
                     self.applyExternalContent(content, modificationDate: modificationDate)
                 }
             } catch {
-                if Self.verbose {
-                    logger.error("\(Self.t)读取外部文件失败：\(error)")
-                }
+                logger.error("\(Self.t)读取外部文件失败：\(error)")
             }
         }
     }

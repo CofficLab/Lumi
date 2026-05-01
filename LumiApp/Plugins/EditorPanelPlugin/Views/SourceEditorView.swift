@@ -19,7 +19,8 @@ struct SourceEditorView: View, SuperLog {
     @State private var cursorCoordinator: CursorCoordinator?
     @State private var scrollCoordinator: ScrollCoordinator?
     @State private var contextMenuCoordinator: ContextMenuCoordinator?
-    @State private var semanticTokenProvider: SemanticTokenHighlightProvider?
+    @State private var semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
+    @State private var semanticTokenHighlightProvider: (any HighlightProviding)?
     @State private var documentHighlightProvider: DocumentHighlightHighlighter?
     @State private var hoverCoordinator: HoverEditorCoordinator?
     
@@ -564,6 +565,7 @@ struct SourceEditorView: View, SuperLog {
             scrollCoordinator: scrollCoordinator,
             contextMenuCoordinator: contextMenuCoordinator,
             semanticTokenProvider: semanticTokenProvider,
+            semanticTokenHighlightProvider: semanticTokenHighlightProvider,
             documentHighlightProvider: documentHighlightProvider,
             hoverCoordinator: hoverCoordinator
         )
@@ -573,6 +575,7 @@ struct SourceEditorView: View, SuperLog {
         scrollCoordinator = next.scrollCoordinator
         contextMenuCoordinator = next.contextMenuCoordinator
         semanticTokenProvider = next.semanticTokenProvider
+        semanticTokenHighlightProvider = next.semanticTokenHighlightProvider
         documentHighlightProvider = next.documentHighlightProvider
         hoverCoordinator = next.hoverCoordinator
         if cachedConfig == nil {
@@ -613,7 +616,7 @@ struct SourceEditorView: View, SuperLog {
         adapter.activeHighlightProviders(
             for: state,
             treeSitterClient: treeSitterClient,
-            semanticTokenProvider: semanticTokenProvider,
+            semanticTokenProvider: semanticTokenHighlightProvider,
             documentHighlightProvider: documentHighlightProvider
         )
     }
@@ -674,7 +677,7 @@ struct SourceEditorView: View, SuperLog {
     private func buildConfiguration() -> SourceEditorConfiguration {
         adapter.configuration(
             for: state,
-            completionDelegate: completionDelegate
+            completionTriggerCharacters: completionDelegate.completionTriggerCharacters()
         )
     }
 }

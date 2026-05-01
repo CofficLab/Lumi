@@ -5,7 +5,7 @@ import AppKit
 /// Orchard 编辑器主题配色方案
 /// 果园红风格：红色调 + 活力橙点缀 + 青柠绿高亮
 @MainActor
-final class OrchardEditorThemeContributor: EditorThemeContributor {
+final class OrchardSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "orchard"
     let displayName: String = "Orchard"
     let icon: String? = "apple.logo"

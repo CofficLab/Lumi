@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-final class LSPSidePanelContributor: EditorSidePanelContributor {
+final class LSPSidePanelContributor: SuperEditorSidePanelContributor {
     let id: String = "builtin.lsp.side-panels"
 
     func provideSidePanels(state: EditorState) -> [EditorSidePanelSuggestion] {

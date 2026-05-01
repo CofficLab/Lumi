@@ -23,10 +23,10 @@ final class ExtensionResolver: ObservableObject {
 
     // MARK: - 属性
 
-    private var completionContributors: [any EditorCompletionContributor] = []
-    private var hoverContributors: [any EditorHoverContributor] = []
-    private var hoverContentContributors: [any EditorHoverContentContributor] = []
-    private var codeActionContributors: [any EditorCodeActionContributor] = []
+    private var completionContributors: [any SuperEditorCompletionContributor] = []
+    private var hoverContributors: [any SuperEditorHoverContributor] = []
+    private var hoverContentContributors: [any SuperEditorHoverContentContributor] = []
+    private var codeActionContributors: [any SuperEditorCodeActionContributor] = []
 
     // MARK: - 初始化
 
@@ -43,25 +43,25 @@ final class ExtensionResolver: ObservableObject {
 
     // MARK: - 注册
 
-    func registerCompletionContributor(_ contributor: any EditorCompletionContributor) {
+    func registerCompletionContributor(_ contributor: any SuperEditorCompletionContributor) {
         if !completionContributors.contains(where: { $0.id == contributor.id }) {
             completionContributors.append(contributor)
         }
     }
 
-    func registerHoverContributor(_ contributor: any EditorHoverContributor) {
+    func registerHoverContributor(_ contributor: any SuperEditorHoverContributor) {
         if !hoverContributors.contains(where: { $0.id == contributor.id }) {
             hoverContributors.append(contributor)
         }
     }
 
-    func registerHoverContentContributor(_ contributor: any EditorHoverContentContributor) {
+    func registerHoverContentContributor(_ contributor: any SuperEditorHoverContentContributor) {
         if !hoverContentContributors.contains(where: { $0.id == contributor.id }) {
             hoverContentContributors.append(contributor)
         }
     }
 
-    func registerCodeActionContributor(_ contributor: any EditorCodeActionContributor) {
+    func registerCodeActionContributor(_ contributor: any SuperEditorCodeActionContributor) {
         if !codeActionContributors.contains(where: { $0.id == contributor.id }) {
             codeActionContributors.append(contributor)
         }

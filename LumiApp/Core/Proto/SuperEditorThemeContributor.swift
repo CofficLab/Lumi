@@ -9,7 +9,7 @@ import CodeEditSourceEditor
 /// 通过 `EditorExtensionRegistry.registerThemeContributor(_:)` 注册后，
 /// 编辑器工具栏的主题选择器会自动展示该主题。
 @MainActor
-protocol EditorThemeContributor: AnyObject {
+protocol SuperEditorThemeContributor: AnyObject {
     /// 主题唯一标识（如 "xcode-dark"、"monokai"）
     var id: String { get }
     /// 主题展示名称

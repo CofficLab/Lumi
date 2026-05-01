@@ -27,18 +27,13 @@ struct FrequentModelRow: View {
 
                         Spacer()
 
-                        // 使用次数
-                        Text("\(entry.useCount)")
-                            .font(.caption2)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                    }
-                    if let stat, stat.avgTTFT > 0 {
-                        ModelLatencyProgressBar(
-                            ttft: stat.avgTTFT,
-                            totalLatency: stat.avgLatency,
-                            sampleCount: stat.sampleCount,
-                            tps: stat.avgTPS
-                        )
+                        if let stat, stat.avgTPS > 0 {
+                            tpsBadge(stat.avgTPS)
+                        }
+
+                        if let stat, stat.sampleCount > 0 {
+                            sampleCountBadge(stat.sampleCount)
+                        }
                     }
                 }
             }
@@ -79,5 +74,50 @@ struct FrequentModelRow: View {
                 RoundedRectangle(cornerRadius: 3)
                     .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
             )
+    }
+
+    /// TPS badge
+    private func tpsBadge(_ tps: Double) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: "speedometer")
+                .font(.system(size: 8, weight: .medium))
+            Text(formatTPS(tps))
+                .font(.caption2)
+        }
+        .foregroundColor(.green)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 1)
+        .background(
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Color.green.opacity(0.12))
+        )
+    }
+
+    /// 消息数量 badge
+    private func sampleCountBadge(_ count: Int) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: "bubble.left.and.bubble.right")
+                .font(.system(size: 8, weight: .medium))
+            Text("\(count)")
+                .font(.caption2)
+        }
+        .foregroundColor(AppUI.Color.semantic.textSecondary)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 1)
+        .background(
+            RoundedRectangle(cornerRadius: 3)
+                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+        )
+    }
+
+    /// 格式化 TPS
+    private func formatTPS(_ tps: Double) -> String {
+        if tps >= 100 {
+            return String(format: "%.0f t/s", tps)
+        } else if tps >= 10 {
+            return String(format: "%.1f t/s", tps)
+        } else {
+            return String(format: "%.2f t/s", tps)
+        }
     }
 }

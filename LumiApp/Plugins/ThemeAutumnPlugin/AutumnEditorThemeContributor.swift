@@ -5,7 +5,7 @@ import AppKit
 /// Autumn 编辑器主题配色方案
 /// 秋日橙风格：橙色调 + 枫叶红点缀 + 秋叶金高亮
 @MainActor
-final class AutumnEditorThemeContributor: EditorThemeContributor {
+final class AutumnSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "autumn"
     let displayName: String = "Autumn"
     let icon: String? = "leaf"

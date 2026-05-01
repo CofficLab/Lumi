@@ -1,28 +1,24 @@
 import SwiftUI
 
-/// 模型选择行组件 - 支持 hover 效果、选中/默认状态高亮和性能指标展示
+/// 模型选择行组件 - 支持 hover 效果、选中/默认状态高亮
 struct ModelRow: View {
     let model: String
     let isDefault: Bool
     let isSelected: Bool
-    var performanceStats: ModelPerformanceStats? = nil
     let action: () -> Void
     
     @State private var isHovered: Bool = false
     
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 6) {
-                modelHeader
-                performanceIndicator
-            }
-            .padding(AppUI.Spacing.sm)
-            .appSurface(
-                style: .custom(rowBackgroundColor),
-                cornerRadius: AppUI.Radius.sm,
-                borderColor: borderColor,
-                lineWidth: borderWidth
-            )
+            modelHeader
+                .padding(AppUI.Spacing.sm)
+                .appSurface(
+                    style: .custom(rowBackgroundColor),
+                    cornerRadius: AppUI.Radius.sm,
+                    borderColor: borderColor,
+                    lineWidth: borderWidth
+                )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
@@ -54,18 +50,6 @@ struct ModelRow: View {
     @ViewBuilder
     private var defaultBadge: some View {
         AppTag("默认", style: .accent)
-    }
-    
-    @ViewBuilder
-    private var performanceIndicator: some View {
-        if let stats = performanceStats, stats.avgTTFT > 0 {
-            SettingsModelLatencyBar(
-                ttft: stats.avgTTFT,
-                totalLatency: stats.avgLatency,
-                sampleCount: stats.sampleCount,
-                tps: stats.avgTPS
-            )
-        }
     }
     
     // MARK: - Computed Properties
@@ -102,9 +86,6 @@ struct ModelRow: View {
         var label = model
         if isDefault {
             label += "，默认模型"
-        }
-        if performanceStats != nil {
-            label += "，有性能数据"
         }
         return label
     }

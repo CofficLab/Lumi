@@ -87,7 +87,7 @@ struct RecentProjectsSidebarView: View {
             // 拖到输入框时 EditorTextView 会自动识别绝对路径并插入
             NSItemProvider(object: project.path as NSString)
         } preview: {
-            DragPreview(fileURL: URL(fileURLWithPath: project.path))
+            RecentProjectDragPreview(fileURL: URL(fileURLWithPath: project.path))
         }
     }
 

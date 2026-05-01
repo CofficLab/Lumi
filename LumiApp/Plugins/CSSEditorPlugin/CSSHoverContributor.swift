@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-final class CSSHoverContributor: EditorHoverContributor {
+final class CSSHoverContributor: SuperEditorHoverContributor {
     let id = "builtin.css.hover"
 
     func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion] {

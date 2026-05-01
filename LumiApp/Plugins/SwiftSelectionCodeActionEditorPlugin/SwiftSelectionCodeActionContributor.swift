@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-final class SwiftSelectionCodeActionContributor: EditorCodeActionContributor {
+final class SwiftSelectionCodeActionContributor: SuperEditorCodeActionContributor {
     let id = "builtin.swift.selection-actions"
 
     func provideCodeActions(context: EditorCodeActionContext) async -> [EditorCodeActionSuggestion] {

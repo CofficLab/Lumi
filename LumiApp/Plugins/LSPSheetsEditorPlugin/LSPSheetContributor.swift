@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-final class LSPSheetContributor: EditorSheetContributor {
+final class LSPSheetContributor: SuperEditorSheetContributor {
     let id: String = "builtin.lsp.sheets"
 
     func provideSheets(state: EditorState) -> [EditorSheetSuggestion] {

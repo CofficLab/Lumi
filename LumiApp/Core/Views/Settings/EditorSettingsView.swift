@@ -232,7 +232,7 @@ struct EditorSettingsView: View {
                     subtitle: "当前没有 editor 扩展向此页贡献设置项。"
                 )
 
-                Text("后续插件只要注册 `EditorSettingsContributor`，设置项就会自动出现在这里。")
+                Text("后续插件只要注册 `SuperEditorSettingsContributor`，设置项就会自动出现在这里。")
                     .font(AppUI.Typography.caption1)
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
             }

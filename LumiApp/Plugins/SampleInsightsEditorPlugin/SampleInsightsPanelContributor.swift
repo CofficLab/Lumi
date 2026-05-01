@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-final class SampleInsightsPanelContributor: EditorPanelContributor {
+final class SampleInsightsPanelContributor: SuperEditorPanelContributor {
     let id = "sample.insights.panel"
 
     func providePanels(state: EditorState) -> [EditorPanelSuggestion] {
@@ -86,7 +86,7 @@ private struct SampleInsightsPanelView: View {
             insightRow("FIXME", "\(todoSummary.fixme)")
             insightRow("Large File", state.largeFileMode == .normal ? "No" : "Yes")
 
-            Text("This panel is contributed by `EditorPanelContributor` and toggled from a `titleTrailing` status item.")
+            Text("This panel is contributed by `SuperEditorPanelContributor` and toggled from a `titleTrailing` status item.")
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

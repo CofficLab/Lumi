@@ -5,7 +5,7 @@ import AppKit
 /// Aurora 编辑器主题配色方案
 /// 极光紫风格：紫色调 + 天空蓝点缀 + 极光绿高亮
 @MainActor
-final class AuroraEditorThemeContributor: EditorThemeContributor {
+final class AuroraSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "aurora"
     let displayName: String = "Aurora"
     let icon: String? = "sparkles"

@@ -18,7 +18,7 @@ actor ThemeGithubPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: GitHubTheme(),
                 editorThemeId: "github",
-                editorThemeContributor: GithubEditorThemeContributor(),
+                editorThemeContributor: GithubSuperEditorThemeContributor(),
                 order: 85
             )
         ]

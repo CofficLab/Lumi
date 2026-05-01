@@ -14,27 +14,27 @@ import SwiftUI
 ///   将聚合和去重放到后台线程。
 @MainActor
 final class EditorExtensionRegistry: ObservableObject {
-    private var completionContributors: [any EditorCompletionContributor] = []
-    private var hoverContributors: [any EditorHoverContributor] = []
-    private var hoverContentContributors: [any EditorHoverContentContributor] = []
-    private var codeActionContributors: [any EditorCodeActionContributor] = []
-    private var highlightProviderContributors: [any EditorHighlightProviderContributor] = []
-    private var commandContributors: [any EditorCommandContributor] = []
-    private var contextMenuContributors: [any EditorContextMenuContributor] = []
-    private var gutterDecorationContributors: [any EditorGutterDecorationContributor] = []
-    private var panelContributors: [any EditorPanelContributor] = []
-    private var settingsContributors: [any EditorSettingsContributor] = []
-    private var statusItemContributors: [any EditorStatusItemContributor] = []
-    private var quickOpenContributors: [any EditorQuickOpenContributor] = []
-    private var interactionContributors: [any EditorInteractionContributor] = []
-    private var sidePanelContributors: [any EditorSidePanelContributor] = []
-    private var sheetContributors: [any EditorSheetContributor] = []
-    private var toolbarContributors: [any EditorToolbarContributor] = []
-    private var themeContributors: [any EditorThemeContributor] = []
+    private var completionContributors: [any SuperEditorCompletionContributor] = []
+    private var hoverContributors: [any SuperEditorHoverContributor] = []
+    private var hoverContentContributors: [any SuperEditorHoverContentContributor] = []
+    private var codeActionContributors: [any SuperEditorCodeActionContributor] = []
+    private var highlightProviderContributors: [any SuperEditorHighlightProviderContributor] = []
+    private var commandContributors: [any SuperEditorCommandContributor] = []
+    private var contextMenuContributors: [any SuperEditorContextMenuContributor] = []
+    private var gutterDecorationContributors: [any SuperEditorGutterDecorationContributor] = []
+    private var panelContributors: [any SuperEditorPanelContributor] = []
+    private var settingsContributors: [any SuperEditorSettingsContributor] = []
+    private var statusItemContributors: [any SuperEditorStatusItemContributor] = []
+    private var quickOpenContributors: [any SuperEditorQuickOpenContributor] = []
+    private var interactionContributors: [any SuperEditorInteractionContributor] = []
+    private var sidePanelContributors: [any SuperEditorSidePanelContributor] = []
+    private var sheetContributors: [any SuperEditorSheetContributor] = []
+    private var toolbarContributors: [any SuperEditorToolbarContributor] = []
+    private var themeContributors: [any SuperEditorThemeContributor] = []
     private var projectContextCapabilities: [any SuperEditorProjectContextCapability] = []
     private var languageIntegrationCapabilities: [any SuperEditorLanguageIntegrationCapability] = []
     private var semanticCapabilities: [any SuperEditorSemanticCapability] = []
-    private var _editorLSPClient: (any EditorLSPClient)?
+    private var _editorLSPClient: (any SuperEditorLSPClient)?
     private var _signatureHelpProvider: (any SuperEditorSignatureHelpProvider)?
     private var _inlayHintProvider: (any SuperEditorInlayHintProvider)?
     private var _documentHighlightProvider: (any SuperEditorDocumentHighlightProvider)?
@@ -80,116 +80,116 @@ final class EditorExtensionRegistry: ObservableObject {
         _diagnosticsProvider = nil
     }
 
-    func registerCompletionContributor(_ contributor: any EditorCompletionContributor) {
+    func registerCompletionContributor(_ contributor: any SuperEditorCompletionContributor) {
         if completionContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         completionContributors.append(contributor)
     }
 
-    func registerHoverContributor(_ contributor: any EditorHoverContributor) {
+    func registerHoverContributor(_ contributor: any SuperEditorHoverContributor) {
         if hoverContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         hoverContributors.append(contributor)
     }
 
-    func registerHoverContentContributor(_ contributor: any EditorHoverContentContributor) {
+    func registerHoverContentContributor(_ contributor: any SuperEditorHoverContentContributor) {
         if hoverContentContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         hoverContentContributors.append(contributor)
     }
 
-    func registerCodeActionContributor(_ contributor: any EditorCodeActionContributor) {
+    func registerCodeActionContributor(_ contributor: any SuperEditorCodeActionContributor) {
         if codeActionContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         codeActionContributors.append(contributor)
     }
 
-    func registerHighlightProviderContributor(_ contributor: any EditorHighlightProviderContributor) {
+    func registerHighlightProviderContributor(_ contributor: any SuperEditorHighlightProviderContributor) {
         if highlightProviderContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         highlightProviderContributors.append(contributor)
     }
 
-    func registerCommandContributor(_ contributor: any EditorCommandContributor) {
+    func registerCommandContributor(_ contributor: any SuperEditorCommandContributor) {
         if commandContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         commandContributors.append(contributor)
     }
 
-    func registerContextMenuContributor(_ contributor: any EditorContextMenuContributor) {
+    func registerContextMenuContributor(_ contributor: any SuperEditorContextMenuContributor) {
         if contextMenuContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         contextMenuContributors.append(contributor)
     }
 
-    func registerGutterDecorationContributor(_ contributor: any EditorGutterDecorationContributor) {
+    func registerGutterDecorationContributor(_ contributor: any SuperEditorGutterDecorationContributor) {
         if gutterDecorationContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         gutterDecorationContributors.append(contributor)
     }
 
-    func registerDecorationContributor(_ contributor: any EditorDecorationContributor) {
+    func registerDecorationContributor(_ contributor: any SuperEditorDecorationContributor) {
         registerGutterDecorationContributor(contributor)
     }
 
-    func registerPanelContributor(_ contributor: any EditorPanelContributor) {
+    func registerPanelContributor(_ contributor: any SuperEditorPanelContributor) {
         if panelContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         panelContributors.append(contributor)
     }
 
-    func registerSettingsContributor(_ contributor: any EditorSettingsContributor) {
+    func registerSettingsContributor(_ contributor: any SuperEditorSettingsContributor) {
         if settingsContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         settingsContributors.append(contributor)
     }
 
-    func registerStatusItemContributor(_ contributor: any EditorStatusItemContributor) {
+    func registerStatusItemContributor(_ contributor: any SuperEditorStatusItemContributor) {
         if statusItemContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         statusItemContributors.append(contributor)
     }
 
-    func registerQuickOpenContributor(_ contributor: any EditorQuickOpenContributor) {
+    func registerQuickOpenContributor(_ contributor: any SuperEditorQuickOpenContributor) {
         if quickOpenContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         quickOpenContributors.append(contributor)
     }
 
-    func registerInteractionContributor(_ contributor: any EditorInteractionContributor) {
+    func registerInteractionContributor(_ contributor: any SuperEditorInteractionContributor) {
         if interactionContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         interactionContributors.append(contributor)
     }
 
-    func registerSidePanelContributor(_ contributor: any EditorSidePanelContributor) {
+    func registerSidePanelContributor(_ contributor: any SuperEditorSidePanelContributor) {
         if sidePanelContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         sidePanelContributors.append(contributor)
     }
 
-    func registerSheetContributor(_ contributor: any EditorSheetContributor) {
+    func registerSheetContributor(_ contributor: any SuperEditorSheetContributor) {
         if sheetContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         sheetContributors.append(contributor)
     }
 
-    func registerToolbarContributor(_ contributor: any EditorToolbarContributor) {
+    func registerToolbarContributor(_ contributor: any SuperEditorToolbarContributor) {
         if toolbarContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
@@ -242,12 +242,12 @@ final class EditorExtensionRegistry: ObservableObject {
     // MARK: - LSP Client Registration
 
     /// 注册编辑器 LSP 客户端
-    func registerEditorLSPClient(_ client: any EditorLSPClient) {
+    func registerSuperEditorLSPClient(_ client: any SuperEditorLSPClient) {
         _editorLSPClient = client
     }
 
     /// 获取编辑器 LSP 客户端
-    var editorLSPClient: (any EditorLSPClient)? { _editorLSPClient }
+    var editorLSPClient: (any SuperEditorLSPClient)? { _editorLSPClient }
 
     // MARK: - LSP Provider Registration
 
@@ -351,7 +351,7 @@ final class EditorExtensionRegistry: ObservableObject {
 
     // MARK: - Theme
 
-    func registerThemeContributor(_ contributor: any EditorThemeContributor) {
+    func registerThemeContributor(_ contributor: any SuperEditorThemeContributor) {
         if themeContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
@@ -360,12 +360,12 @@ final class EditorExtensionRegistry: ObservableObject {
     }
 
     /// 所有已注册的主题（按 displayName 排序）
-    func allThemes() -> [any EditorThemeContributor] {
+    func allThemes() -> [any SuperEditorThemeContributor] {
         themeContributors
     }
 
     /// 按 ID 查找主题
-    func theme(for id: String) -> (any EditorThemeContributor)? {
+    func theme(for id: String) -> (any SuperEditorThemeContributor)? {
         themeContributors.first { $0.id == id }
     }
 

@@ -301,8 +301,6 @@ final class PluginVM: ObservableObject, SuperLog {
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
         defer { free(UnsafeMutableRawPointer(classList)) }
-
-        AppLogger.core.info("\(self.t)开始扫描运行时插件类，总类数: \(count)")
         
         let classes = UnsafeBufferPointer(start: classList, count: Int(count))
         // 临时存储，包含 (实例，类名，顺序)
@@ -333,7 +331,6 @@ final class PluginVM: ObservableObject, SuperLog {
         }
 
         let sortedPluginClassNames = pluginClassNames.sorted()
-        AppLogger.core.info("\(self.t)运行时发现 \(sortedPluginClassNames.count) 个插件类: \(sortedPluginClassNames.joined(separator: ", "))")
         
         // 按 order 升序排序，确保核心插件先加载
         discoveredItems.sort { $0.order < $1.order }
@@ -363,8 +360,6 @@ final class PluginVM: ObservableObject, SuperLog {
         self.discoveredLLMProviderTypes = providerTypes
 
         let discoveredProviderIDs = providerTypes.map { $0.id }
-        AppLogger.core.info("\(self.t)插件扫描结束，共加载 \(sortedPlugins.count) 个插件；LLM provider 映射: \(providerDiagnostics.joined(separator: ", "))")
-        AppLogger.core.info("\(self.t)最终发现 \(discoveredProviderIDs.count) 个 LLM provider type: \(discoveredProviderIDs.joined(separator: ", "))")
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {
@@ -655,9 +650,10 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 状态栏左侧视图数组
     func getStatusBarLeadingViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarLeadingView() }
+            .compactMap { $0.addStatusBarLeadingView(activeIcon: activeIcon) }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
@@ -676,9 +672,10 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 状态栏中间视图数组
     func getStatusBarCenterViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarCenterView() }
+            .compactMap { $0.addStatusBarCenterView(activeIcon: activeIcon) }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
@@ -697,9 +694,10 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 状态栏右侧视图数组
     func getStatusBarTrailingViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarTrailingView() }
+            .compactMap { $0.addStatusBarTrailingView(activeIcon: activeIcon) }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }

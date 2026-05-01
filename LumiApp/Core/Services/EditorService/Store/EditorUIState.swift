@@ -54,7 +54,7 @@ final class EditorUIState: ObservableObject {
 
     // MARK: - 主题
 
-    /// 当前主题 ID（与 EditorThemeContributor.id 对应）
+    /// 当前主题 ID（与 SuperEditorThemeContributor.id 对应）
     @Published var currentThemeId: String = "xcode-dark"
 
     /// 当前主题（缓存，避免每次重建）

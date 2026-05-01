@@ -18,7 +18,7 @@ actor ThemeMidnightPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: MidnightTheme(),
                 editorThemeId: "midnight",
-                editorThemeContributor: MidnightEditorThemeContributor(),
+                editorThemeContributor: MidnightSuperEditorThemeContributor(),
                 order: 10
             )
         ]

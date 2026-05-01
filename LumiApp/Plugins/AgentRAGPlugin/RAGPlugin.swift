@@ -74,7 +74,7 @@ actor RAGPlugin: SuperPlugin, SuperLog {
 
     /// 提供状态栏右侧视图
     @MainActor
-    func addStatusBarTrailingView() -> AnyView? {
+    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(RAGStatusBarView())
     }
 

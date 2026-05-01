@@ -17,8 +17,9 @@ private typealias _MLXModels = MLXModels
 /// 使用 Combine 发布事件，UI 可以订阅变化。
 public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     nonisolated public static let emoji = "⬇️"
+    nonisolated public static let verbose = false
 
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "MLXDownloadManager")
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.mlx")
 
     // MARK: - Published Properties
 
@@ -55,7 +56,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         self.downloadSession = URLSession(configuration: config, delegate: self, delegateQueue: nil)
         try? fileManager.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
 
-        Self.logger.info("\(self.t)MLXDownloadManager 已初始化")
+        if Self.verbose {
+            Self.logger.info("\(self.t)MLXDownloadManager 已初始化")
+        }
     }
 
     // MARK: - Public Methods
@@ -85,7 +88,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 }
 
                 await self.updateStatus(.completed)
-                Self.logger.info("\(self.t)模型下载完成：\(modelId)")
+                if Self.verbose {
+                    Self.logger.info("\(self.t)模型下载完成：\(modelId)")
+                }
 
             } catch {
                 if !Task.isCancelled {
@@ -114,7 +119,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         downloadingModelId = nil
         progress = DownloadProgress()
 
-        Self.logger.info("\(self.t)下载已取消")
+        if Self.verbose {
+            Self.logger.info("\(self.t)下载已取消")
+        }
     }
 
     /// 重置状态

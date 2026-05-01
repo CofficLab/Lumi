@@ -8,7 +8,8 @@ struct SourceEditorCoordinatorSet {
     var cursorCoordinator: CursorCoordinator?
     var scrollCoordinator: ScrollCoordinator?
     var contextMenuCoordinator: ContextMenuCoordinator?
-    var semanticTokenProvider: SemanticTokenHighlightProvider?
+    var semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
+    var semanticTokenHighlightProvider: (any HighlightProviding)?
     var documentHighlightProvider: DocumentHighlightHighlighter?
     var hoverCoordinator: HoverEditorCoordinator?
 }
@@ -34,8 +35,9 @@ struct SourceEditorViewBridge {
             next.contextMenuCoordinator = ContextMenuCoordinator(state: state)
         }
         if next.semanticTokenProvider == nil, let semanticTokenProvider = state.editorExtensions.semanticTokenProvider {
-            next.semanticTokenProvider = semanticTokenProvider as? SemanticTokenHighlightProvider
+            next.semanticTokenProvider = semanticTokenProvider
             next.semanticTokenProvider?.setEnabled(state.isSyntaxHighlightingEnabledInViewport)
+            next.semanticTokenHighlightProvider = semanticTokenProvider as? any HighlightProviding
         }
         if next.documentHighlightProvider == nil, let highlightProvider = state.documentHighlightProvider as? DocumentHighlightProvider {
             next.documentHighlightProvider = DocumentHighlightHighlighter(

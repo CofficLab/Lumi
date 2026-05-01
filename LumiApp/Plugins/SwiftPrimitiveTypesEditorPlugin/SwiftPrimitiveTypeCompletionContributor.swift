@@ -3,7 +3,7 @@ import Foundation
 /// Swift 原生类型补全贡献者
 /// 在类型上下文（例如 `let id: In`）时优先给出 Int/Int8/Int32 等建议。
 @MainActor
-final class SwiftPrimitiveTypeCompletionContributor: EditorCompletionContributor {
+final class SwiftPrimitiveTypeCompletionContributor: SuperEditorCompletionContributor {
     let id = "builtin.swift.primitive-types"
 
     private static let primitiveTypes: [EditorCompletionSuggestion] = [

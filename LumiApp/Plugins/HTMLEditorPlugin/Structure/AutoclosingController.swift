@@ -8,7 +8,7 @@ import AppKit
 /// 监听文本变化，当用户输入 `>` 时自动补全闭标签。
 /// 对自闭合（void）标签如 `<br>`、`<img>` 不生成闭标签。
 @MainActor
-final class HTMLAutoclosingController: EditorInteractionContributor {
+final class HTMLAutoclosingController: SuperEditorInteractionContributor {
     let id = "builtin.html.autoclosing"
 
     func onTextDidChange(

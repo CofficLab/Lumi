@@ -125,7 +125,7 @@ struct EditorCompletionSuggestion: Hashable {
 
 /// 编辑器补全扩展点
 @MainActor
-protocol EditorCompletionContributor: AnyObject {
+protocol SuperEditorCompletionContributor: AnyObject {
     var id: String { get }
     func provideSuggestions(context: EditorCompletionContext) async -> [EditorCompletionSuggestion]
 }
@@ -157,17 +157,17 @@ struct EditorHoverSuggestion: Hashable {
 
 /// 编辑器悬停扩展点
 @MainActor
-protocol EditorHoverContributor: AnyObject {
+protocol SuperEditorHoverContributor: AnyObject {
     var id: String { get }
     func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion]
 }
 
 /// 编辑器悬停内容扩展点
 ///
-/// 相比旧的 `EditorHoverContributor`，这个命名更明确地强调它只负责贡献 hover 内容，
+/// 相比旧的 `SuperEditorHoverContributor`，这个命名更明确地强调它只负责贡献 hover 内容，
 /// 不负责 hover 的触发时机、请求生命周期或卡片布局。
 @MainActor
-protocol EditorHoverContentContributor: AnyObject {
+protocol SuperEditorHoverContentContributor: AnyObject {
     var id: String { get }
     func provideHoverContent(context: EditorHoverContext) async -> [EditorHoverSuggestion]
 }
@@ -194,7 +194,7 @@ struct EditorCodeActionSuggestion: Hashable {
 
 /// 编辑器代码动作扩展点
 @MainActor
-protocol EditorCodeActionContributor: AnyObject {
+protocol SuperEditorCodeActionContributor: AnyObject {
     var id: String { get }
     func provideCodeActions(context: EditorCodeActionContext) async -> [EditorCodeActionSuggestion]
 }
@@ -206,7 +206,7 @@ protocol EditorCodeActionContributor: AnyObject {
 /// 允许插件按语言注入 `CodeEditSourceEditor` 的高亮 provider，
 /// 例如 Markdown、特殊 DSL、额外语义层等。
 @MainActor
-protocol EditorHighlightProviderContributor: AnyObject {
+protocol SuperEditorHighlightProviderContributor: AnyObject {
     var id: String { get }
     func supports(languageId: String) -> Bool
     func provideHighlightProviders(languageId: String) -> [any HighlightProviding]
@@ -283,7 +283,7 @@ struct EditorCommandSuggestion: Identifiable {
 
 /// 编辑器命令扩展点
 @MainActor
-protocol EditorCommandContributor: AnyObject {
+protocol SuperEditorCommandContributor: AnyObject {
     var id: String { get }
     func provideCommands(
         context: EditorCommandContext,
@@ -357,7 +357,7 @@ struct EditorContextMenuItemSuggestion: Identifiable {
 
 /// 编辑器右键菜单扩展点
 @MainActor
-protocol EditorContextMenuContributor: AnyObject {
+protocol SuperEditorContextMenuContributor: AnyObject {
     var id: String { get }
     func provideContextMenuItems(
         context: EditorCommandContext,
@@ -373,10 +373,10 @@ protocol EditorContextMenuContributor: AnyObject {
 /// 当前先以 gutter decoration 作为第一批稳定 surface。
 /// 后续如果扩展到 inline / block / overlay decoration，可以继续在这个语义层上外扩。
 @MainActor
-protocol EditorDecorationContributor: EditorGutterDecorationContributor {}
+protocol SuperEditorDecorationContributor: SuperEditorGutterDecorationContributor {}
 
 @MainActor
-protocol EditorGutterDecorationContributor: AnyObject {
+protocol SuperEditorGutterDecorationContributor: AnyObject {
     var id: String { get }
     func provideGutterDecorations(
         context: EditorGutterDecorationContext,
@@ -396,7 +396,7 @@ enum EditorPanelPlacement: String, Equatable {
 /// 编辑器统一面板建议
 ///
 /// 用于把 side panel、sheet 与 bottom panel 收口到一个统一 contribution point。
-/// 旧的 `EditorSidePanelContributor` / `EditorSheetContributor` 仍然保留，便于渐进迁移。
+/// 旧的 `SuperEditorSidePanelContributor` / `SuperEditorSheetContributor` 仍然保留，便于渐进迁移。
 @MainActor
 struct EditorPanelSuggestion: Identifiable {
     let id: String
@@ -434,7 +434,7 @@ struct EditorPanelSuggestion: Identifiable {
 
 /// 编辑器统一面板扩展点
 @MainActor
-protocol EditorPanelContributor: AnyObject {
+protocol SuperEditorPanelContributor: AnyObject {
     var id: String { get }
     func providePanels(state: EditorState) -> [EditorPanelSuggestion]
 }
@@ -481,7 +481,7 @@ struct EditorSettingsItemSuggestion: Identifiable {
 
 /// 编辑器设置项扩展点
 @MainActor
-protocol EditorSettingsContributor: AnyObject {
+protocol SuperEditorSettingsContributor: AnyObject {
     var id: String { get }
     func provideSettingsItems(state: EditorSettingsState) -> [EditorSettingsItemSuggestion]
 }
@@ -499,7 +499,7 @@ struct EditorSidePanelSuggestion: Identifiable {
 
 /// 编辑器侧边面板扩展点
 @MainActor
-protocol EditorSidePanelContributor: AnyObject {
+protocol SuperEditorSidePanelContributor: AnyObject {
     var id: String { get }
     func provideSidePanels(state: EditorState) -> [EditorSidePanelSuggestion]
 }
@@ -518,7 +518,7 @@ struct EditorSheetSuggestion: Identifiable {
 
 /// 编辑器弹窗扩展点（Sheet）
 @MainActor
-protocol EditorSheetContributor: AnyObject {
+protocol SuperEditorSheetContributor: AnyObject {
     var id: String { get }
     func provideSheets(state: EditorState) -> [EditorSheetSuggestion]
 }
@@ -527,7 +527,7 @@ protocol EditorSheetContributor: AnyObject {
 
 /// 编辑器状态项建议
 ///
-/// 统一描述 toolbar 与 title 区的可插拔状态项。旧的 `EditorToolbarContributor`
+/// 统一描述 toolbar 与 title 区的可插拔状态项。旧的 `SuperEditorToolbarContributor`
 /// 仍然保留，并由注册中心桥接到这个 contract，便于渐进迁移。
 @MainActor
 struct EditorStatusItemSuggestion: Identifiable {
@@ -560,7 +560,7 @@ struct EditorStatusItemSuggestion: Identifiable {
 
 /// 编辑器状态项扩展点
 @MainActor
-protocol EditorStatusItemContributor: AnyObject {
+protocol SuperEditorStatusItemContributor: AnyObject {
     var id: String { get }
     func provideStatusItems(state: EditorState) -> [EditorStatusItemSuggestion]
 }
@@ -610,7 +610,7 @@ struct EditorQuickOpenItemSuggestion: Identifiable {
 
 /// 编辑器 Quick Open 扩展点
 @MainActor
-protocol EditorQuickOpenContributor: AnyObject {
+protocol SuperEditorQuickOpenContributor: AnyObject {
     var id: String { get }
     func provideQuickOpenItems(
         query: String,
@@ -657,7 +657,7 @@ struct EditorToolbarItemSuggestion: Identifiable {
 
 /// 编辑器工具栏扩展点
 @MainActor
-protocol EditorToolbarContributor: AnyObject {
+protocol SuperEditorToolbarContributor: AnyObject {
     var id: String { get }
     func provideToolbarItems(state: EditorState) -> [EditorToolbarItemSuggestion]
 }
@@ -675,7 +675,7 @@ struct EditorInteractionContext {
 
 /// 编辑器交互扩展点
 @MainActor
-protocol EditorInteractionContributor: AnyObject {
+protocol SuperEditorInteractionContributor: AnyObject {
     var id: String { get }
     func onTextDidChange(
         context: EditorInteractionContext,
@@ -689,7 +689,7 @@ protocol EditorInteractionContributor: AnyObject {
     ) async
 }
 
-extension EditorInteractionContributor {
+extension SuperEditorInteractionContributor {
     func onTextDidChange(
         context: EditorInteractionContext,
         state: EditorState,

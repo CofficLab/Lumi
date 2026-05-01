@@ -10,7 +10,7 @@ import MagicKit
 /// 编辑器 LSP 协调器
 /// 负责将 LSP 服务与 CodeEditSourceEditor 集成
 @MainActor
-class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
+class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
     nonisolated static let emoji = "😊"
     nonisolated static let verbose = true
     
@@ -90,7 +90,6 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
         self.version = version
 
         await lspService.openDocument(uri: uri, languageId: languageId, text: content, version: version)
-        logger.info("\(Self.t)LSP: 已打开文件 \(uri)")
     }
     
     /// 关闭文件时调用
@@ -339,7 +338,7 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
         lspService.completionTriggerCharacters
     }
 
-    // MARK: - EditorLSPClient 能力查询
+    // MARK: - SuperEditorLSPClient 能力查询
 
     var hasActiveWork: Bool { lspService.progressProvider.hasActiveWork }
 

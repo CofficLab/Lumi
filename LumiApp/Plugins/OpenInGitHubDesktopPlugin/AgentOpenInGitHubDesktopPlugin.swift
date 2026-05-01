@@ -39,7 +39,7 @@ actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
 
     /// 添加状态栏左侧视图
     @MainActor
-    func addStatusBarLeadingView() -> AnyView? {
+    func addStatusBarLeadingView(activeIcon: String?) -> AnyView? {
         return AnyView(OpenInGitHubDesktopStatusBarView())
     }
 }

@@ -5,7 +5,7 @@ import AppKit
 /// Nebula 编辑器主题配色方案
 /// 星云粉风格：粉紫色调 + 玫瑰红点缀 + 星云紫高亮
 @MainActor
-final class NebulaEditorThemeContributor: EditorThemeContributor {
+final class NebulaSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "nebula"
     let displayName: String = "Nebula"
     let icon: String? = "cloud.moon.fill"

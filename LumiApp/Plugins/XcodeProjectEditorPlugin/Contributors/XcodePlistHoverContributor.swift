@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-final class XcodePlistHoverContributor: EditorHoverContributor {
+final class XcodePlistHoverContributor: SuperEditorHoverContributor {
     let id = "builtin.xcode.plist-hover"
 
     func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion] {

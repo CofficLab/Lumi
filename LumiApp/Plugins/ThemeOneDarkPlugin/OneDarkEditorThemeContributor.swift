@@ -6,7 +6,7 @@ import AppKit
 /// 严格遵循 Atom One Dark (One Dark Pro) 默认主题
 /// 参考: https://github.com/atom/atom-dark-syntax
 @MainActor
-final class OneDarkEditorThemeContributor: EditorThemeContributor {
+final class OneDarkSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "one-dark"
     let displayName: String = "One Dark"
     let icon: String? = "circle.hexagongrid"

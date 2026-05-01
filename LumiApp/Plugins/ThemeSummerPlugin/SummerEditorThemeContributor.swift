@@ -5,7 +5,7 @@ import AppKit
 /// Summer 编辑器主题配色方案
 /// 夏日蓝风格：蓝色调 + 活力橙点缀 + 夏日蓝高亮
 @MainActor
-final class SummerEditorThemeContributor: EditorThemeContributor {
+final class SummerSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "summer"
     let displayName: String = "Summer"
     let icon: String? = "sun.max.fill"

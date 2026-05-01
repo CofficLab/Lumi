@@ -5,7 +5,7 @@ import AppKit
 /// GitHub 编辑器主题配色方案
 /// 参照 VS Code GitHub Dark Default 主题配色
 @MainActor
-final class GithubEditorThemeContributor: EditorThemeContributor {
+final class GithubSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "github"
     let displayName: String = "GitHub Dark"
     let icon: String? = "chevron.left.forwardslash.chevron.right"

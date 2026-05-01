@@ -18,7 +18,7 @@ actor ThemeRiverPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: RiverTheme(),
                 editorThemeId: "river",
-                editorThemeContributor: RiverEditorThemeContributor(),
+                editorThemeContributor: RiverSuperEditorThemeContributor(),
                 order: 110
             )
         ]

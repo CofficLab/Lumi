@@ -30,7 +30,7 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
 
     /// 添加状态栏左侧视图
     @MainActor
-    func addStatusBarLeadingView() -> AnyView? {
+    func addStatusBarLeadingView(activeIcon: String?) -> AnyView? {
         return AnyView(OpenInXcodeStatusBarView())
     }
 }

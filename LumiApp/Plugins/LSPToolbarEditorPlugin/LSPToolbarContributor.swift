@@ -3,7 +3,7 @@ import SwiftUI
 import MagicKit
 
 @MainActor
-final class LSPToolbarContributor: EditorStatusItemContributor {
+final class LSPToolbarContributor: SuperEditorStatusItemContributor {
     let id: String = "builtin.lsp.toolbar"
 
     func provideStatusItems(state: EditorState) -> [EditorStatusItemSuggestion] {

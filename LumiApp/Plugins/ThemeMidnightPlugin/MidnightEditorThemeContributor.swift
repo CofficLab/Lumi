@@ -4,7 +4,7 @@ import AppKit
 
 /// Midnight 编辑器主题配色方案
 @MainActor
-final class MidnightEditorThemeContributor: EditorThemeContributor {
+final class MidnightSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "midnight"
     let displayName: String = "Midnight"
     let icon: String? = "moon.stars.fill"

@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 /// 编辑器主视图（根入口）
 /// 组合面包屑、工具栏、编辑器、状态栏
-struct EditorRootView: View {
+struct EditorPanelView: View {
 
     private struct SessionActivation {
         let sessionID: EditorSession.ID
@@ -1883,6 +1883,6 @@ private enum EditorStateRestoreCoordinator {
 // MARK: - Preview
 
 #Preview {
-    EditorRootView()
+    EditorPanelView()
         .inRootView()
 }

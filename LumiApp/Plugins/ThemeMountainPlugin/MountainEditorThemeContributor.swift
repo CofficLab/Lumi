@@ -5,7 +5,7 @@ import AppKit
 /// Mountain 编辑器主题配色方案
 /// 山岩灰风格：灰色调 + 冷石青点缀 + 雪山白高亮
 @MainActor
-final class MountainEditorThemeContributor: EditorThemeContributor {
+final class MountainSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "mountain"
     let displayName: String = "Mountain"
     let icon: String? = "mountain.2.fill"

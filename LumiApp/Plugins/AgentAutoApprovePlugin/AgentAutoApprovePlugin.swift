@@ -3,9 +3,6 @@ import os
 import SwiftUI
 
 /// 自动批准开关插件
-///
-/// 在工具栏右侧提供自动批准开关（AutoApproveToggle），
-/// 持久化覆盖层（AutoApprovePersistenceOverlay）通过 addRootView 提供。
 actor AgentAutoApprovePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "✅"
     nonisolated static let verbose: Bool = false
@@ -30,7 +27,7 @@ actor AgentAutoApprovePlugin: SuperPlugin, SuperLog {
 
     // MARK: - Toolbar Views
 
-    /// 工具栏右侧：自动批准开关
+    /// 工具栏：自动批准开关
     @MainActor
     func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(AutoApproveToggle())

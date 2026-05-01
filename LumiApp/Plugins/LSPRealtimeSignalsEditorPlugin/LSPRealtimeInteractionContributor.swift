@@ -3,7 +3,7 @@ import CodeEditSourceEditor
 import CodeEditTextView
 
 @MainActor
-final class LSPRealtimeInteractionContributor: EditorInteractionContributor {
+final class LSPRealtimeInteractionContributor: SuperEditorInteractionContributor {
     let id: String = "builtin.lsp.realtime-signals"
 
     func onTextDidChange(

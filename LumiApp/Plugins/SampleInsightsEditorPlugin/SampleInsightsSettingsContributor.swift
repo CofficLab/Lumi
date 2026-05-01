@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-final class SampleInsightsSettingsContributor: EditorSettingsContributor {
+final class SampleInsightsSettingsContributor: SuperEditorSettingsContributor {
     let id = "sample.insights.settings"
 
     func provideSettingsItems(state: EditorSettingsState) -> [EditorSettingsItemSuggestion] {

@@ -6,7 +6,7 @@ import Foundation
 //
 // 将旧的 EditorCommandSuggestion 桥接到 CommandRegistry。
 //
-// 旧的命令体系基于 EditorCommandContributor.provideCommands() 返回数组，
+// 旧的命令体系基于 SuperEditorCommandContributor.provideCommands() 返回数组，
 // 新的体系基于中央 CommandRegistry。
 // CommandRouter 负责在两者之间建立双向兼容。
 
