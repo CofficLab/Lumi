@@ -330,6 +330,6 @@ struct ProblemsPanelView: View {
 }
 
 #Preview {
-    ProblemsPanelView(state: EditorState())
+    ProblemsPanelView(state: EditorState(editorExtensions: EditorExtensionRegistry()))
         .inRootView()
 }

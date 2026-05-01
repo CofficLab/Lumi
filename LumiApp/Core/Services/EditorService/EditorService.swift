@@ -61,22 +61,29 @@ public final class EditorService: ObservableObject {
 
     // MARK: - Initialization
 
+    /// 编辑器扩展注册中心（由 RootViewContainer 创建并注入）
+    let editorExtensionRegistry: EditorExtensionRegistry
+
     init(
+        editorExtensionRegistry: EditorExtensionRegistry,
         state: EditorState,
         sessionStore: EditorSessionStore,
         workbench: EditorWorkbenchState,
         hostStore: EditorGroupHostStore
     ) {
+        self.editorExtensionRegistry = editorExtensionRegistry
         self.state = state
         self.sessionStore = sessionStore
         self.workbench = workbench
         self.hostStore = hostStore
+        hostStore.configureRegistry(editorExtensionRegistry)
     }
 
     /// 便捷构造：使用默认实例创建完整编辑器服务
-    convenience init() {
+    convenience init(editorExtensionRegistry: EditorExtensionRegistry) {
         self.init(
-            state: EditorState(),
+            editorExtensionRegistry: editorExtensionRegistry,
+            state: EditorState(editorExtensions: editorExtensionRegistry),
             sessionStore: EditorSessionStore(),
             workbench: EditorWorkbenchState(),
             hostStore: EditorGroupHostStore()

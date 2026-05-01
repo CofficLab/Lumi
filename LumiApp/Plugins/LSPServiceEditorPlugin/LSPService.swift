@@ -50,6 +50,13 @@ final class LSPService: ObservableObject, SuperLog {
         }
     }
     
+    private(set) var _editorExtensionRegistry: EditorExtensionRegistry?
+
+    /// 注入编辑器扩展注册中心（由 LSPServiceEditorPlugin.registerEditorExtensions 调用）
+    func configureRegistry(_ registry: EditorExtensionRegistry) {
+        _editorExtensionRegistry = registry
+    }
+
     // MARK: - Debouncer (后台防抖)
 
     /// LSP 请求防抖器 — 避免快速连续触发导致主线程阻塞
@@ -211,14 +218,14 @@ final class LSPService: ObservableObject, SuperLog {
     }
 
     private static func projectContextCapability(for projectPath: String?) -> (any SuperEditorProjectContextCapability)? {
-        EditorExtensionRegistry.shared.projectContextCapability(for: projectPath)
+        LSPService.shared._editorExtensionRegistry?.projectContextCapability(for: projectPath)
     }
 
     private static func languageIntegrationCapability(
         for languageId: String,
         projectPath: String?
     ) -> (any SuperEditorLanguageIntegrationCapability)? {
-        EditorExtensionRegistry.shared.languageIntegrationCapability(
+        LSPService.shared._editorExtensionRegistry?.languageIntegrationCapability(
             for: languageId,
             projectPath: projectPath
         )

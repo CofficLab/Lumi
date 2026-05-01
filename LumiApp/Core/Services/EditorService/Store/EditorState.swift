@@ -294,7 +294,7 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 编辑器扩展注册中心
-    let editorExtensions = EditorExtensionRegistry.shared
+    let editorExtensions: EditorExtensionRegistry
     var projectContextCapability: (any SuperEditorProjectContextCapability)? {
         editorExtensions.projectContextCapability(for: projectRootPath)
     }
@@ -1134,7 +1134,9 @@ final class EditorState: ObservableObject, SuperLog {
     
     // MARK: - Init
     
-    init() {
+    init(editorExtensions: EditorExtensionRegistry) {
+        self.editorExtensions = editorExtensions
+
         // Initialize all providers with null defaults first (required for Swift init safety)
         // 内核不直接引用任何插件的类型，所有能力均通过 Registry 获取
         self.signatureHelpProvider = NullSignatureHelpProvider()
@@ -1148,9 +1150,6 @@ final class EditorState: ObservableObject, SuperLog {
         self.diagnosticsProvider = NullDiagnosticsProvider()
         self.lspClient = NullLSPClient()
 
-        // Install plugins first, so providers are registered into registry
-        installEditorPluginsFromPluginVM()
-        
         let registry = self.editorExtensions
         
         // All providers come from registry — no direct dependency on any plugin

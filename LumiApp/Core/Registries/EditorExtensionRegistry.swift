@@ -30,7 +30,6 @@ enum EditorLanguageID {
 /// 同时承担原 `EditorPluginManager` 的插件安装职责：
 /// - 维护 `installedPlugins` 列表（按 order 排序）
 /// - 提供 `installPlugins` / `uninstallAll` 方法
-/// - 全局 `shared` 实例供 LSP 服务等插件层访问
 ///
 /// ## 线程说明
 /// - 注册/注销：@MainActor（与 View 生命周期一致）
@@ -43,10 +42,6 @@ final class EditorExtensionRegistry: ObservableObject {
     private static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "editor.ext-registry")
     nonisolated static let verbose = false
     nonisolated static let emoji = "🔌"
-
-    /// 全局共享实例（原 `EditorPluginManager.activeRegistry` 的替代）。
-    /// LSP 服务、协调器等插件层通过此属性访问注册中心。
-    @MainActor static let shared = EditorExtensionRegistry()
 
     /// 已安装的编辑器插件（按 order 排序）
     @Published private(set) var installedPlugins: [any SuperPlugin] = []

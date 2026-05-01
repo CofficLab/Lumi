@@ -113,6 +113,9 @@ final class EditorSettingsState: ObservableObject {
     /// 当前工作区路径提供者（由插件注入，内核不关心项目概念）
     let currentWorkspacePathProvider: (() -> String?)?
 
+    /// 编辑器扩展注册中心（由 RootViewContainer 注入）
+    private weak var _editorExtensionRegistry: EditorExtensionRegistry?
+
     /// 基础配置快照，用于存储和恢复全局设置
     private var baseSnapshot: EditorConfigSnapshot
 
@@ -138,9 +141,7 @@ final class EditorSettingsState: ObservableObject {
 
         // 恢复保存的设置
         restore()
-        // 重新安装编辑器插件
-        reinstallEditorPlugins()
-        // 监听插件设置变化
+        // 监听插件设置变化（registry 注入后由 reinstallEditorPlugins 触发首次安装）
         observePluginSettingChanges()
     }
 
@@ -148,7 +149,7 @@ final class EditorSettingsState: ObservableObject {
     
     /// 获取插件贡献的设置项列表
     var contributedSettings: [EditorSettingsItemSuggestion] {
-        EditorExtensionRegistry.shared.settingsSuggestions(state: self)
+        _editorExtensionRegistry?.settingsSuggestions(state: self) ?? []
     }
 
     /// 获取当前工作区路径
@@ -181,6 +182,11 @@ final class EditorSettingsState: ObservableObject {
     }
 
     // MARK: - 公共方法
+
+    /// 注入编辑器扩展注册中心（由 RootViewContainer 在初始化后调用）
+    func configureRegistry(_ registry: EditorExtensionRegistry) {
+        _editorExtensionRegistry = registry
+    }
     
     /// 从持久化存储恢复所有设置
     /// 在初始化时调用，或手动刷新设置时调用
@@ -270,10 +276,11 @@ final class EditorSettingsState: ObservableObject {
     /// 重新安装编辑器插件
     /// 当插件列表或启用状态变化时调用
     private func reinstallEditorPlugins() {
+        guard let registry = _editorExtensionRegistry else { return }
         let plugins = PluginVM.shared.plugins.filter {
             PluginVM.shared.isPluginEnabled($0) && $0.providesEditorExtensions
         }
-        EditorExtensionRegistry.shared.installPlugins(plugins)
+        registry.installPlugins(plugins)
         objectWillChange.send()
     }
 

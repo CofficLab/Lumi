@@ -197,7 +197,20 @@ final class RootViewContainer: ObservableObject {
         // 编辑器
         // ========================================
 
-        self.editorVM = EditorVM(service: EditorService())
+        // 创建编辑器扩展注册中心（取消单例，仅在 RootViewContainer 初始化）
+        let editorExtensionRegistry = EditorExtensionRegistry()
+
+        // 从 PluginVM 过滤已启用的编辑器插件并安装
+        let localPluginVM = pluginVM
+        let allPlugins = localPluginVM.plugins
+        let enabledPlugins = allPlugins.filter { localPluginVM.isPluginEnabled($0) }
+        let editorPlugins = enabledPlugins.filter { $0.providesEditorExtensions }
+        editorExtensionRegistry.installPlugins(editorPlugins)
+
+        self.editorVM = EditorVM(service: EditorService(editorExtensionRegistry: editorExtensionRegistry))
+
+        // 将 registry 注入到 EditorSettingsState，使其 settingsSuggestions 和 reinstallEditorPlugins 可用
+        EditorSettingsState.shared.configureRegistry(editorExtensionRegistry)
 
         messageQueueVM.objectWillChange
             .sink { [weak self] _ in

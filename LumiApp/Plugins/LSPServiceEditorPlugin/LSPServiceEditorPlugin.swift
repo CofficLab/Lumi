@@ -17,6 +17,9 @@ actor LSPServiceEditorPlugin: SuperPlugin {
         let coordinator = LSPCoordinator(lspService: .shared)
         registry.registerSuperEditorLSPClient(coordinator)
 
+        // 注入 registry 到 LSPService（替代 EditorExtensionRegistry.shared）
+        LSPService.shared.configureRegistry(registry)
+
         // 注册语义 Token 提供者（同时遵循 HighlightProviding）
         let semanticTokenProvider = SemanticTokenHighlightProvider(
             lspService: .shared,
