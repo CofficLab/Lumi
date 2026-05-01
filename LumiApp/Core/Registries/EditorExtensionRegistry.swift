@@ -2,10 +2,35 @@ import Foundation
 import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI
+import MagicKit
 import os
 
+/// 编辑器支持的语言 ID（内核定义，不依赖具体 LSP 实现）
+enum EditorLanguageID {
+    static let all: [String] = [
+        "swift",
+        "python",
+        "typescript",
+        "javascript",
+        "html",
+        "css",
+        "scss",
+        "sass",
+        "less",
+        "rust",
+        "go",
+        "cpp",
+        "c",
+        "objective-c",
+        "objective-cpp",
+    ]
+}
+
 /// 编辑器扩展注册中心
-/// 目前先开放补全扩展点，后续可继续添加 hover/code action/toolbar 等扩展点。
+/// 同时承担原 `EditorPluginManager` 的插件安装职责：
+/// - 维护 `installedPlugins` 列表（按 order 排序）
+/// - 提供 `installPlugins` / `uninstallAll` 方法
+/// - 全局 `shared` 实例供 LSP 服务等插件层访问
 ///
 /// ## 线程说明
 /// - 注册/注销：@MainActor（与 View 生命周期一致）
@@ -17,6 +42,50 @@ import os
 final class EditorExtensionRegistry: ObservableObject {
     private static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "editor.ext-registry")
     nonisolated static let verbose = false
+    nonisolated static let emoji = "🔌"
+
+    /// 全局共享实例（原 `EditorPluginManager.activeRegistry` 的替代）。
+    /// LSP 服务、协调器等插件层通过此属性访问注册中心。
+    @MainActor static let shared = EditorExtensionRegistry()
+
+    /// 已安装的编辑器插件（按 order 排序）
+    @Published private(set) var installedPlugins: [any SuperPlugin] = []
+
+    /// 从 PluginVM 过滤并安装编辑器插件。
+    ///
+    /// 调用方负责从 `PluginVM` 过滤出已启用的编辑器插件，
+    /// 此方法负责按 order 排序并逐个调用 `registerEditorExtensions(into:)`。
+    ///
+    /// - Parameter plugins: 已过滤的编辑器插件列表（仅包含 `providesEditorExtensions == true` 且已启用的插件）
+    func installPlugins(_ plugins: [any SuperPlugin]) {
+        reset()
+
+        Self.logger.info("\(Self.emoji)installPlugins: 收到 \(plugins.count) 个插件, ids=\(plugins.map { type(of: $0).id })")
+
+        // Sort by order, then by id
+        let sorted = plugins.sorted { a, b in
+            if type(of: a).order != type(of: b).order {
+                return type(of: a).order < type(of: b).order
+            }
+            return type(of: a).id.localizedCaseInsensitiveCompare(type(of: b).id) == .orderedAscending
+        }
+
+        installedPlugins = sorted
+
+        for plugin in sorted {
+            plugin.registerEditorExtensions(into: self)
+        }
+        Self.logger.info("\(Self.emoji)installPlugins: 完成, commandContributorsCount=\(self.commandContributorsCount)")
+    }
+
+    /// 卸载所有已安装的编辑器插件
+    func uninstallAll() {
+        reset()
+        Self.logger.info("\(Self.emoji)已卸载所有编辑器插件")
+    }
+
+    // MARK: - Contributor Storage
+
     private var completionContributors: [any SuperEditorCompletionContributor] = []
     private var hoverContributors: [any SuperEditorHoverContributor] = []
     private var hoverContentContributors: [any SuperEditorHoverContentContributor] = []
@@ -53,6 +122,7 @@ final class EditorExtensionRegistry: ObservableObject {
     var commandContributorsCount: Int { commandContributors.count }
 
     func reset() {
+        installedPlugins.removeAll()
         completionContributors.removeAll()
         hoverContributors.removeAll()
         hoverContentContributors.removeAll()

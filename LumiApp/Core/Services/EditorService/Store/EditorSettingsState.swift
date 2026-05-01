@@ -110,35 +110,29 @@ final class EditorSettingsState: ObservableObject {
     /// 配置控制器，负责配置的持久化和恢复
     private let configController: EditorConfigController
     
-    /// 插件管理器，负责管理编辑器插件
-    private let pluginManager: EditorPluginManager
-    
     /// 当前工作区路径提供者（由插件注入，内核不关心项目概念）
     let currentWorkspacePathProvider: (() -> String?)?
-    
+
     /// 基础配置快照，用于存储和恢复全局设置
     private var baseSnapshot: EditorConfigSnapshot
-    
+
     /// 是否抑制持久化操作（在批量更新时使用）
     private var suppressPersistence = true
-    
+
     /// Combine 订阅集合
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - 初始化方法
-    
+
     /// 初始化编辑器设置状态
     /// - Parameters:
     ///   - configController: 配置控制器实例
-    ///   - pluginManager: 插件管理器实例
     ///   - currentWorkspacePathProvider: 工作区路径提供者闭包
     init(
         configController: EditorConfigController = EditorConfigController(),
-        pluginManager: EditorPluginManager = EditorPluginManager(),
         currentWorkspacePathProvider: (() -> String?)? = nil
     ) {
         self.configController = configController
-        self.pluginManager = pluginManager
         self.currentWorkspacePathProvider = currentWorkspacePathProvider
         self.baseSnapshot = configController.restoreConfig(clampedSidePanelWidth: { CGFloat($0) })
 
@@ -154,7 +148,7 @@ final class EditorSettingsState: ObservableObject {
     
     /// 获取插件贡献的设置项列表
     var contributedSettings: [EditorSettingsItemSuggestion] {
-        pluginManager.registry.settingsSuggestions(state: self)
+        EditorExtensionRegistry.shared.settingsSuggestions(state: self)
     }
 
     /// 获取当前工作区路径
@@ -279,7 +273,7 @@ final class EditorSettingsState: ObservableObject {
         let plugins = PluginVM.shared.plugins.filter {
             PluginVM.shared.isPluginEnabled($0) && $0.providesEditorExtensions
         }
-        pluginManager.install(plugins: plugins)
+        EditorExtensionRegistry.shared.installPlugins(plugins)
         objectWillChange.send()
     }
 

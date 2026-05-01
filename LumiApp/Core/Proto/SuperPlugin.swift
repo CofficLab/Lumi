@@ -233,7 +233,7 @@ protocol SuperPlugin: Actor {
     ///
     /// 返回 `true` 表示该插件会向 `EditorExtensionRegistry` 注入编辑器能力
     ///（如补全、hover、code action、LSP 服务等）。
-    /// `PluginVM` 会据此过滤出编辑器插件，交给 `EditorPluginManager` 安装。
+    /// `PluginVM` 会据此过滤出编辑器插件，交给 `EditorExtensionRegistry` 安装。
     /// 默认返回 `false`。
     nonisolated var providesEditorExtensions: Bool { get }
 

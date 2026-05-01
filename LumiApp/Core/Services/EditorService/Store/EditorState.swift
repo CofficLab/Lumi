@@ -12,22 +12,6 @@ import os
 
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
-///
-/// ## 状态拆分（P2.1）
-/// - `uiState` — UI 配置（字体、主题、显示选项）
-/// - `fileState` — 文件元数据与内容
-/// - `panelState` — 面板显示状态（problems、references、hover 等）
-/// - `editorState` — 编辑器底层状态（光标、滚动、查找）
-///
-/// ## 当前职责地图（Phase 12 Baseline）
-/// - document: 文件加载、二进制/文本判定、保存、外部修改监听、LSP 文档生命周期
-/// - session: `activeSession`、canonical selections、find/replace、scroll restore、undo/redo
-/// - workbench-integration: `onActiveSessionChanged`、session snapshot 同步、open item / navigation 落点
-/// - panel: problems / references / hover / workspace symbol / call hierarchy
-/// - runtime: viewport render、large file mode、长行保护、runtime gating、overlay availability
-/// - command: command palette、command context、registry refresh、toolbar/context menu dispatch
-///
-/// 所有 `@Published` 属性保留向后兼容，同时通过组合子状态容器实现关注点分离。
 @MainActor
 final class EditorState: ObservableObject, SuperLog {
     private final class SessionSyncGate {
@@ -284,12 +268,10 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 编辑器 LSP 客户端抽象（从 registry 获取）
     private(set) var lspClient: any SuperEditorLSPClient
-    /// 编辑器子插件管理器（负责补全/悬停/code action 等扩展点）
-    let editorPluginManager: EditorPluginManager
-    /// 已安装的编辑器插件信息（Phase 4: 从 installedPlugins 派生）
+    /// 已安装的编辑器插件信息（从 registry.installedPlugins 派生）
     var editorFeaturePlugins: [EditorPluginInfo] {
         // 已安装的插件均已通过 PluginVM 启用过滤，因此 isEnabled 恒为 true
-        editorPluginManager.installedPlugins.map { plugin in
+        editorExtensions.installedPlugins.map { plugin in
             let type = type(of: plugin)
             return EditorPluginInfo(
                 id: type.id,
@@ -311,8 +293,8 @@ final class EditorState: ObservableObject, SuperLog {
         let isEnabled: Bool
     }
 
-    /// 兼容旧调用：编辑器扩展注册中心
-    var editorExtensions: EditorExtensionRegistry { editorPluginManager.registry }
+    /// 编辑器扩展注册中心
+    let editorExtensions = EditorExtensionRegistry.shared
     var projectContextCapability: (any SuperEditorProjectContextCapability)? {
         editorExtensions.projectContextCapability(for: projectRootPath)
     }
@@ -1153,8 +1135,6 @@ final class EditorState: ObservableObject, SuperLog {
     // MARK: - Init
     
     init() {
-        self.editorPluginManager = EditorPluginManager()
-
         // Initialize all providers with null defaults first (required for Swift init safety)
         // 内核不直接引用任何插件的类型，所有能力均通过 Registry 获取
         self.signatureHelpProvider = NullSignatureHelpProvider()
@@ -1208,7 +1188,7 @@ final class EditorState: ObservableObject, SuperLog {
         let editorPlugins = enabledFiltered.filter { $0.providesEditorExtensions }
         if Self.verbose { logger.info("\(self.t)installEditorPlugins: providesEditorExtensions 过滤后: \(editorPlugins.count), ids=\(editorPlugins.map { type(of: $0).id })") }
 
-        editorPluginManager.install(plugins: editorPlugins)
+        editorExtensions.installPlugins(editorPlugins)
     }
 
     private func bindKeybindings() {

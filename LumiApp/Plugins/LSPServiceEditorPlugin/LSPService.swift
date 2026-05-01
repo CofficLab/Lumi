@@ -211,14 +211,14 @@ final class LSPService: ObservableObject, SuperLog {
     }
 
     private static func projectContextCapability(for projectPath: String?) -> (any SuperEditorProjectContextCapability)? {
-        EditorPluginManager.activeRegistry?.projectContextCapability(for: projectPath)
+        EditorExtensionRegistry.shared.projectContextCapability(for: projectPath)
     }
 
     private static func languageIntegrationCapability(
         for languageId: String,
         projectPath: String?
     ) -> (any SuperEditorLanguageIntegrationCapability)? {
-        EditorPluginManager.activeRegistry?.languageIntegrationCapability(
+        EditorExtensionRegistry.shared.languageIntegrationCapability(
             for: languageId,
             projectPath: projectPath
         )
