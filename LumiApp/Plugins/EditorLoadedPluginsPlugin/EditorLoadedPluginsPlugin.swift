@@ -22,7 +22,10 @@ actor EditorLoadedPluginsPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 在状态栏右侧显示已加载插件入口
-    @MainActor func addStatusBarTrailingView() -> AnyView? {
-        AnyView(EditorLoadedPluginsStatusBarView())
+    ///
+    /// 仅在 EditorPlugin 被激活时提供。
+    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(EditorLoadedPluginsStatusBarView())
     }
 }

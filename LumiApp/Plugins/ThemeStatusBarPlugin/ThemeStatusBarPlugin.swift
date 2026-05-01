@@ -21,7 +21,7 @@ actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
     static let shared = ThemeStatusBarPlugin()
 
     @MainActor
-    func addStatusBarTrailingView() -> AnyView? {
+    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(ThemeStatusBarView())
     }
 }

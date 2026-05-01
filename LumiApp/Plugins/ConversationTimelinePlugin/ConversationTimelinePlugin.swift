@@ -24,7 +24,7 @@ actor ConversationTimelinePlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     /// 添加状态栏尾部视图
-    @MainActor func addStatusBarTrailingView() -> AnyView? {
+    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
         return AnyView(ConversationTimelineView())
     }
 }

@@ -650,9 +650,10 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 状态栏左侧视图数组
     func getStatusBarLeadingViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarLeadingView() }
+            .compactMap { $0.addStatusBarLeadingView(activeIcon: activeIcon) }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
@@ -671,9 +672,10 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 状态栏中间视图数组
     func getStatusBarCenterViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarCenterView() }
+            .compactMap { $0.addStatusBarCenterView(activeIcon: activeIcon) }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
@@ -692,9 +694,10 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 状态栏右侧视图数组
     func getStatusBarTrailingViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
         let views = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarTrailingView() }
+            .compactMap { $0.addStatusBarTrailingView(activeIcon: activeIcon) }
 
         if Self.verbose {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
