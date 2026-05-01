@@ -6,6 +6,8 @@ struct AutoApproveToggle: View {
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var themeManager: ThemeManager
 
+    private let store = AgentAutoApprovePluginLocalStore.shared
+
     var body: some View {
         let theme = themeManager.activeAppTheme
 
@@ -13,6 +15,7 @@ struct AutoApproveToggle: View {
             get: { projectVM.autoApproveRisk },
             set: { newValue in
                 projectVM.setAutoApproveRisk(newValue)
+                saveToStore(newValue)
                 handleToggleChange(newValue)
             }
         ))
@@ -20,6 +23,24 @@ struct AutoApproveToggle: View {
         .controlSize(.mini)
         .foregroundColor(theme.workspaceTextColor())
         .help(String(localized: "Auto-approve high-risk commands", table: "AgentAutoApprovePlugin"))
+        .onAppear(perform: restoreFromStore)
+        .onChange(of: projectVM.currentProjectPath) { _, _ in
+            restoreFromStore()
+        }
+    }
+
+    private func restoreFromStore() {
+        let path = projectVM.currentProjectPath
+        guard !path.isEmpty else { return }
+        if let saved = store.loadEnabled(for: path) {
+            projectVM.setAutoApproveRisk(saved)
+        }
+    }
+
+    private func saveToStore(_ enabled: Bool) {
+        let path = projectVM.currentProjectPath
+        guard !path.isEmpty else { return }
+        store.saveEnabled(enabled, for: path)
     }
 }
 
