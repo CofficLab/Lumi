@@ -197,17 +197,7 @@ final class RootViewContainer: ObservableObject {
         // 编辑器
         // ========================================
 
-        let editorState = EditorState()
-        let editorSessionStore = EditorSessionStore()
-        let editorWorkbench = EditorWorkbenchState()
-        let editorHostStore = EditorGroupHostStore()
-
-        self.editorVM = EditorVM(
-            state: editorState,
-            sessionStore: editorSessionStore,
-            workbench: editorWorkbench,
-            hostStore: editorHostStore
-        )
+        self.editorVM = EditorVM(service: EditorService())
 
         messageQueueVM.objectWillChange
             .sink { [weak self] _ in

@@ -24,10 +24,11 @@ struct EditorPanelView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
     /// 便利访问
-    private var state: EditorState { editorVM.state }
-    private var sessionStore: EditorSessionStore { editorVM.sessionStore }
-    private var workbench: EditorWorkbenchState { editorVM.workbench }
-    private var hostStore: EditorGroupHostStore { editorVM.hostStore }
+    private var service: EditorService { editorVM.service }
+    private var state: EditorState { service.state }
+    private var sessionStore: EditorSessionStore { service.sessionStore }
+    private var workbench: EditorWorkbenchState { service.workbench }
+    private var hostStore: EditorGroupHostStore { service.hostStore }
 
     @State private var pendingActivationIntent: ActivationIntent?
     @State private var isCommandPalettePresented = false

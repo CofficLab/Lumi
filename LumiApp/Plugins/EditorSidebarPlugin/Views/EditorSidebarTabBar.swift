@@ -14,7 +14,7 @@ struct EditorSidebarTabBar: View {
     let onTabSelect: (EditorSidebarWorkspaceTab) -> Void
     let onDismiss: (EditorSidebarWorkspaceTab) -> Void
 
-    private var state: EditorState { editorVM.state }
+    private var state: EditorState { editorVM.service.state }
 
     var body: some View {
         tabBarButtons

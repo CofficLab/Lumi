@@ -13,9 +13,10 @@ struct EditorSidebarRailView: View {
 
     private let selectedTabStorageKey = "Split.Panel.LumiEditor.SelectedTab"
 
-    private var state: EditorState { editorVM.state }
-    private var sessionStore: EditorSessionStore { editorVM.sessionStore }
-    private var workbench: EditorWorkbenchState { editorVM.workbench }
+    private var service: EditorService { editorVM.service }
+    private var state: EditorState { service.state }
+    private var sessionStore: EditorSessionStore { service.sessionStore }
+    private var workbench: EditorWorkbenchState { service.workbench }
 
     var body: some View {
         VStack(spacing: 0) {
