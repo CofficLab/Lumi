@@ -18,7 +18,7 @@ actor ThemeVoidPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: VoidTheme(),
                 editorThemeId: "void",
-                editorThemeContributor: VoidEditorThemeContributor(),
+                editorThemeContributor: VoidSuperEditorThemeContributor(),
                 order: 40
             )
         ]

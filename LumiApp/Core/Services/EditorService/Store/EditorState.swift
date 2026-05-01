@@ -283,7 +283,7 @@ final class EditorState: ObservableObject, SuperLog {
     let documentController = EditorDocumentController()
     
     /// 编辑器 LSP 客户端抽象（从 registry 获取）
-    private(set) var lspClient: any EditorLSPClient
+    private(set) var lspClient: any SuperEditorLSPClient
     /// 编辑器子插件管理器（负责补全/悬停/code action 等扩展点）
     let editorPluginManager: EditorPluginManager
     /// 已安装的编辑器插件信息（Phase 4: 从 installedPlugins 派生）
@@ -1081,7 +1081,7 @@ final class EditorState: ObservableObject, SuperLog {
     
     // MARK: - Theme
     
-    /// 当前主题 ID（与 EditorThemeContributor.id 对应）
+    /// 当前主题 ID（与 SuperEditorThemeContributor.id 对应）
     @Published var currentThemeId: String = "xcode-dark"
     
     /// 当前主题（缓存，避免每次重建）
@@ -1156,6 +1156,7 @@ final class EditorState: ObservableObject, SuperLog {
         self.editorPluginManager = EditorPluginManager()
 
         // Initialize all providers with null defaults first (required for Swift init safety)
+        // 内核不直接引用任何插件的类型，所有能力均通过 Registry 获取
         self.signatureHelpProvider = NullSignatureHelpProvider()
         self.inlayHintProvider = NullInlayHintProvider()
         self.documentHighlightProvider = NullDocumentHighlightProvider()
@@ -1165,23 +1166,17 @@ final class EditorState: ObservableObject, SuperLog {
         self.documentSymbolProvider = NullDocumentSymbolProvider()
         self.foldingRangeProvider = NullFoldingRangeProvider()
         self.diagnosticsProvider = NullDiagnosticsProvider()
-        self.lspClient = LSPCoordinator(lspService: .shared)
+        self.lspClient = NullLSPClient()
 
-        // Install plugins first, so providers are registered
+        // Install plugins first, so providers are registered into registry
         installEditorPluginsFromPluginVM()
         
         let registry = self.editorExtensions
         
-        // Get or create LSP client from registry; fallback to LSPCoordinator
-        if let registeredClient = registry.editorLSPClient {
-            self.lspClient = registeredClient
-        } else {
-            let lspCoordinator = LSPCoordinator(lspService: .shared)
-            self.lspClient = lspCoordinator
-            registry.registerEditorLSPClient(lspCoordinator)
+        // All providers come from registry — no direct dependency on any plugin
+        if let client = registry.editorLSPClient {
+            self.lspClient = client
         }
-        
-        // Get providers from registry (registered by LSP sub-plugins); fallback to null implementations
         if let p = registry.signatureHelpProvider { self.signatureHelpProvider = p }
         if let p = registry.inlayHintProvider { self.inlayHintProvider = p }
         if let p = registry.documentHighlightProvider { self.documentHighlightProvider = p }
@@ -1603,7 +1598,7 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 获取所有可用主题
-    func availableThemes() -> [any EditorThemeContributor] {
+    func availableThemes() -> [any SuperEditorThemeContributor] {
         editorExtensions.allThemes()
     }
 
@@ -1624,7 +1619,7 @@ final class EditorState: ObservableObject, SuperLog {
             if shouldRegisterThemeContributors {
                 let allContributions = PluginVM.shared.getThemeContributions()
                 for contribution in allContributions {
-                    if let c = contribution.editorThemeContributor as? any EditorThemeContributor {
+                    if let c = contribution.editorThemeContributor as? any SuperEditorThemeContributor {
                         self.editorExtensions.registerThemeContributor(c)
                     }
                 }
@@ -3199,7 +3194,7 @@ final class EditorState: ObservableObject, SuperLog {
 
     private func semanticReadinessState() -> EditorSemanticReadinessState {
         guard projectContextSnapshot?.isStructuredProject == true else { return .idle }
-        if LSPService.shared.progressProvider.hasActiveWork {
+        if lspClient.hasActiveWork {
             return .indexing
         }
         switch currentProjectContextStatus {

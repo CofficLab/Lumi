@@ -4,7 +4,7 @@ import CodeEditTextView
 import CodeEditLanguages
 
 @MainActor
-final class MarkdownHighlightContributor: EditorHighlightProviderContributor {
+final class MarkdownHighlightContributor: SuperEditorHighlightProviderContributor {
     let id = "builtin.markdown.highlight-provider"
     private let supportedLanguageIDs: Set<String> = ["markdown", "markdown-inline", "md", "mdx"]
     private let provider = MarkdownHighlightProvider()

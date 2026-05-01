@@ -5,7 +5,7 @@ import AppKit
 /// Spring 编辑器主题配色方案
 /// 春芽绿风格：绿色调 + 桃花粉点缀 + 天空蓝高亮
 @MainActor
-final class SpringEditorThemeContributor: EditorThemeContributor {
+final class SpringSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "spring"
     let displayName: String = "Spring"
     let icon: String? = "leaf.fill"

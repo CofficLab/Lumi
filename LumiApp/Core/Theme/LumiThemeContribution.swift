@@ -22,7 +22,7 @@ struct LumiThemeContribution: Identifiable {
     /// - Parameters:
     ///   - appTheme: App 全局主题（实现 `SuperTheme`）
     ///   - editorThemeId: 编辑器主题唯一标识
-    ///   - editorThemeContributor: 编辑器主题贡献者（遵循 `EditorThemeContributor`，类型擦除为 `AnyObject` 避免内核依赖编辑器库）
+    ///   - editorThemeContributor: 编辑器主题贡献者（遵循 `SuperEditorThemeContributor`，类型擦除为 `AnyObject` 避免内核依赖编辑器库）
     ///   - order: 排序权重
     init(
         appTheme: any SuperTheme,

@@ -16,8 +16,8 @@ struct SourceEditorAdapter {
     func activeHighlightProviders(
         for state: EditorState,
         treeSitterClient: TreeSitterClient,
-        semanticTokenProvider: SemanticTokenHighlightProvider?,
-        documentHighlightProvider: DocumentHighlightHighlighter?
+        semanticTokenProvider: (any HighlightProviding)?,
+        documentHighlightProvider: (any HighlightProviding)?
     ) -> [any HighlightProviding] {
         var providers: [any HighlightProviding] = []
         let languageID = state.detectedLanguage?.tsName ?? "swift"

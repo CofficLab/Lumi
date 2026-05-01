@@ -4,7 +4,7 @@ import Foundation
 ///
 /// 提供 HTML 标签名和属性名的补全建议。
 @MainActor
-final class HTMLCompletionContributor: EditorCompletionContributor {
+final class HTMLCompletionContributor: SuperEditorCompletionContributor {
     let id = "builtin.html.completion"
 
     func provideSuggestions(context: EditorCompletionContext) async -> [EditorCompletionSuggestion] {

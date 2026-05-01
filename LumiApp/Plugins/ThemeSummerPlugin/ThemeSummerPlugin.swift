@@ -18,7 +18,7 @@ actor ThemeSummerPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: SummerTheme(),
                 editorThemeId: "summer",
-                editorThemeContributor: SummerEditorThemeContributor(),
+                editorThemeContributor: SummerSuperEditorThemeContributor(),
                 order: 60
             )
         ]

@@ -5,7 +5,7 @@ import AppKit
 /// Void 编辑器主题配色方案
 /// 虚空深黑风格：黑靛色调 + 虚空紫 + 虚空粉高亮
 @MainActor
-final class VoidEditorThemeContributor: EditorThemeContributor {
+final class VoidSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "void"
     let displayName: String = "Void"
     let icon: String? = "circle.fill"

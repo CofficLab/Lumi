@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-final class LSPWorkspaceSymbolQuickOpenContributor: EditorQuickOpenContributor {
+final class LSPWorkspaceSymbolQuickOpenContributor: SuperEditorQuickOpenContributor {
     let id: String = "builtin.lsp.workspace-symbol-quick-open"
 
     func provideQuickOpenItems(

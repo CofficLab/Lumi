@@ -6,7 +6,7 @@ import AppKit
 /// 严格遵循 Dracula Theme 官方配色标准
 /// 参考: https://draculatheme.com/contribute
 @MainActor
-final class DraculaEditorThemeContributor: EditorThemeContributor {
+final class DraculaSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "dracula"
     let displayName: String = "Dracula"
     let icon: String? = "moon.stars.fill"

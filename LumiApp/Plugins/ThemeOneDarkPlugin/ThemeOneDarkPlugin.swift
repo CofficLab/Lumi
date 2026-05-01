@@ -18,7 +18,7 @@ actor ThemeOneDarkPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: OneDarkTheme(),
                 editorThemeId: "one-dark",
-                editorThemeContributor: OneDarkEditorThemeContributor(),
+                editorThemeContributor: OneDarkSuperEditorThemeContributor(),
                 order: 100
             )
         ]

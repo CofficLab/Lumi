@@ -3,7 +3,7 @@ import SwiftUI
 import MagicKit
 
 @MainActor
-final class SampleInsightsStatusItemContributor: EditorStatusItemContributor {
+final class SampleInsightsStatusItemContributor: SuperEditorStatusItemContributor {
     let id = "sample.insights.status-item"
 
     func provideStatusItems(state: EditorState) -> [EditorStatusItemSuggestion] {

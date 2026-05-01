@@ -18,7 +18,7 @@ actor ThemeAutumnPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: AutumnTheme(),
                 editorThemeId: "autumn",
-                editorThemeContributor: AutumnEditorThemeContributor(),
+                editorThemeContributor: AutumnSuperEditorThemeContributor(),
                 order: 70
             )
         ]

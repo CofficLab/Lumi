@@ -13,8 +13,15 @@ actor LSPServiceEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        // LSP 补全/悬停/代码动作等能力通过 LSPService 单例直接调用，
-        // 不走 EditorExtensionContributor 路径（因为补全/悬停上下文缺少 fileURI）。
-        // 此插件主要确保 LSP 服务在编辑器加载时可用。
+        // 创建 LSP 协调器并注册到 Registry — 内核通过协议接口使用，不直接引用插件类型
+        let coordinator = LSPCoordinator(lspService: .shared)
+        registry.registerSuperEditorLSPClient(coordinator)
+
+        // 注册语义 Token 提供者（同时遵循 HighlightProviding）
+        let semanticTokenProvider = SemanticTokenHighlightProvider(
+            lspService: .shared,
+            uriProvider: { [weak coordinator] in coordinator?.fileURI }
+        )
+        registry.registerSemanticTokenProvider(semanticTokenProvider)
     }
 }

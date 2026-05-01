@@ -4,7 +4,7 @@ import Foundation
 ///
 /// 提供 HTML 标签和属性的悬浮文档。
 @MainActor
-final class HTMLHoverContributor: EditorHoverContributor {
+final class HTMLHoverContributor: SuperEditorHoverContributor {
     let id = "builtin.html.hover"
 
     func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion] {

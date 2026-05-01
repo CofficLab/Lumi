@@ -18,7 +18,7 @@ actor ThemeVscodeDarkPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: VscodeDarkTheme(),
                 editorThemeId: "vscode-dark",
-                editorThemeContributor: VscodeDarkEditorThemeContributor(),
+                editorThemeContributor: VscodeDarkSuperEditorThemeContributor(),
                 order: 90
             )
         ]

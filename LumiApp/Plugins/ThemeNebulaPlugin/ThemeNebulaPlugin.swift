@@ -18,7 +18,7 @@ actor ThemeNebulaPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: NebulaTheme(),
                 editorThemeId: "nebula",
-                editorThemeContributor: NebulaEditorThemeContributor(),
+                editorThemeContributor: NebulaSuperEditorThemeContributor(),
                 order: 30
             )
         ]

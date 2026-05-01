@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-final class SampleInsightsHoverContributor: EditorHoverContentContributor {
+final class SampleInsightsHoverContributor: SuperEditorHoverContentContributor {
     let id = "sample.insights.hover"
 
     private let glossary: [String: String] = [

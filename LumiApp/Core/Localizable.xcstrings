@@ -5027,7 +5027,7 @@
         }
       }
     },
-    "This panel is contributed by `EditorPanelContributor` and toggled from a `titleTrailing` status item." : {
+    "This panel is contributed by `SuperEditorPanelContributor` and toggled from a `titleTrailing` status item." : {
 
     },
     "this text" : {
@@ -6343,7 +6343,7 @@
         }
       }
     },
-    "后续插件只要注册 `EditorSettingsContributor`，设置项就会自动出现在这里。" : {
+    "后续插件只要注册 `SuperEditorSettingsContributor`，设置项就会自动出现在这里。" : {
 
     },
     "向下分栏" : {

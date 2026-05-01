@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-final class XcodePackageManifestHoverContributor: EditorHoverContributor {
+final class XcodePackageManifestHoverContributor: SuperEditorHoverContributor {
     let id = "builtin.xcode.package-manifest-hover"
 
     func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion] {

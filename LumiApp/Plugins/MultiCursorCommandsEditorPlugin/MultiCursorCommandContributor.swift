@@ -2,7 +2,7 @@ import Foundation
 import CodeEditTextView
 
 @MainActor
-final class MultiCursorCommandContributor: EditorCommandContributor {
+final class MultiCursorCommandContributor: SuperEditorCommandContributor {
     let id: String = "builtin.editor.multi-cursor-commands"
 
     func provideCommands(

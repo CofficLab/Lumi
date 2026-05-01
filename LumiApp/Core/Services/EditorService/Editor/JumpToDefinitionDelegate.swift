@@ -28,7 +28,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
     
     weak var treeSitterClient: TreeSitterClient?
     weak var textStorage: NSTextStorage?
-    weak var lspClient: (any EditorLSPClient)?
+    weak var lspClient: (any SuperEditorLSPClient)?
     weak var textViewController: TextViewController?
     var semanticCapabilityProvider: (() -> (any SuperEditorSemanticCapability)?)?
     var currentFileURLProvider: (() -> URL?)?

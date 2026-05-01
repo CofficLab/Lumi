@@ -295,7 +295,7 @@ final class ContextMenuHelper: NSObject {
 
     /// 在右键菜单中注入自定义项
     ///
-    /// 所有功能菜单项均由编辑器子插件通过 `EditorCommandContributor` 注册，
+    /// 所有功能菜单项均由编辑器子插件通过 `SuperEditorCommandContributor` 注册，
     /// 此处仅负责从注册中心聚合命令并注入到右键菜单中。
     func injectCustomItems(into menu: NSMenu) {
         // 先清除之前注入的项（防止重复）

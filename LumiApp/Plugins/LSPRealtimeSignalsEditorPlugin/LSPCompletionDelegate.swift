@@ -16,7 +16,7 @@ private protocol ApplicableCompletionEntry: CodeEditSourceEditor.CodeSuggestionE
 final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
     nonisolated static let emoji = "💡"
 
-    weak var lspClient: (any EditorLSPClient)?
+    weak var lspClient: (any SuperEditorLSPClient)?
     weak var editorExtensionRegistry: EditorExtensionRegistry?
     weak var editorState: EditorState?
 

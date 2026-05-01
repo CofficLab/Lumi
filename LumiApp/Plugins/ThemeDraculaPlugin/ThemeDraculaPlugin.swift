@@ -18,7 +18,7 @@ actor ThemeDraculaPlugin: SuperPlugin {
             LumiThemeContribution(
                 appTheme: DraculaTheme(),
                 editorThemeId: "dracula",
-                editorThemeContributor: DraculaEditorThemeContributor(),
+                editorThemeContributor: DraculaSuperEditorThemeContributor(),
                 order: 105
             )
         ]

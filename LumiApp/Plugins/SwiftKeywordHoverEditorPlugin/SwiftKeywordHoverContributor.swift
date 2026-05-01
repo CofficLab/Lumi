@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-final class SwiftKeywordHoverContributor: EditorHoverContributor {
+final class SwiftKeywordHoverContributor: SuperEditorHoverContributor {
     let id = "builtin.swift.keyword-hover"
 
     private static let docs: [String: String] = [

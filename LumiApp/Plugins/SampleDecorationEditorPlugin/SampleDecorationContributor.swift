@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-final class SampleDecorationContributor: EditorDecorationContributor {
+final class SampleDecorationContributor: SuperEditorDecorationContributor {
     let id = "sample.decoration.gutter"
 
     func provideGutterDecorations(

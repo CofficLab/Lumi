@@ -6,7 +6,7 @@ import AppKit
 /// 严格遵循 Visual Studio Code Light Modern (Light+) 默认主题
 /// 参考: https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes
 @MainActor
-final class VscodeLightEditorThemeContributor: EditorThemeContributor {
+final class VscodeLightSuperEditorThemeContributor: SuperEditorThemeContributor {
     let id: String = "vscode-light"
     let displayName: String = "VS Code Light+"
     let icon: String? = "terminal"

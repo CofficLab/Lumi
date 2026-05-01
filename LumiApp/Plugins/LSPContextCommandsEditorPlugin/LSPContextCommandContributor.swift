@@ -2,7 +2,7 @@ import Foundation
 import CodeEditTextView
 
 @MainActor
-final class LSPContextCommandContributor: EditorCommandContributor {
+final class LSPContextCommandContributor: SuperEditorCommandContributor {
     let id: String = "builtin.lsp.context-commands"
 
     func provideCommands(

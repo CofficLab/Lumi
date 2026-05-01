@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-final class XcodePlistCompletionContributor: EditorCompletionContributor {
+final class XcodePlistCompletionContributor: SuperEditorCompletionContributor {
     let id = "builtin.xcode.plist-completion"
 
     func provideSuggestions(context: EditorCompletionContext) async -> [EditorCompletionSuggestion] {
