@@ -126,7 +126,7 @@ struct EditorFileTreeNodeView: View {
                 // 传递纯文本路径字符串，接收方直接拿到绝对路径，不会触发文件缓存复制
                 NSItemProvider(object: url.path as NSString)
             } preview: {
-                DragPreview(fileURL: url)
+                FileTreeDragPreview(fileURL: url)
             }
             .contextMenu { contextMenuContent }
             .onTapGesture { handleTap() }
