@@ -16,6 +16,14 @@ struct GitBranchPickerPanel: View {
     @State private var showCreateBranchAlert = false
     @State private var createBranchName = ""
 
+    // MARK: - Commit
+
+    @State private var showCommitPanel = false
+    @State private var commitLanguage: GitCommitService.Language = .english
+    @State private var isCommitting = false
+    @State private var commitResult: GitCommitService.Result?
+    @State private var commitError: String?
+
     // MARK: - Computed
 
     /// 当前分支
@@ -28,6 +36,13 @@ struct GitBranchPickerPanel: View {
         let others = branches.filter { !$0.isCurrent }
         guard !searchText.isEmpty else { return others }
         return others.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
+
+    /// 是否有未提交的更改
+    private var hasUncommittedChanges: Bool {
+        let path = projectVM.currentProjectPath
+        guard !path.isEmpty else { return false }
+        return GitBranchService.isWorkingTreeDirty(at: path)
     }
 
     // MARK: - Adaptive Colors
@@ -50,6 +65,11 @@ struct GitBranchPickerPanel: View {
         VStack(spacing: 0) {
             headerSection
 
+            // Commit 区域
+            if hasUncommittedChanges {
+                commitSection
+            }
+
             if isLoading {
                 Divider()
                 loadingView
@@ -70,6 +90,170 @@ struct GitBranchPickerPanel: View {
             createBranchAlert
         }
         .frame(height: 500)
+    }
+
+    // MARK: - Commit Section
+
+    private var commitSection: some View {
+        VStack(spacing: 0) {
+            Divider()
+
+            VStack(spacing: DesignTokens.Spacing.sm) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(DesignTokens.Color.semantic.primary)
+
+                    Text("AI Commit")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+
+                    Spacer()
+                }
+
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    commitButton(
+                        title: "EN Commit",
+                        icon: "🇬🇧",
+                        language: .english
+                    )
+
+                    commitButton(
+                        title: "CN Commit",
+                        icon: "🇨🇳",
+                        language: .chinese
+                    )
+                }
+
+                // 状态展示
+                if isCommitting {
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                        Text("正在生成并提交...")
+                            .font(.system(size: 11))
+                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    }
+                } else if let result = commitResult {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(DesignTokens.Color.semantic.success)
+                        Text("已提交: \(result.message)")
+                            .font(.system(size: 11))
+                            .foregroundColor(DesignTokens.Color.semantic.success)
+                            .lineLimit(1)
+                    }
+                } else if let error = commitError {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundColor(DesignTokens.Color.semantic.warning)
+                        Text(error)
+                            .font(.system(size: 11))
+                            .foregroundColor(DesignTokens.Color.semantic.warning)
+                            .lineLimit(1)
+                    }
+                }
+            }
+            .padding(.horizontal, DesignTokens.Spacing.md)
+            .padding(.vertical, DesignTokens.Spacing.sm)
+        }
+    }
+
+    private func commitButton(title: String, icon: String, language: GitCommitService.Language) -> some View {
+        Button(action: {
+            commitLanguage = language
+            Task { await executeCommit(language: language) }
+        }) {
+            HStack(spacing: 4) {
+                Text(icon)
+                    .font(.system(size: 12))
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+            }
+            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+            .padding(.horizontal, DesignTokens.Spacing.md)
+            .padding(.vertical, DesignTokens.Spacing.xs)
+            .background(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .fill(DesignTokens.Color.semantic.primary.opacity(0.1))
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isCommitting)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func executeCommit(language: GitCommitService.Language) async {
+        let path = projectVM.currentProjectPath
+        guard !path.isEmpty else { return }
+
+        isCommitting = true
+        commitResult = nil
+        commitError = nil
+
+        do {
+            // 1. 收集变更
+            let changes = try await GitCommitService.gatherChanges(at: path)
+
+            // 2. 生成 commit message
+            let config = RootViewContainer.shared.agentSessionConfig.getCurrentConfig()
+            let message = try await GitCommitService.generateCommitMessage(
+                changes: changes,
+                language: language,
+                llmService: RootViewContainer.shared.llmService,
+                config: config
+            )
+
+            // 3. 执行 commit
+            let hash = try GitCommitService.executeCommit(message: message, at: path)
+
+            await MainActor.run {
+                isCommitting = false
+                commitResult = GitCommitService.Result(message: message, commitHash: hash)
+                commitError = nil
+
+                // 刷新分支列表
+                Task { await loadBranches() }
+            }
+        } catch {
+            let err = error as NSError
+            if let ce = error as? GitCommitError {
+                switch ce {
+                case .noChanges:
+                    await MainActor.run {
+                        isCommitting = false
+                        commitError = "没有需要提交的变更"
+                    }
+                case .commitFailed(let msg):
+                    await MainActor.run {
+                        isCommitting = false
+                        commitError = "提交失败: \(msg)"
+                    }
+                case .emptyResponse:
+                    await MainActor.run {
+                        isCommitting = false
+                        commitError = "AI 未返回有效内容"
+                    }
+                case .llmError(let msg):
+                    await MainActor.run {
+                        isCommitting = false
+                        commitError = "AI 错误: \(msg)"
+                    }
+                default:
+                    break
+                }
+            } else if let llmError = error as? LLMServiceError {
+                await MainActor.run {
+                    isCommitting = false
+                    commitError = "AI 请求失败: \(llmError.localizedDescription)"
+                }
+            } else {
+                await MainActor.run {
+                    isCommitting = false
+                    commitError = "Commit 失败: \(err.localizedDescription)"
+                }
+            }
+        }
     }
 
     // MARK: - Header

@@ -17,6 +17,9 @@ struct CPUStatusBarPopupView: View {
 
                 // 历史趋势图（最近60秒）
                 miniTrendView
+
+                // Top 5 CPU 占用进程
+                topProcessesView
             }
         }
     }
@@ -140,6 +143,12 @@ struct CPUStatusBarPopupView: View {
         }
         .padding(.vertical, 8)
         .background(AppUI.Material.glass.opacity(0.3))
+    }
+
+    // MARK: - Top Processes View
+
+    private var topProcessesView: some View {
+        TopProcessesView(processes: viewModel.topProcesses)
     }
 }
 

@@ -51,10 +51,13 @@ final class RootViewContainer: ObservableObject {
     let chatTimelineViewModel: ChatTimelineViewModel
     let conversationSendStatusVM: ConversationStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
-
     let gitVM: GitVM
     let agentSessionConfig: LLMVM
     let captureThinkingContent: Bool
+
+    // MARK: - Editor
+
+    let editorVM: EditorVM
 
     // MARK: - 初始化
 
@@ -69,10 +72,18 @@ final class RootViewContainer: ObservableObject {
         // 初始化上下文服务
         self.contextService = ContextService()
 
-        // 初始化 LLM 服务
-        self.llmService = LLMService()
+        // 初始化插件 VM
+        self.pluginVM = PluginVM.shared
 
-        // 初始化提示词服务（依赖 ContextService）
+        // 初始化供应商注册表（从插件中收集 LLM Provider）
+        let providerRegistry = LLMProviderRegistry()
+        pluginVM.registerLLMProviders(to: providerRegistry)
+        let registeredProviderIDs = providerRegistry.providerTypes.map { $0.id }
+
+        // 初始化 LLM 服务
+        self.llmService = LLMService(registry: providerRegistry)
+
+        // 初始化提示词服务
         self.promptService = PromptService(contextService: contextService)
 
         // 初始化 Slash 命令服务
@@ -86,15 +97,14 @@ final class RootViewContainer: ObservableObject {
             toolService: toolService
         )
 
-        // 复用 LLMService 中的供应商注册表（已通过插件完成注册）
-        self.providerRegistry = llmService.registry
+        // 供应商注册表
+        self.providerRegistry = providerRegistry
 
         // ========================================
         // 基础 ViewModel
         // ========================================
 
         self.appProvider = GlobalVM()
-        self.pluginVM = PluginVM.shared
         self.messageRendererVM = MessageRendererVM.shared
         self.mystiqueThemeManager = appProvider.themeManager
         self.projectVM = Lumi.ProjectVM(
@@ -182,6 +192,22 @@ final class RootViewContainer: ObservableObject {
         )
 
         self.conversationSendStatusVM = ConversationStatusVM()
+
+        // ========================================
+        // 编辑器
+        // ========================================
+
+        let editorState = EditorState()
+        let editorSessionStore = EditorSessionStore()
+        let editorWorkbench = EditorWorkbenchState()
+        let editorHostStore = EditorGroupHostStore()
+
+        self.editorVM = EditorVM(
+            state: editorState,
+            sessionStore: editorSessionStore,
+            workbench: editorWorkbench,
+            hostStore: editorHostStore
+        )
 
         messageQueueVM.objectWillChange
             .sink { [weak self] _ in

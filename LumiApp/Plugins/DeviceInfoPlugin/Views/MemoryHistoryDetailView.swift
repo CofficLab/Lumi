@@ -42,7 +42,6 @@ struct MemoryHistoryDetailView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

@@ -2,6 +2,8 @@ import MagicKit
 import SwiftUI
 
 /// 语言切换插件
+///
+/// 在工具栏右侧提供语言选择器（LanguageSelector）。
 actor AgentLanguagePlugin: SuperPlugin {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose: Bool = false
@@ -22,11 +24,11 @@ actor AgentLanguagePlugin: SuperPlugin {
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
 
-    @MainActor
-    func addRightHeaderLeadingView() -> AnyView? { nil }
+    // MARK: - Toolbar Views
 
+    /// 工具栏右侧：语言选择器
     @MainActor
-    func addRightHeaderTrailingItems() -> [AnyView] {
-        [AnyView(LanguageSelector())]
+    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(LanguageSelector())
     }
 }

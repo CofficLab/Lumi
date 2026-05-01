@@ -31,19 +31,28 @@ extension SuperPlugin {
     }
 
     /// 默认实现：不提供工具栏前导视图
-    @MainActor func addToolBarLeadingView() -> AnyView? { nil }
+    @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView? { nil }
+
+    /// 默认实现：不提供工具栏中间视图
+    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView? { nil }
 
     /// 默认实现：不提供工具栏右侧视图
-    @MainActor func addToolBarTrailingView() -> AnyView? { nil }
+    @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView? { nil }
 
-    /// 默认实现：不提供详情视图
-    @MainActor func addDetailView() -> AnyView? { nil }
+    /// 默认实现：不提供面板图标（使用插件默认 iconName）
+    nonisolated func addPanelIcon() -> String? { nil }
+
+    /// 默认实现：不提供面板视图
+    @MainActor func addPanelView(activeIcon: String?) -> AnyView? { nil }
+
+    /// 默认实现：不提供 Rail 视图
+    @MainActor func addRailView(activeIcon: String?) -> AnyView? { nil }
+
+    /// 默认实现：不提供右侧栏视图
+    @MainActor func addSidebarView(activeIcon: String?) -> AnyView? { nil }
 
     /// 默认实现：不提供设置视图
     @MainActor func addSettingsView() -> AnyView? { nil }
-
-    /// 默认实现：不提供导航入口
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? { nil }
 
     /// 默认实现：不提供弹窗视图列表（兼容旧版 `addStatusBarPopupView`）
     @MainActor func addStatusBarPopupViews() -> [AnyView] {
@@ -59,4 +68,7 @@ extension SuperPlugin {
 
     /// 默认实现：不提供状态栏内容视图
     @MainActor func addStatusBarContentView() -> AnyView? { nil }
+
+    /// 默认实现：不提供主题贡献
+    @MainActor func addThemeContributions() -> [LumiThemeContribution] { [] }
 }

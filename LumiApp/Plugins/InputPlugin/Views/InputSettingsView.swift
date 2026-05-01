@@ -68,8 +68,6 @@ struct InputSettingsView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(InputPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

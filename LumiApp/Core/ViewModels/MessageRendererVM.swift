@@ -6,7 +6,8 @@ import SwiftUI
 /// 消息渲染器 ViewModel
 ///
 /// 全局单例，管理所有注册的消息渲染器。
-/// 插件可以在 `onRegister()` 中注册自定义渲染器。
+/// 渲染器由 `PluginVM` 在插件发现阶段自动收集（通过 `SuperPlugin.messageRenderers()`），
+/// 无需手动注册。
 ///
 /// ## 架构说明
 ///
@@ -16,16 +17,10 @@ import SwiftUI
 /// ## 使用示例
 ///
 /// ```swift
-/// // 在插件中注册渲染器
+/// // 在插件中声明渲染器（推荐）
 /// actor MyPlugin: SuperPlugin {
-///     nonisolated func onRegister() {
-///         Task { @MainActor in
-///             // 通过环境变量访问（推荐）
-///             messageRendererVM.register(LoadingModelRenderer())
-///             
-///             // 或使用单例（仅用于插件初始化阶段）
-///             MessageRendererVM.shared.register(LoadingModelRenderer())
-///         }
+///     func messageRenderers() -> [any SuperMessageRenderer] {
+///         [MyCustomRenderer()]
 ///     }
 /// }
 ///

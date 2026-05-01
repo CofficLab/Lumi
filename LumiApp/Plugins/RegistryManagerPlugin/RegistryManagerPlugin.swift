@@ -22,27 +22,21 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI
 
+    
+
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                AnyView(RegistryManagerView())
-            }
-        ]
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == Self.iconName else { return nil }
+        return AnyView(RegistryManagerView())
     }
+
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(RegistryManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

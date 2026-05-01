@@ -153,7 +153,6 @@ struct ClipboardItemRow: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

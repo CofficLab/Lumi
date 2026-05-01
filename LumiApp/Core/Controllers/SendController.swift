@@ -143,7 +143,7 @@ final class SendController: ObservableObject, SuperLog {
             self?.container.conversationSendStatusVM.clearStatus(conversationId: conversationId)
         }
 
-        let pipeline = SendPipeline(middlewares: container.pluginVM.getSendMiddlewares())
+        let pipeline = SendPipeline(middlewares: container.pluginVM.getSuperSendMiddlewares())
         await pipeline.run(ctx: ctx) { _ in
             if Self.verbose > 1 {
                 AppLogger.core.info("\(Self.t) 发送管道完成")

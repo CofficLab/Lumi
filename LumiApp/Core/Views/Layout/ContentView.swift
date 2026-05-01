@@ -4,28 +4,23 @@ import SwiftUI
 
 /// 主内容视图，管理应用的整体布局和导航结构
 ///
-/// 支持多窗口模式，每个窗口有独立的 WindowState
+/// 布局完全由各插件自行决定，核心只提供活动栏 + 面板内容区。
+/// 不再有全局右侧栏，右侧栏由各插件在自己的面板视图内自行管理。
 struct ContentView: View, SuperLog {
-    /// emoji 标识符
     nonisolated static let emoji = "📱"
-    /// 是否启用详细日志输出
     nonisolated static let verbose: Bool = false
+
     @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var providerRegistry: LLMProviderRegistry
+    @EnvironmentObject var layoutVM: LayoutVM
 
-    /// 打开窗口的环境变量
     @Environment(\.openWindow) private var openWindow
-
-    /// 当前配色方案（浅色/深色模式）
     @Environment(\.colorScheme) private var colorScheme
 
     /// 窗口级状态（每个窗口独立）
     @StateObject private var windowState: WindowState
-
-    /// 默认选中的导航 ID
-    var defaultNavigationId: String?
 
     /// 默认侧边栏可见性
     var defaultSidebarVisibility: Bool?
@@ -36,19 +31,15 @@ struct ContentView: View, SuperLog {
     /// 初始项目路径
     var initialProjectPath: String?
 
-    /// 初始化
     init(
-        defaultNavigationId: String? = nil,
         defaultSidebarVisibility: Bool? = nil,
         initialConversationId: UUID? = nil,
         initialProjectPath: String? = nil
     ) {
-        self.defaultNavigationId = defaultNavigationId
         self.defaultSidebarVisibility = defaultSidebarVisibility
         self.initialConversationId = initialConversationId
         self.initialProjectPath = initialProjectPath
 
-        // 创建窗口状态
         _windowState = StateObject(wrappedValue: WindowState(
             conversationId: initialConversationId,
             projectPath: initialProjectPath
@@ -63,28 +54,9 @@ struct ContentView: View, SuperLog {
             pluginProvider: pluginProvider,
             themeManager: themeManager,
             content: {
-                Group {
-                    VStack(spacing: 0) {
-                        // 主内容区域：左侧栏 + 中间栏 + 右侧栏
-                        Group {
-                            if windowState.sidebarVisibility {
-                                HSplitView {
-                                    LeftSidebar(sidebarVisibility: $windowState.sidebarVisibility)
-                                        .frame(minWidth: 210, idealWidth: 220, maxWidth: 400)
-                                        .background(SplitViewWidthPersistenceConfigurator(storageKey: "Split.MainMode.SidebarFraction"))
-
-                                    rightPrimaryContent
-                                }
-                                .background(SplitViewAutosaveConfigurator(autosaveName: "MainMode_SidebarSplit"))
-                            } else {
-                                rightPrimaryContent
-                            }
-                        }
-                        .id("unifiedLeftSplitView")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        StatusBar()
-                    }
+                VStack(spacing: 0) {
+                    mainContent
+                    StatusBar()
                 }
             },
             openSettings: openSettings,
@@ -92,247 +64,105 @@ struct ContentView: View, SuperLog {
             onAppear: onAppear,
             onChangeColumnVisibility: onChangeColumnVisibility
         )
+        .toolbar {
+            let leadingViews = pluginProvider.getToolbarLeadingViews()
+            let centerViews = pluginProvider.getToolbarCenterViews()
+            let trailingViews = pluginProvider.getToolbarTrailingViews()
+
+            ToolbarItemGroup(placement: .navigation) {
+                ForEach(Array(leadingViews.enumerated()), id: \.offset) { _, view in
+                    view
+                }
+            }
+
+            ToolbarItemGroup(placement: .principal) {
+                HStack(spacing: 8) {
+                    ForEach(Array(centerViews.enumerated()), id: \.offset) { _, view in
+                        view
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+
+            ToolbarItemGroup(placement: .cancellationAction) {
+                ForEach(Array(trailingViews.enumerated()), id: \.offset) { _, view in
+                    view
+                }
+            }
+        }
         .environment(\.windowState, windowState)
     }
 
+    /// 主内容区域：活动栏 + Rail + 面板 + 右侧栏（只要有插件提供右侧视图就显示）
     @ViewBuilder
-    private var rightPrimaryContent: some View {
-        // 中间 + 右侧区域（根据模式切换布局）
+    private var mainContent: some View {
         Group {
-            if app.selectedMode == .agent {
-                // Agent 模式：三栏布局（中间 + 右侧）
-                if providerRegistry.providerTypes.isEmpty {
+            if providerRegistry.providerTypes.isEmpty {
+                HSplitView {
+                    ActivityBar()
                     AgentModeUnavailableGuideView()
-                } else if pluginProvider.hasDetailViews() {
-                    HSplitView {
-                        MiddleColumn()
-                            .background(SplitViewWidthPersistenceConfigurator(storageKey: "Split.AgentMode.DetailFraction"))
-                        RightColumn()
-                    }
-                    .id("unifiedRightSplitView")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .ignoresSafeArea()
-                    .background(SplitViewAutosaveConfigurator(autosaveName: "AgentMode_DetailRightSplit"))
-                } else {
-                    RightColumn()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
             } else {
-                // App 模式：仅使用中间栏，不占用右侧栏宽度
-                MiddleColumn()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                let sidebarViews = pluginProvider.getSidebarViews()
+                let hasRail = pluginProvider.hasRail()
+
+                if !sidebarViews.isEmpty && hasRail {
+                    HSplitView {
+                        // 图标栏（固定 48px）
+                        ActivityBar()
+
+                        // Rail 栏（活动栏与面板之间的辅助栏，全局最多一个插件提供）
+                        RailView()
+
+                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
+                        PanelContentView().frame(maxWidth: .infinity)
+
+                        // 右侧栏：聚合所有插件提供的侧边栏视图
+                        RightSidebarContainerView(views: sidebarViews)
+                    }
+                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                } else if !sidebarViews.isEmpty {
+                    HSplitView {
+                        // 图标栏（固定 48px）
+                        ActivityBar()
+
+                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
+                        PanelContentView().frame(maxWidth: .infinity)
+
+                        // 右侧栏：聚合所有插件提供的侧边栏视图
+                        RightSidebarContainerView(views: sidebarViews)
+                    }
+                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                } else if hasRail {
+                    HSplitView {
+                        // 图标栏（固定 48px）
+                        ActivityBar()
+
+                        // Rail 栏（活动栏与面板之间的辅助栏，全局最多一个插件提供）
+                        RailView()
+
+                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
+                        PanelContentView().frame(maxWidth: .infinity)
+                    }
+                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                } else {
+                    HSplitView {
+                        // 图标栏（固定 48px）
+                        ActivityBar()
+
+                        // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
+                        PanelContentView().frame(maxWidth: .infinity)
+                    }
+                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-// MARK: - SplitView Autosave Helper
-
-/// 为 macOS 的 `HSplitView` / `VSplitView` 配置 `autosaveName`，以持久化分栏宽度
-private struct SplitViewAutosaveConfigurator: NSViewRepresentable {
-    let autosaveName: String
-
-    func makeNSView(context: Context) -> AutosaveConfiguratorView {
-        AutosaveConfiguratorView(autosaveName: autosaveName)
-    }
-
-    func updateNSView(_ nsView: AutosaveConfiguratorView, context: Context) {
-        nsView.autosaveName = autosaveName
-    }
-}
-
-/// 为 SplitView 增加显式宽度记忆（比例），用于下次主动恢复。
-private struct SplitViewWidthPersistenceConfigurator: NSViewRepresentable {
-    let storageKey: String
-
-    func makeNSView(context: Context) -> SplitViewWidthPersistenceView {
-        SplitViewWidthPersistenceView(storageKey: storageKey)
-    }
-
-    func updateNSView(_ nsView: SplitViewWidthPersistenceView, context: Context) {
-        nsView.storageKey = storageKey
-        nsView.attachIfNeeded()
-    }
-}
-
-/// 在 viewDidMoveToWindow 中配置 NSSplitView 的 autosaveName，确保视图已在窗口层级中
-private final class AutosaveConfiguratorView: NSView {
-    var autosaveName: String {
-        didSet { applyAutosaveIfNeeded() }
-    }
-
-    init(autosaveName: String) {
-        self.autosaveName = autosaveName
-        super.init(frame: .zero)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if window != nil {
-            applyAutosaveIfNeeded()
-        }
-    }
-
-    private var hasApplied = false
-
-    private func applyAutosaveIfNeeded() {
-        guard !hasApplied, !autosaveName.isEmpty, let splitView = findSplitView() else { return }
-        guard splitView.autosaveName != autosaveName else { return }
-
-        splitView.identifier = NSUserInterfaceItemIdentifier(autosaveName)
-        splitView.autosaveName = autosaveName
-        hasApplied = true
-    }
-
-    /// 从当前视图向上查找，或从同层兄弟视图中查找 NSSplitView（SwiftUI .background 与主内容为兄弟关系）
-    private func findSplitView() -> NSSplitView? {
-        // 1. 向上遍历父视图链
-        var current: NSView? = self
-        while let node = current {
-            if let sv = node as? NSSplitView { return sv }
-            // 2. 检查兄弟视图中是否有 NSSplitView（包括其子视图）
-            if let parent = node.superview {
-                for sibling in parent.subviews where sibling !== node {
-                    if let found = findSplitViewRecursive(in: sibling) {
-                        return found
-                    }
-                }
-            }
-            current = node.superview
-        }
-        return nil
-    }
-
-    private func findSplitViewRecursive(in view: NSView?) -> NSSplitView? {
-        guard let view = view else { return nil }
-        if let sv = view as? NSSplitView { return sv }
-        for subview in view.subviews {
-            if let found = findSplitViewRecursive(in: subview) { return found }
-        }
-        return nil
-    }
-}
-
-private final class SplitViewWidthPersistenceView: NSView {
-    var storageKey: String
-    private var observedSplitView: NSSplitView?
-    private var resizeObserver: NSObjectProtocol?
-    private var didApplySavedValue = false
-    private var pendingRetryWorkItem: DispatchWorkItem?
-
-    init(storageKey: String) {
-        self.storageKey = storageKey
-        super.init(frame: .zero)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        attachIfNeeded()
-    }
-
-    func attachIfNeeded() {
-        guard window != nil else { return }
-        guard let splitView = findSplitView() else {
-            scheduleRetryAttach()
-            return
-        }
-        guard splitView !== observedSplitView else { return }
-
-        pendingRetryWorkItem?.cancel()
-        pendingRetryWorkItem = nil
-        observedSplitView = splitView
-        didApplySavedValue = false
-
-        if let resizeObserver {
-            NotificationCenter.default.removeObserver(resizeObserver)
-            self.resizeObserver = nil
-        }
-
-        applySavedRatioIfNeeded()
-
-        resizeObserver = NotificationCenter.default.addObserver(
-            forName: NSSplitView.didResizeSubviewsNotification,
-            object: splitView,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.persistCurrentRatio()
-            }
-        }
-    }
-
-    private func applySavedRatioIfNeeded() {
-        guard !didApplySavedValue else { return }
-        guard let splitView = observedSplitView else { return }
-        guard splitView.arrangedSubviews.count >= 2 else { return }
-
-        let savedRatio = UserDefaults.standard.double(forKey: storageKey)
-        guard savedRatio > 0.0, savedRatio < 1.0 else {
-            didApplySavedValue = true
-            return
-        }
-
-        DispatchQueue.main.async { [weak self, weak splitView] in
-            guard let self, let splitView else { return }
-            guard splitView.arrangedSubviews.count >= 2 else { return }
-            let total = splitView.bounds.width
-            guard total > 0 else { return }
-
-            let dividerThickness = splitView.dividerThickness
-            let usableWidth = max(1, total - dividerThickness)
-            let target = max(0, min(usableWidth, usableWidth * savedRatio))
-            splitView.setPosition(target, ofDividerAt: 0)
-            self.didApplySavedValue = true
-        }
-    }
-
-    private func persistCurrentRatio() {
-        guard let splitView = observedSplitView else { return }
-        guard splitView.arrangedSubviews.count >= 2 else { return }
-
-        let total = splitView.bounds.width
-        guard total > 0 else { return }
-
-        let usableWidth = total - splitView.dividerThickness
-        guard usableWidth > 1 else { return }
-
-        let firstWidth = splitView.arrangedSubviews[0].frame.width
-        let ratio = firstWidth / usableWidth
-        guard ratio > 0.0, ratio < 1.0 else { return }
-
-        UserDefaults.standard.set(ratio, forKey: storageKey)
-    }
-
-    private func findSplitView() -> NSSplitView? {
-        var current: NSView? = self
-        while let node = current {
-            if let sv = node as? NSSplitView { return sv }
-            current = node.superview
-        }
-        return nil
-    }
-
-    private func scheduleRetryAttach() {
-        pendingRetryWorkItem?.cancel()
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.attachIfNeeded()
-        }
-        pendingRetryWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: workItem)
-    }
-
-}
+// MARK: - Content View Body
 
 struct ContentViewBody<Content: View>: View {
     @Binding var sidebarVisibility: Bool
@@ -370,15 +200,22 @@ struct ContentViewBody<Content: View>: View {
         self.onChangeColumnVisibility = onChangeColumnVisibility
     }
 
+    /// 根据当前应用主题计算应使用的 colorScheme，
+    /// 使得 `Color.adaptive(light:dark:)` 等基于 colorScheme 的颜色
+    /// 能与主题保持一致（例如 One Dark 深色主题在浅色系统模式下也使用深色文字色）。
+    private var preferredColorScheme: ColorScheme {
+        themeManager.activeAppTheme.isDarkTheme ? .dark : .light
+    }
+
     var body: some View {
         content
+            .preferredColorScheme(preferredColorScheme)
             .onOpenSettings(perform: openSettings)
             .onOpenPluginSettings(perform: openPluginSettings)
             .background {
                 GeometryReader { proxy in
-                    themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
+                    themeManager.activeAppTheme.makeGlobalBackground(proxy: proxy)
                 }
-                .ignoresSafeArea()
             }
             .onAppear(perform: onAppear)
             .onChange(of: columnVisibility) { _, _ in
@@ -393,46 +230,29 @@ struct ContentViewBody<Content: View>: View {
 // MARK: - Event Handler
 
 extension ContentView {
-    /// 视图出现时的事件处理
     func onAppear() {
         // 注册窗口到 WindowManager
         WindowManager.shared.registerWindow(windowState)
 
-        // 配置窗口样式
+        // 配置窗口标题
         if let window = NSApplication.shared.keyWindow ?? NSApplication.shared.windows.last {
-            window.titlebarAppearsTransparent = true
-            window.styleMask.insert(.fullSizeContentView)
-
-            // 关联 NSWindow 和窗口状态
             WindowManager.shared.associateWindow(window, with: windowState.id)
-
-            // 设置窗口标题
             window.title = windowState.title
         }
 
         // 应用默认配置
-        if let defaultNavigationId = defaultNavigationId {
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t) Setting default navigation to: \(defaultNavigationId)")
-            }
-            app.selectedNavigationId = defaultNavigationId
-        }
-
         if let defaultSidebarVisibility = defaultSidebarVisibility {
             windowState.sidebarVisibility = defaultSidebarVisibility
         }
 
-        // 监听窗口标题变化并更新 NSWindow 标题
         setupWindowTitleObserver()
     }
 
-    /// 设置窗口标题观察者
     private func setupWindowTitleObserver() {
         let windowId = windowState.id
         windowState.$title
             .receive(on: DispatchQueue.main)
             .sink { newTitle in
-                // 更新 NSWindow 标题
                 if let window = NSApplication.shared.windows.first(where: { _ in
                     WindowManager.shared.getWindowState(windowId) != nil
                 }) {
@@ -442,7 +262,6 @@ extension ContentView {
             .store(in: &windowState.cancellables)
     }
 
-    /// 处理列可见性变更事件
     func onChangeColumnVisibility() {
         if windowState.columnVisibility == .detailOnly {
             windowState.sidebarVisibility = false
@@ -451,22 +270,12 @@ extension ContentView {
         }
     }
 
-    /// 打开设置视图（在独立窗口中）
     func openSettings() {
         openWindow(id: SettingsWindowID.settings)
     }
 
-    /// 打开插件设置视图（在独立窗口中）
     func openPluginSettings() {
         openWindow(id: SettingsWindowID.settings)
-    }
-}
-
-// MARK: - Clamped Extension
-
-private extension Comparable {
-    func clamped(min minValue: Self, max maxValue: Self) -> Self {
-        Swift.min(Swift.max(self, minValue), maxValue)
     }
 }
 

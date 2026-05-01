@@ -16,7 +16,7 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     static let navigationId: String = "device_info"
     static let displayName: String = String(localized: "Device Info", table: "DeviceInfo")
     static let description: String = String(localized: "Show system status like CPU, Memory, Disk, Battery, etc.", table: "DeviceInfo")
-    static let iconName: String = "macbook.and.iphone"
+    static let iconName = "macbook.and.iphone"
     static let isConfigurable: Bool = false
     static var order: Int { 10 }
 
@@ -48,26 +48,18 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: String(localized: "Overview", table: "DeviceInfo"),
-                icon: "macbook.and.iphone",
-                pluginId: Self.id
-            ) {
-                DeviceInfoView()
-            },
-        ]
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == Self.iconName else { return nil }
+        return AnyView(DeviceInfoView())
     }
+
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(DeviceInfoPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

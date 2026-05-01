@@ -28,6 +28,8 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
+    
+
     @MainActor func addStatusBarPopupView() -> AnyView? {
         AnyView(NetworkStatusBarPopupView())
     }
@@ -36,24 +38,17 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
         AnyView(NetworkStatusBarContentView())
     }
 
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                NetworkDashboardView()
-            },
-        ]
+    @MainActor
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == Self.iconName else { return nil }
+        return AnyView(NetworkDashboardView())
     }
+
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(NetworkManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

@@ -3,16 +3,19 @@ import SwiftUI
 /// 底部状态栏视图
 struct StatusBar: View {
     @EnvironmentObject var pluginProvider: PluginVM
-    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
+        let theme = themeManager.activeAppTheme
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews()
+        let statusBarCenterViews = pluginProvider.getStatusBarCenterViews()
         let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews()
         let hasLeadingViews = !statusBarLeadingViews.isEmpty
+        let hasCenterViews = !statusBarCenterViews.isEmpty
         let hasTrailingViews = !statusBarTrailingViews.isEmpty
 
         return Group {
-            if hasLeadingViews || hasTrailingViews {
+            if hasLeadingViews || hasCenterViews || hasTrailingViews {
                 HStack(spacing: 12) {
                     // 左侧视图
                     if hasLeadingViews {
@@ -20,6 +23,18 @@ struct StatusBar: View {
                             ForEach(statusBarLeadingViews.indices, id: \.self) { index in
                                 statusBarLeadingViews[index]
                                     .id("status_bar_leading_\(index)")
+                            }
+                        }
+                    }
+
+                    Spacer()
+
+                    // 中间视图
+                    if hasCenterViews {
+                        HStack(spacing: 12) {
+                            ForEach(statusBarCenterViews.indices, id: \.self) { index in
+                                statusBarCenterViews[index]
+                                    .id("status_bar_center_\(index)")
                             }
                         }
                     }
@@ -44,7 +59,7 @@ struct StatusBar: View {
                 .appSurface(style: .custom(statusBarBackground), cornerRadius: 0)
                 .overlay(alignment: .top) {
                     Rectangle()
-                        .fill(statusBarTopDivider)
+                        .fill(theme.workspaceTextColor().opacity(0.18))
                         .frame(height: 1)
                 }
             }
@@ -52,37 +67,10 @@ struct StatusBar: View {
     }
 
     private var statusBarBackground: Color {
-        #if DEBUG
-        // Debug 模式使用黄色调
-        switch colorScheme {
-        case .light:
-            return Color(hex: "F5A623")  // 金黄色
-        case .dark:
-            return Color(hex: "D48806")  // 深金黄色
-        @unknown default:
-            return Color(hex: "D48806")
-        }
-        #else
-        // Release 模式使用蓝色调
-        switch colorScheme {
-        case .light:
-            return Color(hex: "007ACC")
-        case .dark:
-            return Color(hex: "0E639C")
-        @unknown default:
-            return Color(hex: "0E639C")
-        }
-        #endif
-    }
-
-    private var statusBarTopDivider: Color {
-        switch colorScheme {
-        case .light:
-            return Color.black.opacity(0.18)
-        case .dark:
-            return Color.white.opacity(0.18)
-        @unknown default:
-            return Color.white.opacity(0.18)
-        }
+        let theme = themeManager.activeAppTheme
+        // 状态栏使用主题的深色氛围色，确保与整体主题协调
+        return theme.isDarkTheme
+            ? theme.atmosphereColors().deep
+            : theme.accentColors().primary
     }
 }

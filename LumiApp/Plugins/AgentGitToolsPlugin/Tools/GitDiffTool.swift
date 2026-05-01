@@ -3,7 +3,7 @@ import MagicKit
 import SwiftUI
 
 /// Git 差异工具
-struct GitDiffTool: AgentTool, SuperLog {
+struct GitDiffTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
     nonisolated static let verbose: Bool = true
     let name = "git_diff"

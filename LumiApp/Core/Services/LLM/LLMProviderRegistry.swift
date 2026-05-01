@@ -43,16 +43,20 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     /// - Parameter providerType: 要注册的供应商类型
     func register<T: SuperLLMProvider>(_ providerType: T.Type) {
         providerTypes.append(providerType)
-        if Self.verbose {
-            let status = providerType.isEnabled ? "✅" : "⏸️"
-            AppLogger.core.info("\(self.t) \(status) 已注册供应商：\(providerType.displayName) (ID: \(providerType.id))")
-        }
+        let status = providerType.isEnabled ? "enabled" : "disabled"
+        AppLogger.core.info("\(self.t)注册 provider type: \(providerType.id) (\(providerType.displayName)), status=\(status), total=\(self.providerTypes.count)")
     }
 
     /// 批量注册供应商类型
     ///
     /// - Parameter providerTypes: 要注册的供应商类型数组
     func register(_ providerTypes: [any SuperLLMProvider.Type]) {
+        if providerTypes.isEmpty {
+            AppLogger.core.warning("\(self.t)收到空的 provider type 列表，未注册任何 LLM 供应商")
+        } else {
+            let providerIDs = providerTypes.map { $0.id }.joined(separator: ", ")
+            AppLogger.core.info("\(self.t)准备批量注册 \(providerTypes.count) 个 provider type: \(providerIDs)")
+        }
         for type in providerTypes {
             register(type)
         }
@@ -172,12 +176,4 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     }
 }
 
-// MARK: - Provider Registration Extension
 
-/// 供应商注册协议
-///
-/// 允许供应商类型自行注册到注册表。
-protocol ProviderRegistrant {
-    /// 注册到指定的注册表
-    static func register(to registry: LLMProviderRegistry)
-}

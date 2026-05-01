@@ -14,7 +14,7 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
     static let navigationId = "port_manager"
     static let displayName = String(localized: "Port Manager", table: "PortManager")
     static let description = String(localized: "View and manage port usage", table: "PortManager")
-    static let iconName = "network"
+    static let iconName = "arrow.up.arrow.down.circle"
     static var order: Int { 20 }
 
     nonisolated var instanceLabel: String { Self.id }
@@ -25,26 +25,21 @@ actor PortManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                PortManagerView()
-            },
-        ]
+    
+
+    @MainActor
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == Self.iconName else { return nil }
+        return AnyView(PortManagerView())
     }
+
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(PortManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

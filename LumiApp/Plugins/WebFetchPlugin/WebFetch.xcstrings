@@ -1,40 +1,52 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Web Fetch" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Web Fetch"
+  "sourceLanguage": "en",
+  "strings": {
+    "Web Fetch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web Fetch"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "网页抓取"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页抓取"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web 獲取"
           }
         }
       }
     },
-    "提供网页抓取和内容提取功能，支持 HTML 转 Markdown。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provides web page fetching and content extraction, supports HTML to Markdown conversion."
+    "提供网页抓取和内容提取功能，支持 HTML 转 Markdown。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides web page fetching and content extraction, supports HTML to Markdown conversion."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供网页抓取和内容提取功能，支持 HTML 转 Markdown。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供网页抓取和内容提取功能，支持 HTML 转 Markdown。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供網頁抓取和內容提取功能，支持 HTML 轉 Markdown。"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

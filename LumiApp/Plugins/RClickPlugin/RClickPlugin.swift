@@ -33,27 +33,21 @@ actor RClickPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI
 
+    
+
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId ?? Self.id,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                RClickSettingsView()
-            },
-        ]
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == Self.iconName else { return nil }
+        return AnyView(RClickSettingsView())
     }
+
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(RClickPlugin.id)
         .inRootView()
         .withDebugBar()
 }

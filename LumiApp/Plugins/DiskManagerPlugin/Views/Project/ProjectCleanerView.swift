@@ -68,7 +68,6 @@ struct ProjectCleanerView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

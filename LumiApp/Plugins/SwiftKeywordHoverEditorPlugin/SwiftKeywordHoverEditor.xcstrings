@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Shows inline hover documentation for common Swift keywords.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows inline hover documentation for common Swift keywords."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为常见 Swift 关键字显示内联悬停文档。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為常見 Swift 關鍵字顯示內聯懸停文檔。"
+          }
+        }
+      }
+    },
+    "Swift Keyword Hover": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift Keyword Hover"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 关键字悬停"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 關鍵字懸停"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.1"
+}

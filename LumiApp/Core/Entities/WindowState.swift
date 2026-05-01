@@ -28,9 +28,6 @@ final class WindowState: ObservableObject, Identifiable, SuperLog {
     /// 导航分栏视图的列可见性状态
     @Published var columnVisibility: NavigationSplitViewVisibility = .automatic
 
-    /// 当前应用模式
-    @Published var selectedMode: AppMode = .agent
-
     /// 窗口是否活跃
     @Published var isActive: Bool = false
 
@@ -87,15 +84,6 @@ final class WindowState: ObservableObject, Identifiable, SuperLog {
         if Self.verbose {
             let pathString = path ?? "nil"
             AppLogger.core.info("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到项目: \(pathString)")
-        }
-    }
-
-    /// 切换应用模式
-    func switchMode(_ mode: AppMode) {
-        selectedMode = mode
-        if Self.verbose {
-            let modeString = String(describing: mode)
-            AppLogger.core.info("\(Self.t)窗口 \(self.id.uuidString.prefix(8)) 切换到模式: \(modeString)")
         }
     }
 

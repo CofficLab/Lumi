@@ -6,6 +6,7 @@ import MagicKit
 struct MarkdownContent: View {
     let content: String
 
+    @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.preferOuterScroll) private var preferOuterScroll
 
     var body: some View {
@@ -17,7 +18,8 @@ struct MarkdownContent: View {
 
     /// 聊天消息主题
     private var messageTheme: MarkdownTheme {
-        MarkdownTheme(
+        let theme = themeManager.activeAppTheme
+        return MarkdownTheme(
             headingFont: { level in
                 switch level {
                 case 1: return .system(size: 24, weight: .bold)
@@ -33,7 +35,9 @@ struct MarkdownContent: View {
             codeBlockBackground: AppUI.Color.semantic.textSecondary.opacity(0.06),
             quoteBorderColor: AppUI.Color.semantic.textSecondary.opacity(0.4),
             tableHeaderBackground: AppUI.Color.semantic.textSecondary.opacity(0.1),
-            showLanguageLabel: true
+            showLanguageLabel: true,
+            textColor: theme.workspaceTextColor(),
+            secondaryTextColor: theme.workspaceSecondaryTextColor()
         )
     }
 }

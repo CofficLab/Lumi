@@ -18,7 +18,7 @@ import os
 /// - 每次发送消息时动态注入最新的项目信息
 /// - 如果未选择项目，静默跳过
 @MainActor
-final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
+final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "🔄"
     nonisolated static let verbose: Bool = false
     let id: String = "agent-context-sync"

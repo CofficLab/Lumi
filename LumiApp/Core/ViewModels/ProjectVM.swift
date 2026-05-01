@@ -76,7 +76,7 @@ final class ProjectVM: ObservableObject, SuperLog {
         self.currentProject = project
     }
 
-    /// 设置最近项目列表（由 RecentProjectsPlugin 调用）
+    /// 设置最近项目列表
     func setRecentProjects(_ projects: [Project]) {
         recentProjects = projects
     }

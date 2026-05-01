@@ -69,53 +69,38 @@ enum AppSettingStore {
         }
     }
 
-    // MARK: - Mode
+    // MARK: - Layout
 
-    private static let modeKey = "App_SelectedMode"
-
-    /// 加载当前模式
-    static func loadMode() -> AppMode? {
-        guard let raw = object(forKey: modeKey) as? String else { return nil }
-        return AppMode(rawValue: raw)
-    }
-
-    /// 保存模式
-    static func saveMode(_ mode: AppMode) {
-        set(mode.rawValue, forKey: modeKey)
-    }
-
-    // MARK: - Navigation
-
-    private static let selectedNavigationIdKey = "App_SelectedNavigationId"
     private static let selectedAgentSidebarTabIdKey = "App_SelectedAgentSidebarTabId"
     private static let selectedAgentDetailIdKey = "App_SelectedAgentDetailId"
+    private static let activePanelIconKey = "App_ActivePanelIcon"
 
-    /// 加载 App 模式下的上次选中导航入口 ID
-    static func loadSelectedNavigationId() -> String? {
-        object(forKey: selectedNavigationIdKey) as? String
+    /// 加载上次选中的活动栏图标名称
+    static func loadActivePanelIcon() -> String? {
+        object(forKey: activePanelIconKey) as? String
     }
 
-    /// 保存 App 模式下的上次选中导航入口 ID
-    static func saveSelectedNavigationId(_ id: String?) {
-        set(id, forKey: selectedNavigationIdKey)
+    /// 保存当前选中的活动栏图标名称
+    static func saveActivePanelIcon(_ icon: String?) {
+        set(icon, forKey: activePanelIconKey)
     }
 
-    /// 加载 Agent 模式下上次选中的侧边栏 Tab ID
+    /// 加载上次选中的侧边栏 Tab ID
     static func loadSelectedAgentSidebarTabId() -> String? {
         object(forKey: selectedAgentSidebarTabIdKey) as? String
     }
 
-    /// 保存 Agent 模式下选中的侧边栏 Tab ID
+    /// 保存选中的侧边栏 Tab ID
     static func saveSelectedAgentSidebarTabId(_ id: String?) {
         set(id, forKey: selectedAgentSidebarTabIdKey)
     }
 
-    /// 加载 Agent 模式下上次选中的 Detail ID
+    /// 加载上次选中的 Detail ID
     static func loadSelectedAgentDetailId() -> String? {
         object(forKey: selectedAgentDetailIdKey) as? String
     }
 
-    /// 保存 Agent 模式下选中的 Detail ID
+    /// 保存选中的 Detail ID
     static func saveSelectedAgentDetailId(_ id: String?) {
         set(id, forKey: selectedAgentDetailIdKey)
     }
@@ -124,6 +109,10 @@ enum AppSettingStore {
 
     private static let settingsSelectionTypeKey = "App_SettingsSelectionType"
     private static let settingsSelectionValueKey = "App_SettingsSelectionValue"
+    private static let pendingEditorSettingsSearchQueryKey = "App_PendingEditorSettingsSearchQuery"
+    private static let editorRecentCommandIDsKey = "App_EditorRecentCommandIDs"
+    private static let editorCommandUsageCountsKey = "App_EditorCommandUsageCounts"
+    private static let editorCommandPaletteCategoryKey = "App_EditorCommandPaletteCategory"
 
     /// 加载设置界面的上次选中项
     /// - Returns: 元组 (类型，值)，类型为 "core" 或 "plugin"
@@ -148,6 +137,44 @@ enum AppSettingStore {
     static func clearSettingsSelection() {
         set(nil, forKey: settingsSelectionTypeKey)
         set(nil, forKey: settingsSelectionValueKey)
+    }
+
+    static func loadPendingEditorSettingsSearchQuery() -> String? {
+        object(forKey: pendingEditorSettingsSearchQueryKey) as? String
+    }
+
+    static func savePendingEditorSettingsSearchQuery(_ query: String?) {
+        set(query, forKey: pendingEditorSettingsSearchQueryKey)
+    }
+
+    static func consumePendingEditorSettingsSearchQuery() -> String? {
+        let query = loadPendingEditorSettingsSearchQuery()
+        savePendingEditorSettingsSearchQuery(nil)
+        return query
+    }
+
+    static func loadEditorRecentCommandIDs() -> [String] {
+        object(forKey: editorRecentCommandIDsKey) as? [String] ?? []
+    }
+
+    static func saveEditorRecentCommandIDs(_ ids: [String]) {
+        set(ids, forKey: editorRecentCommandIDsKey)
+    }
+
+    static func loadEditorCommandUsageCounts() -> [String: Int] {
+        object(forKey: editorCommandUsageCountsKey) as? [String: Int] ?? [:]
+    }
+
+    static func saveEditorCommandUsageCounts(_ counts: [String: Int]) {
+        set(counts, forKey: editorCommandUsageCountsKey)
+    }
+
+    static func loadEditorCommandPaletteCategory() -> String? {
+        object(forKey: editorCommandPaletteCategoryKey) as? String
+    }
+
+    static func saveEditorCommandPaletteCategory(_ rawValue: String?) {
+        set(rawValue, forKey: editorCommandPaletteCategoryKey)
     }
 
     // MARK: - Plugin Settings

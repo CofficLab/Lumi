@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Provides Swift primitive type completion suggestions.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provides Swift primitive type completion suggestions." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "提供 Swift 基础类型补全建议。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "提供 Swift 基礎類型補全建議。" } }
+      }
+    },
+    "Swift Primitive Types": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Swift Primitive Types" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Swift 基础类型" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Swift 基礎類型" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

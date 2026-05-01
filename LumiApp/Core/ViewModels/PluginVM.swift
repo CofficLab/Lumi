@@ -27,35 +27,47 @@ import Combine
 /// ## 使用示例
 ///
 /// ```swift
-/// // 获取侧边栏视图
-/// let sidebarViews = PluginVM.shared.getSidebarViews()
+/// // 获取面板视图
+/// let panels = PluginVM.shared.getPanelItems()
 ///
 /// // 检查插件是否启用
 /// let isEnabled = PluginVM.shared.isPluginEnabled(somePlugin)
 /// ```
 @MainActor
 final class PluginVM: ObservableObject, SuperLog {
-    struct SidebarTabItem: Identifiable, Equatable {
+    /// 面板图标项（仅用于活动栏图标渲染，不包含视图）
+    struct PanelIconItem: Identifiable, Equatable {
         let id: String
         let title: String
         let icon: String
-        let view: AnyView
-        
-        static func == (lhs: SidebarTabItem, rhs: SidebarTabItem) -> Bool {
+
+        static func == (lhs: PanelIconItem, rhs: PanelIconItem) -> Bool {
             lhs.id == rhs.id
         }
     }
 
-    struct AgentDetailEntry: Identifiable, Equatable {
+    /// 面板视图项（用于左侧活动栏注册的统一入口）
+    struct PanelItem: Identifiable, Equatable {
         let id: String
         let title: String
         let icon: String
         let view: AnyView
         
-        static func == (lhs: AgentDetailEntry, rhs: AgentDetailEntry) -> Bool {
+        static func == (lhs: PanelItem, rhs: PanelItem) -> Bool {
             lhs.id == rhs.id
         }
     }
+
+    /// Rail 视图项（活动栏与面板之间的辅助栏，全局最多一个）
+    struct RailItem: Identifiable, Equatable {
+        let id: String
+        let view: AnyView
+
+        static func == (lhs: RailItem, rhs: RailItem) -> Bool {
+            lhs.id == rhs.id
+        }
+    }
+
     /// 全局单例
     ///
     /// 整个应用共享同一个 PluginVM 实例。
@@ -80,6 +92,18 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 当插件正在加载时为 false，加载完成后为 true。
     @Published private(set) var isLoaded: Bool = false
 
+    /// 当前被激活的 ActivityBar 图标（SF Symbol 名称）
+    ///
+    /// 当用户点击活动栏图标时更新。内核将其传递给 `addPanelView(activeIcon:)`，
+    /// 插件通过比较 `activeIcon` 与自己的 `addPanelIcon()` 返回值来决定是否提供面板视图。
+    ///
+    /// 自动持久化：每次变化都会写入 `AppSettingStore`，下次启动时自动恢复。
+    @Published var activePanelIcon: String? {
+        didSet {
+            AppSettingStore.saveActivePanelIcon(activePanelIcon)
+        }
+    }
+
     /// 插件设置存储
     ///
     /// 负责持久化用户的插件配置（启用/禁用状态）。
@@ -93,12 +117,19 @@ final class PluginVM: ObservableObject, SuperLog {
     private var cancellables = Set<AnyCancellable>()
     private var sidebarViewsCache: [AnyView]?
     private var sidebarViewsCacheKey: String?
+    private var rightSidebarViewsCache: [AnyView]?
 
     // MARK: - Tools Cache
 
-    private var cachedAgentTools: [AgentTool]?
-    private var cachedAgentToolFactories: [AnyAgentToolFactory]?
-    private var cachedSendMiddlewares: [SendMiddleware]?
+    private var cachedAgentTools: [SuperAgentTool]?
+    private var cachedAgentToolFactories: [AnySuperAgentToolFactory]?
+    private var cachedSuperSendMiddlewares: [SuperSendMiddleware]?
+    /// 已发现的 LLM 供应商类型
+    ///
+    /// 在插件自动发现阶段，从所有实现了 `llmProviderType()` 的插件中收集。
+    /// 需要在 `RootViewContainer` 初始化时通过 `registerLLMProviders(to:)` 注册到 `LLMProviderRegistry`。
+    private(set) var discoveredLLMProviderTypes: [any SuperLLMProvider.Type] = []
+
     /// 初始化插件 VM
     ///
     /// - Parameters:
@@ -110,6 +141,9 @@ final class PluginVM: ObservableObject, SuperLog {
     private init(settingsStore: PluginSettingsVM = PluginSettingsVM.shared, autoDiscover: Bool = true) {
         self.settingsStore = settingsStore
 
+        // 恢复上次选中的活动栏图标（didSet 不会在 init 中触发，无需担心循环写入）
+        self.activePanelIcon = AppSettingStore.loadActivePanelIcon()
+
         if autoDiscover {
             autoDiscoverAndRegisterPlugins()
         }
@@ -119,9 +153,10 @@ final class PluginVM: ObservableObject, SuperLog {
             .sink { [weak self] _ in
                 self?.sidebarViewsCache = nil
                 self?.sidebarViewsCacheKey = nil
+                self?.rightSidebarViewsCache = nil
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
-                self?.cachedSendMiddlewares = nil
+                self?.cachedSuperSendMiddlewares = nil
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -138,13 +173,13 @@ final class PluginVM: ObservableObject, SuperLog {
 
     // MARK: - Agent Tools Aggregation
 
-    func getAgentTools() -> [AgentTool] {
+    func getAgentTools() -> [SuperAgentTool] {
         if let cachedAgentTools {
             return cachedAgentTools
         }
 
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var tools: [(pluginOrder: Int, tool: AgentTool)] = []
+        var tools: [(pluginOrder: Int, tool: SuperAgentTool)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
@@ -163,13 +198,13 @@ final class PluginVM: ObservableObject, SuperLog {
         return sorted
     }
 
-    func getAgentToolFactories() -> [AnyAgentToolFactory] {
+    func getAgentToolFactories() -> [AnySuperAgentToolFactory] {
         if let cachedAgentToolFactories {
             return cachedAgentToolFactories
         }
 
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var factories: [(pluginOrder: Int, f: AnyAgentToolFactory)] = []
+        var factories: [(pluginOrder: Int, f: AnySuperAgentToolFactory)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
@@ -191,13 +226,13 @@ final class PluginVM: ObservableObject, SuperLog {
 
     // MARK: - Send Middleware
 
-    func getSendMiddlewares() -> [SendMiddleware] {
-        if let cachedSendMiddlewares {
-            return cachedSendMiddlewares
+    func getSuperSendMiddlewares() -> [SuperSendMiddleware] {
+        if let cachedSuperSendMiddlewares {
+            return cachedSuperSendMiddlewares
         }
 
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var items: [(pluginOrder: Int, mwOrder: Int, middleware: SendMiddleware)] = []
+        var items: [(pluginOrder: Int, mwOrder: Int, middleware: SuperSendMiddleware)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
@@ -212,7 +247,7 @@ final class PluginVM: ObservableObject, SuperLog {
             return a.middleware.id < b.middleware.id
         }.map(\.middleware)
 
-        cachedSendMiddlewares = sorted
+        cachedSuperSendMiddlewares = sorted
         return sorted
     }
 
@@ -236,6 +271,7 @@ final class PluginVM: ObservableObject, SuperLog {
     @objc private func handleFileSelectionChanged(_ notification: Notification) {
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
+        rightSidebarViewsCache = nil
         objectWillChange.send()
     }
 
@@ -257,17 +293,21 @@ final class PluginVM: ObservableObject, SuperLog {
         // 插件列表将被重建，相关缓存一并清空
         sidebarViewsCache = nil
         sidebarViewsCacheKey = nil
+        rightSidebarViewsCache = nil
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
-        cachedSendMiddlewares = nil
+        cachedSuperSendMiddlewares = nil
 
         var count: UInt32 = 0
         guard let classList = objc_copyClassList(&count) else { return }
         defer { free(UnsafeMutableRawPointer(classList)) }
+
+        AppLogger.core.info("\(self.t)开始扫描运行时插件类，总类数: \(count)")
         
         let classes = UnsafeBufferPointer(start: classList, count: Int(count))
         // 临时存储，包含 (实例，类名，顺序)
         var discoveredItems: [(instance: any SuperPlugin, className: String, order: Int)] = []
+        var pluginClassNames: [String] = []
         
         for i in 0 ..< classes.count {
             let cls: AnyClass = classes[i]
@@ -285,11 +325,15 @@ final class PluginVM: ObservableObject, SuperLog {
             let pluginType = type(of: instance)
             if pluginType.enable {
                 discoveredItems.append((instance, className, pluginType.order))
+                pluginClassNames.append(className)
                 if Self.verbose {
                     AppLogger.core.info("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
                 }
             }
         }
+
+        let sortedPluginClassNames = pluginClassNames.sorted()
+        AppLogger.core.info("\(self.t)运行时发现 \(sortedPluginClassNames.count) 个插件类: \(sortedPluginClassNames.joined(separator: ", "))")
         
         // 按 order 升序排序，确保核心插件先加载
         discoveredItems.sort { $0.order < $1.order }
@@ -302,7 +346,25 @@ final class PluginVM: ObservableObject, SuperLog {
         // 插件已更新，清空聚合缓存，避免在插件加载前被读取后永久缓存为空。
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
-        cachedSendMiddlewares = nil
+        cachedSuperSendMiddlewares = nil
+
+        // 从插件中收集 LLM 供应商类型
+        var providerTypes: [any SuperLLMProvider.Type] = []
+        var providerDiagnostics: [String] = []
+        for plugin in sortedPlugins {
+            let pluginType = type(of: plugin)
+            if let providerType = plugin.llmProviderType() {
+                providerTypes.append(providerType)
+                providerDiagnostics.append("\(pluginType.id)->\(providerType.id)")
+            } else {
+                providerDiagnostics.append("\(pluginType.id)->nil")
+            }
+        }
+        self.discoveredLLMProviderTypes = providerTypes
+
+        let discoveredProviderIDs = providerTypes.map { $0.id }
+        AppLogger.core.info("\(self.t)插件扫描结束，共加载 \(sortedPlugins.count) 个插件；LLM provider 映射: \(providerDiagnostics.joined(separator: ", "))")
+        AppLogger.core.info("\(self.t)最终发现 \(discoveredProviderIDs.count) 个 LLM provider type: \(discoveredProviderIDs.joined(separator: ", "))")
 
         // 调用生命周期钩子
         for plugin in sortedPlugins {
@@ -312,12 +374,22 @@ final class PluginVM: ObservableObject, SuperLog {
                 plugin.onEnable()
             }
         }
+
+        // 从插件中收集消息渲染器并注册到 MessageRendererVM
+        var allRenderers: [any SuperMessageRenderer] = []
+        for plugin in sortedPlugins {
+            let pluginRenderers = plugin.messageRenderers()
+            allRenderers.append(contentsOf: pluginRenderers)
+        }
+        if !allRenderers.isEmpty {
+            MessageRendererVM.shared.register(allRenderers)
+        }
         
         // 发送通知，告知其他组件插件加载完成
         NotificationCenter.postPluginsDidLoad()
         
         if Self.verbose {
-            AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins.")
+            AppLogger.core.info("\(self.t)✅ Auto-discovery complete. Loaded \(sortedPlugins.count) plugins, \(providerTypes.count) LLM providers, \(allRenderers.count) message renderers.")
         }
     }
     
@@ -394,6 +466,32 @@ final class PluginVM: ObservableObject, SuperLog {
         return wrapped
     }
 
+    /// 获取所有插件的工具栏前导视图
+    ///
+    /// 收集所有启用插件提供的工具栏左侧视图。
+    /// 这些视图将在工具栏左侧水平排列显示。
+    ///
+    /// - Returns: 工具栏前导视图数组
+    func getToolbarLeadingViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addToolBarLeadingView(activeIcon: activeIcon) }
+    }
+
+    /// 获取所有插件的工具栏中间视图
+    ///
+    /// 收集所有启用插件提供的工具栏中间视图。
+    /// 这些视图将在工具栏中间位置水平排列显示。
+    ///
+    /// - Returns: 工具栏中间视图数组
+    func getToolbarCenterViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addToolBarCenterView(activeIcon: activeIcon) }
+    }
+
     /// 获取所有插件的工具栏右侧视图
     ///
     /// 收集所有启用插件提供的工具栏右侧视图。
@@ -401,48 +499,127 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 工具栏右侧视图数组
     func getToolbarTrailingViews() -> [AnyView] {
-        plugins
+        let activeIcon = activePanelIcon
+        return plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addToolBarTrailingView() }
+            .compactMap { $0.addToolBarTrailingView(activeIcon: activeIcon) }
     }
 
-    /// 获取所有插件的详情视图
+    /// 获取所有面板图标项（用于左侧活动栏）
     ///
-    /// 收集所有启用插件提供的详情视图。
-    /// 这些视图将显示在主内容区域。
+    /// 仅收集各插件通过 `addPanelIcon()` 提供的图标信息，
+    /// 不触发 `addPanelView(activeIcon:)`。用于渲染活动栏图标按钮。
     ///
-    /// - Returns: 详情视图数组
-    func getDetailViews() -> [AnyView] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addDetailView() }
+    /// 如果发现两个插件提供了相同的 icon，会触发 fatalError。
+    func getPanelIconItems() -> [PanelIconItem] {
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var items: [PanelIconItem] = []
+        var seenIcons: [String: String] = [:]  // icon -> plugin id
+
+        for plugin in enabledPlugins {
+            guard let icon = plugin.addPanelIcon() else { continue }
+            let pluginType = type(of: plugin)
+            let pluginId = plugin.instanceLabel
+
+            if let existingPluginId = seenIcons[icon] {
+                fatalError(
+                    "[PluginVM] Duplicate panel icon \"\(icon)\" detected: " +
+                    "\(existingPluginId) and \(pluginId) both provide the same icon. " +
+                    "Each plugin must provide a unique icon via addPanelIcon()."
+                )
+            }
+            seenIcons[icon] = pluginId
+            items.append(PanelIconItem(
+                id: pluginId,
+                title: pluginType.displayName,
+                icon: icon
+            ))
+        }
+        return items
     }
 
-    /// 获取 Agent 模式中栏详情项（包含元信息）
+    /// 获取当前激活插件的 PanelItem
     ///
-    /// 用于中栏顶部切换器展示 title/icon，并渲染对应视图。
-    func getAgentDetailEntries() -> [AgentDetailEntry] {
+    /// 根据 `activePanelIcon` 查找匹配的插件，调用其 `addPanelView(activeIcon:)` 获取视图。
+    /// 只会有一个插件匹配并返回面板视图。
+    func getActivePanelItem() -> PanelItem? {
+        guard let activeIcon = activePanelIcon else { return nil }
+        
+        for plugin in plugins where isPluginEnabled(plugin) {
+            guard let pluginIcon = plugin.addPanelIcon() else { continue }
+            guard pluginIcon == activeIcon else { continue }
+            
+            guard let view = plugin.addPanelView(activeIcon: activeIcon) else { continue }
+            let pluginType = type(of: plugin)
+            return PanelItem(
+                id: plugin.instanceLabel,
+                title: pluginType.displayName,
+                icon: pluginIcon,
+                view: view
+            )
+        }
+        return nil
+    }
+
+    /// 当前是否有面板视图
+    ///
+    /// 用于布局决策：有面板时使用中间栏 + 右侧栏分栏，无时仅显示右侧栏。
+    func hasPanels() -> Bool {
         plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { plugin -> AgentDetailEntry? in
-                guard let detailView = plugin.addDetailView() else { return nil }
-                let pluginType = type(of: plugin)
-                return AgentDetailEntry(
+            .contains { plugin -> Bool in
+                guard let icon = plugin.addPanelIcon() else { return false }
+                return plugin.addPanelView(activeIcon: icon) != nil
+            }
+    }
+
+    /// 获取所有插件提供的 Rail 视图项
+    ///
+    /// 收集所有启用插件提供的 Rail 视图。
+    /// ⚠️ Rail 视图全局互斥，最多只能有一个插件提供。
+    /// 如果超过一个，渲染层会显示冲突错误视图。
+    ///
+    /// - Returns: Rail 视图项数组
+    func getRailItems() -> [RailItem] {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { plugin -> RailItem? in
+                guard let view = plugin.addRailView(activeIcon: activeIcon) else { return nil }
+                return RailItem(
                     id: plugin.instanceLabel,
-                    title: pluginType.displayName,
-                    icon: pluginType.iconName,
-                    view: detailView
+                    view: view
                 )
             }
     }
 
-    /// 当前是否有 detail 视图
-    ///
-    /// 用于布局决策：有 detail 时使用 MiddleColumn + RightColumn 分栏，无时仅显示 RightColumn。
-    func hasDetailViews() -> Bool {
-        plugins
+    /// 当前是否有 Rail 视图
+    func hasRail() -> Bool {
+        let activeIcon = activePanelIcon
+        return plugins
             .filter { isPluginEnabled($0) }
-            .contains { $0.addDetailView() != nil }
+            .contains { $0.addRailView(activeIcon: activeIcon) != nil }
+    }
+
+    /// 获取所有插件提供的右侧栏视图
+    ///
+    /// 收集所有启用插件提供的右侧栏视图。
+    /// 多个右侧栏会水平堆叠，按插件 order 升序排列。
+    ///
+    /// - Returns: 右侧栏视图数组
+    func getSidebarViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addSidebarView(activeIcon: activeIcon) }
+    }
+
+    /// 当前是否有右侧栏视图
+    func hasSidebars() -> Bool {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .contains { $0.addSidebarView(activeIcon: activeIcon) != nil }
     }
 
     /// 获取所有插件提供的状态栏弹窗视图
@@ -470,112 +647,6 @@ final class PluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addStatusBarContentView() }
     }
 
-    /// 获取所有插件提供的侧边栏视图（用于 Agent 模式）
-    ///
-    /// 收集所有启用插件提供的侧边栏视图。
-    /// 多个插件的侧边栏会从上到下垂直堆叠显示。
-    ///
-    /// - Returns: 侧边栏视图数组
-    func getSidebarViews() -> [AnyView] {
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        let cacheKey = enabledPlugins.map(\.instanceLabel).joined(separator: "|")
-
-        if let sidebarViewsCache, sidebarViewsCacheKey == cacheKey {
-            return sidebarViewsCache
-        }
-
-        let views = enabledPlugins.compactMap { $0.addSidebarView() }
-        sidebarViewsCache = views
-        sidebarViewsCacheKey = cacheKey
-
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            AppLogger.core.info("\(self.t) getSidebarViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 侧边栏视图数量=\(views.count)")
-        }
-
-        return views
-    }
-
-    /// 获取 Agent 模式侧边栏 Tab 项（包含元信息）
-    ///
-    /// 用于左侧栏顶部 Tab 切换展示。
-    func getSidebarTabItems() -> [SidebarTabItem] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { plugin -> SidebarTabItem? in
-                guard let sidebarView = plugin.addSidebarView() else { return nil }
-                let pluginType = type(of: plugin)
-                return SidebarTabItem(
-                    id: plugin.instanceLabel,
-                    title: pluginType.displayName,
-                    icon: pluginType.iconName,
-                    view: sidebarView
-                )
-            }
-    }
-
-    /// 获取右侧栏头部左侧视图（首个提供该视图的插件）
-    ///
-    /// 用于与 trailing 小功能项组合成单一 header，便于拆分为多插件（如项目管理、语言切换）。
-    func getRightHeaderLeadingView() -> AnyView? {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addRightHeaderLeadingView() }
-            .first
-    }
-
-    /// 获取所有插件提供的右侧栏头部右侧小功能项（扁平合并）
-    ///
-    /// 多个插件可各自注入小功能（如项目按钮、语言选择器），在 header 内水平排列。
-    func getRightHeaderTrailingItems() -> [AnyView] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .flatMap { $0.addRightHeaderTrailingItems() }
-    }
-
-    /// 获取所有插件提供的右侧栏中间视图（用于 Agent 模式）
-    ///
-    /// 收集所有启用插件提供的右侧栏中间视图。
-    /// 右侧栏中间位于右侧栏中部，用于显示消息列表等内容。
-    /// 多个插件的中间视图会从上到下垂直堆叠显示。
-    ///
-    /// - Returns: 右侧栏中间视图数组
-    func getRightMiddleViews() -> [AnyView] {
-        let views = plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addRightMiddleView() }
-
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            AppLogger.core.info("\(self.t) getRightMiddleViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏中间视图数量=\(views.count)")
-        }
-
-        return views
-    }
-
-    /// 获取所有插件提供的右侧栏底部视图（用于 Agent 模式）
-    ///
-    /// 收集所有启用插件提供的右侧栏底部视图。
-    /// 右侧栏底部位于右侧栏底部，用于显示输入区域等内容。
-    /// 多个插件的底部视图会从上到下垂直堆叠显示。
-    ///
-    /// - Returns: 右侧栏底部视图数组
-    func getRightBottomViews() -> [AnyView] {
-        let views = plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addRightBottomView() }
-
-        if Self.verbose {
-            let pluginNames = plugins.map { String(describing: type(of: $0)) }
-            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
-            AppLogger.core.info("\(self.t) getRightBottomViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 右侧栏底部视图数量=\(views.count)")
-        }
-
-        return views
-    }
-
     /// 获取所有插件提供的状态栏左侧视图（用于 Agent 模式底部状态栏）
     ///
     /// 收集所有启用插件提供的状态栏左侧视图。
@@ -592,6 +663,27 @@ final class PluginVM: ObservableObject, SuperLog {
             let pluginNames = plugins.map { String(describing: type(of: $0)) }
             let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
             AppLogger.core.info("\(self.t) getStatusBarLeadingViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏左侧视图数量=\(views.count)")
+        }
+
+        return views
+    }
+
+    /// 获取所有插件提供的状态栏中间视图（用于 Agent 模式底部状态栏）
+    ///
+    /// 收集所有启用插件提供的状态栏中间视图。
+    /// 状态栏位于 Agent 模式底部，用于显示状态信息、操作提示等内容。
+    /// 多个插件的状态栏视图会水平排列显示在中间。
+    ///
+    /// - Returns: 状态栏中间视图数组
+    func getStatusBarCenterViews() -> [AnyView] {
+        let views = plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addStatusBarCenterView() }
+
+        if Self.verbose {
+            let pluginNames = plugins.map { String(describing: type(of: $0)) }
+            let enabledNames = plugins.filter { isPluginEnabled($0) }.map { String(describing: type(of: $0)) }
+            AppLogger.core.info("\(self.t) getStatusBarCenterViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏中间视图数量=\(views.count)")
         }
 
         return views
@@ -634,27 +726,46 @@ final class PluginVM: ObservableObject, SuperLog {
             }
     }
 
-    /// 获取所有插件提供的导航入口
+    /// 将已发现的 LLM 供应商注册到供应商注册表
     ///
-    /// 收集所有启用插件提供的导航入口。
-    /// 用于在侧边栏显示导航项。
+    /// 在 `RootViewContainer` 初始化时调用，将所有通过插件发现的 LLM 供应商
+    /// 统一注册到 `LLMProviderRegistry`。
     ///
-    /// - Returns: 导航入口数组
-    func getNavigationEntries() -> [NavigationEntry] {
-        plugins
-            .filter { isPluginEnabled($0) }
-            .compactMap { $0.addNavigationEntries() }
-            .flatMap { $0 }
+    /// - Parameter registry: 供应商注册表
+    func registerLLMProviders(to registry: LLMProviderRegistry) {
+        registry.register(discoveredLLMProviderTypes)
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)📦 Registered \(self.discoveredLLMProviderTypes.count) LLM providers from plugins.")
+        }
     }
 
-    /// 获取指定模式下的导航入口
-    ///
-    /// 过滤出指定应用模式（App 或 Agent）下的导航入口。
-    ///
-    /// - Parameter mode: 应用模式
-    /// - Returns: 导航入口数组
-    func getNavigationEntries(for mode: AppMode) -> [NavigationEntry] {
-        getNavigationEntries().filter { $0.mode == mode }
+    /// 获取所有启用插件提供的主题贡献（按插件顺序和主题顺序稳定排序）
+    @MainActor
+    func getThemeContributions() -> [LumiThemeContribution] {
+        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
+        var merged: [(pluginOrder: Int, item: LumiThemeContribution)] = []
+
+        for plugin in enabledPlugins {
+            let pluginOrder = type(of: plugin).order
+            for item in plugin.addThemeContributions() {
+                merged.append((pluginOrder, item))
+            }
+        }
+
+        let sorted = merged.sorted { lhs, rhs in
+            if lhs.pluginOrder != rhs.pluginOrder { return lhs.pluginOrder < rhs.pluginOrder }
+            if lhs.item.order != rhs.item.order { return lhs.item.order < rhs.item.order }
+            return lhs.item.id.localizedCaseInsensitiveCompare(rhs.item.id) == .orderedAscending
+        }.map(\.item)
+
+        var seen = Set<String>()
+        var result: [LumiThemeContribution] = []
+        for item in sorted {
+            if seen.contains(item.id) { continue }
+            seen.insert(item.id)
+            result.append(item)
+        }
+        return result
     }
 }
 
@@ -662,14 +773,12 @@ final class PluginVM: ObservableObject, SuperLog {
 
 #Preview("App - Small Screen") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .frame(width: 800, height: 600)
 }
 
 #Preview("App - Big Screen") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .frame(width: 1200, height: 1200)
 }

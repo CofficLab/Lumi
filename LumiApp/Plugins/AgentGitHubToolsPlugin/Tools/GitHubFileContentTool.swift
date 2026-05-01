@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// GitHub 文件内容获取工具
-struct GitHubFileContentTool: AgentTool, SuperLog {
+struct GitHubFileContentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = false
     let name = "github_file_content"

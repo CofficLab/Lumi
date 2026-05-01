@@ -30,8 +30,8 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tool Factories
 
     @MainActor
-    func agentToolFactories() -> [AnyAgentToolFactory] {
-        [AnyAgentToolFactory(GitHubToolsFactory())]
+    func agentToolFactories() -> [AnySuperAgentToolFactory] {
+        [AnySuperAgentToolFactory(GitHubToolsFactory())]
     }
 
     // MARK: - Settings View
@@ -45,11 +45,11 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
 // MARK: - Tools Factory
 
 @MainActor
-private struct GitHubToolsFactory: AgentToolFactory {
+private struct GitHubToolsFactory: SuperAgentToolFactory {
     let id: String = "github.tools.factory"
     let order: Int = 0
 
-    func makeTools(env: AgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [
             GitHubRepoInfoTool(),
             GitHubSearchTool(),

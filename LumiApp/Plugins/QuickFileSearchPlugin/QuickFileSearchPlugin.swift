@@ -13,7 +13,7 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
     // MARK: - Plugin Properties
 
     nonisolated static let emoji = "🔍"
-    nonisolated static let enable: Bool = true
+    nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = false
 
     static let id = "QuickFileSearch"
@@ -71,13 +71,13 @@ actor QuickFileSearchPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor
-    func agentTools() -> [AgentTool] { [] }
+    func agentTools() -> [SuperAgentTool] { [] }
 
     @MainActor
-    func agentToolFactories() -> [AnyAgentToolFactory] { [] }
+    func agentToolFactories() -> [AnySuperAgentToolFactory] { [] }
 
     @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] { [] }
+    func sendMiddlewares() -> [AnySuperSendMiddleware] { [] }
 }
 
 // MARK: - Preview

@@ -2,7 +2,11 @@ import SwiftUI
 
 /// Agent 模式不可用时的提示视图
 struct AgentModeUnavailableGuideView: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+
     var body: some View {
+        let theme = themeManager.activeAppTheme
+
         VStack(spacing: 12) {
             Spacer()
             Image(systemName: "exclamationmark.triangle.fill")
@@ -11,10 +15,11 @@ struct AgentModeUnavailableGuideView: View {
             Text("Agent 模式不可用")
                 .font(AppUI.Typography.title3)
                 .fontWeight(.semibold)
+                .foregroundColor(theme.workspaceTextColor())
             Text("当前没有任何 LLM 供应商插件已注册。\n请安装并启用至少一个提供 LLM 供应商的插件后重试。")
                 .font(AppUI.Typography.body)
                 .multilineTextAlignment(.center)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(theme.workspaceSecondaryTextColor())
             Spacer()
         }
         .padding()

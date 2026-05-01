@@ -1,11 +1,10 @@
 import MagicKit
 import SwiftUI
 
-/// Editor root overlay
+/// Editor 根视图覆盖层
+///
+/// 包裹 RootView，确保文件选择监听始终生效。
 struct EditorRootOverlay<Content: View>: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var layoutVM: LayoutVM
-
     let content: Content
 
     var body: some View {
@@ -13,10 +12,5 @@ struct EditorRootOverlay<Content: View>: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onChange(of: projectVM.selectedFileURL) {
-            guard projectVM.selectedFileURL != nil else { return }
-            // 有文件被选中时，激活代码编辑器 Detail
-            layoutVM.selectAgentDetail(EditorPlugin.id)
-        }
     }
 }

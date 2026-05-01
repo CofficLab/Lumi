@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LSP Document Links": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Document Links" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 文档链接" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 文件連結" } }
+      }
+    },
+    "Makes URLs and file paths clickable in the editor.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Makes URLs and file paths clickable in the editor." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使编辑器中的 URL 和文件路径可点击。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "使編輯器中的 URL 和檔案路徑可點擊。" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

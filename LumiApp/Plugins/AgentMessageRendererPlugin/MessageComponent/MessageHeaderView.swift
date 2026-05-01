@@ -6,6 +6,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     let leading: Leading
     let trailing: Trailing
 
+    @EnvironmentObject private var themeManager: ThemeManager
     @State private var isHovered = false
 
     init(
@@ -17,6 +18,8 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     }
 
     var body: some View {
+        let theme = themeManager.activeAppTheme
+
         HStack(alignment: .center, spacing: 8) {
             leading
             Spacer()
@@ -27,7 +30,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
         .background(headerBackground)
         .overlay(
             RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
-                .stroke(Color.white.opacity(isHovered ? 0.18 : 0.10), lineWidth: 1)
+                .stroke(theme.workspaceTertiaryTextColor().opacity(isHovered ? 0.18 : 0.10), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous))
         .contentShape(Rectangle())
@@ -39,11 +42,12 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     }
 
     private var headerBackground: some View {
-        RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
+        let theme = themeManager.activeAppTheme
+        return RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
             .fill(
                 isHovered
-                    ? AppUI.Color.semantic.textSecondary.opacity(0.14)
-                    : AppUI.Color.semantic.textSecondary.opacity(0.08)
+                    ? theme.workspaceSecondaryTextColor().opacity(0.14)
+                    : theme.workspaceSecondaryTextColor().opacity(0.08)
             )
     }
 }

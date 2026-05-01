@@ -20,7 +20,7 @@ actor ToolCallLoopDetectionPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     @MainActor
-    func sendMiddlewares() -> [AnySendMiddleware] {
-        [AnySendMiddleware(ToolCallLoopDetectionSendMiddleware())]
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
+        [AnySuperSendMiddleware(ToolCallLoopDetectionSuperSendMiddleware())]
     }
 }

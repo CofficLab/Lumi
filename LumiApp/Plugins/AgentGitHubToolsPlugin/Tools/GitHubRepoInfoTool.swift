@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// GitHub 仓库信息工具
-struct GitHubRepoInfoTool: AgentTool, SuperLog {
+struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📦"
     nonisolated static let verbose: Bool = false
     let name = "github_repo_info"

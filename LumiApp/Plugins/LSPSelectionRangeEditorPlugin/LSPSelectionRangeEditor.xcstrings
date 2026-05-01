@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LSP Selection Ranges": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Selection Ranges" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 选区范围" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 選區範圍" } }
+      }
+    },
+    "Provides smart expand/shrink selection via LSP selection ranges.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provides smart expand/shrink selection via LSP selection ranges." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "通过 LSP 选区范围提供智能扩展/收缩选区功能。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "通過 LSP 選區範圍提供智能擴展/收縮選區功能。" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

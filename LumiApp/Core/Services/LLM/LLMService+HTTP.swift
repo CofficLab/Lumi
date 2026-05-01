@@ -5,7 +5,7 @@ extension LLMService {
     /// 发送消息到指定的 LLM 供应商（单次 HTTP 请求）。
     ///
     /// - Throws: 仅 `LLMServiceError`
-    func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [AgentTool]? = nil) async throws -> ChatMessage {
+    func sendMessage(messages: [ChatMessage], config: LLMConfig, tools: [SuperAgentTool]? = nil) async throws -> ChatMessage {
         let startTime = CFAbsoluteTimeGetCurrent()
 
         // 从消息中获取 conversationId

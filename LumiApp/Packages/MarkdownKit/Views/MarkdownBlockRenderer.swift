@@ -33,6 +33,7 @@ public struct MarkdownBlockRenderer: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .foregroundStyle(theme.textColor ?? .primary)
         .task(id: markdown) {
             blocks = MarkdownParser.parse(markdown)
         }
@@ -71,7 +72,7 @@ public struct MarkdownBlockRenderer: View {
                     HStack(alignment: .top, spacing: 8) {
                         Text("\(item.index).")
                             .font(theme.codeFont)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(theme.secondaryTextColor ?? .secondary)
                         inlineText(item.text)
                             .font(theme.bodyFont)
                             .lineSpacing(4)
@@ -101,7 +102,7 @@ public struct MarkdownBlockRenderer: View {
                     .frame(width: 3)
                 inlineText(text)
                     .font(theme.bodyFont)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(theme.secondaryTextColor ?? .secondary)
                     .lineSpacing(4)
             }
 
@@ -122,7 +123,7 @@ public struct MarkdownBlockRenderer: View {
                 HStack {
                     Text(language)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(theme.secondaryTextColor ?? .secondary)
                     Spacer()
                 }
                 .padding(.horizontal, 10)
@@ -207,7 +208,7 @@ public struct MarkdownBlockRenderer: View {
         case .todo:
             Image(systemName: "square")
                 .font(.system(size: 12))
-                .foregroundColor(.secondary)
+                .foregroundColor(theme.secondaryTextColor ?? .secondary)
                 .padding(.top, 3)
         case .done:
             Image(systemName: "checkmark.square.fill")
