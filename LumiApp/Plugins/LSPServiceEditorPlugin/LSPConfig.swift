@@ -112,7 +112,6 @@ struct LSPConfig: SuperLog {
                 }
             }
             _fullScanCompleted = true
-            logger.info("\(LSPConfig.t)LSP 配置预热完成，缓存 \(_pathCache.count) 条记录")
             return available
         }.value
     }

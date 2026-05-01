@@ -43,7 +43,7 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.state")
 
@@ -1727,9 +1727,11 @@ final class EditorState: ObservableObject, SuperLog {
                         let languageId = self.detectedLanguage?.id.rawValue ?? self.lspActionController.languageID(for: self.fileExtension)
                         if let languageId {
                             let rootPath = self.projectRootPath ?? loadingURL.deletingLastPathComponent().path
-                            self.logger.info(
-                                "\(Self.t)LSP openFile 准备: file=\(loadingURL.path, privacy: .public), languageId=\(languageId, privacy: .public), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), chosenRoot=\(rootPath, privacy: .public)"
-                            )
+                            if Self.verbose {
+                                self.logger.info(
+                                    "\(Self.t)LSP openFile 准备: file=\(loadingURL.path, privacy: .public), languageId=\(languageId, privacy: .public), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), chosenRoot=\(rootPath, privacy: .public)"
+                                )
+                            }
                             self.lspClient.setProjectRootPath(rootPath)
                             let documentVersion = self.currentDocumentVersion
                             Task {
@@ -2518,21 +2520,23 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     func logMultiCursorState(action: String, note: String? = nil) {
+        guard Self.verbose else { return }
         let message = multiCursorController.stateLogMessage(
             action: action,
             selections: multiCursorState.all,
             note: note
         )
-        logger.info("[UI] | ✏️ 编辑器状态 | 多光标状态 | \(message, privacy: .public)")
+        logger.info("\(self.t)多光标状态 | \(message, privacy: .public)")
     }
 
     func logMultiCursorInput(action: String, textViewSelections: [NSRange], note: String? = nil) {
+        guard Self.verbose else { return }
         let details = multiCursorController.inputLogMessage(
             action: action,
             textViewSelections: textViewSelections,
             note: note
         )
-        logger.info("[UI] | ✏️ 编辑器状态 | 多光标输入 | \(details, privacy: .public)")
+        logger.info("\(self.t)多光标输入 | \(details, privacy: .public)")
         logMultiCursorState(action: "input-state-sync", note: action)
     }
 

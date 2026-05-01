@@ -44,7 +44,6 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     func register<T: SuperLLMProvider>(_ providerType: T.Type) {
         providerTypes.append(providerType)
         let status = providerType.isEnabled ? "enabled" : "disabled"
-        AppLogger.core.info("\(self.t)注册 provider type: \(providerType.id) (\(providerType.displayName)), status=\(status), total=\(self.providerTypes.count)")
     }
 
     /// 批量注册供应商类型
@@ -52,10 +51,8 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
     /// - Parameter providerTypes: 要注册的供应商类型数组
     func register(_ providerTypes: [any SuperLLMProvider.Type]) {
         if providerTypes.isEmpty {
-            AppLogger.core.warning("\(self.t)收到空的 provider type 列表，未注册任何 LLM 供应商")
         } else {
             let providerIDs = providerTypes.map { $0.id }.joined(separator: ", ")
-            AppLogger.core.info("\(self.t)准备批量注册 \(providerTypes.count) 个 provider type: \(providerIDs)")
         }
         for type in providerTypes {
             register(type)

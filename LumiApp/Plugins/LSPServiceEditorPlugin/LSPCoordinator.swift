@@ -90,7 +90,6 @@ class LSPCoordinator: ObservableObject, SuperLog, EditorLSPClient {
         self.version = version
 
         await lspService.openDocument(uri: uri, languageId: languageId, text: content, version: version)
-        logger.info("\(Self.t)LSP: 已打开文件 \(uri)")
     }
     
     /// 关闭文件时调用

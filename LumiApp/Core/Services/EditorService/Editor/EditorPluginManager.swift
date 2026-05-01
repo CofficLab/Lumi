@@ -79,10 +79,7 @@ final class EditorPluginManager: ObservableObject, SuperLog {
             for capability in plugin.editorLanguageIntegrationCapabilities() {
                 registry.registerLanguageIntegrationCapability(capability)
             }
-            logger.info("\(self.t)安装编辑器插件: \(type(of: plugin).id) (\(type(of: plugin).displayName))")
         }
-
-        logger.info("\(self.t)安装完成: \(sorted.count) 个编辑器插件")
     }
 
     /// 卸载所有已安装的编辑器插件
