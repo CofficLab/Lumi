@@ -13,7 +13,7 @@ struct EditorInlineRenameOverlayView: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(AppUI.Color.semantic.primary)
 
-                Text("Rename Symbol")
+                Text(String(localized: "Rename Symbol", table: "LumiEditor"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(AppUI.Color.semantic.textPrimary)
 
@@ -30,7 +30,7 @@ struct EditorInlineRenameOverlayView: View {
                 .buttonStyle(.plain)
             }
 
-            TextField("New name", text: Binding(
+            TextField(String(localized: "New name", table: "LumiEditor"), text: Binding(
                 get: { renameState.draftName },
                 set: { state.updateInlineRenameDraft($0) }
             ))
@@ -47,7 +47,7 @@ struct EditorInlineRenameOverlayView: View {
             }
 
             HStack(spacing: 8) {
-                Text("Current: \(renameState.originalName)")
+                Text(String(localized: "Current: \(renameState.originalName)", table: "LumiEditor"))
                     .font(.system(size: 10))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -68,7 +68,7 @@ struct EditorInlineRenameOverlayView: View {
                     .lineLimit(2)
             } else if let summary = renameState.previewSummary, !summary.fileLabels.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Files")
+                    Text(String(localized: "Files", table: "LumiEditor"))
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(AppUI.Color.semantic.textSecondary)
                     ForEach(summary.fileLabels, id: \.self) { label in
@@ -81,7 +81,7 @@ struct EditorInlineRenameOverlayView: View {
             }
 
             HStack {
-                Button(renameState.canApply ? "Apply Rename" : "Preview Changes") {
+                Button(renameState.canApply ? String(localized: "Apply Rename", table: "LumiEditor") : String(localized: "Preview Changes", table: "LumiEditor")) {
                     if renameState.canApply {
                         state.applyInlineRename()
                     } else {
@@ -94,7 +94,7 @@ struct EditorInlineRenameOverlayView: View {
                 .controlSize(.small)
                 .disabled(renameState.isLoadingPreview || (!renameState.canPreview && !renameState.canApply))
 
-                Button("Cancel") {
+                Button(String(localized: "Cancel", table: "LumiEditor")) {
                     state.dismissInlineRename()
                 }
                 .buttonStyle(.borderless)

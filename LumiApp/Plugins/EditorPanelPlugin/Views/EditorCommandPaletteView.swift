@@ -91,7 +91,7 @@ struct EditorCommandPaletteView: View {
     private var categoryFilterStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                categoryFilterChip(title: "All", category: nil)
+                categoryFilterChip(title: String(localized: "All", table: "LumiEditor"), category: nil)
 
                 ForEach(EditorCommandCategory.orderedCases.filter { $0 != .other }, id: \.rawValue) { category in
                     categoryFilterChip(title: category.displayTitle, category: category)

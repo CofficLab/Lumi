@@ -23,6 +23,41 @@
         }
       }
     },
+    "%@ -> %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ -> %2$@"
+          }
+        }
+      }
+    },
+    "%lld item" : {
+
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "0/0" : {
+
+    },
+    "2 Spaces" : {
+
+    },
+    "4 Spaces" : {
+
+    },
+    "8 Spaces" : {
+
+    },
     "A" : {
       "localizations" : {
         "en" : {
@@ -180,6 +215,15 @@
         }
       }
     },
+    "Adjust font size, tab size, line wrapping, minimap, and save behavior." : {
+
+    },
+    "All" : {
+
+    },
+    "Apply Rename" : {
+
+    },
     "Are you sure you want to delete \"%@\"?" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -224,6 +268,9 @@
           }
         }
       }
+    },
+    "Case Sensitive" : {
+
     },
     "Clear Additional Cursors" : {
       "localizations" : {
@@ -339,6 +386,12 @@
     "Current Group" : {
 
     },
+    "Current Symbol" : {
+
+    },
+    "Current: %@" : {
+
+    },
     "Cursor Document End" : {
 
     },
@@ -384,6 +437,9 @@
     "Delete Word Right" : {
 
     },
+    "Discover the editor's main entry points, workbench capabilities, and adjustable parameters — no roadmap needed." : {
+
+    },
     "Document formatted" : {
       "localizations" : {
         "en" : {
@@ -405,6 +461,9 @@
           }
         }
       }
+    },
+    "Editing disabled for truncated preview" : {
+
     },
     "Editing..." : {
       "localizations" : {
@@ -545,6 +604,9 @@
         }
       }
     },
+    "Execute editor commands, or jump to settings / workspace symbols." : {
+
+    },
     "File name" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -613,7 +675,13 @@
         }
       }
     },
+    "Files" : {
+
+    },
     "Find" : {
+
+    },
+    "Find / Replace" : {
 
     },
     "Find All References" : {
@@ -701,6 +769,9 @@
     "Finding type definition..." : {
 
     },
+    "Fix All on Save" : {
+
+    },
     "Focus Next Editor Group" : {
 
     },
@@ -742,6 +813,12 @@
         }
       }
     },
+    "folding" : {
+
+    },
+    "Folding ribbon disabled" : {
+
+    },
     "Format Document" : {
       "localizations" : {
         "en" : {
@@ -763,6 +840,9 @@
           }
         }
       }
+    },
+    "Format on Save" : {
+
     },
     "Formatting document..." : {
       "localizations" : {
@@ -840,6 +920,21 @@
     "Group %lld" : {
 
     },
+    "Highlight current matches, replace preview, and navigate multiple results." : {
+
+    },
+    "In Selection" : {
+
+    },
+    "inlay" : {
+
+    },
+    "Inlay hints disabled" : {
+
+    },
+    "Insert Final Newline" : {
+
+    },
     "Insert Line Above" : {
 
     },
@@ -847,6 +942,28 @@
 
     },
     "Invalid selection" : {
+
+    },
+    "Jump to functions and types via document symbols of the current session." : {
+
+    },
+    "Jump to types, functions, and symbols across the workspace." : {
+
+    },
+    "Keep Editor Version" : {
+
+    },
+    "L%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "L%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "Large File" : {
 
     },
     "Large File Read-Only Preview" : {
@@ -870,6 +987,12 @@
           }
         }
       }
+    },
+    "Ln %lld" : {
+
+    },
+    "Load Full File" : {
+
     },
     "Loaded %lld plugin(s)" : {
       "extractionState" : "stale",
@@ -918,6 +1041,22 @@
       }
     },
     "Location" : {
+
+    },
+    "long line" : {
+
+    },
+    "Long line: L%lld · %lld chars" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Long line: L%1$lld · %2$lld chars"
+          }
+        }
+      }
+    },
+    "long-line syntax" : {
 
     },
     "LSP Actions" : {
@@ -1127,6 +1266,18 @@
         }
       }
     },
+    "Medium File" : {
+
+    },
+    "Mega File" : {
+
+    },
+    "minimap" : {
+
+    },
+    "Minimap disabled" : {
+
+    },
     "Move Editor to Next Group" : {
 
     },
@@ -1137,6 +1288,9 @@
 
     },
     "Move Line Up" : {
+
+    },
+    "Move To Group %lld" : {
 
     },
     "Move to Trash" : {
@@ -1283,6 +1437,9 @@
         }
       }
     },
+    "No content to preview" : {
+
+    },
     "No declaration found" : {
       "localizations" : {
         "en" : {
@@ -1407,6 +1564,9 @@
     "No Open Editors" : {
 
     },
+    "No preview available" : {
+
+    },
     "No Problems" : {
 
     },
@@ -1474,6 +1634,9 @@
         }
       }
     },
+    "Normal File" : {
+
+    },
     "OK" : {
       "localizations" : {
         "en" : {
@@ -1495,6 +1658,15 @@
           }
         }
       }
+    },
+    "Open" : {
+
+    },
+    "Open a file from the project tree" : {
+
+    },
+    "Open diagnostic" : {
+
     },
     "Open Editors" : {
 
@@ -1548,6 +1720,9 @@
     "Open Search Editor" : {
 
     },
+    "Organize Imports on Save" : {
+
+    },
     "Other Open Editors" : {
 
     },
@@ -1585,6 +1760,12 @@
           }
         }
       }
+    },
+    "Preserve Case" : {
+
+    },
+    "Preview Changes" : {
+
     },
     "Preview Truncated for Large File" : {
       "localizations" : {
@@ -1752,6 +1933,9 @@
     "Quick Fix" : {
 
     },
+    "Quick Open" : {
+
+    },
     "Quick Open: files, @symbols, #workspace, :line, >commands" : {
 
     },
@@ -1789,6 +1973,9 @@
           }
         }
       }
+    },
+    "Reload from Disk" : {
+
     },
     "Remove Last Occurrence" : {
 
@@ -1956,6 +2143,9 @@
     "Replace All" : {
 
     },
+    "Restore sessions and split workbench state" : {
+
+    },
     "Reveal in Finder" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1980,6 +2170,9 @@
       }
     },
     "Run" : {
+
+    },
+    "s" : {
 
     },
     "Save" : {
@@ -2028,6 +2221,9 @@
           }
         }
       }
+    },
+    "Search for files, symbols, settings, and commands from a single entry point." : {
+
     },
     "Search in Files" : {
 
@@ -2081,6 +2277,15 @@
       }
     },
     "Select text before selecting all occurrences" : {
+
+    },
+    "semantic" : {
+
+    },
+    "Semantic tokens disabled" : {
+
+    },
+    "Session Restore" : {
 
     },
     "Show Call Hierarchy" : {
@@ -2138,10 +2343,16 @@
     "Sort Lines Descending" : {
 
     },
+    "Split Editor" : {
+
+    },
     "Split Editor Down" : {
 
     },
     "Split Editor Right" : {
+
+    },
+    "Split right or down — ideal for side-by-side reading and multi-file editing." : {
 
     },
     "Swift Keyword Hover" : {
@@ -2213,6 +2424,21 @@
         }
       }
     },
+    "Syntax highlighting limit: first %@ lines" : {
+
+    },
+    "Tab (↹)" : {
+
+    },
+    "Tabs, splits, recently closed recovery, and back-forward navigation preserve workbench state." : {
+
+    },
+    "The most common workflow entry points when you first open the editor." : {
+
+    },
+    "These capabilities align most closely with the editor surface in VS Code." : {
+
+    },
     "This code action has no edit or command" : {
 
     },
@@ -2274,6 +2500,12 @@
         }
       }
     },
+    "Trim Trailing Whitespace" : {
+
+    },
+    "truncated" : {
+
+    },
     "Undo" : {
 
     },
@@ -2310,6 +2542,68 @@
           }
         }
       }
+    },
+    "Use Lumi Version" : {
+
+    },
+    "Use Project Version" : {
+
+    },
+    "Use Quick Open for files / symbols / settings" : {
+
+    },
+    "Use Regular Expression" : {
+
+    },
+    "View current open items, recent activation order, and group distribution." : {
+
+    },
+    "Visible L%lld-%lld · Render L%lld-%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Visible L%1$lld-%2$lld · Render L%3$lld-%4$lld"
+          }
+        }
+      }
+    },
+    "Whole Word" : {
+
+    },
+    "Workbench 能力" : {
+
+    },
+    "Workspace Symbols" : {
+
+    },
+    "常用起点" : {
+
+    },
+    "当前文件同时属于多个 target（%@），语义结果会受当前 scheme/configuration 影响。" : {
+
+    },
+    "当前文件属于 target '%@'，但当前 scheme '%@' 可能没有覆盖它。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "当前文件属于 target '%1$@'，但当前 scheme '%2$@' 可能没有覆盖它。"
+          }
+        }
+      }
+    },
+    "当前文件属于多个 target，编辑器当前按 '%@' 的语义上下文解析。" : {
+
+    },
+    "当前文件未绑定到任何编译 target，跨文件跳转和诊断可能不可用。" : {
+
+    },
+    "编辑器设置" : {
+
+    },
+    "项目语义上下文未就绪，跨文件语义能力可能不稳定。" : {
+
     }
   },
   "version" : "1.0"

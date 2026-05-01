@@ -4,7 +4,7 @@ import MagicKit
 import SwiftUI
 import os
 
-/// Editor Plugin: 代码编辑器 + 文件树
+/// 代码编辑器
 actor EditorPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(
@@ -26,7 +26,7 @@ actor EditorPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 面板视图：文件树 + 编辑器
+    /// 面板视图：编辑器
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
         guard activeIcon == Self.iconName else { return nil }
