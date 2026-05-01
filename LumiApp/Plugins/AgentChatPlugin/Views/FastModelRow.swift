@@ -30,15 +30,10 @@ struct FastModelRow: View {
                         Text(String(format: "%.1f t/s", entry.avgTPS))
                             .font(.caption2)
                             .foregroundColor(.green)
-                    }
 
-                    if let stat, stat.avgTTFT > 0 {
-                        ModelLatencyProgressBar(
-                            ttft: stat.avgTTFT,
-                            totalLatency: stat.avgLatency,
-                            sampleCount: stat.sampleCount,
-                            tps: stat.avgTPS
-                        )
+                        if let stat, stat.sampleCount > 0 {
+                            sampleCountBadge(stat.sampleCount)
+                        }
                     }
                 }
             }
@@ -79,5 +74,22 @@ struct FastModelRow: View {
                 RoundedRectangle(cornerRadius: 3)
                     .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
             )
+    }
+
+    /// 消息数量 badge
+    private func sampleCountBadge(_ count: Int) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: "bubble.left.and.bubble.right")
+                .font(.system(size: 8, weight: .medium))
+            Text("\(count)")
+                .font(.caption2)
+        }
+        .foregroundColor(AppUI.Color.semantic.textSecondary)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 1)
+        .background(
+            RoundedRectangle(cornerRadius: 3)
+                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+        )
     }
 }
