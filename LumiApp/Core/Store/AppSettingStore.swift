@@ -73,6 +73,17 @@ enum AppSettingStore {
 
     private static let selectedAgentSidebarTabIdKey = "App_SelectedAgentSidebarTabId"
     private static let selectedAgentDetailIdKey = "App_SelectedAgentDetailId"
+    private static let activePanelIconKey = "App_ActivePanelIcon"
+
+    /// 加载上次选中的活动栏图标名称
+    static func loadActivePanelIcon() -> String? {
+        object(forKey: activePanelIconKey) as? String
+    }
+
+    /// 保存当前选中的活动栏图标名称
+    static func saveActivePanelIcon(_ icon: String?) {
+        set(icon, forKey: activePanelIconKey)
+    }
 
     /// 加载上次选中的侧边栏 Tab ID
     static func loadSelectedAgentSidebarTabId() -> String? {

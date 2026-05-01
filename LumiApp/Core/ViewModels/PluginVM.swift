@@ -96,7 +96,13 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 当用户点击活动栏图标时更新。内核将其传递给 `addPanelView(activeIcon:)`，
     /// 插件通过比较 `activeIcon` 与自己的 `addPanelIcon()` 返回值来决定是否提供面板视图。
-    @Published var activePanelIcon: String?
+    ///
+    /// 自动持久化：每次变化都会写入 `AppSettingStore`，下次启动时自动恢复。
+    @Published var activePanelIcon: String? {
+        didSet {
+            AppSettingStore.saveActivePanelIcon(activePanelIcon)
+        }
+    }
 
     /// 插件设置存储
     ///
@@ -134,6 +140,9 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 设为 false 可以延迟加载，常用于测试场景。
     private init(settingsStore: PluginSettingsVM = PluginSettingsVM.shared, autoDiscover: Bool = true) {
         self.settingsStore = settingsStore
+
+        // 恢复上次选中的活动栏图标（didSet 不会在 init 中触发，无需担心循环写入）
+        self.activePanelIcon = AppSettingStore.loadActivePanelIcon()
 
         if autoDiscover {
             autoDiscoverAndRegisterPlugins()

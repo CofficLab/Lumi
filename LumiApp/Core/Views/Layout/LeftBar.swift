@@ -53,9 +53,14 @@ struct ActivityBar: View {
         .onAppear {
             let items = pluginProvider.getPanelIconItems()
             layoutVM.restoreSelectedTab(from: items.map(\.id))
-            // 初始化时激活第一个图标的面板
-            if pluginProvider.activePanelIcon == nil, let first = items.first {
-                pluginProvider.activePanelIcon = first.icon
+            // 初始化时恢复上次选中的图标，如果无效则回退到第一个
+            if pluginProvider.activePanelIcon == nil {
+                if let savedIcon = AppSettingStore.loadActivePanelIcon(),
+                   items.contains(where: { $0.icon == savedIcon }) {
+                    pluginProvider.activePanelIcon = savedIcon
+                } else if let first = items.first {
+                    pluginProvider.activePanelIcon = first.icon
+                }
             }
         }
         .onChange(of: pluginProvider.getPanelIconItems()) { _, newItems in
