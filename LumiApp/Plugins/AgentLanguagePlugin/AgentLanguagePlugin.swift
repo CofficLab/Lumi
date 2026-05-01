@@ -3,7 +3,8 @@ import SwiftUI
 
 /// 语言切换插件
 ///
-/// 在工具栏右侧提供语言选择器（LanguageSelector）。
+/// 在工具栏右侧提供语言选择器（LanguageSelector），
+/// 并通过中间件自动将语言偏好注入 LLM 系统提示。
 actor AgentLanguagePlugin: SuperPlugin {
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose: Bool = false
@@ -23,6 +24,13 @@ actor AgentLanguagePlugin: SuperPlugin {
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
+
+    // MARK: - Send Middlewares
+
+    @MainActor
+    func sendMiddlewares() -> [AnySuperSendMiddleware] {
+        [AnySuperSendMiddleware(LanguageSendMiddleware())]
+    }
 
     // MARK: - Toolbar Views
 
