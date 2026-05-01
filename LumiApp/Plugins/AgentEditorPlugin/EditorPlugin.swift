@@ -26,16 +26,6 @@ actor EditorPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 包裹 RootView：确保文件选中监听、编辑器初始化生效
-    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView?
-    where Content: View {
-        AnyView(
-            EditorRootOverlay(
-                content: content()
-            )
-        )
-    }
-
     /// 面板视图：文件树 + 编辑器
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {
@@ -44,6 +34,4 @@ actor EditorPlugin: SuperPlugin, SuperLog {
     }
 
     nonisolated func addPanelIcon() -> String? { Self.iconName }
-
-    /// 编辑器面板需要右侧栏（聊天）
 }

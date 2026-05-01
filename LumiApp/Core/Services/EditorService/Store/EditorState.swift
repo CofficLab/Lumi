@@ -876,7 +876,7 @@ final class EditorState: ObservableObject, SuperLog {
         currentFileURL?.lastPathComponent == "project.pbxproj"
     }
     
-    /// 当前项目根路径（由 EditorRootView 设置，用于计算相对路径）
+    /// 当前项目根路径（由 EditorPanelView 设置，用于计算相对路径）
     var projectRootPath: String? {
         didSet {
             restoreConfig()

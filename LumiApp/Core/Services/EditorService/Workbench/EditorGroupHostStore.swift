@@ -19,7 +19,7 @@ final class EditorGroupHostStore: ObservableObject {
     private var states: [EditorGroup.ID: EditorState] = [:]
     private var configSyncCancellables: [EditorGroup.ID: AnyCancellable] = [:]
 
-    /// 弱引用主 EditorState（由 EditorRootView 持有），用于配置同步源。
+    /// 弱引用主 EditorState（由 EditorPanelView 持有），用于配置同步源。
     private weak var primaryState: EditorState?
 
     func state(for groupID: EditorGroup.ID) -> EditorState {
