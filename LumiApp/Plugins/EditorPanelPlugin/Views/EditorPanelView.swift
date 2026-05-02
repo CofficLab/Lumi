@@ -188,9 +188,6 @@ struct EditorPanelView: View {
             if projectVM.isFileSelected {
                 fileInfoBanner
                 workbenchContent
-                if shouldShowBottomPanel {
-                    EditorBottomPanelHostView(state: state)
-                }
             } else {
                 emptyState
             }
@@ -241,19 +238,6 @@ struct EditorPanelView: View {
                 }
             )
         ]
-    }
-
-    private var shouldShowBottomPanel: Bool {
-        state.panelState.activeBottomPanel.map {
-            $0 != .problems &&
-            $0 != .searchResults &&
-            $0 != .references &&
-            $0 != .workspaceSymbols &&
-            $0 != .callHierarchy
-        } == true ||
-            state.editorExtensions.panelSuggestions(state: state).contains {
-                $0.placement == .bottom && $0.isPresented(state)
-            }
     }
 
     private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {

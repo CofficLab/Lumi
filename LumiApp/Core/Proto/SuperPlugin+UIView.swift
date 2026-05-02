@@ -48,6 +48,9 @@ extension SuperPlugin {
     /// 默认实现：不提供 Panel Header 视图
     @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView? { nil }
 
+    /// 默认实现：不提供 Panel Bottom 视图
+    @MainActor func addPanelBottomView(activeIcon: String?) -> AnyView? { nil }
+
     /// 默认实现：不提供 Rail 标签页
     @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] { [] }
 

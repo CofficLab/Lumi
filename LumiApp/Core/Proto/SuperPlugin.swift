@@ -168,6 +168,18 @@ protocol SuperPlugin: Actor {
     ///   仅在匹配时提供 header 视图。
     @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView?
 
+    /// 提供 Panel Bottom 视图
+    ///
+    /// 在面板内容区下方渲染的底部视图。多个插件提供的 bottom 视图
+    /// 会按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
+    ///
+    /// 典型用例：编辑器的底部面板（Problems、References、Search Results 等）。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件应将其与目标 panel 的 `addPanelIcon()` 返回值比较，
+    ///   仅在匹配时提供 bottom 视图。
+    @MainActor func addPanelBottomView(activeIcon: String?) -> AnyView?
+
     /// 提供 Rail 标签页列表
     ///
     /// 插件返回一个或多个 `RailTab`，由内核聚合渲染为统一的 Tab Bar。

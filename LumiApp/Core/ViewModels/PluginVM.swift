@@ -555,6 +555,19 @@ final class PluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addPanelHeaderView(activeIcon: activeIcon) }
     }
 
+    /// 获取当前激活插件的所有 Panel Bottom 视图
+    ///
+    /// 收集所有启用插件通过 `addPanelBottomView(activeIcon:)` 提供的底部视图，
+    /// 按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
+    ///
+    /// - Returns: Panel Bottom 视图数组
+    func getActivePanelBottomViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addPanelBottomView(activeIcon: activeIcon) }
+    }
+
     /// 当前是否有面板视图
     ///
     /// 用于布局决策：有面板时使用中间栏 + 右侧栏分栏，无时仅显示右侧栏。
