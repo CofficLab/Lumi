@@ -39,5 +39,8 @@ actor GoEditorPlugin: SuperPlugin, SuperLog {
         registry.registerPanelContributor(
             GoPanelContributor(buildManager: buildManager)
         )
+        registry.registerStatusItemContributor(
+            GoStatusItemContributor(buildManager: buildManager)
+        )
     }
 }

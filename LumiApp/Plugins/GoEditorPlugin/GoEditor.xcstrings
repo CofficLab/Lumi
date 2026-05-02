@@ -141,6 +141,20 @@
         "zh-Hans": { "stringUnit": { "state": "translated", "value": "个警告" } },
         "zh-HK": { "stringUnit": { "state": "translated", "value": "個警告" } }
       }
+    },
+    "Building": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Building" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "构建中" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "構建中" } }
+      }
+    },
+    "Testing": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Testing" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "测试中" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "測試中" } }
+      }
     }
   }
 }

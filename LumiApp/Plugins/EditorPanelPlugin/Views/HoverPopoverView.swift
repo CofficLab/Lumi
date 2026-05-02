@@ -1,6 +1,10 @@
 import SwiftUI
 
 /// 悬浮提示气泡视图
+///
+/// 当用户将鼠标悬停在编辑器中的标识符（如变量名、函数名、类型名等）上时，
+/// 编辑器会通过 LSP 或内置插件（如 Swift 关键字悬浮插件）收集文档信息，
+/// 并以此视图展示 Markdown 格式的悬浮文档卡片。
 struct HoverPopoverView: View {
     let markdownText: String
     private let style = EditorHoverOverlayStyle.standard
@@ -31,13 +35,7 @@ struct HoverPopoverView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: style.cornerRadius)
-                .fill(
-                    LinearGradient(
-                        colors: [style.backgroundTop, style.backgroundBottom],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .fill(Color(nsColor: .textBackgroundColor))
                 .overlay(
                     RoundedRectangle(cornerRadius: style.cornerRadius)
                         .stroke(style.borderColor, lineWidth: style.borderWidth)
