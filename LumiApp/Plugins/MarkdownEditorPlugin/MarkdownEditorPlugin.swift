@@ -8,7 +8,7 @@ actor MarkdownEditorPlugin: SuperPlugin {
     static let iconName = "doc.text"
     static let order = 120
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

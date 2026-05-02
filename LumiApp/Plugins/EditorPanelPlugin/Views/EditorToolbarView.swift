@@ -121,8 +121,10 @@ struct EditorToolbarView: View {
     private var selectedMatchDescription: String {
         let currentIndex = (state.activeSession.findReplaceState.selectedMatchIndex ?? -1) + 1
         let total = state.findMatches.count
-        guard total > 0, currentIndex > 0 else { return "0/0" }
-        return "\(currentIndex)/\(total)"
+        guard total > 0, currentIndex > 0 else {
+            return String(localized: "0/0", table: "LumiEditor")
+        }
+        return String(localized: "\(currentIndex)/\(total)", table: "LumiEditor")
     }
 
     private var replacePreviewSummary: String? {
@@ -130,7 +132,7 @@ struct EditorToolbarView: View {
               let replacement = state.currentReplacePreviewText else { return nil }
         let matched = current.matchedText.count > 14 ? String(current.matchedText.prefix(14)) + "..." : current.matchedText
         let target = replacement.count > 14 ? String(replacement.prefix(14)) + "..." : replacement
-        return "\(matched) -> \(target)"
+        return String(localized: "\(matched) -> \(target)", table: "LumiEditor")
     }
 
     private var shouldShowLargeFileIndicator: Bool {
@@ -140,38 +142,38 @@ struct EditorToolbarView: View {
     private var largeFileModeTitle: String {
         switch state.largeFileMode {
         case .normal:
-            return "Normal File"
+            return String(localized: "Normal File", table: "LumiEditor")
         case .medium:
-            return "Medium File"
+            return String(localized: "Medium File", table: "LumiEditor")
         case .large:
-            return "Large File"
+            return String(localized: "Large File", table: "LumiEditor")
         case .mega:
-            return "Mega File"
+            return String(localized: "Mega File", table: "LumiEditor")
         }
     }
 
     private var largeFileModeSummary: String {
         var items: [String] = []
         if state.largeFileMode.isSemanticTokensDisabled {
-            items.append("semantic")
+            items.append(String(localized: "semantic", table: "LumiEditor"))
         }
         if state.isLongLineProtectionSuppressingSyntaxHighlighting {
-            items.append("long-line syntax")
+            items.append(String(localized: "long-line syntax", table: "LumiEditor"))
         }
         if state.largeFileMode.isInlayHintsDisabled {
-            items.append("inlay")
+            items.append(String(localized: "inlay", table: "LumiEditor"))
         }
         if state.largeFileMode.isFoldingDisabled {
-            items.append("folding")
+            items.append(String(localized: "folding", table: "LumiEditor"))
         }
         if state.largeFileMode.isMinimapDisabled {
-            items.append("minimap")
+            items.append(String(localized: "minimap", table: "LumiEditor"))
         }
         if state.isTruncated {
-            items.append("truncated")
+            items.append(String(localized: "truncated", table: "LumiEditor"))
         }
         if state.longestDetectedLine != nil {
-            items.append("long line")
+            items.append(String(localized: "long line", table: "LumiEditor"))
         }
         if items.isEmpty {
             return largeFileModeTitle
@@ -186,7 +188,7 @@ struct EditorToolbarView: View {
         let visibleEnd = state.viewportVisibleLineRange.upperBound
         let renderStart = state.viewportRenderLineRange.lowerBound + 1
         let renderEnd = state.viewportRenderLineRange.upperBound
-        return "Visible L\(visibleStart)-\(visibleEnd) · Render L\(renderStart)-\(renderEnd)"
+        return String(localized: "Visible L\(visibleStart)-\(visibleEnd) · Render L\(renderStart)-\(renderEnd)", table: "LumiEditor")
     }
     
     // MARK: - Font Sizer
@@ -230,24 +232,24 @@ struct EditorToolbarView: View {
     
     private var indentSettings: some View {
         Menu {
-            Button("Tab (↹)") {
+            Button(String(localized: "Tab (↹)", table: "LumiEditor")) {
                 state.useSpaces = false
                 state.persistConfig()
             }
             
-            Button("2 Spaces") {
+            Button(String(localized: "2 Spaces", table: "LumiEditor")) {
                 state.useSpaces = true
                 state.tabWidth = 2
                 state.persistConfig()
             }
             
-            Button("4 Spaces") {
+            Button(String(localized: "4 Spaces", table: "LumiEditor")) {
                 state.useSpaces = true
                 state.tabWidth = 4
                 state.persistConfig()
             }
             
-            Button("8 Spaces") {
+            Button(String(localized: "8 Spaces", table: "LumiEditor")) {
                 state.useSpaces = true
                 state.tabWidth = 8
                 state.persistConfig()
@@ -272,7 +274,7 @@ struct EditorToolbarView: View {
                     state.persistConfig()
                 }
             )) {
-                Text("Format on Save")
+                Text(String(localized: "Format on Save", table: "LumiEditor"))
             }
 
             Toggle(isOn: Binding(
@@ -282,7 +284,7 @@ struct EditorToolbarView: View {
                     state.persistConfig()
                 }
             )) {
-                Text("Organize Imports on Save")
+                Text(String(localized: "Organize Imports on Save", table: "LumiEditor"))
             }
 
             Toggle(isOn: Binding(
@@ -292,7 +294,7 @@ struct EditorToolbarView: View {
                     state.persistConfig()
                 }
             )) {
-                Text("Fix All on Save")
+                Text(String(localized: "Fix All on Save", table: "LumiEditor"))
             }
 
             Toggle(isOn: Binding(
@@ -302,7 +304,7 @@ struct EditorToolbarView: View {
                     state.persistConfig()
                 }
             )) {
-                Text("Trim Trailing Whitespace")
+                Text(String(localized: "Trim Trailing Whitespace", table: "LumiEditor"))
             }
 
             Toggle(isOn: Binding(
@@ -312,7 +314,7 @@ struct EditorToolbarView: View {
                     state.persistConfig()
                 }
             )) {
-                Text("Insert Final Newline")
+                Text(String(localized: "Insert Final Newline", table: "LumiEditor"))
             }
         } label: {
             Image(systemName: "square.and.arrow.down")
@@ -327,11 +329,11 @@ struct EditorToolbarView: View {
 
     private var externalFileConflictControl: some View {
         Menu {
-            Button(state.isEditingProjectPBXProj ? "Use Project Version" : "Reload from Disk") {
+            Button(state.isEditingProjectPBXProj ? String(localized: "Use Project Version", table: "LumiEditor") : String(localized: "Reload from Disk", table: "LumiEditor")) {
                 state.reloadExternalFileConflict()
             }
 
-            Button(state.isEditingProjectPBXProj ? "Use Lumi Version" : "Keep Editor Version") {
+            Button(state.isEditingProjectPBXProj ? String(localized: "Use Lumi Version", table: "LumiEditor") : String(localized: "Keep Editor Version", table: "LumiEditor")) {
                 state.keepEditorVersionForExternalConflict()
             }
         } label: {
@@ -350,34 +352,34 @@ struct EditorToolbarView: View {
         Menu {
             Text(largeFileModeTitle)
             if state.largeFileMode.isSemanticTokensDisabled {
-                Text("Semantic tokens disabled")
+                Text(String(localized: "Semantic tokens disabled", table: "LumiEditor"))
             }
             if state.largeFileMode.isInlayHintsDisabled {
-                Text("Inlay hints disabled")
+                Text(String(localized: "Inlay hints disabled", table: "LumiEditor"))
             }
             if state.largeFileMode.isFoldingDisabled {
-                Text("Folding ribbon disabled")
+                Text(String(localized: "Folding ribbon disabled", table: "LumiEditor"))
             }
             if state.largeFileMode.isMinimapDisabled {
-                Text("Minimap disabled")
+                Text(String(localized: "Minimap disabled", table: "LumiEditor"))
             }
             if state.isTruncated {
-                Text("Editing disabled for truncated preview")
+                Text(String(localized: "Editing disabled for truncated preview", table: "LumiEditor"))
                 if state.canLoadFullFile {
-                    Button("Load Full File") {
+                    Button(String(localized: "Load Full File", table: "LumiEditor")) {
                         state.loadFullFileFromDisk()
                     }
                 }
             }
             if let longestLine = state.longestDetectedLine {
-                Text("Long line: L\(longestLine.line + 1) · \(longestLine.length) chars")
+                Text(String(localized: "Long line: L\(longestLine.line + 1) · \(longestLine.length) chars", table: "LumiEditor"))
             }
             if let viewportRenderSummary {
                 Divider()
                 Text(viewportRenderSummary)
             }
             if state.largeFileMode.maxSyntaxHighlightLines != .max {
-                Text("Syntax highlighting limit: first \(state.largeFileMode.maxSyntaxHighlightLines.formatted()) lines")
+                Text(String(localized: "Syntax highlighting limit: first \(state.largeFileMode.maxSyntaxHighlightLines.formatted()) lines", table: "LumiEditor"))
             }
         } label: {
             HStack(spacing: 4) {
@@ -545,7 +547,7 @@ struct EditorToolbarView: View {
                         state.updateFindReplaceOptions { $0.isCaseSensitive = newValue }
                     }
                 )) {
-                    Text("Case Sensitive")
+                    Text(String(localized: "Case Sensitive", table: "LumiEditor"))
                 }
 
                 Toggle(isOn: Binding(
@@ -554,7 +556,7 @@ struct EditorToolbarView: View {
                         state.updateFindReplaceOptions { $0.matchesWholeWord = newValue }
                     }
                 )) {
-                    Text("Whole Word")
+                    Text(String(localized: "Whole Word", table: "LumiEditor"))
                 }
 
                 Toggle(isOn: Binding(
@@ -563,7 +565,7 @@ struct EditorToolbarView: View {
                         state.updateFindReplaceOptions { $0.isRegexEnabled = newValue }
                     }
                 )) {
-                    Text("Use Regular Expression")
+                    Text(String(localized: "Use Regular Expression", table: "LumiEditor"))
                 }
 
                 Toggle(isOn: Binding(
@@ -572,7 +574,7 @@ struct EditorToolbarView: View {
                         state.updateFindReplaceOptions { $0.inSelectionOnly = newValue }
                     }
                 )) {
-                    Text("In Selection")
+                    Text(String(localized: "In Selection", table: "LumiEditor"))
                 }
 
                 Toggle(isOn: Binding(
@@ -581,7 +583,7 @@ struct EditorToolbarView: View {
                         state.updateFindReplaceOptions { $0.preservesCase = newValue }
                     }
                 )) {
-                    Text("Preserve Case")
+                    Text(String(localized: "Preserve Case", table: "LumiEditor"))
                 }
             } label: {
                 Image(systemName: "slider.horizontal.3")

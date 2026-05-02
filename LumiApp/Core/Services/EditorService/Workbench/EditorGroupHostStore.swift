@@ -22,12 +22,21 @@ final class EditorGroupHostStore: ObservableObject {
     /// 弱引用主 EditorState（由 EditorPanelView 持有），用于配置同步源。
     private weak var primaryState: EditorState?
 
+    /// 编辑器扩展注册中心（由 EditorService 注入，共享给所有 hosted state）
+    private var editorExtensionRegistry: EditorExtensionRegistry?
+
+    /// 注入编辑器扩展注册中心
+    func configureRegistry(_ registry: EditorExtensionRegistry) {
+        editorExtensionRegistry = registry
+    }
+
     func state(for groupID: EditorGroup.ID) -> EditorState {
         if let existing = states[groupID] {
             return existing
         }
 
-        let created = EditorState()
+        let registry = editorExtensionRegistry ?? primaryState?.editorExtensions ?? EditorExtensionRegistry()
+        let created = EditorState(editorExtensions: registry)
         states[groupID] = created
 
         // 同步当前配置到新建的 state

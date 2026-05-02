@@ -8,7 +8,7 @@ actor SampleDecorationEditorPlugin: SuperPlugin {
     static let iconName = "signpost.right.and.left"
     static let order = 90
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

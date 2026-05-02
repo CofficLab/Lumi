@@ -21,7 +21,7 @@ public enum LanguagePreference: String, CaseIterable, Identifiable, Codable, Sen
     public var systemPromptDescription: String {
         switch self {
         case .chinese:
-            return "User Language: Chinese (用户偏好中文，请用中文回复)"
+            return "语言偏好: 中文 (用户偏好中文，请用中文回复)"
         case .english:
             return "User Language: English (User prefers English)"
         }

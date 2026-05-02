@@ -8,7 +8,7 @@ actor MultiCursorCommandsEditorPlugin: SuperPlugin {
     static let iconName = "cursorarrow.and.square.on.square.dashed"
     static let order = 13
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

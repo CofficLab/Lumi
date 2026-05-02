@@ -8,7 +8,7 @@ actor LSPRealtimeSignalsEditorPlugin: SuperPlugin {
     static let iconName = "wifi"
     static let order = 18
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

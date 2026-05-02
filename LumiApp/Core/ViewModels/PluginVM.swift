@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 import ObjectiveC.runtime
 import Combine
+import os
 
 /// 插件 VM，管理插件的生命周期和 UI 贡献
 ///
@@ -23,16 +24,6 @@ import Combine
 ///
 /// ⚠️ 注意：此类标记为 `@MainActor`，所有成员访问都必须在主线程。
 /// 这确保了 UI 相关的操作（如插件注册、视图获取）的线程安全性。
-///
-/// ## 使用示例
-///
-/// ```swift
-/// // 获取面板视图
-/// let panels = PluginVM.shared.getPanelItems()
-///
-/// // 检查插件是否启用
-/// let isEnabled = PluginVM.shared.isPluginEnabled(somePlugin)
-/// ```
 @MainActor
 final class PluginVM: ObservableObject, SuperLog {
     /// 面板图标项（仅用于活动栏图标渲染，不包含视图）
@@ -58,21 +49,13 @@ final class PluginVM: ObservableObject, SuperLog {
         }
     }
 
-    /// Rail 视图项（活动栏与面板之间的辅助栏，全局最多一个）
-    struct RailItem: Identifiable, Equatable {
-        let id: String
-        let view: AnyView
 
-        static func == (lhs: RailItem, rhs: RailItem) -> Bool {
-            lhs.id == rhs.id
-        }
-    }
 
     /// 全局单例
     ///
     /// 整个应用共享同一个 PluginVM 实例。
     /// 使用 `shared` 属性访问全局实例。
-    static let shared = PluginVM()
+    @MainActor static let shared = PluginVM()
 
     /// 日志标识符
     ///
@@ -307,6 +290,8 @@ final class PluginVM: ObservableObject, SuperLog {
         var discoveredItems: [(instance: any SuperPlugin, className: String, order: Int)] = []
         var pluginClassNames: [String] = []
         
+        if Self.verbose { AppLogger.core.info("\(self.t)扫描 \(classes.count) 个类") }
+
         for i in 0 ..< classes.count {
             let cls: AnyClass = classes[i]
             let className = NSStringFromClass(cls)
@@ -325,7 +310,7 @@ final class PluginVM: ObservableObject, SuperLog {
                 discoveredItems.append((instance, className, pluginType.order))
                 pluginClassNames.append(className)
                 if Self.verbose {
-                    AppLogger.core.info("\(self.t)🔍 Discovered plugin: \(pluginType.id) (order: \(pluginType.order))")
+                    AppLogger.core.info("\(self.t)发现插件: \(pluginType.id) (order: \(pluginType.order))")
                 }
             }
         }
@@ -427,7 +412,8 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 判断逻辑：
     /// 1. 如果插件不可配置（`isConfigurable = false`），始终返回 true
-    /// 2. 如果插件可配置，从用户设置中读取启用状态
+    /// 2. 如果插件可配置，从用户设置中读取启用状态；
+    ///    若用户未手动配置过，则回退到插件的 `enable` 静态属性作为默认值
     ///
     /// - Parameter plugin: 要检查的插件
     /// - Returns: 如果插件被启用则返回 true
@@ -439,9 +425,9 @@ final class PluginVM: ObservableObject, SuperLog {
             return true
         }
         
-        // 检查用户配置
+        // 检查用户配置；未配置时使用插件的 enable 静态属性作为默认值
         let pluginId = plugin.instanceLabel
-        return settingsStore.isPluginEnabled(pluginId)
+        return settingsStore.isPluginEnabled(pluginId, defaultEnabled: pluginType.enable)
     }
 
     /// 获取所有插件的根视图包裹
@@ -556,6 +542,32 @@ final class PluginVM: ObservableObject, SuperLog {
         return nil
     }
 
+    /// 获取当前激活插件的所有 Panel Header 视图
+    ///
+    /// 收集所有启用插件通过 `addPanelHeaderView(activeIcon:)` 提供的 header 视图，
+    /// 按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
+    ///
+    /// - Returns: Panel Header 视图数组
+    func getActivePanelHeaderViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addPanelHeaderView(activeIcon: activeIcon) }
+    }
+
+    /// 获取当前激活插件的所有 Panel Bottom 视图
+    ///
+    /// 收集所有启用插件通过 `addPanelBottomView(activeIcon:)` 提供的底部视图，
+    /// 按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
+    ///
+    /// - Returns: Panel Bottom 视图数组
+    func getActivePanelBottomViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addPanelBottomView(activeIcon: activeIcon) }
+    }
+
     /// 当前是否有面板视图
     ///
     /// 用于布局决策：有面板时使用中间栏 + 右侧栏分栏，无时仅显示右侧栏。
@@ -568,32 +580,30 @@ final class PluginVM: ObservableObject, SuperLog {
             }
     }
 
-    /// 获取所有插件提供的 Rail 视图项
+    /// 聚合所有插件提供的 Rail 标签页
     ///
-    /// 收集所有启用插件提供的 Rail 视图。
-    /// ⚠️ Rail 视图全局互斥，最多只能有一个插件提供。
-    /// 如果超过一个，渲染层会显示冲突错误视图。
-    ///
-    /// - Returns: Rail 视图项数组
-    func getRailItems() -> [RailItem] {
+    /// 收集所有启用插件通过 `addRailTabs()` 提供的标签页，
+    /// 按 priority 升序排列。
+    func getRailTabs() -> [RailTab] {
         let activeIcon = activePanelIcon
         return plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { plugin -> RailItem? in
-                guard let view = plugin.addRailView(activeIcon: activeIcon) else { return nil }
-                return RailItem(
-                    id: plugin.instanceLabel,
-                    view: view
-                )
-            }
+            .flatMap { $0.addRailTabs(activeIcon: activeIcon) }
+            .sorted { $0.priority < $1.priority }
     }
 
-    /// 当前是否有 Rail 视图
-    func hasRail() -> Bool {
+    /// 获取指定 Rail tab 对应的内容视图
+    func getRailContentView(tabId: String) -> AnyView? {
         let activeIcon = activePanelIcon
         return plugins
             .filter { isPluginEnabled($0) }
-            .contains { $0.addRailView(activeIcon: activeIcon) != nil }
+            .compactMap { $0.addRailContentView(tabId: tabId, activeIcon: activeIcon) }
+            .first
+    }
+
+    /// 当前是否有 Rail 标签页
+    func hasRailTabs() -> Bool {
+        !getRailTabs().isEmpty
     }
 
     /// 获取所有插件提供的右侧栏视图

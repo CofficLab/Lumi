@@ -8,7 +8,7 @@ actor LSPServiceEditorPlugin: SuperPlugin {
     static let iconName = "server.rack"
     static let order = 5
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 
@@ -16,6 +16,9 @@ actor LSPServiceEditorPlugin: SuperPlugin {
         // 创建 LSP 协调器并注册到 Registry — 内核通过协议接口使用，不直接引用插件类型
         let coordinator = LSPCoordinator(lspService: .shared)
         registry.registerSuperEditorLSPClient(coordinator)
+
+        // 注入 registry 到 LSPService（替代 EditorExtensionRegistry.shared）
+        LSPService.shared.configureRegistry(registry)
 
         // 注册语义 Token 提供者（同时遵循 HighlightProviding）
         let semanticTokenProvider = SemanticTokenHighlightProvider(

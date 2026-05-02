@@ -110,7 +110,7 @@ struct EditorPeekOverlayView: View {
                             )
                     }
                 } else {
-                    Text("No preview available")
+                    Text(String(localized: "No preview available", table: "LumiEditor"))
                         .font(.system(size: 11))
                         .foregroundColor(AppUI.Color.semantic.textTertiary)
                 }
@@ -122,13 +122,13 @@ struct EditorPeekOverlayView: View {
 
     private var footer: some View {
         HStack {
-            Text("\(presentation.items.count) item" + (presentation.items.count == 1 ? "" : "s"))
+            Text(String(localized: "\(presentation.items.count) items", table: "LumiEditor"))
                 .font(.system(size: 10))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
 
             Spacer(minLength: 0)
 
-            Button("Open") {
+            Button(String(localized: "Open", table: "LumiEditor")) {
                 guard let selectedItem else { return }
                 state.openPeekItem(selectedItem)
             }
@@ -136,7 +136,7 @@ struct EditorPeekOverlayView: View {
             .controlSize(.small)
             .disabled(selectedItem == nil)
 
-            Button("Close") {
+            Button(String(localized: "Close", table: "LumiEditor")) {
                 state.dismissPeek()
             }
             .buttonStyle(.borderless)

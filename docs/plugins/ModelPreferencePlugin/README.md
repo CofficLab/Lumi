@@ -14,7 +14,7 @@
 
 数据保存在：
 ```
-~/Library/Application Support/com.cofficlab.Lumi/db_production/ModelPreference/settings/preference.plist
+~/Library/Application Support/com.coffic.Lumi/db_production/ModelPreference/settings/preference.plist
 ```
 
 使用 Property List (Plist) 格式存储，包含以下键：

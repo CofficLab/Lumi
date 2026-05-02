@@ -53,7 +53,7 @@ enum AppConfig {
 
     /// 获取当前应用的 App Support 目录
     ///
-    /// 路径格式：`~/Library/Application Support/com.cofficlab.Lumi`
+    /// 路径格式：`~/Library/Application Support/com.coffic.Lumi`
     ///
     /// - Returns: App Support 目录的 URL
     static func getCurrentAppSupportDir() -> URL {
@@ -62,7 +62,7 @@ enum AppConfig {
             fatalError("无法获取 App Support 目录")
         }
 
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.cofficlab.Lumi"
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.Lumi"
         let appDirectory = appSupportURL.appendingPathComponent(bundleID, isDirectory: true)
 
         // 确保目录存在

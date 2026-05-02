@@ -8,7 +8,7 @@ actor LSPToolbarEditorPlugin: SuperPlugin {
     static let iconName = "wrench.and.screwdriver"
     static let order = 19
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

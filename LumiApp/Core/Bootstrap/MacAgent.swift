@@ -50,6 +50,9 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// 2. 初始化各个控制器
     /// 3. 发送应用启动完成通知
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // 启动磁盘日志收集
+        FileLogCoordinator.shared.start()
+
         if Self.verbose {
             AppLogger.core.info("\(self.t)应用启动完成")
         }
@@ -75,6 +78,9 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         if Self.verbose {
             AppLogger.core.info("\(self.t)应用即将终止")
         }
+
+        // 停止磁盘日志收集，flush 剩余条目
+        FileLogCoordinator.shared.stop()
 
         cleanupApplication()
 

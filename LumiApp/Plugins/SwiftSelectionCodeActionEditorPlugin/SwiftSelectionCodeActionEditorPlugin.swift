@@ -8,7 +8,7 @@ actor SwiftSelectionCodeActionEditorPlugin: SuperPlugin {
     static let iconName = "cursorarrow.click.badge.clock"
     static let order = 30
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

@@ -110,43 +110,38 @@ final class EditorSettingsState: ObservableObject {
     /// 配置控制器，负责配置的持久化和恢复
     private let configController: EditorConfigController
     
-    /// 插件管理器，负责管理编辑器插件
-    private let pluginManager: EditorPluginManager
-    
     /// 当前工作区路径提供者（由插件注入，内核不关心项目概念）
     let currentWorkspacePathProvider: (() -> String?)?
-    
+
+    /// 编辑器扩展注册中心（由 RootViewContainer 注入）
+    private weak var _editorExtensionRegistry: EditorExtensionRegistry?
+
     /// 基础配置快照，用于存储和恢复全局设置
     private var baseSnapshot: EditorConfigSnapshot
-    
+
     /// 是否抑制持久化操作（在批量更新时使用）
     private var suppressPersistence = true
-    
+
     /// Combine 订阅集合
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - 初始化方法
-    
+
     /// 初始化编辑器设置状态
     /// - Parameters:
     ///   - configController: 配置控制器实例
-    ///   - pluginManager: 插件管理器实例
     ///   - currentWorkspacePathProvider: 工作区路径提供者闭包
     init(
         configController: EditorConfigController = EditorConfigController(),
-        pluginManager: EditorPluginManager = EditorPluginManager(),
         currentWorkspacePathProvider: (() -> String?)? = nil
     ) {
         self.configController = configController
-        self.pluginManager = pluginManager
         self.currentWorkspacePathProvider = currentWorkspacePathProvider
-        self.baseSnapshot = configController.restoreConfig(clampedSidePanelWidth: { CGFloat($0) })
+        self.baseSnapshot = configController.restoreConfig()
 
         // 恢复保存的设置
         restore()
-        // 重新安装编辑器插件
-        reinstallEditorPlugins()
-        // 监听插件设置变化
+        // 监听插件设置变化（registry 注入后由 reinstallEditorPlugins 触发首次安装）
         observePluginSettingChanges()
     }
 
@@ -154,7 +149,7 @@ final class EditorSettingsState: ObservableObject {
     
     /// 获取插件贡献的设置项列表
     var contributedSettings: [EditorSettingsItemSuggestion] {
-        pluginManager.registry.settingsSuggestions(state: self)
+        _editorExtensionRegistry?.settingsSuggestions(state: self) ?? []
     }
 
     /// 获取当前工作区路径
@@ -187,12 +182,17 @@ final class EditorSettingsState: ObservableObject {
     }
 
     // MARK: - 公共方法
+
+    /// 注入编辑器扩展注册中心（由 RootViewContainer 在初始化后调用）
+    func configureRegistry(_ registry: EditorExtensionRegistry) {
+        _editorExtensionRegistry = registry
+    }
     
     /// 从持久化存储恢复所有设置
     /// 在初始化时调用，或手动刷新设置时调用
     func restore() {
         suppressPersistence = true
-        let snapshot = configController.restoreConfig(clampedSidePanelWidth: { CGFloat($0) })
+        let snapshot = configController.restoreConfig()
         baseSnapshot = snapshot
         
         // 恢复全局设置
@@ -232,8 +232,7 @@ final class EditorSettingsState: ObservableObject {
             showMinimap: showMinimap,
             showGutter: showGutter,
             showFoldingRibbon: showFoldingRibbon,
-            currentThemeId: baseSnapshot.currentThemeId,
-            sidePanelWidth: baseSnapshot.sidePanelWidth
+            currentThemeId: baseSnapshot.currentThemeId
         )
     }
 
@@ -261,8 +260,7 @@ final class EditorSettingsState: ObservableObject {
         
         configController.persistOverrideSnapshot(
             currentScopedOverrideSnapshot,
-            for: scope,
-            clampedSidePanelWidth: { CGFloat($0) }
+            for: scope
         )
         
         // 通知其他组件设置已变化
@@ -276,10 +274,16 @@ final class EditorSettingsState: ObservableObject {
     /// 重新安装编辑器插件
     /// 当插件列表或启用状态变化时调用
     private func reinstallEditorPlugins() {
+        guard let registry = _editorExtensionRegistry else { return }
         let plugins = PluginVM.shared.plugins.filter {
-            PluginVM.shared.isPluginEnabled($0) && $0.providesEditorExtensions
+            PluginVM.shared.isPluginEnabled($0)
         }
-        pluginManager.install(plugins: plugins)
+        // 先让所有插件自注册
+        for plugin in plugins {
+            plugin.registerEditorExtensions(into: registry)
+        }
+        // 再记录到 registry
+        registry.recordInstalledPlugins(plugins)
         objectWillChange.send()
     }
 
@@ -295,11 +299,10 @@ final class EditorSettingsState: ObservableObject {
     }
 
     /// 刷新外部快照字段
-    /// 从配置控制器获取最新的主题 ID 和侧边栏宽度
+    /// 从配置控制器获取最新的主题 ID
     private func refreshExternalSnapshotFields() {
-        let latest = configController.restoreConfig(clampedSidePanelWidth: { CGFloat($0) })
+        let latest = configController.restoreConfig()
         baseSnapshot.currentThemeId = latest.currentThemeId
-        baseSnapshot.sidePanelWidth = latest.sidePanelWidth
     }
 
     /// 获取当前激活的覆盖作用域
@@ -334,8 +337,7 @@ final class EditorSettingsState: ObservableObject {
         let overrideSnapshot: EditorScopedOverrideSnapshot
         if let scope = activeOverrideScope {
             overrideSnapshot = configController.overrideSnapshot(
-                for: scope,
-                clampedSidePanelWidth: { CGFloat($0) }
+                for: scope
             )
         } else {
             overrideSnapshot = EditorScopedOverrideSnapshot()

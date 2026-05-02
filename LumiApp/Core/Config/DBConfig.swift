@@ -104,8 +104,8 @@ enum DBConfig {
     /// 获取数据库文件夹目录（应用主库与插件子目录的根目录）
     ///
     /// 路径格式（带主版本号）：
-    /// - Debug: `~/Library/Application Support/com.cofficlab.Lumi/db_debug_v1`
-    /// - Release: `~/Library/Application Support/com.cofficlab.Lumi/db_production_v2`
+    /// - Debug: `~/Library/Application Support/com.coffic.Lumi/db_debug_v1`
+    /// - Release: `~/Library/Application Support/com.coffic.Lumi/db_production_v2`
     ///
     /// 版本号规则：使用主版本号，同一主版本的所有子版本共享数据库
     /// - 版本 1.x（包括 1.0, 1.1, 1.2...）都使用 v1 目录
@@ -192,7 +192,7 @@ enum DBConfig {
     
     /// 获取当前应用的 App Support 目录
     ///
-    /// 路径格式：`~/Library/Application Support/com.cofficlab.Lumi`
+    /// 路径格式：`~/Library/Application Support/com.coffic.Lumi`
     ///
     /// - Returns: App Support 目录的 URL
     private static func getAppSupportDirectory() -> URL {
@@ -201,7 +201,7 @@ enum DBConfig {
             fatalError("无法获取 App Support 目录")
         }
 
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.cofficlab.Lumi"
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.Lumi"
         let appDirectory = appSupportURL.appendingPathComponent(bundleID, isDirectory: true)
 
         // 确保目录存在

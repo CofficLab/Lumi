@@ -53,7 +53,7 @@ class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
     init(
         lspService: LSPService = .shared,
         documentSymbolsPreflight: @escaping @MainActor (_ uri: String) -> EditorLanguageFeatureError? = { uri in
-            EditorPluginManager.activeRegistry?
+            LSPService.shared._editorExtensionRegistry?
                 .semanticCapability(for: uri)?
                 .preflightError(
                     uri: uri,

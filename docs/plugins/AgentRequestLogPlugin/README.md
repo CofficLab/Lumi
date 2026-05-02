@@ -26,7 +26,7 @@ RequestLogPlugin/
 ### 存储方式
 
 - **格式**：SwiftData（SQLite）
-- **位置**：`~/Library/Application Support/com.cofficlab.Lumi/db_{debug|production}/RequestLogPlugin/history.sqlite`
+- **位置**：`~/Library/Application Support/com.coffic.Lumi/db_{debug|production}/RequestLogPlugin/history.sqlite`
 
 ### 数据模型
 

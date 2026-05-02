@@ -1,8 +1,13 @@
 import Foundation
+import MagicKit
 import CodeEditTextView
+import os
 
 @MainActor
-final class LSPContextCommandContributor: SuperEditorCommandContributor {
+final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLog {
+    nonisolated static let emoji = "🔌"
+    nonisolated static let verbose = false
+
     let id: String = "builtin.lsp.context-commands"
 
     func provideCommands(
@@ -11,6 +16,9 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor {
         textView: TextView?
     ) -> [EditorCommandSuggestion] {
         let selection = textView?.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
+        if Self.verbose {
+            LSPContextCommandsEditorPlugin.logger.info("\(self.t)provideCommands 被调用, canPreview=\(state.canPreview), isEditable=\(state.isEditable), textView=\(textView != nil)")
+        }
 
         return [
             .init(

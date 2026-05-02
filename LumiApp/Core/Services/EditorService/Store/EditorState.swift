@@ -12,22 +12,6 @@ import os
 
 /// 编辑器状态管理器
 /// 管理当前文件的内容（NSTextStorage）、光标位置、编辑器配置等
-///
-/// ## 状态拆分（P2.1）
-/// - `uiState` — UI 配置（字体、主题、显示选项）
-/// - `fileState` — 文件元数据与内容
-/// - `panelState` — 面板显示状态（problems、references、hover 等）
-/// - `editorState` — 编辑器底层状态（光标、滚动、查找）
-///
-/// ## 当前职责地图（Phase 12 Baseline）
-/// - document: 文件加载、二进制/文本判定、保存、外部修改监听、LSP 文档生命周期
-/// - session: `activeSession`、canonical selections、find/replace、scroll restore、undo/redo
-/// - workbench-integration: `onActiveSessionChanged`、session snapshot 同步、open item / navigation 落点
-/// - panel: problems / references / hover / workspace symbol / call hierarchy
-/// - runtime: viewport render、large file mode、长行保护、runtime gating、overlay availability
-/// - command: command palette、command context、registry refresh、toolbar/context menu dispatch
-///
-/// 所有 `@Published` 属性保留向后兼容，同时通过组合子状态容器实现关注点分离。
 @MainActor
 final class EditorState: ObservableObject, SuperLog {
     private final class SessionSyncGate {
@@ -284,12 +268,10 @@ final class EditorState: ObservableObject, SuperLog {
     
     /// 编辑器 LSP 客户端抽象（从 registry 获取）
     private(set) var lspClient: any SuperEditorLSPClient
-    /// 编辑器子插件管理器（负责补全/悬停/code action 等扩展点）
-    let editorPluginManager: EditorPluginManager
-    /// 已安装的编辑器插件信息（Phase 4: 从 installedPlugins 派生）
+    /// 已安装的编辑器插件信息（从 registry.installedPlugins 派生）
     var editorFeaturePlugins: [EditorPluginInfo] {
         // 已安装的插件均已通过 PluginVM 启用过滤，因此 isEnabled 恒为 true
-        editorPluginManager.installedPlugins.map { plugin in
+        editorExtensions.installedPlugins.map { plugin in
             let type = type(of: plugin)
             return EditorPluginInfo(
                 id: type.id,
@@ -311,8 +293,8 @@ final class EditorState: ObservableObject, SuperLog {
         let isEnabled: Bool
     }
 
-    /// 兼容旧调用：编辑器扩展注册中心
-    var editorExtensions: EditorExtensionRegistry { editorPluginManager.registry }
+    /// 编辑器扩展注册中心
+    let editorExtensions: EditorExtensionRegistry
     var projectContextCapability: (any SuperEditorProjectContextCapability)? {
         editorExtensions.projectContextCapability(for: projectRootPath)
     }
@@ -1134,8 +1116,6 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    /// 右侧面板宽度
-    @Published var sidePanelWidth: CGFloat = 360
     
     // MARK: - Auto Save
     
@@ -1152,8 +1132,8 @@ final class EditorState: ObservableObject, SuperLog {
     
     // MARK: - Init
     
-    init() {
-        self.editorPluginManager = EditorPluginManager()
+    init(editorExtensions: EditorExtensionRegistry) {
+        self.editorExtensions = editorExtensions
 
         // Initialize all providers with null defaults first (required for Swift init safety)
         // 内核不直接引用任何插件的类型，所有能力均通过 Registry 获取
@@ -1168,9 +1148,6 @@ final class EditorState: ObservableObject, SuperLog {
         self.diagnosticsProvider = NullDiagnosticsProvider()
         self.lspClient = NullLSPClient()
 
-        // Install plugins first, so providers are registered into registry
-        installEditorPluginsFromPluginVM()
-        
         let registry = self.editorExtensions
         
         // All providers come from registry — no direct dependency on any plugin
@@ -1198,12 +1175,11 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 从 PluginVM 过滤并安装编辑器插件（Phase 2）
-    private func installEditorPluginsFromPluginVM() {
-        let editorPlugins = PluginVM.shared.plugins.filter {
-            PluginVM.shared.isPluginEnabled($0) && $0.providesEditorExtensions
-        }
-        editorPluginManager.install(plugins: editorPlugins)
-    }
+    /// 
+    /// ⚠️ 已废弃：插件注册现在由 RootViewContainer 统一处理。
+    /// 保留此方法仅为兼容性，实际不再被调用。
+    @available(*, deprecated, message: "Use RootViewContainer's plugin registration flow instead")
+    private func installEditorPluginsFromPluginVM() {}
 
     private func bindKeybindings() {
         keybindingCancellable?.cancel()
@@ -1527,8 +1503,7 @@ final class EditorState: ObservableObject, SuperLog {
             for: EditorConfigContext(
                 workspacePath: projectRootPath,
                 languageId: detectedLanguage?.tsName
-            ),
-            clampedSidePanelWidth: appearanceController.clampedSidePanelWidth(_:)
+            )
         )
         applyConfigSnapshot(snapshot)
     }
@@ -1549,8 +1524,7 @@ final class EditorState: ObservableObject, SuperLog {
                 showMinimap: showMinimap,
                 showGutter: showGutter,
                 showFoldingRibbon: showFoldingRibbon,
-                currentThemeId: currentThemeId,
-                sidePanelWidth: sidePanelWidth
+                currentThemeId: currentThemeId
             )
         )
     }
@@ -1568,7 +1542,6 @@ final class EditorState: ObservableObject, SuperLog {
         showMinimap = snapshot.showMinimap
         showGutter = snapshot.showGutter
         showFoldingRibbon = snapshot.showFoldingRibbon
-        sidePanelWidth = snapshot.sidePanelWidth
         currentThemeId = snapshot.currentThemeId
         currentTheme = resolveTheme(for: currentThemeId)
     }
@@ -2419,17 +2392,6 @@ final class EditorState: ObservableObject, SuperLog {
                 self?.showStatusToast(message, level: level, duration: duration)
             }
         )
-    }
-
-    func updateSidePanelWidth(by delta: CGFloat) {
-        sidePanelWidth = appearanceController.updateSidePanelWidth(
-            currentWidth: sidePanelWidth,
-            delta: delta
-        )
-    }
-
-    func persistSidePanelWidth() {
-        appearanceController.persistSidePanelWidth(sidePanelWidth)
     }
 
     // MARK: - LSP Helpers

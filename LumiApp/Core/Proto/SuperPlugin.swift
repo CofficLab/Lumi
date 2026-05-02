@@ -2,6 +2,24 @@ import AppKit
 import SwiftUI
 import Foundation
 
+/// Rail 标签页定义
+///
+/// 插件通过 `addRailTabs()` 返回此结构体，由内核聚合渲染为统一的 Tab Bar。
+struct RailTab: Identifiable, Equatable {
+    /// 唯一标识
+    let id: String
+    /// 显示标题
+    let title: String
+    /// SF Symbol 图标名
+    let systemImage: String
+    /// 排序优先级（数字越小越靠前）
+    let priority: Int
+
+    static func == (lhs: RailTab, rhs: RailTab) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 /// 插件协议，定义插件的基本接口和 UI 贡献方法
 ///
 /// SuperPlugin 是 Lumi 插件系统的核心协议，所有插件都必须实现此协议。
@@ -138,21 +156,45 @@ protocol SuperPlugin: Actor {
     ///   如果为 `nil`，表示没有任何图标被激活。
     @MainActor func addPanelView(activeIcon: String?) -> AnyView?
 
-    /// 添加 Rail 视图
+    /// 提供 Panel Header 视图
     ///
-    /// 提供一个位于活动栏与面板内容区之间的辅助栏视图。
-    /// Rail 适合放置上下文相关的辅助导航或浏览内容，
-    /// 例如文件浏览器树、符号大纲、书签列表等。
+    /// 在面板内容区上方渲染的头部视图。多个插件提供的 header 视图
+    /// 会按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
+    ///
+    /// 典型用例：编辑器的 Tab Strip、面包屑导航等。
     ///
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    ///   插件可据此判断是否提供 Rail 视图（例如仅在特定插件激活时显示）。
+    ///   插件应将其与目标 panel 的 `addPanelIcon()` 返回值比较，
+    ///   仅在匹配时提供 header 视图。
+    @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView?
+
+    /// 提供 Panel Bottom 视图
     ///
-    /// ## 互斥规则
+    /// 在面板内容区下方渲染的底部视图。多个插件提供的 bottom 视图
+    /// 会按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
     ///
-    /// ⚠️ 全局最多只能有一个插件提供 Rail 视图。
-    /// 如果多个插件同时提供，会显示冲突错误视图。
-    /// 请确保只有一个启用的插件实现了此方法。
-    @MainActor func addRailView(activeIcon: String?) -> AnyView?
+    /// 典型用例：编辑器的底部面板（Problems、References、Search Results 等）。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件应将其与目标 panel 的 `addPanelIcon()` 返回值比较，
+    ///   仅在匹配时提供 bottom 视图。
+    @MainActor func addPanelBottomView(activeIcon: String?) -> AnyView?
+
+    /// 提供 Rail 标签页列表
+    ///
+    /// 插件返回一个或多个 `RailTab`，由内核聚合渲染为统一的 Tab Bar。
+    /// 每个 tab 包含 id、标题、图标和排序优先级。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab]
+
+    /// 提供指定 Rail tab 对应的内容视图
+    ///
+    /// 内核在用户选中某个 tab 时调用此方法获取对应的内容视图。
+    ///
+    /// - Parameter tabId: 选中的 tab id，与 `addRailTabs()` 返回的 `RailTab.id` 对应。
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView?
 
     /// 添加右侧栏视图
     ///
@@ -233,7 +275,7 @@ protocol SuperPlugin: Actor {
     ///
     /// 返回 `true` 表示该插件会向 `EditorExtensionRegistry` 注入编辑器能力
     ///（如补全、hover、code action、LSP 服务等）。
-    /// `PluginVM` 会据此过滤出编辑器插件，交给 `EditorPluginManager` 安装。
+    /// `PluginVM` 会据此过滤出编辑器插件，交给 `EditorExtensionRegistry` 安装。
     /// 默认返回 `false`。
     nonisolated var providesEditorExtensions: Bool { get }
 
@@ -249,22 +291,6 @@ protocol SuperPlugin: Actor {
     ///
     /// 默认实现为空操作。只有需要贡献编辑器能力的插件才需要重写此方法。
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry)
-
-    /// 提供项目上下文能力。
-    ///
-    /// 用于项目打开/关闭、上下文同步、当前文件项目快照等高层能力。
-    /// 这是 editor 内核面向插件的高层入口，插件作者不需要直接理解内核内部 registry 或 bridge。
-    @MainActor func editorProjectContextCapability() -> (any SuperEditorProjectContextCapability)?
-
-    /// 提供语义可用性能力。
-    ///
-    /// 用于 preflight、当前文件语义环境检查，以及语言能力不可用时的错误归类。
-    @MainActor func editorSemanticCapability() -> (any SuperEditorSemanticCapability)?
-
-    /// 提供语言服务项目集成能力列表。
-    ///
-    /// 用于按语言生成 workspace folders、initialization options 等项目型语言服务集成参数。
-    @MainActor func editorLanguageIntegrationCapabilities() -> [any SuperEditorLanguageIntegrationCapability]
 
     // MARK: - Lifecycle Hooks
 

@@ -1,4 +1,5 @@
 import Foundation
+import MagicKit
 import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView
@@ -184,7 +185,10 @@ final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
 ///
 /// 因此我们通过 ObjC runtime 的 `class_replaceMethod` 替换 textView 实例所属类
 /// 的 `menu(for:)` 实现。新实现先调用原始方法获取标准菜单，再往其中插入自定义项。
-final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable {
+final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable, SuperLog {
+
+    nonisolated static let emoji = "🖱️"
+    nonisolated static let verbose = true
 
     private weak var state: EditorState?
 
@@ -196,9 +200,14 @@ final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable {
 
     nonisolated func controllerDidAppear(controller: TextViewController) {
         MainActor.assumeIsolated {
-            guard let textView = controller.textView, let state else { return }
+            guard let textView = controller.textView, let state else {
+                AppLogger.core.warning("\(Self.t)controllerDidAppear: textView=\(controller.textView != nil), state=\(self.state != nil), 跳过注册")
+                return
+            }
+            AppLogger.core.info("\(Self.t)controllerDidAppear: 开始注册 textView=\(String(describing: textView)), canPreview=\(state.canPreview), commandContributors=\(state.editorExtensions.commandContributorsCount)")
             MultiCursorInputInstaller.shared.register(textView: textView, state: state)
             ContextMenuManager.shared.register(textView: textView, state: state)
+            AppLogger.core.info("\(Self.t)controllerDidAppear: 注册完成")
         }
     }
 
@@ -212,7 +221,10 @@ final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable {
 /// 使用全局单例 + associated object 的方式，在 swizzle 后的 `menu(for:)` 中
 /// 通过 textView 实例查找对应的 helper 来注入自定义菜单项。
 @MainActor
-final class ContextMenuManager {
+final class ContextMenuManager: SuperLog {
+
+    nonisolated static let emoji = "🖱️"
+    nonisolated static let verbose = true
 
     static let shared = ContextMenuManager()
 
@@ -231,6 +243,7 @@ final class ContextMenuManager {
         // 确保这个类只 swizzle 一次
         if objc_getAssociatedObject(targetClass, Self.swizzledKey) == nil {
             objc_setAssociatedObject(targetClass, Self.swizzledKey, true, .OBJC_ASSOCIATION_RETAIN)
+            if Self.verbose { AppLogger.core.info("\(self.t)首次 swizzle class=\(String(describing: targetClass))") }
             swizzleMenuForClass(targetClass)
         }
 
@@ -252,7 +265,10 @@ final class ContextMenuManager {
     private func swizzleMenuForClass(_ targetClass: AnyClass) {
         let selector = #selector(NSView.menu(for:))
 
-        guard let originalMethod = class_getInstanceMethod(targetClass, selector) else { return }
+        guard let originalMethod = class_getInstanceMethod(targetClass, selector) else {
+            if Self.verbose { AppLogger.core.warning("\(self.t)swizzleMenuForClass: 找不到 menu(for:) 方法, class=\(String(describing: targetClass))") }
+            return
+        }
         let originalIMP = method_getImplementation(originalMethod)
 
         // 新实现：先调用原始方法拿到菜单，再由 helper 注入自定义项
@@ -273,6 +289,7 @@ final class ContextMenuManager {
 
         let newIMP = imp_implementationWithBlock(block)
         class_replaceMethod(targetClass, selector, newIMP, "@@:@@")
+        if Self.verbose { AppLogger.core.info("\(self.t)swizzleMenuForClass: 替换成功, class=\(String(describing: targetClass))") }
     }
 }
 
@@ -280,7 +297,10 @@ final class ContextMenuManager {
 
 /// 每个 textView 实例对应一个 helper，负责注入自定义菜单项
 @MainActor
-final class ContextMenuHelper: NSObject {
+final class ContextMenuHelper: NSObject, SuperLog {
+
+    nonisolated static let emoji = "🖱️"
+    nonisolated static let verbose = true
 
     private weak var textView: TextView?
     private weak var state: EditorState?
@@ -308,7 +328,10 @@ final class ContextMenuHelper: NSObject {
                 }
             }
 
-        guard let textView, let state else { return }
+        guard let textView, let state else {
+            if Self.verbose { AppLogger.core.warning("\(self.t)injectCustomItems: textView=\(self.textView != nil) state=\(self.state != nil), 跳过注入") }
+            return
+        }
 
         currentTargets.removeAll()
 
@@ -317,7 +340,19 @@ final class ContextMenuHelper: NSObject {
             for: invocationContext,
             categories: EditorCommandCategoryScope.editorContextMenu
         )
-        guard !presentationModel.flattenedCommands.isEmpty else { return }
+
+        let commandCount = presentationModel.flattenedCommands.count
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)injectCustomItems: 命令数=\(commandCount), sections=\(presentationModel.sections.count)")
+            for cmd in presentationModel.flattenedCommands {
+                AppLogger.core.info("\(self.t)injectCustomItems: 命令 id=\(cmd.id), title=\(cmd.title), isEnabled=\(cmd.isEnabled), category=\(cmd.category ?? "nil")")
+            }
+        }
+
+        guard !presentationModel.flattenedCommands.isEmpty else {
+            if Self.verbose { AppLogger.core.warning("\(self.t)injectCustomItems: 命令列表为空, 不注入菜单项") }
+            return
+        }
 
         // 插入分隔符到顶部
         let topSeparator = NSMenuItem.separator()

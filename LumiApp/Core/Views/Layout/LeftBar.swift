@@ -69,33 +69,6 @@ struct ActivityBar: View {
     }
 }
 
-// MARK: - Panel Content View
-
-/// 面板内容视图：显示当前激活插件的面板内容
-///
-/// 根据 `PluginVM.activePanelIcon` 找到匹配的插件，
-/// 通过 `getActivePanelItem()` 获取其面板视图。
-/// 每个插件的宽度比例独立持久化（UserDefaults key: `Split.Panel.<pluginId>`）。
-struct PanelContentView: View {
-    @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject var layoutVM: LayoutVM
-
-    var body: some View {
-        let activeItem = pluginProvider.getActivePanelItem()
-
-        Group {
-            if let activeItem {
-                activeItem.view
-                    .background(SplitViewWidthPersistence(storageKey: "Split.Panel.\(activeItem.id)"))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else {
-                Color.clear
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-    }
-}
-
 // MARK: - Activity Bar Button
 
 /// VS Code 风格的活动栏图标按钮

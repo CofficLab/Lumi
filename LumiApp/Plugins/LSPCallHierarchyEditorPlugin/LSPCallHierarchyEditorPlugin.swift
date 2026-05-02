@@ -8,7 +8,7 @@ actor LSPCallHierarchyEditorPlugin: SuperPlugin {
     static let iconName = "diagram"
     static let order = 25
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

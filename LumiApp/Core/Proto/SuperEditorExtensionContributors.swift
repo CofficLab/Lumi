@@ -388,15 +388,14 @@ protocol SuperEditorGutterDecorationContributor: AnyObject {
 
 @MainActor
 enum EditorPanelPlacement: String, Equatable {
-    case side
     case sheet
     case bottom
 }
 
 /// 编辑器统一面板建议
 ///
-/// 用于把 side panel、sheet 与 bottom panel 收口到一个统一 contribution point。
-/// 旧的 `SuperEditorSidePanelContributor` / `SuperEditorSheetContributor` 仍然保留，便于渐进迁移。
+/// 用于把 sheet 与 bottom panel 收口到一个统一 contribution point。
+/// 旧的 `SuperEditorSheetContributor` 仍然保留，便于渐进迁移。
 @MainActor
 struct EditorPanelSuggestion: Identifiable {
     let id: String
@@ -484,24 +483,6 @@ struct EditorSettingsItemSuggestion: Identifiable {
 protocol SuperEditorSettingsContributor: AnyObject {
     var id: String { get }
     func provideSettingsItems(state: EditorSettingsState) -> [EditorSettingsItemSuggestion]
-}
-
-// MARK: - Side Panel
-
-/// 编辑器侧边面板建议（如 References / Problems）
-@MainActor
-struct EditorSidePanelSuggestion: Identifiable {
-    let id: String
-    let order: Int
-    let isPresented: (EditorState) -> Bool
-    let content: (EditorState) -> AnyView
-}
-
-/// 编辑器侧边面板扩展点
-@MainActor
-protocol SuperEditorSidePanelContributor: AnyObject {
-    var id: String { get }
-    func provideSidePanels(state: EditorState) -> [EditorSidePanelSuggestion]
 }
 
 // MARK: - Sheet

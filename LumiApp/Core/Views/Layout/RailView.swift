@@ -2,17 +2,13 @@ import SwiftUI
 
 /// Rail 视图：位于活动栏与面板内容区之间的辅助栏
 ///
-/// Rail 是一个窄型过渡栏，允许插件提供上下文相关的辅助视图，
-/// 例如文件浏览器树、符号大纲、书签列表等。
-///
-/// ## 渲染规则
-///
-/// - **0 个插件提供**：不渲染，布局中不占空间
-/// - **1 个插件提供**：正常渲染该插件的 Rail 视图
-/// - **多个插件提供**：渲染 `RailConflictGuideView` 错误视图
+/// 内核负责渲染 Tab Bar 和内容区布局，插件通过 `addRailTabs()` 提供 tab 定义，
+/// 通过 `addRailContentView(tabId:)` 提供对应的内容视图。
 struct RailView: View {
     @EnvironmentObject private var pluginProvider: PluginVM
     @EnvironmentObject private var themeManager: ThemeManager
+
+    @State private var selectedTabId: String?
 
     /// Rail 栏默认最小宽度
     static let minWidth: CGFloat = 200
@@ -20,28 +16,113 @@ struct RailView: View {
     /// Rail 栏默认最大宽度
     static let maxWidth: CGFloat = 300
 
+    /// 持久化 key
+    private let selectedTabStorageKey = "Split.Rail.SelectedTab"
+
     var body: some View {
-        let railItems = pluginProvider.getRailItems()
+        let tabs = pluginProvider.getRailTabs()
 
         Group {
-            switch railItems.count {
-            case 0:
-                // 无插件提供 Rail，不渲染
-                EmptyView()
-
-            case 1:
-                // 恰好一个插件，正常渲染
-                railItems[0].view
-                    .frame(minWidth: Self.minWidth, maxWidth: Self.maxWidth)
-
-            default:
-                // 多个插件冲突，显示错误视图
-                RailConflictGuideView(
-                    conflictingPluginIds: railItems.map(\.id)
-                )
+            if !tabs.isEmpty {
+                VStack(spacing: 0) {
+                    // Tab Bar
+                    railTabBar(tabs: tabs)
+                    GlassDivider()
+                    // Content Area
+                    railContent(tabs: tabs)
+                }
                 .frame(minWidth: Self.minWidth, maxWidth: Self.maxWidth)
+            } else {
+                EmptyView()
             }
         }
         .background(themeManager.activeAppTheme.sidebarBackgroundColor())
+        .onAppear {
+            if selectedTabId == nil {
+                restoreSelection(from: tabs)
+            }
+        }
+        .onChange(of: tabs.map(\.id)) { _, newIds in
+            if let current = selectedTabId, !newIds.contains(current) {
+                selectedTabId = tabs.first?.id
+            }
+        }
+    }
+
+    // MARK: - Tab Bar
+
+    private func railTabBar(tabs: [RailTab]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(tabs) { tab in
+                Button {
+                    selectedTabId = tab.id
+                    persistSelection(tab.id)
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.systemImage)
+                            .font(.system(size: 12, weight: .semibold))
+                            .frame(height: 16)
+                        Rectangle()
+                            .fill(
+                                selectedTabId == tab.id
+                                    ? AppUI.Color.semantic.primary.opacity(0.9)
+                                    : Color.clear
+                            )
+                            .frame(height: 2)
+                    }
+                    .foregroundColor(
+                        selectedTabId == tab.id
+                            ? AppUI.Color.semantic.textPrimary
+                            : AppUI.Color.semantic.textSecondary
+                    )
+                    .padding(.horizontal, 6)
+                    .padding(.top, 2)
+                    .contentShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+                .help(tab.title)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.05), Color.black.opacity(0.03)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+    }
+
+    // MARK: - Content
+
+    private func railContent(tabs: [RailTab]) -> some View {
+        let currentId = selectedTabId ?? tabs.first?.id
+        let contentView = currentId.flatMap { pluginProvider.getRailContentView(tabId: $0) }
+
+        return Group {
+            if let contentView {
+                contentView
+            } else {
+                Color.clear
+            }
+        }
+        .frame(maxHeight: .infinity)
+    }
+
+    // MARK: - Persistence
+
+    private func restoreSelection(from tabs: [RailTab]) {
+        if let saved = UserDefaults.standard.string(forKey: selectedTabStorageKey),
+           tabs.contains(where: { $0.id == saved }) {
+            selectedTabId = saved
+        } else {
+            selectedTabId = tabs.first?.id
+        }
+    }
+
+    private func persistSelection(_ tabId: String) {
+        UserDefaults.standard.set(tabId, forKey: selectedTabStorageKey)
     }
 }

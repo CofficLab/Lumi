@@ -8,7 +8,7 @@ actor LSPCodeActionEditorPlugin: SuperPlugin {
     static let iconName = "lightbulb"
     static let order = 20
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

@@ -298,7 +298,7 @@ struct SourceEditorView: View, SuperLog {
             }
         }
         .buttonStyle(.plain)
-        .help("Quick Fix")
+        .help(String(localized: "Quick Fix", table: "LumiEditor"))
     }
 
     @ViewBuilder
@@ -308,7 +308,7 @@ struct SourceEditorView: View, SuperLog {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(hints.prefix(24)) { hint in
-                        Text("L\(hint.line + 1) \(hint.text)")
+                        Text(String(localized: "L\(hint.line + 1) \(hint.text)", table: "LumiEditor"))
                             .font(.system(size: 10, design: .monospaced))
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
                             .lineLimit(1)
@@ -385,7 +385,7 @@ struct SourceEditorView: View, SuperLog {
             }
             .buttonStyle(.plain)
             .contentShape(Rectangle())
-            .help("Open diagnostic")
+            .help(String(localized: "Open diagnostic", table: "LumiEditor"))
         } else {
             content
                 .allowsHitTesting(false)

@@ -8,7 +8,7 @@ actor LSPWorkspaceSymbolEditorPlugin: SuperPlugin {
     static let iconName = "magnifyingglass"
     static let order = 24
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

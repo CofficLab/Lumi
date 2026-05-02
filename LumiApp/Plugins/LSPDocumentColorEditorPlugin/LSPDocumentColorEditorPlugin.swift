@@ -8,7 +8,7 @@ actor LSPDocumentColorEditorPlugin: SuperPlugin {
     static let iconName = "paintpalette"
     static let order = 28
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

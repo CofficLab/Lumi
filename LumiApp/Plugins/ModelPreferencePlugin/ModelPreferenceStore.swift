@@ -7,7 +7,7 @@ import os
 ///
 /// 存储策略：
 /// - 每个项目有独立的配置文件
-/// - 文件路径：~/Library/Application Support/com.cofficlab.Lumi/db_debug/ModelPreference/projects/<项目路径哈希>/preference.plist
+/// - 文件路径：~/Library/Application Support/com.coffic.Lumi/db_debug/ModelPreference/projects/<项目路径哈希>/preference.plist
 /// - 使用二进制 plist 格式，原子写入确保数据完整性
 final class ModelPreferenceStore: @unchecked Sendable, SuperLog {
     /// 日志标识 emoji

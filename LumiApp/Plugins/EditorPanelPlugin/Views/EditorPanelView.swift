@@ -4,8 +4,7 @@ import Combine
 import CodeEditSourceEditor
 import UniformTypeIdentifiers
 
-/// 编辑器主视图（根入口）
-/// 组合面包屑、工具栏、编辑器、状态栏
+/// 编辑器主视图
 struct EditorPanelView: View {
 
     private struct SessionActivation {
@@ -25,14 +24,20 @@ struct EditorPanelView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
     /// 便利访问
-    private var state: EditorState { editorVM.state }
-    private var sessionStore: EditorSessionStore { editorVM.sessionStore }
-    private var workbench: EditorWorkbenchState { editorVM.workbench }
-    private var hostStore: EditorGroupHostStore { editorVM.hostStore }
+    private var service: EditorService { editorVM.service }
+    private var state: EditorState { service.state }
+    private var sessionStore: EditorSessionStore { service.sessionStore }
+    private var workbench: EditorWorkbenchState { service.workbench }
+    private var hostStore: EditorGroupHostStore { service.hostStore }
 
     @State private var pendingActivationIntent: ActivationIntent?
     @State private var isCommandPalettePresented = false
     @State private var draggedTabSessionID: EditorSession.ID?
+
+    /// 标签页持久化存储
+    private let tabStore = EditorTabStripStore.shared
+    /// 防抖保存的 Task
+    @State private var tabSaveTask: Task<Void, Never>?
 
     var body: some View {
         eventBoundRootView
@@ -46,8 +51,25 @@ struct EditorPanelView: View {
 
     private var lifecycleBoundRootView: some View {
         baseRootView
-            .onChange(of: projectVM.currentProjectPath) { _, newPath in
+            .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+                // 保存旧项目的标签页
+                if !oldPath.isEmpty {
+                    saveCurrentTabs(forProject: oldPath)
+                }
+
+                // 保存未保存的变更后关闭所有编辑器会话
+                if state.hasUnsavedChanges { state.saveNow() }
+                for hostedState in hostStore.allStates {
+                    if hostedState.hasUnsavedChanges { hostedState.saveNow() }
+                }
+                sessionStore.closeAll()
+                state.loadFile(from: nil)
                 refreshProjectContext(for: newPath)
+
+                // 恢复新项目的标签页
+                if !newPath.isEmpty {
+                    restoreTabs(forProject: newPath)
+                }
             }
             .onChange(of: projectVM.selectedFileURL) { _, newURL in
                 openOrActivateSession(for: newURL)
@@ -83,13 +105,15 @@ struct EditorPanelView: View {
                 updateBreadcrumbBridge()
             }
             .onDisappear {
-                if state.hasUnsavedChanges {
-                    state.saveNow()
+                // 保存当前项目的标签页
+                let projectPath = projectVM.currentProjectPath
+                if !projectPath.isEmpty {
+                    saveCurrentTabs(forProject: projectPath)
                 }
+
+                if state.hasUnsavedChanges { state.saveNow() }
                 for hostedState in hostStore.allStates {
-                    if hostedState.hasUnsavedChanges {
-                        hostedState.saveNow()
-                    }
+                    if hostedState.hasUnsavedChanges { hostedState.saveNow() }
                 }
                 state.onActiveSessionChanged = nil
                 EditorBreadcrumbContextBridge.shared.update(
@@ -149,11 +173,8 @@ struct EditorPanelView: View {
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorReplaceAll)) { _ in
                 handleEditorCommandEvent("builtin.replace-all")
             }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleOpenEditorsPanel)) { _ in
-                toggleSidebarTab(.openEditors)
-            }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleOutlinePanel)) { _ in
-                toggleSidebarTab(.outline)
+                state.performPanelCommand(.toggleOutline)
             }
     }
 
@@ -187,75 +208,14 @@ struct EditorPanelView: View {
     }
 
     private var rootLayout: some View {
-        HStack(spacing: 0) {
-            VStack(spacing: 0) {
-                if projectVM.isFileSelected {
-                    headerArea
-                    fileInfoBanner
-                    workbenchContent
-                    if shouldShowBottomPanel {
-                        EditorBottomPanelHostView(state: state)
-                    }
-                } else {
-                    emptyState
-                }
-            }
-
-            if let panel = activeSidePanel {
-                panel.content(state)
+        VStack(spacing: 0) {
+            if projectVM.isFileSelected {
+                fileInfoBanner
+                workbenchContent
+            } else {
+                emptyState
             }
         }
-    }
-
-    private var builtinSidePanels: [EditorSidePanelSuggestion] {
-        [
-            .init(
-                id: "builtin.open-editors-panel",
-                order: 0,
-                isPresented: { $0.panelState.isOpenEditorsPanelPresented },
-                content: { state in
-                    AnyView(
-                        EditorOpenEditorsPanelView(
-                            state: state,
-                            items: openEditorItems,
-                            onSelect: activateOpenEditor,
-                            onClose: closeOpenEditorItem,
-                            onCloseOthers: closeOtherOpenEditorItems,
-                            onTogglePinned: togglePinnedOpenEditorItem
-                        )
-                    )
-                }
-            ),
-            .init(
-                id: "builtin.outline-panel",
-                order: 1,
-                isPresented: { $0.panelState.isOutlinePanelPresented },
-                content: { state in
-                    AnyView(
-                        Group {
-                            if let provider = state.documentSymbolProvider as? DocumentSymbolProvider {
-                                EditorOutlinePanelView(
-                                    state: state,
-                                    provider: provider
-                                )
-                            }
-                        }
-                    )
-                }
-            )
-        ]
-    }
-
-    private var activeSidePanel: EditorSidePanelSuggestion? {
-        (builtinSidePanels + state.editorExtensions.sidePanelSuggestions(state: state))
-            .filter { suggestion in
-                suggestion.id != "builtin.open-editors-panel" &&
-                suggestion.id != "builtin.outline-panel" &&
-                suggestion.id != "builtin.references-panel" &&
-                suggestion.id != "builtin.problems-panel"
-            }
-            .sorted { $0.order < $1.order }
-            .first(where: { $0.isPresented(state) })
     }
 
     private var editorSheetHosts: some View {
@@ -304,66 +264,6 @@ struct EditorPanelView: View {
         ]
     }
 
-    // MARK: - Header Area
-
-    /// Header 区域：包含工具栏，带背景色覆盖编辑器内容
-    private var headerArea: some View {
-        VStack(spacing: 0) {
-            if !visibleTabs.isEmpty {
-                EditorTabStripView(
-                    tabs: visibleTabs,
-                    activeSessionID: visibleActiveSessionID,
-                    onSelect: activateSession,
-                    onClose: closeSession,
-                    onCloseOthers: closeOtherSessions,
-                    onTogglePinned: togglePinned,
-                    onStartDrag: beginTabDrag,
-                    onDropBefore: dropDraggedTabInActiveStrip
-                )
-            }
-
-            if !activeDocumentSymbolTrail.isEmpty {
-                EditorStickySymbolBarView(
-                    state: state,
-                    symbols: activeDocumentSymbolTrail
-                )
-            }
-
-            EditorToolbarView(state: state)
-        }
-        // 关键：添加背景色，确保覆盖下方的编辑器内容（如行号）
-        .background(
-            themeManager.activeAppTheme.workspaceBackgroundColor()
-                .ignoresSafeArea()
-        )
-        // 使用 zIndex 确保 header 在编辑器上层
-        .zIndex(1)
-    }
-
-    private var visibleTabs: [EditorTab] {
-        if let activeGroup = workbench.activeGroup, !activeGroup.tabs.isEmpty {
-            return activeGroup.tabs
-        }
-        return sessionStore.tabs
-    }
-
-    private var visibleActiveSessionID: EditorSession.ID? {
-        workbench.activeGroup?.activeSessionID ?? sessionStore.activeSessionID
-    }
-
-    private var shouldShowBottomPanel: Bool {
-        state.panelState.activeBottomPanel.map {
-            $0 != .problems &&
-            $0 != .searchResults &&
-            $0 != .references &&
-            $0 != .workspaceSymbols &&
-            $0 != .callHierarchy
-        } == true ||
-            state.editorExtensions.panelSuggestions(state: state).contains {
-                $0.placement == .bottom && $0.isPresented(state)
-            }
-    }
-
     private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
         state.documentSymbolProvider.activeItems(for: state.cursorLine)
     }
@@ -395,7 +295,7 @@ struct EditorPanelView: View {
                 groupID: group?.id,
                 groupIndex: groupIndex,
                 isInActiveGroup: group?.id == workbench.activeGroupID,
-                isActive: tab.sessionID == visibleActiveSessionID,
+                isActive: tab.sessionID == sessionStore.activeSessionID,
                 recentActivationRank: sessionStore.recentActivationRank(for: tab.sessionID)
             )
         }
@@ -491,7 +391,7 @@ struct EditorPanelView: View {
                     MarkdownBlockRenderer(markdown: content)
                         .padding(20)
                 } else {
-                    Text("No content to preview")
+                    Text(String(localized: "No content to preview", table: "LumiEditor"))
                         .font(.system(size: 12))
                         .foregroundColor(AppUI.Color.semantic.textTertiary)
                         .padding(40)
@@ -522,7 +422,7 @@ struct EditorPanelView: View {
                         .foregroundColor(AppUI.Color.semantic.warning)
                     }
                     if state.canLoadFullFile {
-                        Button("Load Full File") {
+                        Button(String(localized: "Load Full File", table: "LumiEditor")) {
                             state.loadFullFileFromDisk()
                         }
                         .buttonStyle(.link)
@@ -568,27 +468,27 @@ struct EditorPanelView: View {
         guard let snapshot = state.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
         switch snapshot.contextStatus {
         case .unavailable, .needsResync:
-            return "项目语义上下文未就绪，跨文件语义能力可能不稳定。"
+            return String(localized: "Project semantic context is not ready, cross-file semantic capabilities may be unstable.", table: "LumiEditor")
         default:
             break
         }
         guard state.currentFileURL != nil else { return nil }
         if !snapshot.currentFileIsInTarget {
-            return "当前文件未绑定到任何编译 target，跨文件跳转和诊断可能不可用。"
+            return String(localized: "Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.", table: "LumiEditor")
         }
         if let activeScheme = snapshot.activeScheme,
            let currentTarget = snapshot.currentFilePrimaryTarget,
            !currentTarget.isEmpty,
            !snapshot.activeSchemeBuildableTargets.isEmpty,
            !snapshot.activeSchemeBuildableTargets.contains(currentTarget) {
-            return "当前文件属于 target '\(currentTarget)'，但当前 scheme '\(activeScheme)' 可能没有覆盖它。"
+            return String(localized: "Current file belongs to target '\(currentTarget)', but current scheme '\(activeScheme)' may not cover it.", table: "LumiEditor")
         }
         if snapshot.currentFileMatchedTargets.count > 1 {
             if let preferredTarget = snapshot.currentFilePrimaryTarget, !preferredTarget.isEmpty {
-                return "当前文件属于多个 target，编辑器当前按 '\(preferredTarget)' 的语义上下文解析。"
+                return String(localized: "Current file belongs to multiple targets; the editor is currently parsing with '\(preferredTarget)' context.", table: "LumiEditor")
             }
             let targets = snapshot.currentFileMatchedTargets.joined(separator: ", ")
-            return "当前文件同时属于多个 target（\(targets)），语义结果会受当前 scheme/configuration 影响。"
+            return String(localized: "Current file belongs to multiple targets (\(targets)); semantic results depend on current scheme and configuration.", table: "LumiEditor")
         }
         return nil
     }
@@ -602,16 +502,16 @@ struct EditorPanelView: View {
 
                 HStack(spacing: 12) {
                     primaryDiscoverabilityAction(
-                        title: "Quick Open",
-                        subtitle: "在同一入口里搜文件、符号、设置与命令",
+                        title: String(localized: "Quick Open", table: "LumiEditor"),
+                        subtitle: String(localized: "Search for files, symbols, settings, and commands from a single entry point.", table: "LumiEditor"),
                         systemImage: "magnifyingglass",
                         accent: AppUI.Color.semantic.primary,
                         action: { NotificationCenter.postLumiEditorShowCommandPalette() }
                     )
 
                     primaryDiscoverabilityAction(
-                        title: "编辑器设置",
-                        subtitle: "调整字体、tab size、wrap、minimap 与保存策略",
+                        title: String(localized: "Editor Settings", table: "LumiEditor"),
+                        subtitle: String(localized: "Adjust font size, tab size, line wrapping, minimap, and save behavior.", table: "LumiEditor"),
                         systemImage: "slider.horizontal.3",
                         accent: AppUI.Color.semantic.warning,
                         action: openEditorSettings
@@ -619,63 +519,56 @@ struct EditorPanelView: View {
                 }
 
                 discoverabilitySection(
-                    title: "常用起点",
-                    subtitle: "第一次进入 editor 时，最常用的几条工作流入口。"
+                    title: String(localized: "Getting Started", table: "LumiEditor"),
+                    subtitle: String(localized: "The most common workflow entry points when you first open the editor.", table: "LumiEditor")
                 ) {
                     VStack(spacing: 10) {
                         discoverabilityActionRow(
-                            title: "Command Palette",
-                            subtitle: "执行 editor 命令，或直接搜到 settings / workspace symbols",
+                            title: String(localized: "Command Palette", table: "LumiEditor"),
+                            subtitle: String(localized: "Execute editor commands, or jump to settings / workspace symbols.", table: "LumiEditor"),
                             shortcut: "⌘⇧P",
                             systemImage: "command",
                             action: { NotificationCenter.postLumiEditorShowCommandPalette() }
                         )
                         discoverabilityActionRow(
-                            title: "Workspace Symbols",
-                            subtitle: "跨文件跳转到工作区里的类型、函数和符号",
+                            title: String(localized: "Workspace Symbols", table: "LumiEditor"),
+                            subtitle: String(localized: "Jump to types, functions, and symbols across the workspace.", table: "LumiEditor"),
                             shortcut: "⌘T",
                             systemImage: "text.magnifyingglass",
                             action: { state.performEditorCommand(id: "builtin.workspace-symbols") }
-                        )
-                        discoverabilityActionRow(
-                            title: "Open Editors",
-                            subtitle: "查看当前打开项、最近激活顺序和 group 分布",
-                            shortcut: "⌘B",
-                            systemImage: "sidebar.left",
-                            action: { toggleSidebarTab(.openEditors) }
                         )
                     }
                 }
 
                 discoverabilitySection(
-                    title: "Workbench 能力",
-                    subtitle: "这些能力是当前 editor surface 和 VS Code 对齐最明显的部分。"
+                    title: String(localized: "Workbench Capabilities", table: "LumiEditor"),
+                    subtitle: String(localized: "These capabilities align most closely with the editor surface in VS Code.", table: "LumiEditor")
                 ) {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         capabilityCard(
-                            title: "Split Editor",
-                            subtitle: "向右或向下分栏，适合对照阅读和多文件编辑。",
+                            title: String(localized: "Split Editor", table: "LumiEditor"),
+                            subtitle: String(localized: "Split right or down — ideal for side-by-side reading and multi-file editing.", table: "LumiEditor"),
                             systemImage: "rectangle.split.2x1",
                             shortcut: "⌘\\",
                             action: { NotificationCenter.postLumiEditorSplitRight() }
                         )
                         capabilityCard(
-                            title: "Outline",
-                            subtitle: "基于当前 session 的 document symbols，直接跳到函数或类型。",
+                            title: String(localized: "Outline", table: "LumiEditor"),
+                            subtitle: String(localized: "Jump to functions and types via document symbols of the current session.", table: "LumiEditor"),
                             systemImage: "list.bullet.indent",
                             shortcut: nil,
-                            action: { toggleSidebarTab(.outline) }
+                            action: { state.performPanelCommand(.toggleOutline) }
                         )
                         capabilityCard(
-                            title: "Find / Replace",
-                            subtitle: "支持当前匹配高亮、replace preview 与多结果导航。",
+                            title: String(localized: "Find / Replace", table: "LumiEditor"),
+                            subtitle: String(localized: "Highlight current matches, replace preview, and navigate multiple results.", table: "LumiEditor"),
                             systemImage: "text.magnifyingglass",
                             shortcut: "⌘F",
                             action: { state.performEditorCommand(id: "builtin.find") }
                         )
                         capabilityCard(
-                            title: "Session Restore",
-                            subtitle: "tab、split、最近关闭恢复、back-forward 都会保留工作台状态。",
+                            title: String(localized: "Session Restore", table: "LumiEditor"),
+                            subtitle: String(localized: "Tabs, splits, recently closed recovery, and back-forward navigation preserve workbench state.", table: "LumiEditor"),
                             systemImage: "clock.arrow.circlepath",
                             shortcut: nil,
                             action: { state.performEditorCommand(id: "builtin.command-palette") }
@@ -695,10 +588,10 @@ struct EditorPanelView: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Code Editor")
+                        Text(String(localized: "Code Editor", table: "LumiEditor"))
                             .font(.system(size: 26, weight: .semibold))
                             .foregroundColor(AppUI.Color.semantic.textPrimary)
-                        Text("不需要读路线图，也能直接发现 editor 的主要入口、工作台能力和可调参数。")
+                        Text(String(localized: "Discover the editor's main entry points, workbench capabilities, and adjustable parameters — no roadmap needed.", table: "LumiEditor"))
                             .font(.system(size: 13))
                             .foregroundColor(AppUI.Color.semantic.textSecondary)
                     }
@@ -716,9 +609,9 @@ struct EditorPanelView: View {
                 }
 
                 HStack(spacing: 10) {
-                    quickHintChip("Open a file from the project tree")
-                    quickHintChip("Use Quick Open for files / symbols / settings")
-                    quickHintChip("Restore sessions and split workbench state")
+                    quickHintChip(String(localized: "Open a file from the project tree", table: "LumiEditor"))
+                    quickHintChip(String(localized: "Use Quick Open for files / symbols / settings", table: "LumiEditor"))
+                    quickHintChip(String(localized: "Restore sessions and split workbench state", table: "LumiEditor"))
                 }
             }
         }
@@ -882,17 +775,6 @@ struct EditorPanelView: View {
         NotificationCenter.postOpenSettings()
     }
 
-    private func toggleSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
-        switch tab {
-        case .openEditors:
-            state.performPanelCommand(.toggleOpenEditors)
-        case .outline:
-            state.performPanelCommand(.toggleOutline)
-        default:
-            break
-        }
-    }
-
     // MARK: - Unsupported File
 
     private var unsupportedFileView: some View {
@@ -912,6 +794,55 @@ struct EditorPanelView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // MARK: - Tab Persistence
+
+    /// 保存当前打开的标签页到持久化存储
+    private func saveCurrentTabs(forProject projectPath: String) {
+        let activeTabPath = state.currentFileURL?.path
+        tabStore.saveTabs(
+            projectPath: projectPath,
+            tabs: sessionStore.tabs,
+            activeTabPath: activeTabPath
+        )
+    }
+
+    /// 从持久化存储恢复标签页
+    private func restoreTabs(forProject projectPath: String) {
+        let (persistedTabs, activeTabPath) = tabStore.loadTabs(forProject: projectPath)
+
+        // 过滤掉不存在的文件
+        let validTabs = persistedTabs.compactMap { tab -> URL? in
+            guard let url = tab.fileURL,
+                  FileManager.default.isReadableFile(atPath: url.path) else {
+                return nil
+            }
+            return url
+        }
+
+        guard !validTabs.isEmpty else { return }
+
+        // 先打开最后一个保存的活跃标签
+        if let activePath = activeTabPath,
+           let activateURL = validTabs.first(where: { $0.path == activePath }) {
+            projectVM.selectFile(at: activateURL)
+        } else if let fallbackURL = validTabs.first {
+            projectVM.selectFile(at: fallbackURL)
+        }
+    }
+
+    /// 防抖保存当前标签页（2 秒延迟，避免频繁写入）
+    private func scheduleTabSave() {
+        tabSaveTask?.cancel()
+        tabSaveTask = Task {
+            try? await Task.sleep(for: Duration.seconds(2))
+            guard !Task.isCancelled else { return }
+            let projectPath = projectVM.currentProjectPath
+            if !projectPath.isEmpty {
+                saveCurrentTabs(forProject: projectPath)
+            }
+        }
+    }
+
     // MARK: - Session Management
 
     private func openOrActivateSession(for fileURL: URL?) {
@@ -926,6 +857,7 @@ struct EditorPanelView: View {
         state.loadFile(from: session.fileURL)
         applySnapshot(session, toHostState: hostStore.state(for: workbench.activeGroupID))
         restoreInteractionState(for: session)
+        scheduleTabSave()
     }
 
     private func refreshProjectContext(for projectPath: String) {
@@ -1054,8 +986,15 @@ struct EditorPanelView: View {
         guard let resolved = resolvedSessionActivation(
             for: sessionID,
             preferredGroupID: preferredGroupID
-        ) else { return }
-        guard resolved.sessionID != sessionStore.activeSessionID || projectVM.selectedFileURL != resolved.fileURL else { return }
+        ) else {
+            print("[TabSwitch] ❌ resolvedSessionActivation returned nil for sessionID=\(sessionID)")
+            return
+        }
+        if resolved.sessionID == sessionStore.activeSessionID && projectVM.selectedFileURL == resolved.fileURL {
+            print("[TabSwitch] ⚠️ Guard blocked: sessionID=\(resolved.sessionID) == activeSessionID=\(sessionStore.activeSessionID), fileURL=\(resolved.fileURL) == selectedFileURL=\(String(describing: projectVM.selectedFileURL))")
+            return
+        }
+        print("[TabSwitch] ✅ Activating sessionID=\(resolved.sessionID), fileURL=\(resolved.fileURL), currentActive=\(String(describing: sessionStore.activeSessionID))")
         applyResolvedSessionActivation(resolved)
     }
 
@@ -1585,7 +1524,7 @@ struct EditorGroupView: View {
     private var leafGroupHeader: some View {
         VStack(spacing: 6) {
             HStack(spacing: 8) {
-                Text("Group \(groupOrdinal)")
+                Text(String(localized: "Group \(groupOrdinal)", table: "LumiEditor"))
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -1594,7 +1533,7 @@ struct EditorGroupView: View {
                 if workbench.leafGroups.count > 1, group.activeSessionID != nil {
                     Menu {
                         ForEach(workbench.leafGroups.filter { $0.id != group.id }) { targetGroup in
-                            Button("Move To Group \(leafOrdinal(for: targetGroup))") {
+                            Button(String(localized: "Move To Group \(leafOrdinal(for: targetGroup))", table: "LumiEditor")) {
                                 workbench.activateGroup(group.id)
                                 onMoveSessionToGroup(targetGroup.id)
                             }
@@ -1776,7 +1715,6 @@ private struct EditorGroupHostView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(themeManager.activeAppTheme.workspaceBackgroundColor())
                 } else if state.canPreview || state.isBinaryFile {
-                    // 完整可编辑的源码编辑器——不再禁止交互
                     SourceEditorView(state: state)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipped()

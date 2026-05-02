@@ -2,18 +2,81 @@ import Foundation
 import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI
+import MagicKit
+import os
+
+/// 编辑器支持的语言 ID（内核定义，不依赖具体 LSP 实现）
+enum EditorLanguageID {
+    static let all: [String] = [
+        "swift",
+        "python",
+        "typescript",
+        "javascript",
+        "html",
+        "css",
+        "scss",
+        "sass",
+        "less",
+        "rust",
+        "go",
+        "cpp",
+        "c",
+        "objective-c",
+        "objective-cpp",
+    ]
+}
 
 /// 编辑器扩展注册中心
-/// 目前先开放补全扩展点，后续可继续添加 hover/code action/toolbar 等扩展点。
+/// 同时承担原 `EditorPluginManager` 的插件安装职责：
+/// - 维护 `installedPlugins` 列表（按 order 排序）
+/// - 提供 `installPlugins` / `uninstallAll` 方法
 ///
 /// ## 线程说明
 /// - 注册/注销：@MainActor（与 View 生命周期一致）
-/// - 同步查询（command/sidePanel/sheet/toolbar）：@MainActor
+/// - 同步查询（command/sheet/toolbar）：@MainActor
 /// - 异步查询（completion/hover/codeAction）：委托给 `ExtensionResolver`（后台 actor）执行，
 ///   但保留当前同步版本以确保向后兼容。调用方可选择使用 `resolveCompletionAsync` 等方法
 ///   将聚合和去重放到后台线程。
 @MainActor
-final class EditorExtensionRegistry: ObservableObject {
+final class EditorExtensionRegistry: ObservableObject, SuperLog {
+    private static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "editor.ext-registry")
+    nonisolated static let verbose = false
+    nonisolated static let emoji = "🔌"
+
+    /// 已安装的编辑器插件（按 order 排序）
+    @Published private(set) var installedPlugins: [any SuperPlugin] = []
+
+    /// 记录已安装的编辑器插件（由 RootViewContainer 在插件自注册后调用）
+    ///
+    /// 注意：此方法仅用于记录 installedPlugins 列表，不再调用 registerEditorExtensions。
+    /// 插件的自注册应由调用方在调用此方法前完成。
+    func recordInstalledPlugins(_ plugins: [any SuperPlugin]) {
+        // ⚠️ 不调用 reset()——注册阶段（registerEditorExtensions）已在之前完成，
+        // reset() 会清空所有已注册的 contributors（commandContributors、hoverContributors 等）。
+        // 仅清空 installedPlugins 列表本身再重新填充。
+        installedPlugins.removeAll()
+
+        // Sort by order, then by id
+        let sorted = plugins.sorted { a, b in
+            if type(of: a).order != type(of: b).order {
+                return type(of: a).order < type(of: b).order
+            }
+            return type(of: a).id.localizedCaseInsensitiveCompare(type(of: b).id) == .orderedAscending
+        }
+
+        installedPlugins = sorted
+
+        Self.logger.info("\(self.t)recordInstalledPlugins: 记录 \(sorted.count) 个插件, ids=\(sorted.map { type(of: $0).id })")
+    }
+
+    /// 卸载所有已安装的编辑器插件
+    func uninstallAll() {
+        reset()
+        Self.logger.info("\(self.t)已卸载所有编辑器插件")
+    }
+
+    // MARK: - Contributor Storage
+
     private var completionContributors: [any SuperEditorCompletionContributor] = []
     private var hoverContributors: [any SuperEditorHoverContributor] = []
     private var hoverContentContributors: [any SuperEditorHoverContentContributor] = []
@@ -27,7 +90,6 @@ final class EditorExtensionRegistry: ObservableObject {
     private var statusItemContributors: [any SuperEditorStatusItemContributor] = []
     private var quickOpenContributors: [any SuperEditorQuickOpenContributor] = []
     private var interactionContributors: [any SuperEditorInteractionContributor] = []
-    private var sidePanelContributors: [any SuperEditorSidePanelContributor] = []
     private var sheetContributors: [any SuperEditorSheetContributor] = []
     private var toolbarContributors: [any SuperEditorToolbarContributor] = []
     private var themeContributors: [any SuperEditorThemeContributor] = []
@@ -46,7 +108,11 @@ final class EditorExtensionRegistry: ObservableObject {
     private var _semanticTokenProvider: (any SuperEditorSemanticTokenProvider)?
     private var _diagnosticsProvider: (any SuperEditorLSPDiagnosticsProvider)?
 
+    /// 当前已注册的 commandContributors 数量（用于调试日志）
+    var commandContributorsCount: Int { commandContributors.count }
+
     func reset() {
+        installedPlugins.removeAll()
         completionContributors.removeAll()
         hoverContributors.removeAll()
         hoverContentContributors.removeAll()
@@ -60,7 +126,6 @@ final class EditorExtensionRegistry: ObservableObject {
         statusItemContributors.removeAll()
         quickOpenContributors.removeAll()
         interactionContributors.removeAll()
-        sidePanelContributors.removeAll()
         sheetContributors.removeAll()
         toolbarContributors.removeAll()
         themeContributors.removeAll()
@@ -117,9 +182,11 @@ final class EditorExtensionRegistry: ObservableObject {
 
     func registerCommandContributor(_ contributor: any SuperEditorCommandContributor) {
         if commandContributors.contains(where: { $0.id == contributor.id }) {
+            Self.logger.info("\(self.t)registerCommandContributor: 已存在，跳过 id=\(contributor.id), count=\(self.commandContributors.count)")
             return
         }
         commandContributors.append(contributor)
+        Self.logger.info("\(self.t)registerCommandContributor: id=\(contributor.id), count=\(self.commandContributors.count)")
     }
 
     func registerContextMenuContributor(_ contributor: any SuperEditorContextMenuContributor) {
@@ -173,13 +240,6 @@ final class EditorExtensionRegistry: ObservableObject {
             return
         }
         interactionContributors.append(contributor)
-    }
-
-    func registerSidePanelContributor(_ contributor: any SuperEditorSidePanelContributor) {
-        if sidePanelContributors.contains(where: { $0.id == contributor.id }) {
-            return
-        }
-        sidePanelContributors.append(contributor)
     }
 
     func registerSheetContributor(_ contributor: any SuperEditorSheetContributor) {
@@ -416,7 +476,11 @@ final class EditorExtensionRegistry: ObservableObject {
         state: EditorState,
         textView: TextView?
     ) -> [EditorCommandSuggestion] {
-        guard !commandContributors.isEmpty else { return [] }
+        guard !commandContributors.isEmpty else {
+            if Self.verbose { Self.logger.warning("\(self.t)commandSuggestions: commandContributors 为空") }
+            return []
+        }
+        if Self.verbose { Self.logger.info("\(self.t)commandSuggestions: contributors.count=\(self.commandContributors.count), ids=\(self.commandContributors.map(\.id))") }
         var merged: [EditorCommandSuggestion] = []
         for contributor in commandContributors {
             let items = contributor.provideCommands(
@@ -424,11 +488,14 @@ final class EditorExtensionRegistry: ObservableObject {
                 state: state,
                 textView: textView
             )
+            if Self.verbose { Self.logger.info("\(self.t)commandSuggestions: contributor=\(contributor.id) 返回 \(items.count) 个命令") }
             if !items.isEmpty {
                 merged.append(contentsOf: items)
             }
         }
-        return deduplicateCommands(merged)
+        let result = deduplicateCommands(merged)
+        if Self.verbose { Self.logger.info("\(self.t)commandSuggestions: 去重后共 \(result.count) 个命令") }
+        return result
     }
 
     func contextMenuSuggestions(
@@ -441,11 +508,15 @@ final class EditorExtensionRegistry: ObservableObject {
             legacyContext: context
         )
 
-        var merged = commandSuggestions(
+        let commandsBeforeFilter = commandSuggestions(
             for: context,
             state: state,
             textView: textView
         ).map(EditorContextMenuItemSuggestion.init(command:))
+
+        if Self.verbose { Self.logger.info("\(self.t)contextMenuSuggestions: commandSuggestions 返回 \(commandsBeforeFilter.count) 项, contextMenuContributors.count=\(self.contextMenuContributors.count)") }
+
+        var merged = commandsBeforeFilter
 
         for contributor in contextMenuContributors {
             let items = contributor.provideContextMenuItems(
@@ -453,13 +524,28 @@ final class EditorExtensionRegistry: ObservableObject {
                 state: state,
                 textView: textView
             )
+            if Self.verbose { Self.logger.info("\(self.t)contextMenuSuggestions: contributor=\(contributor.id) 返回 \(items.count) 项") }
             if !items.isEmpty {
                 merged.append(contentsOf: items)
             }
         }
-        return deduplicateContextMenuSuggestions(
-            merged.filter { $0.isEnabled && $0.metadata.matches(contributionContext) }
-        )
+
+        let beforeFilter = merged.count
+        let filtered = merged.filter { $0.isEnabled && $0.metadata.matches(contributionContext) }
+        if Self.verbose { Self.logger.info("\(self.t)contextMenuSuggestions: 合并后 \(beforeFilter) 项, 过滤后 \(filtered.count) 项") }
+
+        if beforeFilter > 0 && filtered.isEmpty {
+            if Self.verbose {
+                Self.logger.warning("\(self.t)contextMenuSuggestions: 所有命令被过滤掉了")
+                for item in merged.prefix(5) {
+                    Self.logger.warning("\(self.t)contextMenuSuggestions: 被过滤的命令: id=\(item.id), isEnabled=\(item.isEnabled), whenClause=\(item.metadata.whenClause != nil)")
+                }
+            }
+        }
+
+        let result = deduplicateContextMenuSuggestions(filtered)
+        if Self.verbose { Self.logger.info("\(self.t)contextMenuSuggestions: 去重后返回 \(result.count) 项") }
+        return result
     }
 
     func gutterDecorationSuggestions(
@@ -475,27 +561,6 @@ final class EditorExtensionRegistry: ObservableObject {
             }
         }
         return deduplicateGutterDecorations(merged)
-    }
-
-    func sidePanelSuggestions(state: EditorState) -> [EditorSidePanelSuggestion] {
-        var merged: [EditorSidePanelSuggestion] = []
-        for panel in panelSuggestions(state: state) where panel.placement == .side {
-            merged.append(
-                EditorSidePanelSuggestion(
-                    id: panel.id,
-                    order: panel.order,
-                    isPresented: panel.isPresented,
-                    content: panel.content
-                )
-            )
-        }
-        for contributor in sidePanelContributors {
-            let items = contributor.provideSidePanels(state: state)
-            if !items.isEmpty {
-                merged.append(contentsOf: items)
-            }
-        }
-        return deduplicateSidePanels(merged)
     }
 
     func sheetSuggestions(state: EditorState) -> [EditorSheetSuggestion] {
@@ -779,24 +844,6 @@ final class EditorExtensionRegistry: ObservableObject {
         for item in sorted {
             let key = "\(item.line):\(item.lane):\(item.id.lowercased())"
             if seen.contains(key) { continue }
-            seen.insert(key)
-            result.append(item)
-        }
-        return result
-    }
-
-    private func deduplicateSidePanels(_ suggestions: [EditorSidePanelSuggestion]) -> [EditorSidePanelSuggestion] {
-        var seen: Set<String> = []
-        var result: [EditorSidePanelSuggestion] = []
-
-        let sorted = suggestions.sorted { lhs, rhs in
-            if lhs.order != rhs.order { return lhs.order < rhs.order }
-            return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
-        }
-
-        for item in sorted {
-            let key = item.id.lowercased()
-            if key.isEmpty || seen.contains(key) { continue }
             seen.insert(key)
             result.append(item)
         }

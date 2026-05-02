@@ -288,16 +288,6 @@
         }
       }
     },
-    "%@:%lld:%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@:%2$lld:%3$lld"
-          }
-        }
-      }
-    },
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -555,12 +545,6 @@
         }
       }
     },
-    "2 Spaces" : {
-
-    },
-    "4 Spaces" : {
-
-    },
     "5,000 次/小时" : {
       "localizations" : {
         "zh-Hans" : {
@@ -576,9 +560,6 @@
           }
         }
       }
-    },
-    "8 Spaces" : {
-
     },
     "60 次/小时" : {
       "localizations" : {
@@ -1107,9 +1088,6 @@
         }
       }
     },
-    "Apply Rename" : {
-
-    },
     "Apps" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1311,9 +1289,6 @@
       }
     },
     "Cannot preview image" : {
-
-    },
-    "Case Sensitive" : {
 
     },
     "Cask" : {
@@ -1548,9 +1523,6 @@
 
     },
     "Code Actions" : {
-
-    },
-    "Code Editor" : {
 
     },
     "code-server 未运行，扩展管理不可用" : {
@@ -1800,9 +1772,6 @@
     "Current Status" : {
 
     },
-    "Current Symbol" : {
-
-    },
     "Current version is the latest stable version" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1819,9 +1788,6 @@
           }
         }
       }
-    },
-    "Current: %@" : {
-
     },
     "Cursor" : {
 
@@ -2218,9 +2184,6 @@
         }
       }
     },
-    "Editing disabled for truncated preview" : {
-
-    },
     "Empty files in the trash" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2369,9 +2332,6 @@
     "Esc" : {
 
     },
-    "Explorer" : {
-
-    },
     "Export Backup..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2479,25 +2439,10 @@
     "File indexing is automatic when switching projects" : {
 
     },
-    "Files" : {
-
-    },
     "Filter symbols" : {
 
     },
     "Finder" : {
-
-    },
-    "Fix All on Save" : {
-
-    },
-    "Folding ribbon disabled" : {
-
-    },
-    "Format on Save" : {
-
-    },
-    "G%lld" : {
 
     },
     "General" : {
@@ -2617,9 +2562,6 @@
           }
         }
       }
-    },
-    "Group %lld" : {
-
     },
     "History / Layers" : {
       "localizations" : {
@@ -2756,12 +2698,6 @@
         }
       }
     },
-    "In Selection" : {
-
-    },
-    "Inlay hints disabled" : {
-
-    },
     "Input Manager" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2794,9 +2730,6 @@
           }
         }
       }
-    },
-    "Insert Final Newline" : {
-
     },
     "Insights" : {
 
@@ -2898,9 +2831,6 @@
         }
       }
     },
-    "Keep Editor Version" : {
-
-    },
     "Keys" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2929,16 +2859,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "結束進程"
-          }
-        }
-      }
-    },
-    "L%lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "L%1$lld %2$@"
           }
         }
       }
@@ -3004,9 +2924,6 @@
         }
       }
     },
-    "Ln %lld" : {
-
-    },
     "Load" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3022,9 +2939,6 @@
           }
         }
       }
-    },
-    "Load Full File" : {
-
     },
     "Loading Outline..." : {
 
@@ -3057,16 +2971,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "日誌"
-          }
-        }
-      }
-    },
-    "Long line: L%lld · %lld chars" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Long line: L%1$lld · %2$lld chars"
           }
         }
       }
@@ -3241,9 +3145,6 @@
     "Mermaid render failed" : {
 
     },
-    "Minimap disabled" : {
-
-    },
     "More" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3259,9 +3160,6 @@
           }
         }
       }
-    },
-    "Move To Group %lld" : {
-
     },
     "My Database" : {
       "localizations" : {
@@ -3393,9 +3291,6 @@
         }
       }
     },
-    "New name" : {
-
-    },
     "New Tag" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3477,9 +3372,6 @@
         }
       }
     },
-    "No content to preview" : {
-
-    },
     "No Listening Ports" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3527,9 +3419,6 @@
           }
         }
       }
-    },
-    "No preview available" : {
-
     },
     "No project selected" : {
       "localizations" : {
@@ -3649,9 +3538,6 @@
         }
       }
     },
-    "Open diagnostic" : {
-
-    },
     "Open Search Editor" : {
 
     },
@@ -3689,9 +3575,6 @@
           }
         }
       }
-    },
-    "Organize Imports on Save" : {
-
     },
     "Outline" : {
 
@@ -3869,9 +3752,6 @@
     "Preferred" : {
 
     },
-    "Preserve Case" : {
-
-    },
     "Preview" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3887,9 +3767,6 @@
           }
         }
       }
-    },
-    "Preview Changes" : {
-
     },
     "Preview Size" : {
       "localizations" : {
@@ -4043,9 +3920,6 @@
     "Quick File Search" : {
 
     },
-    "Quick Fix" : {
-
-    },
     "RAG" : {
 
     },
@@ -4056,9 +3930,6 @@
 
     },
     "RAG 索引状态" : {
-
-    },
-    "Rail 视图冲突" : {
 
     },
     "Real-time Monitor" : {
@@ -4109,12 +3980,6 @@
           }
         }
       }
-    },
-    "Reload from Disk" : {
-
-    },
-    "Rename Symbol" : {
-
     },
     "Reset" : {
       "localizations" : {
@@ -4474,9 +4339,6 @@
     "Semantic Availability" : {
 
     },
-    "Semantic tokens disabled" : {
-
-    },
     "Show in Finder" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4789,9 +4651,6 @@
         }
       }
     },
-    "Syntax highlighting limit: first %@ lines" : {
-
-    },
     "System" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4840,9 +4699,6 @@
           }
         }
       }
-    },
-    "Tab (↹)" : {
-
     },
     "Tab Information" : {
       "extractionState" : "stale",
@@ -5117,9 +4973,6 @@
         }
       }
     },
-    "Trim Trailing Whitespace" : {
-
-    },
     "Try other search keywords" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5317,15 +5170,6 @@
         }
       }
     },
-    "Use Lumi Version" : {
-
-    },
-    "Use Project Version" : {
-
-    },
-    "Use Regular Expression" : {
-
-    },
     "user" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5425,9 +5269,6 @@
           }
         }
       }
-    },
-    "Whole Word" : {
-
     },
     "Wi-Fi" : {
       "localizations" : {
@@ -5580,9 +5421,6 @@
         }
       }
     },
-    "不需要读路线图，也能直接发现 editor 的主要入口、工作台能力和可调参数。" : {
-
-    },
     "主题" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5665,9 +5503,6 @@
           }
         }
       }
-    },
-    "以下插件同时提供了 Rail 视图，但 Rail 区域只能由一个插件提供：" : {
-
     },
     "会话列表" : {
 
@@ -8955,9 +8790,6 @@
     "获取索引状态失败" : {
 
     },
-    "解析中" : {
-
-    },
     "设置" : {
       "localizations" : {
         "zh-Hans" : {
@@ -9033,9 +8865,6 @@
 
     },
     "请先选择或添加项目，RAG 才能建立与展示索引。" : {
-
-    },
-    "请只保留一个插件的 addRailView() 实现，或禁用多余的插件。" : {
 
     },
     "请在左侧文件树中选择一个文件\n查看其内容" : {
