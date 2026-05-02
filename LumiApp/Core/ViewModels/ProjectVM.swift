@@ -74,6 +74,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 切换到指定项目
     func switchProject(to project: Project) {
         self.currentProject = project
+        clearFileSelection()
     }
 
     /// 设置最近项目列表

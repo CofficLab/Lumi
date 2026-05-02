@@ -42,9 +42,11 @@ struct EditorTabStripView: View {
 
         return Button(action: { onSelect(tab) }) {
             HStack(spacing: 6) {
-                Circle()
-                    .fill(tab.isDirty ? AppUI.Color.semantic.warning : theme.workspaceTertiaryTextColor().opacity(0.35))
-                    .frame(width: 6, height: 6)
+                if tab.isDirty {
+                    Circle()
+                        .fill(AppUI.Color.semantic.warning)
+                        .frame(width: 6, height: 6)
+                }
 
                 if tab.isPinned {
                     Image(systemName: "pin.fill")

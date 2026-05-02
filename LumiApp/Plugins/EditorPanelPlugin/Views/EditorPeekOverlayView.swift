@@ -122,10 +122,7 @@ struct EditorPeekOverlayView: View {
 
     private var footer: some View {
         HStack {
-            Text(
-                String(localized: "\(presentation.items.count) item", table: "LumiEditor")
-                    + (presentation.items.count == 1 ? "" : String(localized: "s", table: "LumiEditor"))
-            )
+            Text(String(localized: "\(presentation.items.count) items", table: "LumiEditor"))
                 .font(.system(size: 10))
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
 

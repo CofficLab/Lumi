@@ -14,9 +14,9 @@ actor EditorTabStripPlugin: SuperPlugin, SuperLog {
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
     static let id: String = "EditorTabStrip"
-    static let displayName: String = String(localized: "Editor Tab Strip", table: "LumiEditor")
+    static let displayName: String = String(localized: "Editor Tab Strip", table: "EditorTabStrip")
     static let description: String = String(
-        localized: "Tab bar and breadcrumb for the editor panel", table: "LumiEditor")
+        localized: "Tab bar and breadcrumb for the editor panel", table: "EditorTabStrip")
     static let iconName = "rectangle.topthird.inset.filled"
     static var isConfigurable: Bool { false }
     static var order: Int { 76 }

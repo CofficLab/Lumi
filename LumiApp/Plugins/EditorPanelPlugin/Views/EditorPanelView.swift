@@ -34,6 +34,11 @@ struct EditorPanelView: View {
     @State private var isCommandPalettePresented = false
     @State private var draggedTabSessionID: EditorSession.ID?
 
+    /// 标签页持久化存储
+    private let tabStore = EditorTabStripStore.shared
+    /// 防抖保存的 Task
+    @State private var tabSaveTask: Task<Void, Never>?
+
     var body: some View {
         eventBoundRootView
     }
@@ -46,8 +51,25 @@ struct EditorPanelView: View {
 
     private var lifecycleBoundRootView: some View {
         baseRootView
-            .onChange(of: projectVM.currentProjectPath) { _, newPath in
+            .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+                // 保存旧项目的标签页
+                if !oldPath.isEmpty {
+                    saveCurrentTabs(forProject: oldPath)
+                }
+
+                // 保存未保存的变更后关闭所有编辑器会话
+                if state.hasUnsavedChanges { state.saveNow() }
+                for hostedState in hostStore.allStates {
+                    if hostedState.hasUnsavedChanges { hostedState.saveNow() }
+                }
+                sessionStore.closeAll()
+                state.loadFile(from: nil)
                 refreshProjectContext(for: newPath)
+
+                // 恢复新项目的标签页
+                if !newPath.isEmpty {
+                    restoreTabs(forProject: newPath)
+                }
             }
             .onChange(of: projectVM.selectedFileURL) { _, newURL in
                 openOrActivateSession(for: newURL)
@@ -83,13 +105,15 @@ struct EditorPanelView: View {
                 updateBreadcrumbBridge()
             }
             .onDisappear {
-                if state.hasUnsavedChanges {
-                    state.saveNow()
+                // 保存当前项目的标签页
+                let projectPath = projectVM.currentProjectPath
+                if !projectPath.isEmpty {
+                    saveCurrentTabs(forProject: projectPath)
                 }
+
+                if state.hasUnsavedChanges { state.saveNow() }
                 for hostedState in hostStore.allStates {
-                    if hostedState.hasUnsavedChanges {
-                        hostedState.saveNow()
-                    }
+                    if hostedState.hasUnsavedChanges { hostedState.saveNow() }
                 }
                 state.onActiveSessionChanged = nil
                 EditorBreadcrumbContextBridge.shared.update(
@@ -444,27 +468,27 @@ struct EditorPanelView: View {
         guard let snapshot = state.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
         switch snapshot.contextStatus {
         case .unavailable, .needsResync:
-            return String(localized: "项目语义上下文未就绪，跨文件语义能力可能不稳定。", table: "LumiEditor")
+            return String(localized: "Project semantic context is not ready, cross-file semantic capabilities may be unstable.", table: "LumiEditor")
         default:
             break
         }
         guard state.currentFileURL != nil else { return nil }
         if !snapshot.currentFileIsInTarget {
-            return String(localized: "当前文件未绑定到任何编译 target，跨文件跳转和诊断可能不可用。", table: "LumiEditor")
+            return String(localized: "Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.", table: "LumiEditor")
         }
         if let activeScheme = snapshot.activeScheme,
            let currentTarget = snapshot.currentFilePrimaryTarget,
            !currentTarget.isEmpty,
            !snapshot.activeSchemeBuildableTargets.isEmpty,
            !snapshot.activeSchemeBuildableTargets.contains(currentTarget) {
-            return String(localized: "当前文件属于 target '\(currentTarget)'，但当前 scheme '\(activeScheme)' 可能没有覆盖它。", table: "LumiEditor")
+            return String(localized: "Current file belongs to target '\(currentTarget)', but current scheme '\(activeScheme)' may not cover it.", table: "LumiEditor")
         }
         if snapshot.currentFileMatchedTargets.count > 1 {
             if let preferredTarget = snapshot.currentFilePrimaryTarget, !preferredTarget.isEmpty {
-                return String(localized: "当前文件属于多个 target，编辑器当前按 '\(preferredTarget)' 的语义上下文解析。", table: "LumiEditor")
+                return String(localized: "Current file belongs to multiple targets; the editor is currently parsing with '\(preferredTarget)' context.", table: "LumiEditor")
             }
             let targets = snapshot.currentFileMatchedTargets.joined(separator: ", ")
-            return String(localized: "当前文件同时属于多个 target（\(targets)），语义结果会受当前 scheme/configuration 影响。", table: "LumiEditor")
+            return String(localized: "Current file belongs to multiple targets (\(targets)); semantic results depend on current scheme and configuration.", table: "LumiEditor")
         }
         return nil
     }
@@ -486,7 +510,7 @@ struct EditorPanelView: View {
                     )
 
                     primaryDiscoverabilityAction(
-                        title: String(localized: "编辑器设置", table: "LumiEditor"),
+                        title: String(localized: "Editor Settings", table: "LumiEditor"),
                         subtitle: String(localized: "Adjust font size, tab size, line wrapping, minimap, and save behavior.", table: "LumiEditor"),
                         systemImage: "slider.horizontal.3",
                         accent: AppUI.Color.semantic.warning,
@@ -495,7 +519,7 @@ struct EditorPanelView: View {
                 }
 
                 discoverabilitySection(
-                    title: String(localized: "常用起点", table: "LumiEditor"),
+                    title: String(localized: "Getting Started", table: "LumiEditor"),
                     subtitle: String(localized: "The most common workflow entry points when you first open the editor.", table: "LumiEditor")
                 ) {
                     VStack(spacing: 10) {
@@ -517,7 +541,7 @@ struct EditorPanelView: View {
                 }
 
                 discoverabilitySection(
-                    title: String(localized: "Workbench 能力", table: "LumiEditor"),
+                    title: String(localized: "Workbench Capabilities", table: "LumiEditor"),
                     subtitle: String(localized: "These capabilities align most closely with the editor surface in VS Code.", table: "LumiEditor")
                 ) {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -770,6 +794,55 @@ struct EditorPanelView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // MARK: - Tab Persistence
+
+    /// 保存当前打开的标签页到持久化存储
+    private func saveCurrentTabs(forProject projectPath: String) {
+        let activeTabPath = state.currentFileURL?.path
+        tabStore.saveTabs(
+            projectPath: projectPath,
+            tabs: sessionStore.tabs,
+            activeTabPath: activeTabPath
+        )
+    }
+
+    /// 从持久化存储恢复标签页
+    private func restoreTabs(forProject projectPath: String) {
+        let (persistedTabs, activeTabPath) = tabStore.loadTabs(forProject: projectPath)
+
+        // 过滤掉不存在的文件
+        let validTabs = persistedTabs.compactMap { tab -> URL? in
+            guard let url = tab.fileURL,
+                  FileManager.default.isReadableFile(atPath: url.path) else {
+                return nil
+            }
+            return url
+        }
+
+        guard !validTabs.isEmpty else { return }
+
+        // 先打开最后一个保存的活跃标签
+        if let activePath = activeTabPath,
+           let activateURL = validTabs.first(where: { $0.path == activePath }) {
+            projectVM.selectFile(at: activateURL)
+        } else if let fallbackURL = validTabs.first {
+            projectVM.selectFile(at: fallbackURL)
+        }
+    }
+
+    /// 防抖保存当前标签页（2 秒延迟，避免频繁写入）
+    private func scheduleTabSave() {
+        tabSaveTask?.cancel()
+        tabSaveTask = Task {
+            try? await Task.sleep(for: Duration.seconds(2))
+            guard !Task.isCancelled else { return }
+            let projectPath = projectVM.currentProjectPath
+            if !projectPath.isEmpty {
+                saveCurrentTabs(forProject: projectPath)
+            }
+        }
+    }
+
     // MARK: - Session Management
 
     private func openOrActivateSession(for fileURL: URL?) {
@@ -784,6 +857,7 @@ struct EditorPanelView: View {
         state.loadFile(from: session.fileURL)
         applySnapshot(session, toHostState: hostStore.state(for: workbench.activeGroupID))
         restoreInteractionState(for: session)
+        scheduleTabSave()
     }
 
     private func refreshProjectContext(for projectPath: String) {
