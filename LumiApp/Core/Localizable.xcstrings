@@ -2439,9 +2439,6 @@
     "File indexing is automatic when switching projects" : {
 
     },
-    "Filter symbols" : {
-
-    },
     "Finder" : {
 
     },
@@ -2939,9 +2936,6 @@
           }
         }
       }
-    },
-    "Loading Outline..." : {
-
     },
     "Local IP" : {
       "localizations" : {
@@ -3452,9 +3446,6 @@
         }
       }
     },
-    "No Symbols" : {
-
-    },
     "No themes available" : {
 
     },
@@ -3575,12 +3566,6 @@
           }
         }
       }
-    },
-    "Outline" : {
-
-    },
-    "Outline not available" : {
-
     },
     "Override" : {
 

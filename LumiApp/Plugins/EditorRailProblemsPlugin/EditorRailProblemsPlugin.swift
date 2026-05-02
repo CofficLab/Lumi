@@ -32,7 +32,7 @@ actor EditorRailProblemsPlugin: SuperPlugin, SuperLog {
 
     @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
         guard activeIcon == EditorPlugin.iconName else { return [] }
-        return [RailTab(id: "problems", title: "Problems", systemImage: "exclamationmark.bubble", priority: 10)]
+        return [RailTab(id: "problems", title: String(localized: "Problems", table: "EditorRailProblems"), systemImage: "exclamationmark.bubble", priority: 10)]
     }
 
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {

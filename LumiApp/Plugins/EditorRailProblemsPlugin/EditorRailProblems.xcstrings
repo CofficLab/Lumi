@@ -1,214 +1,160 @@
 {
   "sourceLanguage" : "en",
+  "version" : "1.0",
   "strings" : {
-    "{count} Call Hierarchy" : {
-      "extractionState" : "stale",
+    "Problems" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "{count} Call Hierarchy"
+            "value" : "Problems"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "{count} 个调用层级"
+            "value" : "问题"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "{count} 個調用層級"
+            "value" : "問題"
           }
         }
       }
     },
-    "%lld Call Hierarchy" : {
-
-    },
-    "Call Hierarchy" : {
+    "No Problems" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Call Hierarchy"
+            "value" : "No Problems"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "调用层级"
+            "value" : "无问题"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "調用層級"
+            "value" : "無問題"
           }
         }
       }
     },
-    "Calls" : {
+    "Project Context" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Calls"
+            "value" : "Project Context"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "调用"
+            "value" : "项目上下文"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "調用"
+            "value" : "專案上下文"
           }
         }
       }
     },
-    "Editor Call Hierarchy Rail" : {
-
-    },
-    "Editor sidebar call hierarchy tab" : {
-
-    },
-    "Empty" : {
+    "Project" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Empty"
+            "value" : "Project"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "空"
+            "value" : "项目"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "空"
+            "value" : "專案"
           }
         }
       }
     },
-    "Incoming" : {
+    "Diagnostics" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Incoming"
+            "value" : "Diagnostics"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "被调用"
+            "value" : "诊断"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "被調用"
+            "value" : "診斷"
           }
         }
       }
     },
-    "Loading Call Hierarchy..." : {
+    "LSP" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loading Call Hierarchy..."
+            "value" : "LSP"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加载调用层级..."
+            "value" : "LSP"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "載入調用層級..."
+            "value" : "LSP"
           }
         }
       }
     },
-    "No Call Hierarchy" : {
+    "{count} Problems" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Call Hierarchy"
+            "value" : "{count} Problems"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无调用层级"
+            "value" : "{count} 个问题"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無調用層級"
-          }
-        }
-      }
-    },
-    "Outgoing" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Outgoing"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "调用"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "調用"
-          }
-        }
-      }
-    },
-    "Symbol" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Symbol"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "符号"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "符號"
+            "value" : "{count} 個問題"
           }
         }
       }
     }
-  },
-  "version" : "1.0"
+  }
 }

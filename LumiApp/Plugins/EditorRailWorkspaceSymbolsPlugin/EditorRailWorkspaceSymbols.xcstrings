@@ -1,122 +1,94 @@
 {
   "sourceLanguage" : "en",
+  "version" : "1.0",
   "strings" : {
-    "Editor Outline Rail" : {
-
-    },
-    "Editor sidebar outline tab" : {
-
-    },
-    "Filter symbols" : {
+    "Symbols" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filter symbols"
+            "value" : "Symbols"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "筛选符号"
+            "value" : "符号"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "篩選符號"
+            "value" : "符號"
           }
         }
       }
     },
-    "Loading Outline..." : {
+    "Workspace symbols not available" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loading Outline..."
+            "value" : "Workspace symbols not available"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加载大纲..."
+            "value" : "工作区符号不可用"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "載入大綱..."
+            "value" : "工作區符號不可用"
           }
         }
       }
     },
-    "No Symbols" : {
+    "Workspace Symbols" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Symbols"
+            "value" : "Workspace Symbols"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无符号"
+            "value" : "工作区符号"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無符號"
+            "value" : "工作區符號"
           }
         }
       }
     },
-    "Outline" : {
+    "{count} Workspace Symbols" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Outline"
+            "value" : "{count} Workspace Symbols"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "大纲"
+            "value" : "{count} 个工作区符号"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "大綱"
-          }
-        }
-      }
-    },
-    "Outline not available" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Outline not available"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "大纲不可用"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "大綱不可用"
+            "value" : "{count} 個工作區符號"
           }
         }
       }
     }
-  },
-  "version" : "1.0"
+  }
 }

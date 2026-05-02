@@ -41,24 +41,24 @@ struct EditorProblemsPanelView: View {
 
     private var panelTitle: String {
         let count = state.panelState.semanticProblems.count + state.panelState.problemDiagnostics.count
-        return count > 0 ? "Problems (\(count))" : "Problems"
+        return count > 0 ? String(localized: "\(count) Problems", table: "EditorRailProblems") : String(localized: "Problems", table: "EditorRailProblems")
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
                 if state.panelState.semanticProblems.isEmpty && state.panelState.problemDiagnostics.isEmpty {
-                    emptyState("No Problems", systemImage: "checkmark.circle")
+                    emptyState(String(localized: "No Problems", table: "EditorRailProblems"), systemImage: "checkmark.circle")
                 } else {
                     if !state.panelState.semanticProblems.isEmpty {
-                        sectionLabel("Project Context")
+                        sectionLabel(String(localized: "Project Context", table: "EditorRailProblems"))
                         ForEach(state.panelState.semanticProblems) { problem in
-                            panelCard(title: problem.title, subtitle: problem.message, badge: "Project")
+                            panelCard(title: problem.title, subtitle: problem.message, badge: String(localized: "Project", table: "EditorRailProblems"))
                         }
                     }
 
                     if !state.panelState.problemDiagnostics.isEmpty {
-                        sectionLabel("Diagnostics")
+                        sectionLabel(String(localized: "Diagnostics", table: "EditorRailProblems"))
                         ForEach(Array(state.panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
                             let line = Int(diagnostic.range.start.line) + 1
                             let column = Int(diagnostic.range.start.character) + 1
@@ -68,7 +68,7 @@ struct EditorProblemsPanelView: View {
                                 panelCard(
                                     title: "\(state.relativeFilePath):\(line):\(column)",
                                     subtitle: diagnostic.message,
-                                    badge: diagnostic.source ?? "LSP"
+                                    badge: diagnostic.source ?? String(localized: "LSP", table: "EditorRailProblems")
                                 )
                             }
                             .buttonStyle(.plain)

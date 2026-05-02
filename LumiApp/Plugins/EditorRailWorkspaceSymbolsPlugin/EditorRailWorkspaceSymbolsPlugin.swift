@@ -32,7 +32,7 @@ actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
 
     @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
         guard activeIcon == EditorPlugin.iconName else { return [] }
-        return [RailTab(id: "workspaceSymbols", title: "Symbols", systemImage: "text.magnifyingglass", priority: 13)]
+        return [RailTab(id: "workspaceSymbols", title: String(localized: "Symbols", table: "EditorRailWorkspaceSymbols"), systemImage: "text.magnifyingglass", priority: 13)]
     }
 
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {
