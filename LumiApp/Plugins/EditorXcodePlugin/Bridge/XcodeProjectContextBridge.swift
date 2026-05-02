@@ -184,18 +184,8 @@ final class XcodeProjectContextBridge: SuperLog {
     
     private func isBuildServerValid(at path: String) -> Bool {
         let projectURL = URL(filePath: path)
-        let buildServerURL: URL
-        if let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL) {
-            buildServerURL = workspaceURL.deletingLastPathComponent().appendingPathComponent("buildServer.json")
-        } else {
-            buildServerURL = projectURL.appendingPathComponent("buildServer.json")
-        }
-        guard FileManager.default.fileExists(atPath: buildServerURL.path),
-              let data = try? Data(contentsOf: buildServerURL),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let name = json["name"] as? String,
-              let scheme = json["scheme"] as? String else { return false }
-        return name.contains("xcode build server") && !scheme.isEmpty
+        guard let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL) else { return false }
+        return XcodeBuildServerStore.validate(forWorkspace: workspaceURL.path) != nil
     }
     
     // MARK: - LSP 参数生成

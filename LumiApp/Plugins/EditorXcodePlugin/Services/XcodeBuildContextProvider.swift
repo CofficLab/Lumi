@@ -70,6 +70,18 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         let buildServerJSONPath: String
         let workspacePath: String
         let scheme: String
+
+        init(buildServerJSONPath: String, workspacePath: String, scheme: String) {
+            self.buildServerJSONPath = buildServerJSONPath
+            self.workspacePath = workspacePath
+            self.scheme = scheme
+        }
+
+        init(from storeConfig: XcodeBuildServerStore.Config) {
+            self.buildServerJSONPath = storeConfig.buildServerJSONPath
+            self.workspacePath = storeConfig.workspacePath
+            self.scheme = storeConfig.scheme
+        }
     }
     
     // MARK: - 初始化
@@ -189,8 +201,8 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         Self.logger.info("\(Self.t)生成 buildServer.json: \(args.joined(separator: " "), privacy: .public)")
         
         // 关键：xcode-build-server config 会把 buildServer.json 生成到当前工作目录，
-        // 必须设置 currentDirectoryURL 为项目根目录（workspace/project 的父目录）
-        let outputDirectory = workspaceURL.deletingLastPathComponent()
+        // 生成到该项目专属的插件存储目录（遵循插件数据存储规范）
+        let outputDirectory = XcodeBuildServerStore.ensureDirectory(forWorkspace: workspaceURL.path)
         let success = await runCommand(
             path: serverPath,
             args: ["config", workspaceArg, workspaceURL.path, "-scheme", scheme],
@@ -200,34 +212,14 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         isGeneratingBuildServer = false
         
         if success {
-            let jsonPath = outputDirectory.appendingPathComponent("buildServer.json").path
-            buildServerJSONPath = jsonPath
-            
-            if let config = buildServerConfig(from: jsonPath) {
-                buildContextStatus = .available(config)
-                Self.logger.info("\(Self.t)buildServer.json 已生成: \(jsonPath, privacy: .public)")
+            if let config = XcodeBuildServerStore.load(forWorkspace: workspaceURL.path) {
+                buildServerJSONPath = config.buildServerJSONPath
+                buildContextStatus = .available(XcodeBuildServerConfig(from: config))
+                Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)")
             }
         } else {
             buildContextStatus = .unavailable("生成 buildServer.json 失败")
         }
-    }
-    
-    /// 读取并解析 buildServer.json
-    func buildServerConfig(from path: String) -> XcodeBuildServerConfig? {
-        let url = URL(filePath: path)
-        guard let data = try? Data(contentsOf: url),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return nil
-        }
-        
-        let workspacePath = json["workspace"] as? String ?? ""
-        let scheme = json["scheme"] as? String ?? ""
-        
-        return XcodeBuildServerConfig(
-            buildServerJSONPath: path,
-            workspacePath: workspacePath,
-            scheme: scheme
-        )
     }
     
     // MARK: - 文件归属查询
