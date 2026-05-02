@@ -1,24 +1,24 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Editor Plugins" : {
+    "App Plugins" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editor Plugins"
+            "value" : "App Plugins"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "编辑器插件"
+            "value" : "应用插件"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "編輯器插件"
+            "value" : "應用插件"
           }
         }
       }
@@ -45,24 +45,24 @@
         }
       }
     },
-    "No editor plugins loaded" : {
+    "No app plugins loaded" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No editor plugins loaded"
+            "value" : "No app plugins loaded"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未加载任何编辑器插件"
+            "value" : "未加载任何应用插件"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未加載任何編輯器插件"
+            "value" : "未加載任何應用插件"
           }
         }
       }
@@ -89,8 +89,28 @@
         }
       }
     },
-    "Show loaded editor plugins in status bar" : {
-
+    "Show loaded app plugins in status bar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show loaded app plugins in status bar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在状态栏显示已加载的应用插件"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在狀態欄顯示已加載的應用插件"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

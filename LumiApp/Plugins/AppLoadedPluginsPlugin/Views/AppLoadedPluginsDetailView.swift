@@ -1,10 +1,10 @@
+import MagicKit
 import SwiftUI
 
-/// 编辑器插件详情弹窗视图
-struct EditorLoadedPluginsDetailView: View {
+/// App 插件详情弹窗视图
+struct AppLoadedPluginsDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var editorVM: EditorVM
-    @StateObject private var viewModel = EditorLoadedPluginsViewModel()
+    @StateObject private var viewModel = AppLoadedPluginsViewModel()
 
     private var rowBackground: Color {
         colorScheme == .light
@@ -24,7 +24,7 @@ struct EditorLoadedPluginsDetailView: View {
             }
         }
         .onAppear {
-            viewModel.refresh(from: editorVM)
+            viewModel.refresh()
         }
     }
 
@@ -32,28 +32,28 @@ struct EditorLoadedPluginsDetailView: View {
 
     private var headerView: some View {
         HStack {
-            Text(String(localized: "Editor Plugins", table: "EditorLoadedPlugins"))
+            Text(String(localized: "App Plugins", table: "AppLoadedPlugins"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
             Spacer()
 
             Button {
-                viewModel.refresh(from: editorVM)
+                viewModel.refresh()
             } label: {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(DesignTokens.Color.semantic.textSecondary)
             }
             .buttonStyle(.plain)
-            .help(String(localized: "Refresh", table: "EditorLoadedPlugins"))
+            .help(String(localized: "Refresh", table: "AppLoadedPlugins"))
         }
     }
 
     private var countView: some View {
         Text(
             String(
-                format: String(localized: "Loaded %lld plugin(s)", table: "EditorLoadedPlugins"),
+                format: String(localized: "Loaded %lld plugin(s)", table: "AppLoadedPlugins"),
                 Int64(viewModel.enabledPlugins.count)
             )
         )
@@ -62,7 +62,7 @@ struct EditorLoadedPluginsDetailView: View {
     }
 
     private var emptyView: some View {
-        Text(String(localized: "No editor plugins loaded", table: "EditorLoadedPlugins"))
+        Text(String(localized: "No app plugins loaded", table: "AppLoadedPlugins"))
             .font(.system(size: 12))
             .foregroundColor(DesignTokens.Color.semantic.textTertiary)
             .padding(.vertical, 8)
@@ -72,7 +72,7 @@ struct EditorLoadedPluginsDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(viewModel.enabledPlugins) { plugin in
-                    EditorLoadedPluginRowView(plugin: plugin, rowBackground: rowBackground)
+                    AppLoadedPluginRowView(plugin: plugin, rowBackground: rowBackground)
                 }
             }
         }
@@ -81,8 +81,8 @@ struct EditorLoadedPluginsDetailView: View {
 }
 
 /// 单个已加载插件的行视图
-private struct EditorLoadedPluginRowView: View {
-    let plugin: EditorLoadedPluginsViewModel.PluginInfo
+private struct AppLoadedPluginRowView: View {
+    let plugin: AppLoadedPluginsViewModel.PluginInfo
     let rowBackground: Color
 
     var body: some View {

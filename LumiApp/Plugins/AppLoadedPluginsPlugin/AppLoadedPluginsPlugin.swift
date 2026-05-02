@@ -1,31 +1,28 @@
 import MagicKit
 import SwiftUI
 
-/// 编辑器插件状态栏入口：在状态栏右侧显示已加载编辑器插件数量与详情
-actor EditorLoadedPluginsPlugin: SuperPlugin, SuperLog {
+/// App 插件状态栏入口：在状态栏右侧显示已加载 App 插件数量与详情
+actor AppLoadedPluginsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🧩"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
 
-    static let id: String = "EditorLoadedPlugins"
+    static let id: String = "AppLoadedPlugins"
     static let displayName: String = String(
-        localized: "Editor Plugins", table: "EditorLoadedPlugins")
+        localized: "App Plugins", table: "AppLoadedPlugins")
     static let description: String = String(
-        localized: "Show loaded editor plugins in status bar", table: "EditorLoadedPlugins")
+        localized: "Show loaded app plugins in status bar", table: "AppLoadedPlugins")
     static let iconName: String = "puzzlepiece.extension"
     static var isConfigurable: Bool { false }
     static var order: Int { 79 }
 
     nonisolated var instanceLabel: String { Self.id }
-    static let shared = EditorLoadedPluginsPlugin()
+    static let shared = AppLoadedPluginsPlugin()
 
     // MARK: - UI Contributions
 
     /// 在状态栏右侧显示已加载插件入口
-    ///
-    /// 仅在 EditorPlugin 被激活时提供。
     @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
-        return AnyView(EditorLoadedPluginsStatusBarView())
+        return AnyView(AppLoadedPluginsStatusBarView())
     }
 }

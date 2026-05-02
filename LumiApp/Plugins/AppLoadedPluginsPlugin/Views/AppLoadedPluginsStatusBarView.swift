@@ -1,15 +1,15 @@
 import MagicKit
 import SwiftUI
 
-/// 编辑器插件状态栏悬浮按钮视图
+/// App 插件状态栏悬浮按钮视图
 ///
-/// 点击后展示已加载编辑器插件的详情弹窗。
-struct EditorLoadedPluginsStatusBarView: View {
+/// 点击后展示已加载 App 插件的详情弹窗。
+struct AppLoadedPluginsStatusBarView: View {
     var body: some View {
         StatusBarHoverContainer(
-            detailView: EditorLoadedPluginsDetailView(),
+            detailView: AppLoadedPluginsDetailView(),
             popoverWidth: 460,
-            id: "lumi-editor-loaded-plugins"
+            id: "lumi-app-loaded-plugins"
         ) {
             HStack(spacing: 4) {
                 Image(systemName: "puzzlepiece.extension")
