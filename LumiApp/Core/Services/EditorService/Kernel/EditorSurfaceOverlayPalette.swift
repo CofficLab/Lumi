@@ -89,14 +89,13 @@ struct EditorSurfaceOverlayPalette {
             )
 
         case .hoverSymbol:
-            // VSCode 风格的 hover 符号高亮：柔和的半透明背景 + 轻微边框
-            // 比文档高亮（bracketMatch）更醒目但不过分
+            // VSCode 风格的 hover 符号高亮：醒目的边框勾勒 + 柔和背景填充
             let accent = selection.blended(withFraction: 0.55, of: lineHighlight) ?? selection
             return EditorSurfaceHighlightStyle(
-                fillColor: Color(nsColor: accent.withAlphaComponent(0.22)),
-                strokeColor: Color(nsColor: accent.withAlphaComponent(0.48)),
+                fillColor: Color(nsColor: accent.withAlphaComponent(0.28)),
+                strokeColor: Color(nsColor: accent.withAlphaComponent(0.82)),
                 cornerRadius: 3,
-                lineWidth: 0.75,
+                lineWidth: 1.25,
                 minimumWidth: 3,
                 minimumHeight: 2,
                 zIndex: 4

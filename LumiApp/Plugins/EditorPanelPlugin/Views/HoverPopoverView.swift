@@ -10,26 +10,11 @@ struct HoverPopoverView: View {
     private let style = EditorHoverOverlayStyle.standard
 
     var body: some View {
-        VStack(alignment: .leading, spacing: style.headerSpacing) {
-            HStack(spacing: 6) {
-                Text("Hover")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundColor(style.labelForeground)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(style.labelBackground)
-                    )
-                Spacer(minLength: 0)
-            }
-
-            ScrollView(.vertical, showsIndicators: false) {
-                MarkdownBlockRenderer(
-                    markdown: markdownText,
-                    theme: hoverTheme
-                )
-            }
+        ScrollView(.vertical, showsIndicators: false) {
+            MarkdownBlockRenderer(
+                markdown: markdownText,
+                theme: hoverTheme
+            )
         }
         .padding(style.contentPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
