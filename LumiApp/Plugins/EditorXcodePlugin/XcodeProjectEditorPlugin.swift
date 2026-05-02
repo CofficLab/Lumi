@@ -9,7 +9,7 @@ actor XcodeProjectEditorPlugin: SuperPlugin {
     static let iconName = "xmark.app"
     static let order = 4  // 在 LSP Service 之前加载，确保 build context 就绪
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

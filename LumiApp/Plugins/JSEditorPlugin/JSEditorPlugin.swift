@@ -21,7 +21,7 @@ actor JSEditorPlugin: SuperPlugin, SuperLog {
     static let iconName = "js"
     static let order = 33
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { false }
 }

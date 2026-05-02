@@ -8,7 +8,7 @@ actor LSPInlayHintEditorPlugin: SuperPlugin {
     static let iconName = "textformat.size"
     static let order = 22
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

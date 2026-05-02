@@ -8,7 +8,7 @@ actor SampleInsightsEditorPlugin: SuperPlugin {
     static let iconName = "lightbulb.max"
     static let order = 91
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

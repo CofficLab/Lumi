@@ -15,7 +15,7 @@ actor HTMLEditorPlugin: SuperPlugin {
     static let iconName = "curlybraces"
     static let order = 31
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

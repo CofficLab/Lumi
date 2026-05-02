@@ -8,7 +8,7 @@ actor LSPDocumentLinkEditorPlugin: SuperPlugin {
     static let iconName = "link"
     static let order = 29
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

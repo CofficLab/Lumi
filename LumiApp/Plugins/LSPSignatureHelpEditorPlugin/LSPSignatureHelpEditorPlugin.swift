@@ -8,7 +8,7 @@ actor LSPSignatureHelpEditorPlugin: SuperPlugin {
     static let iconName = "text.badge.plus"
     static let order = 23
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

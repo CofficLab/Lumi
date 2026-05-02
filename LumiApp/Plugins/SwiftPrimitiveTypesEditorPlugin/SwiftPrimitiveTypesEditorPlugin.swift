@@ -8,7 +8,7 @@ actor SwiftPrimitiveTypesEditorPlugin: SuperPlugin {
     static let iconName = "square.and.pencil"
     static let order = 10
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

@@ -8,7 +8,7 @@ actor LSPSelectionRangeEditorPlugin: SuperPlugin {
     static let iconName = "rectangle.on.rectangle"
     static let order = 27
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

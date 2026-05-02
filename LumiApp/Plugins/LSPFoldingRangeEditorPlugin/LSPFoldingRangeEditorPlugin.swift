@@ -8,7 +8,7 @@ actor LSPFoldingRangeEditorPlugin: SuperPlugin {
     static let iconName = "chevron.left.2"
     static let order = 26
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

@@ -13,7 +13,7 @@ actor LSPContextCommandsEditorPlugin: SuperPlugin, SuperLog {
     static let iconName = "command"
     static let order = 15
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

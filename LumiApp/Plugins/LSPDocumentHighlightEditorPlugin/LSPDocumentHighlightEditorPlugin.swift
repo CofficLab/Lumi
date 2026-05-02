@@ -8,7 +8,7 @@ actor LSPDocumentHighlightEditorPlugin: SuperPlugin {
     static let iconName = "highlighter"
     static let order = 21
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 

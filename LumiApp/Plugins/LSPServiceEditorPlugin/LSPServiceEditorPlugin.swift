@@ -8,7 +8,7 @@ actor LSPServiceEditorPlugin: SuperPlugin {
     static let iconName = "server.rack"
     static let order = 5
     static let enable = true
-    static var isConfigurable: Bool { true }
+    static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
 
