@@ -5,7 +5,6 @@ import SwiftUI
 /// 编辑器侧边栏工作区标签页
 enum EditorSidebarWorkspaceTab: String, CaseIterable, Identifiable {
     case explorer
-    case openEditors
     case outline
     case problems
     case searchResults
@@ -19,8 +18,6 @@ enum EditorSidebarWorkspaceTab: String, CaseIterable, Identifiable {
         switch self {
         case .explorer:
             "Explorer"
-        case .openEditors:
-            "Open Editors"
         case .outline:
             "Outline"
         case .problems:
@@ -40,8 +37,6 @@ enum EditorSidebarWorkspaceTab: String, CaseIterable, Identifiable {
         switch self {
         case .explorer:
             "folder"
-        case .openEditors:
-            "sidebar.left"
         case .outline:
             "list.bullet.indent"
         case .problems:
@@ -59,7 +54,7 @@ enum EditorSidebarWorkspaceTab: String, CaseIterable, Identifiable {
 
     var isContextual: Bool {
         switch self {
-        case .explorer, .openEditors, .outline:
+        case .explorer, .outline:
             return false
         case .problems, .searchResults, .references, .workspaceSymbols, .callHierarchy:
             return true
@@ -70,10 +65,8 @@ enum EditorSidebarWorkspaceTab: String, CaseIterable, Identifiable {
         switch self {
         case .explorer:
             return 0
-        case .openEditors:
-            return 1
         case .outline:
-            return 2
+            return 1
         case .problems:
             return 10
         case .searchResults:

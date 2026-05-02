@@ -10,7 +10,6 @@ struct EditorSidebarTabBar: View {
 
     let selectedTab: EditorSidebarWorkspaceTab
     let visibleTabs: [EditorSidebarWorkspaceTab]
-    let openEditorItems: [EditorOpenEditorItem]
     let onTabSelect: (EditorSidebarWorkspaceTab) -> Void
     let onDismiss: (EditorSidebarWorkspaceTab) -> Void
 
@@ -98,8 +97,6 @@ struct EditorSidebarTabBar: View {
         switch tab {
         case .explorer:
             return nil
-        case .openEditors:
-            return openEditorItems.isEmpty ? nil : "\(openEditorItems.count)"
         case .outline:
             let count = state.documentSymbolProvider.symbols.count
             return count > 0 ? "\(count)" : nil

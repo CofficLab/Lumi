@@ -23,7 +23,6 @@ struct EditorSidebarRailView: View {
             EditorSidebarTabBar(
                 selectedTab: selectedTab,
                 visibleTabs: visibleTabs,
-                openEditorItems: openEditorItems,
                 onTabSelect: selectSidebarTab,
                 onDismiss: dismissSidebarTab
             )
@@ -32,12 +31,7 @@ struct EditorSidebarRailView: View {
                 selectedTab: selectedTab,
                 state: state,
                 sessionStore: sessionStore,
-                workbench: workbench,
-                openEditors: openEditorItems,
-                onSelectOpenEditor: activateOpenEditor,
-                onCloseOpenEditor: closeOpenEditorItem,
-                onCloseOtherOpenEditors: closeOtherOpenEditorItems,
-                onTogglePinnedOpenEditor: togglePinnedOpenEditorItem
+                workbench: workbench
             )
         }
         .frame(maxHeight: .infinity)
@@ -45,20 +39,11 @@ struct EditorSidebarRailView: View {
         .onAppear {
             restoreSidebarWorkspaceSelection()
         }
-        .onChange(of: state.panelState.isOpenEditorsPanelPresented) { _, isPresented in
-            if isPresented {
-                selectedTab = .openEditors
-                persistSidebarWorkspaceSelection(.openEditors)
-            } else if !state.panelState.isOutlinePanelPresented, selectedTab == .openEditors {
-                selectedTab = .explorer
-                persistSidebarWorkspaceSelection(.explorer)
-            }
-        }
         .onChange(of: state.panelState.isOutlinePanelPresented) { _, isPresented in
             if isPresented {
                 selectedTab = .outline
                 persistSidebarWorkspaceSelection(.outline)
-            } else if !state.panelState.isOpenEditorsPanelPresented, selectedTab == .outline {
+            } else if selectedTab == .outline {
                 selectedTab = .explorer
                 persistSidebarWorkspaceSelection(.explorer)
             }
@@ -128,53 +113,10 @@ struct EditorSidebarRailView: View {
         }
     }
 
-    // MARK: - Open Editor Items
-
-    private var openEditorItems: [EditorOpenEditorItem] {
-        sessionStore.tabs.compactMap { tab in
-            let group = workbench.leafGroups.first(where: { group in
-                group.sessions.contains(where: { $0.id == tab.sessionID })
-            })
-            let groupIndex = group.flatMap { targetGroup in
-                workbench.leafGroups.firstIndex(where: { $0.id == targetGroup.id })
-            }
-            return EditorOpenEditorItem(
-                sessionID: tab.sessionID,
-                fileURL: tab.fileURL,
-                title: tab.title,
-                isDirty: tab.isDirty,
-                isPinned: tab.isPinned,
-                groupID: group?.id,
-                groupIndex: groupIndex,
-                isInActiveGroup: group?.id == workbench.activeGroupID,
-                isActive: tab.sessionID == sessionStore.activeSessionID,
-                recentActivationRank: sessionStore.recentActivationRank(for: tab.sessionID)
-            )
-        }
-        .sorted { lhs, rhs in
-            if lhs.isInActiveGroup != rhs.isInActiveGroup {
-                return lhs.isInActiveGroup && !rhs.isInActiveGroup
-            }
-            if lhs.isActive != rhs.isActive {
-                return lhs.isActive && !rhs.isActive
-            }
-            if lhs.recentActivationRank != rhs.recentActivationRank {
-                return (lhs.recentActivationRank ?? .max) < (rhs.recentActivationRank ?? .max)
-            }
-            if lhs.groupIndex != rhs.groupIndex {
-                return (lhs.groupIndex ?? .max) < (rhs.groupIndex ?? .max)
-            }
-            if lhs.isPinned != rhs.isPinned {
-                return lhs.isPinned && !rhs.isPinned
-            }
-            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
-        }
-    }
-
     // MARK: - Visible Tabs
 
     private var visibleTabs: [EditorSidebarWorkspaceTab] {
-        let baseTabs: [EditorSidebarWorkspaceTab] = [.explorer, .openEditors, .outline]
+        let baseTabs: [EditorSidebarWorkspaceTab] = [.explorer, .outline]
         let contextualTabs = EditorSidebarWorkspaceTab.allCases
             .filter(\.isContextual)
             .filter(shouldShowContextualTab(_:))
@@ -184,7 +126,7 @@ struct EditorSidebarRailView: View {
 
     private func shouldShowContextualTab(_ tab: EditorSidebarWorkspaceTab) -> Bool {
         switch tab {
-        case .explorer, .openEditors, .outline:
+        case .explorer, .outline:
             return true
         case .problems:
             return problemCount > 0 || state.panelState.isProblemsPanelPresented
@@ -213,55 +155,12 @@ struct EditorSidebarRailView: View {
         state.panelState.semanticProblems.count + state.panelState.problemDiagnostics.count
     }
 
-    // MARK: - Actions
-
-    private func activateOpenEditor(_ item: EditorOpenEditorItem) {
-        guard let fileURL = item.fileURL else { return }
-        projectVM.selectFile(at: fileURL)
-    }
-
-    private func closeOpenEditorItem(_ item: EditorOpenEditorItem) {
-        let wasActive = item.sessionID == sessionStore.activeSessionID
-        if wasActive, state.hasUnsavedChanges {
-            state.saveNow()
-        }
-        let nextSession = sessionStore.close(sessionID: item.sessionID)
-        workbench.close(sessionID: item.sessionID)
-        if wasActive {
-            if let nextFileURL = nextSession?.fileURL {
-                projectVM.selectFile(at: nextFileURL)
-            } else {
-                projectVM.clearFileSelection()
-            }
-        }
-    }
-
-    private func closeOtherOpenEditorItems(_ item: EditorOpenEditorItem) {
-        if state.currentFileURL != item.fileURL, state.hasUnsavedChanges {
-            state.saveNow()
-        }
-        workbench.closeOthers(keeping: item.sessionID)
-        let keptSession = sessionStore.closeOthers(keeping: item.sessionID)
-        if let fileURL = keptSession?.fileURL {
-            projectVM.selectFile(at: fileURL)
-        } else {
-            projectVM.clearFileSelection()
-        }
-    }
-
-    private func togglePinnedOpenEditorItem(_ item: EditorOpenEditorItem) {
-        sessionStore.togglePinned(sessionID: item.sessionID)
-        workbench.groupContainingSession(sessionID: item.sessionID)?.togglePinned(
-            sessionID: item.sessionID)
-    }
-
     // MARK: - Tab Selection
 
     private func selectSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
         persistSidebarWorkspaceSelection(tab)
         switch tab {
         case .explorer:
-            state.performPanelCommand(.closeOpenEditors)
             state.performPanelCommand(.closeOutline)
             if selectedTab == .problems || state.panelState.activeBottomPanel == .problems {
                 state.performPanelCommand(.closeProblems)
@@ -281,12 +180,6 @@ struct EditorSidebarRailView: View {
                 state.performPanelCommand(.closeCallHierarchy)
             }
             selectedTab = .explorer
-        case .openEditors:
-            if !state.panelState.isOpenEditorsPanelPresented {
-                state.performPanelCommand(.toggleOpenEditors)
-            } else {
-                selectedTab = .openEditors
-            }
         case .outline:
             if !state.panelState.isOutlinePanelPresented {
                 state.performPanelCommand(.toggleOutline)
@@ -315,8 +208,6 @@ struct EditorSidebarRailView: View {
         switch tab {
         case .explorer:
             break
-        case .openEditors:
-            state.performPanelCommand(.closeOpenEditors)
         case .outline:
             state.performPanelCommand(.closeOutline)
         case .problems:

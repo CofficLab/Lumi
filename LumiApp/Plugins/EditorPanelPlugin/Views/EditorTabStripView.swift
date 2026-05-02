@@ -40,48 +40,49 @@ struct EditorTabStripView: View {
     private func tabItem(for tab: EditorTab) -> some View {
         let isActive = tab.sessionID == activeSessionID
 
-        return HStack(spacing: 6) {
-            Circle()
-                .fill(tab.isDirty ? AppUI.Color.semantic.warning : theme.workspaceTertiaryTextColor().opacity(0.35))
-                .frame(width: 6, height: 6)
+        return Button(action: { onSelect(tab) }) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(tab.isDirty ? AppUI.Color.semantic.warning : theme.workspaceTertiaryTextColor().opacity(0.35))
+                    .frame(width: 6, height: 6)
 
-            if tab.isPinned {
-                Image(systemName: "pin.fill")
-                    .font(.system(size: 8))
-                    .foregroundColor(theme.workspaceTertiaryTextColor())
+                if tab.isPinned {
+                    Image(systemName: "pin.fill")
+                        .font(.system(size: 8))
+                        .foregroundColor(theme.workspaceTertiaryTextColor())
+                }
+
+                Text(tab.title)
+                    .font(.system(size: 11, weight: isActive ? .semibold : .regular))
+                    .foregroundColor(isActive ? theme.workspaceTextColor() : theme.workspaceSecondaryTextColor())
+                    .lineLimit(1)
+
+                // 关闭按钮用 StopPropagation 避免触发外层 Button
+                Button {
+                    onClose(tab)
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(theme.workspaceTertiaryTextColor())
+                        .frame(width: 14, height: 14)
+                }
+                .buttonStyle(.plain)
+                .opacity(isActive ? 1 : 0.7)
             }
-
-            Text(tab.title)
-                .font(.system(size: 11, weight: isActive ? .semibold : .regular))
-                .foregroundColor(isActive ? theme.workspaceTextColor() : theme.workspaceSecondaryTextColor())
-                .lineLimit(1)
-
-            Button {
-                onClose(tab)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundColor(theme.workspaceTertiaryTextColor())
-                    .frame(width: 14, height: 14)
-            }
-            .buttonStyle(.plain)
-            .opacity(isActive ? 1 : 0.7)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .frame(height: 28)
+            .background(
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(isActive ? theme.workspaceTextColor().opacity(0.07) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 7)
+                    .stroke(isActive ? theme.workspaceTextColor().opacity(0.08) : Color.clear, lineWidth: 1)
+            )
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(height: 28)
-        .background(
-            RoundedRectangle(cornerRadius: 7)
-                .fill(isActive ? theme.workspaceTextColor().opacity(0.07) : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(isActive ? theme.workspaceTextColor().opacity(0.08) : Color.clear, lineWidth: 1)
-        )
+        .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .onTapGesture {
-            onSelect(tab)
-        }
         .onDrag {
             onStartDrag(tab)
             return NSItemProvider(object: tab.sessionID.uuidString as NSString)

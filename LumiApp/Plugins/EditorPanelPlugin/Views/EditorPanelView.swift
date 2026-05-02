@@ -149,9 +149,6 @@ struct EditorPanelView: View {
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorReplaceAll)) { _ in
                 handleEditorCommandEvent("builtin.replace-all")
             }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleOpenEditorsPanel)) { _ in
-                toggleSidebarTab(.openEditors)
-            }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleOutlinePanel)) { _ in
                 toggleSidebarTab(.outline)
             }
@@ -635,13 +632,6 @@ struct EditorPanelView: View {
                             systemImage: "text.magnifyingglass",
                             action: { state.performEditorCommand(id: "builtin.workspace-symbols") }
                         )
-                        discoverabilityActionRow(
-                            title: String(localized: "Open Editors", table: "LumiEditor"),
-                            subtitle: String(localized: "View current open items, recent activation order, and group distribution.", table: "LumiEditor"),
-                            shortcut: "⌘B",
-                            systemImage: "sidebar.left",
-                            action: { toggleSidebarTab(.openEditors) }
-                        )
                     }
                 }
 
@@ -882,8 +872,6 @@ struct EditorPanelView: View {
 
     private func toggleSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
         switch tab {
-        case .openEditors:
-            state.performPanelCommand(.toggleOpenEditors)
         case .outline:
             state.performPanelCommand(.toggleOutline)
         default:
@@ -1052,8 +1040,15 @@ struct EditorPanelView: View {
         guard let resolved = resolvedSessionActivation(
             for: sessionID,
             preferredGroupID: preferredGroupID
-        ) else { return }
-        guard resolved.sessionID != sessionStore.activeSessionID || projectVM.selectedFileURL != resolved.fileURL else { return }
+        ) else {
+            print("[TabSwitch] ❌ resolvedSessionActivation returned nil for sessionID=\(sessionID)")
+            return
+        }
+        if resolved.sessionID == sessionStore.activeSessionID && projectVM.selectedFileURL == resolved.fileURL {
+            print("[TabSwitch] ⚠️ Guard blocked: sessionID=\(resolved.sessionID) == activeSessionID=\(sessionStore.activeSessionID), fileURL=\(resolved.fileURL) == selectedFileURL=\(String(describing: projectVM.selectedFileURL))")
+            return
+        }
+        print("[TabSwitch] ✅ Activating sessionID=\(resolved.sessionID), fileURL=\(resolved.fileURL), currentActive=\(String(describing: sessionStore.activeSessionID))")
         applyResolvedSessionActivation(resolved)
     }
 

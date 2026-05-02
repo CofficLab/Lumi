@@ -10,27 +10,11 @@ struct EditorSidebarWorkspaceContent: View {
     @ObservedObject var state: EditorState
     let sessionStore: EditorSessionStore
     let workbench: EditorWorkbenchState
-    let openEditors: [EditorOpenEditorItem]
-    let onSelectOpenEditor: (EditorOpenEditorItem) -> Void
-    let onCloseOpenEditor: (EditorOpenEditorItem) -> Void
-    let onCloseOtherOpenEditors: (EditorOpenEditorItem) -> Void
-    let onTogglePinnedOpenEditor: (EditorOpenEditorItem) -> Void
 
     var body: some View {
         switch selectedTab {
         case .explorer:
             EditorFileTreeView()
-        case .openEditors:
-            EditorOpenEditorsPanelView(
-                state: state,
-                items: openEditors,
-                onSelect: onSelectOpenEditor,
-                onClose: onCloseOpenEditor,
-                onCloseOthers: onCloseOtherOpenEditors,
-                onTogglePinned: onTogglePinnedOpenEditor,
-                showsHeader: false,
-                showsResizeHandle: false
-            )
         case .outline:
             if let provider = state.documentSymbolProvider as? DocumentSymbolProvider {
                 EditorOutlinePanelView(
