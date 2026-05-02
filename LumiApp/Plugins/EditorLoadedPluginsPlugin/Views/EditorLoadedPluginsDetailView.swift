@@ -3,7 +3,7 @@ import SwiftUI
 /// 编辑器插件详情弹窗视图
 struct EditorLoadedPluginsDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var pluginVM: PluginVM
+    @EnvironmentObject private var editorVM: EditorVM
     @StateObject private var viewModel = EditorLoadedPluginsViewModel()
 
     private var rowBackground: Color {
@@ -24,8 +24,7 @@ struct EditorLoadedPluginsDetailView: View {
             }
         }
         .onAppear {
-            viewModel.pluginVM = pluginVM
-            viewModel.refresh()
+            viewModel.refresh(from: editorVM)
         }
     }
 
@@ -40,7 +39,7 @@ struct EditorLoadedPluginsDetailView: View {
             Spacer()
 
             Button {
-                viewModel.refresh()
+                viewModel.refresh(from: editorVM)
             } label: {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 11, weight: .medium))

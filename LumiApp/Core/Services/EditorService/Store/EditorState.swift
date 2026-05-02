@@ -1177,18 +1177,11 @@ final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 从 PluginVM 过滤并安装编辑器插件（Phase 2）
-    private func installEditorPluginsFromPluginVM() {
-        let allPlugins = PluginVM.shared.plugins
-        if Self.verbose { logger.info("\(self.t)installEditorPlugins: PluginVM.plugins.count=\(allPlugins.count)") }
-
-        let enabledFiltered = allPlugins.filter { PluginVM.shared.isPluginEnabled($0) }
-        if Self.verbose { logger.info("\(self.t)installEditorPlugins: enabled 过滤后: \(enabledFiltered.count)") }
-
-        let editorPlugins = enabledFiltered.filter { $0.providesEditorExtensions }
-        if Self.verbose { logger.info("\(self.t)installEditorPlugins: providesEditorExtensions 过滤后: \(editorPlugins.count), ids=\(editorPlugins.map { type(of: $0).id })") }
-
-        editorExtensions.installPlugins(editorPlugins)
-    }
+    /// 
+    /// ⚠️ 已废弃：插件注册现在由 RootViewContainer 统一处理。
+    /// 保留此方法仅为兼容性，实际不再被调用。
+    @available(*, deprecated, message: "Use RootViewContainer's plugin registration flow instead")
+    private func installEditorPluginsFromPluginVM() {}
 
     private func bindKeybindings() {
         keybindingCancellable?.cancel()

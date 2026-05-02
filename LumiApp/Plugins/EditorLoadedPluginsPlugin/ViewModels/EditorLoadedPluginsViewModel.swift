@@ -9,28 +9,21 @@ final class EditorLoadedPluginsViewModel: ObservableObject {
         let id: String
         let displayName: String
         let description: String
+        let order: Int
     }
 
-    /// 已启用的编辑器插件列表
+    /// 已安装的编辑器插件列表（从 EditorVM 获取，即真正加载到 editor 内核的插件）
     @Published var enabledPlugins: [PluginInfo] = []
 
-    /// 插件管理器（通过环境变量注入）
-    var pluginVM: PluginVM?
-
     /// 刷新插件列表
-    func refresh() {
-        guard let pluginVM else { return }
-        enabledPlugins = pluginVM.plugins
-            .filter { plugin in
-                pluginVM.isPluginEnabled(plugin) && plugin.providesEditorExtensions
-            }
-            .map { plugin in
-                let type = type(of: plugin)
-                return PluginInfo(
-                    id: type.id,
-                    displayName: type.displayName,
-                    description: type.description
-                )
-            }
+    func refresh(from editorVM: EditorVM) {
+        enabledPlugins = editorVM.service.state.editorFeaturePlugins.map { plugin in
+            PluginInfo(
+                id: plugin.id,
+                displayName: plugin.displayName,
+                description: plugin.description,
+                order: plugin.order
+            )
+        }
     }
 }

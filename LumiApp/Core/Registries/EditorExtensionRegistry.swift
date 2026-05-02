@@ -38,7 +38,7 @@ enum EditorLanguageID {
 ///   但保留当前同步版本以确保向后兼容。调用方可选择使用 `resolveCompletionAsync` 等方法
 ///   将聚合和去重放到后台线程。
 @MainActor
-final class EditorExtensionRegistry: ObservableObject {
+final class EditorExtensionRegistry: ObservableObject, SuperLog {
     private static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "editor.ext-registry")
     nonisolated static let verbose = false
     nonisolated static let emoji = "🔌"
@@ -46,16 +46,12 @@ final class EditorExtensionRegistry: ObservableObject {
     /// 已安装的编辑器插件（按 order 排序）
     @Published private(set) var installedPlugins: [any SuperPlugin] = []
 
-    /// 从 PluginVM 过滤并安装编辑器插件。
+    /// 记录已安装的编辑器插件（由 RootViewContainer 在插件自注册后调用）
     ///
-    /// 调用方负责从 `PluginVM` 过滤出已启用的编辑器插件，
-    /// 此方法负责按 order 排序并逐个调用 `registerEditorExtensions(into:)`。
-    ///
-    /// - Parameter plugins: 已过滤的编辑器插件列表（仅包含 `providesEditorExtensions == true` 且已启用的插件）
-    func installPlugins(_ plugins: [any SuperPlugin]) {
+    /// 注意：此方法仅用于记录 installedPlugins 列表，不再调用 registerEditorExtensions。
+    /// 插件的自注册应由调用方在调用此方法前完成。
+    func recordInstalledPlugins(_ plugins: [any SuperPlugin]) {
         reset()
-
-        Self.logger.info("\(Self.emoji)installPlugins: 收到 \(plugins.count) 个插件, ids=\(plugins.map { type(of: $0).id })")
 
         // Sort by order, then by id
         let sorted = plugins.sorted { a, b in
@@ -67,16 +63,13 @@ final class EditorExtensionRegistry: ObservableObject {
 
         installedPlugins = sorted
 
-        for plugin in sorted {
-            plugin.registerEditorExtensions(into: self)
-        }
-        Self.logger.info("\(Self.emoji)installPlugins: 完成, commandContributorsCount=\(self.commandContributorsCount)")
+        Self.logger.info("\(self.t)recordInstalledPlugins: 记录 \(sorted.count) 个插件, ids=\(sorted.map { type(of: $0).id })")
     }
 
     /// 卸载所有已安装的编辑器插件
     func uninstallAll() {
         reset()
-        Self.logger.info("\(Self.emoji)已卸载所有编辑器插件")
+        Self.logger.info("\(self.t)已卸载所有编辑器插件")
     }
 
     // MARK: - Contributor Storage
@@ -191,7 +184,7 @@ final class EditorExtensionRegistry: ObservableObject {
             return
         }
         commandContributors.append(contributor)
-        if Self.verbose { Self.logger.info("registerCommandContributor: id=\(contributor.id), count=\(self.commandContributors.count)") }
+        if Self.verbose { Self.logger.info("\(self.t)registerCommandContributor: id=\(contributor.id), count=\(self.commandContributors.count)") }
     }
 
     func registerContextMenuContributor(_ contributor: any SuperEditorContextMenuContributor) {
@@ -489,10 +482,10 @@ final class EditorExtensionRegistry: ObservableObject {
         textView: TextView?
     ) -> [EditorCommandSuggestion] {
         guard !commandContributors.isEmpty else {
-            if Self.verbose { Self.logger.warning("commandSuggestions: commandContributors 为空") }
+            if Self.verbose { Self.logger.warning("\(self.t)commandSuggestions: commandContributors 为空") }
             return []
         }
-        if Self.verbose { Self.logger.info("commandSuggestions: contributors.count=\(self.commandContributors.count), ids=\(self.commandContributors.map(\.id))") }
+        if Self.verbose { Self.logger.info("\(self.t)commandSuggestions: contributors.count=\(self.commandContributors.count), ids=\(self.commandContributors.map(\.id))") }
         var merged: [EditorCommandSuggestion] = []
         for contributor in commandContributors {
             let items = contributor.provideCommands(
@@ -500,13 +493,13 @@ final class EditorExtensionRegistry: ObservableObject {
                 state: state,
                 textView: textView
             )
-            if Self.verbose { Self.logger.info("commandSuggestions: contributor=\(contributor.id) 返回 \(items.count) 个命令") }
+            if Self.verbose { Self.logger.info("\(self.t)commandSuggestions: contributor=\(contributor.id) 返回 \(items.count) 个命令") }
             if !items.isEmpty {
                 merged.append(contentsOf: items)
             }
         }
         let result = deduplicateCommands(merged)
-        if Self.verbose { Self.logger.info("commandSuggestions: 去重后共 \(result.count) 个命令") }
+        if Self.verbose { Self.logger.info("\(self.t)commandSuggestions: 去重后共 \(result.count) 个命令") }
         return result
     }
 
@@ -526,7 +519,7 @@ final class EditorExtensionRegistry: ObservableObject {
             textView: textView
         ).map(EditorContextMenuItemSuggestion.init(command:))
 
-        if Self.verbose { Self.logger.info("contextMenuSuggestions: commandSuggestions 返回 \(commandsBeforeFilter.count) 项, contextMenuContributors.count=\(self.contextMenuContributors.count)") }
+        if Self.verbose { Self.logger.info("\(self.t)contextMenuSuggestions: commandSuggestions 返回 \(commandsBeforeFilter.count) 项, contextMenuContributors.count=\(self.contextMenuContributors.count)") }
 
         var merged = commandsBeforeFilter
 
@@ -536,7 +529,7 @@ final class EditorExtensionRegistry: ObservableObject {
                 state: state,
                 textView: textView
             )
-            if Self.verbose { Self.logger.info("contextMenuSuggestions: contributor=\(contributor.id) 返回 \(items.count) 项") }
+            if Self.verbose { Self.logger.info("\(self.t)contextMenuSuggestions: contributor=\(contributor.id) 返回 \(items.count) 项") }
             if !items.isEmpty {
                 merged.append(contentsOf: items)
             }
@@ -544,19 +537,19 @@ final class EditorExtensionRegistry: ObservableObject {
 
         let beforeFilter = merged.count
         let filtered = merged.filter { $0.isEnabled && $0.metadata.matches(contributionContext) }
-        if Self.verbose { Self.logger.info("contextMenuSuggestions: 合并后 \(beforeFilter) 项, 过滤后 \(filtered.count) 项") }
+        if Self.verbose { Self.logger.info("\(self.t)contextMenuSuggestions: 合并后 \(beforeFilter) 项, 过滤后 \(filtered.count) 项") }
 
         if beforeFilter > 0 && filtered.isEmpty {
             if Self.verbose {
-                Self.logger.warning("contextMenuSuggestions: 所有命令被过滤掉了")
+                Self.logger.warning("\(self.t)contextMenuSuggestions: 所有命令被过滤掉了")
                 for item in merged.prefix(5) {
-                    Self.logger.warning("contextMenuSuggestions: 被过滤的命令: id=\(item.id), isEnabled=\(item.isEnabled), whenClause=\(item.metadata.whenClause != nil)")
+                    Self.logger.warning("\(self.t)contextMenuSuggestions: 被过滤的命令: id=\(item.id), isEnabled=\(item.isEnabled), whenClause=\(item.metadata.whenClause != nil)")
                 }
             }
         }
 
         let result = deduplicateContextMenuSuggestions(filtered)
-        if Self.verbose { Self.logger.info("contextMenuSuggestions: 去重后返回 \(result.count) 项") }
+        if Self.verbose { Self.logger.info("\(self.t)contextMenuSuggestions: 去重后返回 \(result.count) 项") }
         return result
     }
 

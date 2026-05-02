@@ -73,7 +73,7 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 整个应用共享同一个 PluginVM 实例。
     /// 使用 `shared` 属性访问全局实例。
-    static let shared = PluginVM()
+    @MainActor static let shared = PluginVM()
 
     /// 日志标识符
     ///

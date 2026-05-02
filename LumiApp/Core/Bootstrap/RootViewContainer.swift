@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import MagicKit
 import SwiftData
+import os
 
 /// RootView 容器：管理所有服务和 ViewModel 的单例实例。
 ///
@@ -197,15 +198,20 @@ final class RootViewContainer: ObservableObject {
         // 编辑器
         // ========================================
 
-        // 创建编辑器扩展注册中心（取消单例，仅在 RootViewContainer 初始化）
+        // 创建编辑器扩展注册中心
         let editorExtensionRegistry = EditorExtensionRegistry()
 
-        // 从 PluginVM 过滤已启用的编辑器插件并安装
+        // 让所有已启用的插件自行注册 editor 扩展
+        // （替代通过 providesEditorExtensions 过滤的方案，避免 Swift 6 Actor 动态派发问题）
         let localPluginVM = pluginVM
-        let allPlugins = localPluginVM.plugins
-        let enabledPlugins = allPlugins.filter { localPluginVM.isPluginEnabled($0) }
-        let editorPlugins = enabledPlugins.filter { $0.providesEditorExtensions }
-        editorExtensionRegistry.installPlugins(editorPlugins)
+        let pluginsToRegister = localPluginVM.plugins.filter { localPluginVM.isPluginEnabled($0) }
+        for plugin in pluginsToRegister {
+            plugin.registerEditorExtensions(into: editorExtensionRegistry)
+        }
+        // 将实际注册了的插件记录到 registry
+        editorExtensionRegistry.recordInstalledPlugins(pluginsToRegister)
+        
+        os.Logger(subsystem: "com.coffic.lumi", category: "root").info("🔌 RootViewContainer: 插件自注册完成，installedPlugins=\(editorExtensionRegistry.installedPlugins.count)")
 
         self.editorVM = EditorVM(service: EditorService(editorExtensionRegistry: editorExtensionRegistry))
 

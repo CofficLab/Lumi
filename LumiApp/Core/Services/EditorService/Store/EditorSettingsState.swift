@@ -278,9 +278,14 @@ final class EditorSettingsState: ObservableObject {
     private func reinstallEditorPlugins() {
         guard let registry = _editorExtensionRegistry else { return }
         let plugins = PluginVM.shared.plugins.filter {
-            PluginVM.shared.isPluginEnabled($0) && $0.providesEditorExtensions
+            PluginVM.shared.isPluginEnabled($0)
         }
-        registry.installPlugins(plugins)
+        // 先让所有插件自注册
+        for plugin in plugins {
+            plugin.registerEditorExtensions(into: registry)
+        }
+        // 再记录到 registry
+        registry.recordInstalledPlugins(plugins)
         objectWillChange.send()
     }
 
