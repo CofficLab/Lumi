@@ -3,15 +3,19 @@ import MagicKit
 import UniformTypeIdentifiers
 
 struct EditorTabStripView: View {
+    @EnvironmentObject var editorVM: EditorVM
+    @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var themeManager: ThemeManager
+
     let tabs: [EditorTab]
     let activeSessionID: EditorSession.ID?
-    let onSelect: (EditorTab) -> Void
-    let onClose: (EditorTab) -> Void
-    let onCloseOthers: (EditorTab) -> Void
-    let onTogglePinned: (EditorTab) -> Void
     let onStartDrag: (EditorTab) -> Void
     let onDropBefore: (EditorTab?) -> Void
+
+    var service: EditorService { editorVM.service }
+    var sessionStore: EditorSessionStore { service.sessionStore }
+    var workbench: EditorWorkbenchState { service.workbench }
+    var state: EditorState { service.state }
 
     /// 当前主题
     private var theme: any SuperTheme {
@@ -37,17 +41,15 @@ struct EditorTabStripView: View {
         .background(theme.workspaceTertiaryTextColor().opacity(0.06))
     }
 
+    // MARK: - Tab Item
+
     @ViewBuilder
     private func tabItem(for tab: EditorTab) -> some View {
         let isActive = tab.sessionID == activeSessionID
 
         HoverRevealButton(
+            tab: tab,
             isActive: isActive,
-            isDirty: tab.isDirty,
-            isPinned: tab.isPinned,
-            title: tab.title,
-            onSelect: { onSelect(tab) },
-            onClose: { onClose(tab) },
             theme: theme
         )
         .buttonStyle(.plain)
@@ -68,10 +70,10 @@ struct EditorTabStripView: View {
                     ? String(localized: "Unpin Tab", table: "LumiEditor")
                     : String(localized: "Pin Tab", table: "LumiEditor")
             ) {
-                onTogglePinned(tab)
+                togglePinned(tab)
             }
             Button(String(localized: "Close Others", table: "LumiEditor")) {
-                onCloseOthers(tab)
+                closeOtherSessions(tab)
             }
         }
     }
@@ -93,69 +95,26 @@ struct EditorTabStripView: View {
             }
         }
     }
-}
 
-// MARK: - HoverRevealButton
+    // MARK: - 操作
 
-/// 单个标签页视图：关闭按钮默认隐藏，hover 或激活时显示
-private struct HoverRevealButton: View {
-    let isActive: Bool
-    let isDirty: Bool
-    let isPinned: Bool
-    let title: String
-    let onSelect: () -> Void
-    let onClose: () -> Void
-    let theme: any SuperTheme
-
-    @State private var isHovered = false
-
-    var body: some View {
-        let showClose = isActive || isHovered
-
-        HStack(spacing: 6) {
-            if isDirty {
-                Circle()
-                    .fill(AppUI.Color.semantic.warning)
-                    .frame(width: 6, height: 6)
-            }
-
-            if isPinned {
-                Image(systemName: "pin.fill")
-                    .font(.system(size: 8))
-                    .foregroundColor(theme.workspaceTertiaryTextColor())
-            }
-
-            Text(title)
-                .font(.system(size: 11, weight: isActive ? .semibold : .regular))
-                .foregroundColor(isActive ? theme.workspaceTextColor() : theme.workspaceSecondaryTextColor())
-                .lineLimit(1)
-
-            Image(systemName: "xmark")
-                .font(.system(size: 8, weight: .bold))
-                .foregroundColor(theme.workspaceTertiaryTextColor())
-                .frame(width: 14, height: 14)
-                .contentShape(Rectangle())
-                .opacity(showClose ? 1 : 0)
-                .highPriorityGesture(TapGesture().onEnded {
-                    onClose()
-                })
+    private func closeOtherSessions(_ tab: EditorTab) {
+        guard let session = sessionStore.session(for: tab.sessionID) else { return }
+        if state.currentFileURL != session.fileURL, state.hasUnsavedChanges {
+            state.saveNow()
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(height: 28)
-        .background(
-            RoundedRectangle(cornerRadius: 7)
-                .fill(isActive ? theme.workspaceTextColor().opacity(0.07) : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(isActive ? theme.workspaceTextColor().opacity(0.08) : Color.clear, lineWidth: 1)
-        )
-        .onTapGesture {
-            onSelect()
+
+        let _ = workbench.closeOthers(keeping: session.id)
+        let keptSession = sessionStore.closeOthers(keeping: session.id)
+        if let fileURL = keptSession?.fileURL {
+            projectVM.selectFile(at: fileURL)
+        } else {
+            projectVM.clearFileSelection()
         }
-        .onHover { hovered in
-            isHovered = hovered
-        }
+    }
+
+    private func togglePinned(_ tab: EditorTab) {
+        sessionStore.togglePinned(sessionID: tab.sessionID)
+        workbench.groupContainingSession(sessionID: tab.sessionID)?.togglePinned(sessionID: tab.sessionID)
     }
 }

@@ -1,28 +1,37 @@
 {
   "sourceLanguage" : "en",
-  "version" : "1.0",
   "strings" : {
-    "References" : {
+    "{count} References" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "References"
+            "value" : "{count} References"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "引用"
+            "value" : "{count} 个引用"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "引用"
+            "value" : "{count} 個引用"
           }
         }
       }
+    },
+    "%lld References" : {
+
+    },
+    "Editor Rail References" : {
+
+    },
+    "Editor sidebar references tab" : {
+
     },
     "No References" : {
       "localizations" : {
@@ -68,27 +77,28 @@
         }
       }
     },
-    "{count} References" : {
+    "References" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "{count} References"
+            "value" : "References"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "{count} 个引用"
+            "value" : "引用"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "{count} 個引用"
+            "value" : "引用"
           }
         }
       }
     }
-  }
+  },
+  "version" : "1.0"
 }
