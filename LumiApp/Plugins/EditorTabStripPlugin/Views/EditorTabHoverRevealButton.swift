@@ -69,10 +69,8 @@ struct HoverRevealButton: View {
 
     private func activateSession(_ tab: EditorTab) {
         let sessionStore = editorVM.service.sessionStore
-        let workbench = editorVM.service.workbench
 
         _ = sessionStore.activate(sessionID: tab.sessionID)
-        _ = workbench.activate(sessionID: tab.sessionID)
         if let fileURL = tab.fileURL {
             projectVM.selectFile(at: fileURL)
         }
@@ -80,12 +78,10 @@ struct HoverRevealButton: View {
 
     private func closeSession(_ tab: EditorTab) {
         let sessionStore = editorVM.service.sessionStore
-        let workbench = editorVM.service.workbench
         let state = editorVM.service.state
 
         guard let session = sessionStore.session(for: tab.sessionID) else { return }
         let wasActive = session.id == sessionStore.activeSessionID
-        let nextGroupSession = workbench.close(sessionID: session.id)
         if wasActive, state.hasUnsavedChanges {
             state.saveNow()
         }

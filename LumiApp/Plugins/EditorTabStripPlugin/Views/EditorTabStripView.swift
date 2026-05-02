@@ -14,7 +14,6 @@ struct EditorTabStripView: View {
 
     var service: EditorService { editorVM.service }
     var sessionStore: EditorSessionStore { service.sessionStore }
-    var workbench: EditorWorkbenchState { service.workbench }
     var state: EditorState { service.state }
 
     /// 当前主题
@@ -104,7 +103,6 @@ struct EditorTabStripView: View {
             state.saveNow()
         }
 
-        let _ = workbench.closeOthers(keeping: session.id)
         let keptSession = sessionStore.closeOthers(keeping: session.id)
         if let fileURL = keptSession?.fileURL {
             projectVM.selectFile(at: fileURL)
@@ -115,6 +113,5 @@ struct EditorTabStripView: View {
 
     private func togglePinned(_ tab: EditorTab) {
         sessionStore.togglePinned(sessionID: tab.sessionID)
-        workbench.groupContainingSession(sessionID: tab.sessionID)?.togglePinned(sessionID: tab.sessionID)
     }
 }

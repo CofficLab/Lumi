@@ -50,27 +50,6 @@ extension Notification.Name {
     /// 请求切换 Outline 面板
     static let lumiEditorToggleOutlinePanel = Notification.Name("LumiEditorToggleOutlinePanel")
 
-    /// 请求向右分栏
-    static let lumiEditorSplitRight = Notification.Name("LumiEditorSplitRight")
-
-    /// 请求向下分栏
-    static let lumiEditorSplitDown = Notification.Name("LumiEditorSplitDown")
-
-    /// 请求关闭分栏
-    static let lumiEditorCloseSplit = Notification.Name("LumiEditorCloseSplit")
-
-    /// 请求聚焦下一个编辑器分组
-    static let lumiEditorFocusNextGroup = Notification.Name("LumiEditorFocusNextGroup")
-
-    /// 请求聚焦上一个编辑器分组
-    static let lumiEditorFocusPreviousGroup = Notification.Name("LumiEditorFocusPreviousGroup")
-
-    /// 请求把当前 editor 移到下一个分组
-    static let lumiEditorMoveToNextGroup = Notification.Name("LumiEditorMoveToNextGroup")
-
-    /// 请求把当前 editor 移到上一个分组
-    static let lumiEditorMoveToPreviousGroup = Notification.Name("LumiEditorMoveToPreviousGroup")
-
     /// 请求触发补全
     static let lumiEditorTriggerCompletion = Notification.Name("LumiEditorTriggerCompletion")
 
@@ -160,33 +139,5 @@ extension NotificationCenter {
 
     static func postLumiEditorToggleOutlinePanel() {
         NotificationCenter.default.post(name: .lumiEditorToggleOutlinePanel, object: nil)
-    }
-
-    static func postLumiEditorSplitRight() {
-        NotificationCenter.default.post(name: .lumiEditorSplitRight, object: nil)
-    }
-
-    static func postLumiEditorSplitDown() {
-        NotificationCenter.default.post(name: .lumiEditorSplitDown, object: nil)
-    }
-
-    static func postLumiEditorCloseSplit() {
-        NotificationCenter.default.post(name: .lumiEditorCloseSplit, object: nil)
-    }
-
-    static func postLumiEditorFocusNextGroup() {
-        NotificationCenter.default.post(name: .lumiEditorFocusNextGroup, object: nil)
-    }
-
-    static func postLumiEditorFocusPreviousGroup() {
-        NotificationCenter.default.post(name: .lumiEditorFocusPreviousGroup, object: nil)
-    }
-
-    static func postLumiEditorMoveToNextGroup() {
-        NotificationCenter.default.post(name: .lumiEditorMoveToNextGroup, object: nil)
-    }
-
-    static func postLumiEditorMoveToPreviousGroup() {
-        NotificationCenter.default.post(name: .lumiEditorMoveToPreviousGroup, object: nil)
     }
 }

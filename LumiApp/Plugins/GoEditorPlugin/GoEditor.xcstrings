@@ -1,0 +1,146 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "Build": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Build" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "构建" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "構建" } }
+      }
+    },
+    "Build succeeded": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Build succeeded" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "构建成功" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "構建成功" } }
+      }
+    },
+    "Building...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Building..." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "构建中..." } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "構建中..." } }
+      }
+    },
+    "Go": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Go" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Go" } }
+      }
+    },
+    "Go Build": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go Build" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Go 构建" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Go 構建" } }
+      }
+    },
+    "Go Editor": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go Editor" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Go 编辑器" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Go 編輯器" } }
+      }
+    },
+    "Go Format": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go Format" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Go 格式化" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Go 格式化" } }
+      }
+    },
+    "Go Mod Tidy": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go Mod Tidy" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Go 依赖整理" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Go 依賴整理" } }
+      }
+    },
+    "Go Test": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go Test" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Go 测试" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Go 測試" } }
+      }
+    },
+    "Go language support: gopls integration, build, test, format, and module management.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go language support: gopls integration, build, test, format, and module management." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Go 语言支持：gopls 集成、构建、测试、格式化和模块管理。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Go 語言支援：gopls 整合、構建、測試、格式化和模組管理。" } }
+      }
+    },
+    "Run go build to see output": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Run go build to see output" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "运行 go build 查看输出" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "執行 go build 查看輸出" } }
+      }
+    },
+    "Run go test to see results": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Run go test to see results" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "运行 go test 查看结果" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "執行 go test 查看結果" } }
+      }
+    },
+    "Running tests...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Running tests..." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "运行测试中..." } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "執行測試中..." } }
+      }
+    },
+    "Tests": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tests" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "测试" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "測試" } }
+      }
+    },
+    "Testing...": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Testing..." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "测试中..." } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "測試中..." } }
+      }
+    },
+    "errors": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "errors" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "个错误" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "個錯誤" } }
+      }
+    },
+    "passed": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "passed" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "个通过" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "個通過" } }
+      }
+    },
+    "failed": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "failed" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "个失败" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "個失敗" } }
+      }
+    },
+    "skipped": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "skipped" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "个跳过" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "個跳過" } }
+      }
+    },
+    "warnings": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "warnings" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "个警告" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "個警告" } }
+      }
+    }
+  }
+}

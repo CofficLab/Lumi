@@ -12,8 +12,7 @@ import LanguageServerProtocol
 // ## 设计原则
 //
 // EditorService 是编辑器模块的唯一对外入口。
-// 所有内部类型（EditorState、EditorSession、EditorWorkbenchState、
-// EditorGroupHostStore、EditorSessionStore 等）均通过此服务暴露，
+// 所有内部类型（EditorState、EditorSessionStore 等）均通过此服务暴露，
 // 外部消费者不直接引用内部实现。
 //
 // ## 内部组件（不对外暴露）
@@ -22,8 +21,6 @@ import LanguageServerProtocol
 // |-----------------------|-------------------------------------|
 // | `EditorState`         | 当前活跃编辑器的全部状态与 LSP 交互  |
 // | `sessionStore`        | 会话/标签页管理、导航历史            |
-// | `workbench`           | 分栏 Group 树管理                   |
-// | `hostStore`           | 每个分栏独立的 EditorState 实例      |
 //
 // ## 使用方式
 //
@@ -38,26 +35,17 @@ import LanguageServerProtocol
 //
 // // 执行命令
 // editor.performCommand(id: "builtin.find")
-//
-// // 分栏
-// editor.splitRight()
 // ```
 @MainActor
 public final class EditorService: ObservableObject {
 
     // MARK: - Internal Components（不对外暴露）
 
-    /// 主编辑器状态（活跃分栏的文件内容、光标、面板等）
+    /// 主编辑器状态（文件内容、光标、面板等）
     let state: EditorState
 
     /// 会话管理（打开的文件标签页、导航历史）
     let sessionStore: EditorSessionStore
-
-    /// 工作台状态（分栏 group 树）
-    let workbench: EditorWorkbenchState
-
-    /// 分栏宿主（每个分栏独立的 EditorState 实例）
-    let hostStore: EditorGroupHostStore
 
     // MARK: - Initialization
 
@@ -67,16 +55,11 @@ public final class EditorService: ObservableObject {
     init(
         editorExtensionRegistry: EditorExtensionRegistry,
         state: EditorState,
-        sessionStore: EditorSessionStore,
-        workbench: EditorWorkbenchState,
-        hostStore: EditorGroupHostStore
+        sessionStore: EditorSessionStore
     ) {
         self.editorExtensionRegistry = editorExtensionRegistry
         self.state = state
         self.sessionStore = sessionStore
-        self.workbench = workbench
-        self.hostStore = hostStore
-        hostStore.configureRegistry(editorExtensionRegistry)
     }
 
     /// 便捷构造：使用默认实例创建完整编辑器服务
@@ -84,9 +67,7 @@ public final class EditorService: ObservableObject {
         self.init(
             editorExtensionRegistry: editorExtensionRegistry,
             state: EditorState(editorExtensions: editorExtensionRegistry),
-            sessionStore: EditorSessionStore(),
-            workbench: EditorWorkbenchState(),
-            hostStore: EditorGroupHostStore()
+            sessionStore: EditorSessionStore()
         )
     }
 
@@ -218,69 +199,6 @@ public final class EditorService: ObservableObject {
     }
 
     // ========================================================================
-    // MARK: - 分栏管理（Workbench / Split）
-    // ========================================================================
-
-    /// 根 Group
-    var rootGroup: EditorGroup { workbench.rootGroup }
-
-    /// 当前活跃的 Group ID
-    var activeGroupID: EditorGroup.ID { workbench.activeGroupID }
-
-    /// 当前活跃的 Group
-    var activeGroup: EditorGroup? { workbench.activeGroup }
-
-    /// 所有叶子 Group（包含实际编辑器内容的 group）
-    var leafGroups: [EditorGroup] { workbench.leafGroups }
-
-    /// 是否为多分栏模式
-    var isSplitMode: Bool { !workbench.rootGroup.isLeaf }
-
-    /// 水平分割编辑器（左右分栏）
-    func splitRight() {
-        workbench.splitActiveGroup(.horizontal)
-    }
-
-    /// 垂直分割编辑器（上下分栏）
-    func splitDown() {
-        workbench.splitActiveGroup(.vertical)
-    }
-
-    /// 取消分割
-    func unsplit() {
-        workbench.unsplitActiveGroup()
-    }
-
-    /// 聚焦到下一个分栏
-    @discardableResult
-    func focusNextGroup() -> EditorGroup? {
-        workbench.focusNextGroup()
-    }
-
-    /// 聚焦到上一个分栏
-    @discardableResult
-    func focusPreviousGroup() -> EditorGroup? {
-        workbench.focusPreviousGroup()
-    }
-
-    /// 将活跃会话移动到下一个分栏
-    @discardableResult
-    func moveActiveSessionToNextGroup() -> Bool {
-        workbench.moveActiveSessionToNextGroup()
-    }
-
-    /// 将活跃会话移动到上一个分栏
-    @discardableResult
-    func moveActiveSessionToPreviousGroup() -> Bool {
-        workbench.moveActiveSessionToPreviousGroup()
-    }
-
-    /// 激活指定 Group
-    func activateGroup(_ groupID: EditorGroup.ID) {
-        workbench.activateGroup(groupID)
-    }
-
-    // ========================================================================
     // MARK: - 光标与编辑器状态（Cursor & Editor State）
     // ========================================================================
 
@@ -328,7 +246,7 @@ public final class EditorService: ObservableObject {
     /// References 结果列表
     var referenceResults: [ReferenceResult] { state.referenceResults }
 
-    /// 是否展示 References 面板
+    /// 是否展示 References 靖板
     var isReferencePanelPresented: Bool { state.isReferencePanelPresented }
 
     // ========================================================================
@@ -547,34 +465,9 @@ public final class EditorService: ObservableObject {
     // MARK: - Session Snapshot Sync（内部协调）
     // ========================================================================
 
-    /// 从快照同步活跃会话到工作台
+    /// 从快照同步活跃会话
     func syncActiveSession(from snapshot: EditorSession) {
         sessionStore.syncActiveSession(from: snapshot)
-        workbench.syncActiveSession(from: snapshot)
-    }
-
-    // ========================================================================
-    // MARK: - 分栏宿主管理（Host Store）
-    // ========================================================================
-
-    /// 获取指定 Group 的 EditorState（分栏场景下使用）
-    func hostedState(for groupID: EditorGroup.ID) -> EditorState {
-        hostStore.state(for: groupID)
-    }
-
-    /// 设置主 EditorState 引用
-    func setPrimaryState(_ state: EditorState) {
-        hostStore.setPrimaryState(state)
-    }
-
-    /// 保留指定 Group 的 EditorState，清理其余
-    func retainHostStates(for groupIDs: Set<EditorGroup.ID>) {
-        hostStore.retainOnly(groupIDs)
-    }
-
-    /// 所有已托管的 EditorState
-    var allHostedStates: [EditorState] {
-        hostStore.allStates
     }
 
     // ========================================================================

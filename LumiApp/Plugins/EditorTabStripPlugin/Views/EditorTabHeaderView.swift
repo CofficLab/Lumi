@@ -12,7 +12,6 @@ struct EditorTabHeaderView: View {
 
     var service: EditorService { editorVM.service }
     var sessionStore: EditorSessionStore { service.sessionStore }
-    var workbench: EditorWorkbenchState { service.workbench }
     var state: EditorState { service.state }
 
     @State var draggedTabSessionID: EditorSession.ID?
@@ -45,14 +44,11 @@ struct EditorTabHeaderView: View {
     // MARK: - 计算属性
 
     private var visibleTabs: [EditorTab] {
-        if let activeGroup = workbench.activeGroup, !activeGroup.tabs.isEmpty {
-            return activeGroup.tabs
-        }
-        return sessionStore.tabs
+        sessionStore.tabs
     }
 
     private var visibleActiveSessionID: EditorSession.ID? {
-        workbench.activeGroup?.activeSessionID ?? sessionStore.activeSessionID
+        sessionStore.activeSessionID
     }
 
     private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
