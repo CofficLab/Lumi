@@ -31,7 +31,7 @@ actor EditorBottomPanelPlugin: SuperPlugin, SuperLog {
 
     /// 当编辑器面板激活时，提供 Panel Bottom 视图
     @MainActor func addPanelBottomView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.id else { return nil }
+        guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorBottomPanelContainerView())
     }
 }
