@@ -23,28 +23,28 @@
         }
       }
     },
-    "Swift Keyword Hover": {
+    "Editor Swift Keyword Hover": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Swift Keyword Hover"
+            "value": "Editor Swift Keyword Hover"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Swift 关键字悬停"
+            "value": "编辑器 Swift 关键字悬停"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Swift 關鍵字懸停"
+            "value": "編輯器 Swift 關鍵字懸停"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version": "1.0"
 }
