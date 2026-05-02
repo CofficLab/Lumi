@@ -105,7 +105,6 @@ struct EditorConfigSnapshot: Equatable {
     var showGutter: Bool
     var showFoldingRibbon: Bool
     var currentThemeId: String
-    var sidePanelWidth: CGFloat
 }
 
 @MainActor
@@ -113,7 +112,6 @@ final class EditorConfigController {
     private let scopedOverridesKey = "scopedOverrides.v1"
 
     func restoreConfig(
-        clampedSidePanelWidth: (Double) -> CGFloat
     ) -> EditorConfigSnapshot {
         var snapshot = EditorConfigSnapshot(
             fontSize: 13.0,
@@ -128,8 +126,7 @@ final class EditorConfigController {
             showMinimap: true,
             showGutter: true,
             showFoldingRibbon: true,
-            currentThemeId: "xcode-dark",
-            sidePanelWidth: 360
+            currentThemeId: "xcode-dark"
         )
 
         if let value = EditorConfigStore.loadDouble(forKey: EditorConfigStore.fontSizeKey) { snapshot.fontSize = value }
@@ -144,9 +141,6 @@ final class EditorConfigController {
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showMinimapKey) { snapshot.showMinimap = value }
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showGutterKey) { snapshot.showGutter = value }
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showFoldingRibbonKey) { snapshot.showFoldingRibbon = value }
-        if let value = EditorConfigStore.loadDouble(forKey: EditorConfigStore.sidePanelWidthKey) {
-            snapshot.sidePanelWidth = clampedSidePanelWidth(value)
-        }
 
         if let appThemeId = ThemeManager.loadSavedThemeId() {
             snapshot.currentThemeId = ThemeManager.editorThemeID(for: appThemeId)
@@ -158,9 +152,8 @@ final class EditorConfigController {
     }
 
     func restoreScopedConfig(
-        clampedSidePanelWidth: (Double) -> CGFloat
     ) -> EditorScopedConfigSnapshot {
-        let global = restoreConfig(clampedSidePanelWidth: clampedSidePanelWidth)
+        let global = restoreConfig()
         let rawScopes = EditorConfigStore.loadDictionary(forKey: scopedOverridesKey) ?? [:]
         let workspaceOverrides = decodeOverrideMap(rawScopes["workspace"] as? [String: Any])
         let languageOverrides = decodeOverrideMap(rawScopes["language"] as? [String: Any])
@@ -172,10 +165,9 @@ final class EditorConfigController {
     }
 
     func resolveConfig(
-        for context: EditorConfigContext,
-        clampedSidePanelWidth: (Double) -> CGFloat
+        for context: EditorConfigContext
     ) -> EditorConfigSnapshot {
-        let scoped = restoreScopedConfig(clampedSidePanelWidth: clampedSidePanelWidth)
+        let scoped = restoreScopedConfig()
         var resolved = scoped.global
 
         if let workspacePath = context.normalizedWorkspacePath,
@@ -205,14 +197,12 @@ final class EditorConfigController {
         EditorConfigStore.saveValue(snapshot.showGutter, forKey: EditorConfigStore.showGutterKey)
         EditorConfigStore.saveValue(snapshot.showFoldingRibbon, forKey: EditorConfigStore.showFoldingRibbonKey)
         EditorConfigStore.saveValue(snapshot.currentThemeId, forKey: EditorConfigStore.themeNameKey)
-        EditorConfigStore.saveValue(snapshot.sidePanelWidth, forKey: EditorConfigStore.sidePanelWidthKey)
     }
 
     func overrideSnapshot(
-        for scope: EditorConfigOverrideScope,
-        clampedSidePanelWidth: (Double) -> CGFloat
+        for scope: EditorConfigOverrideScope
     ) -> EditorScopedOverrideSnapshot {
-        let scoped = restoreScopedConfig(clampedSidePanelWidth: clampedSidePanelWidth)
+        let scoped = restoreScopedConfig()
         switch scope {
         case let .workspace(path):
             return scoped.workspaceOverrides[EditorConfigContext.normalizePath(path) ?? path] ?? EditorScopedOverrideSnapshot()
@@ -223,10 +213,9 @@ final class EditorConfigController {
 
     func persistOverrideSnapshot(
         _ overrideSnapshot: EditorScopedOverrideSnapshot,
-        for scope: EditorConfigOverrideScope,
-        clampedSidePanelWidth: (Double) -> CGFloat
+        for scope: EditorConfigOverrideScope
     ) {
-        var scoped = restoreScopedConfig(clampedSidePanelWidth: clampedSidePanelWidth)
+        var scoped = restoreScopedConfig()
         switch scope {
         case let .workspace(path):
             let normalized = EditorConfigContext.normalizePath(path) ?? path

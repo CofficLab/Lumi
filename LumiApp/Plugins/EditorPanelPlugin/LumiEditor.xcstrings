@@ -383,9 +383,6 @@
         }
       }
     },
-    "Current Group" : {
-
-    },
     "Current Symbol" : {
 
     },
@@ -1040,9 +1037,6 @@
         }
       }
     },
-    "Location" : {
-
-    },
     "long line" : {
 
     },
@@ -1561,13 +1555,7 @@
         }
       }
     },
-    "No Open Editors" : {
-
-    },
     "No preview available" : {
-
-    },
-    "No Problems" : {
 
     },
     "No project" : {
@@ -1723,9 +1711,6 @@
     "Organize Imports on Save" : {
 
     },
-    "Other Open Editors" : {
-
-    },
     "Outline" : {
 
     },
@@ -1788,9 +1773,6 @@
           }
         }
       }
-    },
-    "Problems" : {
-
     },
     "Professional code editor with syntax highlighting, code folding, minimap, and find/replace" : {
       "extractionState" : "stale",
@@ -1939,16 +1921,10 @@
     "Quick Open: files, @symbols, #workspace, :line, >commands" : {
 
     },
-    "Recently Active" : {
-
-    },
     "Recently Used" : {
 
     },
     "Redo" : {
-
-    },
-    "References" : {
 
     },
     "Refresh" : {

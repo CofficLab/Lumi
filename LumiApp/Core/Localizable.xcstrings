@@ -288,16 +288,6 @@
         }
       }
     },
-    "%@:%lld:%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@:%2$lld:%3$lld"
-          }
-        }
-      }
-    },
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2453,9 +2443,6 @@
 
     },
     "Finder" : {
-
-    },
-    "G%lld" : {
 
     },
     "General" : {
@@ -8801,9 +8788,6 @@
 
     },
     "获取索引状态失败" : {
-
-    },
-    "解析中" : {
 
     },
     "设置" : {

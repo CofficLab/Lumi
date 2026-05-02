@@ -11,7 +11,7 @@ final class SampleInsightsPanelContributor: SuperEditorPanelContributor {
                 id: "sample.insights.side-panel",
                 title: "Sample Insights",
                 systemImage: "lightbulb.max",
-                placement: .side,
+                placement: .bottom,
                 order: -10,
                 metadata: .init(priority: 100, dedupeKey: "sample-insights-panel"),
                 isPresented: { sampleState in

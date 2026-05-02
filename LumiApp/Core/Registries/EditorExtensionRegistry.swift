@@ -33,7 +33,7 @@ enum EditorLanguageID {
 ///
 /// ## 线程说明
 /// - 注册/注销：@MainActor（与 View 生命周期一致）
-/// - 同步查询（command/sidePanel/sheet/toolbar）：@MainActor
+/// - 同步查询（command/sheet/toolbar）：@MainActor
 /// - 异步查询（completion/hover/codeAction）：委托给 `ExtensionResolver`（后台 actor）执行，
 ///   但保留当前同步版本以确保向后兼容。调用方可选择使用 `resolveCompletionAsync` 等方法
 ///   将聚合和去重放到后台线程。
@@ -90,7 +90,6 @@ final class EditorExtensionRegistry: ObservableObject, SuperLog {
     private var statusItemContributors: [any SuperEditorStatusItemContributor] = []
     private var quickOpenContributors: [any SuperEditorQuickOpenContributor] = []
     private var interactionContributors: [any SuperEditorInteractionContributor] = []
-    private var sidePanelContributors: [any SuperEditorSidePanelContributor] = []
     private var sheetContributors: [any SuperEditorSheetContributor] = []
     private var toolbarContributors: [any SuperEditorToolbarContributor] = []
     private var themeContributors: [any SuperEditorThemeContributor] = []
@@ -127,7 +126,6 @@ final class EditorExtensionRegistry: ObservableObject, SuperLog {
         statusItemContributors.removeAll()
         quickOpenContributors.removeAll()
         interactionContributors.removeAll()
-        sidePanelContributors.removeAll()
         sheetContributors.removeAll()
         toolbarContributors.removeAll()
         themeContributors.removeAll()
@@ -242,13 +240,6 @@ final class EditorExtensionRegistry: ObservableObject, SuperLog {
             return
         }
         interactionContributors.append(contributor)
-    }
-
-    func registerSidePanelContributor(_ contributor: any SuperEditorSidePanelContributor) {
-        if sidePanelContributors.contains(where: { $0.id == contributor.id }) {
-            return
-        }
-        sidePanelContributors.append(contributor)
     }
 
     func registerSheetContributor(_ contributor: any SuperEditorSheetContributor) {
@@ -572,27 +563,6 @@ final class EditorExtensionRegistry: ObservableObject, SuperLog {
         return deduplicateGutterDecorations(merged)
     }
 
-    func sidePanelSuggestions(state: EditorState) -> [EditorSidePanelSuggestion] {
-        var merged: [EditorSidePanelSuggestion] = []
-        for panel in panelSuggestions(state: state) where panel.placement == .side {
-            merged.append(
-                EditorSidePanelSuggestion(
-                    id: panel.id,
-                    order: panel.order,
-                    isPresented: panel.isPresented,
-                    content: panel.content
-                )
-            )
-        }
-        for contributor in sidePanelContributors {
-            let items = contributor.provideSidePanels(state: state)
-            if !items.isEmpty {
-                merged.append(contentsOf: items)
-            }
-        }
-        return deduplicateSidePanels(merged)
-    }
-
     func sheetSuggestions(state: EditorState) -> [EditorSheetSuggestion] {
         var merged: [EditorSheetSuggestion] = []
         for panel in panelSuggestions(state: state) where panel.placement == .sheet {
@@ -874,24 +844,6 @@ final class EditorExtensionRegistry: ObservableObject, SuperLog {
         for item in sorted {
             let key = "\(item.line):\(item.lane):\(item.id.lowercased())"
             if seen.contains(key) { continue }
-            seen.insert(key)
-            result.append(item)
-        }
-        return result
-    }
-
-    private func deduplicateSidePanels(_ suggestions: [EditorSidePanelSuggestion]) -> [EditorSidePanelSuggestion] {
-        var seen: Set<String> = []
-        var result: [EditorSidePanelSuggestion] = []
-
-        let sorted = suggestions.sorted { lhs, rhs in
-            if lhs.order != rhs.order { return lhs.order < rhs.order }
-            return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
-        }
-
-        for item in sorted {
-            let key = item.id.lowercased()
-            if key.isEmpty || seen.contains(key) { continue }
             seen.insert(key)
             result.append(item)
         }

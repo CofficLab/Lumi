@@ -184,75 +184,18 @@ struct EditorPanelView: View {
     }
 
     private var rootLayout: some View {
-        HStack(spacing: 0) {
-            VStack(spacing: 0) {
-                if projectVM.isFileSelected {
-                    headerArea
-                    fileInfoBanner
-                    workbenchContent
-                    if shouldShowBottomPanel {
-                        EditorBottomPanelHostView(state: state)
-                    }
-                } else {
-                    emptyState
+        VStack(spacing: 0) {
+            if projectVM.isFileSelected {
+                headerArea
+                fileInfoBanner
+                workbenchContent
+                if shouldShowBottomPanel {
+                    EditorBottomPanelHostView(state: state)
                 }
-            }
-
-            if let panel = activeSidePanel {
-                panel.content(state)
+            } else {
+                emptyState
             }
         }
-    }
-
-    private var builtinSidePanels: [EditorSidePanelSuggestion] {
-        [
-            .init(
-                id: "builtin.open-editors-panel",
-                order: 0,
-                isPresented: { $0.panelState.isOpenEditorsPanelPresented },
-                content: { state in
-                    AnyView(
-                        EditorOpenEditorsPanelView(
-                            state: state,
-                            items: openEditorItems,
-                            onSelect: activateOpenEditor,
-                            onClose: closeOpenEditorItem,
-                            onCloseOthers: closeOtherOpenEditorItems,
-                            onTogglePinned: togglePinnedOpenEditorItem
-                        )
-                    )
-                }
-            ),
-            .init(
-                id: "builtin.outline-panel",
-                order: 1,
-                isPresented: { $0.panelState.isOutlinePanelPresented },
-                content: { state in
-                    AnyView(
-                        Group {
-                            if let provider = state.documentSymbolProvider as? DocumentSymbolProvider {
-                                EditorOutlinePanelView(
-                                    state: state,
-                                    provider: provider
-                                )
-                            }
-                        }
-                    )
-                }
-            )
-        ]
-    }
-
-    private var activeSidePanel: EditorSidePanelSuggestion? {
-        (builtinSidePanels + state.editorExtensions.sidePanelSuggestions(state: state))
-            .filter { suggestion in
-                suggestion.id != "builtin.open-editors-panel" &&
-                suggestion.id != "builtin.outline-panel" &&
-                suggestion.id != "builtin.references-panel" &&
-                suggestion.id != "builtin.problems-panel"
-            }
-            .sorted { $0.order < $1.order }
-            .first(where: { $0.isPresented(state) })
     }
 
     private var editorSheetHosts: some View {

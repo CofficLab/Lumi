@@ -7,8 +7,13 @@ struct EditorOutlinePanelView: View {
     var showsHeader: Bool = true
     var showsResizeHandle: Bool = true
 
+    private static let defaultWidth: CGFloat = 360
+    private static let minWidth: CGFloat = 240
+    private static let maxWidth: CGFloat = 720
+
     @State private var filterText: String = ""
     @State private var collapsedIDs = Set<String>()
+    @State private var panelWidth: CGFloat = defaultWidth
     @State private var dragStartWidth: CGFloat?
     @State private var isResizeHandleHovering = false
 
@@ -25,7 +30,7 @@ struct EditorOutlinePanelView: View {
                 }
                 content
             }
-            .frame(width: showsResizeHandle ? state.sidePanelWidth : nil)
+            .frame(width: showsResizeHandle ? panelWidth : nil)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(nsColor: .textBackgroundColor))
             .overlay(alignment: .leading) {
@@ -143,14 +148,13 @@ struct EditorOutlinePanelView: View {
                 DragGesture(minimumDistance: 1)
                     .onChanged { value in
                         if dragStartWidth == nil {
-                            dragStartWidth = state.sidePanelWidth
+                            dragStartWidth = panelWidth
                         }
-                        let baseWidth = dragStartWidth ?? state.sidePanelWidth
-                        state.sidePanelWidth = CGFloat(min(max(baseWidth - value.translation.width, 240), 720))
+                        let baseWidth = dragStartWidth ?? panelWidth
+                        panelWidth = CGFloat(min(max(baseWidth - value.translation.width, Self.minWidth), Self.maxWidth))
                     }
                     .onEnded { _ in
                         dragStartWidth = nil
-                        state.persistSidePanelWidth()
                     }
             )
     }

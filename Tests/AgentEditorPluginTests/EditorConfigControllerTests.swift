@@ -19,7 +19,6 @@ final class EditorConfigControllerTests: XCTestCase {
         EditorConfigStore.removeValue(forKey: EditorConfigStore.showGutterKey)
         EditorConfigStore.removeValue(forKey: EditorConfigStore.showFoldingRibbonKey)
         EditorConfigStore.removeValue(forKey: EditorConfigStore.themeNameKey)
-        EditorConfigStore.removeValue(forKey: EditorConfigStore.sidePanelWidthKey)
         EditorConfigStore.removeValue(forKey: "scopedOverrides.v1")
     }
 
@@ -38,12 +37,11 @@ final class EditorConfigControllerTests: XCTestCase {
             showMinimap: false,
             showGutter: true,
             showFoldingRibbon: false,
-            currentThemeId: "xcode-light",
-            sidePanelWidth: 420
+            currentThemeId: "xcode-light"
         )
 
         controller.persistConfig(snapshot)
-        let restored = controller.restoreConfig(clampedSidePanelWidth: { CGFloat($0) })
+        let restored = controller.restoreConfig()
 
         XCTAssertEqual(restored.fontSize, 15)
         XCTAssertEqual(restored.tabWidth, 2)
@@ -51,7 +49,6 @@ final class EditorConfigControllerTests: XCTestCase {
         XCTAssertEqual(restored.formatOnSave, true)
         XCTAssertEqual(restored.organizeImportsOnSave, true)
         XCTAssertEqual(restored.currentThemeId, "xcode-light")
-        XCTAssertEqual(restored.sidePanelWidth, 420)
     }
 
     func testResolveConfigAppliesWorkspaceThenLanguageOverrides() {
@@ -70,8 +67,7 @@ final class EditorConfigControllerTests: XCTestCase {
                 showMinimap: true,
                 showGutter: true,
                 showFoldingRibbon: true,
-                currentThemeId: "xcode-dark",
-                sidePanelWidth: 360
+                currentThemeId: "xcode-dark"
             )
         )
         controller.persistOverrideSnapshot(
@@ -81,8 +77,7 @@ final class EditorConfigControllerTests: XCTestCase {
                 wrapLines: nil,
                 formatOnSave: true
             ),
-            for: .workspace("/tmp/demo"),
-            clampedSidePanelWidth: { CGFloat($0) }
+            for: .workspace("/tmp/demo")
         )
         controller.persistOverrideSnapshot(
             EditorScopedOverrideSnapshot(
@@ -91,13 +86,11 @@ final class EditorConfigControllerTests: XCTestCase {
                 wrapLines: false,
                 formatOnSave: nil
             ),
-            for: .language("swift"),
-            clampedSidePanelWidth: { CGFloat($0) }
+            for: .language("swift")
         )
 
         let resolved = controller.resolveConfig(
-            for: EditorConfigContext(workspacePath: "/tmp/demo", languageId: "swift"),
-            clampedSidePanelWidth: { CGFloat($0) }
+            for: EditorConfigContext(workspacePath: "/tmp/demo", languageId: "swift")
         )
 
         XCTAssertEqual(resolved.tabWidth, 8)
@@ -115,28 +108,24 @@ final class EditorConfigControllerTests: XCTestCase {
                 wrapLines: nil,
                 formatOnSave: nil
             ),
-            for: .language("python"),
-            clampedSidePanelWidth: { CGFloat($0) }
+            for: .language("python")
         )
 
         XCTAssertEqual(
             controller.overrideSnapshot(
-                for: .language("python"),
-                clampedSidePanelWidth: { CGFloat($0) }
+                for: .language("python")
             ).tabWidth,
             2
         )
 
         controller.persistOverrideSnapshot(
             EditorScopedOverrideSnapshot(),
-            for: .language("python"),
-            clampedSidePanelWidth: { CGFloat($0) }
+            for: .language("python")
         )
 
         XCTAssertTrue(
             controller.overrideSnapshot(
-                for: .language("python"),
-                clampedSidePanelWidth: { CGFloat($0) }
+                for: .language("python")
             ).isEmpty
         )
     }

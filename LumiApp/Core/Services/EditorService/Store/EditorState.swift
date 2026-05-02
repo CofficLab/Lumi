@@ -1116,8 +1116,6 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    /// 右侧面板宽度
-    @Published var sidePanelWidth: CGFloat = 360
     
     // MARK: - Auto Save
     
@@ -1505,8 +1503,7 @@ final class EditorState: ObservableObject, SuperLog {
             for: EditorConfigContext(
                 workspacePath: projectRootPath,
                 languageId: detectedLanguage?.tsName
-            ),
-            clampedSidePanelWidth: appearanceController.clampedSidePanelWidth(_:)
+            )
         )
         applyConfigSnapshot(snapshot)
     }
@@ -1527,8 +1524,7 @@ final class EditorState: ObservableObject, SuperLog {
                 showMinimap: showMinimap,
                 showGutter: showGutter,
                 showFoldingRibbon: showFoldingRibbon,
-                currentThemeId: currentThemeId,
-                sidePanelWidth: sidePanelWidth
+                currentThemeId: currentThemeId
             )
         )
     }
@@ -1546,7 +1542,6 @@ final class EditorState: ObservableObject, SuperLog {
         showMinimap = snapshot.showMinimap
         showGutter = snapshot.showGutter
         showFoldingRibbon = snapshot.showFoldingRibbon
-        sidePanelWidth = snapshot.sidePanelWidth
         currentThemeId = snapshot.currentThemeId
         currentTheme = resolveTheme(for: currentThemeId)
     }
@@ -2397,17 +2392,6 @@ final class EditorState: ObservableObject, SuperLog {
                 self?.showStatusToast(message, level: level, duration: duration)
             }
         )
-    }
-
-    func updateSidePanelWidth(by delta: CGFloat) {
-        sidePanelWidth = appearanceController.updateSidePanelWidth(
-            currentWidth: sidePanelWidth,
-            delta: delta
-        )
-    }
-
-    func persistSidePanelWidth() {
-        appearanceController.persistSidePanelWidth(sidePanelWidth)
     }
 
     // MARK: - LSP Helpers

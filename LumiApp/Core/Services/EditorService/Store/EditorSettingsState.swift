@@ -137,7 +137,7 @@ final class EditorSettingsState: ObservableObject {
     ) {
         self.configController = configController
         self.currentWorkspacePathProvider = currentWorkspacePathProvider
-        self.baseSnapshot = configController.restoreConfig(clampedSidePanelWidth: { CGFloat($0) })
+        self.baseSnapshot = configController.restoreConfig()
 
         // 恢复保存的设置
         restore()
@@ -192,7 +192,7 @@ final class EditorSettingsState: ObservableObject {
     /// 在初始化时调用，或手动刷新设置时调用
     func restore() {
         suppressPersistence = true
-        let snapshot = configController.restoreConfig(clampedSidePanelWidth: { CGFloat($0) })
+        let snapshot = configController.restoreConfig()
         baseSnapshot = snapshot
         
         // 恢复全局设置
@@ -232,8 +232,7 @@ final class EditorSettingsState: ObservableObject {
             showMinimap: showMinimap,
             showGutter: showGutter,
             showFoldingRibbon: showFoldingRibbon,
-            currentThemeId: baseSnapshot.currentThemeId,
-            sidePanelWidth: baseSnapshot.sidePanelWidth
+            currentThemeId: baseSnapshot.currentThemeId
         )
     }
 
@@ -261,8 +260,7 @@ final class EditorSettingsState: ObservableObject {
         
         configController.persistOverrideSnapshot(
             currentScopedOverrideSnapshot,
-            for: scope,
-            clampedSidePanelWidth: { CGFloat($0) }
+            for: scope
         )
         
         // 通知其他组件设置已变化
@@ -301,11 +299,10 @@ final class EditorSettingsState: ObservableObject {
     }
 
     /// 刷新外部快照字段
-    /// 从配置控制器获取最新的主题 ID 和侧边栏宽度
+    /// 从配置控制器获取最新的主题 ID
     private func refreshExternalSnapshotFields() {
-        let latest = configController.restoreConfig(clampedSidePanelWidth: { CGFloat($0) })
+        let latest = configController.restoreConfig()
         baseSnapshot.currentThemeId = latest.currentThemeId
-        baseSnapshot.sidePanelWidth = latest.sidePanelWidth
     }
 
     /// 获取当前激活的覆盖作用域
@@ -340,8 +337,7 @@ final class EditorSettingsState: ObservableObject {
         let overrideSnapshot: EditorScopedOverrideSnapshot
         if let scope = activeOverrideScope {
             overrideSnapshot = configController.overrideSnapshot(
-                for: scope,
-                clampedSidePanelWidth: { CGFloat($0) }
+                for: scope
             )
         } else {
             overrideSnapshot = EditorScopedOverrideSnapshot()

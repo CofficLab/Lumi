@@ -4,17 +4,14 @@ import XCTest
 
 @MainActor
 final class EditorAppearanceControllerTests: XCTestCase {
-    func testClampedSidePanelWidthRespectsBounds() {
+    func testSyncThemeSilentlyReturnsTrueWhenThemesDiffer() {
         let controller = EditorAppearanceController()
-
-        XCTAssertEqual(controller.clampedSidePanelWidth(100), 240)
-        XCTAssertEqual(controller.clampedSidePanelWidth(500), 500)
-        XCTAssertEqual(controller.clampedSidePanelWidth(1000), 720)
+        XCTAssertTrue(controller.syncThemeSilently(currentThemeId: "a", incomingThemeId: "b"))
     }
 
-    func testUpdateSidePanelWidthUsesClamp() {
+    func testSyncThemeSilentlyReturnsFalseWhenThemesMatch() {
         let controller = EditorAppearanceController()
-        XCTAssertEqual(controller.updateSidePanelWidth(currentWidth: 300, delta: -100), 240)
+        XCTAssertFalse(controller.syncThemeSilently(currentThemeId: "a", incomingThemeId: "a"))
     }
 }
 #endif
