@@ -24,16 +24,6 @@ import os
 ///
 /// ⚠️ 注意：此类标记为 `@MainActor`，所有成员访问都必须在主线程。
 /// 这确保了 UI 相关的操作（如插件注册、视图获取）的线程安全性。
-///
-/// ## 使用示例
-///
-/// ```swift
-/// // 获取面板视图
-/// let panels = PluginVM.shared.getPanelItems()
-///
-/// // 检查插件是否启用
-/// let isEnabled = PluginVM.shared.isPluginEnabled(somePlugin)
-/// ```
 @MainActor
 final class PluginVM: ObservableObject, SuperLog {
     /// 面板图标项（仅用于活动栏图标渲染，不包含视图）
@@ -430,7 +420,8 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 判断逻辑：
     /// 1. 如果插件不可配置（`isConfigurable = false`），始终返回 true
-    /// 2. 如果插件可配置，从用户设置中读取启用状态
+    /// 2. 如果插件可配置，从用户设置中读取启用状态；
+    ///    若用户未手动配置过，则回退到插件的 `enable` 静态属性作为默认值
     ///
     /// - Parameter plugin: 要检查的插件
     /// - Returns: 如果插件被启用则返回 true
@@ -442,9 +433,9 @@ final class PluginVM: ObservableObject, SuperLog {
             return true
         }
         
-        // 检查用户配置
+        // 检查用户配置；未配置时使用插件的 enable 静态属性作为默认值
         let pluginId = plugin.instanceLabel
-        return settingsStore.isPluginEnabled(pluginId)
+        return settingsStore.isPluginEnabled(pluginId, defaultEnabled: pluginType.enable)
     }
 
     /// 获取所有插件的根视图包裹

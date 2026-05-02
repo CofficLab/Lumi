@@ -14,10 +14,15 @@ actor XcodeProjectEditorPlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     /// Build Context Provider 实例
-    @MainActor let buildContextProvider = XcodeBuildContextProvider()
-    @MainActor private let projectContextCapability = XcodeProjectContextCapabilityAdapter()
-    @MainActor private let semanticCapability = XcodeSemanticCapabilityAdapter()
-    @MainActor private let languageIntegrationCapability = XcodeLanguageIntegrationCapabilityAdapter()
+    ///
+    /// 使用 lazy var 而非 let 初始化，因为 Actor 通过 ObjC Runtime 的 alloc/init 创建时，
+    /// init() 不在 @MainActor 上运行，会导致 @MainActor 的 ObservableObject 在错误线程初始化，
+    /// 后续在主线程访问 @Published 属性时触发 EXC_BAD_ACCESS。
+    /// lazy var 确保在首次 @MainActor 上下文访问时才初始化。
+    @MainActor lazy var buildContextProvider = XcodeBuildContextProvider()
+    @MainActor private lazy var projectContextCapability = XcodeProjectContextCapabilityAdapter()
+    @MainActor private lazy var semanticCapability = XcodeSemanticCapabilityAdapter()
+    @MainActor private lazy var languageIntegrationCapability = XcodeLanguageIntegrationCapabilityAdapter()
 
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         // 向 Bridge 注册 buildContextProvider，让 LSPService 能读取 build context

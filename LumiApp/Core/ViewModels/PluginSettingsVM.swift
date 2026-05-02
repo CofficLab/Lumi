@@ -15,8 +15,13 @@ final class PluginSettingsVM: ObservableObject {
     }
 
     /// 获取插件的启用状态
-    func isPluginEnabled(_ pluginId: String) -> Bool {
-        return settings[pluginId] ?? false
+    ///
+    /// - Parameters:
+    ///   - pluginId: 插件 ID
+    ///   - defaultEnabled: 当用户未手动配置时的默认值（应使用插件的 `enable` 静态属性）
+    /// - Returns: 插件是否启用
+    func isPluginEnabled(_ pluginId: String, defaultEnabled: Bool = false) -> Bool {
+        return settings[pluginId] ?? defaultEnabled
     }
 
     /// 设置插件的启用状态

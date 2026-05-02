@@ -124,8 +124,10 @@ struct PluginSettingsView: View {
     /// 加载插件状态
     private func loadPluginStates() {
         var states: [String: Bool] = [:]
-        for plugin in configurablePlugins {
-            states[plugin.id] = settingsStore.isPluginEnabled(plugin.id)
+        for plugin in pluginProvider.plugins.filter({ type(of: $0).isConfigurable }) {
+            let pluginType = type(of: plugin)
+            // 使用插件的 enable 静态属性作为未配置时的默认值
+            states[pluginType.id] = settingsStore.isPluginEnabled(pluginType.id, defaultEnabled: pluginType.enable)
         }
         pluginStates = states
     }

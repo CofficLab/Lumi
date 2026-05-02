@@ -51,7 +51,10 @@ final class EditorExtensionRegistry: ObservableObject, SuperLog {
     /// 注意：此方法仅用于记录 installedPlugins 列表，不再调用 registerEditorExtensions。
     /// 插件的自注册应由调用方在调用此方法前完成。
     func recordInstalledPlugins(_ plugins: [any SuperPlugin]) {
-        reset()
+        // ⚠️ 不调用 reset()——注册阶段（registerEditorExtensions）已在之前完成，
+        // reset() 会清空所有已注册的 contributors（commandContributors、hoverContributors 等）。
+        // 仅清空 installedPlugins 列表本身再重新填充。
+        installedPlugins.removeAll()
 
         // Sort by order, then by id
         let sorted = plugins.sorted { a, b in
@@ -181,10 +184,11 @@ final class EditorExtensionRegistry: ObservableObject, SuperLog {
 
     func registerCommandContributor(_ contributor: any SuperEditorCommandContributor) {
         if commandContributors.contains(where: { $0.id == contributor.id }) {
+            Self.logger.info("\(self.t)registerCommandContributor: 已存在，跳过 id=\(contributor.id), count=\(self.commandContributors.count)")
             return
         }
         commandContributors.append(contributor)
-        if Self.verbose { Self.logger.info("\(self.t)registerCommandContributor: id=\(contributor.id), count=\(self.commandContributors.count)") }
+        Self.logger.info("\(self.t)registerCommandContributor: id=\(contributor.id), count=\(self.commandContributors.count)")
     }
 
     func registerContextMenuContributor(_ contributor: any SuperEditorContextMenuContributor) {

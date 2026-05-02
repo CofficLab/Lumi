@@ -188,7 +188,7 @@ final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
 final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable, SuperLog {
 
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private weak var state: EditorState?
 
@@ -201,13 +201,13 @@ final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable, Su
     nonisolated func controllerDidAppear(controller: TextViewController) {
         MainActor.assumeIsolated {
             guard let textView = controller.textView, let state else {
-                if Self.verbose { AppLogger.core.warning("\(Self.t)controllerDidAppear: textView 或 state 为 nil, 跳过注册") }
+                AppLogger.core.warning("\(Self.t)controllerDidAppear: textView=\(controller.textView != nil), state=\(self.state != nil), 跳过注册")
                 return
             }
-            if Self.verbose { AppLogger.core.info("\(Self.t)controllerDidAppear: 开始注册 textView=\(String(describing: textView)), canPreview=\(state.canPreview)") }
+            AppLogger.core.info("\(Self.t)controllerDidAppear: 开始注册 textView=\(String(describing: textView)), canPreview=\(state.canPreview), commandContributors=\(state.editorExtensions.commandContributorsCount)")
             MultiCursorInputInstaller.shared.register(textView: textView, state: state)
             ContextMenuManager.shared.register(textView: textView, state: state)
-            if Self.verbose { AppLogger.core.info("\(Self.t)controllerDidAppear: 注册完成") }
+            AppLogger.core.info("\(Self.t)controllerDidAppear: 注册完成")
         }
     }
 
@@ -224,7 +224,7 @@ final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable, Su
 final class ContextMenuManager: SuperLog {
 
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     static let shared = ContextMenuManager()
 
@@ -300,7 +300,7 @@ final class ContextMenuManager: SuperLog {
 final class ContextMenuHelper: NSObject, SuperLog {
 
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private weak var textView: TextView?
     private weak var state: EditorState?
