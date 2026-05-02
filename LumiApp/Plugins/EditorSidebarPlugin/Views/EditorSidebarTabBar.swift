@@ -42,6 +42,8 @@ struct EditorSidebarTabBar: View {
         }
     }
 
+    @State private var hoverState: [EditorSidebarWorkspaceTab: Bool] = [:]
+
     private func sidebarTabButton(for tab: EditorSidebarWorkspaceTab) -> some View {
         Button {
             onTabSelect(tab)
@@ -78,13 +80,25 @@ struct EditorSidebarTabBar: View {
             .foregroundColor(
                 selectedTab == tab
                     ? AppUI.Color.semantic.textPrimary
-                    : AppUI.Color.semantic.textSecondary
+                    : (hoverState[tab] == true
+                        ? AppUI.Color.semantic.textPrimary
+                        : AppUI.Color.semantic.textSecondary)
             )
             .padding(.horizontal, 6)
             .padding(.top, 2)
+            .background(
+                hoverState[tab] == true && selectedTab != tab
+                    ? AppUI.Color.semantic.textPrimary.opacity(0.08)
+                    : Color.clear
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
         .help(tab.title)
+        .contentShape(RoundedRectangle(cornerRadius: 6))
+        .onHover { isHovered in
+            hoverState[tab] = isHovered
+        }
     }
 
     // MARK: - Helpers
