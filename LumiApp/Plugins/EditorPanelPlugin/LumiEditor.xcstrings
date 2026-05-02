@@ -507,6 +507,9 @@
         }
       }
     },
+    "Editor Tab Strip" : {
+
+    },
     "Empty workspace edit" : {
 
     },
@@ -2404,6 +2407,9 @@
 
     },
     "Tab (↹)" : {
+
+    },
+    "Tab bar and breadcrumb for the editor panel" : {
 
     },
     "Tabs, splits, recently closed recovery, and back-forward navigation preserve workbench state." : {

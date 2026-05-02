@@ -542,6 +542,19 @@ final class PluginVM: ObservableObject, SuperLog {
         return nil
     }
 
+    /// 获取当前激活插件的所有 Panel Header 视图
+    ///
+    /// 收集所有启用插件通过 `addPanelHeaderView(activeIcon:)` 提供的 header 视图，
+    /// 按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
+    ///
+    /// - Returns: Panel Header 视图数组
+    func getActivePanelHeaderViews() -> [AnyView] {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addPanelHeaderView(activeIcon: activeIcon) }
+    }
+
     /// 当前是否有面板视图
     ///
     /// 用于布局决策：有面板时使用中间栏 + 右侧栏分栏，无时仅显示右侧栏。

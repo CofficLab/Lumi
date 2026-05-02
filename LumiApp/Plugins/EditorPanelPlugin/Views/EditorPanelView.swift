@@ -186,7 +186,6 @@ struct EditorPanelView: View {
     private var rootLayout: some View {
         VStack(spacing: 0) {
             if projectVM.isFileSelected {
-                headerArea
                 fileInfoBanner
                 workbenchContent
                 if shouldShowBottomPanel {
@@ -244,51 +243,6 @@ struct EditorPanelView: View {
         ]
     }
 
-    // MARK: - Header Area
-
-    /// Header 区域：包含标签栏和符号栏，带背景色覆盖编辑器内容
-    private var headerArea: some View {
-        VStack(spacing: 0) {
-            if !visibleTabs.isEmpty {
-                EditorTabStripView(
-                    tabs: visibleTabs,
-                    activeSessionID: visibleActiveSessionID,
-                    onSelect: activateSession,
-                    onClose: closeSession,
-                    onCloseOthers: closeOtherSessions,
-                    onTogglePinned: togglePinned,
-                    onStartDrag: beginTabDrag,
-                    onDropBefore: dropDraggedTabInActiveStrip
-                )
-            }
-
-            if !activeDocumentSymbolTrail.isEmpty {
-                EditorStickySymbolBarView(
-                    state: state,
-                    symbols: activeDocumentSymbolTrail
-                )
-            }
-        }
-        // 关键：添加背景色，确保覆盖下方的编辑器内容（如行号）
-        .background(
-            themeManager.activeAppTheme.workspaceBackgroundColor()
-                .ignoresSafeArea()
-        )
-        // 使用 zIndex 确保 header 在编辑器上层
-        .zIndex(1)
-    }
-
-    private var visibleTabs: [EditorTab] {
-        if let activeGroup = workbench.activeGroup, !activeGroup.tabs.isEmpty {
-            return activeGroup.tabs
-        }
-        return sessionStore.tabs
-    }
-
-    private var visibleActiveSessionID: EditorSession.ID? {
-        workbench.activeGroup?.activeSessionID ?? sessionStore.activeSessionID
-    }
-
     private var shouldShowBottomPanel: Bool {
         state.panelState.activeBottomPanel.map {
             $0 != .problems &&
@@ -333,7 +287,7 @@ struct EditorPanelView: View {
                 groupID: group?.id,
                 groupIndex: groupIndex,
                 isInActiveGroup: group?.id == workbench.activeGroupID,
-                isActive: tab.sessionID == visibleActiveSessionID,
+                isActive: tab.sessionID == sessionStore.activeSessionID,
                 recentActivationRank: sessionStore.recentActivationRank(for: tab.sessionID)
             )
         }
