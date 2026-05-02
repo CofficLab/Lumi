@@ -42,4 +42,12 @@ actor EditorXcodePlugin: SuperPlugin {
         guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(XcodeProjectStatusBar())
     }
+    
+    /// 添加根视图包裹器
+    ///
+    /// 在应用启动时预加载最近 Xcode 项目的 buildServer.json，
+    /// 减少首次打开项目时的等待时间。
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        return AnyView(EditorXcodePluginRootView(content: content()))
+    }
 }
