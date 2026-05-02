@@ -38,6 +38,8 @@ actor EditorXcodePlugin: SuperPlugin {
 
     /// 在工具栏显示 Xcode 项目状态
     @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView? {
+        // 只在编辑器图标激活时显示 Xcode 项目状态栏
+        guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(XcodeProjectStatusBar())
     }
 }
