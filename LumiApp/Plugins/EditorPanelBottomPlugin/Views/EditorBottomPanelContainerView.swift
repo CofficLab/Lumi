@@ -8,7 +8,20 @@ import SwiftUI
 struct EditorBottomPanelContainerView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
-    private var state: EditorState { editorVM.service.state }
+    var body: some View {
+        let state = editorVM.service.state
+        EditorBottomPanelContainerInnerView(
+            state: state,
+            panelState: state.panelState
+        )
+    }
+}
+
+/// 内部视图：直接 @ObservedObject panelState，
+/// 确保 isProblemsPanelPresented 等 @Published 属性变化时能触发重绘。
+private struct EditorBottomPanelContainerInnerView: View {
+    @ObservedObject var state: EditorState
+    @ObservedObject var panelState: EditorPanelState
 
     var body: some View {
         if shouldShow {
@@ -17,9 +30,7 @@ struct EditorBottomPanelContainerView: View {
     }
 
     private var shouldShow: Bool {
-        // 有活跃的内置底部面板
-        state.panelState.activeBottomPanel != nil ||
-        // 或有扩展插件贡献的底部面板
+        panelState.activeBottomPanel != nil ||
         state.editorExtensions.panelSuggestions(state: state).contains {
             $0.placement == .bottom && $0.isPresented(state)
         }
