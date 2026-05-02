@@ -45,8 +45,11 @@ extension SuperPlugin {
     /// 默认实现：不提供面板视图
     @MainActor func addPanelView(activeIcon: String?) -> AnyView? { nil }
 
-    /// 默认实现：不提供 Rail 视图
-    @MainActor func addRailView(activeIcon: String?) -> AnyView? { nil }
+    /// 默认实现：不提供 Rail 标签页
+    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] { [] }
+
+    /// 默认实现：不提供 Rail 内容视图
+    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? { nil }
 
     /// 默认实现：不提供右侧栏视图
     @MainActor func addSidebarView(activeIcon: String?) -> AnyView? { nil }

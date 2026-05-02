@@ -105,7 +105,7 @@ struct ContentView: View, SuperLog {
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
             } else {
                 let sidebarViews = pluginProvider.getSidebarViews()
-                let hasRail = pluginProvider.hasRail()
+                let hasRail = pluginProvider.hasRailTabs()
 
                 if !sidebarViews.isEmpty && hasRail {
                     HSplitView {

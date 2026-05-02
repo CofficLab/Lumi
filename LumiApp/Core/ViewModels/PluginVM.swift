@@ -49,15 +49,7 @@ final class PluginVM: ObservableObject, SuperLog {
         }
     }
 
-    /// Rail 视图项（活动栏与面板之间的辅助栏，全局最多一个）
-    struct RailItem: Identifiable, Equatable {
-        let id: String
-        let view: AnyView
 
-        static func == (lhs: RailItem, rhs: RailItem) -> Bool {
-            lhs.id == rhs.id
-        }
-    }
 
     /// 全局单例
     ///
@@ -562,32 +554,30 @@ final class PluginVM: ObservableObject, SuperLog {
             }
     }
 
-    /// 获取所有插件提供的 Rail 视图项
+    /// 聚合所有插件提供的 Rail 标签页
     ///
-    /// 收集所有启用插件提供的 Rail 视图。
-    /// ⚠️ Rail 视图全局互斥，最多只能有一个插件提供。
-    /// 如果超过一个，渲染层会显示冲突错误视图。
-    ///
-    /// - Returns: Rail 视图项数组
-    func getRailItems() -> [RailItem] {
+    /// 收集所有启用插件通过 `addRailTabs()` 提供的标签页，
+    /// 按 priority 升序排列。
+    func getRailTabs() -> [RailTab] {
         let activeIcon = activePanelIcon
         return plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { plugin -> RailItem? in
-                guard let view = plugin.addRailView(activeIcon: activeIcon) else { return nil }
-                return RailItem(
-                    id: plugin.instanceLabel,
-                    view: view
-                )
-            }
+            .flatMap { $0.addRailTabs(activeIcon: activeIcon) }
+            .sorted { $0.priority < $1.priority }
     }
 
-    /// 当前是否有 Rail 视图
-    func hasRail() -> Bool {
+    /// 获取指定 Rail tab 对应的内容视图
+    func getRailContentView(tabId: String) -> AnyView? {
         let activeIcon = activePanelIcon
         return plugins
             .filter { isPluginEnabled($0) }
-            .contains { $0.addRailView(activeIcon: activeIcon) != nil }
+            .compactMap { $0.addRailContentView(tabId: tabId, activeIcon: activeIcon) }
+            .first
+    }
+
+    /// 当前是否有 Rail 标签页
+    func hasRailTabs() -> Bool {
+        !getRailTabs().isEmpty
     }
 
     /// 获取所有插件提供的右侧栏视图

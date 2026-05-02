@@ -2,6 +2,24 @@ import AppKit
 import SwiftUI
 import Foundation
 
+/// Rail 标签页定义
+///
+/// 插件通过 `addRailTabs()` 返回此结构体，由内核聚合渲染为统一的 Tab Bar。
+struct RailTab: Identifiable, Equatable {
+    /// 唯一标识
+    let id: String
+    /// 显示标题
+    let title: String
+    /// SF Symbol 图标名
+    let systemImage: String
+    /// 排序优先级（数字越小越靠前）
+    let priority: Int
+
+    static func == (lhs: RailTab, rhs: RailTab) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 /// 插件协议，定义插件的基本接口和 UI 贡献方法
 ///
 /// SuperPlugin 是 Lumi 插件系统的核心协议，所有插件都必须实现此协议。
@@ -138,21 +156,21 @@ protocol SuperPlugin: Actor {
     ///   如果为 `nil`，表示没有任何图标被激活。
     @MainActor func addPanelView(activeIcon: String?) -> AnyView?
 
-    /// 添加 Rail 视图
+    /// 提供 Rail 标签页列表
     ///
-    /// 提供一个位于活动栏与面板内容区之间的辅助栏视图。
-    /// Rail 适合放置上下文相关的辅助导航或浏览内容，
-    /// 例如文件浏览器树、符号大纲、书签列表等。
+    /// 插件返回一个或多个 `RailTab`，由内核聚合渲染为统一的 Tab Bar。
+    /// 每个 tab 包含 id、标题、图标和排序优先级。
     ///
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    ///   插件可据此判断是否提供 Rail 视图（例如仅在特定插件激活时显示）。
+    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab]
+
+    /// 提供指定 Rail tab 对应的内容视图
     ///
-    /// ## 互斥规则
+    /// 内核在用户选中某个 tab 时调用此方法获取对应的内容视图。
     ///
-    /// ⚠️ 全局最多只能有一个插件提供 Rail 视图。
-    /// 如果多个插件同时提供，会显示冲突错误视图。
-    /// 请确保只有一个启用的插件实现了此方法。
-    @MainActor func addRailView(activeIcon: String?) -> AnyView?
+    /// - Parameter tabId: 选中的 tab id，与 `addRailTabs()` 返回的 `RailTab.id` 对应。
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView?
 
     /// 添加右侧栏视图
     ///

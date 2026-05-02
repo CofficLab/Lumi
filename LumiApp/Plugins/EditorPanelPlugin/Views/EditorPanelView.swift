@@ -150,7 +150,7 @@ struct EditorPanelView: View {
                 handleEditorCommandEvent("builtin.replace-all")
             }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleOutlinePanel)) { _ in
-                toggleSidebarTab(.outline)
+                state.performPanelCommand(.toggleOutline)
             }
     }
 
@@ -652,7 +652,7 @@ struct EditorPanelView: View {
                             subtitle: String(localized: "Jump to functions and types via document symbols of the current session.", table: "LumiEditor"),
                             systemImage: "list.bullet.indent",
                             shortcut: nil,
-                            action: { toggleSidebarTab(.outline) }
+                            action: { state.performPanelCommand(.toggleOutline) }
                         )
                         capabilityCard(
                             title: String(localized: "Find / Replace", table: "LumiEditor"),
@@ -868,15 +868,6 @@ struct EditorPanelView: View {
         AppSettingStore.saveSettingsSelection(type: "core", value: SettingTab.editor.rawValue)
         AppSettingStore.savePendingEditorSettingsSearchQuery(nil)
         NotificationCenter.postOpenSettings()
-    }
-
-    private func toggleSidebarTab(_ tab: EditorSidebarWorkspaceTab) {
-        switch tab {
-        case .outline:
-            state.performPanelCommand(.toggleOutline)
-        default:
-            break
-        }
     }
 
     // MARK: - Unsupported File
