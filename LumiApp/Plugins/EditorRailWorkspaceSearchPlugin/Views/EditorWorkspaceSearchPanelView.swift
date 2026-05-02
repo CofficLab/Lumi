@@ -20,7 +20,7 @@ struct EditorWorkspaceSearchPanelView: View {
     private var toolbar: some View {
         HStack(spacing: 8) {
             TextField(
-                "Search in files",
+                String(localized: "Search in files", table: "EditorRailWorkspaceSearch"),
                 text: Binding(
                     get: { state.panelState.workspaceSearchQuery },
                     set: { state.panelController.setWorkspaceSearchQuery($0) }
@@ -33,7 +33,7 @@ struct EditorWorkspaceSearchPanelView: View {
                 }
             }
 
-            Button("Search") {
+            Button(String(localized: "Search", table: "EditorRailWorkspaceSearch")) {
                 Task { @MainActor in
                     await state.performWorkspaceSearch()
                 }
@@ -41,7 +41,7 @@ struct EditorWorkspaceSearchPanelView: View {
             .buttonStyle(.borderedProminent)
             .disabled(state.panelState.workspaceSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-            Button("Open Search Editor") {
+            Button(String(localized: "Open Search Editor", table: "EditorRailWorkspaceSearch")) {
                 state.openWorkspaceSearchResultsInEditor()
             }
             .buttonStyle(.bordered)
@@ -55,7 +55,7 @@ struct EditorWorkspaceSearchPanelView: View {
         if state.panelState.isWorkspaceSearchLoading {
             VStack(spacing: 10) {
                 ProgressView()
-                Text("Searching workspace…")
+                Text(String(localized: "Searching workspace…", table: "EditorRailWorkspaceSearch"))
                     .font(.system(size: 12))
                     .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
             }
@@ -63,14 +63,14 @@ struct EditorWorkspaceSearchPanelView: View {
         } else if let error = state.panelState.workspaceSearchErrorMessage {
             emptyState(error, systemImage: "exclamationmark.triangle")
         } else if state.panelState.workspaceSearchQuery.isEmpty {
-            emptyState("Enter a query and press Return", systemImage: "magnifyingglass")
+            emptyState(String(localized: "Enter a query and press Return", table: "EditorRailWorkspaceSearch"), systemImage: "magnifyingglass")
         } else if state.panelState.workspaceSearchResults.isEmpty {
-            emptyState("No results", systemImage: "doc.text.magnifyingglass")
+            emptyState(String(localized: "No results", table: "EditorRailWorkspaceSearch"), systemImage: "doc.text.magnifyingglass")
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     if let summary = state.panelState.workspaceSearchSummary {
-                        Text("\(summary.totalMatches) matches in \(summary.totalFiles) files")
+                        Text(String(localized: "\(summary.totalMatches) matches in \(summary.totalFiles) files", table: "EditorRailWorkspaceSearch"))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
                     }
@@ -146,7 +146,9 @@ struct EditorWorkspaceSearchPanelView: View {
     }
 
     private func fileMatchSummary(_ file: EditorWorkspaceSearchFileResult) -> String {
-        let noun = file.matchCount == 1 ? "match" : "matches"
+        let noun = file.matchCount == 1
+            ? String(localized: "match", table: "EditorRailWorkspaceSearch")
+            : String(localized: "matches", table: "EditorRailWorkspaceSearch")
         return "\(file.matchCount) \(noun)"
     }
 

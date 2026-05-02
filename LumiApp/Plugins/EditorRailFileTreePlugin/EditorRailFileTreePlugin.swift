@@ -32,7 +32,7 @@ actor EditorRailFileTreePlugin: SuperPlugin, SuperLog {
 
     @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
         guard activeIcon == EditorPlugin.iconName else { return [] }
-        return [RailTab(id: "explorer", title: "Explorer", systemImage: "folder", priority: 0)]
+        return [RailTab(id: "explorer", title: String(localized: "Explorer", table: "EditorRailFileTree"), systemImage: "folder", priority: 0)]
     }
 
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {

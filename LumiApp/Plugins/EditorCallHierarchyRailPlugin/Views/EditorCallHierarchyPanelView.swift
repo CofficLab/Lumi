@@ -42,21 +42,23 @@ struct EditorCallHierarchyPanelView: View {
     @ViewBuilder
     private var content: some View {
         if state.callHierarchyProvider.isLoading {
-            emptyState("Loading Call Hierarchy...", systemImage: "arrow.triangle.branch")
+            emptyState(String(localized: "Loading Call Hierarchy...", table: "EditorCallHierarchyRail"), systemImage: "arrow.triangle.branch")
         } else if state.callHierarchyProvider.rootItem == nil {
-            emptyState("No Call Hierarchy", systemImage: "point.3.connected.trianglepath.dotted")
+            emptyState(String(localized: "No Call Hierarchy", table: "EditorCallHierarchyRail"), systemImage: "point.3.connected.trianglepath.dotted")
         } else {
             HStack(spacing: 0) {
-                callHierarchyColumn(title: "Incoming", calls: state.callHierarchyProvider.incomingCalls)
+                callHierarchyColumn(title: String(localized: "Incoming", table: "EditorCallHierarchyRail"), calls: state.callHierarchyProvider.incomingCalls)
                 Divider()
-                callHierarchyColumn(title: "Outgoing", calls: state.callHierarchyProvider.outgoingCalls)
+                callHierarchyColumn(title: String(localized: "Outgoing", table: "EditorCallHierarchyRail"), calls: state.callHierarchyProvider.outgoingCalls)
             }
         }
     }
 
     private var panelTitle: String {
         let count = state.callHierarchyProvider.incomingCalls.count + state.callHierarchyProvider.outgoingCalls.count
-        return count > 0 ? "Call Hierarchy (\(count))" : "Call Hierarchy"
+        return count > 0
+            ? String(localized: "\(count) Call Hierarchy", table: "EditorCallHierarchyRail")
+            : String(localized: "Call Hierarchy", table: "EditorCallHierarchyRail")
     }
 
     private func callHierarchyColumn(title: String, calls: [EditorCallHierarchyCall]) -> some View {
@@ -70,7 +72,7 @@ struct EditorCallHierarchyPanelView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     if calls.isEmpty {
-                        emptyState("Empty", systemImage: "minus.circle")
+                        emptyState(String(localized: "Empty", table: "EditorCallHierarchyRail"), systemImage: "minus.circle")
                     } else {
                         ForEach(calls) { call in
                             Button {
@@ -79,7 +81,7 @@ struct EditorCallHierarchyPanelView: View {
                                 panelCard(
                                     title: call.item.name,
                                     subtitle: call.item.kindDisplayName,
-                                    badge: URL(string: call.item.uri)?.lastPathComponent ?? "Symbol"
+                                    badge: URL(string: call.item.uri)?.lastPathComponent ?? String(localized: "Symbol", table: "EditorCallHierarchyRail")
                                 )
                             }
                             .buttonStyle(.plain)

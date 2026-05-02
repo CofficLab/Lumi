@@ -32,7 +32,7 @@ actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
 
     @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
         guard activeIcon == EditorPlugin.iconName else { return [] }
-        return [RailTab(id: "outline", title: "Outline", systemImage: "list.bullet.indent", priority: 1)]
+        return [RailTab(id: "outline", title: String(localized: "Outline", table: "EditorOutlineRail"), systemImage: "list.bullet.indent", priority: 1)]
     }
 
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {
@@ -56,7 +56,7 @@ struct EditorOutlineRailContentView: View {
                 showsResizeHandle: false
             )
         } else {
-            Text("Outline not available")
+            Text(String(localized: "Outline not available", table: "EditorOutlineRail"))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
