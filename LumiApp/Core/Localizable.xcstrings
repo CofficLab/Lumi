@@ -288,6 +288,16 @@
         }
       }
     },
+    "%@:%lld:%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@:%2$lld:%3$lld"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -300,6 +310,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "%lld %@, %lld %@, %lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@, %3$lld %4$@, %5$lld %6$@"
           }
         }
       }
@@ -5624,9 +5654,6 @@
     "关闭" : {
 
     },
-    "关闭分栏" : {
-
-    },
     "内存 %lld GB" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6164,12 +6191,6 @@
       }
     },
     "后续插件只要注册 `SuperEditorSettingsContributor`，设置项就会自动出现在这里。" : {
-
-    },
-    "向下分栏" : {
-
-    },
-    "向右分栏" : {
 
     },
     "向量后端：%@" : {
@@ -8559,12 +8580,6 @@
         }
       }
     },
-    "移动到上一个分组" : {
-
-    },
-    "移动到下一个分组" : {
-
-    },
     "移除此消息" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8745,12 +8760,6 @@
           }
         }
       }
-    },
-    "聚焦上一个分组" : {
-
-    },
-    "聚焦下一个分组" : {
-
     },
     "自动批准高风险命令" : {
       "extractionState" : "stale",

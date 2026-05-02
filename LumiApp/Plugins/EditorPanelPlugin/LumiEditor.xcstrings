@@ -1820,6 +1820,7 @@
       }
     },
     "Focus Next Editor Group" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1842,6 +1843,7 @@
       }
     },
     "Focus Previous Editor Group" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2196,6 +2198,7 @@
       }
     },
     "Group %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2977,6 +2980,7 @@
       }
     },
     "Move Editor to Next Group" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2999,6 +3003,7 @@
       }
     },
     "Move Editor to Previous Group" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3065,6 +3070,7 @@
       }
     },
     "Move To Group %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3377,6 +3383,7 @@
       }
     },
     "No file open" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4553,7 +4560,11 @@
         }
       }
     },
+    "Restore sessions and navigation history" : {
+
+    },
     "Restore sessions and split workbench state" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4998,6 +5009,7 @@
       }
     },
     "Split Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5064,6 +5076,7 @@
       }
     },
     "Split right or down — ideal for side-by-side reading and multi-file editing." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5198,7 +5211,11 @@
         }
       }
     },
+    "Tabs, recently closed recovery, and back-forward navigation preserve workbench state." : {
+
+    },
     "Tabs, splits, recently closed recovery, and back-forward navigation preserve workbench state." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
