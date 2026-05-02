@@ -4,25 +4,25 @@ import os
 import MagicKit
 
 /// 编辑器引用 Rail 插件：提供 References 标签页
-actor EditorReferencesRailPlugin: SuperPlugin, SuperLog {
+actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.editor-references-rail")
+        subsystem: "com.coffic.lumi", category: "plugin.editor-rail-references")
 
     nonisolated static let emoji = "🔗"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
-    static let id: String = "EditorReferencesRail"
+    static let id: String = "EditorRailReferences"
     static let displayName: String = String(
-        localized: "Editor References Rail", table: "EditorReferencesRail")
+        localized: "Editor Rail References", table: "EditorRailReferences")
     static let description: String = String(
         localized: "Editor sidebar references tab",
-        table: "EditorReferencesRail")
+        table: "EditorRailReferences")
     static let iconName: String = "arrow.triangle.branch"
     static var isConfigurable: Bool { false }
     static var order: Int { 78 }
 
     nonisolated var instanceLabel: String { Self.id }
-    static let shared = EditorReferencesRailPlugin()
+    static let shared = EditorRailReferencesPlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}

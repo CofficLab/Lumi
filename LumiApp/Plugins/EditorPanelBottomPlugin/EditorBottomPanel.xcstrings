@@ -1,22 +1,24 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Editor Bottom Panel" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "编辑器底部面板"
-          }
-        }
-      }
-    },
     "Bottom panel for the editor (Problems, References, Search Results, etc.)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "编辑器底部面板（问题、引用、搜索结果等）"
+          }
+        }
+      }
+    },
+    "Editor Bottom Panel" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑器底部面板"
           }
         }
       }

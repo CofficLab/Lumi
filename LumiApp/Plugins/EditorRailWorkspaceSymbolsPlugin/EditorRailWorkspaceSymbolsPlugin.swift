@@ -4,25 +4,25 @@ import os
 import MagicKit
 
 /// 编辑器工作区符号 Rail 插件：提供 Symbols 标签页
-actor EditorWorkspaceSymbolsRailPlugin: SuperPlugin, SuperLog {
+actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.editor-workspace-symbols-rail")
+        subsystem: "com.coffic.lumi", category: "plugin.editor-rail-workspace-symbols")
 
     nonisolated static let emoji = "🔣"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
-    static let id: String = "EditorWorkspaceSymbolsRail"
+    static let id: String = "EditorRailWorkspaceSymbols"
     static let displayName: String = String(
-        localized: "Editor Workspace Symbols Rail", table: "EditorWorkspaceSymbolsRail")
+        localized: "Editor Rail Workspace Symbols", table: "EditorRailWorkspaceSymbols")
     static let description: String = String(
         localized: "Editor sidebar workspace symbols tab",
-        table: "EditorWorkspaceSymbolsRail")
+        table: "EditorRailWorkspaceSymbols")
     static let iconName: String = "text.magnifyingglass"
     static var isConfigurable: Bool { false }
     static var order: Int { 78 }
 
     nonisolated var instanceLabel: String { Self.id }
-    static let shared = EditorWorkspaceSymbolsRailPlugin()
+    static let shared = EditorRailWorkspaceSymbolsPlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}

@@ -4,25 +4,25 @@ import os
 import MagicKit
 
 /// 编辑器工作区搜索 Rail 插件：提供 Search 标签页
-actor EditorWorkspaceSearchRailPlugin: SuperPlugin, SuperLog {
+actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.editor-workspace-search-rail")
+        subsystem: "com.coffic.lumi", category: "plugin.editor-rail-workspace-search")
 
     nonisolated static let emoji = "🔍"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
-    static let id: String = "EditorWorkspaceSearchRail"
+    static let id: String = "EditorRailWorkspaceSearch"
     static let displayName: String = String(
-        localized: "Editor Workspace Search Rail", table: "EditorWorkspaceSearchRail")
+        localized: "Editor Rail Workspace Search", table: "EditorRailWorkspaceSearch")
     static let description: String = String(
         localized: "Editor sidebar search tab",
-        table: "EditorWorkspaceSearchRail")
+        table: "EditorRailWorkspaceSearch")
     static let iconName: String = "magnifyingglass"
     static var isConfigurable: Bool { false }
     static var order: Int { 78 }
 
     nonisolated var instanceLabel: String { Self.id }
-    static let shared = EditorWorkspaceSearchRailPlugin()
+    static let shared = EditorRailWorkspaceSearchPlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}

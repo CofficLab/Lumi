@@ -4,25 +4,25 @@ import os
 import MagicKit
 
 /// 编辑器问题面板 Rail 插件：提供 Problems 标签页
-actor EditorProblemsRailPlugin: SuperPlugin, SuperLog {
+actor EditorRailProblemsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.editor-problems-rail")
+        subsystem: "com.coffic.lumi", category: "plugin.editor-rail-problems")
 
     nonisolated static let emoji = "⚠️"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
-    static let id: String = "EditorProblemsRail"
+    static let id: String = "EditorRailProblems"
     static let displayName: String = String(
-        localized: "Editor Problems Rail", table: "EditorProblemsRail")
+        localized: "Editor Rail Problems", table: "EditorRailProblems")
     static let description: String = String(
         localized: "Editor sidebar problems tab",
-        table: "EditorProblemsRail")
+        table: "EditorRailProblems")
     static let iconName: String = "exclamationmark.bubble"
     static var isConfigurable: Bool { false }
     static var order: Int { 78 }
 
     nonisolated var instanceLabel: String { Self.id }
-    static let shared = EditorProblemsRailPlugin()
+    static let shared = EditorRailProblemsPlugin()
 
     nonisolated func onRegister() {}
     nonisolated func onEnable() {}

@@ -7,25 +7,25 @@ import os
 ///
 /// 作为 Panel Bottom 提供者，当编辑器面板激活时，
 /// 在面板内容下方渲染底部面板（Problems、References、Search Results 等）。
-actor EditorBottomPanelPlugin: SuperPlugin, SuperLog {
+actor EditorPanelBottomPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-panel")
+        subsystem: "com.coffic.lumi", category: "plugin.editor-panel-bottom")
 
     nonisolated static let emoji = "⬇️"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
-    static let id: String = "EditorBottomPanel"
+    static let id: String = "EditorPanelBottom"
     static let displayName: String = String(
-        localized: "Editor Bottom Panel", table: "EditorBottomPanel")
+        localized: "Editor Panel Bottom", table: "EditorPanelBottom")
     static let description: String = String(
         localized: "Bottom panel for the editor (Problems, References, Search Results, etc.)",
-        table: "EditorBottomPanel")
+        table: "EditorPanelBottom")
     static let iconName: String = "square.split.bottomthird.twofills"
     static var isConfigurable: Bool { false }
     static var order: Int { 79 }
 
     nonisolated var instanceLabel: String { Self.id }
-    static let shared = EditorBottomPanelPlugin()
+    static let shared = EditorPanelBottomPlugin()
 
     // MARK: - UI Contributions
 
