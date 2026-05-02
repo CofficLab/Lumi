@@ -132,13 +132,13 @@ struct EditorBottomPanelHostView: View {
             case .problems:
                 bottomProblemsContent
             case .references:
-                EditorReferencesWorkspacePanelView(state: state, showsHeader: false)
+                BottomEditorReferencesWorkspacePanelView(state: state, showsHeader: false)
             case .searchResults:
-                EditorWorkspaceSearchPanelView(state: state, showsToolbar: true)
+                BottomEditorWorkspaceSearchPanelView(state: state, showsToolbar: true)
             case .workspaceSymbols:
-                EditorWorkspaceSymbolsPanelView(state: state, showsHeader: false)
+                BottomEditorWorkspaceSymbolsPanelView(state: state, showsHeader: false)
             case .callHierarchy:
-                EditorCallHierarchyPanelView(state: state, showsHeader: false)
+                BottomEditorCallHierarchyPanelView(state: state, showsHeader: false)
             }
         } else if let activeExtensionPanel {
             activeExtensionPanel.content(state)
@@ -168,7 +168,7 @@ struct EditorBottomPanelHostView: View {
     }
 
     private var bottomProblemsContent: some View {
-        EditorProblemsPanelView(state: state, showsHeader: false)
+        BottomEditorProblemsPanelView(state: state, showsHeader: false)
     }
 
     private func emptyState(_ title: String, systemImage: String) -> some View {
