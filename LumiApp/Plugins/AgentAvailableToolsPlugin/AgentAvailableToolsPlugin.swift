@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 可用工具插件
 ///
-/// 在工具栏右侧提供可用工具按钮（AvailableToolsButton）。
+/// 在状态栏右侧提供可用工具按钮（AvailableToolsButton）。
 actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🧰"
     nonisolated static let verbose: Bool = false
@@ -27,11 +27,11 @@ actor AgentAvailableToolsPlugin: SuperPlugin, SuperLog {
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
 
-    // MARK: - Toolbar Views
+    // MARK: - StatusBar Views
 
-    /// 工具栏右侧：可用工具按钮
+    /// 状态栏右侧：可用工具按钮
     @MainActor
-    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
+    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(AvailableToolsButton())
     }
 }
