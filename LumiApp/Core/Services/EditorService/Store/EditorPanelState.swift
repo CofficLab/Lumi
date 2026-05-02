@@ -79,6 +79,9 @@ final class EditorPanelState: ObservableObject {
     /// 鼠标悬停对应的 symbol 矩形（编辑器坐标系）
     @Published var mouseHoverSymbolRect: CGRect = .zero
 
+    /// 鼠标悬停对应的 LSP Range（用于在编辑器中高亮被 hover 的符号）
+    @Published var mouseHoverRange: LSPRange?
+
     var snapshot: EditorPanelSnapshot {
         EditorPanelSnapshot(
             isOpenEditorsPanelPresented: isOpenEditorsPanelPresented,
@@ -137,7 +140,7 @@ final class EditorPanelState: ObservableObject {
     // MARK: - 便捷方法
 
     /// 设置鼠标悬停状态
-    func setMouseHover(content: String, symbolRect: CGRect) {
+    func setMouseHover(content: String, symbolRect: CGRect, hoverRange: LSPRange? = nil) {
         let currentContent = mouseHoverContent ?? ""
         let currentRect = mouseHoverSymbolRect
         let epsilon: CGFloat = 0.75
@@ -146,17 +149,19 @@ final class EditorPanelState: ObservableObject {
             abs(currentRect.minY - symbolRect.minY) <= epsilon &&
             abs(currentRect.width - symbolRect.width) <= epsilon &&
             abs(currentRect.height - symbolRect.height) <= epsilon
-        if isSameContent && isCloseRect { return }
+        if isSameContent && isCloseRect && mouseHoverRange == hoverRange { return }
 
         mouseHoverContent = content
         mouseHoverSymbolRect = symbolRect
+        mouseHoverRange = hoverRange
     }
 
     /// 清除鼠标悬停状态
     func clearMouseHover() {
-        guard mouseHoverContent != nil || mouseHoverSymbolRect != .zero else { return }
+        guard mouseHoverContent != nil || mouseHoverSymbolRect != .zero || mouseHoverRange != nil else { return }
         mouseHoverContent = nil
         mouseHoverSymbolRect = .zero
+        mouseHoverRange = nil
     }
 
     func apply(_ snapshot: EditorPanelSnapshot) {
@@ -224,6 +229,7 @@ final class EditorPanelState: ObservableObject {
         isCallHierarchyPresented = false
         mouseHoverContent = nil
         mouseHoverSymbolRect = .zero
+        mouseHoverRange = nil
     }
 
     private static func editorReferenceResult(from result: ReferenceResult) -> EditorReferenceResult {

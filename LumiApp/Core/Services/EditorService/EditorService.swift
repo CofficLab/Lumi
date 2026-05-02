@@ -384,8 +384,8 @@ public final class EditorService: ObservableObject {
     var mouseHoverContent: String? { state.mouseHoverContent }
 
     /// 设置鼠标悬停状态
-    func setMouseHover(content: String, symbolRect: CGRect) {
-        state.setMouseHover(content: content, symbolRect: symbolRect)
+    func setMouseHover(content: String, symbolRect: CGRect, hoverRange: LSPRange? = nil) {
+        state.setMouseHover(content: content, symbolRect: symbolRect, hoverRange: hoverRange)
     }
 
     /// 清除鼠标悬停状态

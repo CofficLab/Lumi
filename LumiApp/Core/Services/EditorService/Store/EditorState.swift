@@ -444,7 +444,8 @@ final class EditorState: ObservableObject, SuperLog {
         textView: TextView,
         lineTable: LineOffsetTable
     ) -> [EditorSurfaceHighlight] {
-        overlayController.surfaceHighlights(
+        let hoverRect: CGRect? = panelState.hasActiveHover ? panelState.mouseHoverSymbolRect : nil
+        return overlayController.surfaceHighlights(
             matches: currentRenderedFindMatches(lineTable: lineTable),
             selectedRange: activeSession.findReplaceState.selectedMatchRange,
             bracketMatch: renderedBracketMatch(lineTable: lineTable),
@@ -452,7 +453,8 @@ final class EditorState: ObservableObject, SuperLog {
             isPrimaryCursorRendered: isPrimaryCursorRendered,
             textView: textView,
             lineTable: lineTable,
-            theme: currentTheme
+            theme: currentTheme,
+            hoverSymbolRect: hoverRect
         )
     }
 
@@ -972,7 +974,7 @@ final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var mouseHoverCharacter: Int = 0
 
     /// 设置鼠标悬停状态（使用 symbol 矩形定位）
-    func setMouseHover(content: String, symbolRect: CGRect) {
+    func setMouseHover(content: String, symbolRect: CGRect, hoverRange: LSPRange? = nil) {
         let currentContent = panelState.mouseHoverContent ?? ""
         let currentRect = panelState.mouseHoverSymbolRect
         let epsilon: CGFloat = 0.75
@@ -981,9 +983,9 @@ final class EditorState: ObservableObject, SuperLog {
             abs(currentRect.minY - symbolRect.minY) <= epsilon &&
             abs(currentRect.width - symbolRect.width) <= epsilon &&
             abs(currentRect.height - symbolRect.height) <= epsilon
-        if isSameContent && isCloseRect { return }
+        if isSameContent && isCloseRect && panelState.mouseHoverRange == hoverRange { return }
 
-        panelController.setMouseHover(content: content, symbolRect: symbolRect)
+        panelController.setMouseHover(content: content, symbolRect: symbolRect, hoverRange: hoverRange)
         syncActiveSessionState()
     }
 
