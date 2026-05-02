@@ -58,7 +58,7 @@ ConversationListPlugin/
 ## 存储位置
 
 ```
-~/Library/Application Support/com.cofficlab.Lumi/db_{debug|production}/
+~/Library/Application Support/com.coffic.Lumi/db_{debug|production}/
 └── ConversationListPlugin/
     └── settings/
         └── conversation_selection.plist  # 选中的会话 ID

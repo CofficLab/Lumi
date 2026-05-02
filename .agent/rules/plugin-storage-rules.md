@@ -25,7 +25,7 @@
 ### 1.2 目录结构
 
 ```
-~/Library/Application Support/com.cofficlab.Lumi/db_{debug|production}/
+~/Library/Application Support/com.coffic.Lumi/db_{debug|production}/
 ├── Core/                              # 主数据库（Core 模块）
 │   └── Lumi.db
 ├── ClipboardManager/                  # ClipboardManager 插件
@@ -249,7 +249,7 @@ class <PluginName>ViewModel: ObservableObject {
 ### 2.3 目录结构
 
 ```
-~/Library/Application Support/com.cofficlab.Lumi/db_{debug|production}/
+~/Library/Application Support/com.coffic.Lumi/db_{debug|production}/
 ├── MemoryManager/                     # MemoryManager 插件
 │   └── history.sqlite
 ├── NetworkManager/                    # NetworkManager 插件
@@ -606,7 +606,7 @@ class MemoryHistoryService: ObservableObject {
 
 ```swift
 // 基础路径
-AppConfig.getDBFolderURL()  // ~/Library/Application Support/com.cofficlab.Lumi/db_{debug|production}/
+AppConfig.getDBFolderURL()  // ~/Library/Application Support/com.coffic.Lumi/db_{debug|production}/
 
 // 插件专用路径
 AppConfig.getPluginDBFolderURL(pluginName: "<PluginName>")  // 自动创建并返回插件目录

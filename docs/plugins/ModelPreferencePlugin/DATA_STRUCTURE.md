@@ -3,7 +3,7 @@
 ## 📁 目录结构
 
 ```
-~/Library/Application Support/com.cofficlab.Lumi/
+~/Library/Application Support/com.coffic.Lumi/
 └── db_debug/ (或 db_production/)
     └── ModelPreference/
         └── projects/
@@ -19,14 +19,14 @@
 
 ### 文件路径
 ```
-~/Library/Application Support/com.cofficlab.Lumi/db_debug/ModelPreference/projects/a3f5e9c2b1d4/preference.plist
+~/Library/Application Support/com.coffic.Lumi/db_debug/ModelPreference/projects/a3f5e9c2b1d4/preference.plist
 ```
 
 ### 文件内容（二进制 plist 格式）
 
 使用 `plutil` 命令查看：
 ```bash
-plutil -p ~/Library/Application\ Support/com.cofficlab.Lumi/db_debug/ModelPreference/projects/a3f5e9c2b1d4/preference.plist
+plutil -p ~/Library/Application\ Support/com.coffic.Lumi/db_debug/ModelPreference/projects/a3f5e9c2b1d4/preference.plist
 ```
 
 输出示例：
@@ -75,10 +75,10 @@ plutil -p ~/Library/Application\ Support/com.cofficlab.Lumi/db_debug/ModelPrefer
 ### 方法 1：使用 plutil
 ```bash
 # 列出所有项目配置
-ls ~/Library/Application\ Support/com.cofficlab.Lumi/db_debug/ModelPreference/projects/
+ls ~/Library/Application\ Support/com.coffic.Lumi/db_debug/ModelPreference/projects/
 
 # 查看特定项目的配置
-plutil -p ~/Library/Application\ Support/com.cofficlab.Lumi/db_debug/ModelPreference/projects/<hash>/preference.plist
+plutil -p ~/Library/Application\ Support/com.coffic.Lumi/db_debug/ModelPreference/projects/<hash>/preference.plist
 ```
 
 ### 方法 2：使用 Swift 代码
@@ -94,19 +94,19 @@ if let pref = store.getPreference(forProject: "/Users/dev/Projects/MyApp") {
 ### 方法 3：直接查看文件
 ```bash
 # 打开 Finder
-open ~/Library/Application\ Support/com.cofficlab.Lumi/db_debug/ModelPreference/projects/
+open ~/Library/Application\ Support/com.coffic.Lumi/db_debug/ModelPreference/projects/
 ```
 
 ## 🗑️ 清除数据
 
 ### 清除特定项目
 ```bash
-rm -rf ~/Library/Application\ Support/com.cofficlab.Lumi/db_debug/ModelPreference/projects/<hash>/
+rm -rf ~/Library/Application\ Support/com.coffic.Lumi/db_debug/ModelPreference/projects/<hash>/
 ```
 
 ### 清除所有项目配置
 ```bash
-rm -rf ~/Library/Application\ Support/com.cofficlab.Lumi/db_debug/ModelPreference/projects/*
+rm -rf ~/Library/Application\ Support/com.coffic.Lumi/db_debug/ModelPreference/projects/*
 ```
 
 ## 📝 示例场景

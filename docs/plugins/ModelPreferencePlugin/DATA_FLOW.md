@@ -65,7 +65,7 @@
 │  │                    磁盘文件结构                              │   │
 │  │                                                              │   │
 │  │  ~/Library/Application Support/                             │   │
-│  │  └── com.cofficlab.Lumi/                                    │   │
+│  │  └── com.coffic.Lumi/                                    │   │
 │  │      └── db_debug/ (或 db_production/)                      │   │
 │  │          └── ModelPreference/                               │   │
 │  │              └── projects/                                  │   │
