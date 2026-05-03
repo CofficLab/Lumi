@@ -148,7 +148,7 @@ final class XcodeProjectContextBridge: SuperLog {
             activeScheme: activeScheme,
             activeConfiguration: activeConfiguration,
             activeDestination: activeDestination,
-            buildContextStatus: buildContextProvider?.buildContextStatus.displayDescription ?? "未初始化",
+            buildContextStatus: buildContextProvider?.buildContextStatus.displayDescription ?? String(localized: "Not Initialized", table: "EditorXcodePlugin"),
             isXcodeProject: isXcodeProject,
             isInitialized: isInitialized,
             workspaceName: buildContextProvider?.currentWorkspace?.name,
@@ -205,7 +205,7 @@ final class XcodeProjectContextBridge: SuperLog {
     
     func getBuildServerPath() -> String? { cachedState?.buildServerPath }
     var cachedActiveScheme: String? { cachedState?.activeScheme }
-    var buildContextStatusDescription: String { cachedState?.buildContextStatus ?? "未初始化" }
+    var buildContextStatusDescription: String { cachedState?.buildContextStatus ?? String(localized: "Not Initialized", table: "EditorXcodePlugin") }
     var shouldHaveBuildContext: Bool { cachedState?.isXcodeProject ?? false }
     
     func makeInitializationOptions() -> [String: Any]? {

@@ -45,35 +45,42 @@ enum XcodeLSPError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .serverNotStarted:
-            return "LSP 服务器未启动，无法处理请求"
+            return String(localized: "LSP server not started, unable to process request", table: "EditorXcodePlugin")
         case .serverDisconnected:
-            return "LSP 服务器连接已断开，正在尝试重新连接..."
+            return String(localized: "LSP server connection lost, attempting to reconnect...", table: "EditorXcodePlugin")
         case .noProjectContext:
-            return "当前文件未绑定有效的 Xcode 项目上下文"
+            return String(localized: "Current file is not bound to a valid Xcode project context", table: "EditorXcodePlugin")
         case .buildContextUnavailable(let reason):
-            return "Build context 不可用: \(reason)"
+            let format = String(localized: "Build context unavailable: %@", table: "EditorXcodePlugin")
+            return String(format: format, reason)
         case .symbolNotResolved(let symbol):
-            return "无法解析符号\((symbol.map { " '\($0)'" }) ?? "")"
+            let symbolPart = symbol.map { " '\($0)'" } ?? ""
+            return String(localized: "Unable to resolve symbol%@", table: "EditorXcodePlugin") + symbolPart
         case .symbolNotFound:
-            return "未找到匹配的符号"
+            return String(localized: "No matching symbol found", table: "EditorXcodePlugin")
         case .indexingInProgress:
-            return "正在索引项目，语义导航可能不完整"
+            return String(localized: "Project is being indexed, semantic navigation may be incomplete", table: "EditorXcodePlugin")
         case .fileNotInTarget(let file):
-            return "'\(file)' 不属于任何编译 target，请检查文件是否在项目中"
+            let format = String(localized: "'%@' does not belong to any compilation target, please check if the file is in the project", table: "EditorXcodePlugin")
+            return String(format: format, file)
         case .fileInMultipleTargets(let file, let targets, let activeScheme):
             let targetList = targets.joined(separator: ", ")
             if let activeScheme, !activeScheme.isEmpty {
-                return "'\(file)' 同时属于多个 target（\(targetList)），当前 scheme '\(activeScheme)' 无法唯一确定语义上下文"
+                let format = String(localized: "'%@' belongs to multiple targets (%@), current scheme '%@' cannot uniquely determine semantic context", table: "EditorXcodePlugin")
+                return String(format: format, file, targetList, activeScheme)
             }
-            return "'\(file)' 同时属于多个 target（\(targetList)），当前无法唯一确定语义上下文"
+            let format = String(localized: "'%@' belongs to multiple targets (%@), cannot uniquely determine semantic context", table: "EditorXcodePlugin")
+            return String(format: format, file, targetList)
         case .fileTargetsExcludedByActiveScheme(let file, let targets, let activeScheme):
             let targetList = targets.joined(separator: ", ")
             if let activeScheme, !activeScheme.isEmpty {
-                return "'\(file)' 属于 target（\(targetList)），但当前 scheme '\(activeScheme)' 不包含这些 target"
+                let format = String(localized: "'%@' belongs to target (%@), but current scheme '%@' does not include these targets", table: "EditorXcodePlugin")
+                return String(format: format, file, targetList, activeScheme)
             }
-            return "'\(file)' 属于 target（\(targetList)），但当前 active scheme 不包含这些 target"
+            let format = String(localized: "'%@' belongs to target (%@), but current active scheme does not include these targets", table: "EditorXcodePlugin")
+            return String(format: format, file, targetList)
         case .requestTimeout:
-            return "LSP 请求超时，请稍后重试"
+            return String(localized: "LSP request timed out, please try again later", table: "EditorXcodePlugin")
         case .unknown(let message):
             return message
         }
@@ -83,27 +90,27 @@ enum XcodeLSPError: LocalizedError, Equatable {
     var suggestedAction: String? {
         switch self {
         case .serverNotStarted:
-            return "尝试重新打开文件或重启 Lumi"
+            return String(localized: "Try reopening the file or restarting Lumi", table: "EditorXcodePlugin")
         case .serverDisconnected:
-            return "等待自动重连，或手动切换文件触发重建"
+            return String(localized: "Wait for auto-reconnect, or manually switch files to trigger rebuild", table: "EditorXcodePlugin")
         case .noProjectContext:
-            return "确保 .xcodeproj/.xcworkspace 在项目根目录"
+            return String(localized: "Ensure .xcodeproj/.xcworkspace is in the project root directory", table: "EditorXcodePlugin")
         case .buildContextUnavailable:
-            return "运行 brew install xcode-build-server 并重新打开项目"
+            return String(localized: "Run brew install xcode-build-server and reopen the project", table: "EditorXcodePlugin")
         case .symbolNotResolved:
-            return "等待索引完成后重试，或检查 sourcekit-lsp 日志"
+            return String(localized: "Wait for indexing to complete and retry, or check sourcekit-lsp logs", table: "EditorXcodePlugin")
         case .symbolNotFound:
             return nil
         case .indexingInProgress:
-            return "等待索引完成后再次尝试"
+            return String(localized: "Wait for indexing to complete and try again", table: "EditorXcodePlugin")
         case .fileNotInTarget:
-            return "将文件添加到 target 中"
+            return String(localized: "Add the file to a target", table: "EditorXcodePlugin")
         case .fileInMultipleTargets:
-            return "切换到更精确的 scheme，或仅保留一个 target 归属后重试"
+            return String(localized: "Switch to a more specific scheme, or keep only one target membership and retry", table: "EditorXcodePlugin")
         case .fileTargetsExcludedByActiveScheme:
-            return "切换到包含该文件 target 的 scheme 后重试"
+            return String(localized: "Switch to a scheme that includes the file's target and retry", table: "EditorXcodePlugin")
         case .requestTimeout:
-            return "尝试重试"
+            return String(localized: "Try again", table: "EditorXcodePlugin")
         case .unknown:
             return nil
         }
@@ -155,7 +162,7 @@ enum XcodeLSPErrorClassifier {
             return .buildContextUnavailable(reason)
         }
         if case .needsResync = bridge.buildContextProvider?.buildContextStatus {
-            return .buildContextUnavailable("Build context 需要重新同步")
+            return .buildContextUnavailable(String(localized: "Build context needs to be resynchronized", table: "EditorXcodePlugin"))
         }
 
         guard let uri = context.uri, let url = URL(string: uri) else {

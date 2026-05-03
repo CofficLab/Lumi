@@ -59,7 +59,7 @@ final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
                 suggestions.append(
                     EditorQuickOpenItemSuggestion(
                         id: "xcode-key:\(fileURL.path):\(match.line):\(match.key)",
-                        sectionTitle: "Project Keys",
+                        sectionTitle: String(localized: "Project Keys", table: "EditorXcodePlugin"),
                         title: match.key,
                         subtitle: "\(relativePath):\(match.line)",
                         systemImage: ext == "xcconfig" ? "slider.horizontal.3" : "list.bullet.rectangle",

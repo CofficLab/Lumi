@@ -16,43 +16,47 @@ enum PlistEditing {
     }
     
     /// 常见的 Info.plist key 及其描述
-    static let commonKeys: [String: String] = [
-        "CFBundleName": "Bundle Name - 应用名称",
-        "CFBundleDisplayName": "Display Name - 显示名称",
-        "CFBundleIdentifier": "Bundle ID - 应用唯一标识",
-        "CFBundleVersion": "Bundle Version - 构建版本号",
-        "CFBundleShortVersionString": "Short Version - 营销版本号",
-        "CFBundlePackageType": "Package Type - 包类型",
-        "CFBundleSignature": "Bundle Signature - 签名",
-        "LSMinimumSystemVersion": "Minimum System Version - 最低系统版本",
-        "NSPrincipalClass": "Principal Class - 主类",
-        "NSMainStoryboardFile": "Main Storyboard - 主 Storyboard",
-        "UILaunchStoryboardName": "Launch Storyboard - 启动 Storyboard",
-        "UIApplicationSceneManifest": "Scene Manifest - 场景配置",
-        "UISupportedInterfaceOrientations": "Supported Orientations - 支持的方向",
-        "UIRequiredDeviceCapabilities": "Required Capabilities - 所需设备能力",
-        "NSAppTransportSecurity": "App Transport Security - 网络安全",
-        "NSCameraUsageDescription": "Camera Usage - 相机使用说明",
-        "NSPhotoLibraryUsageDescription": "Photo Library Usage - 照片库使用说明",
-        "NSLocationWhenInUseUsageDescription": "Location Usage - 位置使用说明",
-        "NSBluetoothPeripheralUsageDescription": "Bluetooth Usage - 蓝牙使用说明",
-    ]
+    static var commonKeys: [String: String] {
+        [
+            "CFBundleName": String(localized: "Bundle Name - Application name", table: "EditorXcodePlugin"),
+            "CFBundleDisplayName": String(localized: "Display Name - Shown on Home screen", table: "EditorXcodePlugin"),
+            "CFBundleIdentifier": String(localized: "Bundle ID - Unique app identifier", table: "EditorXcodePlugin"),
+            "CFBundleVersion": String(localized: "Bundle Version - Build version number", table: "EditorXcodePlugin"),
+            "CFBundleShortVersionString": String(localized: "Short Version - Marketing version number", table: "EditorXcodePlugin"),
+            "CFBundlePackageType": String(localized: "Package Type - Bundle package type", table: "EditorXcodePlugin"),
+            "CFBundleSignature": String(localized: "Bundle Signature", table: "EditorXcodePlugin"),
+            "LSMinimumSystemVersion": String(localized: "Minimum System Version - Minimum OS version", table: "EditorXcodePlugin"),
+            "NSPrincipalClass": String(localized: "Principal Class", table: "EditorXcodePlugin"),
+            "NSMainStoryboardFile": String(localized: "Main Storyboard - Main storyboard file", table: "EditorXcodePlugin"),
+            "UILaunchStoryboardName": String(localized: "Launch Storyboard - Launch screen storyboard", table: "EditorXcodePlugin"),
+            "UIApplicationSceneManifest": String(localized: "Scene Manifest - Scene configuration", table: "EditorXcodePlugin"),
+            "UISupportedInterfaceOrientations": String(localized: "Supported Orientations - Supported interface orientations", table: "EditorXcodePlugin"),
+            "UIRequiredDeviceCapabilities": String(localized: "Required Capabilities - Required device capabilities", table: "EditorXcodePlugin"),
+            "NSAppTransportSecurity": String(localized: "App Transport Security - Network security", table: "EditorXcodePlugin"),
+            "NSCameraUsageDescription": String(localized: "Camera Usage - Camera access description", table: "EditorXcodePlugin"),
+            "NSPhotoLibraryUsageDescription": String(localized: "Photo Library Usage - Photo library access description", table: "EditorXcodePlugin"),
+            "NSLocationWhenInUseUsageDescription": String(localized: "Location Usage - Location access description", table: "EditorXcodePlugin"),
+            "NSBluetoothPeripheralUsageDescription": String(localized: "Bluetooth Usage - Bluetooth access description", table: "EditorXcodePlugin"),
+        ]
+    }
     
     /// 常见的 Entitlements key
-    static let commonEntitlements: [String: String] = [
-        "com.apple.security.application-groups": "App Groups - 应用组共享",
-        "com.apple.developer.icloud-container-identifiers": "iCloud Containers - iCloud 容器",
-        "com.apple.developer.associated-domains": "Associated Domains - 关联域名",
-        "com.apple.developer.applesignin": "Sign in with Apple - Apple 登录",
-        "com.apple.developer.networking.wifi-info": "WiFi Info - WiFi 信息",
-        "com.apple.developer.usernotifications.communication": "Communication Notifications - 通讯通知",
-        "com.apple.developer.team-identifier": "Team Identifier - 团队标识",
-        "keychain-access-groups": "Keychain Access Groups - 钥匙串访问组",
-        "com.apple.security.device.audio-input": "Audio Input - 音频输入",
-        "com.apple.security.device.camera": "Camera - 相机",
-    ]
+    static var commonEntitlements: [String: String] {
+        [
+            "com.apple.security.application-groups": String(localized: "App Groups - Shared app group", table: "EditorXcodePlugin"),
+            "com.apple.developer.icloud-container-identifiers": String(localized: "iCloud Containers", table: "EditorXcodePlugin"),
+            "com.apple.developer.associated-domains": String(localized: "Associated Domains", table: "EditorXcodePlugin"),
+            "com.apple.developer.applesignin": String(localized: "Sign in with Apple", table: "EditorXcodePlugin"),
+            "com.apple.developer.networking.wifi-info": String(localized: "WiFi Info", table: "EditorXcodePlugin"),
+            "com.apple.developer.usernotifications.communication": String(localized: "Communication Notifications", table: "EditorXcodePlugin"),
+            "com.apple.developer.team-identifier": String(localized: "Team Identifier", table: "EditorXcodePlugin"),
+            "keychain-access-groups": String(localized: "Keychain Access Groups", table: "EditorXcodePlugin"),
+            "com.apple.security.device.audio-input": String(localized: "Audio Input", table: "EditorXcodePlugin"),
+            "com.apple.security.device.camera": String(localized: "Camera", table: "EditorXcodePlugin"),
+        ]
+    }
 
-    private static let plistEntries: [KnownEntry] = [
+    private static var plistEntries: [KnownEntry] {[
         .init(key: "CFBundleName", description: commonKeys["CFBundleName"] ?? "", valueSuggestions: ["$(PRODUCT_NAME)"]),
         .init(key: "CFBundleDisplayName", description: commonKeys["CFBundleDisplayName"] ?? "", valueSuggestions: ["$(PRODUCT_NAME)"]),
         .init(key: "CFBundleIdentifier", description: commonKeys["CFBundleIdentifier"] ?? "", valueSuggestions: ["$(PRODUCT_BUNDLE_IDENTIFIER)"]),
@@ -63,15 +67,15 @@ enum PlistEditing {
         .init(key: "NSPhotoLibraryUsageDescription", description: commonKeys["NSPhotoLibraryUsageDescription"] ?? "", valueSuggestions: ["This app requires photo library access."]),
         .init(key: "NSLocationWhenInUseUsageDescription", description: commonKeys["NSLocationWhenInUseUsageDescription"] ?? "", valueSuggestions: ["This app requires your location while in use."]),
         .init(key: "NSBluetoothPeripheralUsageDescription", description: commonKeys["NSBluetoothPeripheralUsageDescription"] ?? "", valueSuggestions: ["This app uses Bluetooth to connect to accessories."])
-    ]
+    ]}
 
-    private static let entitlementEntries: [KnownEntry] = [
+    private static var entitlementEntries: [KnownEntry] {[
         .init(key: "com.apple.security.application-groups", description: commonEntitlements["com.apple.security.application-groups"] ?? "", valueSuggestions: ["group.$(PRODUCT_BUNDLE_IDENTIFIER)"]),
         .init(key: "com.apple.developer.associated-domains", description: commonEntitlements["com.apple.developer.associated-domains"] ?? "", valueSuggestions: ["applinks:example.com"]),
         .init(key: "com.apple.developer.applesignin", description: commonEntitlements["com.apple.developer.applesignin"] ?? "", valueSuggestions: ["Default"]),
         .init(key: "keychain-access-groups", description: commonEntitlements["keychain-access-groups"] ?? "", valueSuggestions: ["$(AppIdentifierPrefix)$(CFBundleIdentifier)"]),
         .init(key: "com.apple.security.device.camera", description: commonEntitlements["com.apple.security.device.camera"] ?? "", valueSuggestions: ["true"])
-    ]
+    ]}
     
     /// 验证 plist 内容
     static func validatePlist(_ content: String) -> [String] {
@@ -80,19 +84,19 @@ enum PlistEditing {
         // 检查是否包含常见但可能缺失的 key
         guard let data = content.data(using: .utf8),
               let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
-            warnings.append("无法解析为有效的 plist")
+            warnings.append(String(localized: "Unable to parse as valid plist", table: "EditorXcodePlugin"))
             return warnings
         }
         
         // 检查是否包含必要字段
         if plist["CFBundleIdentifier"] == nil {
-            warnings.append("缺少 CFBundleIdentifier")
+            warnings.append(String(localized: "Missing CFBundleIdentifier", table: "EditorXcodePlugin"))
         }
         if plist["CFBundleVersion"] == nil {
-            warnings.append("缺少 CFBundleVersion")
+            warnings.append(String(localized: "Missing CFBundleVersion", table: "EditorXcodePlugin"))
         }
         if plist["CFBundleShortVersionString"] == nil {
-            warnings.append("缺少 CFBundleShortVersionString")
+            warnings.append(String(localized: "Missing CFBundleShortVersionString", table: "EditorXcodePlugin"))
         }
         
         return warnings
@@ -121,7 +125,7 @@ enum PlistEditing {
 
         let values = entry.valueSuggestions.isEmpty
             ? ""
-            : "\n\nSuggested values:\n" + entry.valueSuggestions.map { "- `\($0)`" }.joined(separator: "\n")
+            : "\n\n" + String(localized: "Suggested values:", table: "EditorXcodePlugin") + "\n" + entry.valueSuggestions.map { "- `\($0)`" }.joined(separator: "\n")
         return "### `\(entry.key)`\n\(entry.description)\(values)"
     }
 
@@ -158,7 +162,7 @@ enum PlistEditing {
             EditorCompletionSuggestion(
                 label: value,
                 insertText: value,
-                detail: currentKey.map { "Suggested value for \($0)" },
+                detail: currentKey.map { String(localized: "Suggested value for \($0)", table: "EditorXcodePlugin") },
                 priority: 260 - index
             )
         }

@@ -53,15 +53,17 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         var displayDescription: String {
             switch self {
             case .unknown:
-                return "未知"
+                return String(localized: "Unknown", table: "EditorXcodePlugin")
             case .resolving:
-                return "正在解析 build context..."
+                return String(localized: "Resolving build context...", table: "EditorXcodePlugin")
             case .available(let config):
-                return "可用 (scheme: \(config.scheme))"
+                let format = String(localized: "Available (scheme: %@)", table: "EditorXcodePlugin")
+                return String(format: format, config.scheme)
             case .unavailable(let reason):
-                return "不可用: \(reason)"
+                let format = String(localized: "Unavailable: %@", table: "EditorXcodePlugin")
+                return String(format: format, reason)
             case .needsResync:
-                return "需要重新同步"
+                return String(localized: "Needs resync", table: "EditorXcodePlugin")
             }
         }
     }
@@ -95,13 +97,14 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
     /// 打开/识别一个 Xcode 项目
     func openProject(at projectURL: URL) async {
         guard FileManager.default.fileExists(atPath: projectURL.path) else {
-            buildContextStatus = .unavailable("项目路径不存在: \(projectURL.path)")
+            let format = String(localized: "Project path does not exist: %@", table: "EditorXcodePlugin")
+            buildContextStatus = .unavailable(String(format: format, projectURL.path))
             return
         }
         
         let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL)
         guard let workspaceURL else {
-            buildContextStatus = .unavailable("未找到 .xcodeproj / .xcworkspace")
+            buildContextStatus = .unavailable(String(localized: "No .xcodeproj / .xcworkspace found", table: "EditorXcodePlugin"))
             return
         }
         
@@ -109,7 +112,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         
         // 解析项目
         guard let workspaceContext = await resolver.resolve(workspaceURL: workspaceURL) else {
-            buildContextStatus = .unavailable("无法解析项目")
+            buildContextStatus = .unavailable(String(localized: "Unable to parse project", table: "EditorXcodePlugin"))
             return
         }
         
@@ -183,7 +186,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
     /// 返回 JSON 路径，如果失败返回 nil
     func generateBuildServerJSON(workspaceURL: URL, scheme: String) async {
         guard let serverPath = xcodeBuildServerPath else {
-            buildContextStatus = .unavailable("未安装 xcode-build-server，请运行: brew install xcode-build-server")
+            buildContextStatus = .unavailable(String(localized: "xcode-build-server not installed, please run: brew install xcode-build-server", table: "EditorXcodePlugin"))
             return
         }
         
@@ -218,7 +221,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
                 Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)")
             }
         } else {
-            buildContextStatus = .unavailable("生成 buildServer.json 失败")
+            buildContextStatus = .unavailable(String(localized: "Failed to generate buildServer.json", table: "EditorXcodePlugin"))
         }
     }
     

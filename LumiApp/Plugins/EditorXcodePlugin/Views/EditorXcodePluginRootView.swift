@@ -46,14 +46,17 @@ struct EditorXcodePluginRootView<Content: View>: View {
         var displayDescription: String {
             switch self {
             case .idle:
-                return "未启动"
+                return String(localized: "Not Started", table: "EditorXcodePlugin")
             case .loading(let count):
-                return "正在预加载 \(count) 个项目..."
+                let format = String(localized: "Preloading %lld project(s)...", table: "EditorXcodePlugin")
+                return String(format: format, count)
             case .completed(let success, let failed):
                 if failed == 0 {
-                    return "预加载完成：成功 \(success) 个"
+                    let format = String(localized: "Preload completed: %lld succeeded", table: "EditorXcodePlugin")
+                    return String(format: format, success)
                 } else {
-                    return "预加载完成：成功 \(success) 个，失败 \(failed) 个"
+                    let format = String(localized: "Preload completed: %lld succeeded, %lld failed", table: "EditorXcodePlugin")
+                    return String(format: format, success, failed)
                 }
             }
         }

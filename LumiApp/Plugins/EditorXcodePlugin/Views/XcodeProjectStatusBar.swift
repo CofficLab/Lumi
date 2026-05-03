@@ -72,7 +72,7 @@ struct XcodeProjectStatusBar: View {
                 HStack(spacing: 4) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 8))
-                    Text(viewModel.activeScheme ?? "Scheme")
+                    Text(viewModel.activeScheme ?? String(localized: "Scheme", table: "EditorXcodePlugin"))
                         .lineLimit(1)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 8))
@@ -105,7 +105,7 @@ struct XcodeProjectStatusBar: View {
                 HStack(spacing: 4) {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 8))
-                    Text(viewModel.activeConfiguration ?? "Config")
+                    Text(viewModel.activeConfiguration ?? String(localized: "Config", table: "EditorXcodePlugin"))
                         .lineLimit(1)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 8))
@@ -131,7 +131,7 @@ struct XcodeProjectStatusBar: View {
             .padding(.vertical, 2)
             .background(Color.white.opacity(0.08))
             .cornerRadius(4)
-            .help("当前编辑器语义上下文的目标平台")
+            .help(String(localized: "Target platform for current editor semantic context", table: "EditorXcodePlugin"))
         }
     }
 
@@ -150,16 +150,16 @@ struct XcodeProjectStatusDetailView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Xcode Context")
+                Text(String(localized: "Xcode Context", table: "EditorXcodePlugin"))
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
                 buildStatusBadge
             }
 
-            detailRow("Scheme", viewModel.activeScheme ?? "未选择")
-            detailRow("Configuration", viewModel.activeConfiguration ?? "未选择")
-            detailRow("Destination", viewModel.activeDestination ?? "未确定")
-            detailRow("Build Context", viewModel.buildContextStatusDescription)
+            detailRow(String(localized: "Scheme", table: "EditorXcodePlugin"), viewModel.activeScheme ?? String(localized: "Not Selected", table: "EditorXcodePlugin"))
+            detailRow(String(localized: "Configuration", table: "EditorXcodePlugin"), viewModel.activeConfiguration ?? String(localized: "Not Selected", table: "EditorXcodePlugin"))
+            detailRow(String(localized: "Destination", table: "EditorXcodePlugin"), viewModel.activeDestination ?? String(localized: "Undetermined", table: "EditorXcodePlugin"))
+            detailRow(String(localized: "Build Context", table: "EditorXcodePlugin"), viewModel.buildContextStatusDescription)
 
             HStack {
                 Spacer()
@@ -170,10 +170,10 @@ struct XcodeProjectStatusDetailView: View {
                         HStack(spacing: 6) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text("重新解析中")
+                            Text(String(localized: "Re-resolving...", table: "EditorXcodePlugin"))
                         }
                     } else {
-                        Text("重新解析 Build Context")
+                        Text(String(localized: "Re-resolve Build Context", table: "EditorXcodePlugin"))
                     }
                 }
                 .buttonStyle(.plain)
@@ -185,21 +185,21 @@ struct XcodeProjectStatusDetailView: View {
             Divider()
 
             if let snapshot = viewModel.latestEditorSnapshot {
-                detailRow("Workspace", snapshot.workspaceName)
-                detailRow("Current File", snapshot.currentFilePath ?? "未打开文件")
-                detailRow("Preferred Target", snapshot.currentFileTarget ?? "未确定")
+                detailRow(String(localized: "Workspace", table: "EditorXcodePlugin"), snapshot.workspaceName)
+                detailRow(String(localized: "Current File", table: "EditorXcodePlugin"), snapshot.currentFilePath ?? String(localized: "No File Open", table: "EditorXcodePlugin"))
+                detailRow(String(localized: "Preferred Target", table: "EditorXcodePlugin"), snapshot.currentFileTarget ?? String(localized: "Undetermined", table: "EditorXcodePlugin"))
                 detailRow(
-                    "Matched Targets",
-                    snapshot.currentFileMatchedTargets.isEmpty ? "无" : snapshot.currentFileMatchedTargets.joined(separator: ", ")
+                    String(localized: "Matched Targets", table: "EditorXcodePlugin"),
+                    snapshot.currentFileMatchedTargets.isEmpty ? String(localized: "None", table: "EditorXcodePlugin") : snapshot.currentFileMatchedTargets.joined(separator: ", ")
                 )
                 detailRow(
-                    "Scheme Targets",
-                    snapshot.activeSchemeBuildableTargets.isEmpty ? "无" : snapshot.activeSchemeBuildableTargets.joined(separator: ", ")
+                    String(localized: "Scheme Targets", table: "EditorXcodePlugin"),
+                    snapshot.activeSchemeBuildableTargets.isEmpty ? String(localized: "None", table: "EditorXcodePlugin") : snapshot.activeSchemeBuildableTargets.joined(separator: ", ")
                 )
                 if !viewModel.semanticReport.reasons.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Semantic Availability")
+                        Text(String(localized: "Semantic Availability", table: "EditorXcodePlugin"))
                             .font(.system(size: 12, weight: .semibold))
                         ForEach(viewModel.semanticReport.reasons) { reason in
                             reasonRow(reason)
@@ -207,7 +207,7 @@ struct XcodeProjectStatusDetailView: View {
                     }
                 }
             } else {
-                Text("当前没有可用的编辑器上下文快照。")
+                Text(String(localized: "No editor context snapshot available.", table: "EditorXcodePlugin"))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -273,19 +273,20 @@ struct XcodeFileNotInTargetWarning: View {
             HStack {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
-                Text("文件未在项目中注册")
+                Text(String(localized: "File Not Registered in Project", table: "EditorXcodePlugin"))
                     .font(.headline)
             }
             
-            Text("\"\(fileName)\" 未绑定到任何编译 target，跨文件语义导航可能不可用。")
+            let format = String(localized: "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.", table: "EditorXcodePlugin")
+            Text(String(format: format, fileName))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
             HStack(spacing: 12) {
-                Button("我知道了", action: onDismiss)
+                Button(String(localized: "Got It", table: "EditorXcodePlugin"), action: onDismiss)
                     .buttonStyle(.bordered)
                 
-                Button("在 Xcode 中打开") {
+                Button(String(localized: "Open in Xcode", table: "EditorXcodePlugin")) {
                     NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: "")
                 }
                 .buttonStyle(.borderless)

@@ -12,7 +12,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
     @Published var configurations: [String] = []
     @Published var activeDestination: String?
     @Published var buildContextStatus: XcodeBuildContextProvider.BuildContextStatus = .unknown
-    @Published var buildContextStatusDescription = "未初始化"
+    @Published var buildContextStatusDescription = String(localized: "Not Initialized", table: "EditorXcodePlugin")
     @Published var latestEditorSnapshot: XcodeEditorContextSnapshot?
     @Published var semanticReport: XcodeSemanticAvailability.Report = .init(reasons: [])
     @Published var isResyncingBuildContext = false
@@ -152,31 +152,34 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
     var semanticStatusText: String {
         if let indexingTask {
             if let percentage = indexingTask.percentage {
-                return "索引中 \(Int(percentage))%"
+                let format = String(localized: "Indexing %d%%", table: "EditorXcodePlugin")
+                return String(format: format, Int(percentage))
             }
             if let message = indexingTask.message, !message.isEmpty {
                 return message
             }
-            return indexingTask.title.isEmpty ? "索引中..." : indexingTask.title
+            return indexingTask.title.isEmpty
+                ? String(localized: "Indexing...", table: "EditorXcodePlugin")
+                : indexingTask.title
         }
 
         switch buildContextStatus {
         case .unknown:
-            return "未检测"
+            return String(localized: "Not Detected", table: "EditorXcodePlugin")
         case .resolving:
-            return "解析中..."
+            return String(localized: "Resolving...", table: "EditorXcodePlugin")
         case .available:
-            return "就绪"
+            return String(localized: "Ready", table: "EditorXcodePlugin")
         case .unavailable:
-            return "错误"
+            return String(localized: "Error", table: "EditorXcodePlugin")
         case .needsResync:
-            return "需同步"
+            return String(localized: "Needs Sync", table: "EditorXcodePlugin")
         }
     }
 
     var semanticStatusDescription: String {
         if let indexingTask {
-            var parts = ["Swift 语义索引进行中"]
+            var parts = [String(localized: "Swift semantic indexing in progress", table: "EditorXcodePlugin")]
             if !indexingTask.title.isEmpty {
                 parts.append(indexingTask.title)
             }

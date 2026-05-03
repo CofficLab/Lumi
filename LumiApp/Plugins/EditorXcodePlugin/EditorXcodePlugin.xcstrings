@@ -1,0 +1,1030 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "'%@' belongs to multiple targets (%@), cannot uniquely determine semantic context" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' belongs to multiple targets (%@), cannot uniquely determine semantic context"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 属于多个目标（%@），无法唯一确定语义上下文"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 屬於多個目標（%@），無法唯一確定語義上下文"
+          }
+        }
+      }
+    },
+    "'%@' belongs to multiple targets (%@), current scheme '%@' cannot uniquely determine semantic context" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' belongs to multiple targets (%@), current scheme '%@' cannot uniquely determine semantic context"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 属于多个目标（%@），当前 scheme '%@' 无法唯一确定语义上下文"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 屬於多個目標（%@），當前 scheme '%@' 無法唯一確定語義上下文"
+          }
+        }
+      }
+    },
+    "'%@' belongs to target (%@), but current active scheme does not include these targets" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' belongs to target (%@), but current active scheme does not include these targets"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 属于目标（%@），但当前活动 scheme 不包含这些目标"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 屬於目標（%@），但當前活動 scheme 不包含這些目標"
+          }
+        }
+      }
+    },
+    "'%@' belongs to target (%@), but current scheme '%@' does not include these targets" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' belongs to target (%@), but current scheme '%@' does not include these targets"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 属于目标（%@），但当前 scheme '%@' 不包含这些目标"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 屬於目標（%@），但當前 scheme '%@' 不包含這些目標"
+          }
+        }
+      }
+    },
+    "'%@' does not belong to any compilation target, please check if the file is in the project" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' does not belong to any compilation target, please check if the file is in the project"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 不属于任何编译目标，请检查文件是否在项目中"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 不屬於任何編譯目標，請檢查文件是否在項目中"
+          }
+        }
+      }
+    },
+    "'%@' does not belong to any compilation target." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' does not belong to any compilation target."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 不属于任何编译目标。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'%@' 不屬於任何編譯目標。"
+          }
+        }
+      }
+    },
+    "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" 未绑定到任何编译目标。跨文件语义导航可能不可用。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" 未綁定到任何編譯目標。跨文件語義導航可能不可用。"
+          }
+        }
+      }
+    },
+    "Add the file to a target" : {
+
+    },
+    "App Groups - Shared app group" : {
+
+    },
+    "App Transport Security - Network security" : {
+
+    },
+    "Associated Domains" : {
+
+    },
+    "Audio Input" : {
+
+    },
+    "Available" : {
+
+    },
+    "Available (scheme: %@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available (scheme: %@)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用（scheme: %@）"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用（scheme: %@）"
+          }
+        }
+      }
+    },
+    "Bluetooth Usage - Bluetooth access description" : {
+
+    },
+    "Build Context" : {
+
+    },
+    "Build Context Needs Sync" : {
+
+    },
+    "Build context needs to be resynchronized" : {
+
+    },
+    "Build Context Unavailable" : {
+
+    },
+    "Build context unavailable: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build context unavailable: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "构建上下文不可用：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "構建上下文不可用：%@"
+          }
+        }
+      }
+    },
+    "Bundle ID - Unique app identifier" : {
+
+    },
+    "Bundle Name - Application name" : {
+
+    },
+    "Bundle Signature" : {
+
+    },
+    "Bundle Version - Build version number" : {
+
+    },
+    "Camera" : {
+
+    },
+    "Camera Usage - Camera access description" : {
+
+    },
+    "Communication Notifications" : {
+
+    },
+    "Config" : {
+
+    },
+    "Configuration" : {
+
+    },
+    "Current File" : {
+
+    },
+    "Current file belongs to %@, but current scheme cannot uniquely determine semantic context." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current file belongs to %@, but current scheme cannot uniquely determine semantic context."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前文件属于 %@，但当前 scheme 无法唯一确定语义上下文。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前文件屬於 %@，但當前 scheme 無法唯一確定語義上下文。"
+          }
+        }
+      }
+    },
+    "Current file is not bound to a valid Xcode project context" : {
+
+    },
+    "Current file matches multiple targets, currently resolving with '%@'." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current file matches multiple targets, currently resolving with '%@'."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前文件匹配多个目标，当前使用 '%@' 解析。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前文件匹配多個目標，當前使用 '%@' 解析。"
+          }
+        }
+      }
+    },
+    "Current scheme '%@' does not include %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current scheme '%@' does not include %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前 scheme '%@' 不包含 %@。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前 scheme '%@' 不包含 %@。"
+          }
+        }
+      }
+    },
+    "Destination" : {
+
+    },
+    "Destination Undetermined" : {
+
+    },
+    "Display Name - Shown on Home screen" : {
+
+    },
+    "Ensure .xcodeproj/.xcworkspace is in the project root directory" : {
+
+    },
+    "Error" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "错误"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
+          }
+        }
+      }
+    },
+    "Failed to generate buildServer.json" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to generate buildServer.json"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "生成 buildServer.json 失败"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "生成 buildServer.json 失敗"
+          }
+        }
+      }
+    },
+    "File Not in Target" : {
+
+    },
+    "File Not Registered in Project" : {
+
+    },
+    "Got It" : {
+
+    },
+    "iCloud Containers" : {
+
+    },
+    "Indexing %d%%" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indexing %d%%"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "索引中 %d%%"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "索引中 %d%%"
+          }
+        }
+      }
+    },
+    "Indexing..." : {
+
+    },
+    "Keychain Access Groups" : {
+
+    },
+    "Launch Storyboard - Launch screen storyboard" : {
+
+    },
+    "Location Usage - Location access description" : {
+
+    },
+    "LSP Not Initialized" : {
+
+    },
+    "LSP request timed out, please try again later" : {
+
+    },
+    "LSP server connection lost, attempting to reconnect..." : {
+
+    },
+    "LSP server not started, unable to process request" : {
+
+    },
+    "Main Storyboard - Main storyboard file" : {
+
+    },
+    "Matched Targets" : {
+
+    },
+    "Minimum System Version - Minimum OS version" : {
+
+    },
+    "Missing CFBundleIdentifier" : {
+
+    },
+    "Missing CFBundleShortVersionString" : {
+
+    },
+    "Missing CFBundleVersion" : {
+
+    },
+    "Multi-Target Ambiguity" : {
+
+    },
+    "Multi-Target File" : {
+
+    },
+    "Needs resync" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs resync"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要重新同步"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要重新同步"
+          }
+        }
+      }
+    },
+    "Needs Sync" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs Sync"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要同步"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要同步"
+          }
+        }
+      }
+    },
+    "No .xcodeproj / .xcworkspace found" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No .xcodeproj / .xcworkspace found"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到 .xcodeproj / .xcworkspace"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到 .xcodeproj / .xcworkspace"
+          }
+        }
+      }
+    },
+    "No editor context snapshot available." : {
+
+    },
+    "No File Open" : {
+
+    },
+    "No matching symbol found" : {
+
+    },
+    "None" : {
+
+    },
+    "Not Detected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Detected"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未检测到"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未檢測到"
+          }
+        }
+      }
+    },
+    "Not Initialized" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Initialized"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未初始化"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未初始化"
+          }
+        }
+      }
+    },
+    "Not Selected" : {
+
+    },
+    "Not Started" : {
+
+    },
+    "Open in Xcode" : {
+
+    },
+    "Package Type - Bundle package type" : {
+
+    },
+    "Photo Library Usage - Photo library access description" : {
+
+    },
+    "Preferred Target" : {
+
+    },
+    "Preload completed: %lld succeeded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preload completed: %lld succeeded"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预加载完成：%lld 个成功"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預加載完成：%lld 個成功"
+          }
+        }
+      }
+    },
+    "Preload completed: %lld succeeded, %lld failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preload completed: %lld succeeded, %lld failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预加载完成：%lld 个成功，%lld 个失败"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預加載完成：%lld 個成功，%lld 個失敗"
+          }
+        }
+      }
+    },
+    "Preloading %lld project(s)..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preloading %lld project(s)..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在预加载 %lld 个项目..."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在預加載 %lld 個項目..."
+          }
+        }
+      }
+    },
+    "Principal Class" : {
+
+    },
+    "Project is being indexed, semantic navigation may be incomplete" : {
+
+    },
+    "Project Keys" : {
+
+    },
+    "Project path does not exist: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Project path does not exist: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目路径不存在：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目路徑不存在：%@"
+          }
+        }
+      }
+    },
+    "Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为 Swift 项目提供 Xcode 项目标识、构建上下文和 sourcekit-lsp 集成。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Swift 項目提供 Xcode 項目標識、構建上下文和 sourcekit-lsp 集成。"
+          }
+        }
+      }
+    },
+    "Re-resolve Build Context" : {
+
+    },
+    "Re-resolving..." : {
+
+    },
+    "Ready" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "就绪"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "就緒"
+          }
+        }
+      }
+    },
+    "Required Capabilities - Required device capabilities" : {
+
+    },
+    "Resolving build context..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resolving build context..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在解析构建上下文..."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在解析構建上下文..."
+          }
+        }
+      }
+    },
+    "Resolving..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resolving..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析中..."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析中..."
+          }
+        }
+      }
+    },
+    "Run brew install xcode-build-server and reopen the project" : {
+
+    },
+    "Scene Manifest - Scene configuration" : {
+
+    },
+    "Scheme" : {
+
+    },
+    "Scheme Does Not Cover File Target" : {
+
+    },
+    "Scheme Targets" : {
+
+    },
+    "Semantic Availability" : {
+
+    },
+    "Short Version - Marketing version number" : {
+
+    },
+    "Sign in with Apple" : {
+
+    },
+    "Suggested value for %@" : {
+
+    },
+    "Suggested values:" : {
+
+    },
+    "Supported Orientations - Supported interface orientations" : {
+
+    },
+    "Swift semantic indexing in progress" : {
+
+    },
+    "Switch to a more specific scheme, or keep only one target membership and retry" : {
+
+    },
+    "Switch to a scheme that includes the file's target and retry" : {
+
+    },
+    "Target platform for current editor semantic context" : {
+
+    },
+    "Team Identifier" : {
+
+    },
+    "The current build context has expired, workspace semantic results may be inaccurate." : {
+
+    },
+    "The current target platform has not yet been resolved." : {
+
+    },
+    "The current Xcode project context has not yet completed initialization." : {
+
+    },
+    "Try again" : {
+
+    },
+    "Try reopening the file or restarting Lumi" : {
+
+    },
+    "Unable to parse as valid plist" : {
+
+    },
+    "Unable to parse project" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to parse project"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法解析项目"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法解析項目"
+          }
+        }
+      }
+    },
+    "Unable to resolve symbol%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to resolve symbol%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法解析符号%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法解析符號%@"
+          }
+        }
+      }
+    },
+    "Unavailable" : {
+
+    },
+    "Unavailable: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用：%@"
+          }
+        }
+      }
+    },
+    "Undetermined" : {
+
+    },
+    "Unknown" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        }
+      }
+    },
+    "Wait for auto-reconnect, or manually switch files to trigger rebuild" : {
+
+    },
+    "Wait for indexing to complete and retry, or check sourcekit-lsp logs" : {
+
+    },
+    "Wait for indexing to complete and try again" : {
+
+    },
+    "WiFi Info" : {
+
+    },
+    "Workspace" : {
+
+    },
+    "Xcode Context" : {
+
+    },
+    "Xcode Project Editor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Project Editor"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode 项目编辑器"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode 項目編輯器"
+          }
+        }
+      }
+    },
+    "xcode-build-server not installed, please run: brew install xcode-build-server" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "xcode-build-server not installed, please run: brew install xcode-build-server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未安装 xcode-build-server，请运行：brew install xcode-build-server"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未安裝 xcode-build-server，請運行：brew install xcode-build-server"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
