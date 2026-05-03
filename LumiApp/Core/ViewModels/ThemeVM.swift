@@ -17,13 +17,6 @@ final class ThemeVM: ObservableObject {
         }
     }
 
-    /// 是否启用高对比度模式
-    @Published var isHighContrast: Bool = false {
-        didSet {
-            Themes.isHighContrast = isHighContrast
-        }
-    }
-
     // MARK: - 计算属性
 
     /// 当前选中的主题
