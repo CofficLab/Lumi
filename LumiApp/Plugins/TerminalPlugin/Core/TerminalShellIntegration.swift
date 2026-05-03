@@ -14,7 +14,6 @@ import Foundation
 /// 5. preexec: 设置终端标题为正在执行的命令
 /// 6. precmd: 恢复终端标题为 shell 名称
 enum ShellIntegration {
-
     // MARK: - Errors
 
     enum Error: Swift.Error, LocalizedError {
@@ -53,7 +52,7 @@ enum ShellIntegration {
         var defaultPath: String {
             switch self {
             case .bash: return "/bin/bash"
-            case .zsh:  return "/bin/zsh"
+            case .zsh: return "/bin/zsh"
             }
         }
     }

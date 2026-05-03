@@ -142,7 +142,7 @@ final class EditorConfigController {
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showGutterKey) { snapshot.showGutter = value }
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showFoldingRibbonKey) { snapshot.showFoldingRibbon = value }
 
-        if let appThemeId = ThemeVM.loadSavedThemeId() {
+        if let appThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() {
             snapshot.currentThemeId = ThemeVM.editorThemeID(for: appThemeId)
         } else if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey) {
             snapshot.currentThemeId = themeRaw
@@ -251,16 +251,7 @@ final class EditorConfigController {
             }
         }
 
-        NotificationCenter.default.addObserver(
-            forName: .lumiEditorThemeDidChange,
-            object: nil,
-            queue: .main
-        ) { notification in
-            guard let themeId = notification.userInfo?["themeId"] as? String else { return }
-            Task { @MainActor in
-                applyResolvedThemeID(themeId, false)
-            }
-        }
+
     }
 
     private func persistScopedOverrides(_ scopedSnapshot: EditorScopedConfigSnapshot) {

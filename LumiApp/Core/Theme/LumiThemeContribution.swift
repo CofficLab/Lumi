@@ -46,8 +46,6 @@ struct LumiThemeContribution: Identifiable {
 /// 内置主题清单（用于兜底和内置主题插件复用）。
 enum LumiBuiltinThemeCatalog {
     static let defaultThemeId = "midnight"
-    static let selectedThemeKey = "LumiTheme.SelectedThemeID"
-    static let legacySelectedThemeKey = "MystiqueTheme.SelectedVariant"
 
     @MainActor
     static func themes() -> [LumiThemeContribution] {

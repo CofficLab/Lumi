@@ -51,7 +51,7 @@ final class ThemeVM: ObservableObject {
         let initialThemes = Self.loadThemesFromPlugins()
         self.themes = initialThemes
         self.currentThemeId = Self.resolveInitialThemeID(from: initialThemes)
-        applyCurrentTheme(shouldSave: false)
+        applyCurrentTheme()
 
         NotificationCenter.default.addObserver(
             forName: .pluginsDidLoad,
@@ -74,7 +74,7 @@ final class ThemeVM: ObservableObject {
             currentThemeId = themes.first?.id ?? LumiBuiltinThemeCatalog.defaultThemeId
             return
         }
-        applyCurrentTheme(shouldSave: false)
+        applyCurrentTheme()
     }
 
     /// 选择指定主题
@@ -83,20 +83,6 @@ final class ThemeVM: ObservableObject {
     func selectTheme(_ themeId: String) {
         guard themes.contains(where: { $0.id == themeId }) else { return }
         currentThemeId = themeId
-    }
-
-    /// 加载已保存的主题 ID
-    ///
-    /// - Returns: 保存的主题 ID，如果没有则返回 nil
-    static func loadSavedThemeId() -> String? {
-        if let value = ThemeVariantStateStore.loadString(forKey: LumiBuiltinThemeCatalog.selectedThemeKey), !value.isEmpty {
-            return value
-        }
-        // 兼容旧版本保存键
-        if let legacy = ThemeVariantStateStore.loadString(forKey: LumiBuiltinThemeCatalog.legacySelectedThemeKey), !legacy.isEmpty {
-            return legacy
-        }
-        return nil
     }
 
     /// 根据主题 ID 获取对应的编辑器主题 ID
@@ -119,25 +105,19 @@ final class ThemeVM: ObservableObject {
         return LumiBuiltinThemeCatalog.themes()
     }
 
-    /// 解析初始主题 ID：优先使用已保存的，否则使用默认值
+    /// 解析初始主题 ID：从插件存储读取已保存的，否则使用默认值
     private static func resolveInitialThemeID(from themes: [LumiThemeContribution]) -> String {
-        let saved = loadSavedThemeId() ?? LumiBuiltinThemeCatalog.defaultThemeId
+        let saved = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() ?? LumiBuiltinThemeCatalog.defaultThemeId
         if themes.contains(where: { $0.id == saved }) {
             return saved
         }
         return themes.first?.id ?? LumiBuiltinThemeCatalog.defaultThemeId
     }
 
-    /// 应用当前主题到全局状态
-    ///
-    /// - Parameter shouldSave: 是否持久化当前主题选择
-    private func applyCurrentTheme(shouldSave: Bool = true) {
+    /// 应用当前主题到全局状态（不负责持久化，持久化由 ThemeStatusBarPlugin 监听通知后处理）
+    private func applyCurrentTheme() {
         let selected = currentTheme ?? themes.first
         Themes.currentTheme = selected?.appTheme ?? MidnightTheme()
-
-        if shouldSave {
-            ThemeVariantStateStore.saveString(currentThemeId, forKey: LumiBuiltinThemeCatalog.selectedThemeKey)
-        }
 
         let editorThemeId = selected?.editorThemeId ?? "xcode-dark"
         NotificationCenter.default.post(
@@ -147,12 +127,6 @@ final class ThemeVM: ObservableObject {
                 "themeId": selected?.id ?? currentThemeId,
                 "editorThemeId": editorThemeId,
             ]
-        )
-        // 兼容现有编辑器/终端监听方
-        NotificationCenter.default.post(
-            name: .lumiEditorThemeDidChange,
-            object: nil,
-            userInfo: ["themeId": editorThemeId]
         )
     }
 }

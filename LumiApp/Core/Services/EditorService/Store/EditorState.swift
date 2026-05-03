@@ -1553,13 +1553,6 @@ final class EditorState: ObservableObject, SuperLog {
         currentThemeId = themeId
         currentTheme = resolveTheme(for: themeId)
         persistConfig()
-
-        // 通知终端插件同步更新颜色
-        NotificationCenter.default.post(
-            name: .lumiEditorThemeDidChange,
-            object: nil,
-            userInfo: ["themeId": themeId]
-        )
     }
 
     /// 同步主题但不触发持久化和通知（用于 hosted state 同步）
