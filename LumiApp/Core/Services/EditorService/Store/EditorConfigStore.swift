@@ -30,7 +30,6 @@ enum EditorConfigStore {
     static let showMinimapKey = "showMinimap"
     static let showGutterKey = "showGutter"
     static let showFoldingRibbonKey = "showFoldingRibbon"
-    static let themeNameKey = "themeName"
     private static let editorPluginEnabledPrefix = "editorPluginEnabled."
 
     // MARK: - Load / Save

@@ -142,11 +142,8 @@ final class EditorConfigController {
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showGutterKey) { snapshot.showGutter = value }
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showFoldingRibbonKey) { snapshot.showFoldingRibbon = value }
 
-        if let appThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() {
-            snapshot.currentThemeId = ThemeVM.editorThemeID(for: appThemeId)
-        } else if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey) {
-            snapshot.currentThemeId = themeRaw
-        }
+        // 注意：主题 ID 不在此恢复，由 ThemeStatusBarPlugin 通过 ThemeVM 驱动
+        // EditorState 通过 observeThemeChanges() 监听通知来同步编辑器主题
 
         return snapshot
     }
@@ -196,7 +193,7 @@ final class EditorConfigController {
         EditorConfigStore.saveValue(snapshot.showMinimap, forKey: EditorConfigStore.showMinimapKey)
         EditorConfigStore.saveValue(snapshot.showGutter, forKey: EditorConfigStore.showGutterKey)
         EditorConfigStore.saveValue(snapshot.showFoldingRibbon, forKey: EditorConfigStore.showFoldingRibbonKey)
-        EditorConfigStore.saveValue(snapshot.currentThemeId, forKey: EditorConfigStore.themeNameKey)
+        // 注意：currentThemeId 不在此持久化，主题持久化由 ThemeStatusBarPlugin 全权负责
     }
 
     func overrideSnapshot(

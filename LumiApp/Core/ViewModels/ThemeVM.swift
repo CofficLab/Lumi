@@ -1,9 +1,6 @@
 import SwiftUI
 
 /// 主题 ViewModel
-///
-/// 管理应用主题的切换和持久化，统一控制 App 主题和编辑器主题。
-/// 通过 SwiftUI 环境注入到视图树中，供所有视图和插件使用。
 @MainActor
 final class ThemeVM: ObservableObject {
 
@@ -105,16 +102,12 @@ final class ThemeVM: ObservableObject {
         return LumiBuiltinThemeCatalog.themes()
     }
 
-    /// 解析初始主题 ID：从插件存储读取已保存的，否则使用默认值
+    /// 解析初始主题 ID
     private static func resolveInitialThemeID(from themes: [LumiThemeContribution]) -> String {
-        let saved = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() ?? LumiBuiltinThemeCatalog.defaultThemeId
-        if themes.contains(where: { $0.id == saved }) {
-            return saved
-        }
-        return themes.first?.id ?? LumiBuiltinThemeCatalog.defaultThemeId
+        themes.first?.id ?? LumiBuiltinThemeCatalog.defaultThemeId
     }
 
-    /// 应用当前主题到全局状态（不负责持久化，持久化由 ThemeStatusBarPlugin 监听通知后处理）
+    /// 应用当前主题到全局状态
     private func applyCurrentTheme() {
         let selected = currentTheme ?? themes.first
         Themes.currentTheme = selected?.appTheme ?? MidnightTheme()
