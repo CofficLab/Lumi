@@ -1531,7 +1531,7 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    private func applyConfigSnapshot(_ snapshot: EditorConfigSnapshot) {
+    private func applyConfigSnapshot(_ snapshot: EditorConfigSnapshot, skipTheme: Bool = true) {
         fontSize = snapshot.fontSize
         tabWidth = snapshot.tabWidth
         useSpaces = snapshot.useSpaces
@@ -1544,8 +1544,9 @@ final class EditorState: ObservableObject, SuperLog {
         showMinimap = snapshot.showMinimap
         showGutter = snapshot.showGutter
         showFoldingRibbon = snapshot.showFoldingRibbon
-        currentThemeId = snapshot.currentThemeId
-        currentTheme = resolveTheme(for: currentThemeId)
+        // 主题不在此恢复。编辑器主题由 ThemeStatusBarPlugin 通过
+        // syncInitialThemeFromExternal() 和 .lumiThemeDidChange 通知统一驱动，
+        // 避免旧持久化值（如 "xcode-dark"）覆盖已同步的正确主题。
     }
     
     /// 切换主题
@@ -1577,6 +1578,7 @@ final class EditorState: ObservableObject, SuperLog {
             return contributor.createTheme()
         }
         // Fallback：插件系统未加载时使用默认 Xcode Dark 主题
+        logger.warning("\(Self.t)resolveTheme: 找不到主题 contributor for '\(id, privacy: .public)'，使用 fallback")
         return EditorThemeAdapter.fallbackTheme()
     }
 
@@ -1593,9 +1595,34 @@ final class EditorState: ObservableObject, SuperLog {
                 }
             }
             guard self.currentThemeId != themeId else { return }
+            self.logger.info("\(Self.t)observeThemeChanges: \(self.currentThemeId, privacy: .public) → \(themeId, privacy: .public)")
             self.currentThemeId = themeId
             self.currentTheme = self.resolveTheme(for: themeId)
         }
+    }
+
+    /// 由外层（ThemeStatusBarPlugin）在视图就绪后调用，确保编辑器使用正确的初始主题。
+    ///
+    /// ThemeVM.init() 在 EditorState 之前创建，其发送的 .lumiThemeDidChange
+    /// 通知在 EditorState 注册监听之前就已经发出，导致 EditorState 错过了初始通知。
+    /// 此方法由 ThemeStatusBarPlugin 在视图层主动调用，将 ThemeVM 当前主题同步到 EditorState。
+    func syncInitialThemeFromExternal(_ editorThemeId: String) {
+        let before = self.currentThemeId
+        guard before != editorThemeId else {
+            if Self.verbose {
+                self.logger.debug("\(Self.t)syncInitialThemeFromExternal: 主题一致，跳过（\(before, privacy: .public)）")
+            }
+            return
+        }
+        self.logger.info("\(Self.t)syncInitialThemeFromExternal: \(before, privacy: .public) → \(editorThemeId, privacy: .public)")
+        let allContributions = PluginVM.shared.getThemeContributions()
+        for contribution in allContributions {
+            if let c = contribution.editorThemeContributor as? any SuperEditorThemeContributor {
+                self.editorExtensions.registerThemeContributor(c)
+            }
+        }
+        self.currentThemeId = editorThemeId
+        self.currentTheme = self.resolveTheme(for: editorThemeId)
     }
     
     // MARK: - File Loading

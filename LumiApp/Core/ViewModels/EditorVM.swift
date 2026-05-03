@@ -44,4 +44,13 @@ final class EditorVM: ObservableObject {
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
     }
+
+    // MARK: - Theme Sync
+
+    /// 由外层插件（ThemeStatusBarPlugin）调用，将 ThemeVM 当前主题同步到编辑器。
+    ///
+    /// 解决 ThemeVM 初始化时发出的通知在 EditorState 注册监听之前已发出的时序问题。
+    func syncInitialEditorTheme(_ editorThemeId: String) {
+        service.state.syncInitialThemeFromExternal(editorThemeId)
+    }
 }

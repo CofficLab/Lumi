@@ -53,6 +53,7 @@ actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
 /// 此视图不渲染任何可见内容，仅作为生命周期锚点。
 private struct ThemePersistenceAnchor<Content: View>: View {
     @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var editorVM: EditorVM
     let content: Content
 
     /// 标记是否已完成首次恢复，避免恢复触发 didSet 又写回存储
@@ -62,10 +63,18 @@ private struct ThemePersistenceAnchor<Content: View>: View {
         content
             .onAppear {
                 restoreSavedTheme()
+                // 主动将 ThemeVM 当前主题同步到 EditorState。
+                // ThemeVM.init() 在 EditorState 之前创建，其发送的 .lumiThemeDidChange
+                // 通知在 EditorState 注册监听之前就已经发出，导致 EditorState 错过了初始通知。
+                // 此处由插件（外层）主动向 EditorState（内层）推送，而非 EditorState 反向读取 ThemeVM。
+                let editorThemeId = themeVM.activeEditorThemeId
+                ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)onAppear: 同步初始编辑器主题 → \(editorThemeId, privacy: .public)")
+                editorVM.syncInitialEditorTheme(editorThemeId)
             }
             .onChange(of: themeVM.currentThemeId) { oldValue, newValue in
                 guard hasRestored else { return }
                 guard oldValue != newValue else { return }
+                ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)主题变更: \(oldValue, privacy: .public) → \(newValue, privacy: .public)")
                 ThemeStatusBarPluginLocalStore.shared.saveSelectedThemeID(newValue)
             }
     }
@@ -76,8 +85,10 @@ private struct ThemePersistenceAnchor<Content: View>: View {
         hasRestored = true
 
         guard let savedId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() else {
+            ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)无已保存主题，使用默认主题")
             return
         }
+        ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)恢复已保存主题: \(savedId, privacy: .public)")
         themeVM.selectTheme(savedId)
     }
 }
