@@ -2,7 +2,7 @@ import SwiftUI
 import MagicKit
 
 struct BottomEditorWorkspaceSearchPanelView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var state: EditorState
     var showsToolbar: Bool = true
 
@@ -57,7 +57,7 @@ struct BottomEditorWorkspaceSearchPanelView: View {
                 ProgressView()
                 Text("Searching workspace…")
                     .font(.system(size: 12))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = state.panelState.workspaceSearchErrorMessage {
@@ -72,7 +72,7 @@ struct BottomEditorWorkspaceSearchPanelView: View {
                     if let summary = state.panelState.workspaceSearchSummary {
                         Text("\(summary.totalMatches) matches in \(summary.totalFiles) files")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     }
 
                     ForEach(state.panelState.workspaceSearchResults) { file in
@@ -83,17 +83,17 @@ struct BottomEditorWorkspaceSearchPanelView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: isCollapsed(file) ? "chevron.right" : "chevron.down")
                                         .font(.system(size: 9, weight: .semibold))
-                                        .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                                        .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 
                                     Text(file.path)
                                         .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                                        .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
 
                                     Spacer()
 
                                     Text(fileMatchSummary(file))
                                         .font(.system(size: 10, weight: .bold))
-                                        .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                                        .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                                 }
                             }
                             .buttonStyle(.plain)
@@ -106,12 +106,12 @@ struct BottomEditorWorkspaceSearchPanelView: View {
                                         HStack(alignment: .top, spacing: 10) {
                                             Text("L\(match.line):C\(match.column)")
                                                 .font(.system(size: 10, design: .monospaced))
-                                                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                                                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                                                 .frame(width: 62, alignment: .leading)
 
                                             Text(match.preview)
                                                 .font(.system(size: 12, design: .monospaced))
-                                                .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                                                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
                                                 .frame(maxWidth: .infinity, alignment: .leading)
                                         }
                                         .padding(.horizontal, 10)
@@ -132,7 +132,7 @@ struct BottomEditorWorkspaceSearchPanelView: View {
                         .padding(10)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(themeManager.activeAppTheme.workspaceTextColor().opacity(0.035))
+                                .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.035))
                         )
                     }
                 }
@@ -152,13 +152,13 @@ struct BottomEditorWorkspaceSearchPanelView: View {
 
     private func rowBackground(for match: EditorWorkspaceSearchMatch) -> Color {
         state.panelState.selectedWorkspaceSearchMatchID == match.id
-            ? themeManager.activeAppTheme.workspaceTextColor().opacity(0.1)
-            : themeManager.activeAppTheme.workspaceTextColor().opacity(0.05)
+            ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.1)
+            : themeVM.activeAppTheme.workspaceTextColor().opacity(0.05)
     }
 
     private func rowBorder(for match: EditorWorkspaceSearchMatch) -> Color {
         state.panelState.selectedWorkspaceSearchMatchID == match.id
-            ? themeManager.activeAppTheme.workspaceTextColor().opacity(0.18)
+            ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.18)
             : .clear
     }
 
@@ -166,10 +166,10 @@ struct BottomEditorWorkspaceSearchPanelView: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
             Text(title)
                 .font(.system(size: 12))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

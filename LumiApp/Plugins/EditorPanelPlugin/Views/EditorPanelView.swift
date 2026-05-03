@@ -9,7 +9,7 @@ struct EditorPanelView: View {
 
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var layoutVM: LayoutVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @EnvironmentObject private var editorVM: EditorVM
 
     /// 便利访问
@@ -32,7 +32,7 @@ struct EditorPanelView: View {
     private var baseRootView: some View {
         rootLayout
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+            .background(themeVM.activeAppTheme.workspaceBackgroundColor())
     }
 
     private var lifecycleBoundRootView: some View {
@@ -271,7 +271,7 @@ struct EditorPanelView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
     }
 
     // MARK: - File Info Banner
@@ -325,7 +325,7 @@ struct EditorPanelView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(AppUI.Color.semantic.warning.opacity(0.06))
-            .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+            .background(themeVM.activeAppTheme.workspaceBackgroundColor())
             .zIndex(1)
         }
     }
@@ -443,7 +443,7 @@ struct EditorPanelView: View {
             .frame(maxWidth: 920)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
     }
 
     private var discoverabilityHeroCard: some View {

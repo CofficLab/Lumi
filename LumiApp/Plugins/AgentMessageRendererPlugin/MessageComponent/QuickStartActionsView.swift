@@ -6,7 +6,6 @@ struct QuickStartActionsView: View {
         case sendInCurrentConversation
     }
 
-    @EnvironmentObject private var app: GlobalVM
     @EnvironmentObject private var inputQueueVM: InputQueueVM
     @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
     @EnvironmentObject private var projectVM: ProjectVM

@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 struct EditorTabStripView: View {
     @EnvironmentObject var editorVM: EditorVM
     @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     let tabs: [EditorTab]
     let activeSessionID: EditorSession.ID?
@@ -18,7 +18,7 @@ struct EditorTabStripView: View {
 
     /// 当前主题
     private var theme: any SuperTheme {
-        themeManager.activeAppTheme
+        themeVM.activeAppTheme
     }
 
     var body: some View {

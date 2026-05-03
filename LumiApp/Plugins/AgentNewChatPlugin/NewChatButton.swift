@@ -4,13 +4,13 @@ import SwiftUI
 /// 新会话按钮视图组件
 struct NewChatButton: View {
     @EnvironmentObject var conversationCreationVM: ConversationCreationVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     private let iconSize: CGFloat = 14
     private let iconButtonSize: CGFloat = 28
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         Button {
             Task {

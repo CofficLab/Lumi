@@ -22,8 +22,8 @@ final class TerminalSession: ObservableObject, Identifiable {
         self.terminalView = LumiTerminalView(frame: .zero)
 
         // 读取当前统一主题并映射为编辑器主题
-        if let savedThemeId = ThemeManager.loadSavedThemeId() {
-            self.currentThemeId = ThemeManager.editorThemeID(for: savedThemeId)
+        if let savedThemeId = ThemeVM.loadSavedThemeId() {
+            self.currentThemeId = ThemeVM.editorThemeID(for: savedThemeId)
         } else {
             self.currentThemeId = "xcode-dark"
         }

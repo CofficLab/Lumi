@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 文件树节点视图 - 完全独立实现，无外部依赖
 struct EditorFileTreeNodeView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     let url: URL
     let depth: Int
 
@@ -91,7 +91,7 @@ struct EditorFileTreeNodeView: View {
 
     var body: some View {
         let isSelected = selectedURL == url
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 4) {
@@ -263,7 +263,7 @@ struct EditorFileTreeNodeView: View {
     }
 
     fileprivate func rowBackground(isSelected: Bool) -> Color {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
         if isSelected {
             return isHovering ? theme.sidebarSelectionColor().opacity(1.2) : theme.sidebarSelectionColor()
         } else {

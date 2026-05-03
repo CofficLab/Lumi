@@ -7,7 +7,7 @@ import MagicKit
 /// 提供快速导航功能，点击任意符号可跳转到对应代码位置。
 /// 固定在编辑器顶部区域，滚动代码时始终可见，帮助开发者在大型或深层嵌套的文件中保持上下文感知。
 struct EditorStickySymbolBarView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     /// 编辑器状态（用于获取光标行号、执行符号跳转等操作）
     @ObservedObject private var state: EditorState
@@ -24,7 +24,7 @@ struct EditorStickySymbolBarView: View {
             // 左侧提示标签
             Label(String(localized: "Current Symbol", table: "LumiEditor"), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 
             // 中间：可横向滚动的符号面包屑链
             ScrollView(.horizontal, showsIndicators: false) {
@@ -36,7 +36,7 @@ struct EditorStickySymbolBarView: View {
                         if index < symbols.count - 1 {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 8, weight: .semibold))
-                                .foregroundColor(themeManager.activeAppTheme.workspaceTertiaryTextColor())
+                                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
                         }
                     }
                 }
@@ -48,19 +48,19 @@ struct EditorStickySymbolBarView: View {
             // 当前光标行号指示器
             Text(String(localized: "Ln \(state.cursorLine)", table: "LumiEditor"))
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(themeManager.activeAppTheme.workspaceTextColor().opacity(0.05))
+                .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
                 .clipShape(Capsule())
         }
         // 整体背景色与底部细线分隔
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.035))
+        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.035))
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08))
+                .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08))
                 .frame(height: 1)
         }
     }
@@ -81,10 +81,10 @@ struct EditorStickySymbolBarView: View {
                     .font(.system(size: 10, weight: .medium))
                     .lineLimit(1)
             }
-            .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+            .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(themeManager.activeAppTheme.workspaceTextColor().opacity(0.05))
+            .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)

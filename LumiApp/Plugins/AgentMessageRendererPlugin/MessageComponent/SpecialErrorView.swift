@@ -8,7 +8,7 @@ import SwiftUI
 struct RawErrorDetailView: View {
     let rawDetail: String
     @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @State private var isExpanded = false
 
     private var zh: Bool {
@@ -48,7 +48,7 @@ struct RawErrorDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(themeManager.activeAppTheme.workspaceSecondaryTextColor().opacity(0.05))
+                                .fill(themeVM.activeAppTheme.workspaceSecondaryTextColor().opacity(0.05))
                         )
                 }
                 .frame(maxHeight: 150)
@@ -101,7 +101,7 @@ struct SpecialErrorView: View {
     let suggestion: String?
     let rawErrorDetail: String?
 
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -117,7 +117,7 @@ struct SpecialErrorView: View {
             // 底部：原始 HTTP 错误折叠区域
             if let rawErrorDetail, !rawErrorDetail.isEmpty {
                 Divider()
-                    .overlay(themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15))
+                    .overlay(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15))
                     .padding(.top, 2)
 
                 RawErrorDetailView(rawDetail: rawErrorDetail)
@@ -134,7 +134,7 @@ struct DefaultErrorView: View {
     let message: String
     let rawErrorDetail: String?
 
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -150,7 +150,7 @@ struct DefaultErrorView: View {
             // 底部：原始 HTTP 错误折叠区域
             if let rawErrorDetail, !rawErrorDetail.isEmpty {
                 Divider()
-                    .overlay(themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15))
+                    .overlay(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15))
 
                 RawErrorDetailView(rawDetail: rawErrorDetail)
             }

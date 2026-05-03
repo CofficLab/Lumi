@@ -6,7 +6,7 @@ import SwiftUI
 /// 通过 `addRailContentView(tabId:)` 提供对应的内容视图。
 struct RailView: View {
     @EnvironmentObject private var pluginProvider: PluginVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     @State private var selectedTabId: String?
 
@@ -36,7 +36,7 @@ struct RailView: View {
                 EmptyView()
             }
         }
-        .background(themeManager.activeAppTheme.sidebarBackgroundColor())
+        .background(themeVM.activeAppTheme.sidebarBackgroundColor())
         .onAppear {
             if selectedTabId == nil {
                 restoreSelection(from: tabs)

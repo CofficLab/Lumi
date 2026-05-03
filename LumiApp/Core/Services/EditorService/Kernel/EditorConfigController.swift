@@ -142,8 +142,8 @@ final class EditorConfigController {
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showGutterKey) { snapshot.showGutter = value }
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showFoldingRibbonKey) { snapshot.showFoldingRibbon = value }
 
-        if let appThemeId = ThemeManager.loadSavedThemeId() {
-            snapshot.currentThemeId = ThemeManager.editorThemeID(for: appThemeId)
+        if let appThemeId = ThemeVM.loadSavedThemeId() {
+            snapshot.currentThemeId = ThemeVM.editorThemeID(for: appThemeId)
         } else if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey) {
             snapshot.currentThemeId = themeRaw
         }
@@ -244,7 +244,7 @@ final class EditorConfigController {
             queue: .main
         ) { notification in
             let editorThemeId = (notification.userInfo?["editorThemeId"] as? String)
-                ?? (notification.userInfo?["themeId"] as? String).map { ThemeManager.editorThemeID(for: $0) }
+                ?? (notification.userInfo?["themeId"] as? String).map { ThemeVM.editorThemeID(for: $0) }
                 ?? "xcode-dark"
             Task { @MainActor in
                 applyResolvedThemeID(editorThemeId, true)

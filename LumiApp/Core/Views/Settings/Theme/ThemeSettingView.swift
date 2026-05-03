@@ -3,7 +3,7 @@ import SwiftUI
 /// 主题设置视图
 struct ThemeSettingView: View {
     /// 主题管理器
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
         VStack(spacing: 0) {
@@ -51,7 +51,7 @@ struct ThemeSettingView: View {
                 GlassDivider()
 
                 ThemeSelectorView()
-                    .environmentObject(themeManager)
+                    .environmentObject(themeVM)
             }
         }
     }

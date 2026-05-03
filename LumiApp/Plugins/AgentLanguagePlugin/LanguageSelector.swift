@@ -3,12 +3,12 @@ import SwiftUI
 /// 语言选择器：下拉菜单选择 AI 响应语言
 struct LanguageSelector: View {
     @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     private let iconSize: CGFloat = 14
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         Menu {
             ForEach(LanguagePreference.allCases) { lang in

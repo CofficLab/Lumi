@@ -307,7 +307,7 @@ struct BreadcrumbComponent: View {
     @Binding var truncatedCrumbWidth: CGFloat?
     let onSelectFile: (URL) -> Void
 
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @State private var isHovering = false
     @State private var isMenuVisible = false
 
@@ -422,7 +422,7 @@ struct BreadcrumbComponent: View {
 
     private var hoverBackground: Color {
         guard isHovering else { return .clear }
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
         return theme.workspaceTextColor().opacity(0.06)
     }
 

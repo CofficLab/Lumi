@@ -6,7 +6,7 @@ import SwiftUI
 /// 支持多窗口模式，每个窗口有独立的 WindowState
 struct ContentLayout: View {
     /// 应用状态提供者环境对象
-    @EnvironmentObject var app: GlobalVM
+    @EnvironmentObject var themeVM: ThemeVM
 
     /// 插件 VM 环境对象
     @EnvironmentObject var pluginProvider: PluginVM

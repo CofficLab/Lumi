@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ThemePickerDetailView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -9,7 +9,7 @@ struct ThemePickerDetailView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(DesignTokens.Color.semantic.textPrimary)
 
-            if themeManager.themes.isEmpty {
+            if themeVM.themes.isEmpty {
                 Text("No themes available")
                     .font(.system(size: 12))
                     .foregroundColor(DesignTokens.Color.semantic.textTertiary)
@@ -17,7 +17,7 @@ struct ThemePickerDetailView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 6) {
-                        ForEach(themeManager.themes) { theme in
+                        ForEach(themeVM.themes) { theme in
                             themeRow(theme)
                         }
                     }
@@ -29,9 +29,9 @@ struct ThemePickerDetailView: View {
 
     @ViewBuilder
     private func themeRow(_ theme: LumiThemeContribution) -> some View {
-        let isSelected = theme.id == themeManager.currentThemeId
+        let isSelected = theme.id == themeVM.currentThemeId
         Button {
-            themeManager.selectTheme(theme.id)
+            themeVM.selectTheme(theme.id)
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: theme.iconName)

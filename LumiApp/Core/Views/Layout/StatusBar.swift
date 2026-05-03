@@ -3,10 +3,10 @@ import SwiftUI
 /// 底部状态栏视图
 struct StatusBar: View {
     @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
         let statusBarLeadingViews = pluginProvider.getStatusBarLeadingViews()
         let statusBarCenterViews = pluginProvider.getStatusBarCenterViews()
         let statusBarTrailingViews = pluginProvider.getStatusBarTrailingViews()
@@ -67,7 +67,7 @@ struct StatusBar: View {
     }
 
     private var statusBarBackground: Color {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
         // 状态栏使用主题的深色氛围色，确保与整体主题协调
         return theme.isDarkTheme
             ? theme.atmosphereColors().deep

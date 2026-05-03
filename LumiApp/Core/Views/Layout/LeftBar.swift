@@ -10,7 +10,7 @@ import SwiftUI
 struct ActivityBar: View {
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var layoutVM: LayoutVM
-    @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var themeVM: ThemeVM
 
     /// 图标栏宽度
     static let width: CGFloat = 48
@@ -18,7 +18,7 @@ struct ActivityBar: View {
     var body: some View {
         let iconItems = pluginProvider.getPanelIconItems()
         let activeIcon = pluginProvider.activePanelIcon
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         VStack(spacing: 0) {
             ScrollView(.vertical, showsIndicators: false) {
@@ -80,11 +80,11 @@ struct ActivityBarButton: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @State private var isHovered = false
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         Button(action: action) {
             ZStack(alignment: .leading) {

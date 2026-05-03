@@ -5,10 +5,10 @@ struct SidebarEmptyStateView: View {
     let message: String
     let subtitle: String
 
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         VStack(spacing: 12) {
             Image(systemName: "tray")

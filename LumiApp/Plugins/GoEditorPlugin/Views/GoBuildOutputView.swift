@@ -5,7 +5,7 @@ import MagicKit
 ///
 /// 显示 go build 的实时输出和解析后的构建问题列表。
 struct GoBuildOutputView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var buildManager: GoBuildManager
     let projectRoot: String?
 
@@ -36,7 +36,7 @@ struct GoBuildOutputView: View {
                                 Text(line)
                                     .font(.system(size: 11, design: .monospaced))
                                     .foregroundColor(
-                                        themeManager.activeAppTheme.workspaceSecondaryTextColor()
+                                        themeVM.activeAppTheme.workspaceSecondaryTextColor()
                                     )
                                     .textSelection(.enabled)
                                     .padding(.horizontal, 12)
@@ -57,7 +57,7 @@ struct GoBuildOutputView: View {
             Image(systemName: "hammer")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(
-                    themeManager.activeAppTheme.workspaceSecondaryTextColor()
+                    themeVM.activeAppTheme.workspaceSecondaryTextColor()
                 )
 
             if buildManager.state == .building {
@@ -101,14 +101,14 @@ struct GoBuildOutputView: View {
                 Text(String(format: "%.1fs", buildManager.lastBuildDuration))
                     .font(.system(size: 10))
                     .foregroundColor(
-                        themeManager.activeAppTheme.workspaceTertiaryTextColor()
+                        themeVM.activeAppTheme.workspaceTertiaryTextColor()
                     )
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(
-            themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05)
+            themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05)
         )
     }
 
@@ -131,13 +131,13 @@ struct GoBuildOutputView: View {
                 Text("\(issue.file):\(issue.line):\(issue.column)")
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundColor(
-                        themeManager.activeAppTheme.workspaceTextColor()
+                        themeVM.activeAppTheme.workspaceTextColor()
                     )
 
                 Text(issue.message)
                     .font(.system(size: 11))
                     .foregroundColor(
-                        themeManager.activeAppTheme.workspaceSecondaryTextColor()
+                        themeVM.activeAppTheme.workspaceSecondaryTextColor()
                     )
                     .lineLimit(1)
 
@@ -157,12 +157,12 @@ struct GoBuildOutputView: View {
             Image(systemName: "hammer")
                 .font(.system(size: 20, weight: .thin))
                 .foregroundColor(
-                    themeManager.activeAppTheme.workspaceTertiaryTextColor()
+                    themeVM.activeAppTheme.workspaceTertiaryTextColor()
                 )
             Text(String(localized: "Run go build to see output", table: "GoEditor"))
                 .font(.system(size: 11))
                 .foregroundColor(
-                    themeManager.activeAppTheme.workspaceSecondaryTextColor()
+                    themeVM.activeAppTheme.workspaceSecondaryTextColor()
                 )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

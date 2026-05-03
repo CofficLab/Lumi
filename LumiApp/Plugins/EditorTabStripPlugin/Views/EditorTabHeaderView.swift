@@ -8,7 +8,7 @@ import SwiftUI
 struct EditorTabHeaderView: View {
     @EnvironmentObject var editorVM: EditorVM
     @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var service: EditorService { editorVM.service }
     var sessionStore: EditorSessionStore { service.sessionStore }
@@ -35,7 +35,7 @@ struct EditorTabHeaderView: View {
             }
         }
         .background(
-            themeManager.activeAppTheme.workspaceBackgroundColor()
+            themeVM.activeAppTheme.workspaceBackgroundColor()
                 .ignoresSafeArea()
         )
         .zIndex(1)

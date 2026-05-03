@@ -22,7 +22,7 @@ struct InputAreaView: View, SuperLog {
     @EnvironmentObject private var inputQueueVM: InputQueueVM
 
     /// 主题管理器
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
@@ -111,15 +111,15 @@ struct InputAreaView: View, SuperLog {
             .accessibilityLabel(String(localized: "Chat Toolbar", table: "AgentChat"))
             .accessibilityHint(String(localized: "Chat Toolbar Hint", table: "AgentChat"))
         }
-        .background(themeManager.activeAppTheme.workspaceBackgroundColor())
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .overlay(RoundedRectangle(cornerRadius: 0)
-            .stroke(themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.1), lineWidth: 1))
+            .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.1), lineWidth: 1))
         .overlay {
             if !canChat {
                 noConversationOverlay
             }
         }
-        .shadow(color: themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08), radius: 8, x: 0, y: 4)
+        .shadow(color: themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08), radius: 8, x: 0, y: 4)
         .overlay(alignment: .bottomLeading) {
             commandSuggestionOverlay
         }
@@ -137,7 +137,7 @@ struct InputAreaView: View, SuperLog {
 extension InputAreaView {
     /// 无会话时的遮罩层
     private var noConversationOverlay: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
         return ZStack {
             // 半透明背景，盖住输入区域，防止误操作
             RoundedRectangle(cornerRadius: 12)
@@ -177,7 +177,7 @@ extension InputAreaView {
         MacEditorView(
             text: $inputViewModel.text,
             height: $editorHeight,
-            textColor: NSColor(themeManager.activeAppTheme.workspaceTextColor()),
+            textColor: NSColor(themeVM.activeAppTheme.workspaceTextColor()),
             onSubmit: handleSubmit,
             onArrowUp: handleArrowUp,
             onArrowDown: handleArrowDown,

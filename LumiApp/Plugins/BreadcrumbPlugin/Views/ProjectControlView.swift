@@ -5,12 +5,12 @@ import SwiftUI
 /// 默认显示当前项目名，点击后弹出最近项目 Popover
 struct ProjectControlView: View {
     @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     @State private var isPopoverPresented = false
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         HStack(spacing: 6) {
             Text(projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName)
