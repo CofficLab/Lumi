@@ -2,9 +2,8 @@ import SwiftUI
 
 /// Xcode 项目状态栏视图
 struct XcodeProjectStatusBar: View {
-    
     @StateObject private var viewModel = XcodeProjectStatusBarViewModel()
-    
+
     var body: some View {
         Group {
             if viewModel.isXcodeProject {
@@ -25,14 +24,13 @@ struct XcodeProjectStatusBar: View {
                         buildContextIndicator
                     }
                     .padding(.horizontal, 4)
-                    .frame(width: 400, alignment: .leading)
                 }
             }
         }
     }
-    
+
     // MARK: - Build Context 状态指示器
-    
+
     private var buildContextIndicator: some View {
         HStack(spacing: 4) {
             if viewModel.isIndexing {
@@ -44,14 +42,14 @@ struct XcodeProjectStatusBar: View {
                     .fill(statusColor)
                     .frame(width: 8, height: 8)
             }
-            
+
             Text(statusText)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }
         .help(viewModel.semanticStatusDescription)
     }
-    
+
     @ViewBuilder
     private var schemeMenu: some View {
         if !viewModel.schemes.isEmpty {
@@ -69,22 +67,12 @@ struct XcodeProjectStatusBar: View {
                     }
                 }
             } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 8))
-                    Text(viewModel.activeScheme ?? String(localized: "Scheme", table: "EditorXcodePlugin"))
-                        .lineLimit(1)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 8))
-                }
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(4)
+                Text(viewModel.activeScheme ?? String(localized: "Scheme", table: "EditorXcodePlugin"))
+                    .lineLimit(1)
             }
         }
     }
-    
+
     @ViewBuilder
     private var configurationMenu: some View {
         if !viewModel.configurations.isEmpty {
@@ -102,18 +90,8 @@ struct XcodeProjectStatusBar: View {
                     }
                 }
             } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 8))
-                    Text(viewModel.activeConfiguration ?? String(localized: "Config", table: "EditorXcodePlugin"))
-                        .lineLimit(1)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 8))
-                }
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.white.opacity(0.08))
-                .cornerRadius(4)
+                Text(viewModel.activeConfiguration ?? String(localized: "Config", table: "EditorXcodePlugin"))
+                    .lineLimit(1)
             }
         }
     }
@@ -121,24 +99,16 @@ struct XcodeProjectStatusBar: View {
     @ViewBuilder
     private var destinationChip: some View {
         if let destination = viewModel.activeDestination, !destination.isEmpty {
-            HStack(spacing: 4) {
-                Image(systemName: "macwindow")
-                    .font(.system(size: 8))
-                Text(destination)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(Color.white.opacity(0.08))
-            .cornerRadius(4)
-            .help(String(localized: "Target platform for current editor semantic context", table: "EditorXcodePlugin"))
+            Text(destination)
+                .lineLimit(1)
+                .help(String(localized: "Target platform for current editor semantic context", table: "EditorXcodePlugin"))
         }
     }
 
     private var statusColor: Color {
         viewModel.semanticStatusColor
     }
-    
+
     private var statusText: String {
         viewModel.semanticStatusText
     }
@@ -267,7 +237,7 @@ struct XcodeProjectStatusDetailView: View {
 struct XcodeFileNotInTargetWarning: View {
     let fileName: String
     let onDismiss: () -> Void
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -276,16 +246,16 @@ struct XcodeFileNotInTargetWarning: View {
                 Text(String(localized: "File Not Registered in Project", table: "EditorXcodePlugin"))
                     .font(.headline)
             }
-            
+
             let format = String(localized: "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.", table: "EditorXcodePlugin")
             Text(String(format: format, fileName))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            
+
             HStack(spacing: 12) {
                 Button(String(localized: "Got It", table: "EditorXcodePlugin"), action: onDismiss)
                     .buttonStyle(.bordered)
-                
+
                 Button(String(localized: "Open in Xcode", table: "EditorXcodePlugin")) {
                     NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: "")
                 }
@@ -302,9 +272,9 @@ struct XcodeFileNotInTargetWarning: View {
     VStack {
         XcodeProjectStatusBar()
             .padding()
-        
+
         Divider()
-        
+
         XcodeFileNotInTargetWarning(fileName: "MyFile.swift") { }
             .padding()
     }

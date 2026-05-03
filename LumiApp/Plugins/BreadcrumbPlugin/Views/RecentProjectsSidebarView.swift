@@ -150,7 +150,7 @@ struct RecentProjectsSidebarView: View {
             guard let folderURL = urls.first else { return }
             addProjectAndSwitch(to: folderURL.standardizedFileURL)
         case .failure(let error):
-            BreadcrumbPlugin.logger.error("File import 错误：\(error.localizedDescription)")
+            BreadcrumbPlugin.logger.error("File import error: \(error.localizedDescription)")
         }
     }
 

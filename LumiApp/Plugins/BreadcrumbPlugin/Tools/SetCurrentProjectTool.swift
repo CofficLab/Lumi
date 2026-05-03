@@ -6,7 +6,7 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
     let name = "set_current_project"
-    let description = "设置当前选中的项目。需要提供项目路径。"
+    let description = "Set the current selected project. Requires a project path."
 
     var inputSchema: [String: Any] {
         [
@@ -14,7 +14,7 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "项目根目录的绝对路径",
+                    "description": "Absolute path to the project root directory",
                 ],
             ],
             "required": ["path"],
@@ -27,11 +27,11 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let path = arguments["path"]?.value as? String else {
-            return "❌ 错误：需要提供项目路径参数"
+            return "❌ Error: Missing required parameter 'path'"
         }
 
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)设置当前项目：\(path)")
+            BreadcrumbPlugin.logger.info("\(Self.t)Setting current project: \(path)")
         }
 
         // 验证路径是否存在且为目录
@@ -39,11 +39,11 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
         var isDirectory: ObjCBool = false
 
         guard fm.fileExists(atPath: path, isDirectory: &isDirectory) else {
-            return "❌ 错误：路径不存在：\(path)"
+            return "❌ Error: Path does not exist: \(path)"
         }
 
         guard isDirectory.boolValue else {
-            return "❌ 错误：路径不是目录：\(path)"
+            return "❌ Error: Path is not a directory: \(path)"
         }
 
         let projectName = URL(fileURLWithPath: path).lastPathComponent
@@ -56,13 +56,13 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
         NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
 
         return """
-        ✅ 已成功设置当前项目
+        ✅ Successfully set current project
         
-        **项目名称**: \(projectName)
+        **Project Name**: \(projectName)
         
-        **项目路径**: \(path)
+        **Project Path**: \(path)
         
-        项目已保存，可以开始使用项目相关的功能。
+        The project has been saved and is ready to use.
         """
     }
 }

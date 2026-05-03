@@ -22,7 +22,7 @@ struct RecentProjectsPopoverButton: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .help("最近项目")
+        .help(String(localized: "Recent Projects", table: "RecentProjects"))
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             RecentProjectsSidebarView()
                 .frame(width: 300, height: 400)

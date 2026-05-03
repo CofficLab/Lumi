@@ -1666,7 +1666,6 @@ final class EditorState: ObservableObject, SuperLog {
                         self.logger.info("📝[loadFile] shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path, privacy: .public)")
                         return
                     }
-                    self.logger.info("📝[loadFile] 文档加载完成: \(String(describing: loadedDocument), privacy: .public), url=\(loadingURL.path, privacy: .public)")
                     switch loadedDocument {
                     case .binary:
                         self.logger.info("📝[loadFile] → 加载二进制文件, url=\(loadingURL.path, privacy: .public)")

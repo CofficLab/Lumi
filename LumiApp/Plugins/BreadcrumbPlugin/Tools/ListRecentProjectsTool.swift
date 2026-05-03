@@ -28,7 +28,7 @@ struct ListRecentProjectsTool: SuperAgentTool, SuperLog {
         let limit = min((arguments["limit"]?.value as? Int) ?? 5, 500)
 
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)列出最近项目，限制：\(limit)")
+            BreadcrumbPlugin.logger.info("\(Self.t)Listing recent projects, limit: \(limit)")
         }
 
         let store = RecentProjectsStore()

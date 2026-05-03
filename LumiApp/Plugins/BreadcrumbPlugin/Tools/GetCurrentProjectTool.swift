@@ -6,7 +6,7 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
     let name = "get_current_project"
-    let description = "获取当前选中的项目信息，包括项目名称和路径。如果没有选择项目，返回空信息。"
+    let description = "Get the current selected project information, including project name and path. Returns empty info if no project is selected."
 
     var inputSchema: [String: Any] {
         [
@@ -21,28 +21,28 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)获取当前项目")
+            BreadcrumbPlugin.logger.info("\(Self.t)Getting current project")
         }
 
         let store = RecentProjectsStore()
         guard let project = store.getCurrentProject() else {
             return """
-            ## 当前项目状态
+            ## Current Project Status
             
-            **状态**: 未选择项目
+            **Status**: No project selected
             
-            使用 `set_current_project` 工具来选择一个项目。
+            Use the `set_current_project` tool to select a project.
             """
         }
 
         return """
-        ## 当前项目信息
+        ## Current Project Info
         
-        **项目名称**: \(project.name)
+        **Project Name**: \(project.name)
         
-        **项目路径**: \(project.path)
+        **Project Path**: \(project.path)
         
-        **最后使用**: \(formatDate(project.lastUsed))
+        **Last Used**: \(formatDate(project.lastUsed))
         """
     }
     
