@@ -243,7 +243,7 @@ struct EditorPanelView: View {
             FilePreviewView(fileURL: fileURL)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if projectVM.isFileSelected {
-            let _ = state.logger.warning("📝[editorContent] unsupportedFileView shown. isMarkdownFile=\(state.isMarkdownFile), canPreview=\(state.canPreview), isBinaryFile=\(state.isBinaryFile), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public), fileName=\(state.fileName, privacy: .public), fileExtension=\(state.fileExtension, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
+            let _ = state.logger.warning("📝[editorContent] 显示了「不支持的文件」视图. isMarkdownFile=\(state.isMarkdownFile), canPreview=\(state.canPreview), isBinaryFile=\(state.isBinaryFile), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public), fileName=\(state.fileName, privacy: .public), fileExtension=\(state.fileExtension, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
             unsupportedFileView
         }
     }
@@ -739,12 +739,12 @@ struct EditorPanelView: View {
         state.projectRootPath = projectVM.currentProject?.path
         refreshProjectContext(for: projectVM.currentProjectPath)
         guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
-            state.logger.info("📝[openOrActivateSession] session is nil → loadFile(nil), fileURL=\(fileURL?.path ?? "nil", privacy: .public)")
+            state.logger.info("📝[openOrActivateSession] session 为 nil → loadFile(nil), fileURL=\(fileURL?.path ?? "nil", privacy: .public)")
             state.loadFile(from: nil)
             return
         }
 
-        state.logger.info("📝[openOrActivateSession] loading session file: \(session.fileURL?.path ?? "nil", privacy: .public)")
+        state.logger.info("📝[openOrActivateSession] 加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public)")
         state.loadFile(from: session.fileURL)
         restoreInteractionState(for: session)
         scheduleTabSave()

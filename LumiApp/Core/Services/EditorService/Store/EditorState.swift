@@ -1634,20 +1634,20 @@ final class EditorState: ObservableObject, SuperLog {
         saveController.cancelSuccessClear()
         
         guard let url = url else {
-            logger.info("📝[loadFile] url is nil → resetState")
+            logger.info("📝[loadFile] url 为 nil → resetState")
             resetState()
             return
         }
         
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         if isDirectory {
-            logger.info("📝[loadFile] url is directory → resetState, url=\(url.path, privacy: .public)")
+            logger.info("📝[loadFile] url 是目录 → resetState, url=\(url.path, privacy: .public)")
             resetState()
             return
         }
         
         let loadingURL = url
-        logger.info("📝[loadFile] start loading url=\(loadingURL.path, privacy: .public), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
+        logger.info("📝[loadFile] 开始加载 url=\(loadingURL.path, privacy: .public), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
         
         Task {
             do {
@@ -1663,13 +1663,13 @@ final class EditorState: ObservableObject, SuperLog {
                     let isReloadingCurrentFile = self.currentFileURL?.standardizedFileURL == standardizedLoadingURL
                     let shouldReplaceCurrentBuffer = !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
                     guard shouldReplaceCurrentBuffer else {
-                        self.logger.info("📝[loadFile] shouldReplaceCurrentBuffer=false, skip. url=\(loadingURL.path, privacy: .public)")
+                        self.logger.info("📝[loadFile] shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path, privacy: .public)")
                         return
                     }
-                    self.logger.info("📝[loadFile] document loaded: \(String(describing: loadedDocument), privacy: .public), url=\(loadingURL.path, privacy: .public)")
+                    self.logger.info("📝[loadFile] 文档加载完成: \(String(describing: loadedDocument), privacy: .public), url=\(loadingURL.path, privacy: .public)")
                     switch loadedDocument {
                     case .binary:
-                        self.logger.info("📝[loadFile] → loadBinaryFile, url=\(loadingURL.path, privacy: .public)")
+                        self.logger.info("📝[loadFile] → 加载二进制文件, url=\(loadingURL.path, privacy: .public)")
                         self.loadBinaryFile(from: loadingURL, loadedDocument: loadedDocument)
                     case .text(let document):
                         let content = document.content
@@ -1744,7 +1744,7 @@ final class EditorState: ObservableObject, SuperLog {
                     }
                 }
             } catch {
-                self.logger.error("📝[loadFile] CATCH error=\(error.localizedDescription, privacy: .public), url=\(loadingURL.path, privacy: .public)")
+                self.logger.error("📝[loadFile] 加载失败 error=\(error.localizedDescription, privacy: .public), url=\(loadingURL.path, privacy: .public)")
                 await MainActor.run { [weak self] in
                     self?.resetState()
                 }

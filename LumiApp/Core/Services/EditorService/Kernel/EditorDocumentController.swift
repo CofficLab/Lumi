@@ -140,7 +140,7 @@ final class EditorDocumentController {
         Self.logger.info("📝[loadDocument] url=\(url.path, privacy: .public), fileSize=\(fileSize), ext=\(fileExtension, privacy: .public), isLikelyText=\(isLikelyText), largeFileMode=\(String(describing: largeFileMode)), forceFullLoad=\(forceFullLoad)")
 
         guard isLikelyText else {
-            Self.logger.info("📝[loadDocument] → .binary, url=\(url.path, privacy: .public)")
+            Self.logger.info("📝[loadDocument] → 二进制文件, url=\(url.path, privacy: .public)")
             return .binary(
                 .init(
                     fileSize: fileSize,
@@ -160,7 +160,7 @@ final class EditorDocumentController {
             content = try String(contentsOf: url, usedEncoding: &detectedEncoding)
         }
 
-        Self.logger.info("📝[loadDocument] → .text, url=\(url.path, privacy: .public), contentLength=\(content.count), isTruncated=\(shouldTruncate)")
+        Self.logger.info("📝[loadDocument] → 文本文件, url=\(url.path, privacy: .public), contentLength=\(content.count), isTruncated=\(shouldTruncate)")
         return .text(
             .init(
                 content: content,
