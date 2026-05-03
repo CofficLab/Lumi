@@ -11,12 +11,13 @@ struct ProjectControlView: View {
 
     var body: some View {
         let theme = themeVM.activeAppTheme
+        let projectName = projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName
 
         HStack(spacing: 6) {
-            Text(projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName)
-                .font(AppUI.Typography.body)
+            Text(projectName)
                 .fontWeight(.medium)
-                .foregroundColor(theme.workspaceTextColor())
+                .lineLimit(1)
+                .layoutPriority(1)
 
             Image(systemName: "chevron.down")
                 .font(.system(size: 9, weight: .semibold))
