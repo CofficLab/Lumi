@@ -2,8 +2,10 @@ import AppKit
 import Foundation
 import LanguageServerProtocol
 import UniformTypeIdentifiers
+import os
 
 final class EditorDocumentController {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.doc-controller")
     private static let truncationFileSizeThreshold: Int64 = 2 * 1024 * 1024
 
     struct LoadedTextDocument {
@@ -134,7 +136,11 @@ final class EditorDocumentController {
         let fileExtension = url.pathExtension.lowercased()
         let fileName = url.lastPathComponent
 
-        guard try isLikelyTextFile(url: url) else {
+        let isLikelyText = try isLikelyTextFile(url: url)
+        Self.logger.info("📝[loadDocument] url=\(url.path, privacy: .public), fileSize=\(fileSize), ext=\(fileExtension, privacy: .public), isLikelyText=\(isLikelyText), largeFileMode=\(String(describing: largeFileMode)), forceFullLoad=\(forceFullLoad)")
+
+        guard isLikelyText else {
+            Self.logger.info("📝[loadDocument] → .binary, url=\(url.path, privacy: .public)")
             return .binary(
                 .init(
                     fileSize: fileSize,
@@ -154,6 +160,7 @@ final class EditorDocumentController {
             content = try String(contentsOf: url, usedEncoding: &detectedEncoding)
         }
 
+        Self.logger.info("📝[loadDocument] → .text, url=\(url.path, privacy: .public), contentLength=\(content.count), isTruncated=\(shouldTruncate)")
         return .text(
             .init(
                 content: content,

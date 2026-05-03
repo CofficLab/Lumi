@@ -243,6 +243,7 @@ struct EditorPanelView: View {
             FilePreviewView(fileURL: fileURL)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if projectVM.isFileSelected {
+            let _ = state.logger.warning("📝[editorContent] unsupportedFileView shown. isMarkdownFile=\(state.isMarkdownFile), canPreview=\(state.canPreview), isBinaryFile=\(state.isBinaryFile), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public), fileName=\(state.fileName, privacy: .public), fileExtension=\(state.fileExtension, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
             unsupportedFileView
         }
     }
@@ -738,10 +739,12 @@ struct EditorPanelView: View {
         state.projectRootPath = projectVM.currentProject?.path
         refreshProjectContext(for: projectVM.currentProjectPath)
         guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
+            state.logger.info("📝[openOrActivateSession] session is nil → loadFile(nil), fileURL=\(fileURL?.path ?? "nil", privacy: .public)")
             state.loadFile(from: nil)
             return
         }
 
+        state.logger.info("📝[openOrActivateSession] loading session file: \(session.fileURL?.path ?? "nil", privacy: .public)")
         state.loadFile(from: session.fileURL)
         restoreInteractionState(for: session)
         scheduleTabSave()

@@ -81,7 +81,7 @@ private struct ThemePersistenceAnchor<Content: View>: View {
 
     /// 从本地存储恢复上次保存的主题
     private func restoreSavedTheme() {
-        guard !hasRestored else { return }
+         guard !hasRestored else { return }
         hasRestored = true
 
         guard let savedId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() else {
