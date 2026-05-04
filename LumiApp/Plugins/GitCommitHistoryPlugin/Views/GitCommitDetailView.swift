@@ -119,6 +119,13 @@ struct GitCommitDetailView: View {
 
     private var workingStateContent: some View {
         VStack(spacing: 0) {
+            // Commit 输入区域（顶部）
+            GitCommitInputView(onCommitSuccess: {
+                loadWorkingState()
+            })
+
+            Divider()
+
             workingStateSummary
 
             Divider()
@@ -131,13 +138,6 @@ struct GitCommitDetailView: View {
 
                     diffViewSection
                 }
-
-                Divider()
-
-                // Commit 输入区域
-                GitCommitInputView(onCommitSuccess: {
-                    loadWorkingState()
-                })
             } else if loadingWorkingState {
                 loadingView
             } else {
