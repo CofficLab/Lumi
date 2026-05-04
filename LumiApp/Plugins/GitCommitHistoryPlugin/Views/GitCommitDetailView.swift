@@ -124,12 +124,20 @@ struct GitCommitDetailView: View {
             Divider()
 
             if !uncommittedFiles.isEmpty {
+                // 文件列表 + Diff
                 HSplitView {
                     uncommittedFileListSection
                         .frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
 
                     diffViewSection
                 }
+
+                Divider()
+
+                // Commit 输入区域
+                GitCommitInputView(onCommitSuccess: {
+                    loadWorkingState()
+                })
             } else if loadingWorkingState {
                 loadingView
             } else {

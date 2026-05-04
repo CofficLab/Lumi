@@ -527,7 +527,7 @@ struct SourceEditorView: View, SuperLog {
                 .onAppear {
                     if Self.verbose {
                         state.logger.debug("\(Self.t)悬停预览: 内容长度=\(hoverText.count), 矩形=\(String(describing: state.currentHoverOverlayRect))")
-                        state.logger.debug("\(Self.t)悬停预览: 原始内容=\n\(hoverText)")
+                        state.logger.debug("\(Self.t)悬停预览: 原始内容=\n\(hoverText.max(200))")
                     }
                 }
                 .fixedSize(horizontal: false, vertical: false)
