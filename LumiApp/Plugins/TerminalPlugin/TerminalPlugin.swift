@@ -20,16 +20,14 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     static let shared = TerminalPlugin()
 
     // MARK: - Lifecycle
-    
-    nonisolated func onRegister() {}
-    
-    nonisolated func onEnable() {}
-    
-    nonisolated func onDisable() {}
-    
-    // MARK: - UI
 
-    
+    nonisolated func onRegister() {}
+
+    nonisolated func onEnable() {}
+
+    nonisolated func onDisable() {}
+
+    // MARK: - UI
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {

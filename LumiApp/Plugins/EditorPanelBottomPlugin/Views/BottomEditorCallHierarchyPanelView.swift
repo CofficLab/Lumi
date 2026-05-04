@@ -2,7 +2,7 @@ import SwiftUI
 import MagicKit
 
 struct BottomEditorCallHierarchyPanelView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var state: EditorState
     var showsHeader: Bool = true
 
@@ -21,7 +21,7 @@ struct BottomEditorCallHierarchyPanelView: View {
         HStack(spacing: 8) {
             Text(panelTitle)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
 
             Spacer(minLength: 0)
 
@@ -30,7 +30,7 @@ struct BottomEditorCallHierarchyPanelView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -63,7 +63,7 @@ struct BottomEditorCallHierarchyPanelView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
 
@@ -97,22 +97,22 @@ struct BottomEditorCallHierarchyPanelView: View {
             HStack(spacing: 8) {
                 Text(title)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Text(badge)
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(themeManager.activeAppTheme.workspaceTextColor().opacity(0.05))
+                    .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
                     .clipShape(Capsule())
             }
 
             if !subtitle.isEmpty {
                 Text(subtitle)
                     .font(.system(size: 10))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -122,7 +122,7 @@ struct BottomEditorCallHierarchyPanelView: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(themeManager.activeAppTheme.workspaceTextColor().opacity(0.05))
+                .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
         )
     }
 
@@ -130,10 +130,10 @@ struct BottomEditorCallHierarchyPanelView: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 24, weight: .thin))
-                .foregroundColor(themeManager.activeAppTheme.workspaceTertiaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
             Text(title)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 24)

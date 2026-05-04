@@ -60,8 +60,8 @@ enum XcodeSemanticAvailability {
                 Reason(
                     id: "server-not-started",
                     severity: .error,
-                    title: "LSP 未初始化",
-                    message: "当前 Xcode 项目上下文还没有完成初始化。"
+                    title: String(localized: "LSP Not Initialized", table: "EditorXcodePlugin"),
+                    message: String(localized: "The current Xcode project context has not yet completed initialization.", table: "EditorXcodePlugin")
                 )
             )
         }
@@ -71,7 +71,7 @@ enum XcodeSemanticAvailability {
                 Reason(
                     id: "build-context-unavailable",
                     severity: .error,
-                    title: "Build Context 不可用",
+                    title: String(localized: "Build Context Unavailable", table: "EditorXcodePlugin"),
                     message: reason
                 )
             )
@@ -82,8 +82,8 @@ enum XcodeSemanticAvailability {
                 Reason(
                     id: "build-context-resync",
                     severity: .warning,
-                    title: "Build Context 需要同步",
-                    message: "当前 build context 已失效，工作区语义结果可能不准确。"
+                    title: String(localized: "Build Context Needs Sync", table: "EditorXcodePlugin"),
+                    message: String(localized: "The current build context has expired, workspace semantic results may be inaccurate.", table: "EditorXcodePlugin")
                 )
             )
         }
@@ -99,45 +99,52 @@ enum XcodeSemanticAvailability {
         }
 
         if input.matchedTargets.isEmpty {
+            let format = String(localized: "'%@' does not belong to any compilation target.", table: "EditorXcodePlugin")
             reasons.append(
                 Reason(
                     id: "file-not-in-target",
                     severity: .error,
-                    title: "文件未进 Target",
-                    message: "'\(fileName)' 不属于任何编译 target。"
+                    title: String(localized: "File Not in Target", table: "EditorXcodePlugin"),
+                    message: String(format: format, fileName)
                 )
             )
             return Report(reasons: reasons)
         }
 
         if input.compatibleTargets.isEmpty {
+            let format = String(localized: "Current scheme '%@' does not include %@.", table: "EditorXcodePlugin")
+            let scheme = input.activeScheme ?? String(localized: "Not Selected", table: "EditorXcodePlugin")
+            let targets = input.matchedTargets.joined(separator: ", ")
             reasons.append(
                 Reason(
                     id: "scheme-excludes-targets",
                     severity: .error,
-                    title: "Scheme 未覆盖文件 Target",
-                    message: "当前 scheme '\(input.activeScheme ?? "未选择")' 不包含 \(input.matchedTargets.joined(separator: ", "))。"
+                    title: String(localized: "Scheme Does Not Cover File Target", table: "EditorXcodePlugin"),
+                    message: String(format: format, scheme, targets)
                 )
             )
         }
 
         if input.matchedTargets.count > 1 {
             if let preferredTarget = input.preferredTarget {
+                let format = String(localized: "Current file matches multiple targets, currently resolving with '%@'.", table: "EditorXcodePlugin")
                 reasons.append(
                     Reason(
                         id: "multiple-targets-resolved",
                         severity: .info,
-                        title: "多 Target 文件",
-                        message: "当前文件命中多个 target，当前按 '\(preferredTarget)' 解析。"
+                        title: String(localized: "Multi-Target File", table: "EditorXcodePlugin"),
+                        message: String(format: format, preferredTarget)
                     )
                 )
             } else {
+                let format = String(localized: "Current file belongs to %@, but current scheme cannot uniquely determine semantic context.", table: "EditorXcodePlugin")
+                let targets = input.matchedTargets.joined(separator: ", ")
                 reasons.append(
                     Reason(
                         id: "multiple-targets-ambiguous",
                         severity: .warning,
-                        title: "多 Target 歧义",
-                        message: "当前文件属于 \(input.matchedTargets.joined(separator: ", "))，但当前 scheme 无法唯一确定语义上下文。"
+                        title: String(localized: "Multi-Target Ambiguity", table: "EditorXcodePlugin"),
+                        message: String(format: format, targets)
                     )
                 )
             }
@@ -148,8 +155,8 @@ enum XcodeSemanticAvailability {
                 Reason(
                     id: "destination-unknown",
                     severity: .warning,
-                    title: "Destination 未确定",
-                    message: "当前目标平台还没有稳定解析出来。"
+                    title: String(localized: "Destination Undetermined", table: "EditorXcodePlugin"),
+                    message: String(localized: "The current target platform has not yet been resolved.", table: "EditorXcodePlugin")
                 )
             )
         }
@@ -256,16 +263,16 @@ enum XcodeSemanticAvailability {
 
         switch reason.id {
         case "file-not-in-target":
-            return .fileNotInTarget(input.fileName ?? "当前文件")
+            return .fileNotInTarget(input.fileName ?? String(localized: "Current File", table: "EditorXcodePlugin"))
         case "scheme-excludes-targets":
             return .fileTargetsExcludedByActiveScheme(
-                file: input.fileName ?? "当前文件",
+                file: input.fileName ?? String(localized: "Current File", table: "EditorXcodePlugin"),
                 targets: input.matchedTargets,
                 activeScheme: input.activeScheme
             )
         case "multiple-targets-ambiguous":
             return .fileInMultipleTargets(
-                file: input.fileName ?? "当前文件",
+                file: input.fileName ?? String(localized: "Current File", table: "EditorXcodePlugin"),
                 targets: input.matchedTargets,
                 activeScheme: input.activeScheme
             )

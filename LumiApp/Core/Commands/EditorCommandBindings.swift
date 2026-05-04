@@ -102,14 +102,6 @@ enum EditorCommandBindings {
     static let findPrevious = EditorCommandBinding(key: "g", modifiers: [.command, .shift])
     static let openEditors = EditorCommandBinding(key: "e", modifiers: [.command, .shift])
 
-    static let splitRight = EditorCommandBinding(key: "\\", modifiers: [.command])
-    static let splitDown = EditorCommandBinding(key: "\\", modifiers: [.command, .shift])
-    static let closeSplit = EditorCommandBinding(key: "\\", modifiers: [.command, .option])
-    static let focusNextGroup = EditorCommandBinding(key: "]", modifiers: [.command, .option])
-    static let focusPreviousGroup = EditorCommandBinding(key: "[", modifiers: [.command, .option])
-    static let moveToNextGroup = EditorCommandBinding(key: "]", modifiers: [.command, .option, .shift])
-    static let moveToPreviousGroup = EditorCommandBinding(key: "[", modifiers: [.command, .option, .shift])
-
     static let formatDocument = EditorCommandBinding(key: "f", modifiers: [.command, .shift, .option])
     static let findReferences = EditorCommandBinding(key: "r", modifiers: [.command, .option])
     static let quickFix = EditorCommandBinding(key: ".", modifiers: [.command])

@@ -16,7 +16,7 @@ struct EditorWorkspaceSymbolsPanelView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Text("Workspace symbols not available")
+                Text(String(localized: "Workspace symbols not available", table: "EditorRailWorkspaceSymbols"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -45,6 +45,6 @@ struct EditorWorkspaceSymbolsPanelView: View {
 
     private var panelTitle: String {
         let count = state.workspaceSymbolProvider.symbols.count
-        return count > 0 ? "Workspace Symbols (\(count))" : "Workspace Symbols"
+        return count > 0 ? String(localized: "\(count) Workspace Symbols", table: "EditorRailWorkspaceSymbols") : String(localized: "Workspace Symbols", table: "EditorRailWorkspaceSymbols")
     }
 }

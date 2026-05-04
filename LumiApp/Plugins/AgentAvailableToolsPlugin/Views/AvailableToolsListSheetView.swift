@@ -1,10 +1,13 @@
 import SwiftUI
 
-struct AvailableToolsListSheetView: View {
-    let tools: [SuperAgentTool]
-
-    @Environment(\.dismiss) private var dismiss
+/// 可用工具列表详情视图（在 popover 中展示）
+struct AvailableToolsListDetailView: View {
+    @EnvironmentObject var conversationTurnServices: ConversationTurnServices
     @State private var query = ""
+
+    private var tools: [SuperAgentTool] {
+        conversationTurnServices.toolService.tools
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -12,19 +15,17 @@ struct AvailableToolsListSheetView: View {
             Divider()
             content
         }
-        .background(Color(nsColor: .windowBackgroundColor))
     }
 }
 
 // MARK: - View
 
-extension AvailableToolsListSheetView {
+extension AvailableToolsListDetailView {
     private var header: some View {
         HStack(spacing: 12) {
             headerTitle
             Spacer()
             searchField
-            doneButton
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -52,14 +53,7 @@ extension AvailableToolsListSheetView {
     private var searchField: some View {
         TextField(String(localized: "Search tools", table: "AgentAvailableToolsPlugin"), text: $query)
             .textFieldStyle(.roundedBorder)
-            .frame(width: 260)
-    }
-
-    private var doneButton: some View {
-        Button(String(localized: "Done", table: "AgentAvailableToolsPlugin")) {
-            handleDismiss()
-        }
-        .keyboardShortcut(.defaultAction)
+            .frame(width: 200)
     }
 
     private var content: some View {
@@ -71,6 +65,7 @@ extension AvailableToolsListSheetView {
             }
         }
         .listStyle(.inset)
+        .frame(minHeight: 300, maxHeight: 480)
     }
 
     private var emptyStateView: some View {
@@ -115,7 +110,7 @@ extension AvailableToolsListSheetView {
 
 // MARK: - Computed
 
-extension AvailableToolsListSheetView {
+extension AvailableToolsListDetailView {
     private var filteredTools: [SuperAgentTool] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return tools.sorted { $0.name < $1.name } }
@@ -125,17 +120,10 @@ extension AvailableToolsListSheetView {
     }
 }
 
-// MARK: - Action
-
-extension AvailableToolsListSheetView {
-    func handleDismiss() {
-        dismiss()
-    }
-}
-
 // MARK: - Preview
 
 #Preview {
-    AvailableToolsListSheetView(tools: [])
-        .frame(width: 720, height: 520)
+    AvailableToolsListDetailView()
+        .frame(width: 480, height: 520)
+        .inRootView()
 }

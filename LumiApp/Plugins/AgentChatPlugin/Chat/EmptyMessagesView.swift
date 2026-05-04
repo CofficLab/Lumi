@@ -3,10 +3,10 @@ import SwiftUI
 /// 空消息视图 - 已选择会话但没有消息时显示
 struct EmptyMessagesView: View {
     @EnvironmentObject private var ConversationVM: ConversationVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         VStack(spacing: 20) {
             Spacer()

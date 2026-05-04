@@ -53,15 +53,17 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         var displayDescription: String {
             switch self {
             case .unknown:
-                return "未知"
+                return String(localized: "Unknown", table: "EditorXcodePlugin")
             case .resolving:
-                return "正在解析 build context..."
+                return String(localized: "Resolving build context...", table: "EditorXcodePlugin")
             case .available(let config):
-                return "可用 (scheme: \(config.scheme))"
+                let format = String(localized: "Available (scheme: %@)", table: "EditorXcodePlugin")
+                return String(format: format, config.scheme)
             case .unavailable(let reason):
-                return "不可用: \(reason)"
+                let format = String(localized: "Unavailable: %@", table: "EditorXcodePlugin")
+                return String(format: format, reason)
             case .needsResync:
-                return "需要重新同步"
+                return String(localized: "Needs resync", table: "EditorXcodePlugin")
             }
         }
     }
@@ -70,6 +72,18 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         let buildServerJSONPath: String
         let workspacePath: String
         let scheme: String
+
+        init(buildServerJSONPath: String, workspacePath: String, scheme: String) {
+            self.buildServerJSONPath = buildServerJSONPath
+            self.workspacePath = workspacePath
+            self.scheme = scheme
+        }
+
+        init(from storeConfig: XcodeBuildServerStore.Config) {
+            self.buildServerJSONPath = storeConfig.buildServerJSONPath
+            self.workspacePath = storeConfig.workspacePath
+            self.scheme = storeConfig.scheme
+        }
     }
     
     // MARK: - 初始化
@@ -83,13 +97,14 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
     /// 打开/识别一个 Xcode 项目
     func openProject(at projectURL: URL) async {
         guard FileManager.default.fileExists(atPath: projectURL.path) else {
-            buildContextStatus = .unavailable("项目路径不存在: \(projectURL.path)")
+            let format = String(localized: "Project path does not exist: %@", table: "EditorXcodePlugin")
+            buildContextStatus = .unavailable(String(format: format, projectURL.path))
             return
         }
         
         let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL)
         guard let workspaceURL else {
-            buildContextStatus = .unavailable("未找到 .xcodeproj / .xcworkspace")
+            buildContextStatus = .unavailable(String(localized: "No .xcodeproj / .xcworkspace found", table: "EditorXcodePlugin"))
             return
         }
         
@@ -97,7 +112,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         
         // 解析项目
         guard let workspaceContext = await resolver.resolve(workspaceURL: workspaceURL) else {
-            buildContextStatus = .unavailable("无法解析项目")
+            buildContextStatus = .unavailable(String(localized: "Unable to parse project", table: "EditorXcodePlugin"))
             return
         }
         
@@ -171,7 +186,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
     /// 返回 JSON 路径，如果失败返回 nil
     func generateBuildServerJSON(workspaceURL: URL, scheme: String) async {
         guard let serverPath = xcodeBuildServerPath else {
-            buildContextStatus = .unavailable("未安装 xcode-build-server，请运行: brew install xcode-build-server")
+            buildContextStatus = .unavailable(String(localized: "xcode-build-server not installed, please run: brew install xcode-build-server", table: "EditorXcodePlugin"))
             return
         }
         
@@ -189,8 +204,8 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         Self.logger.info("\(Self.t)生成 buildServer.json: \(args.joined(separator: " "), privacy: .public)")
         
         // 关键：xcode-build-server config 会把 buildServer.json 生成到当前工作目录，
-        // 必须设置 currentDirectoryURL 为项目根目录（workspace/project 的父目录）
-        let outputDirectory = workspaceURL.deletingLastPathComponent()
+        // 生成到该项目专属的插件存储目录（遵循插件数据存储规范）
+        let outputDirectory = XcodeBuildServerStore.ensureDirectory(forWorkspace: workspaceURL.path)
         let success = await runCommand(
             path: serverPath,
             args: ["config", workspaceArg, workspaceURL.path, "-scheme", scheme],
@@ -200,34 +215,14 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         isGeneratingBuildServer = false
         
         if success {
-            let jsonPath = outputDirectory.appendingPathComponent("buildServer.json").path
-            buildServerJSONPath = jsonPath
-            
-            if let config = buildServerConfig(from: jsonPath) {
-                buildContextStatus = .available(config)
-                Self.logger.info("\(Self.t)buildServer.json 已生成: \(jsonPath, privacy: .public)")
+            if let config = XcodeBuildServerStore.load(forWorkspace: workspaceURL.path) {
+                buildServerJSONPath = config.buildServerJSONPath
+                buildContextStatus = .available(XcodeBuildServerConfig(from: config))
+                Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)")
             }
         } else {
-            buildContextStatus = .unavailable("生成 buildServer.json 失败")
+            buildContextStatus = .unavailable(String(localized: "Failed to generate buildServer.json", table: "EditorXcodePlugin"))
         }
-    }
-    
-    /// 读取并解析 buildServer.json
-    func buildServerConfig(from path: String) -> XcodeBuildServerConfig? {
-        let url = URL(filePath: path)
-        guard let data = try? Data(contentsOf: url),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return nil
-        }
-        
-        let workspacePath = json["workspace"] as? String ?? ""
-        let scheme = json["scheme"] as? String ?? ""
-        
-        return XcodeBuildServerConfig(
-            buildServerJSONPath: path,
-            workspacePath: workspacePath,
-            scheme: scheme
-        )
     }
     
     // MARK: - 文件归属查询

@@ -20,7 +20,7 @@ struct ChatToolbarView: View, SuperLog {
     @EnvironmentObject private var inputQueueVM: InputQueueVM
 
     /// 主题管理器
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     /// 消息队列状态（用于判断是否真的在处理）
     @EnvironmentObject private var messageQueueVM: MessageQueueVM
@@ -140,7 +140,7 @@ extension ChatToolbarView {
         case .chat:
             return Color.orange
         case .build:
-            return themeManager.activeAppTheme.workspaceSecondaryTextColor()
+            return themeVM.activeAppTheme.workspaceSecondaryTextColor()
         }
     }
 
@@ -150,7 +150,7 @@ extension ChatToolbarView {
         case .chat:
             return Color.orange.opacity(0.1)
         case .build:
-            return themeManager.activeAppTheme.workspaceTextColor().opacity(0.06)
+            return themeVM.activeAppTheme.workspaceTextColor().opacity(0.06)
         }
     }
 
@@ -178,12 +178,12 @@ extension ChatToolbarView {
                     .truncationMode(.middle)
                 Image(systemName: "chevron.up")
                     .font(.system(size: 10))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
             }
-            .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(themeManager.activeAppTheme.workspaceTextColor().opacity(0.06))
+            .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.06))
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
@@ -217,9 +217,9 @@ extension ChatToolbarView {
         }) {
             Image(systemName: "photo")
                 .font(.system(size: 14))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                 .frame(width: 28, height: 28)
-                .background(themeManager.activeAppTheme.workspaceTextColor().opacity(0.06))
+                .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.06))
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)

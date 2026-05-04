@@ -88,64 +88,6 @@ struct EditorCommand: Commands, SuperLog {
 
             Divider()
 
-            Button("向右分栏") {
-                NotificationCenter.postLumiEditorSplitRight()
-            }
-            .keyboardShortcut(
-                resolvedShortcut(EditorCommandBindings.splitRight, commandID: "builtin.split-right").keyEquivalent,
-                modifiers: resolvedShortcut(EditorCommandBindings.splitRight, commandID: "builtin.split-right").eventModifiers
-            )
-
-            Button("向下分栏") {
-                NotificationCenter.postLumiEditorSplitDown()
-            }
-            .keyboardShortcut(
-                resolvedShortcut(EditorCommandBindings.splitDown, commandID: "builtin.split-down").keyEquivalent,
-                modifiers: resolvedShortcut(EditorCommandBindings.splitDown, commandID: "builtin.split-down").eventModifiers
-            )
-
-            Button("关闭分栏") {
-                NotificationCenter.postLumiEditorCloseSplit()
-            }
-            .keyboardShortcut(
-                resolvedShortcut(EditorCommandBindings.closeSplit, commandID: "builtin.close-split").keyEquivalent,
-                modifiers: resolvedShortcut(EditorCommandBindings.closeSplit, commandID: "builtin.close-split").eventModifiers
-            )
-
-            Button("聚焦下一个分组") {
-                NotificationCenter.postLumiEditorFocusNextGroup()
-            }
-            .keyboardShortcut(
-                resolvedShortcut(EditorCommandBindings.focusNextGroup, commandID: "builtin.focus-next-group").keyEquivalent,
-                modifiers: resolvedShortcut(EditorCommandBindings.focusNextGroup, commandID: "builtin.focus-next-group").eventModifiers
-            )
-
-            Button("聚焦上一个分组") {
-                NotificationCenter.postLumiEditorFocusPreviousGroup()
-            }
-            .keyboardShortcut(
-                resolvedShortcut(EditorCommandBindings.focusPreviousGroup, commandID: "builtin.focus-previous-group").keyEquivalent,
-                modifiers: resolvedShortcut(EditorCommandBindings.focusPreviousGroup, commandID: "builtin.focus-previous-group").eventModifiers
-            )
-
-            Button("移动到下一个分组") {
-                NotificationCenter.postLumiEditorMoveToNextGroup()
-            }
-            .keyboardShortcut(
-                resolvedShortcut(EditorCommandBindings.moveToNextGroup, commandID: "builtin.move-to-next-group").keyEquivalent,
-                modifiers: resolvedShortcut(EditorCommandBindings.moveToNextGroup, commandID: "builtin.move-to-next-group").eventModifiers
-            )
-
-            Button("移动到上一个分组") {
-                NotificationCenter.postLumiEditorMoveToPreviousGroup()
-            }
-            .keyboardShortcut(
-                resolvedShortcut(EditorCommandBindings.moveToPreviousGroup, commandID: "builtin.move-to-previous-group").keyEquivalent,
-                modifiers: resolvedShortcut(EditorCommandBindings.moveToPreviousGroup, commandID: "builtin.move-to-previous-group").eventModifiers
-            )
-
-            Divider()
-
             Button("格式化文档") {
                 NotificationCenter.postLumiEditorFormatDocument()
             }

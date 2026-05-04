@@ -6,7 +6,7 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
     let name = "add_recent_project"
-    let description = "将指定项目添加到最近项目列表。添加后会更新 projectVM 中的最近项目。"
+    let description = "Add the specified project to the recent projects list. Updates the projectVM's recent projects after adding."
 
     var inputSchema: [String: Any] {
         [
@@ -14,7 +14,7 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "项目根目录的绝对路径",
+                    "description": "Absolute path to the project root directory",
                 ],
             ],
             "required": ["path"],
@@ -27,11 +27,11 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let path = arguments["path"]?.value as? String else {
-            return "❌ 错误：需要提供项目路径参数"
+            return "❌ Error: Missing required parameter 'path'"
         }
 
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)添加项目到最近列表：\(path)")
+            BreadcrumbPlugin.logger.info("\(Self.t)Adding project to recent list: \(path)")
         }
 
         // 验证路径是否存在且为目录
@@ -39,11 +39,11 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         var isDirectory: ObjCBool = false
 
         guard fm.fileExists(atPath: path, isDirectory: &isDirectory) else {
-            return "❌ 错误：路径不存在：\(path)"
+            return "❌ Error: Path does not exist: \(path)"
         }
 
         guard isDirectory.boolValue else {
-            return "❌ 错误：路径不是目录：\(path)"
+            return "❌ Error: Path is not a directory: \(path)"
         }
 
         let projectName = URL(fileURLWithPath: path).lastPathComponent
@@ -59,12 +59,12 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
         let recentProjects = store.loadProjects()
 
         // 构建返回消息
-        var output = "✅ 已成功添加项目到最近列表\n\n"
-        output += "**项目名称**: \(projectName)\n\n"
-        output += "**项目路径**: \(path)\n\n"
+        var output = "✅ Successfully added project to recent list\n\n"
+        output += "**Project Name**: \(projectName)\n\n"
+        output += "**Project Path**: \(path)\n\n"
 
         // 显示更新后的最近项目列表
-        output += "## 最近项目列表（\(recentProjects.count) 个）\n\n"
+        output += "## Recent Projects (\(recentProjects.count) total)\n\n"
         for (index, project) in recentProjects.prefix(5).enumerated() {
             output += "\(index + 1). **\(project.name)**\n"
             output += "   Path: `\(project.path)`\n\n"

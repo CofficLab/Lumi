@@ -4,6 +4,7 @@ import MagicKit
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {
     @EnvironmentObject var projectVM: ProjectVM
+    @StateObject private var branchCache = GitBranchCache()
     @State private var isFileImporterPresented = false
 
     private let store = RecentProjectsStore()
@@ -24,6 +25,15 @@ struct RecentProjectsSidebarView: View {
                 .padding(.vertical, 8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            refreshAllBranches()
+        }
+        .onChange(of: projectVM.currentProjectPath) { _, _ in
+            refreshAllBranches()
+        }
+        .onApplicationDidBecomeActive {
+            refreshAllBranches()
+        }
     }
 
     // MARK: - Recent Projects List
@@ -44,6 +54,8 @@ struct RecentProjectsSidebarView: View {
 
     private func projectRow(_ project: Project) -> some View {
         let isSelected = projectVM.currentProjectPath == project.path
+        let branchName = branchCache.branch(for: project.path)
+        let hasBranch = branchName != nil && !branchName!.isEmpty
 
         return HStack(spacing: 8) {
             Image(systemName: isSelected ? "folder.fill" : "folder")
@@ -51,11 +63,17 @@ struct RecentProjectsSidebarView: View {
                 .foregroundColor(isSelected ? .accentColor : .secondary)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(project.name)
-                    .font(.system(size: 12))
-                    .fontWeight(isSelected ? .semibold : .regular)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
-                    .lineLimit(1)
+                HStack(spacing: 5) {
+                    Text(project.name)
+                        .font(.system(size: 12))
+                        .fontWeight(isSelected ? .semibold : .regular)
+                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .lineLimit(1)
+
+                    if hasBranch {
+                        gitBranchBadge(branchName!)
+                    }
+                }
 
                 Text(project.path)
                     .font(.system(size: 9))
@@ -89,6 +107,31 @@ struct RecentProjectsSidebarView: View {
         } preview: {
             RecentProjectDragPreview(fileURL: URL(fileURLWithPath: project.path))
         }
+    }
+
+    // MARK: - Git Branch Badge
+
+    /// Git 分支标签：紧凑的药丸样式，在项目名右侧显示
+    private func gitBranchBadge(_ branch: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: "arrow.triangle.branch")
+                .font(.system(size: 7, weight: .semibold))
+
+            Text(branch)
+                .font(.system(size: 9, weight: .medium))
+                .lineLimit(1)
+        }
+        .foregroundColor(AppUI.Color.semantic.primary)
+        .padding(.horizontal, 5)
+        .padding(.vertical, 1.5)
+        .background(
+            Capsule()
+                .fill(AppUI.Color.semantic.primary.opacity(0.1))
+        )
+        .overlay(
+            Capsule()
+                .strokeBorder(AppUI.Color.semantic.primary.opacity(0.15), lineWidth: 0.5)
+        )
     }
 
     // MARK: - Empty View
@@ -150,7 +193,7 @@ struct RecentProjectsSidebarView: View {
             guard let folderURL = urls.first else { return }
             addProjectAndSwitch(to: folderURL.standardizedFileURL)
         case .failure(let error):
-            BreadcrumbPlugin.logger.error("File import 错误：\(error.localizedDescription)")
+            BreadcrumbPlugin.logger.error("File import error: \(error.localizedDescription)")
         }
     }
 
@@ -164,6 +207,13 @@ struct RecentProjectsSidebarView: View {
         store.addProject(name: project.name, path: project.path)
         projectVM.setRecentProjects(store.loadProjects())
         projectVM.switchProject(to: project)
+    }
+
+    // MARK: - Branch Refresh
+
+    private func refreshAllBranches() {
+        let paths = recentProjects.map(\.path)
+        branchCache.refresh(paths: paths)
     }
 }
 

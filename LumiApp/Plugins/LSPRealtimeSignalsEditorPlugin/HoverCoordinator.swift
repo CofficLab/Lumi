@@ -231,7 +231,12 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             abs(currentRect.width - symbolRect.width) <= Self.hoverRectUpdateEpsilon &&
             abs(currentRect.height - symbolRect.height) <= Self.hoverRectUpdateEpsilon
         if isSameContent && isCloseRect { return }
-        state.setMouseHover(content: content, symbolRect: symbolRect)
+        // 使用 activeHoverRange 提供精确的 LSP Range（用于 hover 符号高亮）
+        state.setMouseHover(
+            content: content,
+            symbolRect: symbolRect,
+            hoverRange: activeHoverRange?.range
+        )
     }
 
     // MARK: - LSP Range → TextView Rect

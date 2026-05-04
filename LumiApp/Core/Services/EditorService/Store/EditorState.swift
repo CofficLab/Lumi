@@ -444,7 +444,8 @@ final class EditorState: ObservableObject, SuperLog {
         textView: TextView,
         lineTable: LineOffsetTable
     ) -> [EditorSurfaceHighlight] {
-        overlayController.surfaceHighlights(
+        let hoverRect: CGRect? = panelState.hasActiveHover ? panelState.mouseHoverSymbolRect : nil
+        return overlayController.surfaceHighlights(
             matches: currentRenderedFindMatches(lineTable: lineTable),
             selectedRange: activeSession.findReplaceState.selectedMatchRange,
             bracketMatch: renderedBracketMatch(lineTable: lineTable),
@@ -452,7 +453,8 @@ final class EditorState: ObservableObject, SuperLog {
             isPrimaryCursorRendered: isPrimaryCursorRendered,
             textView: textView,
             lineTable: lineTable,
-            theme: currentTheme
+            theme: currentTheme,
+            hoverSymbolRect: hoverRect
         )
     }
 
@@ -972,7 +974,7 @@ final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var mouseHoverCharacter: Int = 0
 
     /// 设置鼠标悬停状态（使用 symbol 矩形定位）
-    func setMouseHover(content: String, symbolRect: CGRect) {
+    func setMouseHover(content: String, symbolRect: CGRect, hoverRange: LSPRange? = nil) {
         let currentContent = panelState.mouseHoverContent ?? ""
         let currentRect = panelState.mouseHoverSymbolRect
         let epsilon: CGFloat = 0.75
@@ -981,9 +983,9 @@ final class EditorState: ObservableObject, SuperLog {
             abs(currentRect.minY - symbolRect.minY) <= epsilon &&
             abs(currentRect.width - symbolRect.width) <= epsilon &&
             abs(currentRect.height - symbolRect.height) <= epsilon
-        if isSameContent && isCloseRect { return }
+        if isSameContent && isCloseRect && panelState.mouseHoverRange == hoverRange { return }
 
-        panelController.setMouseHover(content: content, symbolRect: symbolRect)
+        panelController.setMouseHover(content: content, symbolRect: symbolRect, hoverRange: hoverRange)
         syncActiveSessionState()
     }
 
@@ -1529,7 +1531,7 @@ final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    private func applyConfigSnapshot(_ snapshot: EditorConfigSnapshot) {
+    private func applyConfigSnapshot(_ snapshot: EditorConfigSnapshot, skipTheme: Bool = true) {
         fontSize = snapshot.fontSize
         tabWidth = snapshot.tabWidth
         useSpaces = snapshot.useSpaces
@@ -1542,8 +1544,9 @@ final class EditorState: ObservableObject, SuperLog {
         showMinimap = snapshot.showMinimap
         showGutter = snapshot.showGutter
         showFoldingRibbon = snapshot.showFoldingRibbon
-        currentThemeId = snapshot.currentThemeId
-        currentTheme = resolveTheme(for: currentThemeId)
+        // 主题不在此恢复。编辑器主题由 ThemeStatusBarPlugin 通过
+        // syncInitialThemeFromExternal() 和 .lumiThemeDidChange 通知统一驱动，
+        // 避免旧持久化值（如 "xcode-dark"）覆盖已同步的正确主题。
     }
     
     /// 切换主题
@@ -1551,13 +1554,6 @@ final class EditorState: ObservableObject, SuperLog {
         currentThemeId = themeId
         currentTheme = resolveTheme(for: themeId)
         persistConfig()
-
-        // 通知终端插件同步更新颜色
-        NotificationCenter.default.post(
-            name: .lumiEditorThemeDidChange,
-            object: nil,
-            userInfo: ["themeId": themeId]
-        )
     }
 
     /// 同步主题但不触发持久化和通知（用于 hosted state 同步）
@@ -1582,6 +1578,7 @@ final class EditorState: ObservableObject, SuperLog {
             return contributor.createTheme()
         }
         // Fallback：插件系统未加载时使用默认 Xcode Dark 主题
+        logger.warning("\(Self.t)resolveTheme: 找不到主题 contributor for '\(id, privacy: .public)'，使用 fallback")
         return EditorThemeAdapter.fallbackTheme()
     }
 
@@ -1598,9 +1595,34 @@ final class EditorState: ObservableObject, SuperLog {
                 }
             }
             guard self.currentThemeId != themeId else { return }
+            self.logger.info("\(Self.t)observeThemeChanges: \(self.currentThemeId, privacy: .public) → \(themeId, privacy: .public)")
             self.currentThemeId = themeId
             self.currentTheme = self.resolveTheme(for: themeId)
         }
+    }
+
+    /// 由外层（ThemeStatusBarPlugin）在视图就绪后调用，确保编辑器使用正确的初始主题。
+    ///
+    /// ThemeVM.init() 在 EditorState 之前创建，其发送的 .lumiThemeDidChange
+    /// 通知在 EditorState 注册监听之前就已经发出，导致 EditorState 错过了初始通知。
+    /// 此方法由 ThemeStatusBarPlugin 在视图层主动调用，将 ThemeVM 当前主题同步到 EditorState。
+    func syncInitialThemeFromExternal(_ editorThemeId: String) {
+        let before = self.currentThemeId
+        guard before != editorThemeId else {
+            if Self.verbose {
+                self.logger.debug("\(Self.t)syncInitialThemeFromExternal: 主题一致，跳过（\(before, privacy: .public)）")
+            }
+            return
+        }
+        self.logger.info("\(Self.t)syncInitialThemeFromExternal: \(before, privacy: .public) → \(editorThemeId, privacy: .public)")
+        let allContributions = PluginVM.shared.getThemeContributions()
+        for contribution in allContributions {
+            if let c = contribution.editorThemeContributor as? any SuperEditorThemeContributor {
+                self.editorExtensions.registerThemeContributor(c)
+            }
+        }
+        self.currentThemeId = editorThemeId
+        self.currentTheme = self.resolveTheme(for: editorThemeId)
     }
     
     // MARK: - File Loading
@@ -1612,17 +1634,20 @@ final class EditorState: ObservableObject, SuperLog {
         saveController.cancelSuccessClear()
         
         guard let url = url else {
+            logger.info("📝[loadFile] url 为 nil → resetState")
             resetState()
             return
         }
         
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         if isDirectory {
+            logger.info("📝[loadFile] url 是目录 → resetState, url=\(url.path, privacy: .public)")
             resetState()
             return
         }
         
         let loadingURL = url
+        logger.info("📝[loadFile] 开始加载 url=\(loadingURL.path, privacy: .public), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
         
         Task {
             do {
@@ -1637,9 +1662,13 @@ final class EditorState: ObservableObject, SuperLog {
                     let standardizedLoadingURL = loadingURL.standardizedFileURL
                     let isReloadingCurrentFile = self.currentFileURL?.standardizedFileURL == standardizedLoadingURL
                     let shouldReplaceCurrentBuffer = !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
-                    guard shouldReplaceCurrentBuffer else { return }
+                    guard shouldReplaceCurrentBuffer else {
+                        self.logger.info("📝[loadFile] shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path, privacy: .public)")
+                        return
+                    }
                     switch loadedDocument {
                     case .binary:
+                        self.logger.info("📝[loadFile] → 加载二进制文件, url=\(loadingURL.path, privacy: .public)")
                         self.loadBinaryFile(from: loadingURL, loadedDocument: loadedDocument)
                     case .text(let document):
                         let content = document.content
@@ -1714,6 +1743,7 @@ final class EditorState: ObservableObject, SuperLog {
                     }
                 }
             } catch {
+                self.logger.error("📝[loadFile] 加载失败 error=\(error.localizedDescription, privacy: .public), url=\(loadingURL.path, privacy: .public)")
                 await MainActor.run { [weak self] in
                     self?.resetState()
                 }

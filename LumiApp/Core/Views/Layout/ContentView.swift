@@ -10,9 +10,8 @@ struct ContentView: View, SuperLog {
     nonisolated static let emoji = "📱"
     nonisolated static let verbose: Bool = false
 
-    @EnvironmentObject var app: GlobalVM
     @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var themeVM: ThemeVM
     @EnvironmentObject var providerRegistry: LLMProviderRegistry
     @EnvironmentObject var layoutVM: LayoutVM
 
@@ -50,9 +49,8 @@ struct ContentView: View, SuperLog {
         ContentViewBody(
             sidebarVisibility: $windowState.sidebarVisibility,
             columnVisibility: $windowState.columnVisibility,
-            app: app,
             pluginProvider: pluginProvider,
-            themeManager: themeManager,
+            themeVM: themeVM,
             content: {
                 VStack(spacing: 0) {
                     mainContent
@@ -167,9 +165,8 @@ struct ContentView: View, SuperLog {
 struct ContentViewBody<Content: View>: View {
     @Binding var sidebarVisibility: Bool
     @Binding var columnVisibility: NavigationSplitViewVisibility
-    @ObservedObject var app: GlobalVM
     @ObservedObject var pluginProvider: PluginVM
-    @ObservedObject var themeManager: ThemeManager
+    @ObservedObject var themeVM: ThemeVM
     let content: Content
     let openSettings: () -> Void
     let openPluginSettings: () -> Void
@@ -179,9 +176,8 @@ struct ContentViewBody<Content: View>: View {
     init(
         sidebarVisibility: Binding<Bool>,
         columnVisibility: Binding<NavigationSplitViewVisibility>,
-        app: GlobalVM,
         pluginProvider: PluginVM,
-        themeManager: ThemeManager,
+        themeVM: ThemeVM,
         @ViewBuilder content: () -> Content,
         openSettings: @escaping () -> Void,
         openPluginSettings: @escaping () -> Void,
@@ -190,9 +186,8 @@ struct ContentViewBody<Content: View>: View {
     ) {
         self._sidebarVisibility = sidebarVisibility
         self._columnVisibility = columnVisibility
-        self.app = app
         self.pluginProvider = pluginProvider
-        self.themeManager = themeManager
+        self.themeVM = themeVM
         self.content = content()
         self.openSettings = openSettings
         self.openPluginSettings = openPluginSettings
@@ -204,7 +199,7 @@ struct ContentViewBody<Content: View>: View {
     /// 使得 `Color.adaptive(light:dark:)` 等基于 colorScheme 的颜色
     /// 能与主题保持一致（例如 One Dark 深色主题在浅色系统模式下也使用深色文字色）。
     private var preferredColorScheme: ColorScheme {
-        themeManager.activeAppTheme.isDarkTheme ? .dark : .light
+        themeVM.activeAppTheme.isDarkTheme ? .dark : .light
     }
 
     var body: some View {
@@ -214,7 +209,7 @@ struct ContentViewBody<Content: View>: View {
             .onOpenPluginSettings(perform: openPluginSettings)
             .background {
                 GeometryReader { proxy in
-                    themeManager.activeAppTheme.makeGlobalBackground(proxy: proxy)
+                    themeVM.activeAppTheme.makeGlobalBackground(proxy: proxy)
                 }
             }
             .onAppear(perform: onAppear)

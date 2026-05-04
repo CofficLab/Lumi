@@ -1,7 +1,7 @@
-import Foundation
-import SwiftUI
 import AppKit
+import Foundation
 import SwiftTerm
+import SwiftUI
 
 @MainActor
 final class TerminalSession: ObservableObject, Identifiable {
@@ -22,8 +22,8 @@ final class TerminalSession: ObservableObject, Identifiable {
         self.terminalView = LumiTerminalView(frame: .zero)
 
         // 读取当前统一主题并映射为编辑器主题
-        if let savedThemeId = ThemeManager.loadSavedThemeId() {
-            self.currentThemeId = ThemeManager.editorThemeID(for: savedThemeId)
+        if let savedThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() {
+            self.currentThemeId = ThemeVM.editorThemeID(for: savedThemeId)
         } else {
             self.currentThemeId = "xcode-dark"
         }
@@ -56,17 +56,6 @@ final class TerminalSession: ObservableObject, Identifiable {
         ) { [weak self] notification in
             guard let editorThemeId = notification.userInfo?["editorThemeId"] as? String else { return }
             self?.currentThemeId = editorThemeId
-            self?.applyThemeColors()
-        }
-
-        // 兼容旧通知链路
-        NotificationCenter.default.addObserver(
-            forName: .lumiEditorThemeDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let themeId = notification.userInfo?["themeId"] as? String else { return }
-            self?.currentThemeId = themeId
             self?.applyThemeColors()
         }
 
@@ -150,7 +139,6 @@ final class TerminalSession: ObservableObject, Identifiable {
 // MARK: - LocalProcessTerminalViewDelegate
 
 extension TerminalSession: LocalProcessTerminalViewDelegate {
-
     nonisolated func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
 
     nonisolated func setTerminalTitle(source: LocalProcessTerminalView, title: String) {

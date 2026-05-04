@@ -4,12 +4,12 @@ import SwiftUI
 /// 自动批准开关：控制是否自动批准高风险命令
 struct AutoApproveToggle: View {
     @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     private let store = AgentAutoApprovePluginLocalStore.shared
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         Toggle(String(localized: "Auto", table: "AgentAutoApprovePlugin"), isOn: Binding(
             get: { projectVM.autoApproveRisk },

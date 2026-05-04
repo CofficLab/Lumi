@@ -339,6 +339,7 @@
       }
     },
     "Adjust font size, tab size, line wrapping, minimap, and save behavior." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1197,6 +1198,7 @@
       }
     },
     "Discover the editor's main entry points, workbench capabilities, and adjustable parameters — no roadmap needed." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1308,6 +1310,7 @@
       }
     },
     "Editor Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1443,6 +1446,7 @@
       }
     },
     "Execute editor commands, or jump to settings / workspace symbols." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1577,6 +1581,7 @@
       }
     },
     "Find / Replace" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1820,6 +1825,7 @@
       }
     },
     "Focus Next Editor Group" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1842,6 +1848,7 @@
       }
     },
     "Focus Previous Editor Group" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2129,6 +2136,7 @@
       }
     },
     "Getting Started" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2196,6 +2204,7 @@
       }
     },
     "Group %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2218,6 +2227,7 @@
       }
     },
     "Highlight current matches, replace preview, and navigate multiple results." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2394,6 +2404,7 @@
       }
     },
     "Jump to functions and types via document symbols of the current session." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2416,6 +2427,7 @@
       }
     },
     "Jump to types, functions, and symbols across the workspace." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2977,6 +2989,7 @@
       }
     },
     "Move Editor to Next Group" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2999,6 +3012,7 @@
       }
     },
     "Move Editor to Previous Group" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3065,6 +3079,7 @@
       }
     },
     "Move To Group %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3377,6 +3392,7 @@
       }
     },
     "No file open" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3664,6 +3680,7 @@
       }
     },
     "Open a file from the project tree" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4179,6 +4196,7 @@
       }
     },
     "Quick Open" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4554,6 +4572,7 @@
       }
     },
     "Restore sessions and split workbench state" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4687,6 +4706,7 @@
       }
     },
     "Search for files, symbols, settings, and commands from a single entry point." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4731,7 +4751,6 @@
       }
     },
     "Select a file to start editing" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4864,6 +4883,7 @@
       }
     },
     "Session Restore" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4998,6 +5018,7 @@
       }
     },
     "Split Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5064,6 +5085,7 @@
       }
     },
     "Split right or down — ideal for side-by-side reading and multi-file editing." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5199,6 +5221,7 @@
       }
     },
     "Tabs, splits, recently closed recovery, and back-forward navigation preserve workbench state." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5221,6 +5244,7 @@
       }
     },
     "The most common workflow entry points when you first open the editor." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5243,6 +5267,7 @@
       }
     },
     "These capabilities align most closely with the editor surface in VS Code." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5641,6 +5666,7 @@
       }
     },
     "Use Quick Open for files / symbols / settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5729,6 +5755,7 @@
       }
     },
     "Workbench Capabilities" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5751,6 +5778,7 @@
       }
     },
     "Workspace Symbols" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -6,7 +6,7 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = true
     let name = "get_current_file"
-    let description = "获取当前选中的文件信息，包括文件路径和最后选择时间。如果没有选择文件，返回空信息。"
+    let description = "Get the current selected file information, including file path and last selection time. Returns empty info if no file is selected."
 
     var inputSchema: [String: Any] {
         [
@@ -21,30 +21,30 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)获取当前文件")
+            BreadcrumbPlugin.logger.info("\(Self.t)Getting current file")
         }
 
         let store = RecentProjectsStore()
         guard let fileInfo = store.getCurrentFile() else {
             return """
-            ## 当前文件状态
+            ## Current File Status
             
-            **状态**: 未选择文件
+            **Status**: No file selected
             
-            使用 `set_current_file` 工具来选择一个文件。
+            Use the `set_current_file` tool to select a file.
             """
         }
 
         let fileName = URL(fileURLWithPath: fileInfo.path).lastPathComponent
 
         return """
-        ## 当前文件信息
+        ## Current File Info
         
-        **文件名称**: \(fileName)
+        **File Name**: \(fileName)
         
-        **文件路径**: \(fileInfo.path)
+        **File Path**: \(fileInfo.path)
         
-        **最后选择**: \(formatDate(fileInfo.lastSelected))
+        **Last Selected**: \(formatDate(fileInfo.lastSelected))
         """
     }
     

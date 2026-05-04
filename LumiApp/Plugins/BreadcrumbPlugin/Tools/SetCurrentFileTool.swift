@@ -6,7 +6,7 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = true
     let name = "set_current_file"
-    let description = "设置当前选中的文件。需要提供文件路径。"
+    let description = "Set the current selected file. Requires a file path."
 
     var inputSchema: [String: Any] {
         [
@@ -14,7 +14,7 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "文件的绝对路径",
+                    "description": "Absolute path to the file",
                 ],
             ],
             "required": ["path"],
@@ -27,11 +27,11 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let path = arguments["path"]?.value as? String else {
-            return "❌ 错误：需要提供文件路径参数"
+            return "❌ Error: Missing required parameter 'path'"
         }
 
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)设置当前文件：\(path)")
+            BreadcrumbPlugin.logger.info("\(Self.t)Setting current file: \(path)")
         }
 
         // 验证路径是否存在且为文件
@@ -39,11 +39,11 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
         var isDirectory: ObjCBool = false
 
         guard fm.fileExists(atPath: path, isDirectory: &isDirectory) else {
-            return "❌ 错误：路径不存在：\(path)"
+            return "❌ Error: Path does not exist: \(path)"
         }
 
         guard !isDirectory.boolValue else {
-            return "❌ 错误：路径是目录而非文件：\(path)"
+            return "❌ Error: Path is a directory, not a file: \(path)"
         }
 
         let fileName = URL(fileURLWithPath: path).lastPathComponent
@@ -56,13 +56,13 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
         NotificationCenter.postCurrentFileDidChange(path: path)
 
         return """
-        ✅ 已成功设置当前文件
+        ✅ Successfully set current file
         
-        **文件名称**: \(fileName)
+        **File Name**: \(fileName)
         
-        **文件路径**: \(path)
+        **File Path**: \(path)
         
-        文件已保存，可以开始使用文件相关的功能。
+        The file has been saved and is ready to use.
         """
     }
 }

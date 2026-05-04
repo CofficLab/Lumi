@@ -7,6 +7,7 @@ enum EditorSurfaceHighlightKind: Equatable {
     case findMatch
     case currentMatch
     case bracketMatch
+    case hoverSymbol
 }
 
 struct EditorSurfaceHighlightStyle {
@@ -85,6 +86,19 @@ struct EditorSurfaceOverlayPalette {
                 minimumWidth: 3,
                 minimumHeight: 2,
                 zIndex: 3
+            )
+
+        case .hoverSymbol:
+            // VSCode 风格的 hover 符号高亮：醒目的边框勾勒 + 柔和背景填充
+            let accent = selection.blended(withFraction: 0.55, of: lineHighlight) ?? selection
+            return EditorSurfaceHighlightStyle(
+                fillColor: Color(nsColor: accent.withAlphaComponent(0.28)),
+                strokeColor: Color(nsColor: accent.withAlphaComponent(0.82)),
+                cornerRadius: 3,
+                lineWidth: 1.25,
+                minimumWidth: 3,
+                minimumHeight: 2,
+                zIndex: 4
             )
         }
     }

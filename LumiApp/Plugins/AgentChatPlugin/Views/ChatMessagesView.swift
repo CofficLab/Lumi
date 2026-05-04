@@ -6,7 +6,7 @@ struct ChatMessagesView: View {
     /// 会话管理 ViewModel
     @EnvironmentObject var ConversationVM: ConversationVM
     /// 主题管理器
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
         Group {
@@ -16,7 +16,7 @@ struct ChatMessagesView: View {
                 EmptyStateView()
             }
         }
-        .background(themeManager.activeAppTheme.workspaceBackgroundColor().opacity(0.6))
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.6))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(String(localized: "Chat Messages Area", table: "AgentChat"))
     }

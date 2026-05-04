@@ -32,7 +32,7 @@ actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
 
     @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
         guard activeIcon == EditorPlugin.iconName else { return [] }
-        return [RailTab(id: "callHierarchy", title: "Calls", systemImage: "point.3.connected.trianglepath.dotted", priority: 14)]
+        return [RailTab(id: "callHierarchy", title: String(localized: "Calls", table: "EditorCallHierarchyRail"), systemImage: "point.3.connected.trianglepath.dotted", priority: 14)]
     }
 
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {

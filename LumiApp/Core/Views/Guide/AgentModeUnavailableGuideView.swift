@@ -2,10 +2,10 @@ import SwiftUI
 
 /// Agent 模式不可用时的提示视图
 struct AgentModeUnavailableGuideView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         VStack(spacing: 12) {
             Spacer()

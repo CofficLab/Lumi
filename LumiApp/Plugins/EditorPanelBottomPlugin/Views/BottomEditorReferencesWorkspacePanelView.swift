@@ -2,7 +2,7 @@ import SwiftUI
 import MagicKit
 
 struct BottomEditorReferencesWorkspacePanelView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var state: EditorState
     var showsHeader: Bool = true
 
@@ -21,7 +21,7 @@ struct BottomEditorReferencesWorkspacePanelView: View {
         HStack(spacing: 8) {
             Text(panelTitle)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
 
             Spacer(minLength: 0)
 
@@ -30,7 +30,7 @@ struct BottomEditorReferencesWorkspacePanelView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -84,22 +84,22 @@ struct BottomEditorReferencesWorkspacePanelView: View {
             HStack(spacing: 8) {
                 Text(title)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Text(badge)
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(themeManager.activeAppTheme.workspaceTextColor().opacity(0.05))
+                    .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
                     .clipShape(Capsule())
             }
 
             if !subtitle.isEmpty {
                 Text(subtitle)
                     .font(.system(size: 10))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -111,14 +111,14 @@ struct BottomEditorReferencesWorkspacePanelView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(
                     isSelected
-                        ? themeManager.activeAppTheme.workspaceTextColor().opacity(0.1)
-                        : themeManager.activeAppTheme.workspaceTextColor().opacity(0.05)
+                        ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.1)
+                        : themeVM.activeAppTheme.workspaceTextColor().opacity(0.05)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(
                             isSelected
-                                ? themeManager.activeAppTheme.workspaceTextColor().opacity(0.18)
+                                ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.18)
                                 : Color.clear,
                             lineWidth: 1
                         )
@@ -130,10 +130,10 @@ struct BottomEditorReferencesWorkspacePanelView: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 24, weight: .thin))
-                .foregroundColor(themeManager.activeAppTheme.workspaceTertiaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
             Text(title)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 24)

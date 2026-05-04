@@ -148,7 +148,7 @@ final class XcodeProjectContextBridge: SuperLog {
             activeScheme: activeScheme,
             activeConfiguration: activeConfiguration,
             activeDestination: activeDestination,
-            buildContextStatus: buildContextProvider?.buildContextStatus.displayDescription ?? "未初始化",
+            buildContextStatus: buildContextProvider?.buildContextStatus.displayDescription ?? String(localized: "Not Initialized", table: "EditorXcodePlugin"),
             isXcodeProject: isXcodeProject,
             isInitialized: isInitialized,
             workspaceName: buildContextProvider?.currentWorkspace?.name,
@@ -184,18 +184,8 @@ final class XcodeProjectContextBridge: SuperLog {
     
     private func isBuildServerValid(at path: String) -> Bool {
         let projectURL = URL(filePath: path)
-        let buildServerURL: URL
-        if let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL) {
-            buildServerURL = workspaceURL.deletingLastPathComponent().appendingPathComponent("buildServer.json")
-        } else {
-            buildServerURL = projectURL.appendingPathComponent("buildServer.json")
-        }
-        guard FileManager.default.fileExists(atPath: buildServerURL.path),
-              let data = try? Data(contentsOf: buildServerURL),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let name = json["name"] as? String,
-              let scheme = json["scheme"] as? String else { return false }
-        return name.contains("xcode build server") && !scheme.isEmpty
+        guard let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL) else { return false }
+        return XcodeBuildServerStore.validate(forWorkspace: workspaceURL.path) != nil
     }
     
     // MARK: - LSP 参数生成
@@ -215,7 +205,7 @@ final class XcodeProjectContextBridge: SuperLog {
     
     func getBuildServerPath() -> String? { cachedState?.buildServerPath }
     var cachedActiveScheme: String? { cachedState?.activeScheme }
-    var buildContextStatusDescription: String { cachedState?.buildContextStatus ?? "未初始化" }
+    var buildContextStatusDescription: String { cachedState?.buildContextStatus ?? String(localized: "Not Initialized", table: "EditorXcodePlugin") }
     var shouldHaveBuildContext: Bool { cachedState?.isXcodeProject ?? false }
     
     func makeInitializationOptions() -> [String: Any]? {

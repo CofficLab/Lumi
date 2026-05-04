@@ -9,7 +9,7 @@ struct AppCard<Content: View>: View {
 
     let style: Style
     let padding: EdgeInsets
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @ViewBuilder let content: Content
 
     init(
@@ -31,7 +31,7 @@ struct AppCard<Content: View>: View {
     }
 
     private var background: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
         return Group {
             switch style {
             case .elevated:
@@ -45,7 +45,7 @@ struct AppCard<Content: View>: View {
     }
 
     private var border: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
         return RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
             .stroke(theme.workspaceTertiaryTextColor().opacity(style == .elevated ? 0.12 : 0.06), lineWidth: 1)
     }

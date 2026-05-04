@@ -142,11 +142,8 @@ final class EditorConfigController {
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showGutterKey) { snapshot.showGutter = value }
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showFoldingRibbonKey) { snapshot.showFoldingRibbon = value }
 
-        if let appThemeId = ThemeManager.loadSavedThemeId() {
-            snapshot.currentThemeId = ThemeManager.editorThemeID(for: appThemeId)
-        } else if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey) {
-            snapshot.currentThemeId = themeRaw
-        }
+        // 注意：主题 ID 不在此恢复，由 ThemeStatusBarPlugin 通过 ThemeVM 驱动
+        // EditorState 通过 observeThemeChanges() 监听通知来同步编辑器主题
 
         return snapshot
     }
@@ -196,7 +193,7 @@ final class EditorConfigController {
         EditorConfigStore.saveValue(snapshot.showMinimap, forKey: EditorConfigStore.showMinimapKey)
         EditorConfigStore.saveValue(snapshot.showGutter, forKey: EditorConfigStore.showGutterKey)
         EditorConfigStore.saveValue(snapshot.showFoldingRibbon, forKey: EditorConfigStore.showFoldingRibbonKey)
-        EditorConfigStore.saveValue(snapshot.currentThemeId, forKey: EditorConfigStore.themeNameKey)
+        // 注意：currentThemeId 不在此持久化，主题持久化由 ThemeStatusBarPlugin 全权负责
     }
 
     func overrideSnapshot(
@@ -244,23 +241,14 @@ final class EditorConfigController {
             queue: .main
         ) { notification in
             let editorThemeId = (notification.userInfo?["editorThemeId"] as? String)
-                ?? (notification.userInfo?["themeId"] as? String).map { ThemeManager.editorThemeID(for: $0) }
+                ?? (notification.userInfo?["themeId"] as? String).map { ThemeVM.editorThemeID(for: $0) }
                 ?? "xcode-dark"
             Task { @MainActor in
                 applyResolvedThemeID(editorThemeId, true)
             }
         }
 
-        NotificationCenter.default.addObserver(
-            forName: .lumiEditorThemeDidChange,
-            object: nil,
-            queue: .main
-        ) { notification in
-            guard let themeId = notification.userInfo?["themeId"] as? String else { return }
-            Task { @MainActor in
-                applyResolvedThemeID(themeId, false)
-            }
-        }
+
     }
 
     private func persistScopedOverrides(_ scopedSnapshot: EditorScopedConfigSnapshot) {

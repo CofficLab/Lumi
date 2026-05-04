@@ -76,19 +76,25 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
     }
 
     private func status(from description: String) -> EditorProjectContextStatus {
-        if description.contains("需要重新同步") {
+        if description.contains(String(localized: "Needs resync", table: "EditorXcodePlugin")) {
             return .needsResync
         }
-        if description.contains("解析中") {
+        if description.contains(String(localized: "Resolving build context...", table: "EditorXcodePlugin")) {
             return .resolving
         }
-        if description.contains("不可用:") {
-            return .unavailable(String(description.dropFirst("不可用: ".count)))
+        if description.contains(": ") && !description.contains(String(localized: "Available", table: "EditorXcodePlugin")) {
+            // Unavailable: <reason> format
+            let prefix = String(localized: "Unavailable", table: "EditorXcodePlugin") + ": "
+            if description.hasPrefix(prefix) {
+                return .unavailable(String(description.dropFirst(prefix.count)))
+            }
+            return .unavailable(description)
         }
-        if description.contains("可用") {
+        if description.contains(String(localized: "Available", table: "EditorXcodePlugin")) {
             return .available(description)
         }
-        if description == "未初始化" {
+        if description == String(localized: "Not Initialized", table: "EditorXcodePlugin")
+            || description == String(localized: "Unknown", table: "EditorXcodePlugin") {
             return .unknown
         }
         return .available(description)

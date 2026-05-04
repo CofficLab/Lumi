@@ -2,7 +2,7 @@ import SwiftUI
 import MagicKit
 
 struct EditorProblemsPanelView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var state: EditorState
     var showsHeader: Bool = true
 
@@ -21,7 +21,7 @@ struct EditorProblemsPanelView: View {
         HStack(spacing: 8) {
             Text(panelTitle)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
 
             Spacer(minLength: 0)
 
@@ -30,7 +30,7 @@ struct EditorProblemsPanelView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -41,24 +41,24 @@ struct EditorProblemsPanelView: View {
 
     private var panelTitle: String {
         let count = state.panelState.semanticProblems.count + state.panelState.problemDiagnostics.count
-        return count > 0 ? "Problems (\(count))" : "Problems"
+        return count > 0 ? String(localized: "\(count) Problems", table: "EditorRailProblems") : String(localized: "Problems", table: "EditorRailProblems")
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
                 if state.panelState.semanticProblems.isEmpty && state.panelState.problemDiagnostics.isEmpty {
-                    emptyState("No Problems", systemImage: "checkmark.circle")
+                    emptyState(String(localized: "No Problems", table: "EditorRailProblems"), systemImage: "checkmark.circle")
                 } else {
                     if !state.panelState.semanticProblems.isEmpty {
-                        sectionLabel("Project Context")
+                        sectionLabel(String(localized: "Project Context", table: "EditorRailProblems"))
                         ForEach(state.panelState.semanticProblems) { problem in
-                            panelCard(title: problem.title, subtitle: problem.message, badge: "Project")
+                            panelCard(title: problem.title, subtitle: problem.message, badge: String(localized: "Project", table: "EditorRailProblems"))
                         }
                     }
 
                     if !state.panelState.problemDiagnostics.isEmpty {
-                        sectionLabel("Diagnostics")
+                        sectionLabel(String(localized: "Diagnostics", table: "EditorRailProblems"))
                         ForEach(Array(state.panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
                             let line = Int(diagnostic.range.start.line) + 1
                             let column = Int(diagnostic.range.start.character) + 1
@@ -68,7 +68,7 @@ struct EditorProblemsPanelView: View {
                                 panelCard(
                                     title: "\(state.relativeFilePath):\(line):\(column)",
                                     subtitle: diagnostic.message,
-                                    badge: diagnostic.source ?? "LSP"
+                                    badge: diagnostic.source ?? String(localized: "LSP", table: "EditorRailProblems")
                                 )
                             }
                             .buttonStyle(.plain)
@@ -83,7 +83,7 @@ struct EditorProblemsPanelView: View {
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .semibold))
-            .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
     }
 
     private func panelCard(title: String, subtitle: String, badge: String) -> some View {
@@ -91,29 +91,29 @@ struct EditorProblemsPanelView: View {
             HStack(alignment: .center, spacing: 8) {
                 Text(title)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(badge)
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
                     .background(
                         Capsule()
-                            .fill(themeManager.activeAppTheme.workspaceTextColor().opacity(0.08))
+                            .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.08))
                     )
             }
 
             Text(subtitle)
                 .font(.system(size: 11))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(themeManager.activeAppTheme.workspaceTextColor().opacity(0.035))
+                .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.035))
         )
     }
 
@@ -121,10 +121,10 @@ struct EditorProblemsPanelView: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
             Text(title)
                 .font(.system(size: 12))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -20,7 +20,8 @@ final class EditorOverlayController {
         isPrimaryCursorRendered: Bool,
         textView: TextView,
         lineTable: LineOffsetTable,
-        theme: EditorTheme?
+        theme: EditorTheme?,
+        hoverSymbolRect: CGRect?
     ) -> [EditorSurfaceHighlight] {
         let palette = EditorSurfaceOverlayPalette(theme: theme)
         let seeds = currentLineHighlightSeeds(
@@ -36,6 +37,8 @@ final class EditorOverlayController {
         ) + bracketHighlightSeeds(
             match: bracketMatch,
             textView: textView
+        ) + hoverSymbolHighlightSeeds(
+            hoverSymbolRect: hoverSymbolRect
         )
 
         return seeds
@@ -288,6 +291,24 @@ final class EditorOverlayController {
             EditorSurfaceHighlightSeed(kind: .bracketMatch, rect: openOverlayRect),
             EditorSurfaceHighlightSeed(kind: .bracketMatch, rect: closeOverlayRect),
         ]
+    }
+
+    /// 生成 hover 符号高亮的 seed。
+    ///
+    /// 当 hover popover 活跃时，使用 `mouseHoverSymbolRect`（由 HoverEditorCoordinator
+    /// 通过 LSP hover range 计算得到的 overlay 坐标矩形）作为高亮区域。
+    /// 该矩形已经是 overlay 坐标系（减去了 scroll offset），可以直接使用。
+    func hoverSymbolHighlightSeeds(
+        hoverSymbolRect: CGRect?
+    ) -> [EditorSurfaceHighlightSeed] {
+        guard let rect = hoverSymbolRect,
+              rect != .zero,
+              rect.width > 0,
+              rect.height > 0 else {
+            return []
+        }
+
+        return [EditorSurfaceHighlightSeed(kind: .hoverSymbol, rect: rect)]
     }
 
     func shouldPresentHoverOverlay(

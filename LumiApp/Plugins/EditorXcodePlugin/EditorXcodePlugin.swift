@@ -4,8 +4,8 @@ import SwiftUI
 /// Xcode 项目编辑器插件：提供 Xcode 项目标识、构建上下文和 sourcekit-lsp 集成
 actor EditorXcodePlugin: SuperPlugin {
     static let id = "EditorXcode"
-    static let displayName = String(localized: "Editor Xcode", table: "EditorXcode")
-    static let description = String(localized: "Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects.", table: "EditorXcode")
+    static let displayName = String(localized: "Xcode Project Editor", table: "EditorXcodePlugin")
+    static let description = String(localized: "Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects.", table: "EditorXcodePlugin")
     static let iconName = "xmark.app"
     static let order = 4  // 在 LSP Service 之前加载，确保 build context 就绪
     static let enable = true
@@ -41,5 +41,13 @@ actor EditorXcodePlugin: SuperPlugin {
         // 只在编辑器图标激活时显示 Xcode 项目状态栏
         guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(XcodeProjectStatusBar())
+    }
+    
+    /// 添加根视图包裹器
+    ///
+    /// 在应用启动时预加载最近 Xcode 项目的 buildServer.json，
+    /// 减少首次打开项目时的等待时间。
+    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        return AnyView(EditorXcodePluginRootView(content: content()))
     }
 }

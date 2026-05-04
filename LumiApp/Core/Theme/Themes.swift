@@ -61,11 +61,8 @@ enum Themes {
         }
     }
 
-    /// 统一主题对象（由 ThemeManager 驱动）
+    /// 统一主题对象（由 ThemeVM 驱动）
     nonisolated(unsafe) static var currentTheme: any SuperTheme = MidnightTheme()
-
-    nonisolated(unsafe) static var isHighContrast: Bool = false
-    nonisolated(unsafe) static var isReducedMotion: Bool = false
 
     // MARK: - 颜色配置（动态加载）
 

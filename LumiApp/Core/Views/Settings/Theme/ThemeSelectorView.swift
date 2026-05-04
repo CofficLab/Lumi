@@ -6,18 +6,18 @@ import SwiftUI
 ///
 struct ThemeSelectorView: View {
     // MARK: - 环境
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     // MARK: - 主体
     var body: some View {
         VStack(spacing: AppUI.Spacing.sm) {
-            ForEach(themeManager.themes) { theme in
+            ForEach(themeVM.themes) { theme in
                 ThemeOptionCard(
                     theme: theme,
-                    isSelected: themeManager.currentThemeId == theme.id
+                    isSelected: themeVM.currentThemeId == theme.id
                 ) {
                     withAnimation(DesignAnimations.Preset.bounce) {
-                        themeManager.selectTheme(theme.id)
+                        themeVM.selectTheme(theme.id)
                     }
                 }
             }
@@ -66,5 +66,5 @@ struct ThemeOptionCard: View {
 #Preview("主题选择器") {
     ThemeSelectorView()
         .mystiqueBackground()
-        .environmentObject(ThemeManager())
+        .environmentObject(ThemeVM())
 }

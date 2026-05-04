@@ -2,7 +2,7 @@ import SwiftUI
 import MagicKit
 
 struct EditorCallHierarchyPanelView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var state: EditorState
     var showsHeader: Bool = true
 
@@ -21,7 +21,7 @@ struct EditorCallHierarchyPanelView: View {
         HStack(spacing: 8) {
             Text(panelTitle)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
 
             Spacer(minLength: 0)
 
@@ -30,7 +30,7 @@ struct EditorCallHierarchyPanelView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -42,35 +42,37 @@ struct EditorCallHierarchyPanelView: View {
     @ViewBuilder
     private var content: some View {
         if state.callHierarchyProvider.isLoading {
-            emptyState("Loading Call Hierarchy...", systemImage: "arrow.triangle.branch")
+            emptyState(String(localized: "Loading Call Hierarchy...", table: "EditorCallHierarchyRail"), systemImage: "arrow.triangle.branch")
         } else if state.callHierarchyProvider.rootItem == nil {
-            emptyState("No Call Hierarchy", systemImage: "point.3.connected.trianglepath.dotted")
+            emptyState(String(localized: "No Call Hierarchy", table: "EditorCallHierarchyRail"), systemImage: "point.3.connected.trianglepath.dotted")
         } else {
             HStack(spacing: 0) {
-                callHierarchyColumn(title: "Incoming", calls: state.callHierarchyProvider.incomingCalls)
+                callHierarchyColumn(title: String(localized: "Incoming", table: "EditorCallHierarchyRail"), calls: state.callHierarchyProvider.incomingCalls)
                 Divider()
-                callHierarchyColumn(title: "Outgoing", calls: state.callHierarchyProvider.outgoingCalls)
+                callHierarchyColumn(title: String(localized: "Outgoing", table: "EditorCallHierarchyRail"), calls: state.callHierarchyProvider.outgoingCalls)
             }
         }
     }
 
     private var panelTitle: String {
         let count = state.callHierarchyProvider.incomingCalls.count + state.callHierarchyProvider.outgoingCalls.count
-        return count > 0 ? "Call Hierarchy (\(count))" : "Call Hierarchy"
+        return count > 0
+            ? String(localized: "\(count) Call Hierarchy", table: "EditorCallHierarchyRail")
+            : String(localized: "Call Hierarchy", table: "EditorCallHierarchyRail")
     }
 
     private func callHierarchyColumn(title: String, calls: [EditorCallHierarchyCall]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     if calls.isEmpty {
-                        emptyState("Empty", systemImage: "minus.circle")
+                        emptyState(String(localized: "Empty", table: "EditorCallHierarchyRail"), systemImage: "minus.circle")
                     } else {
                         ForEach(calls) { call in
                             Button {
@@ -79,7 +81,7 @@ struct EditorCallHierarchyPanelView: View {
                                 panelCard(
                                     title: call.item.name,
                                     subtitle: call.item.kindDisplayName,
-                                    badge: URL(string: call.item.uri)?.lastPathComponent ?? "Symbol"
+                                    badge: URL(string: call.item.uri)?.lastPathComponent ?? String(localized: "Symbol", table: "EditorCallHierarchyRail")
                                 )
                             }
                             .buttonStyle(.plain)
@@ -97,22 +99,22 @@ struct EditorCallHierarchyPanelView: View {
             HStack(spacing: 8) {
                 Text(title)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Text(badge)
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(themeManager.activeAppTheme.workspaceTextColor().opacity(0.05))
+                    .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
                     .clipShape(Capsule())
             }
 
             if !subtitle.isEmpty {
                 Text(subtitle)
                     .font(.system(size: 10))
-                    .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -122,7 +124,7 @@ struct EditorCallHierarchyPanelView: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(themeManager.activeAppTheme.workspaceTextColor().opacity(0.05))
+                .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
         )
     }
 
@@ -130,10 +132,10 @@ struct EditorCallHierarchyPanelView: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 24, weight: .thin))
-                .foregroundColor(themeManager.activeAppTheme.workspaceTertiaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
             Text(title)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(themeManager.activeAppTheme.workspaceSecondaryTextColor())
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 24)

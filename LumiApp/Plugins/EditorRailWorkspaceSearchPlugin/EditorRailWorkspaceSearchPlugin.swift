@@ -32,7 +32,7 @@ actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
 
     @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
         guard activeIcon == EditorPlugin.iconName else { return [] }
-        return [RailTab(id: "searchResults", title: "Search", systemImage: "magnifyingglass", priority: 11)]
+        return [RailTab(id: "searchResults", title: String(localized: "Search", table: "EditorRailWorkspaceSearch"), systemImage: "magnifyingglass", priority: 11)]
     }
 
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {

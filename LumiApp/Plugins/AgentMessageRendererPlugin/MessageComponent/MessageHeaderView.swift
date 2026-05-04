@@ -6,7 +6,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     let leading: Leading
     let trailing: Trailing
 
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @State private var isHovered = false
 
     init(
@@ -18,7 +18,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     }
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         HStack(alignment: .center, spacing: 8) {
             leading
@@ -42,7 +42,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     }
 
     private var headerBackground: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
         return RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
             .fill(
                 isHovered

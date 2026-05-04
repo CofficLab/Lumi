@@ -6,7 +6,7 @@ import CodeEditTextView
 /// 包含字体大小、缩进、主题切换等设置
 struct EditorToolbarView: View {
     
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var state: EditorState
     let canSplitEditor: Bool
     let onSplitHorizontal: () -> Void
@@ -88,7 +88,7 @@ struct EditorToolbarView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
-        .background(themeManager.activeAppTheme.workspaceTertiaryTextColor().opacity(0.06))
+        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.06))
         .background(findKeyboardShortcutHost)
     }
 

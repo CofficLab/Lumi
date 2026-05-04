@@ -32,7 +32,7 @@ actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
 
     @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
         guard activeIcon == EditorPlugin.iconName else { return [] }
-        return [RailTab(id: "references", title: "References", systemImage: "arrow.triangle.branch", priority: 12)]
+        return [RailTab(id: "references", title: String(localized: "References", table: "EditorRailReferences"), systemImage: "arrow.triangle.branch", priority: 12)]
     }
 
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {

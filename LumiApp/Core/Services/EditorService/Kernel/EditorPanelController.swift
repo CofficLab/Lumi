@@ -92,8 +92,8 @@ final class EditorPanelController {
         panelState.selectedWorkspaceSearchMatchID = id
     }
 
-    func setMouseHover(content: String, symbolRect: CGRect) {
-        panelState.setMouseHover(content: content, symbolRect: symbolRect)
+    func setMouseHover(content: String, symbolRect: CGRect, hoverRange: LSPRange? = nil) {
+        panelState.setMouseHover(content: content, symbolRect: symbolRect, hoverRange: hoverRange)
     }
 
     func clearMouseHover() {

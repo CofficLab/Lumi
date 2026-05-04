@@ -191,7 +191,7 @@ private struct OnboardingSheetView: View {
     @ObservedObject var viewModel: OnboardingPluginViewModel
     @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
     @EnvironmentObject private var pluginVM: PluginVM
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - 页面数据

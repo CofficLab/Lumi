@@ -168,9 +168,6 @@
         }
       }
     },
-    "\"%@\" 未绑定到任何编译 target，跨文件语义导航可能不可用。" : {
-
-    },
     "(%@)" : {
 
     },
@@ -288,6 +285,16 @@
         }
       }
     },
+    "%@:%lld:%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@:%2$lld:%3$lld"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -300,6 +307,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "%lld %@, %lld %@, %lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@, %3$lld %4$@, %5$lld %6$@"
           }
         }
       }
@@ -2439,9 +2466,6 @@
     "File indexing is automatic when switching projects" : {
 
     },
-    "Filter symbols" : {
-
-    },
     "Finder" : {
 
     },
@@ -2643,9 +2667,6 @@
           }
         }
       }
-    },
-    "Hover" : {
-
     },
     "How to Use" : {
 
@@ -2939,9 +2960,6 @@
           }
         }
       }
-    },
-    "Loading Outline..." : {
-
     },
     "Local IP" : {
       "localizations" : {
@@ -3452,9 +3470,6 @@
         }
       }
     },
-    "No Symbols" : {
-
-    },
     "No themes available" : {
 
     },
@@ -3575,12 +3590,6 @@
           }
         }
       }
-    },
-    "Outline" : {
-
-    },
-    "Outline not available" : {
-
     },
     "Override" : {
 
@@ -4335,9 +4344,6 @@
           }
         }
       }
-    },
-    "Semantic Availability" : {
-
     },
     "Show in Finder" : {
       "extractionState" : "stale",
@@ -5292,9 +5298,6 @@
     "Xcode" : {
 
     },
-    "Xcode Context" : {
-
-    },
     "Xcode 环境很干净！" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5639,9 +5642,6 @@
     "关闭" : {
 
     },
-    "关闭分栏" : {
-
-    },
     "内存 %lld GB" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5665,6 +5665,7 @@
 
     },
     "最近项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6181,12 +6182,6 @@
     "后续插件只要注册 `SuperEditorSettingsContributor`，设置项就会自动出现在这里。" : {
 
     },
-    "向下分栏" : {
-
-    },
-    "向右分栏" : {
-
-    },
     "向量后端：%@" : {
 
     },
@@ -6282,9 +6277,6 @@
           }
         }
       }
-    },
-    "在 Xcode 中打开" : {
-
     },
     "在文件中搜索" : {
 
@@ -6840,13 +6832,7 @@
         }
       }
     },
-    "当前没有可用的编辑器上下文快照。" : {
-
-    },
     "当前目标" : {
-
-    },
-    "当前编辑器语义上下文的目标平台" : {
 
     },
     "当前还没有可用的 workspace 上下文。先打开一个项目，再回到这里设置 workspace override。" : {
@@ -6953,9 +6939,6 @@
 
     },
     "恢复默认" : {
-
-    },
-    "我知道了" : {
 
     },
     "打开" : {
@@ -7491,9 +7474,6 @@
       }
     },
     "文件数" : {
-
-    },
-    "文件未在项目中注册" : {
 
     },
     "文件树" : {
@@ -8574,12 +8554,6 @@
         }
       }
     },
-    "移动到上一个分组" : {
-
-    },
-    "移动到下一个分组" : {
-
-    },
     "移除此消息" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8760,12 +8734,6 @@
           }
         }
       }
-    },
-    "聚焦上一个分组" : {
-
-    },
-    "聚焦下一个分组" : {
-
     },
     "自动批准高风险命令" : {
       "extractionState" : "stale",
@@ -9396,12 +9364,6 @@
       }
     },
     "重新解析" : {
-
-    },
-    "重新解析 Build Context" : {
-
-    },
-    "重新解析中" : {
 
     },
     "重试" : {

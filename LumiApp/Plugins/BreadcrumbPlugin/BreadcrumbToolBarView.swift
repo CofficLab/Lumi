@@ -14,19 +14,21 @@ struct BreadcrumbToolBarView: View {
         HStack(spacing: 0) {
             // 左侧：项目选择器（最近项目下拉）
             ProjectControlView()
+                .layoutPriority(1)
 
-            // 分隔线
-            if projectVM.isProjectSelected {
+            // 分隔线 + 右侧面包屑（仅在有文件打开时显示）
+            if projectVM.isProjectSelected, projectVM.selectedFileURL != nil {
+                // 分隔线
                 Rectangle()
                     .fill(Color.secondary.opacity(0.2))
                     .frame(width: 1, height: 16)
                     .padding(.horizontal, 6)
-            }
 
-            // 右侧：面包屑路径导航
-            BreadcrumbPathView()
-                .layoutPriority(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                // 右侧：面包屑路径导航
+                BreadcrumbPathView()
+                    .layoutPriority(0)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 }
@@ -172,7 +174,6 @@ struct BreadcrumbPathView: View {
         .padding(.leading, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
         .layoutPriority(1)
-        .opacity(breadcrumbItems.isEmpty ? 0 : 1)
     }
 
     // MARK: - Truncation Logic
@@ -307,7 +308,7 @@ struct BreadcrumbComponent: View {
     @Binding var truncatedCrumbWidth: CGFloat?
     let onSelectFile: (URL) -> Void
 
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
     @State private var isHovering = false
     @State private var isMenuVisible = false
 
@@ -422,7 +423,7 @@ struct BreadcrumbComponent: View {
 
     private var hoverBackground: Color {
         guard isHovering else { return .clear }
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
         return theme.workspaceTextColor().opacity(0.06)
     }
 

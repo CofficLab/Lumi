@@ -44,7 +44,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
     var body: some View {
         content
             .withMagicToast()
-            .environmentObject(container.appProvider)
+            .environmentObject(container.themeVM)
             .environmentObject(container.projectVM)
             .environmentObject(container.layoutVM)
             .environmentObject(container.providerRegistry)
@@ -67,7 +67,6 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.conversationSendStatusVM)
             .environmentObject(container.projectContextRequestVM)
             .environmentObject(container.gitVM)
-            .environmentObject(container.mystiqueThemeManager)
             .environmentObject(container.editorVM)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)

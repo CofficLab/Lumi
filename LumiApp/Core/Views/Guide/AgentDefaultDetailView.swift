@@ -2,10 +2,10 @@ import SwiftUI
 
 /// Agent 模式下默认详情视图（当右侧栏无内容时显示）
 struct AgentDefaultDetailView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var themeVM: ThemeVM
 
     var body: some View {
-        let theme = themeManager.activeAppTheme
+        let theme = themeVM.activeAppTheme
 
         VStack(spacing: 20) {
             Spacer()
