@@ -2,15 +2,15 @@ import Foundation
 import LanguageServerProtocol
 
 @MainActor
-final class EditorSaveController {
+public final class EditorSaveController {
     private var successClearTask: Task<Void, Never>?
     private let successDisplayDuration: TimeInterval
 
-    init(successDisplayDuration: TimeInterval = 2.0) {
+    public init(successDisplayDuration: TimeInterval = 2.0) {
         self.successDisplayDuration = successDisplayDuration
     }
 
-    func pipelineOptions(
+    public func pipelineOptions(
         trimTrailingWhitespace: Bool,
         insertFinalNewline: Bool,
         formatOnSave: Bool,
@@ -28,7 +28,7 @@ final class EditorSaveController {
         )
     }
 
-    func prepareAndSaveNow(
+    public func prepareAndSaveNow(
         currentContent: String,
         fileURL: URL,
         options: EditorSavePipelineOptions,
@@ -74,7 +74,7 @@ final class EditorSaveController {
         performSave(finalContent, requestFileURL)
     }
 
-    func performSave(
+    public func performSave(
         content: String,
         url: URL,
         onMissingFile: @escaping @MainActor () -> Void,
@@ -97,7 +97,7 @@ final class EditorSaveController {
         }
     }
 
-    func scheduleSuccessClear(
+    public func scheduleSuccessClear(
         isSavedState: @escaping @MainActor () -> Bool,
         clearState: @escaping @MainActor () -> Void
     ) {
@@ -113,7 +113,7 @@ final class EditorSaveController {
         }
     }
 
-    func cancelSuccessClear() {
+    public func cancelSuccessClear() {
         successClearTask?.cancel()
         successClearTask = nil
     }

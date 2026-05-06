@@ -172,6 +172,36 @@ struct EditorKernelCoreTests {
 
     @Test
     @MainActor
+    func saveControllerBuildsPipelineOptionsAndClearsSavedState() async {
+        let controller = EditorSaveController(successDisplayDuration: 0.01)
+        let options = controller.pipelineOptions(
+            trimTrailingWhitespace: true,
+            insertFinalNewline: true,
+            formatOnSave: false,
+            organizeImportsOnSave: true,
+            fixAllOnSave: false
+        )
+        #expect(options.textParticipants.trimTrailingWhitespace == true)
+        #expect(options.textParticipants.insertFinalNewline == true)
+        #expect(options.organizeImportsOnSave == true)
+
+        var isSaved = true
+        var cleared = false
+        controller.scheduleSuccessClear(
+            isSavedState: { isSaved },
+            clearState: {
+                cleared = true
+                isSaved = false
+            }
+        )
+
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(cleared == true)
+        controller.cancelSuccessClear()
+    }
+
+    @Test
+    @MainActor
     func externalFileControllerTracksConflictsAndReloadThresholds() {
         let controller = EditorExternalFileController()
         let modDate = Date()
