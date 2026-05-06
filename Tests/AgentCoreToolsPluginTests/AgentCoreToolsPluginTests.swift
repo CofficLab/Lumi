@@ -27,5 +27,29 @@ final class AgentCoreToolsPluginTests: XCTestCase {
         XCTAssertEqual(CommandRiskEvaluator.evaluate(command: "pwd"), .safe)
         XCTAssertEqual(CommandRiskEvaluator.evaluate(command: "date"), .safe)
     }
+
+    @MainActor
+    func testPluginExposesSingleCoreToolsFactory() async {
+        let factories = await AgentCoreToolsPlugin.shared.agentToolFactories()
+
+        XCTAssertEqual(factories.count, 1)
+        XCTAssertEqual(factories.first?.id, "core.tools.factory")
+        XCTAssertEqual(factories.first?.order, 0)
+    }
+
+    func testCommandRiskEvaluatorTreatsUnknownCommandsAsMediumRisk() {
+        XCTAssertEqual(CommandRiskEvaluator.evaluate(command: "custom-cli --version"), .medium)
+    }
+
+    func testCommandRiskEvaluatorDetectsPathTraversalAsHighRisk() {
+        XCTAssertEqual(CommandRiskEvaluator.evaluate(command: "cat ../Secrets.txt"), .high)
+    }
+
+    func testCommandRiskEvaluatorUsesHighestRiskInCommandChain() {
+        XCTAssertEqual(
+            CommandRiskEvaluator.evaluate(command: "echo ok && git status && rm -rf /tmp/cache"),
+            .high
+        )
+    }
 }
 #endif

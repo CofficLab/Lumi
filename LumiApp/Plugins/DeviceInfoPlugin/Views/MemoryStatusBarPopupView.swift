@@ -17,7 +17,7 @@ struct MemoryStatusBarPopupView: View {
     private var liveStatsView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Memory")
+                Text(String(localized: "Memory", table: "DeviceInfo"))
                     .font(.system(size: 11))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -58,7 +58,7 @@ struct MemoryStatusBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
-                Text("Last 60 seconds")
+                Text(String(localized: "Last 60 Seconds", table: "DeviceInfo"))
                     .font(.system(size: 10))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -69,7 +69,7 @@ struct MemoryStatusBarPopupView: View {
                         Circle()
                             .fill(AppUI.Color.semantic.primary.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text("Usage")
+                        Text(String(localized: "Usage", table: "DeviceInfo"))
                             .font(.system(size: 9))
                             .foregroundColor(AppUI.Color.semantic.textTertiary)
                     }
@@ -110,7 +110,7 @@ struct MemoryStatusBarPopupView: View {
                         )
                         .stroke(AppUI.Color.semantic.primary.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text("Collecting...")
+                        Text(String(localized: "Collecting...", table: "DeviceInfo"))
                             .font(.system(size: 10))
                             .foregroundColor(AppUI.Color.semantic.textTertiary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

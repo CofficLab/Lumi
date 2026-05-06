@@ -8,7 +8,7 @@ struct MemoryHistoryDetailView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Memory Usage Trend")
+                Text(String(localized: "Memory Usage Trend", table: "DeviceInfo"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -16,7 +16,7 @@ struct MemoryHistoryDetailView: View {
 
                 Picker("Time Range", selection: $selectedRange) {
                     ForEach(MemoryTimeRange.allCases) { range in
-                        Text(range.rawValue).tag(range)
+                        Text(range.displayName).tag(range)
                     }
                 }
                 .pickerStyle(.segmented)

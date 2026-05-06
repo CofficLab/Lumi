@@ -1,12 +1,21 @@
 import Foundation
 
 enum CPUTimeRange: String, CaseIterable, Identifiable {
-    case hour1 = "1 Hour"
-    case hour4 = "4 Hours"
-    case hour24 = "24 Hours"
-    case month1 = "30 Days"
+    case hour1
+    case hour4
+    case hour24
+    case month1
 
     var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .hour1: return String(localized: "1 Hour", table: "DeviceInfo")
+        case .hour4: return String(localized: "4 Hours", table: "DeviceInfo")
+        case .hour24: return String(localized: "24 Hours", table: "DeviceInfo")
+        case .month1: return String(localized: "30 Days", table: "DeviceInfo")
+        }
+    }
 
     var duration: TimeInterval {
         switch self {

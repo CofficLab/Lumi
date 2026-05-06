@@ -20,7 +20,7 @@ struct TopProcessesView: View {
                     .font(.system(size: 10))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
-                Text("Top Processes")
+                Text(String(localized: "Top Processes", table: "DeviceInfo"))
                     .font(.system(size: 10))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
             }
@@ -28,7 +28,7 @@ struct TopProcessesView: View {
             .padding(.bottom, 6)
 
             if processes.isEmpty {
-                Text("Collecting...")
+                Text(String(localized: "Collecting...", table: "DeviceInfo"))
                     .font(.system(size: 10))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .center)

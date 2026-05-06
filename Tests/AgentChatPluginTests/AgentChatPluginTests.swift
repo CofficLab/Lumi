@@ -16,5 +16,18 @@ final class AgentChatPluginTests: XCTestCase {
         let view = await AgentChatPlugin.shared.addSidebarView(activeIcon: "not-editor")
         XCTAssertNil(view)
     }
+
+    func testSidebarViewIsAvailableForEditorIcon() async {
+        let view = await AgentChatPlugin.shared.addSidebarView(activeIcon: EditorPlugin.iconName)
+        XCTAssertNotNil(view)
+    }
+
+    func testModelSelectorTabBuiltInTitlesRemainStable() {
+        XCTAssertEqual(ModelSelectorTab.current.displayTitle, "Current Provider")
+        XCTAssertEqual(ModelSelectorTab.frequent.displayTitle, "Frequent")
+        XCTAssertEqual(ModelSelectorTab.fast.displayTitle, "Fast")
+        XCTAssertEqual(ModelSelectorTab.all.displayTitle, "All")
+        XCTAssertEqual(ModelSelectorTab.provider("openai").displayTitle, "")
+    }
 }
 #endif

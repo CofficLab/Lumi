@@ -74,8 +74,6 @@ class ProcessService: ObservableObject, SuperLog {
         let deltaTime = now - previousTimestamp
         guard deltaTime > 0 else { return }
 
-        let numCPUs = Double(ProcessInfo.processInfo.activeProcessorCount)
-
         // 获取所有 PID
         var bufferSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, nil, 0)
         guard bufferSize > 0 else { return }
@@ -112,7 +110,7 @@ class ProcessService: ObservableObject, SuperLog {
                 let totalDelta = deltaUser &+ deltaSystem
 
                 // pti_total_user/system 单位为 nanoseconds
-                let cpuPercent = Double(totalDelta) / (deltaTime * numCPUs * 1_000_000_000) * 100.0
+                let cpuPercent = Double(totalDelta) / (deltaTime * 1_000_000_000) * 100.0
 
                 if cpuPercent > 0.1 {
                     let name = getProcessName(pid: pid)

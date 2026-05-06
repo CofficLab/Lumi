@@ -133,14 +133,17 @@ public struct MarkdownBlockRenderer: View {
             }
 
             if preferOuterScroll {
-                // 外层列表控制垂直滚动时，使用自定义容器避免水平 ScrollView 捕获垂直滚轮事件
-                PassthroughHorizontalScrollView {
-                    Text(verbatim: code)
-                        .font(theme.codeFont)
-                        .textSelection(.enabled)
-                        .multilineTextAlignment(.leading)
-                        .padding(10)
-                }
+                // 外层列表控制垂直滚动时，不使用任何 ScrollView。
+                // 直接用 Text + lineLimit + clipping 展示代码。
+                // 超宽内容会被裁剪，但不会捕获滚轮事件，保证外层 List 正常滚动。
+                Text(verbatim: code)
+                    .font(theme.codeFont)
+                    .textSelection(.enabled)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(code.components(separatedBy: .newlines).count)
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .clipped()
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     Text(verbatim: code)
@@ -231,109 +234,6 @@ public struct MarkdownBlockRenderer: View {
             Text("•")
                 .font(theme.bodyFont)
         }
-    }
-}
-
-// MARK: - PassthroughHorizontalScrollView
-
-/// 一个水平滚动容器，不会拦截垂直方向的滚轮事件。
-///
-/// 解决嵌套在垂直 `List`/`ScrollView` 中的水平 `ScrollView` 捕获垂直滚轮、
-/// 导致外层无法滚动的问题。
-///
-/// 原理：底层使用 `NSScrollView`，在 `scrollWheel(with:)` 中：
-/// - **垂直滚轮** → 直接转发给 responder 链上的上层视图
-/// - **水平滚轮 / Shift+滚轮 / 触控板横扫** → 由自身处理水平滚动
-struct PassthroughHorizontalScrollView<Content: View>: NSViewRepresentable {
-    let content: Content
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    func makeNSView(context: Context) -> PassthroughHorizontalScrollViewHost {
-        let host = PassthroughHorizontalScrollViewHost()
-        host.setup(content: content, context: context)
-        return host
-    }
-
-    func updateNSView(_ nsView: PassthroughHorizontalScrollViewHost, context: Context) {
-        nsView.update(content: content)
-    }
-}
-
-/// 承载 `PassthroughHorizontalScrollView` 的 NSView 宿主
-///
-/// 内部使用 `NSScrollView` 进行水平滚动，但通过重写 `scrollWheel(with:)`
-/// 将垂直滚轮事件转发给 responder 链上的上层视图。
-final class PassthroughHorizontalScrollViewHost: NSView {
-    private var hostingView: NSHostingView<AnyView>?
-    private var scrollView: NSScrollView?
-
-    func setup(content: some View, context: NSViewRepresentableContext<some NSViewRepresentable>) {
-        wantsLayer = true
-
-        let hosting = NSHostingView(rootView: AnyView(content))
-        hosting.translatesAutoresizingMaskIntoConstraints = false
-        self.hostingView = hosting
-
-        let scroll = NSScrollView()
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        scroll.documentView = hosting
-        scroll.hasHorizontalScroller = false
-        scroll.hasVerticalScroller = false
-        scroll.horizontalScrollElasticity = .allowed
-        scroll.verticalScrollElasticity = .none
-        scroll.drawsBackground = false
-        scroll.automaticallyAdjustsContentInsets = false
-        scroll.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-        self.scrollView = scroll
-
-        addSubview(scroll)
-        NSLayoutConstraint.activate([
-            scroll.leadingAnchor.constraint(equalTo: leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: trailingAnchor),
-            scroll.topAnchor.constraint(equalTo: topAnchor),
-            scroll.bottomAnchor.constraint(equalTo: bottomAnchor),
-        ])
-
-        // 让 hostingView 宽度自适应内容，高度跟随容器
-        NSLayoutConstraint.activate([
-            hosting.topAnchor.constraint(equalTo: scroll.contentView.topAnchor),
-            hosting.heightAnchor.constraint(equalTo: scroll.heightAnchor),
-        ])
-    }
-
-    func update(content: some View) {
-        hostingView?.rootView = AnyView(content)
-    }
-
-    override func scrollWheel(with event: NSEvent) {
-        // 判断是否为水平滚动意图
-        let isHorizontalGesture: Bool
-        if event.phase == .mayBegin || event.phase == .began {
-            // 触控板：根据初始 deltaX/deltaY 判断方向
-            isHorizontalGesture = abs(event.deltaX) > abs(event.deltaY)
-        } else if event.modifierFlags.contains(.shift) {
-            // Shift + 滚轮 = 水平滚动
-            isHorizontalGesture = true
-        } else {
-            // 普通鼠标滚轮：deltaX 几乎为 0，属于垂直意图
-            isHorizontalGesture = abs(event.deltaX) > abs(event.deltaY)
-        }
-
-        if isHorizontalGesture {
-            // 水平滚动：由自身 NSScrollView 处理
-            super.scrollWheel(with: event)
-        } else {
-            // 垂直滚动：转发给 responder 链（交给外层 List/ScrollView）
-            nextResponder?.scrollWheel(with: event)
-        }
-    }
-
-    override var intrinsicContentSize: NSSize {
-        // 宽度跟随父容器，高度由内容决定
-        return NSSize(width: NSView.noIntrinsicMetric, height: hostingView?.intrinsicContentSize.height ?? NSView.noIntrinsicMetric)
     }
 }
 

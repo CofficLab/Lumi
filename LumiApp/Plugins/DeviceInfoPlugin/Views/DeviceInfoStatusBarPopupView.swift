@@ -19,6 +19,9 @@ struct DeviceInfoStatusBarPopupView: View {
 
                 // 历史趋势图（最近60秒）
                 miniTrendView
+
+                // Top 5 CPU 占用进程
+                topProcessesView
             }
         }
     }
@@ -28,7 +31,7 @@ struct DeviceInfoStatusBarPopupView: View {
     private var liveCpuView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("CPU Usage")
+                Text(String(localized: "CPU Usage", table: "DeviceInfo"))
                     .font(.system(size: 11))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -75,7 +78,7 @@ struct DeviceInfoStatusBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
-                Text("Last 60 Seconds")
+                Text(String(localized: "Last 60 Seconds", table: "DeviceInfo"))
                     .font(.system(size: 10))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -87,7 +90,7 @@ struct DeviceInfoStatusBarPopupView: View {
                         Circle()
                             .fill(cpuColor.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text("Usage")
+                        Text(String(localized: "Usage", table: "DeviceInfo"))
                             .font(.system(size: 9))
                             .foregroundColor(AppUI.Color.semantic.textTertiary)
                     }
@@ -132,7 +135,7 @@ struct DeviceInfoStatusBarPopupView: View {
                         )
                         .stroke(cpuColor.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text("收集中...")
+                        Text(String(localized: "Collecting...", table: "DeviceInfo"))
                             .font(.system(size: 10))
                             .foregroundColor(AppUI.Color.semantic.textTertiary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -144,6 +147,12 @@ struct DeviceInfoStatusBarPopupView: View {
         }
         .padding(.vertical, 8)
         .background(AppUI.Material.glass.opacity(0.3))
+    }
+
+    // MARK: - Top Processes View
+
+    private var topProcessesView: some View {
+        TopProcessesView(processes: viewModel.topProcesses)
     }
 
     // MARK: - Helpers
