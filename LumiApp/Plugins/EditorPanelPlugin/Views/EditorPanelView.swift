@@ -38,6 +38,7 @@ struct EditorPanelView: View {
     private var lifecycleBoundRootView: some View {
         baseRootView
             .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+                state.logger.info("📝[onChange:currentProjectPath] oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)")
                 // 保存旧项目的标签页
                 if !oldPath.isEmpty {
                     saveCurrentTabs(forProject: oldPath)
@@ -55,6 +56,7 @@ struct EditorPanelView: View {
                 }
             }
             .onChange(of: projectVM.selectedFileURL) { _, newURL in
+                state.logger.info("📝[onChange:selectedFileURL] newURL=\(newURL?.path ?? "nil", privacy: .public)")
                 openOrActivateSession(for: newURL)
             }
             .onChange(of: state.currentFileURL) { _, _ in
@@ -68,6 +70,7 @@ struct EditorPanelView: View {
                 updateBreadcrumbBridge()
             }
             .onAppear {
+                state.logger.info("📝[onAppear] EditorPanelView 出现, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
                 state.projectRootPath = projectVM.currentProject?.path
                 refreshProjectContext(for: projectVM.currentProjectPath)
                 state.onActiveSessionChanged = { snapshot in
@@ -425,23 +428,28 @@ struct EditorPanelView: View {
     /// 从持久化存储恢复标签页
     private func restoreTabs(forProject projectPath: String) {
         let (persistedTabs, activeTabPath) = tabStore.loadTabs(forProject: projectPath)
+        state.logger.info("📝[restoreTabs] 恢复标签页, projectPath=\(projectPath, privacy: .public), persistedCount=\(persistedTabs.count), activeTabPath=\(activeTabPath ?? "nil", privacy: .public)")
 
         // 过滤掉不存在的文件
         let validTabs = persistedTabs.compactMap { tab -> URL? in
             guard let url = tab.fileURL,
                   FileManager.default.isReadableFile(atPath: url.path) else {
+                state.logger.warning("📝[restoreTabs] 跳过不可读文件: \(tab.path, privacy: .public)")
                 return nil
             }
             return url
         }
 
+        state.logger.info("📝[restoreTabs] 有效标签页数=\(validTabs.count)")
         guard !validTabs.isEmpty else { return }
 
         // 先打开最后一个保存的活跃标签
         if let activePath = activeTabPath,
            let activateURL = validTabs.first(where: { $0.path == activePath }) {
+            state.logger.info("📝[restoreTabs] 选择活跃标签: \(activateURL.path, privacy: .public)")
             projectVM.selectFile(at: activateURL)
         } else if let fallbackURL = validTabs.first {
+            state.logger.info("📝[restoreTabs] 选择第一个标签: \(fallbackURL.path, privacy: .public)")
             projectVM.selectFile(at: fallbackURL)
         }
     }
@@ -488,6 +496,7 @@ struct EditorPanelView: View {
     // MARK: - Session Management
 
     private func openOrActivateSession(for fileURL: URL?) {
+        state.logger.info("📝[openOrActivateSession] 入口, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), isFileSelected=\(projectVM.isFileSelected)")
         state.projectRootPath = projectVM.currentProject?.path
         refreshProjectContext(for: projectVM.currentProjectPath)
         guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
@@ -496,7 +505,7 @@ struct EditorPanelView: View {
             return
         }
 
-        state.logger.info("📝[openOrActivateSession] 加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public)")
+        state.logger.info("📝[openOrActivateSession] 加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public), sessionID=\(session.id)")
         state.loadFile(from: session.fileURL)
         restoreInteractionState(for: session)
         scheduleTabSave()
