@@ -1336,4 +1336,40 @@ struct EditorKernelCoreTests {
         )
         #expect(conflicts.map(\.id) == ["builtin.find"])
     }
+
+    @Test
+    @MainActor
+    func selectionMappingPolicyNormalizesRangesAndGuardsMultiCursorLoss() {
+        let canonical = EditorSelectionMappingPolicy.canonicalSelectionSet(
+            from: [
+                NSRange(location: 8, length: 1),
+                NSRange(location: NSNotFound, length: 0),
+                NSRange(location: 2, length: 0),
+            ]
+        )
+        #expect(canonical?.selections == [
+            .init(range: .init(location: 2, length: 0)),
+            .init(range: .init(location: 8, length: 1)),
+        ])
+
+        let currentState = EditorSelectionSet(selections: [
+            .init(range: .init(location: 2, length: 0)),
+            .init(range: .init(location: 8, length: 1)),
+        ])
+        let viewSelections = EditorSelectionSet(selections: [
+            .init(range: .init(location: 2, length: 0)),
+        ])
+        #expect(
+            EditorSelectionMappingPolicy.shouldAcceptCanonicalUpdate(
+                viewSelections: viewSelections,
+                currentState: currentState
+            ) == false
+        )
+        #expect(
+            EditorSelectionMappingPolicy.rangesAreEqual(
+                EditorSelectionMappingPolicy.targetViewRanges(for: currentState),
+                [NSRange(location: 2, length: 0), NSRange(location: 8, length: 1)]
+            ) == true
+        )
+    }
 }

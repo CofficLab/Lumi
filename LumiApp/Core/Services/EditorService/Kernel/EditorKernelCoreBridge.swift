@@ -5,6 +5,7 @@ typealias CursorMotionController = EditorKernelCore.CursorMotionController
 typealias EditorRange = EditorKernelCore.EditorRange
 typealias EditorSelection = EditorKernelCore.EditorSelection
 typealias EditorSelectionSet = EditorKernelCore.EditorSelectionSet
+typealias EditorSelectionMappingPolicy = EditorKernelCore.EditorSelectionMappingPolicy
 typealias EditorCursorState = EditorKernelCore.EditorCursorState
 typealias EditorTransaction = EditorKernelCore.EditorTransaction
 typealias EditorCommandCategory = EditorKernelCore.EditorCommandCategory

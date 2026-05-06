@@ -16,6 +16,7 @@ import Foundation
 //   旧：view 改选区 → state 追 → state 回写 → 覆盖 view → 循环
 //   新：view → toCanonical → 内核 → 下次 toView 时才写回 view
 
+@MainActor
 enum EditorSelectionMapper {
 
     // MARK: - View → Canonical
@@ -31,19 +32,12 @@ enum EditorSelectionMapper {
         currentState: EditorSelectionSet
     ) -> EditorSelectionSet? {
         let viewSelections = textView.selectionManager.textSelections
-
-        // 过滤无效选区
-        let validRanges = viewSelections
-            .map(\.range)
-            .filter { $0.location != NSNotFound && $0.location >= 0 }
-
-        guard !validRanges.isEmpty else { return nil }
-
-        let mapped = validRanges
-            .sorted { $0.location < $1.location }
-            .map { EditorSelection(range: EditorRange(location: $0.location, length: $0.length)) }
-
-        return EditorSelectionSet(selections: mapped)
+        let canonical = EditorSelectionMappingPolicy.canonicalSelectionSet(
+            from: viewSelections.map(\.range)
+        )
+        guard let canonical else { return nil }
+        _ = currentState
+        return canonical
     }
 
     /// 判断是否应该接受这次原生选区变化。
@@ -55,17 +49,10 @@ enum EditorSelectionMapper {
         viewSelections: EditorSelectionSet,
         currentState: EditorSelectionSet
     ) -> Bool {
-        // 单光标模式总是接受
-        if !currentState.isMultiCursor && !viewSelections.isMultiCursor {
-            return true
-        }
-
-        // 多光标模式下，原生选区数量减少时拒绝（可能是 CodeEdit 内部丢失）
-        if currentState.isMultiCursor && viewSelections.count < currentState.count {
-            return false
-        }
-
-        return true
+        EditorSelectionMappingPolicy.shouldAcceptCanonicalUpdate(
+            viewSelections: viewSelections,
+            currentState: currentState
+        )
     }
 
     // MARK: - Canonical → View
@@ -78,22 +65,11 @@ enum EditorSelectionMapper {
         textView: TextView
     ) {
         let currentViewRanges = textView.selectionManager.textSelections.map(\.range)
-
-        let targetRanges = selectionSet.selections.map(\.range.nsRange)
+        let targetRanges = EditorSelectionMappingPolicy.targetViewRanges(for: selectionSet)
 
         // 如果一致则跳过，避免触发 selectionDidChange 回调形成循环
-        guard !rangesAreEqual(currentViewRanges, targetRanges) else { return }
+        guard !EditorSelectionMappingPolicy.rangesAreEqual(currentViewRanges, targetRanges) else { return }
 
         textView.selectionManager.setSelectedRanges(targetRanges)
-    }
-
-    // MARK: - Private
-
-    private static func rangesAreEqual(
-        _ lhs: [NSRange],
-        _ rhs: [NSRange]
-    ) -> Bool {
-        guard lhs.count == rhs.count else { return false }
-        return zip(lhs, rhs).allSatisfy { $0 == $1 }
     }
 }
