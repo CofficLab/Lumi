@@ -27,6 +27,7 @@ typealias EditorCommandPresentationModel = EditorKernelCore.EditorCommandPresent
 typealias EditorCommandSection = EditorKernelCore.EditorCommandSection
 typealias EditorCommandShortcut = EditorKernelCore.EditorCommandShortcut
 typealias EditorCommandSuggestion = EditorKernelCore.EditorCommandSuggestion
+typealias EditorFormattingController = EditorKernelCore.EditorFormattingController
 typealias EditorShortcutDefinition = EditorKernelCore.EditorShortcutDefinition
 typealias EditorKeybindingEntry = EditorKernelCore.EditorKeybindingEntry
 typealias EditorShortcutCatalogPolicy = EditorKernelCore.EditorShortcutCatalogPolicy

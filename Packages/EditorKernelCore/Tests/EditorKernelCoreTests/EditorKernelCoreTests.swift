@@ -202,6 +202,38 @@ struct EditorKernelCoreTests {
 
     @Test
     @MainActor
+    func formattingControllerFormatsAndPreparesSaveText() async {
+        let controller = EditorFormattingController()
+        let edit = TextEdit(
+            range: LSPRange(start: Position(line: 0, character: 0), end: Position(line: 0, character: 3)),
+            newText: "let"
+        )
+
+        var statuses: [EditorStatusLevel] = []
+        var appliedReason: String?
+        await controller.formatDocument(
+            canPreview: true,
+            isEditable: true,
+            tabSize: 4,
+            insertSpaces: true,
+            requestFormatting: { _, _ in [edit] },
+            applyTextEdits: { _, reason in appliedReason = reason },
+            showStatus: { _, level, _ in statuses.append(level) }
+        )
+        #expect(statuses == [.info, .success])
+        #expect(appliedReason == "lsp_format_document")
+
+        let prepared = await controller.prepareSaveFormatting(
+            text: "var value",
+            tabSize: 4,
+            insertSpaces: true,
+            requestFormatting: { _, _ in [edit] }
+        )
+        #expect(prepared == "let value")
+    }
+
+    @Test
+    @MainActor
     func externalFileControllerTracksConflictsAndReloadThresholds() {
         let controller = EditorExternalFileController()
         let modDate = Date()

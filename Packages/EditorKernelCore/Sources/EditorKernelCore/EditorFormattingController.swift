@@ -2,8 +2,10 @@ import Foundation
 import LanguageServerProtocol
 
 @MainActor
-final class EditorFormattingController {
-    func formatDocument(
+public final class EditorFormattingController {
+    public init() {}
+
+    public func formatDocument(
         canPreview: Bool,
         isEditable: Bool,
         tabSize: Int,
@@ -40,7 +42,7 @@ final class EditorFormattingController {
         )
     }
 
-    func prepareSaveFormatting(
+    public func prepareSaveFormatting(
         text: String,
         tabSize: Int,
         insertSpaces: Bool,
