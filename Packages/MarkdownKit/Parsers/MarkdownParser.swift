@@ -54,7 +54,16 @@ public enum MarkdownParser {
         case let code as CodeBlock:
             blocks.append(.codeBlock(language: code.language, code: code.code))
         case let quote as BlockQuote:
-            let text = quote.children.map { $0.format() }.joined(separator: "\n")
+            let text = quote.format()
+                .components(separatedBy: .newlines)
+                .map { line in
+                    line.replacingOccurrences(
+                        of: #"^\s*>\s?"#,
+                        with: "",
+                        options: .regularExpression
+                    )
+                }
+                .joined(separator: "\n")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             if !text.isEmpty {
                 blocks.append(.quote(text: text))
@@ -72,7 +81,7 @@ public enum MarkdownParser {
     }
 
     private static func parseListItem(_ item: ListItem) -> MarkdownListItem? {
-        let text = item.children.map { $0.format() }.joined(separator: "\n")
+        let text = item.format()
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
         let stripped = stripListPrefix(text)

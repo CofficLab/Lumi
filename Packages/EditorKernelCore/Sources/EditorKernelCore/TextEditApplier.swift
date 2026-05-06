@@ -1,8 +1,8 @@
 import Foundation
 import LanguageServerProtocol
 
-enum TextEditApplier {
-    static func apply(edits: [TextEdit], to content: String) -> String? {
+public enum TextEditApplier {
+    public static func apply(edits: [TextEdit], to content: String) -> String? {
         let sorted = edits.sorted { lhs, rhs in
             if lhs.range.start.line != rhs.range.start.line {
                 return lhs.range.start.line > rhs.range.start.line

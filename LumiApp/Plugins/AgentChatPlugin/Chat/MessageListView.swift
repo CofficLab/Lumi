@@ -1,6 +1,7 @@
 import AppKit
 import MagicKit
 import SwiftUI
+import MarkdownKit
 
 /// 消息列表视图组件
 struct MessageListView: View {

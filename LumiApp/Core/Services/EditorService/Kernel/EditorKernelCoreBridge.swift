@@ -1,0 +1,15 @@
+import EditorKernelCore
+
+typealias CursorMotionTarget = EditorKernelCore.CursorMotionTarget
+typealias CursorMotionController = EditorKernelCore.CursorMotionController
+typealias EditorRange = EditorKernelCore.EditorRange
+typealias EditorSelection = EditorKernelCore.EditorSelection
+typealias EditorTransaction = EditorKernelCore.EditorTransaction
+typealias EditorSnippetSession = EditorKernelCore.EditorSnippetSession
+typealias EditorSnippetParseResult = EditorKernelCore.EditorSnippetParseResult
+typealias EditorSnippetParser = EditorKernelCore.EditorSnippetParser
+typealias MultiCursorSelection = EditorKernelCore.MultiCursorSelection
+typealias MultiCursorOperation = EditorKernelCore.MultiCursorOperation
+typealias MultiCursorEditResult = EditorKernelCore.MultiCursorEditResult
+typealias MultiCursorEditEngine = EditorKernelCore.MultiCursorEditEngine
+typealias TextEditApplier = EditorKernelCore.TextEditApplier

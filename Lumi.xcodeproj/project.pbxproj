@@ -30,6 +30,10 @@
 		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
+		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
+		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
+		A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E12F70000100AAA101 /* MarkdownKit */; };
+		A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E72F70000100AAA101 /* EditorKernelCore */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -176,6 +180,11 @@
 			path = LumiFinder;
 			sourceTree = "<group>";
 		};
+		A1B2C3D82F70000100AAA101 /* Packages */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Packages;
+			sourceTree = "<group>";
+		};
 		F5819AA43050B3B70038F0A1 /* Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Tests;
@@ -231,6 +240,10 @@
 				0B6DF8562F8E77E100FA0CAC /* LanguageServerProtocol in Frameworks */,
 				0B4548682F89F3B500C6B7C8 /* CodeEditSourceEditor in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
+				A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */,
+				A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */,
+				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
+				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
 				0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */,
 				F5485E322F7A077B00566188 /* CodeEditor in Frameworks */,
@@ -270,6 +283,7 @@
 			children = (
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
+				A1B2C3D82F70000100AAA101 /* Packages */,
 				F5819AA43050B3B70038F0A1 /* Tests */,
 				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
@@ -387,6 +401,10 @@
 				0B6DF8552F8E77E100FA0CAC /* LanguageServerProtocol */,
 				0B6DF8582F8E780800FA0CAC /* LanguageClient */,
 				223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */,
+				A1B2C3DC2F70000100AAA101 /* FilePreviewKit */,
+				A1B2C3E12F70000100AAA101 /* MarkdownKit */,
+				A1B2C3D62F70000100AAA101 /* MarkdownKitCore */,
+				A1B2C3E72F70000100AAA101 /* EditorKernelCore */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 			);
 			productName = "SwiftUI-Template";
@@ -471,6 +489,9 @@
 				0B6DF8542F8E77E100FA0CAC /* XCRemoteSwiftPackageReference "LanguageServerProtocol" */,
 				0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */,
 				F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */,
+				A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */,
+				A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */,
+				A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1047,6 +1068,21 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/MarkdownKit;
+		};
+		A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FilePreviewKit;
+		};
+		A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/EditorKernelCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1311,6 +1347,26 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0F7C1D5EDE3441A587783365 /* XCRemoteSwiftPackageReference "beautiful-mermaid-swift" */;
 			productName = BeautifulMermaid;
+		};
+		A1B2C3D62F70000100AAA101 /* MarkdownKitCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */;
+			productName = MarkdownKitCore;
+		};
+		A1B2C3DC2F70000100AAA101 /* FilePreviewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */;
+			productName = FilePreviewKit;
+		};
+		A1B2C3E12F70000100AAA101 /* MarkdownKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */;
+			productName = MarkdownKit;
+		};
+		A1B2C3E72F70000100AAA101 /* EditorKernelCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */;
+			productName = EditorKernelCore;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -1,14 +1,5 @@
 import Foundation
 
-/// 多光标选择范围
-struct MultiCursorSelection: Hashable {
-    var location: Int
-    var length: Int
-
-    var isCaret: Bool { length == 0 }
-    var upperBound: Int { location + length }
-}
-
 /// 多光标编辑状态
 struct MultiCursorState: Equatable {
     var primary: MultiCursorSelection = .init(location: 0, length: 0)

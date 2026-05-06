@@ -1,13 +1,23 @@
 import Foundation
 
-struct EditorSnippetParseResult: Equatable {
-    let text: String
-    let groups: [EditorSnippetSession.PlaceholderGroup]
-    let exitSelection: NSRange
+public struct EditorSnippetParseResult: Equatable, Sendable {
+    public let text: String
+    public let groups: [EditorSnippetSession.PlaceholderGroup]
+    public let exitSelection: NSRange
+
+    public init(
+        text: String,
+        groups: [EditorSnippetSession.PlaceholderGroup],
+        exitSelection: NSRange
+    ) {
+        self.text = text
+        self.groups = groups
+        self.exitSelection = exitSelection
+    }
 }
 
-enum EditorSnippetParser {
-    static func parse(_ snippet: String) -> EditorSnippetParseResult {
+public enum EditorSnippetParser {
+    public static func parse(_ snippet: String) -> EditorSnippetParseResult {
         let ns = snippet as NSString
         var index = 0
         var output = ""
@@ -34,7 +44,7 @@ enum EditorSnippetParser {
         while index < ns.length {
             let char = ns.character(at: index)
 
-            if char == 0x5C { // "\"
+            if char == 0x5C {
                 if index + 1 < ns.length {
                     output.append(ns.substring(with: NSRange(location: index + 1, length: 1)))
                     index += 2
@@ -44,7 +54,7 @@ enum EditorSnippetParser {
                 continue
             }
 
-            guard char == 0x24 else { // "$"
+            guard char == 0x24 else {
                 output.append(ns.substring(with: NSRange(location: index, length: 1)))
                 index += 1
                 continue
@@ -65,7 +75,7 @@ enum EditorSnippetParser {
                 continue
             }
 
-            if next == 0x7B { // "{"
+            if next == 0x7B {
                 var cursor = index + 2
                 var digits = ""
                 while cursor < ns.length {
@@ -82,14 +92,14 @@ enum EditorSnippetParser {
                 }
 
                 let delimiter = ns.character(at: cursor)
-                if delimiter == 0x7D { // "}"
+                if delimiter == 0x7D {
                     let seededText = placeholderSeeds[placeholderIndex] ?? ""
                     appendPlaceholder(index: placeholderIndex, text: seededText)
                     index = cursor + 1
                     continue
                 }
 
-                if delimiter == 0x3A { // ":"
+                if delimiter == 0x3A {
                     cursor += 1
                     var body = ""
                     while cursor < ns.length {

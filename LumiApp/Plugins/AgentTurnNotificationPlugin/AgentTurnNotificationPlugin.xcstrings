@@ -61,6 +61,12 @@
             "state": "translated",
             "value": "当 Agent 回合结束时发送系统通知。"
           }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當 Agent 回合結束時發送系統通知。"
+          }
         }
       }
     },

@@ -2,6 +2,8 @@ import MagicKit
 import SwiftUI
 import Combine
 import CodeEditSourceEditor
+import FilePreviewKit
+import MarkdownKit
 import UniformTypeIdentifiers
 
 /// 编辑器主视图

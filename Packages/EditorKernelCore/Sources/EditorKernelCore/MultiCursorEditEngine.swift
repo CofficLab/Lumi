@@ -1,6 +1,6 @@
 import Foundation
 
-enum MultiCursorOperation {
+public enum MultiCursorOperation: Sendable {
     case replaceSelection(String)
     case insert(String)
     case deleteBackward
@@ -8,16 +8,18 @@ enum MultiCursorOperation {
     case outdent(tabSize: Int, useSpaces: Bool)
 }
 
-struct MultiCursorEditResult {
-    let text: String
-    let selections: [MultiCursorSelection]
+public struct MultiCursorEditResult: Equatable, Sendable {
+    public let text: String
+    public let selections: [MultiCursorSelection]
+
+    public init(text: String, selections: [MultiCursorSelection]) {
+        self.text = text
+        self.selections = selections
+    }
 }
 
-/// 多光标编辑引擎
-/// 以“从后往前”顺序应用编辑，避免前序编辑导致后续 range 偏移
-enum MultiCursorEditEngine {
-
-    static func apply(
+public enum MultiCursorEditEngine {
+    public static func apply(
         text: String,
         selections: [MultiCursorSelection],
         operation: MultiCursorOperation
@@ -77,6 +79,7 @@ enum MultiCursorEditEngine {
                 } else {
                     newSelections.append(safe)
                 }
+
             case .indent, .outdent:
                 break
             }
@@ -91,33 +94,24 @@ enum MultiCursorEditEngine {
         selections: [MultiCursorSelection],
         indentUnit: String
     ) -> MultiCursorEditResult {
-        let ns = text as NSString
-        let normalizedSelections = selections
-            .map { normalized($0, maxLength: ns.length) }
+        let nsText = text as NSString
+        let lineStarts = uniqueLineStarts(in: nsText, selections: selections)
+        guard !lineStarts.isEmpty else {
+            return .init(text: text, selections: selections.sorted { $0.location < $1.location })
+        }
+
+        let buffer = NSMutableString(string: text)
+        let indentLength = (indentUnit as NSString).length
+
+        for start in lineStarts.sorted(by: >) {
+            buffer.insert(indentUnit, at: start)
+        }
+
+        let adjustedSelections = selections
+            .map { adjustedSelection($0, forInsertedLineStarts: lineStarts, indentLength: indentLength) }
             .sorted { $0.location < $1.location }
 
-        let lineStarts = uniqueLineStarts(in: text, selections: normalizedSelections)
-        let lineStartSet = Set(lineStarts)
-        let replacements = lineStarts.sorted(by: >)
-        let mutable = NSMutableString(string: text)
-        for start in replacements {
-            mutable.insert(indentUnit, at: start)
-        }
-
-        let indentLength = (indentUnit as NSString).length
-        let updatedSelections = normalizedSelections.map { selection in
-            let shiftBeforeStart = replacements.filter { $0 < selection.location }.count * indentLength
-            let coveredStarts = lineStartSet.filter { lineStart in
-                lineStart >= selection.location && lineStart < selection.location + selection.length
-            }.count
-
-            return MultiCursorSelection(
-                location: selection.location + shiftBeforeStart,
-                length: selection.length + coveredStarts * indentLength
-            )
-        }
-
-        return .init(text: mutable as String, selections: updatedSelections)
+        return .init(text: buffer as String, selections: adjustedSelections)
     }
 
     private static func applyOutdent(
@@ -126,76 +120,81 @@ enum MultiCursorEditEngine {
         tabSize: Int,
         useSpaces: Bool
     ) -> MultiCursorEditResult {
-        let ns = text as NSString
-        let normalizedSelections = selections
-            .map { normalized($0, maxLength: ns.length) }
+        let nsText = text as NSString
+        let lineStarts = uniqueLineStarts(in: nsText, selections: selections)
+        guard !lineStarts.isEmpty else {
+            return .init(text: text, selections: selections.sorted { $0.location < $1.location })
+        }
+
+        let buffer = NSMutableString(string: text)
+        var removedRanges: [NSRange] = []
+
+        for start in lineStarts.sorted(by: >) {
+            let lineRange = nsText.lineRange(for: NSRange(location: start, length: 0))
+            let lineText = nsText.substring(with: lineRange)
+            let removeWidth = outdentWidth(lineText: lineText, tabSize: tabSize, useSpaces: useSpaces)
+            guard removeWidth > 0 else { continue }
+            let removeRange = NSRange(location: start, length: removeWidth)
+            buffer.deleteCharacters(in: removeRange)
+            removedRanges.append(removeRange)
+        }
+
+        let adjustedSelections = selections
+            .map { adjustedSelection($0, removedRanges: removedRanges) }
             .sorted { $0.location < $1.location }
 
-        let lineStarts = uniqueLineStarts(in: text, selections: normalizedSelections)
-        let removals = lineStarts.compactMap { lineStart -> NSRange? in
-            let lineRange = ns.lineRange(for: NSRange(location: lineStart, length: 0))
-            let lineText = ns.substring(with: lineRange)
-            let length = outdentWidth(in: lineText, tabSize: tabSize, useSpaces: useSpaces)
-            guard length > 0 else { return nil }
-            return NSRange(location: lineStart, length: length)
-        }
-
-        guard !removals.isEmpty else {
-            return .init(text: text, selections: normalizedSelections)
-        }
-
-        let mutable = NSMutableString(string: text)
-        for removal in removals.sorted(by: { $0.location > $1.location }) {
-            mutable.deleteCharacters(in: removal)
-        }
-
-        let updatedSelections = normalizedSelections.map { selection in
-            adjustedSelection(selection, removedRanges: removals)
-        }
-
-        return .init(text: mutable as String, selections: updatedSelections)
+        return .init(text: buffer as String, selections: adjustedSelections)
     }
 
     private static func normalized(_ selection: MultiCursorSelection, maxLength: Int) -> MultiCursorSelection {
-        let location = min(max(0, selection.location), maxLength)
-        let maxSelectable = max(0, maxLength - location)
-        let length = min(max(0, selection.length), maxSelectable)
-        return .init(location: location, length: length)
+        let location = min(max(selection.location, 0), maxLength)
+        let upperBound = min(max(selection.location + selection.length, location), maxLength)
+        return .init(location: location, length: upperBound - location)
     }
 
     private static func uniqueLineStarts(
-        in text: String,
+        in nsText: NSString,
         selections: [MultiCursorSelection]
     ) -> [Int] {
-        let ns = text as NSString
-        var starts: Set<Int> = []
-
+        var result = Set<Int>()
         for selection in selections {
-            let first = ns.lineRange(for: NSRange(location: selection.location, length: 0)).location
-            let lastLocation = selection.length > 0
-                ? max(selection.location, selection.location + selection.length - 1)
-                : selection.location
-            let last = ns.lineRange(for: NSRange(location: min(lastLocation, ns.length), length: 0)).location
-
-            var current = first
-            while current <= last, current < ns.length {
-                starts.insert(current)
-                let lineRange = ns.lineRange(for: NSRange(location: current, length: 0))
-                let next = NSMaxRange(lineRange)
-                if next <= current { break }
-                current = next
+            let safe = normalized(selection, maxLength: nsText.length)
+            let effectiveLength = max(safe.length, safe.isCaret ? 1 : 0)
+            let lineRange = nsText.lineRange(for: NSRange(location: min(safe.location, max(nsText.length - 1, 0)), length: 0))
+            if safe.isCaret || lineRange.length == 0 {
+                result.insert(lineRange.location)
+                continue
             }
 
-            if ns.length == 0 || first == ns.length {
-                starts.insert(first)
+            let searchRange = NSRange(location: safe.location, length: effectiveLength)
+            nsText.enumerateSubstrings(
+                in: searchRange,
+                options: [.byLines, .substringNotRequired]
+            ) { _, substringRange, _, _ in
+                result.insert(substringRange.location)
             }
         }
+        return Array(result)
+    }
 
-        return starts.sorted()
+    private static func adjustedSelection(
+        _ selection: MultiCursorSelection,
+        forInsertedLineStarts lineStarts: [Int],
+        indentLength: Int
+    ) -> MultiCursorSelection {
+        let insertedBeforeStart = lineStarts.filter { $0 < selection.location }.count * indentLength
+        let insertedWithinSelection = lineStarts.filter {
+            $0 >= selection.location && $0 < selection.upperBound
+        }.count * indentLength
+
+        return MultiCursorSelection(
+            location: selection.location + insertedBeforeStart,
+            length: selection.length + insertedWithinSelection + (selection.isCaret ? 0 : insertedBeforeStart == 0 && lineStarts.contains(selection.location) ? indentLength : 0)
+        )
     }
 
     private static func outdentWidth(
-        in lineText: String,
+        lineText: String,
         tabSize: Int,
         useSpaces: Bool
     ) -> Int {

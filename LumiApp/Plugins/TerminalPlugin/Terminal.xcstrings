@@ -1,77 +1,75 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Close Tab" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close Tab"
+  "sourceLanguage": "en",
+  "strings": {
+    "Close Tab": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Tab"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭标签页"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭标签页"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關閉分頁"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關閉分頁"
           }
         }
       }
     },
-    "Interactive terminal emulator" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Interactive terminal emulator"
+    "Interactive terminal emulator": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interactive terminal emulator"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "交互式终端模拟器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "交互式终端模拟器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "互動式終端機模擬器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "互動式終端機模擬器"
           }
         }
       }
     },
-    "Native interactive terminal powered by SwiftTerm" : {
-
-    },
-    "Terminal" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terminal"
+    "Native interactive terminal powered by SwiftTerm": {},
+    "Terminal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终端"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "终端"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "終端機"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "終端機"
           }
         }
       }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

@@ -457,6 +457,7 @@
       }
     },
     "%lld." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1329,9 +1330,6 @@
           }
         }
       }
-    },
-    "Cannot preview image" : {
-
     },
     "Cask" : {
       "localizations" : {
@@ -3179,9 +3177,6 @@
           }
         }
       }
-    },
-    "Mermaid render failed" : {
-
     },
     "More" : {
       "localizations" : {

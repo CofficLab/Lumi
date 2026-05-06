@@ -1,5 +1,6 @@
 import SwiftUI
 import BeautifulMermaid
+import MarkdownKitCore
 
 /// Markdown 块级元素渲染器
 /// 基于 Apple swift-markdown 框架，将 Markdown 文本解析为 SwiftUI 原生视图。

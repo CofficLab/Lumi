@@ -1,24 +1,26 @@
 import AppKit
+import Foundation
 import PDFKit
 import QuickLookUI
 import SwiftUI
-import UniformTypeIdentifiers
 
 /// 本地文件的 SwiftUI 预览（图片 / PDF / QuickLook 支持的其它类型）。
-struct FilePreviewView: View {
+public struct FilePreviewView: View {
 
     let fileURL: URL
 
-    var body: some View {
-        let ext = fileURL.pathExtension.lowercased()
-        let utType = UTType(filenameExtension: ext)
+    public init(fileURL: URL) {
+        self.fileURL = fileURL
+    }
 
+    public var body: some View {
         Group {
-            if utType?.conforms(to: .image) == true {
+            switch FilePreviewResolver.previewKind(for: fileURL) {
+            case .image:
                 _ImageFilePreview(fileURL: fileURL)
-            } else if utType?.conforms(to: .pdf) == true || ext == "pdf" {
+            case .pdf:
                 _PDFFilePreview(fileURL: fileURL)
-            } else {
+            case .quickLook:
                 _QuickLookFilePreview(fileURL: fileURL)
             }
         }

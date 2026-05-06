@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import MarkdownKit
 
 /// Markdown 渲染视图（用于聊天消息）
 /// 复用 MarkdownKit 的统一渲染逻辑，适配消息列表的滚动行为
@@ -7,8 +8,6 @@ struct MarkdownContent: View {
     let content: String
 
     @EnvironmentObject private var themeVM: ThemeVM
-    @Environment(\.preferOuterScroll) private var preferOuterScroll
-
     var body: some View {
         MarkdownBlockRenderer(
             markdown: content,
