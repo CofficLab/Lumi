@@ -228,6 +228,11 @@ struct EditorPanelView: View {
 
     // MARK: - Editor Content
 
+    /// 文件是否正在加载中（已选中但 loadFile 异步 Task 尚未完成）
+    private var isFileLoading: Bool {
+        projectVM.isFileSelected && !state.canPreview && !state.isBinaryFile && state.currentFileURL == nil
+    }
+
     /// 编辑器主体（session 驱动）
     @ViewBuilder
     private var editorContent: some View {
@@ -242,6 +247,8 @@ struct EditorPanelView: View {
         } else if state.isBinaryFile, let fileURL = state.currentFileURL {
             FilePreviewView(fileURL: fileURL)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if isFileLoading {
+            loadingStateView
         } else if projectVM.isFileSelected {
             let _ = state.logger.warning("📝[editorContent] 显示了「不支持的文件」视图. isMarkdownFile=\(state.isMarkdownFile), canPreview=\(state.canPreview), isBinaryFile=\(state.isBinaryFile), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public), fileName=\(state.fileName, privacy: .public), fileExtension=\(state.fileExtension, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
             unsupportedFileView
@@ -368,6 +375,20 @@ struct EditorPanelView: View {
 
     private var emptyState: some View {
         EditorEmptyStateView()
+    }
+
+    // MARK: - Loading State
+
+    private var loadingStateView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .controlSize(.small)
+
+            Text(String(localized: "Loading...", table: "LumiEditor"))
+                .font(.system(size: 12))
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Unsupported File
