@@ -131,6 +131,46 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func configModelsNormalizeScopesAndApplyOverrides() {
+        let context = EditorConfigContext(
+            workspacePath: " /tmp/project/../project ",
+            languageId: " Swift "
+        )
+        #expect(context.normalizedWorkspacePath == "/tmp/project")
+        #expect(context.normalizedLanguageId == "swift")
+
+        let scope = EditorConfigOverrideScope.language(" TypeScript ")
+        #expect(scope.normalizedKey == "typescript")
+
+        let base = EditorConfigSnapshot(
+            fontSize: 13,
+            tabWidth: 4,
+            useSpaces: true,
+            formatOnSave: false,
+            organizeImportsOnSave: false,
+            fixAllOnSave: false,
+            trimTrailingWhitespaceOnSave: true,
+            insertFinalNewlineOnSave: true,
+            wrapLines: true,
+            showMinimap: true,
+            showGutter: true,
+            showFoldingRibbon: true,
+            currentThemeId: "xcode-dark"
+        )
+        let overrideSnapshot = EditorScopedOverrideSnapshot(
+            tabWidth: 2,
+            useSpaces: false,
+            wrapLines: false,
+            formatOnSave: true
+        )
+        let resolved = overrideSnapshot.applying(to: base)
+        #expect(resolved.tabWidth == 2)
+        #expect(resolved.useSpaces == false)
+        #expect(resolved.wrapLines == false)
+        #expect(resolved.formatOnSave == true)
+    }
+
+    @Test
     @MainActor
     func externalFileControllerTracksConflictsAndReloadThresholds() {
         let controller = EditorExternalFileController()
