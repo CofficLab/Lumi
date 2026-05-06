@@ -1,6 +1,6 @@
 {
   "sourceLanguage": "en",
-  "version": "1.1",
+  "version": "1.0",
   "strings": {
     "Breadcrumb Navigation": {
       "localizations": {
@@ -24,24 +24,24 @@
         }
       }
     },
-    "File path breadcrumb navigation in toolbar": {
+    "File path breadcrumb navigation below editor tabs": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File path breadcrumb navigation in toolbar"
+            "value": "File path breadcrumb navigation below editor tabs"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在工具栏显示文件路径的面包屑导航"
+            "value": "在编辑器标签栏下方显示文件路径的面包屑导航"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "在工具欄顯示文件路徑的麵包屑導航"
+            "value": "在編輯器標籤欄下方顯示文件路徑的麵包屑導航"
           }
         }
       }

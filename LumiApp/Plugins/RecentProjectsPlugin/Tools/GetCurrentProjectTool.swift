@@ -21,7 +21,7 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)Getting current project")
+            RecentProjectsPlugin.logger.info("\(Self.t)Getting current project")
         }
 
         let store = RecentProjectsStore()

@@ -1,12 +1,12 @@
 import Foundation
 import MagicKit
 
-/// 设置当前项目工具
-struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
+/// 添加项目到最近列表工具
+struct AddProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
-    let name = "set_current_project"
-    let description = "Set the current selected project. Requires a project path."
+    let name = "add_recent_project"
+    let description = "Add the specified project to the recent projects list. Updates the projectVM's recent projects after adding."
 
     var inputSchema: [String: Any] {
         [
@@ -31,7 +31,7 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)Setting current project: \(path)")
+            RecentProjectsPlugin.logger.info("\(Self.t)Adding project to recent list: \(path)")
         }
 
         // 验证路径是否存在且为目录
@@ -47,22 +47,29 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
         }
 
         let projectName = URL(fileURLWithPath: path).lastPathComponent
-        
-        // 使用 store 设置当前项目（会自动添加到最近列表）
+
+        // 1. 使用 store 添加项目到最近列表
         let store = RecentProjectsStore()
-        store.setCurrentProject(name: projectName, path: path)
-        
-        // 发送通知，告知 RootView 同步到 ProjectVM
+        store.addProject(name: projectName, path: path)
+
+        // 2. 发送通知，RecentProjectsPersistenceOverlay 会自动更新 projectVM
         NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
 
-        return """
-        ✅ Successfully set current project
-        
-        **Project Name**: \(projectName)
-        
-        **Project Path**: \(path)
-        
-        The project has been saved and is ready to use.
-        """
+        // 3. 加载更新后的最近项目列表
+        let recentProjects = store.loadProjects()
+
+        // 构建返回消息
+        var output = "✅ Successfully added project to recent list\n\n"
+        output += "**Project Name**: \(projectName)\n\n"
+        output += "**Project Path**: \(path)\n\n"
+
+        // 显示更新后的最近项目列表
+        output += "## Recent Projects (\(recentProjects.count) total)\n\n"
+        for (index, project) in recentProjects.prefix(5).enumerated() {
+            output += "\(index + 1). **\(project.name)**\n"
+            output += "   Path: `\(project.path)`\n\n"
+        }
+
+        return output
     }
 }

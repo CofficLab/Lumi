@@ -131,7 +131,7 @@ extension RecentProjectsPersistenceOverlay {
         // 验证文件存在
         guard FileManager.default.fileExists(atPath: path) else {
             if Self.verbose {
-                BreadcrumbPlugin.logger.warning("\(Self.t)⚠️ File does not exist: \(path)")
+                RecentProjectsPlugin.logger.warning("\(Self.t)⚠️ File does not exist: \(path)")
             }
             return
         }
@@ -151,14 +151,14 @@ extension RecentProjectsPersistenceOverlay {
 
         if switched {
             if Self.verbose {
-                BreadcrumbPlugin.logger.info("\(Self.t)✅ Switched to latest conversation for project [\(projectPath)]")
+                RecentProjectsPlugin.logger.info("\(Self.t)✅ Switched to latest conversation for project [\(projectPath)]")
             }
             return
         }
 
         // 该项目没有关联对话 → 新建一个
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)📁 No associated conversation for project [\(projectPath)], creating new one")
+            RecentProjectsPlugin.logger.info("\(Self.t)📁 No associated conversation for project [\(projectPath)], creating new one")
         }
 
         Task {

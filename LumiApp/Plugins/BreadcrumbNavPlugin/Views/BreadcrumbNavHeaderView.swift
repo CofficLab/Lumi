@@ -2,49 +2,31 @@ import CodeEditLanguages
 import MagicKit
 import SwiftUI
 
-// MARK: - Breadcrumb Toolbar View
-
-/// 工具栏面包屑导航视图
-/// 左侧显示项目选择器（最近项目），右侧显示文件路径面包屑
-struct BreadcrumbToolBarView: View {
-
+/// 面包屑导航头部视图
+///
+/// 在编辑器面板的 Tab 栏下方显示当前文件的路径面包屑导航。
+/// 仅显示文件路径段，符号面包屑由 EditorTabStripPlugin 的 EditorStickySymbolBarView 负责。
+struct BreadcrumbNavHeaderView: View {
     @EnvironmentObject private var projectVM: ProjectVM
 
     var body: some View {
-        HStack(spacing: 0) {
-            // 左侧：项目选择器（最近项目下拉）
-            ProjectControlView()
-                .layoutPriority(1)
-
-            // 分隔线 + 右侧面包屑（仅在有文件打开时显示）
-            if projectVM.isProjectSelected, projectVM.selectedFileURL != nil {
-                // 分隔线
-                Rectangle()
-                    .fill(Color.secondary.opacity(0.2))
-                    .frame(width: 1, height: 16)
-                    .padding(.horizontal, 6)
-
-                // 右侧：面包屑路径导航
-                BreadcrumbPathView()
-                    .layoutPriority(0)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+        // 仅在有文件打开时显示
+        if let fileURL = projectVM.selectedFileURL, projectVM.isProjectSelected {
+            BreadcrumbNavPathView(fileURL: fileURL)
         }
     }
 }
 
-// MARK: - Breadcrumb Path View
+// MARK: - Breadcrumb Nav Path View
 
-/// 面包屑路径视图（原 BreadcrumbToolBarView 的核心逻辑）
-struct BreadcrumbPathView: View {
-
+/// 面包屑路径视图
+struct BreadcrumbNavPathView: View {
     @EnvironmentObject private var projectVM: ProjectVM
-    @ObservedObject private var editorBreadcrumbBridge = EditorBreadcrumbContextBridge.shared
+
+    let fileURL: URL
 
     /// 面包屑路径段列表
     private var breadcrumbItems: [BreadcrumbItem] {
-        guard let fileURL = projectVM.selectedFileURL else { return [] }
-
         // 标准化文件路径：解析符号链接、移除末尾斜杠
         let normalizedFile = fileURL.resolvingSymlinksInPath()
         let fullPath = normalizedFile.path
@@ -105,7 +87,7 @@ struct BreadcrumbPathView: View {
                         ForEach(breadcrumbItems) { item in
                             let isLast = item.index == breadcrumbItems.count - 1
 
-                            BreadcrumbComponent(
+                            BreadcrumbNavComponent(
                                 item: item,
                                 isLastItem: isLast,
                                 truncatedCrumbWidth: item.index == 0
@@ -114,19 +96,6 @@ struct BreadcrumbPathView: View {
                                     projectVM.selectFile(at: url)
                                 }
                             )
-                        }
-                    }
-
-                    if !editorBreadcrumbBridge.activeSymbolTrail.isEmpty && !breadcrumbItems.isEmpty {
-                        Rectangle()
-                            .fill(AppUI.Color.semantic.textTertiary.opacity(0.12))
-                            .frame(width: 1, height: 14)
-                            .padding(.horizontal, 6)
-                    }
-
-                    ForEach(editorBreadcrumbBridge.activeSymbolTrail) { symbol in
-                        SymbolBreadcrumbComponent(symbol: symbol) {
-                            editorBreadcrumbBridge.openSymbol?(symbol)
                         }
                     }
                 }
@@ -171,10 +140,19 @@ struct BreadcrumbPathView: View {
             .layoutPriority(1)
             .frame(height: 20)
         }
-        .padding(.leading, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .layoutPriority(1)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(
+            themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.035)
+        )
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08))
+                .frame(height: 1)
+        }
     }
+
+    @EnvironmentObject private var themeVM: ThemeVM
 
     // MARK: - Truncation Logic
 
@@ -221,88 +199,10 @@ struct BreadcrumbPathView: View {
     }
 }
 
-private struct SymbolBreadcrumbComponent: View {
-    let symbol: EditorDocumentSymbolItem
-    let onSelect: () -> Void
-
-    var body: some View {
-        Button(action: onSelect) {
-            HStack(spacing: 5) {
-                Image(systemName: symbol.iconSymbol)
-                    .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.primary)
-
-                Text(symbol.name)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(AppUI.Color.semantic.primary.opacity(0.08))
-            )
-        }
-        .buttonStyle(.plain)
-        .padding(.vertical, 3)
-    }
-}
-
-// MARK: - Breadcrumb Item Model
-
-/// 面包屑路径段数据模型
-struct BreadcrumbItem: Identifiable, Equatable {
-    let index: Int
-    let name: String
-    let url: URL
-    let isDirectory: Bool
-    var id: Int { index }
-
-    /// 获取同级的兄弟文件/文件夹列表
-    var siblings: [BreadcrumbSibling] {
-        let parentURL = url.deletingLastPathComponent()
-        guard
-            let contents = try? FileManager.default.contentsOfDirectory(
-                at: parentURL,
-                includingPropertiesForKeys: [.isDirectoryKey],
-                options: [.skipsHiddenFiles]
-            )
-        else { return [] }
-
-        return
-            contents
-            .filter { $0.lastPathComponent != ".DS_Store" && $0.lastPathComponent != ".git" }
-            .sorted { a, b in
-                let aIsDir =
-                    (try? a.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                let bIsDir =
-                    (try? b.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                if aIsDir != bIsDir { return aIsDir }
-                return a.lastPathComponent.localizedStandardCompare(b.lastPathComponent)
-                    == .orderedAscending
-            }
-            .map { url in
-                let isDir =
-                    (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                return BreadcrumbSibling(name: url.lastPathComponent, url: url, isDirectory: isDir)
-            }
-    }
-}
-
-/// 面包屑兄弟节点（用于下拉菜单列表）
-struct BreadcrumbSibling: Identifiable, Equatable {
-    let name: String
-    let url: URL
-    let isDirectory: Bool
-    var id: String { url.path }
-}
-
-// MARK: - Breadcrumb Component
+// MARK: - Breadcrumb Nav Component
 
 /// 单个面包屑路径段组件
-/// 支持点击弹出菜单显示同级文件
-struct BreadcrumbComponent: View {
+struct BreadcrumbNavComponent: View {
     let item: BreadcrumbItem
     let isLastItem: Bool
     @Binding var truncatedCrumbWidth: CGFloat?
@@ -356,7 +256,6 @@ struct BreadcrumbComponent: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .frame(maxWidth: 200)
-            .frame(maxWidth: 200)
             .frame(
                 maxWidth: isHovering || isLastItem ? nil : truncatedCrumbWidth,
                 alignment: .leading
@@ -396,7 +295,6 @@ struct BreadcrumbComponent: View {
 
     // MARK: - Chevron
 
-    /// 分隔箭头：hover 时显示上下箭头，否则显示右箭头
     @ViewBuilder
     private var chevronView: some View {
         HStack(spacing: 0) {
@@ -486,9 +384,7 @@ struct BreadcrumbComponent: View {
 
 // MARK: - Breadcrumb Menu Content
 
-/// 面包屑下拉菜单内容
 struct BreadcrumbMenuContent: View {
-
     let siblings: [BreadcrumbSibling]
     let currentURL: URL
     let onSelectFile: (URL) -> Void
@@ -528,9 +424,7 @@ struct BreadcrumbMenuContent: View {
 
 // MARK: - Breadcrumb Menu Row
 
-/// 面包屑菜单行
 struct BreadcrumbMenuRow: View {
-
     let sibling: BreadcrumbSibling
     let isCurrent: Bool
     let onSelectFile: (URL) -> Void

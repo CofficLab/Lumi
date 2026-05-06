@@ -21,7 +21,7 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)Getting current file")
+            RecentProjectsPlugin.logger.info("\(Self.t)Getting current file")
         }
 
         let store = RecentProjectsStore()

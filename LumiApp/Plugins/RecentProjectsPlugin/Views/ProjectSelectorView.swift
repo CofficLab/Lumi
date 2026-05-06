@@ -282,7 +282,7 @@ extension ProjectSelectorView {
                 }
             }
         case .failure(let error):
-            BreadcrumbPlugin.logger.error("File import error: \(error.localizedDescription)")
+            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
         }
     }
 }

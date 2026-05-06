@@ -31,7 +31,7 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            BreadcrumbPlugin.logger.info("\(Self.t)Setting current file: \(path)")
+            RecentProjectsPlugin.logger.info("\(Self.t)Setting current file: \(path)")
         }
 
         // 验证路径是否存在且为文件
