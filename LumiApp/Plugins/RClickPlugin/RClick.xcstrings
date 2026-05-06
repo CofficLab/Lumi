@@ -300,6 +300,7 @@
         }
       }
     },
+    "List Hidden Files": {},
     "Name (e.g. Python Script)": {
       "extractionState": "manual",
       "localizations": {

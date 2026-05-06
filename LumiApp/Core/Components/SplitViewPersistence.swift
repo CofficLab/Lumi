@@ -85,36 +85,50 @@ final class AutosaveConfiguratorView: NSView {
 
 /// 为 SplitView 增加显式宽度记忆（比例），用于下次主动恢复。
 ///
+/// 支持指定 `columnIndex`，控制 SplitView 中第几个子视图的宽度比例。
+/// 默认 `columnIndex = 0`，即控制第一个子视图（向后兼容）。
+///
 /// 用法：
 /// ```swift
 /// HSplitView {
 ///     MyView()
-///         .background(SplitViewWidthPersistence(storageKey: "Split.MyPanel.MyView"))
+///         .background(SplitViewWidthPersistence(
+///             storageKey: "Split.MyPanel.MyView",
+///             columnIndex: 1
+///         ))
 ///     OtherView()
 /// }
 /// ```
 struct SplitViewWidthPersistence: NSViewRepresentable {
     let storageKey: String
+    /// 控制第几个子视图的宽度比例（默认 0，向后兼容）
+    var columnIndex: Int = 0
 
     func makeNSView(context: Context) -> SplitViewWidthPersistenceView {
-        SplitViewWidthPersistenceView(storageKey: storageKey)
+        SplitViewWidthPersistenceView(storageKey: storageKey, columnIndex: columnIndex)
     }
 
     func updateNSView(_ nsView: SplitViewWidthPersistenceView, context: Context) {
         nsView.storageKey = storageKey
+        nsView.columnIndex = columnIndex
         nsView.attachIfNeeded()
     }
 }
 
 final class SplitViewWidthPersistenceView: NSView {
     var storageKey: String
+    var columnIndex: Int
     private var observedSplitView: NSSplitView?
     private var resizeObserver: NSObjectProtocol?
     private var didApplySavedValue = false
     private var pendingRetryWorkItem: DispatchWorkItem?
 
-    init(storageKey: String) {
+    /// 所有栏的最小保护宽度
+    static let minimumColumnWidth: CGFloat = 48
+
+    init(storageKey: String, columnIndex: Int = 0) {
         self.storageKey = storageKey
+        self.columnIndex = columnIndex
         super.init(frame: .zero)
     }
 
@@ -162,43 +176,61 @@ final class SplitViewWidthPersistenceView: NSView {
     private func applySavedRatioIfNeeded() {
         guard !didApplySavedValue else { return }
         guard let splitView = observedSplitView else { return }
-        guard splitView.arrangedSubviews.count >= 2 else { return }
+        let idx = columnIndex
+        guard idx >= 0, splitView.arrangedSubviews.count > idx, splitView.arrangedSubviews.count >= 2 else { return }
 
-        let savedRatio = UserDefaults.standard.double(forKey: storageKey)
-        guard savedRatio > 0.0, savedRatio < 1.0 else {
+        let savedRatio = AppSettingStore.loadLayoutRatio(forKey: storageKey)
+        guard let savedRatio, savedRatio > 0.0, savedRatio < 1.0 else {
             didApplySavedValue = true
             return
         }
 
+        // 对应的 divider 索引：子视图 i 与子视图 i+1 之间的 divider 编号为 i
+        let dividerIndex = idx
+
         DispatchQueue.main.async { [weak self, weak splitView] in
             guard let self, let splitView else { return }
-            guard splitView.arrangedSubviews.count >= 2 else { return }
+            guard splitView.arrangedSubviews.count > self.columnIndex else { return }
             let total = splitView.bounds.width
             guard total > 0 else { return }
 
-            let dividerThickness = splitView.dividerThickness
-            let usableWidth = max(1, total - dividerThickness)
-            let target = max(0, min(usableWidth, usableWidth * savedRatio))
-            splitView.setPosition(target, ofDividerAt: 0)
+            let dividersCount = splitView.arrangedSubviews.count - 1
+            let usableWidth = max(1, total - CGFloat(dividersCount) * splitView.dividerThickness)
+
+            // 计算此栏之前所有栏占用的宽度（从 ratio 推算）
+            let targetWidth = max(Self.minimumColumnWidth, min(usableWidth - Self.minimumColumnWidth, usableWidth * savedRatio))
+
+            // 需要算出 divider 的绝对位置：前面所有栏宽度 + divider 厚度
+            var position: CGFloat = 0
+            for i in 0..<dividerIndex {
+                // 前面尚未恢复的栏使用当前实际宽度
+                position += splitView.arrangedSubviews[i].frame.width
+                position += splitView.dividerThickness
+            }
+            position += targetWidth
+
+            splitView.setPosition(position, ofDividerAt: dividerIndex)
             self.didApplySavedValue = true
         }
     }
 
     private func persistCurrentRatio() {
         guard let splitView = observedSplitView else { return }
-        guard splitView.arrangedSubviews.count >= 2 else { return }
+        let idx = columnIndex
+        guard idx >= 0, splitView.arrangedSubviews.count > idx, splitView.arrangedSubviews.count >= 2 else { return }
 
         let total = splitView.bounds.width
         guard total > 0 else { return }
 
-        let usableWidth = total - splitView.dividerThickness
+        let dividersCount = splitView.arrangedSubviews.count - 1
+        let usableWidth = total - CGFloat(dividersCount) * splitView.dividerThickness
         guard usableWidth > 1 else { return }
 
-        let firstWidth = splitView.arrangedSubviews[0].frame.width
-        let ratio = firstWidth / usableWidth
+        let columnWidth = splitView.arrangedSubviews[idx].frame.width
+        let ratio = columnWidth / usableWidth
         guard ratio > 0.0, ratio < 1.0 else { return }
 
-        UserDefaults.standard.set(ratio, forKey: storageKey)
+        AppSettingStore.saveLayoutRatio(ratio, forKey: storageKey)
     }
 
     private func findSplitView() -> NSSplitView? {

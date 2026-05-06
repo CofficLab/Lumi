@@ -1,0 +1,7 @@
+{
+    "name": "architect",
+    "title": "Software Architect",
+    "description": "系统设计、可扩展性和技术决策的专家技能",
+    "triggers": ["architecture", "设计", "system", "scalability", "pattern", "架构"],
+    "version": "1.0.0"
+}

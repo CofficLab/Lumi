@@ -8,16 +8,16 @@ final class EditorStatusToastController {
         level: EditorStatusLevel,
         duration: TimeInterval = 1.8
     ) {
-        let safeDuration = max(1.0, duration)
-        switch level {
+        let presentation = EditorStatusToastPolicy.presentation(level: level, duration: duration)
+        switch presentation.level {
         case .info:
-            alert_info(message, duration: safeDuration)
+            alert_info(message, duration: presentation.duration)
         case .success:
-            alert_success(message, duration: safeDuration)
+            alert_success(message, duration: presentation.duration)
         case .warning:
-            alert_warning(message, duration: max(safeDuration, 2.0))
+            alert_warning(message, duration: presentation.duration)
         case .error:
-            alert_error(message, duration: max(safeDuration, 2.0), autoDismiss: true)
+            alert_error(message, duration: presentation.duration, autoDismiss: presentation.autoDismiss)
         }
     }
 }

@@ -2,6 +2,8 @@ import MagicKit
 import SwiftUI
 import Combine
 import CodeEditSourceEditor
+import FilePreviewKit
+import MarkdownKit
 import UniformTypeIdentifiers
 
 /// 编辑器主视图
@@ -20,10 +22,18 @@ struct EditorPanelView: View {
     @State private var isCommandPalettePresented = false
     @State private var draggedTabSessionID: EditorSession.ID?
 
+    /// 标记编辑器协调器是否已完成初始化
+    /// 避免在 SourceEditorView.onAppear (initializeCoordinators) 执行前就触发文件加载导致崩溃
+    @State private var isEditorReady: Bool = false
+
     /// 标签页持久化存储
     private let tabStore = EditorTabStripStore.shared
     /// 防抖保存的 Task
     @State private var tabSaveTask: Task<Void, Never>?
+
+    /// 首次 appear 后延迟恢复标签页的 Task
+    /// 避免在 SourceEditorView 协调器未初始化时就触发文件加载导致崩溃
+    @State private var tabRestoreTask: Task<Void, Never>?
 
     var body: some View {
         eventBoundRootView
@@ -38,6 +48,7 @@ struct EditorPanelView: View {
     private var lifecycleBoundRootView: some View {
         baseRootView
             .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+                state.logger.info("📝[onChange:currentProjectPath] oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)")
                 // 保存旧项目的标签页
                 if !oldPath.isEmpty {
                     saveCurrentTabs(forProject: oldPath)
@@ -55,6 +66,7 @@ struct EditorPanelView: View {
                 }
             }
             .onChange(of: projectVM.selectedFileURL) { _, newURL in
+                state.logger.info("📝[onChange:selectedFileURL] newURL=\(newURL?.path ?? "nil", privacy: .public)")
                 openOrActivateSession(for: newURL)
             }
             .onChange(of: state.currentFileURL) { _, _ in
@@ -68,6 +80,7 @@ struct EditorPanelView: View {
                 updateBreadcrumbBridge()
             }
             .onAppear {
+                state.logger.info("📝[onAppear] EditorPanelView 出现, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
                 state.projectRootPath = projectVM.currentProject?.path
                 refreshProjectContext(for: projectVM.currentProjectPath)
                 state.onActiveSessionChanged = { snapshot in
@@ -228,6 +241,11 @@ struct EditorPanelView: View {
 
     // MARK: - Editor Content
 
+    /// 文件是否正在加载中（已选中但 loadFile 异步 Task 尚未完成）
+    private var isFileLoading: Bool {
+        projectVM.isFileSelected && !state.canPreview && !state.isBinaryFile && state.currentFileURL == nil
+    }
+
     /// 编辑器主体（session 驱动）
     @ViewBuilder
     private var editorContent: some View {
@@ -242,6 +260,8 @@ struct EditorPanelView: View {
         } else if state.isBinaryFile, let fileURL = state.currentFileURL {
             FilePreviewView(fileURL: fileURL)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if isFileLoading {
+            loadingStateView
         } else if projectVM.isFileSelected {
             let _ = state.logger.warning("📝[editorContent] 显示了「不支持的文件」视图. isMarkdownFile=\(state.isMarkdownFile), canPreview=\(state.canPreview), isBinaryFile=\(state.isBinaryFile), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public), fileName=\(state.fileName, privacy: .public), fileExtension=\(state.fileExtension, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
             unsupportedFileView
@@ -370,6 +390,20 @@ struct EditorPanelView: View {
         EditorEmptyStateView()
     }
 
+    // MARK: - Loading State
+
+    private var loadingStateView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .controlSize(.small)
+
+            Text(String(localized: "Loading...", table: "LumiEditor"))
+                .font(.system(size: 12))
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     // MARK: - Unsupported File
 
     private var unsupportedFileView: some View {
@@ -404,23 +438,28 @@ struct EditorPanelView: View {
     /// 从持久化存储恢复标签页
     private func restoreTabs(forProject projectPath: String) {
         let (persistedTabs, activeTabPath) = tabStore.loadTabs(forProject: projectPath)
+        state.logger.info("📝[restoreTabs] 恢复标签页, projectPath=\(projectPath, privacy: .public), persistedCount=\(persistedTabs.count), activeTabPath=\(activeTabPath ?? "nil", privacy: .public)")
 
         // 过滤掉不存在的文件
         let validTabs = persistedTabs.compactMap { tab -> URL? in
             guard let url = tab.fileURL,
                   FileManager.default.isReadableFile(atPath: url.path) else {
+                state.logger.warning("📝[restoreTabs] 跳过不可读文件: \(tab.path, privacy: .public)")
                 return nil
             }
             return url
         }
 
+        state.logger.info("📝[restoreTabs] 有效标签页数=\(validTabs.count)")
         guard !validTabs.isEmpty else { return }
 
         // 先打开最后一个保存的活跃标签
         if let activePath = activeTabPath,
            let activateURL = validTabs.first(where: { $0.path == activePath }) {
+            state.logger.info("📝[restoreTabs] 选择活跃标签: \(activateURL.path, privacy: .public)")
             projectVM.selectFile(at: activateURL)
         } else if let fallbackURL = validTabs.first {
+            state.logger.info("📝[restoreTabs] 选择第一个标签: \(fallbackURL.path, privacy: .public)")
             projectVM.selectFile(at: fallbackURL)
         }
     }
@@ -467,6 +506,7 @@ struct EditorPanelView: View {
     // MARK: - Session Management
 
     private func openOrActivateSession(for fileURL: URL?) {
+        state.logger.info("📝[openOrActivateSession] 入口, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), isFileSelected=\(projectVM.isFileSelected)")
         state.projectRootPath = projectVM.currentProject?.path
         refreshProjectContext(for: projectVM.currentProjectPath)
         guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
@@ -475,7 +515,7 @@ struct EditorPanelView: View {
             return
         }
 
-        state.logger.info("📝[openOrActivateSession] 加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public)")
+        state.logger.info("📝[openOrActivateSession] 加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public), sessionID=\(session.id)")
         state.loadFile(from: session.fileURL)
         restoreInteractionState(for: session)
         scheduleTabSave()

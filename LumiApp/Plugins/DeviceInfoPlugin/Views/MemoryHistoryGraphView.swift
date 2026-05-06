@@ -39,7 +39,7 @@ struct MemoryHistoryGraphView: View {
                             MemoryGraphLine(data: dataPoints.map { $0.usagePercentage }, maxValue: maxValue)
                                 .stroke(AppUI.Color.semantic.primary, lineWidth: 1.5)
                         } else {
-                            Text("Collecting data...")
+                            Text(String(localized: "Collecting...", table: "DeviceInfo"))
                                 .font(.caption)
                                 .foregroundColor(AppUI.Color.semantic.textSecondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)

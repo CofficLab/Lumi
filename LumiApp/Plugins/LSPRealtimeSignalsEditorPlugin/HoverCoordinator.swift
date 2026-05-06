@@ -649,6 +649,14 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         // 将鼠标位置转换到 textView 的本地坐标系
         let localPoint = textView.convert(event.locationInWindow, from: nil)
 
+        // 点击事件：点击 hover popover 以外的区域时立即关闭悬停卡片
+        if event.type == .leftMouseDown || event.type == .rightMouseDown {
+            if state.panelState.mouseHoverContent != nil,
+               !isMouseInsideHoverPopover(at: localPoint, state: state) {
+                cancelHover()
+            }
+        }
+
         // 检查鼠标是否在 textView 的可见区域内（增加容差避免边界抖动）
         let visibleRect = textView.visibleRect
         let tolerance: CGFloat = 2.0

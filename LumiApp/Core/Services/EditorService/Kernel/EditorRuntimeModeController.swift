@@ -18,7 +18,10 @@ final class EditorRuntimeModeController {
         largeFileMode: LargeFileMode,
         longestDetectedLine: LongestDetectedLine?
     ) -> Bool {
-        largeFileMode.isLongLineProtectionEnabled && longestDetectedLine != nil
+        EditorViewportFeaturePolicy.isLongLineProtectionSuppressingSyntaxHighlighting(
+            largeFileMode: largeFileMode,
+            longestDetectedLine: longestDetectedLine
+        )
     }
 
     static func isViewportSyntaxFeatureEnabled(
@@ -27,26 +30,19 @@ final class EditorRuntimeModeController {
         largeFileMode: LargeFileMode,
         longestDetectedLine: LongestDetectedLine?
     ) -> Bool {
-        guard !isLongLineProtectionSuppressingSyntaxHighlighting(
+        EditorViewportFeaturePolicy.isViewportSyntaxFeatureEnabled(
+            viewportRange: viewportRange,
+            maxLine: maxLine,
             largeFileMode: largeFileMode,
             longestDetectedLine: longestDetectedLine
-        ) else {
-            return false
-        }
-        return isViewportFeatureEnabled(
-            viewportRange: viewportRange,
-            maxLine: maxLine
         )
     }
 
     static func isViewportFeatureEnabled(viewportRange: Range<Int>, maxLine: Int) -> Bool {
-        if maxLine == .max {
-            return true
-        }
-        if viewportRange.isEmpty {
-            return true
-        }
-        return viewportRange.lowerBound < maxLine
+        EditorViewportFeaturePolicy.isViewportFeatureEnabled(
+            viewportRange: viewportRange,
+            maxLine: maxLine
+        )
     }
 
     func isRenderedLine(_ line: Int, renderRange: Range<Int>) -> Bool {

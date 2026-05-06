@@ -100,27 +100,41 @@ struct ContentView: View, SuperLog {
                     ActivityBar()
                     AgentModeUnavailableGuideView()
                 }
-                .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
                 let sidebarViews = pluginProvider.getSidebarViews()
                 let hasRail = pluginProvider.hasRailTabs()
 
+                // 根据分栏组合生成布局签名，避免不同分栏数共享 autosaveName 导致位置错乱
+                let layoutSignature = Self.layoutSignature(hasRail: hasRail, hasSidebar: !sidebarViews.isEmpty)
+                let autosaveName = "Unified_MainSplit_\(layoutSignature)"
+
                 if !sidebarViews.isEmpty && hasRail {
+                    // 4 栏: ActivityBar(固定) | Rail | Panel | RightSidebar
                     HSplitView {
                         // 图标栏（固定 48px）
                         ActivityBar()
 
                         // Rail 栏（活动栏与面板之间的辅助栏，全局最多一个插件提供）
                         RailView()
+                            .background(SplitViewWidthPersistence(
+                                storageKey: "Layout.Main.Rail",
+                                columnIndex: 1
+                            ))
 
                         // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                         PanelContentView().frame(maxWidth: .infinity)
 
                         // 右侧栏：聚合所有插件提供的侧边栏视图
                         RightSidebarContainerView(views: sidebarViews)
+                            .background(SplitViewWidthPersistence(
+                                storageKey: "Layout.Main.RightSidebar",
+                                columnIndex: 3
+                            ))
                     }
-                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                    .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 } else if !sidebarViews.isEmpty {
+                    // 3 栏: ActivityBar(固定) | Panel | RightSidebar
                     HSplitView {
                         // 图标栏（固定 48px）
                         ActivityBar()
@@ -130,21 +144,31 @@ struct ContentView: View, SuperLog {
 
                         // 右侧栏：聚合所有插件提供的侧边栏视图
                         RightSidebarContainerView(views: sidebarViews)
+                            .background(SplitViewWidthPersistence(
+                                storageKey: "Layout.Main.RightSidebar",
+                                columnIndex: 2
+                            ))
                     }
-                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                    .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 } else if hasRail {
+                    // 3 栏: ActivityBar(固定) | Rail | Panel
                     HSplitView {
                         // 图标栏（固定 48px）
                         ActivityBar()
 
                         // Rail 栏（活动栏与面板之间的辅助栏，全局最多一个插件提供）
                         RailView()
+                            .background(SplitViewWidthPersistence(
+                                storageKey: "Layout.Main.Rail",
+                                columnIndex: 1
+                            ))
 
                         // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                         PanelContentView().frame(maxWidth: .infinity)
                     }
-                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                    .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 } else {
+                    // 2 栏: ActivityBar(固定) | Panel
                     HSplitView {
                         // 图标栏（固定 48px）
                         ActivityBar()
@@ -152,11 +176,27 @@ struct ContentView: View, SuperLog {
                         // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                         PanelContentView().frame(maxWidth: .infinity)
                     }
-                    .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit"))
+                    .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Layout Helpers
+
+    /// 根据分栏组合生成布局签名
+    /// - Parameters:
+    ///   - hasRail: 是否有 Rail 栏
+    ///   - hasSidebar: 是否有右侧栏
+    /// - Returns: 布局签名字符串，如 "SRB"、"S" 等
+    private static func layoutSignature(hasRail: Bool, hasSidebar: Bool) -> String {
+        var signature = ""
+        if hasSidebar { signature += "S" }
+        if hasRail { signature += "R" }
+        // B = Base (always present: ActivityBar + Panel)
+        signature += "B"
+        return signature
     }
 }
 

@@ -818,6 +818,36 @@ private struct SemanticTokenRange {
     let length: UInt32
 }
 
+enum SemanticTokenDeltaGuard {
+    static func validatedEditRange(
+        start: UInt,
+        deleteCount: UInt,
+        tokenCount: Int
+    ) -> Range<Int>? {
+        guard let startIndex = Int(exactly: start),
+              let deleteLength = Int(exactly: deleteCount),
+              startIndex >= 0,
+              deleteLength >= 0,
+              startIndex <= tokenCount,
+              startIndex <= tokenCount - deleteLength else {
+            return nil
+        }
+        return startIndex..<(startIndex + deleteLength)
+    }
+
+    static func validatedInsertIndex(
+        start: UInt,
+        tokenCount: Int
+    ) -> Int? {
+        guard let startIndex = Int(exactly: start),
+              startIndex >= 0,
+              startIndex <= tokenCount else {
+            return nil
+        }
+        return startIndex
+    }
+}
+
 private final class SemanticTokenStorage {
     private struct CurrentState {
         let resultId: String?
@@ -840,14 +870,24 @@ private final class SemanticTokenStorage {
         var invalidatedSet: [SemanticTokenRange] = []
         
         for edit in deltas.edits.sorted(by: { $0.start > $1.start }) {
+            guard let deleteRange = SemanticTokenDeltaGuard.validatedEditRange(
+                start: edit.start,
+                deleteCount: edit.deleteCount,
+                tokenCount: tokenData.count
+            ), let insertIndex = SemanticTokenDeltaGuard.validatedInsertIndex(
+                start: edit.start,
+                tokenCount: tokenData.count
+            ) else {
+                return []
+            }
             invalidatedSet.append(
                 contentsOf: invalidatedRanges(start: edit.start, length: edit.deleteCount, data: tokenData[...])
             )
             
             if edit.deleteCount > 0 {
-                tokenData.replaceSubrange(Int(edit.start)..<Int(edit.start + edit.deleteCount), with: edit.data ?? [])
+                tokenData.replaceSubrange(deleteRange, with: edit.data ?? [])
             } else {
-                tokenData.insert(contentsOf: edit.data ?? [], at: Int(edit.start))
+                tokenData.insert(contentsOf: edit.data ?? [], at: insertIndex)
             }
             
             if let inserted = edit.data, !inserted.isEmpty {

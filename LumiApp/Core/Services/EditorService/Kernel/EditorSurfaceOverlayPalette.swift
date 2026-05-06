@@ -2,14 +2,6 @@ import SwiftUI
 import AppKit
 import CodeEditSourceEditor
 
-enum EditorSurfaceHighlightKind: Equatable {
-    case currentLine
-    case findMatch
-    case currentMatch
-    case bracketMatch
-    case hoverSymbol
-}
-
 struct EditorSurfaceHighlightStyle {
     let fillColor: Color
     let strokeColor: Color

@@ -1,12 +1,5 @@
 import SwiftUI
 
-struct EditorHoverOverlayPlacement {
-    let anchor: UnitPoint
-    let origin: CGPoint
-    let cardSize: CGSize
-    let isPresentedAboveSymbol: Bool
-}
-
 struct EditorHoverOverlayStyle {
     let cornerRadius: CGFloat
     let borderColor: Color

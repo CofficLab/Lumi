@@ -1,11 +1,5 @@
 import Foundation
 
-enum EditorExternalFileReloadDecision {
-    case unchanged
-    case registerConflict(content: String, modificationDate: Date)
-    case applyExternalContent(content: String, modificationDate: Date)
-}
-
 @MainActor
 final class EditorExternalFileWorkflowController {
     func pollDecision(
@@ -25,11 +19,12 @@ final class EditorExternalFileWorkflowController {
         currentModDate: Date,
         hasUnsavedChanges: Bool
     ) -> EditorExternalFileReloadDecision {
-        guard newContent != currentContent else { return .unchanged }
-        if hasUnsavedChanges {
-            return .registerConflict(content: newContent, modificationDate: currentModDate)
-        }
-        return .applyExternalContent(content: newContent, modificationDate: currentModDate)
+        EditorExternalFileReloadPolicy.reloadDecision(
+            newContent: newContent,
+            currentContent: currentContent,
+            currentModDate: currentModDate,
+            hasUnsavedChanges: hasUnsavedChanges
+        )
     }
 
     func applyConflictRegistration(

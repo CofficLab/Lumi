@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import CodeEditSourceEditor
 import LanguageServerProtocol
 
 @MainActor
@@ -141,7 +142,16 @@ extension EditorState {
     }
 
     func openPeekItem(_ item: EditorPeekItem) {
-        performNavigation(item.navigationRequest)
+        performNavigation(
+            .definition(
+                item.target.url,
+                CursorPosition(
+                    start: .init(line: item.target.line, column: item.target.column),
+                    end: nil
+                ),
+                highlightLine: item.target.highlightLine
+            )
+        )
         dismissPeek()
     }
 
@@ -277,8 +287,8 @@ extension EditorState {
             showWarning: { [weak self] message in
                 self?.showStatusToast(message, level: .warning)
             },
-            openPanel: { [weak self] command in
-                self?.performPanelCommand(command)
+            openPanel: { [weak self] in
+                self?.performPanelCommand(.openCallHierarchy)
             }
         )
     }

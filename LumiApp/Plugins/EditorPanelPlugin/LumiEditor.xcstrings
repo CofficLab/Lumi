@@ -798,6 +798,18 @@
             "state" : "new",
             "value" : "Current file belongs to target '%1$@', but current scheme '%2$@' may not cover it."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前文件属于目标 '%1$@'，但当前 scheme '%2$@' 可能不包含它。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前檔案屬於目標 '%1$@'，但當前 scheme '%2$@' 可能不包含它。"
+          }
         }
       }
     },
@@ -3481,6 +3493,7 @@
       }
     },
     "No more occurrences found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4795,6 +4808,7 @@
       }
     },
     "Select text before adding next occurrence" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4817,6 +4831,7 @@
       }
     },
     "Select text before selecting all occurrences" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

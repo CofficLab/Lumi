@@ -184,13 +184,16 @@ struct ModelSelectorView: View, SuperLog {
 
     /// 常用模型的单行视图
     private func frequentModelRow(entry: FrequentModelEntry) -> some View {
-        FrequentModelRow(
-            entry: entry,
-            isSelected: isSelected(providerId: entry.providerId, model: entry.modelName),
-            stat: findDetailedStat(providerId: entry.providerId, modelName: entry.modelName)
-        ) {
-            selectModel(providerId: entry.providerId, model: entry.modelName)
+        guard let provider = llmVM.allProviders.first(where: { $0.id == entry.providerId }) else {
+            return AnyView(EmptyView())
         }
+        return AnyView(
+            modelRow(
+                provider: provider,
+                model: entry.modelName,
+                providerDisplayName: entry.providerDisplayName
+            )
+        )
     }
 
     // MARK: - Fast Models List
@@ -217,13 +220,16 @@ struct ModelSelectorView: View, SuperLog {
 
     /// TPS 较快模型单行
     private func fastModelRow(entry: FastModelEntry) -> some View {
-        FastModelRow(
-            entry: entry,
-            isSelected: isSelected(providerId: entry.providerId, model: entry.modelName),
-            stat: findDetailedStat(providerId: entry.providerId, modelName: entry.modelName)
-        ) {
-            selectModel(providerId: entry.providerId, model: entry.modelName)
+        guard let provider = llmVM.allProviders.first(where: { $0.id == entry.providerId }) else {
+            return AnyView(EmptyView())
         }
+        return AnyView(
+            modelRow(
+                provider: provider,
+                model: entry.modelName,
+                providerDisplayName: entry.providerDisplayName
+            )
+        )
     }
 
     /// 供应商与模型列表（共用结构）；本地供应商有缓存时按系列分组展示
@@ -290,6 +296,7 @@ struct ModelSelectorView: View, SuperLog {
         provider: LLMProviderInfo,
         model: String,
         displayName: String? = nil,
+        providerDisplayName: String? = nil,
         supportsVision: Bool? = nil,
         supportsTools: Bool? = nil
     ) -> some View {
@@ -298,6 +305,7 @@ struct ModelSelectorView: View, SuperLog {
             provider: provider,
             model: model,
             displayName: displayName,
+            providerDisplayName: providerDisplayName,
             supportsVision: supportsVision,
             supportsTools: supportsTools,
             isSelected: isSelected(providerId: provider.id, model: model),

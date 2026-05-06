@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import MarkdownKit
 
 /// 纯文本消息内容视图（不解析 Markdown）
 struct PlainTextMessageContentView: View {

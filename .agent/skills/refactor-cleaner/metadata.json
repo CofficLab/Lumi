@@ -1,0 +1,7 @@
+{
+    "name": "refactor-cleaner",
+    "title": "Refactor Cleaner",
+    "description": "代码重构、清理技术债务、改善代码质量的专家技能",
+    "triggers": ["refactor", "重构", "debt", "clean", "优化", "技术债务"],
+    "version": "1.0.0"
+}

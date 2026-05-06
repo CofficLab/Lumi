@@ -6,7 +6,7 @@ struct RClickSettingsView: View {
     @State private var showingAddTemplateSheet = false
 
     var body: some View {
-        HStack(spacing: 0) {
+        VStack(spacing: 0) {
             VStack(spacing: 20) {
                 Text("Preview")
                     .font(AppUI.Typography.bodyEmphasized)
@@ -91,9 +91,16 @@ struct RClickSettingsView: View {
 
                     GlassCard {
                         VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
-                            Text("New File Menu")
-                                .font(AppUI.Typography.title3)
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            HStack {
+                                Text("New File Menu")
+                                    .font(AppUI.Typography.title3)
+                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                Spacer()
+                                GlassButton(title: LocalizedStringKey(String(localized: "Add Template")), style: .secondary) {
+                                    showingAddTemplateSheet = true
+                                }
+                                .frame(width: 120)
+                            }
 
                             if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
                                 GlassRow {
@@ -137,11 +144,6 @@ struct RClickSettingsView: View {
                                     }
                                 }
                                 .frame(minHeight: 100)
-
-                                GlassButton(title: LocalizedStringKey(String(localized: "Add Template")), style: .secondary) {
-                                    showingAddTemplateSheet = true
-                                }
-                                .frame(width: 140)
                             }
                         }
                     }

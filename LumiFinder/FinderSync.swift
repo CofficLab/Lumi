@@ -162,6 +162,12 @@ class FinderSync: FIFinderSync, SuperLog {
                 if showIcons {
                     showHiddenFilesItem.image = menuIcon("eye")
                 }
+
+            case .listHiddenFiles:
+                let listHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "列出隐藏文件", action: #selector(listHiddenFiles(_:)), keyEquivalent: "")
+                if showIcons {
+                    listHiddenFilesItem.image = menuIcon("list.bullet")
+                }
             }
         }
 

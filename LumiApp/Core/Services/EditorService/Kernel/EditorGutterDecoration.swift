@@ -1,62 +1,6 @@
 import SwiftUI
 import LanguageServerProtocol
 
-@MainActor
-struct EditorGutterDecorationContext {
-    let languageId: String
-    let currentLine: Int
-    let visibleLineRange: Range<Int>
-    let renderLineRange: Range<Int>
-    let isLargeFileMode: Bool
-}
-
-enum EditorGutterDecorationTone {
-    case neutral
-    case accent
-    case info
-    case success
-    case warning
-    case error
-}
-
-enum EditorGitDecorationChangeKind {
-    case added
-    case modified
-    case deleted
-}
-
-enum EditorGutterDecorationKind {
-    case diagnostic(EditorStatusLevel)
-    case gitChange(EditorGitDecorationChangeKind)
-    case symbol(SymbolKind)
-    case custom(name: String, tone: EditorGutterDecorationTone, symbolName: String?)
-}
-
-struct EditorGutterDecorationSuggestion: Identifiable {
-    let id: String
-    let line: Int
-    let lane: Int
-    let kind: EditorGutterDecorationKind
-    let priority: Int
-    let badgeText: String?
-
-    init(
-        id: String,
-        line: Int,
-        lane: Int = 0,
-        kind: EditorGutterDecorationKind,
-        priority: Int = 0,
-        badgeText: String? = nil
-    ) {
-        self.id = id
-        self.line = line
-        self.lane = lane
-        self.kind = kind
-        self.priority = priority
-        self.badgeText = badgeText
-    }
-}
-
 struct EditorGutterDecoration: Identifiable {
     let id: String
     let line: Int

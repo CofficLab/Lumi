@@ -269,7 +269,18 @@
         }
       }
     },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
     "%@ used" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -281,6 +292,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ 已使用"
+          }
+        }
+      }
+    },
+    "%@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@"
           }
         }
       }
@@ -436,6 +457,7 @@
       }
     },
     "%lld." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -545,12 +567,6 @@
 
     },
     "^[%lld Skill](inflect: true)" : {
-
-    },
-    "↑%@" : {
-
-    },
-    "↓%@" : {
 
     },
     "+%lld" : {
@@ -1315,9 +1331,6 @@
         }
       }
     },
-    "Cannot preview image" : {
-
-    },
     "Cask" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1556,6 +1569,7 @@
 
     },
     "Collecting data..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1733,6 +1747,7 @@
       }
     },
     "CPU Load Trend" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1749,6 +1764,7 @@
       }
     },
     "CPU Usage" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2914,6 +2930,7 @@
       }
     },
     "Last 60 Seconds" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3129,6 +3146,7 @@
       }
     },
     "Memory Usage Trend" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3159,9 +3177,6 @@
           }
         }
       }
-    },
-    "Mermaid render failed" : {
-
     },
     "More" : {
       "localizations" : {
@@ -4944,9 +4959,6 @@
         }
       }
     },
-    "Top Processes" : {
-
-    },
     "Total: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5142,6 +5154,7 @@
       }
     },
     "Uptime: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5161,6 +5174,7 @@
 
     },
     "Usage" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7426,6 +7440,7 @@
 
     },
     "收集中..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

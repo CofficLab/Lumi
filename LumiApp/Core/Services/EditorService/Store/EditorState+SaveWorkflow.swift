@@ -73,7 +73,7 @@ extension EditorState {
         let before = captureUndoState()
         let replacePayload = documentReplaceController.replaceTextPayload(
             text,
-            documentController: documentController,
+            replaceText: documentController.replaceText,
             transactionController: transactionController
         )
         content = documentController.textStorage
@@ -283,7 +283,7 @@ extension EditorState {
 
         let replacePayload = documentReplaceController.replaceTextPayload(
             newContent,
-            documentController: documentController,
+            replaceText: documentController.replaceText,
             transactionController: transactionController
         )
         content = documentController.textStorage

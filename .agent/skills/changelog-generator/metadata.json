@@ -1,0 +1,7 @@
+{
+    "name": "changelog-generator",
+    "title": "Changelog Generator",
+    "description": "自动生成项目变更日志的技能",
+    "triggers": ["changelog", "变更日志", "release", "版本", "commit"],
+    "version": "1.0.0"
+}

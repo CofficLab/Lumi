@@ -1,10 +1,5 @@
 import SwiftUI
 
-struct EditorCodeActionIndicatorPlacement {
-    let origin: CGPoint
-    let panelOrigin: CGPoint
-}
-
 struct EditorCodeActionOverlayStyle {
     let indicatorSize: CGFloat
     let indicatorCornerRadius: CGFloat
