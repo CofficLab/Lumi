@@ -1372,4 +1372,35 @@ struct EditorKernelCoreTests {
             ) == true
         )
     }
+
+    @Test
+    @MainActor
+    func peekControllerBuildsDefinitionPresentationFromCurrentBuffer() {
+        let fileURL = URL(fileURLWithPath: "/tmp/EditorKernelCorePeek.swift")
+        let location = Location(
+            uri: fileURL.absoluteString,
+            range: LSPRange(
+                start: Position(line: 1, character: 4),
+                end: Position(line: 1, character: 7)
+            )
+        )
+        let controller = EditorPeekController()
+
+        let presentation = controller.buildDefinitionPresentation(
+            location: location,
+            currentFileURL: fileURL,
+            projectRootPath: "/tmp",
+            currentContent: "struct Demo {\n    value\n}\n"
+        )
+
+        #expect(presentation?.mode == .definition)
+        #expect(presentation?.summary == "EditorKernelCorePeek.swift:2:5")
+        #expect(presentation?.items.first?.preview == "value")
+        #expect(presentation?.items.first?.target == .init(
+            url: fileURL,
+            line: 2,
+            column: 5,
+            highlightLine: true
+        ))
+    }
 }

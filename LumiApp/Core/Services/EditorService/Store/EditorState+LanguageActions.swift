@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import CodeEditSourceEditor
 import LanguageServerProtocol
 
 @MainActor
@@ -141,7 +142,16 @@ extension EditorState {
     }
 
     func openPeekItem(_ item: EditorPeekItem) {
-        performNavigation(item.navigationRequest)
+        performNavigation(
+            .definition(
+                item.target.url,
+                CursorPosition(
+                    start: .init(line: item.target.line, column: item.target.column),
+                    end: nil
+                ),
+                highlightLine: item.target.highlightLine
+            )
+        )
         dismissPeek()
     }
 

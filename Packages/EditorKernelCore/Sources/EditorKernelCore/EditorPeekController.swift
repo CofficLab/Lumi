@@ -1,13 +1,12 @@
 import Foundation
-import CodeEditSourceEditor
 import LanguageServerProtocol
 
 @MainActor
-enum EditorPeekMode: Equatable {
+public enum EditorPeekMode: Equatable {
     case definition
     case references
 
-    var title: String {
+    public var title: String {
         switch self {
         case .definition:
             return "Peek Definition"
@@ -17,24 +16,62 @@ enum EditorPeekMode: Equatable {
     }
 }
 
-struct EditorPeekItem: Identifiable, Equatable {
-    let id: String
-    let title: String
-    let subtitle: String
-    let preview: String
-    let badgeText: String
-    let navigationRequest: EditorNavigationRequest
+public struct EditorPeekTarget: Equatable, Sendable {
+    public let url: URL
+    public let line: Int
+    public let column: Int
+    public let highlightLine: Bool
+
+    public init(url: URL, line: Int, column: Int, highlightLine: Bool) {
+        self.url = url
+        self.line = line
+        self.column = column
+        self.highlightLine = highlightLine
+    }
 }
 
-struct EditorPeekPresentation: Equatable {
-    let mode: EditorPeekMode
-    let summary: String
-    let items: [EditorPeekItem]
+public struct EditorPeekItem: Identifiable, Equatable {
+    public let id: String
+    public let title: String
+    public let subtitle: String
+    public let preview: String
+    public let badgeText: String
+    public let target: EditorPeekTarget
+
+    public init(
+        id: String,
+        title: String,
+        subtitle: String,
+        preview: String,
+        badgeText: String,
+        target: EditorPeekTarget
+    ) {
+        self.id = id
+        self.title = title
+        self.subtitle = subtitle
+        self.preview = preview
+        self.badgeText = badgeText
+        self.target = target
+    }
+}
+
+public struct EditorPeekPresentation: Equatable {
+    public let mode: EditorPeekMode
+    public let summary: String
+    public let items: [EditorPeekItem]
+
+    public init(mode: EditorPeekMode, summary: String, items: [EditorPeekItem]) {
+        self.mode = mode
+        self.summary = summary
+        self.items = items
+    }
 }
 
 @MainActor
-struct EditorPeekController {
-    func buildDefinitionPresentation(
+public struct EditorPeekController {
+    public init() {}
+
+    public func buildDefinitionPresentation(
         location: Location,
         currentFileURL: URL?,
         projectRootPath: String?,
@@ -58,7 +95,7 @@ struct EditorPeekController {
         )
     }
 
-    func buildReferencesPresentation(
+    public func buildReferencesPresentation(
         locations: [Location],
         currentFileURL: URL?,
         relativeFilePath: String,
@@ -107,11 +144,13 @@ struct EditorPeekController {
             currentFileURL: currentFileURL,
             currentContent: currentContent
         )
-        let target = CursorPosition(
-            start: .init(line: line, column: column),
-            end: nil
-        )
         let subtitle = displayPath(for: url, projectRootPath: projectRootPath) + ":\(line):\(column)"
+        let target = EditorPeekTarget(
+            url: url,
+            line: line,
+            column: column,
+            highlightLine: highlightLine
+        )
 
         return EditorPeekItem(
             id: "\(url.standardizedFileURL.path):\(line):\(column):\(badgeText)",
@@ -119,7 +158,7 @@ struct EditorPeekController {
             subtitle: subtitle,
             preview: previewContent,
             badgeText: badgeText,
-            navigationRequest: .definition(url, target, highlightLine: highlightLine)
+            target: target
         )
     }
 

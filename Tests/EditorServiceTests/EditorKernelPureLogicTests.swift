@@ -59,16 +59,13 @@ final class EditorKernelPureLogicTests: XCTestCase {
         XCTAssertEqual(presentation?.items.first?.preview, "value")
         XCTAssertEqual(presentation?.items.first?.badgeText, "Definition")
 
-        guard let request = presentation?.items.first?.navigationRequest else {
-            return XCTFail("Expected navigation request")
+        guard let target = presentation?.items.first?.target else {
+            return XCTFail("Expected peek target")
         }
-        switch request {
-        case let .definition(url, _, highlightLine):
-            XCTAssertEqual(url, fileURL)
-            XCTAssertTrue(highlightLine)
-        default:
-            XCTFail("Expected definition navigation request")
-        }
+        XCTAssertEqual(target.url, fileURL)
+        XCTAssertEqual(target.line, 2)
+        XCTAssertEqual(target.column, 5)
+        XCTAssertTrue(target.highlightLine)
     }
 
     func testEditorPeekControllerReferencesFallBackWhenNoFileCanBeResolved() {
