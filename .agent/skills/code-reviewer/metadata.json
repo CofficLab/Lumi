@@ -1,0 +1,7 @@
+{
+    "name": "code-reviewer",
+    "title": "Code Reviewer",
+    "description": "代码质量、最佳实践和一致性检查的专家技能",
+    "triggers": ["review", "审查", "quality", "best practice", "bug", "security"],
+    "version": "1.0.0"
+}

@@ -1,0 +1,7 @@
+{
+    "name": "i18n-translate",
+    "title": "i18n Translate Manager",
+    "description": "管理 iOS/macOS 应用的 xcstrings 本地化翻译文件，自动清理过期条目、检测缺失翻译、添加简繁体中文翻译",
+    "triggers": ["translate", "翻译", "xcstrings", "i18n", "localization", "国际化"],
+    "version": "1.0.0"
+}

@@ -11,40 +11,63 @@ struct SkillStatusBarView: View {
     @State private var skills: [SkillMetadata] = []
 
     var body: some View {
-        // 无 Skill 时不显示
-        if !skills.isEmpty {
-            StatusBarHoverContainer(
-                detailView: SkillListPopover(skills: skills),
-                popoverWidth: 360,
-                id: "skill-status"
-            ) {
-                HStack(spacing: 4) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 10))
-                    Text("^[\(skills.count) Skill](inflect: true)")
-                        .font(.system(size: 11, weight: .medium))
+        Group {
+            // 无 Skill 时不显示
+            if !skills.isEmpty {
+                StatusBarHoverContainer(
+                    detailView: SkillListPopover(skills: skills),
+                    popoverWidth: 360,
+                    id: "skill-status"
+                ) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 10))
+                        Text("^[\(skills.count) Skill](inflect: true)")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
             }
-            .task {
-                await loadSkills()
-            }
-            .onChange(of: projectVM.currentProjectPath) { _, _ in
-                Task { await loadSkills() }
-            }
+        }
+        // 与 GitBranchStatusBarView 保持一致的刷新时机
+        .onAppear {
+            refreshSkills()
+        }
+        .onChange(of: projectVM.currentProjectPath) { _, _ in
+            refreshSkills()
+        }
+        .onApplicationDidBecomeActive {
+            refreshSkills()
         }
     }
 
     // MARK: - 私有方法
 
-    private func loadSkills() async {
+    private func refreshSkills() {
         let projectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        if SkillPlugin.verbose {
+            SkillPlugin.logger.info("\(SkillPlugin.emoji) refreshSkills: projectPath='\(projectPath)'")
+        }
         guard !projectPath.isEmpty else {
+            if SkillPlugin.verbose {
+                SkillPlugin.logger.info("\(SkillPlugin.emoji) refreshSkills: empty project path, clearing skills")
+            }
             skills = []
             return
         }
-        skills = await SkillService.shared.listSkills(projectPath: projectPath)
+        Task {
+            let loaded = await SkillService.shared.listSkills(projectPath: projectPath)
+            await MainActor.run {
+                skills = loaded
+            }
+            if SkillPlugin.verbose {
+                SkillPlugin.logger.info("\(SkillPlugin.emoji) refreshSkills: found \(loaded.count) skills")
+                for s in loaded {
+                    SkillPlugin.logger.info("\(SkillPlugin.emoji)   - \(s.name): \(s.title)")
+                }
+            }
+        }
     }
 }
 
