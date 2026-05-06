@@ -154,7 +154,7 @@ final class EditorLanguageActionFacade {
         prepare: @escaping (_ uri: String, _ line: Int, _ character: Int) async -> Void,
         hasRootItem: @escaping () -> Bool,
         showWarning: @escaping (_ message: String) -> Void,
-        openPanel: @escaping (_ command: EditorPanelCommand) -> Void
+        openPanel: @escaping () -> Void
     ) async {
         await callHierarchyController.openCallHierarchy(
             currentFileURL: currentFileURL,

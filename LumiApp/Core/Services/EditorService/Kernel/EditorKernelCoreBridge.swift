@@ -77,6 +77,7 @@ typealias EditorSnippetTransactionPayload = EditorKernelCore.EditorSnippetTransa
 typealias EditorTransactionController = EditorKernelCore.EditorTransactionController
 typealias EditorDocumentReplacePayload = EditorKernelCore.EditorDocumentReplacePayload
 typealias EditorDocumentReplaceController = EditorKernelCore.EditorDocumentReplaceController
+typealias EditorCallHierarchyController = EditorKernelCore.EditorCallHierarchyController
 typealias EditorPerfEvent = EditorKernelCore.EditorPerfEvent
 typealias EditorPerfResult = EditorKernelCore.EditorPerfResult
 typealias EditorPerfSummary = EditorKernelCore.EditorPerfSummary

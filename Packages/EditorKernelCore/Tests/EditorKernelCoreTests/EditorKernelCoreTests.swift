@@ -88,6 +88,49 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    @MainActor
+    func callHierarchyControllerPreparesCoordinatesAndOpensOnlyWhenRootExists() async {
+        let controller = EditorCallHierarchyController()
+        let fileURL = URL(fileURLWithPath: "/tmp/CallHierarchy.swift")
+
+        var prepared: (String, Int, Int)?
+        var warning: String?
+        var opened = false
+
+        await controller.openCallHierarchy(
+            currentFileURL: fileURL,
+            cursorLine: 3,
+            cursorColumn: 5,
+            prepare: { uri, line, character in
+                prepared = (uri, line, character)
+            },
+            hasRootItem: { true },
+            showWarning: { warning = $0 },
+            openPanel: { opened = true }
+        )
+
+        #expect(prepared?.0 == fileURL.absoluteString)
+        #expect(prepared?.1 == 2)
+        #expect(prepared?.2 == 4)
+        #expect(warning == nil)
+        #expect(opened == true)
+
+        opened = false
+        await controller.openCallHierarchy(
+            currentFileURL: fileURL,
+            cursorLine: 1,
+            cursorColumn: 1,
+            prepare: { _, _, _ in },
+            hasRootItem: { false },
+            showWarning: { warning = $0 },
+            openPanel: { opened = true }
+        )
+
+        #expect(warning == "未找到调用层级信息")
+        #expect(opened == false)
+    }
+
+    @Test
     func cursorMotionWordAndLineBehaviorsRemainStable() {
         #expect(CursorMotionController.moveWordLeft(location: 10, text: "foo  +  bar").location == 8)
         #expect(CursorMotionController.moveWordRight(location: 0, text: "foo  +  bar").location == 3)

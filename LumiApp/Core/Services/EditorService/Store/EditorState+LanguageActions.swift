@@ -287,8 +287,8 @@ extension EditorState {
             showWarning: { [weak self] message in
                 self?.showStatusToast(message, level: .warning)
             },
-            openPanel: { [weak self] command in
-                self?.performPanelCommand(command)
+            openPanel: { [weak self] in
+                self?.performPanelCommand(.openCallHierarchy)
             }
         )
     }
