@@ -1403,4 +1403,31 @@ struct EditorKernelCoreTests {
             highlightLine: true
         ))
     }
+
+    @Test
+    @MainActor
+    func settingsQuickOpenPolicyFiltersAndSortsMatchingItems() {
+        let items: [EditorSettingsQuickOpenSearchItem] = [
+            .init(
+                id: "editor.font-size",
+                title: "Font Size",
+                subtitle: "Editor typography",
+                keywords: ["font", "typography"],
+                sectionTitle: "Display"
+            ),
+            .init(
+                id: "editor.format-on-save",
+                title: "Format On Save",
+                subtitle: "Save pipeline",
+                keywords: ["format", "save"],
+                sectionTitle: "Save"
+            ),
+        ]
+
+        let matches = EditorSettingsQuickOpenPolicy.matchingItems(items, query: "save")
+        #expect(matches.map(\.id) == ["editor.format-on-save"])
+
+        let fontMatches = EditorSettingsQuickOpenPolicy.matchingItems(items, query: "font")
+        #expect(fontMatches.map(\.id) == ["editor.font-size"])
+    }
 }

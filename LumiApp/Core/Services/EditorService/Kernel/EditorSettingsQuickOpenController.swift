@@ -4,46 +4,16 @@ import Foundation
 struct EditorSettingsQuickOpenController {
     func suggestions(matching query: String) -> [EditorQuickOpenItemSuggestion] {
         let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalizedQuery.isEmpty else { return [] }
-
-        let builtInItems: [EditorQuickOpenItemSuggestion] = EditorSettingsCatalog.builtInSections().reduce(into: []) { result, section in
-            let items = section.entries.compactMap { entry -> EditorQuickOpenItemSuggestion? in
-                guard matches(query: normalizedQuery, title: entry.title, subtitle: entry.subtitle, keywords: entry.keywords, section: section.title) else {
-                    return nil
-                }
-                return makeSuggestion(
-                    id: entry.id,
-                    title: entry.title,
-                    subtitle: entry.subtitle ?? section.title,
-                    badge: section.title,
-                    searchQuery: normalizedQuery
-                )
-            }
-            result.append(contentsOf: items)
-        }
-
-        let contributedItems: [EditorQuickOpenItemSuggestion] = EditorSettingsState.shared.contributedSettings.compactMap { item in
-            guard matches(
-                query: normalizedQuery,
-                title: item.title,
-                subtitle: item.subtitle,
-                keywords: item.keywords,
-                section: item.sectionTitle
-            ) else {
-                return nil
-            }
-            return makeSuggestion(
+        let matches = EditorSettingsQuickOpenPolicy.matchingItems(searchItems(), query: normalizedQuery)
+        return matches.enumerated().map { index, item in
+            makeSuggestion(
                 id: item.id,
                 title: item.title,
                 subtitle: item.subtitle ?? item.sectionTitle,
                 badge: item.sectionTitle,
-                searchQuery: normalizedQuery
+                searchQuery: normalizedQuery,
+                order: index
             )
-        }
-
-        return (builtInItems + contributedItems).sorted { lhs, rhs in
-            if lhs.order != rhs.order { return lhs.order < rhs.order }
-            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
         }
     }
 
@@ -52,7 +22,8 @@ struct EditorSettingsQuickOpenController {
         title: String,
         subtitle: String,
         badge: String,
-        searchQuery: String
+        searchQuery: String,
+        order: Int
     ) -> EditorQuickOpenItemSuggestion {
         return EditorQuickOpenItemSuggestion(
             id: "setting.\(id)",
@@ -61,7 +32,7 @@ struct EditorSettingsQuickOpenController {
             subtitle: subtitle,
             systemImage: "slider.horizontal.3",
             badge: badge,
-            order: 5,
+            order: order,
             isEnabled: true,
             metadata: .init(priority: 60, dedupeKey: id),
             action: {
@@ -72,14 +43,29 @@ struct EditorSettingsQuickOpenController {
         )
     }
 
-    private func matches(
-        query: String,
-        title: String,
-        subtitle: String?,
-        keywords: [String],
-        section: String
-    ) -> Bool {
-        let haystack = ([title, subtitle ?? "", section] + keywords).joined(separator: " ")
-        return haystack.localizedCaseInsensitiveContains(query)
+    private func searchItems() -> [EditorSettingsQuickOpenSearchItem] {
+        let builtInItems = EditorSettingsCatalog.builtInSections().flatMap { section in
+            section.entries.map { entry in
+                EditorSettingsQuickOpenSearchItem(
+                    id: entry.id,
+                    title: entry.title,
+                    subtitle: entry.subtitle,
+                    keywords: entry.keywords,
+                    sectionTitle: section.title
+                )
+            }
+        }
+
+        let contributedItems = EditorSettingsState.shared.contributedSettings.map { item in
+            EditorSettingsQuickOpenSearchItem(
+                id: item.id,
+                title: item.title,
+                subtitle: item.subtitle,
+                keywords: item.keywords,
+                sectionTitle: item.sectionTitle
+            )
+        }
+
+        return builtInItems + contributedItems
     }
 }
