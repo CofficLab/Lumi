@@ -23,10 +23,22 @@ final class AgentChatPluginTests: XCTestCase {
     }
 
     func testModelSelectorTabBuiltInTitlesRemainStable() {
-        XCTAssertEqual(ModelSelectorTab.current.displayTitle, "Current Provider")
-        XCTAssertEqual(ModelSelectorTab.frequent.displayTitle, "Frequent")
-        XCTAssertEqual(ModelSelectorTab.fast.displayTitle, "Fast")
-        XCTAssertEqual(ModelSelectorTab.all.displayTitle, "All")
+        XCTAssertEqual(
+            ModelSelectorTab.current.displayTitle,
+            String(localized: "Current Provider", table: "AgentChat")
+        )
+        XCTAssertEqual(
+            ModelSelectorTab.frequent.displayTitle,
+            String(localized: "Frequent", table: "AgentChat")
+        )
+        XCTAssertEqual(
+            ModelSelectorTab.fast.displayTitle,
+            String(localized: "Fast", table: "AgentChat")
+        )
+        XCTAssertEqual(
+            ModelSelectorTab.all.displayTitle,
+            String(localized: "All", table: "AgentChat")
+        )
         XCTAssertEqual(ModelSelectorTab.provider("openai").displayTitle, "")
     }
 }

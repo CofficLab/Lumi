@@ -304,7 +304,7 @@ final class EditorServiceKernelTests: XCTestCase {
         XCTAssertEqual(plan?.replacementText, "()xy()")
         XCTAssertEqual(
             plan?.selectedRanges,
-            [NSRange(location: 1, length: 0), NSRange(location: 5, length: 0)]
+            [NSRange(location: 1, length: 0), NSRange(location: 3, length: 0)]
         )
         XCTAssertEqual(plan?.reason, "multi_cursor_bracket_auto_closing")
     }

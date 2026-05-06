@@ -228,4 +228,65 @@ extension FinderSync {
             }
         }
     }
+
+    @IBAction func listHiddenFiles(_ sender: AnyObject?) {
+        if Self.verbose {
+            FinderSync.logger.info("\(self.t)触发「列出隐藏文件」操作")
+        }
+        guard let currentDir = getCurrentDirectoryURL() else {
+            if Self.verbose {
+                FinderSync.logger.warning("\(self.t)未获取到当前目录")
+            }
+            return
+        }
+
+        do {
+            let urls = try FileManager.default.contentsOfDirectory(
+                at: currentDir,
+                includingPropertiesForKeys: [.isHiddenKey],
+                options: [.skipsSubdirectoryDescendants]
+            )
+
+            let hiddenItems = urls.filter { url in
+                (try? url.resourceValues(forKeys: [.isHiddenKey]))?.isHidden == true
+            }
+
+            if Self.verbose {
+                FinderSync.logger.info("\(self.t)在当前目录中找到 \(hiddenItems.count) 个隐藏文件")
+            }
+
+            // 在主线程显示对话框
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = String(localized: "Hidden Files", table: "FinderSync")
+
+                if hiddenItems.isEmpty {
+                    alert.informativeText = String(format: String(localized: "No hidden files found in:\n%@", table: "FinderSync"), currentDir.path)
+                    alert.addButton(withTitle: String(localized: "OK", table: "FinderSync"))
+                } else {
+                    let fileNames = hiddenItems.map { $0.lastPathComponent }.sorted()
+                    let fileList = fileNames.joined(separator: "\n")
+
+                    alert.informativeText = String(format: String(localized: "Found %d hidden file(s) in:\n%@\n\n%@", table: "FinderSync"), hiddenItems.count, currentDir.path, fileList)
+                    alert.addButton(withTitle: String(localized: "OK", table: "FinderSync"))
+                }
+
+                alert.alertStyle = .informational
+                alert.runModal()
+            }
+        } catch {
+            if Self.verbose {
+                FinderSync.logger.error("\(self.t)读取目录失败: \(currentDir.path)，错误: \(error.localizedDescription)")
+            }
+
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = String(localized: "Error", table: "FinderSync")
+                alert.informativeText = String(format: String(localized: "Failed to read directory:\n%@", table: "FinderSync"), currentDir.path)
+                alert.alertStyle = .critical
+                alert.addButton(withTitle: String(localized: "OK", table: "FinderSync"))
+                alert.runModal()
+            }
+        }
+    }
 }

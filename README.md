@@ -108,6 +108,15 @@ open Lumi.xcodeproj
 - Select the macOS target
 - Build (⌘B) and run (⌘R)
 
+### 4. Run Tests
+
+Use the checked-in helper script so local runs avoid the known third-party
+SwiftLint build-tool plugin failure from `CodeEditTextView` / `CodeEditSourceEditor`.
+
+```bash
+./scripts/test-lumi.sh
+```
+
 
 ## 📄 License
 

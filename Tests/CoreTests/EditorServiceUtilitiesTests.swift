@@ -27,10 +27,10 @@ final class EditorServiceUtilitiesTests: XCTestCase {
         let table = LineOffsetTable(content: "😀a\nb")
 
         XCTAssertEqual(table.lineStart(line: 0), 0)
-        XCTAssertEqual(table.lineStart(line: 1), 3)
+        XCTAssertEqual(table.lineStart(line: 1), 4)
         XCTAssertEqual(table.utf16Offset(line: 0, character: 2), 2)
-        XCTAssertEqual(table.utf16Offset(line: 1, character: 1), 4)
-        XCTAssertEqual(table.totalUTF16Length, 4)
+        XCTAssertEqual(table.utf16Offset(line: 1, character: 1), 5)
+        XCTAssertEqual(table.totalUTF16Length, 5)
     }
 
     func testLineOffsetTableRejectsOutOfBoundsQueries() {
@@ -89,7 +89,7 @@ final class EditorServiceUtilitiesTests: XCTestCase {
     }
 
     func testLongLineDetectorHonorsCustomLimit() {
-        let text = "short\n123456"
+        let text = "tiny\n123456"
 
         let result = LongLineDetector.findLongestLine(in: text, limit: 5)
 

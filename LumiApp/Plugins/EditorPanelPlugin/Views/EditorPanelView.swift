@@ -20,10 +20,18 @@ struct EditorPanelView: View {
     @State private var isCommandPalettePresented = false
     @State private var draggedTabSessionID: EditorSession.ID?
 
+    /// 标记编辑器协调器是否已完成初始化
+    /// 避免在 SourceEditorView.onAppear (initializeCoordinators) 执行前就触发文件加载导致崩溃
+    @State private var isEditorReady: Bool = false
+
     /// 标签页持久化存储
     private let tabStore = EditorTabStripStore.shared
     /// 防抖保存的 Task
     @State private var tabSaveTask: Task<Void, Never>?
+
+    /// 首次 appear 后延迟恢复标签页的 Task
+    /// 避免在 SourceEditorView 协调器未初始化时就触发文件加载导致崩溃
+    @State private var tabRestoreTask: Task<Void, Never>?
 
     var body: some View {
         eventBoundRootView
