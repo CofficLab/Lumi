@@ -1,15 +1,29 @@
 import Foundation
 
 @MainActor
-final class EditorTextInputController {
-    struct InputEditPlan {
-        let replacementRange: NSRange
-        let replacementText: String
-        let selectedRanges: [NSRange]
-        let reason: String
+public final class EditorTextInputController {
+    public struct InputEditPlan {
+        public let replacementRange: NSRange
+        public let replacementText: String
+        public let selectedRanges: [NSRange]
+        public let reason: String
+
+        public init(
+            replacementRange: NSRange,
+            replacementText: String,
+            selectedRanges: [NSRange],
+            reason: String
+        ) {
+            self.replacementRange = replacementRange
+            self.replacementText = replacementText
+            self.selectedRanges = selectedRanges
+            self.reason = reason
+        }
     }
 
-    func textInputPlan(
+    public init() {}
+
+    public func textInputPlan(
         text: String,
         replacementRange: NSRange,
         textViewSelections: [NSRange],
@@ -60,7 +74,7 @@ final class EditorTextInputController {
         return nil
     }
 
-    func insertNewlinePlan(
+    public func insertNewlinePlan(
         textViewSelections: [NSRange],
         multiCursorSelectionCount: Int,
         currentText: String,
@@ -90,7 +104,7 @@ final class EditorTextInputController {
         )
     }
 
-    func insertTabPlan(
+    public func insertTabPlan(
         textViewSelections: [NSRange],
         multiCursorSelectionCount: Int,
         currentText: String,
@@ -140,7 +154,7 @@ final class EditorTextInputController {
         )
     }
 
-    func insertBacktabPlan(
+    public func insertBacktabPlan(
         textViewSelections: [NSRange],
         multiCursorSelectionCount: Int,
         currentText: String,

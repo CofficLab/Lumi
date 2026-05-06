@@ -1,44 +1,28 @@
 import Foundation
 
-// MARK: - Bracket & Auto-Closing Pairs
-//
-// Phase 9: 编辑体验打磨 — 括号匹配、自动闭合、自动缩进。
-//
-// VS Code 的核心编辑体验包括：
-// 1. 自动闭合：输入 `(` 自动补 `)`，输入 `[` 自动补 `]`
-// 2. 自动环绕：选中文本后输入 `(` 变成 `(选中文本)`
-// 3. 括号匹配：光标在括号旁边时，高亮对应的括号
-// 4. 自动缩进：换行时保持或增加缩进级别
+public struct BracketPair: Hashable, Sendable {
+    public let open: Character
+    public let close: Character
 
-/// 括号对定义。
-struct BracketPair: Hashable, Sendable {
-    let open: Character
-    let close: Character
-
-    init(open: Character, close: Character) {
+    public init(open: Character, close: Character) {
         self.open = open
         self.close = close
     }
 
-    func matchesClose(_ char: Character) -> Bool {
+    public func matchesClose(_ char: Character) -> Bool {
         close == char
     }
 
-    func matchesOpen(_ char: Character) -> Bool {
+    public func matchesOpen(_ char: Character) -> Bool {
         open == char
     }
 }
 
-/// 语言特定的括号对配置。
-struct BracketPairsConfig: Sendable {
-    let pairs: [BracketPair]
-    let autoClosingPairs: [AutoClosingPair]
+public struct BracketPairsConfig: Sendable {
+    public let pairs: [BracketPair]
+    public let autoClosingPairs: [AutoClosingPair]
 
-    /// 创建配置。
-    /// - Parameters:
-    ///   - pairs: 括号对列表
-    ///   - autoClosingPairs: 自动闭合配置（默认为所有括号对）
-    init(
+    public init(
         pairs: [BracketPair],
         autoClosingPairs: [AutoClosingPair]? = nil
     ) {
@@ -48,8 +32,7 @@ struct BracketPairsConfig: Sendable {
         }
     }
 
-    /// 编程语言的默认括号配置。
-    static func defaultForLanguage(_ languageId: String) -> BracketPairsConfig {
+    public static func defaultForLanguage(_ languageId: String) -> BracketPairsConfig {
         let commonPairs: [BracketPair] = [
             BracketPair(open: "(", close: ")"),
             BracketPair(open: "[", close: "]"),
@@ -68,7 +51,7 @@ struct BracketPairsConfig: Sendable {
                 pairs: [
                     BracketPair(open: "<", close: ">"),
                 ],
-                autoClosingPairs: []  // HTML/XML 标签不自动闭合
+                autoClosingPairs: []
             )
         case "css", "scss", "sass", "less":
             return BracketPairsConfig(
@@ -93,77 +76,65 @@ struct BracketPairsConfig: Sendable {
         }
     }
 
-    /// 查找给定开括号对应的闭括号。
-    func matchingClose(for open: Character) -> Character? {
+    public func matchingClose(for open: Character) -> Character? {
         pairs.first(where: { $0.open == open })?.close
     }
 
-    /// 查找给定闭括号对应的开括号。
-    func matchingOpen(for close: Character) -> Character? {
+    public func matchingOpen(for close: Character) -> Character? {
         pairs.first(where: { $0.close == close })?.open
     }
 
-    /// 检查字符是否是开括号。
-    func isOpenBracket(_ char: Character) -> Bool {
+    public func isOpenBracket(_ char: Character) -> Bool {
         pairs.contains { $0.open == char }
     }
 
-    /// 检查字符是否是闭括号。
-    func isCloseBracket(_ char: Character) -> Bool {
+    public func isCloseBracket(_ char: Character) -> Bool {
         pairs.contains { $0.close == char }
     }
 }
 
-/// 自动闭合对配置。
-struct AutoClosingPair: Hashable, Sendable {
-    let open: Character
-    let close: Character
-    let notIn: [AutoClosingContext]
+public struct AutoClosingPair: Hashable, Sendable {
+    public let open: Character
+    public let close: Character
+    public let notIn: [AutoClosingContext]
 
-    init(open: Character, close: Character, notIn: [AutoClosingContext] = []) {
+    public init(open: Character, close: Character, notIn: [AutoClosingContext] = []) {
         self.open = open
         self.close = close
         self.notIn = notIn
     }
 }
 
-/// 自动闭合上下文限制。
-enum AutoClosingContext: Hashable, Sendable {
-    /// 不在字符串内
+public enum AutoClosingContext: Hashable, Sendable {
     case string
-    /// 不在注释内
     case comment
-    /// 不在正则表达式内
     case regex
 }
 
-/// 括号匹配器。
-///
-/// 给定文本和光标位置，找到匹配的括号对。
-enum BracketMatcher {
+public enum BracketMatcher {
+    public struct AutoClosingEdit: Equatable, Sendable {
+        public let replacementRange: NSRange
+        public let replacementText: String
+        public let selectedRange: NSRange
 
-    struct AutoClosingEdit: Equatable, Sendable {
-        let replacementRange: NSRange
-        let replacementText: String
-        let selectedRange: NSRange
+        public init(replacementRange: NSRange, replacementText: String, selectedRange: NSRange) {
+            self.replacementRange = replacementRange
+            self.replacementText = replacementText
+            self.selectedRange = selectedRange
+        }
     }
 
-    /// 括号匹配结果。
-    struct MatchResult {
-        /// 开括号位置。
-        let openPosition: Int
-        /// 闭括号位置。
-        let closePosition: Int
+    public struct MatchResult {
+        public let openPosition: Int
+        public let closePosition: Int
+
+        public init(openPosition: Int, closePosition: Int) {
+            self.openPosition = openPosition
+            self.closePosition = closePosition
+        }
     }
 
-    /// 在给定文本中查找光标位置附近的匹配括号。
-    ///
-    /// - Parameters:
-    ///   - text: 文档文本
-    ///   - cursorPosition: 光标位置（UTF-16 offset）
-    ///   - config: 括号对配置
-    /// - Returns: 如果光标在括号旁边，返回匹配结果
-    static func findMatchingBracket(
+    public static func findMatchingBracket(
         in text: String,
         at cursorPosition: Int,
         config: BracketPairsConfig
@@ -171,7 +142,6 @@ enum BracketMatcher {
         let textLength = text.utf16.count
         guard cursorPosition >= 0, cursorPosition <= textLength else { return nil }
 
-        // 检查光标前一个字符是否是开括号
         if cursorPosition > 0 {
             let openIndex = text.utf16.index(text.utf16.startIndex, offsetBy: cursorPosition - 1)
             if let scalar = Unicode.Scalar(text.utf16[openIndex]),
@@ -187,7 +157,6 @@ enum BracketMatcher {
             }
         }
 
-        // 检查光标当前位置字符是否是开括号
         if cursorPosition < textLength {
             let openIndex = text.utf16.index(text.utf16.startIndex, offsetBy: cursorPosition)
             if let scalar = Unicode.Scalar(text.utf16[openIndex]),
@@ -203,7 +172,6 @@ enum BracketMatcher {
             }
         }
 
-        // 检查光标位置字符是否是闭括号
         if cursorPosition < textLength {
             let closeIndex = text.utf16.index(text.utf16.startIndex, offsetBy: cursorPosition)
             if let scalar = Unicode.Scalar(text.utf16[closeIndex]),
@@ -219,7 +187,6 @@ enum BracketMatcher {
             }
         }
 
-        // 检查光标前一个字符是否是闭括号
         if cursorPosition > 0 {
             let closeIndex = text.utf16.index(text.utf16.startIndex, offsetBy: cursorPosition - 1)
             if let scalar = Unicode.Scalar(text.utf16[closeIndex]),
@@ -238,43 +205,27 @@ enum BracketMatcher {
         return nil
     }
 
-    /// 检查字符后是否是自动闭合的候选。
-    ///
-    /// - Parameters:
-    ///   - text: 文档文本
-    ///   - position: 输入位置
-    ///   - typedChar: 刚输入的字符
-    ///   - config: 自动闭合配置
-    /// - Returns: 如果需要自动闭合，返回应插入的闭括号字符
-    static func shouldAutoClose(
+    public static func shouldAutoClose(
         in text: String,
         at position: Int,
         typedChar: Character,
         config: BracketPairsConfig
     ) -> Character? {
-        // 检查是否是自动闭合对中的开括号
         guard let autoPair = config.autoClosingPairs.first(where: { $0.open == typedChar }) else {
             return nil
         }
 
-        // 检查是否在禁止上下文中（字符串、注释等）
-        // 简化实现：检查光标前是否有未闭合的引号
-        if autoPair.notIn.contains(.string) {
-            if isInStringContext(text, position: position) {
-                return nil
-            }
+        if autoPair.notIn.contains(.string), isInStringContext(text, position: position) {
+            return nil
         }
-        if autoPair.notIn.contains(.comment) {
-            if isInCommentContext(text, position: position) {
-                return nil
-            }
+        if autoPair.notIn.contains(.comment), isInCommentContext(text, position: position) {
+            return nil
         }
 
         return autoPair.close
     }
 
-    /// 检查是否应该自动环绕选中的文本。
-    static func shouldAutoSurround(
+    public static func shouldAutoSurround(
         typedChar: Character,
         config: BracketPairsConfig
     ) -> Bool {
@@ -282,7 +233,7 @@ enum BracketMatcher {
         config.pairs.contains { $0.close == typedChar }
     }
 
-    static func autoClosingEdit(
+    public static func autoClosingEdit(
         in text: String,
         selection: NSRange,
         typedChar: Character,
@@ -340,8 +291,6 @@ enum BracketMatcher {
 
         return nil
     }
-
-    // MARK: - Private
 
     private static func findCloseBracket(
         in text: String,
@@ -414,9 +363,7 @@ enum BracketMatcher {
         return nil
     }
 
-    /// 简化版字符串上下文检测。
     private static func isInStringContext(_ text: String, position: Int) -> Bool {
-        // 统计 position 之前的引号数量
         var doubleQuoteCount = 0
         var singleQuoteCount = 0
         var backslashCount = 0
@@ -437,39 +384,38 @@ enum BracketMatcher {
         return doubleQuoteCount % 2 != 0 || singleQuoteCount % 2 != 0
     }
 
-    /// 简化版注释上下文检测。
     private static func isInCommentContext(_ text: String, position: Int) -> Bool {
         let prefix = String(text.prefix(position))
         let lines = prefix.components(separatedBy: "\n")
         guard let lastLine = lines.last else { return false }
-
         return lastLine.contains("//")
     }
 }
 
-/// 智能换行/自动缩进处理器。
-enum SmartIndentHandler {
+public enum SmartIndentHandler {
+    public struct IndentResult {
+        public let textToInsert: String
+        public let cursorOffset: Int
 
-    struct IndentResult {
-        let textToInsert: String
-        let cursorOffset: Int
+        public init(textToInsert: String, cursorOffset: Int) {
+            self.textToInsert = textToInsert
+            self.cursorOffset = cursorOffset
+        }
     }
 
-    struct OutdentResult: Equatable, Sendable {
-        let replacementRange: NSRange
-        let replacementText: String
-        let selectedRange: NSRange
+    public struct OutdentResult: Equatable, Sendable {
+        public let replacementRange: NSRange
+        public let replacementText: String
+        public let selectedRange: NSRange
+
+        public init(replacementRange: NSRange, replacementText: String, selectedRange: NSRange) {
+            self.replacementRange = replacementRange
+            self.replacementText = replacementText
+            self.selectedRange = selectedRange
+        }
     }
 
-    /// 处理换行时的自动缩进。
-    ///
-    /// - Parameters:
-    ///   - text: 文档文本
-    ///   - position: 换行位置
-    ///   - tabSize: Tab 宽度
-    ///   - useSpaces: 是否使用空格
-    /// - Returns: 应插入的文本（换行 + 缩进）和光标偏移
-    static func handleEnter(
+    public static func handleEnter(
         in text: String,
         at position: Int,
         tabSize: Int,
@@ -484,13 +430,11 @@ enum SmartIndentHandler {
         let lineRange = nsText.lineRange(for: NSRange(location: anchor, length: 0))
         let currentLineText = nsText.substring(with: lineRange)
 
-        // 计算当前行前导空白
         let leadingWhitespace = currentLineText.prefix(while: { $0 == " " || $0 == "\t" })
         let leadingWhitespaceLength = (String(leadingWhitespace) as NSString).length
         let indentLength = (indent as NSString).length
         let newlineLength = (newline as NSString).length
 
-        // 检查光标前一个字符是否是开括号
         let prevChar: Character? = safePosition > 0
             ? nsText.substring(with: NSRange(location: safePosition - 1, length: 1)).first
             : nil
@@ -498,7 +442,6 @@ enum SmartIndentHandler {
             ? nsText.substring(with: NSRange(location: safePosition, length: 1)).first
             : nil
 
-        // 如果光标在 `{` 和 `}` 之间，插入额外的缩进
         if prevChar == "{", nextChar == "}" {
             let newText = newline + String(leadingWhitespace) + indent + newline + String(leadingWhitespace)
             return IndentResult(
@@ -507,7 +450,6 @@ enum SmartIndentHandler {
             )
         }
 
-        // 如果光标前一个字符是开括号，增加缩进
         if let prev = prevChar, prev == "{" || prev == "(" || prev == "[" {
             let newText = newline + String(leadingWhitespace) + indent
             return IndentResult(
@@ -516,7 +458,6 @@ enum SmartIndentHandler {
             )
         }
 
-        // 默认：保持当前缩进
         let newText = newline + String(leadingWhitespace)
         return IndentResult(
             textToInsert: newText,
@@ -524,8 +465,7 @@ enum SmartIndentHandler {
         )
     }
 
-    /// 处理 Tab 键。
-    static func handleTab(
+    public static func handleTab(
         at position: Int,
         hasSelection: Bool,
         selectionStart: Int,
@@ -534,22 +474,13 @@ enum SmartIndentHandler {
         useSpaces: Bool
     ) -> IndentResult {
         let indent = indentString(tabSize: tabSize, useSpaces: useSpaces)
-
-        if hasSelection {
-            // 多行缩进：缩进选中范围的每一行
-            return IndentResult(
-                textToInsert: indent,
-                cursorOffset: indent.count
-            )
-        } else {
-            return IndentResult(
-                textToInsert: indent,
-                cursorOffset: indent.count
-            )
-        }
+        return IndentResult(
+            textToInsert: indent,
+            cursorOffset: indent.count
+        )
     }
 
-    static func handleTab(
+    public static func handleTab(
         in text: String,
         selection: NSRange,
         tabSize: Int,
@@ -588,7 +519,7 @@ enum SmartIndentHandler {
         )
     }
 
-    static func handleBacktab(
+    public static func handleBacktab(
         in text: String,
         selection: NSRange,
         tabSize: Int,
@@ -618,63 +549,88 @@ enum SmartIndentHandler {
         guard !removedRanges.isEmpty else { return nil }
 
         var updatedText = text
-        for range in removedRanges.reversed() {
-            let stringRange = Range(range, in: updatedText)!
+        for removalRange in removedRanges.sorted(by: { $0.location > $1.location }) {
+            guard let stringRange = Range(removalRange, in: updatedText) else {
+                return nil
+            }
             updatedText.removeSubrange(stringRange)
         }
 
-        let replacementRange = NSRange(location: 0, length: nsText.length)
-        let updatedSelection = adjustedSelection(
+        let updatedSelection = adjustedSelectionForOutdent(
             original: selection,
             removedRanges: removedRanges
         )
 
         return OutdentResult(
-            replacementRange: replacementRange,
+            replacementRange: NSRange(location: 0, length: nsText.length),
             replacementText: updatedText,
             selectedRange: updatedSelection
         )
     }
 
-    // MARK: - Private
-
     private static func indentString(tabSize: Int, useSpaces: Bool) -> String {
-        if useSpaces {
-            return String(repeating: " ", count: tabSize)
-        } else {
-            return "\t"
-        }
+        useSpaces ? String(repeating: " ", count: max(1, tabSize)) : "\t"
     }
 
     private static func newlineString(in text: String) -> String {
-        if text.contains("\r\n") {
-            return "\r\n"
-        }
-        return "\n"
+        text.contains("\r\n") ? "\r\n" : "\n"
     }
 
     private static func lineStarts(in text: String, selection: NSRange) -> [Int] {
         let nsText = text as NSString
-        let firstLineStart = nsText.lineRange(for: NSRange(location: selection.location, length: 0)).location
-        let lastLocation = selection.length > 0
-            ? max(selection.location, NSMaxRange(selection) - 1)
-            : selection.location
-        let lastLineStart = nsText.lineRange(for: NSRange(location: lastLocation, length: 0)).location
+        guard nsText.length > 0 else { return [0] }
+
+        let startLineRange = nsText.lineRange(for: NSRange(location: selection.location, length: 0))
+        let endLocation = max(selection.location, NSMaxRange(selection) - (selection.length > 0 ? 1 : 0))
+        let clampedEnd = min(endLocation, max(0, nsText.length - 1))
+        let endLineRange = nsText.lineRange(for: NSRange(location: clampedEnd, length: 0))
 
         var starts: [Int] = []
-        var current = firstLineStart
-        while current <= lastLineStart, current < nsText.length {
-            starts.append(current)
-            let lineRange = nsText.lineRange(for: NSRange(location: current, length: 0))
-            let next = NSMaxRange(lineRange)
-            if next <= current { break }
-            current = next
+        var currentLocation = startLineRange.location
+        while currentLocation < NSMaxRange(endLineRange) {
+            starts.append(currentLocation)
+            let lineRange = nsText.lineRange(for: NSRange(location: currentLocation, length: 0))
+            let nextLocation = NSMaxRange(lineRange)
+            if nextLocation <= currentLocation {
+                break
+            }
+            currentLocation = nextLocation
         }
 
-        if starts.isEmpty, firstLineStart == nsText.length {
-            starts.append(firstLineStart)
-        }
         return starts
+    }
+
+    private static func utf16StringIndex(in text: String, offset: Int) -> String.Index? {
+        guard offset >= 0, offset <= text.utf16.count else { return nil }
+        return String.Index(utf16Offset: offset, in: text)
+    }
+
+    private static func adjustedSelectionForIndent(
+        original: NSRange,
+        lineStarts: [Int],
+        indentLength: Int
+    ) -> NSRange {
+        let startsBeforeSelection = lineStarts.filter { $0 < original.location }.count
+        let startsWithinSelection = lineStarts.filter { $0 >= original.location && $0 <= NSMaxRange(original) }.count
+        let location = original.location + (startsBeforeSelection * indentLength)
+        let length = original.length + (startsWithinSelection * indentLength)
+        return NSRange(location: location, length: length)
+    }
+
+    private static func adjustedSelectionForOutdent(
+        original: NSRange,
+        removedRanges: [NSRange]
+    ) -> NSRange {
+        let removedBeforeSelection = removedRanges
+            .filter { NSMaxRange($0) <= original.location }
+            .reduce(0) { $0 + $1.length }
+        let removedInsideSelection = removedRanges
+            .filter { $0.location >= original.location && $0.location <= NSMaxRange(original) }
+            .reduce(0) { $0 + $1.length }
+
+        let location = max(0, original.location - removedBeforeSelection)
+        let length = max(0, original.length - removedInsideSelection)
+        return NSRange(location: location, length: length)
     }
 
     private static func outdentWidth(
@@ -683,93 +639,16 @@ enum SmartIndentHandler {
         tabSize: Int,
         useSpaces: Bool
     ) -> Int {
-        let nsLine = lineText as NSString
         if useSpaces {
-            let maxWidth = min(tabSize, nsLine.length)
-            var count = 0
-            while count < maxWidth, nsLine.character(at: count) == 32 {
-                count += 1
-            }
-            return count
+            let leadingSpaces = lineText.prefix(while: { $0 == " " })
+            return min((String(leadingSpaces) as NSString).length, max(1, tabSize))
         }
 
-        guard nsLine.length > 0 else { return 0 }
-        if nsLine.character(at: 0) == 9 {
+        if lineText.hasPrefix("\t") {
             return 1
         }
-        let indentLength = (indentUnit as NSString).length
-        if indentLength > 0, nsLine.length >= indentLength,
-           nsLine.substring(with: NSRange(location: 0, length: indentLength)) == indentUnit {
-            return indentLength
-        }
-        return 0
-    }
 
-    private static func utf16StringIndex(in text: String, offset: Int) -> String.Index? {
-        guard offset >= 0, offset <= text.utf16.count else { return nil }
-        let utf16Start = text.utf16.startIndex
-        guard let utf16Index = text.utf16.index(
-            utf16Start,
-            offsetBy: offset,
-            limitedBy: text.utf16.endIndex
-        ) else {
-            return nil
-        }
-        return String.Index(utf16Index, within: text)
-    }
-
-    private static func adjustedSelection(
-        original: NSRange,
-        removedRanges: [NSRange]
-    ) -> NSRange {
-        let originalEnd = NSMaxRange(original)
-        let startShift = removedRanges
-            .filter { $0.location < original.location }
-            .reduce(0) { $0 + $1.length }
-
-        let endShift = removedRanges
-            .filter { $0.location < originalEnd }
-            .reduce(0) { $0 + $1.length }
-
-        let newLocation = max(0, original.location - startShift)
-        let newEnd = max(newLocation, originalEnd - endShift)
-        return NSRange(location: newLocation, length: newEnd - newLocation)
-    }
-
-    private static func adjustedSelectionForIndent(
-        original: NSRange,
-        lineStarts: [Int],
-        indentLength: Int
-    ) -> NSRange {
-        let originalEnd = NSMaxRange(original)
-        let startShift = lineStarts.filter { $0 < original.location }.count * indentLength
-        let endShift = lineStarts.filter { $0 < originalEnd }.count * indentLength
-        let newLocation = original.location + startShift
-        let newEnd = max(newLocation, originalEnd + endShift)
-        return NSRange(location: newLocation, length: newEnd - newLocation)
-    }
-
-    private static func findLineStart(_ text: String, position: Int) -> Int {
-        var pos = min(max(0, position), text.count)
-        while pos > 0 {
-            let charIndex = text.index(text.startIndex, offsetBy: pos - 1)
-            if text[charIndex] == "\n" {
-                return pos
-            }
-            pos -= 1
-        }
-        return 0
-    }
-
-    private static func findLineEnd(_ text: String, position: Int) -> Int {
-        var pos = min(max(0, position), text.count)
-        while pos < text.count {
-            let charIndex = text.index(text.startIndex, offsetBy: pos)
-            if text[charIndex] == "\n" {
-                return pos
-            }
-            pos += 1
-        }
-        return text.count
+        let leadingSpaces = lineText.prefix(while: { $0 == " " })
+        return min((String(leadingSpaces) as NSString).length, (indentUnit as NSString).length)
     }
 }

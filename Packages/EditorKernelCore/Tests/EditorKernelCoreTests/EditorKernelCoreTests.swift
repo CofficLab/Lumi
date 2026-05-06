@@ -5,6 +5,58 @@ import Testing
 
 struct EditorKernelCoreTests {
     @Test
+    @MainActor
+    func textInputControllerBuildsBracketAndIndentPlans() {
+        let controller = EditorTextInputController()
+
+        let autoClose = controller.textInputPlan(
+            text: "(",
+            replacementRange: NSRange(location: 1, length: 0),
+            textViewSelections: [NSRange(location: 1, length: 0)],
+            multiCursorSelectionCount: 1,
+            currentText: "a)",
+            languageId: "swift"
+        )
+        #expect(autoClose?.replacementText == "()")
+        #expect(autoClose?.selectedRanges == [NSRange(location: 2, length: 0)])
+
+        let newline = controller.insertNewlinePlan(
+            textViewSelections: [NSRange(location: 1, length: 0)],
+            multiCursorSelectionCount: 1,
+            currentText: "{}",
+            tabSize: 4,
+            useSpaces: true
+        )
+        #expect(newline?.replacementText == "\n    \n")
+        #expect(newline?.selectedRanges == [NSRange(location: 6, length: 0)])
+    }
+
+    @Test
+    func bracketAndIndentPoliciesHandleLanguageAndOutdentRules() {
+        let htmlConfig = BracketPairsConfig.defaultForLanguage("html")
+        #expect(htmlConfig.autoClosingPairs.isEmpty)
+
+        let pythonConfig = BracketPairsConfig.defaultForLanguage("python")
+        #expect(
+            BracketMatcher.shouldAutoClose(
+                in: "print(\"value",
+                at: 12,
+                typedChar: "\"",
+                config: pythonConfig
+            ) == nil
+        )
+
+        let outdented = SmartIndentHandler.handleBacktab(
+            in: "    one\n    two",
+            selection: NSRange(location: 0, length: 13),
+            tabSize: 4,
+            useSpaces: true
+        )
+        #expect(outdented?.replacementText == "one\ntwo")
+        #expect(outdented?.selectedRange == NSRange(location: 0, length: 5))
+    }
+
+    @Test
     func cursorMotionWordAndLineBehaviorsRemainStable() {
         #expect(CursorMotionController.moveWordLeft(location: 10, text: "foo  +  bar").location == 8)
         #expect(CursorMotionController.moveWordRight(location: 0, text: "foo  +  bar").location == 3)
