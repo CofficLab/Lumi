@@ -216,6 +216,29 @@ enum AppSettingStore {
     private static let selectedRemoteProviderIdKey = "App_SelectedRemoteProviderId"
     private static let remoteProviderModelsKey = "App_RemoteProviderModels"
 
+    // MARK: - Layout Ratios
+
+    /// 存储 key 前缀
+    private static let layoutRatioPrefix = "App_LayoutRatio_"
+
+    /// 加载布局宽度比例
+    /// - Parameter key: 存储键（如 "Split.Panel.xxx"）
+    /// - Returns: 比例值 (0.0~1.0)，无记录时返回 nil
+    static func loadLayoutRatio(forKey key: String) -> Double? {
+        let value = object(forKey: "\(layoutRatioPrefix)\(key)") as? Double
+        return value
+    }
+
+    /// 保存布局宽度比例
+    /// - Parameters:
+    ///   - ratio: 比例值 (0.0~1.0)
+    ///   - key: 存储键
+    static func saveLayoutRatio(_ ratio: Double, forKey key: String) {
+        set(ratio, forKey: "\(layoutRatioPrefix)\(key)")
+    }
+
+    // MARK: - Remote Provider (continued)
+
     /// 加载上次选中的云端供应商 ID
     static func loadSelectedRemoteProviderId() -> String? {
         object(forKey: selectedRemoteProviderIdKey) as? String
