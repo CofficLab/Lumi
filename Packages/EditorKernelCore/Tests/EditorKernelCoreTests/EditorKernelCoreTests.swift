@@ -1458,4 +1458,17 @@ struct EditorKernelCoreTests {
         #expect(markdown.contains("## Sources/App.swift"))
         #expect(markdown.contains("`L3:C5` let value = 1"))
     }
+
+    @Test
+    @MainActor
+    func statusToastPolicyNormalizesDurationsByLevel() {
+        let info = EditorStatusToastPolicy.presentation(level: .info, duration: 0.2)
+        #expect(info == .init(level: .info, duration: 1.0, autoDismiss: false))
+
+        let warning = EditorStatusToastPolicy.presentation(level: .warning, duration: 1.2)
+        #expect(warning == .init(level: .warning, duration: 2.0, autoDismiss: false))
+
+        let error = EditorStatusToastPolicy.presentation(level: .error, duration: 3.0)
+        #expect(error == .init(level: .error, duration: 3.0, autoDismiss: true))
+    }
 }
