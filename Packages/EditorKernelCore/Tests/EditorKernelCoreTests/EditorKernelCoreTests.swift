@@ -131,6 +131,49 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    @MainActor
+    func externalFileControllerTracksConflictsAndReloadThresholds() {
+        let controller = EditorExternalFileController()
+        let modDate = Date()
+
+        #expect(controller.registerConflictIfNeeded(content: "A", modificationDate: modDate) == true)
+        #expect(controller.registerConflictIfNeeded(content: "A", modificationDate: modDate) == false)
+
+        controller.recordUnchangedModificationDate(modDate)
+        #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(0.2), hasUnsavedChanges: false) == false)
+        #expect(controller.shouldReloadForChange(currentModDate: modDate.addingTimeInterval(0.2), hasUnsavedChanges: true) == true)
+    }
+
+    @Test
+    @MainActor
+    func externalFileControllerLoadsAndAppliesExternalText() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try "hello".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let controller = EditorExternalFileController()
+        let loaded = try await controller.loadExternalText(from: url)
+        #expect(loaded == "hello")
+
+        let modDate = Date()
+        _ = controller.registerConflictIfNeeded(content: "world", modificationDate: modDate)
+
+        var applied: (String, Date)?
+        var cleared = false
+        var synced = false
+        controller.reloadConflict(
+            applyExternalContent: { content, date in applied = (content, date) },
+            clearConflict: { cleared = true },
+            syncSession: { synced = true }
+        )
+
+        #expect(applied?.0 == "world")
+        #expect(applied?.1 == modDate)
+        #expect(cleared == true)
+        #expect(synced == true)
+    }
+
+    @Test
     func cursorMotionWordAndLineBehaviorsRemainStable() {
         #expect(CursorMotionController.moveWordLeft(location: 10, text: "foo  +  bar").location == 8)
         #expect(CursorMotionController.moveWordRight(location: 0, text: "foo  +  bar").location == 3)

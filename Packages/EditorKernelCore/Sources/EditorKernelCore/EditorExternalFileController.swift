@@ -1,22 +1,27 @@
 import Foundation
 
 @MainActor
-final class EditorExternalFileController {
-    struct ConflictState: Equatable {
-        let content: String
-        let modificationDate: Date
+public final class EditorExternalFileController {
+    public struct ConflictState: Equatable {
+        public let content: String
+        public let modificationDate: Date
+
+        public init(content: String, modificationDate: Date) {
+            self.content = content
+            self.modificationDate = modificationDate
+        }
     }
 
     private var pollTimer: Timer?
     private var lastKnownModificationDate: Date?
-    private(set) var conflictState: ConflictState?
+    public private(set) var conflictState: ConflictState?
     private let pollInterval: TimeInterval
 
-    init(pollInterval: TimeInterval = 1.0) {
+    public init(pollInterval: TimeInterval = 1.0) {
         self.pollInterval = pollInterval
     }
 
-    func setupWatcher(
+    public func setupWatcher(
         for url: URL,
         onPoll: @escaping @MainActor (_ url: URL, _ currentModDate: Date) -> Void
     ) {
@@ -35,7 +40,7 @@ final class EditorExternalFileController {
         pollTimer = timer
     }
 
-    func cleanupWatcher(clearConflict: @escaping @MainActor () -> Void) {
+    public func cleanupWatcher(clearConflict: @escaping @MainActor () -> Void) {
         pollTimer?.invalidate()
         pollTimer = nil
         lastKnownModificationDate = nil
@@ -43,7 +48,7 @@ final class EditorExternalFileController {
         clearConflict()
     }
 
-    func shouldReloadForChange(
+    public func shouldReloadForChange(
         currentModDate: Date,
         hasUnsavedChanges: Bool
     ) -> Bool {
@@ -55,11 +60,11 @@ final class EditorExternalFileController {
         return true
     }
 
-    func recordUnchangedModificationDate(_ date: Date) {
+    public func recordUnchangedModificationDate(_ date: Date) {
         lastKnownModificationDate = date
     }
 
-    func loadExternalText(from url: URL) async throws -> String? {
+    public func loadExternalText(from url: URL) async throws -> String? {
         try await Task.detached(priority: .userInitiated) {
             let fileHandle = try FileHandle(forReadingFrom: url)
             let data = try fileHandle.readToEnd()
@@ -69,7 +74,7 @@ final class EditorExternalFileController {
         }.value
     }
 
-    func registerConflictIfNeeded(content: String, modificationDate: Date) -> Bool {
+    public func registerConflictIfNeeded(content: String, modificationDate: Date) -> Bool {
         let candidate = ConflictState(content: content, modificationDate: modificationDate)
         if conflictState == candidate {
             return false
@@ -78,11 +83,11 @@ final class EditorExternalFileController {
         return true
     }
 
-    func clearConflict() {
+    public func clearConflict() {
         conflictState = nil
     }
 
-    func reloadConflict(
+    public func reloadConflict(
         applyExternalContent: @escaping @MainActor (_ content: String, _ modificationDate: Date) -> Void,
         clearConflict: @escaping @MainActor () -> Void,
         syncSession: @escaping @MainActor () -> Void
@@ -93,7 +98,7 @@ final class EditorExternalFileController {
         syncSession()
     }
 
-    func keepEditorVersionForConflict(
+    public func keepEditorVersionForConflict(
         hasUnsavedChanges: Bool,
         clearConflict: @escaping @MainActor () -> Void,
         setSaveState: @escaping @MainActor (_ stateIsEditing: Bool) -> Void,
@@ -106,12 +111,12 @@ final class EditorExternalFileController {
         syncSession()
     }
 
-    func recordAppliedExternalContent(modificationDate: Date) {
+    public func recordAppliedExternalContent(modificationDate: Date) {
         lastKnownModificationDate = modificationDate
         conflictState = nil
     }
 
-    static func getModificationDate(of url: URL) -> Date? {
+    nonisolated public static func getModificationDate(of url: URL) -> Date? {
         try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
     }
 }
