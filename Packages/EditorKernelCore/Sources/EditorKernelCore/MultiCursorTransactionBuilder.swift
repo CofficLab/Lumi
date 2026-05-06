@@ -1,7 +1,7 @@
 import Foundation
 
-enum MultiCursorTransactionBuilder {
-    static func makeTransaction(
+public enum MultiCursorTransactionBuilder {
+    public static func makeTransaction(
         operation: MultiCursorOperation,
         selections: [MultiCursorSelection],
         updatedSelections: [MultiCursorSelection]
@@ -46,9 +46,7 @@ enum MultiCursorTransactionBuilder {
         return EditorTransaction(
             replacements: replacements,
             updatedSelections: updatedSelections.map {
-                EditorSelection(
-                    range: EditorRange(location: $0.location, length: $0.length)
-                )
+                EditorSelection(range: EditorRange(location: $0.location, length: $0.length))
             }
         )
     }

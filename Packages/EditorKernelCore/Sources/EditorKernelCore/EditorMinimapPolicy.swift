@@ -1,18 +1,18 @@
 import Foundation
 
-struct EditorMinimapPolicy: Equatable {
-    let userRequestedVisible: Bool
-    let largeFileMode: LargeFileMode
+public struct EditorMinimapPolicy: Equatable, Sendable {
+    public let userRequestedVisible: Bool
+    public let largeFileMode: LargeFileMode
 
-    var isForcedHidden: Bool {
+    public var isForcedHidden: Bool {
         largeFileMode.isMinimapDisabled
     }
 
-    var isVisible: Bool {
+    public var isVisible: Bool {
         userRequestedVisible && !isForcedHidden
     }
 
-    var statusTitle: String {
+    public var statusTitle: String {
         if isVisible {
             return "Minimap On"
         }
@@ -22,7 +22,7 @@ struct EditorMinimapPolicy: Equatable {
         return "Minimap Off"
     }
 
-    var detailText: String {
+    public var detailText: String {
         if isForcedHidden {
             switch largeFileMode {
             case .large:
@@ -36,5 +36,10 @@ struct EditorMinimapPolicy: Equatable {
         return userRequestedVisible
             ? "Minimap is visible for the current editor."
             : "Minimap is turned off in editor settings."
+    }
+
+    public init(userRequestedVisible: Bool, largeFileMode: LargeFileMode) {
+        self.userRequestedVisible = userRequestedVisible
+        self.largeFileMode = largeFileMode
     }
 }

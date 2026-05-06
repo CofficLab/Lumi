@@ -1,13 +1,13 @@
 import Foundation
 
-struct EditorFindReplaceOptions: Equatable, Sendable {
-    var isRegexEnabled: Bool
-    var isCaseSensitive: Bool
-    var matchesWholeWord: Bool
-    var inSelectionOnly: Bool
-    var preservesCase: Bool
+public struct EditorFindReplaceOptions: Equatable, Sendable {
+    public var isRegexEnabled: Bool
+    public var isCaseSensitive: Bool
+    public var matchesWholeWord: Bool
+    public var inSelectionOnly: Bool
+    public var preservesCase: Bool
 
-    init(
+    public init(
         isRegexEnabled: Bool = false,
         isCaseSensitive: Bool = false,
         matchesWholeWord: Bool = false,

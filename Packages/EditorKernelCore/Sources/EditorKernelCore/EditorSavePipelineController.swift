@@ -1,38 +1,62 @@
 import Foundation
 
-enum EditorDeferredSaveAction: String, CaseIterable, Equatable, Sendable {
+public enum EditorDeferredSaveAction: String, CaseIterable, Equatable, Sendable {
     case organizeImports
     case fixAll
 }
 
-struct EditorSavePipelineOptions: Equatable, Sendable {
-    var textParticipants: EditorSaveParticipantOptions
-    var formatOnSave: Bool
-    var organizeImportsOnSave: Bool
-    var fixAllOnSave: Bool
+public struct EditorSavePipelineOptions: Equatable, Sendable {
+    public var textParticipants: EditorSaveParticipantOptions
+    public var formatOnSave: Bool
+    public var organizeImportsOnSave: Bool
+    public var fixAllOnSave: Bool
 
-    static let `default` = EditorSavePipelineOptions(
+    public static let `default` = EditorSavePipelineOptions(
         textParticipants: .default,
         formatOnSave: false,
         organizeImportsOnSave: false,
         fixAllOnSave: false
     )
-}
 
-struct EditorSavePipelineResult: Equatable, Sendable {
-    let text: String
-    let didApplyTextParticipants: Bool
-    let didFormat: Bool
-    let deferredActions: [EditorDeferredSaveAction]
-
-    var changed: Bool {
-        didApplyTextParticipants || didFormat
+    public init(
+        textParticipants: EditorSaveParticipantOptions,
+        formatOnSave: Bool,
+        organizeImportsOnSave: Bool,
+        fixAllOnSave: Bool
+    ) {
+        self.textParticipants = textParticipants
+        self.formatOnSave = formatOnSave
+        self.organizeImportsOnSave = organizeImportsOnSave
+        self.fixAllOnSave = fixAllOnSave
     }
 }
 
-enum EditorSavePipelineController {
+public struct EditorSavePipelineResult: Equatable, Sendable {
+    public let text: String
+    public let didApplyTextParticipants: Bool
+    public let didFormat: Bool
+    public let deferredActions: [EditorDeferredSaveAction]
+
+    public var changed: Bool {
+        didApplyTextParticipants || didFormat
+    }
+
+    public init(
+        text: String,
+        didApplyTextParticipants: Bool,
+        didFormat: Bool,
+        deferredActions: [EditorDeferredSaveAction]
+    ) {
+        self.text = text
+        self.didApplyTextParticipants = didApplyTextParticipants
+        self.didFormat = didFormat
+        self.deferredActions = deferredActions
+    }
+}
+
+public enum EditorSavePipelineController {
     @MainActor
-    static func prepare(
+    public static func prepare(
         text: String,
         options: EditorSavePipelineOptions = .default,
         tabSize: Int,

@@ -1,7 +1,7 @@
 import Foundation
 
-enum EditorFindReplaceController {
-    static func matches(
+public enum EditorFindReplaceController {
+    public static func matches(
         in text: String,
         state: EditorFindReplaceState,
         selections: [EditorSelection],
@@ -48,7 +48,7 @@ enum EditorFindReplaceController {
         )
     }
 
-    static func nextMatchIndex(
+    public static func nextMatchIndex(
         in matches: [EditorFindMatch],
         selectedMatchIndex: Int?
     ) -> Int? {
@@ -57,7 +57,7 @@ enum EditorFindReplaceController {
         return (selectedMatchIndex + 1) % matches.count
     }
 
-    static func previousMatchIndex(
+    public static func previousMatchIndex(
         in matches: [EditorFindMatch],
         selectedMatchIndex: Int?
     ) -> Int? {

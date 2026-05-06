@@ -3,25 +3,6 @@ import CodeEditSourceEditor
 import LanguageServerProtocol
 
 @MainActor
-enum EditorQuickOpenQueryScope: Equatable {
-    case files
-    case documentSymbols
-    case workspaceSymbols
-    case line
-    case commands
-}
-
-@MainActor
-struct EditorQuickOpenQuery: Equatable {
-    let rawText: String
-    let scope: EditorQuickOpenQueryScope
-    let searchText: String
-    let line: Int?
-    let column: Int?
-    let hasExplicitScope: Bool
-}
-
-@MainActor
 struct EditorQuickOpenFileContext: Equatable {
     let projectRootPath: String?
     let currentFileURL: URL?
@@ -40,69 +21,7 @@ struct EditorQuickOpenController {
     }
 
     func parse(_ rawQuery: String) -> EditorQuickOpenQuery {
-        let trimmed = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let prefix = trimmed.first else {
-            return EditorQuickOpenQuery(
-                rawText: rawQuery,
-                scope: .files,
-                searchText: "",
-                line: nil,
-                column: nil,
-                hasExplicitScope: false
-            )
-        }
-
-        let remainder = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
-        switch prefix {
-        case "@":
-            return EditorQuickOpenQuery(
-                rawText: rawQuery,
-                scope: .documentSymbols,
-                searchText: remainder,
-                line: nil,
-                column: nil,
-                hasExplicitScope: true
-            )
-        case "#":
-            return EditorQuickOpenQuery(
-                rawText: rawQuery,
-                scope: .workspaceSymbols,
-                searchText: remainder,
-                line: nil,
-                column: nil,
-                hasExplicitScope: true
-            )
-        case ":":
-            let parts = remainder.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
-            let line = parts.first.flatMap { Int($0) }
-            let column = parts.count > 1 ? Int(parts[1]) : nil
-            return EditorQuickOpenQuery(
-                rawText: rawQuery,
-                scope: .line,
-                searchText: remainder,
-                line: line,
-                column: column,
-                hasExplicitScope: true
-            )
-        case ">":
-            return EditorQuickOpenQuery(
-                rawText: rawQuery,
-                scope: .commands,
-                searchText: remainder,
-                line: nil,
-                column: nil,
-                hasExplicitScope: true
-            )
-        default:
-            return EditorQuickOpenQuery(
-                rawText: rawQuery,
-                scope: .files,
-                searchText: trimmed,
-                line: nil,
-                column: nil,
-                hasExplicitScope: false
-            )
-        }
+        EditorQuickOpenQueryParser.parse(rawQuery)
     }
 
     func fileSuggestions(
@@ -116,7 +35,7 @@ struct EditorQuickOpenController {
             .filter { $0.fileURL != nil }
             .sorted(by: sortRecentEditors)
 
-        var candidatesByPath: [String: QuickOpenFileCandidate] = [:]
+        var candidatesByPath: [String: EditorQuickOpenFileCandidate] = [:]
 
         for (index, item) in recentOpenEditors.enumerated() {
             guard let fileURL = item.fileURL else { continue }
@@ -125,7 +44,7 @@ struct EditorQuickOpenController {
                 continue
             }
             mergeFileCandidate(
-                QuickOpenFileCandidate(
+                EditorQuickOpenFileCandidate(
                     fileURL: fileURL,
                     title: item.title,
                     subtitle: relativePath,
@@ -142,7 +61,7 @@ struct EditorQuickOpenController {
             let fileResults = fileSearch(normalizedSearch, projectPath, 40)
             for (index, result) in fileResults.enumerated() where !result.isDirectory {
                 mergeFileCandidate(
-                    QuickOpenFileCandidate(
+                EditorQuickOpenFileCandidate(
                         fileURL: result.url,
                         title: result.name,
                         subtitle: result.relativePath,
@@ -156,20 +75,8 @@ struct EditorQuickOpenController {
             }
         }
 
-        let duplicateTitles = Dictionary(grouping: candidatesByPath.values, by: \.title)
-            .filter { $0.value.count > 1 }
-            .reduce(into: Set<String>()) { result, entry in
-                result.insert(entry.key)
-            }
-
-        let ordered = candidatesByPath.values.sorted { lhs, rhs in
-            if lhs.score != rhs.score { return lhs.score > rhs.score }
-            if lhs.recentRank != rhs.recentRank { return lhs.recentRank < rhs.recentRank }
-            if lhs.title != rhs.title {
-                return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
-            }
-            return lhs.subtitle.localizedCaseInsensitiveCompare(rhs.subtitle) == .orderedAscending
-        }
+        let duplicateTitles = EditorQuickOpenFilePolicy.duplicateTitles(in: candidatesByPath.values)
+        let ordered = EditorQuickOpenFilePolicy.orderedCandidates(candidatesByPath.values)
 
         let sectionTitle = normalizedSearch.isEmpty ? "Recent Files" : "Files"
         return ordered.prefix(normalizedSearch.isEmpty ? 12 : 24).enumerated().map { index, candidate in
@@ -272,39 +179,20 @@ struct EditorQuickOpenController {
     }
 
     private func relativePath(for fileURL: URL, projectRootPath: String?) -> String {
-        if let projectRootPath, fileURL.path.hasPrefix(projectRootPath + "/") {
-            return String(fileURL.path.dropFirst(projectRootPath.count + 1))
-        }
-        return fileURL.lastPathComponent
+        EditorQuickOpenFilePolicy.relativePath(for: fileURL, projectRootPath: projectRootPath)
     }
 
     private func parentLabel(for relativePath: String) -> String? {
-        let parentPath = (relativePath as NSString).deletingLastPathComponent
-        guard !parentPath.isEmpty, parentPath != "." else { return nil }
-        return URL(fileURLWithPath: parentPath).lastPathComponent
+        EditorQuickOpenFilePolicy.parentLabel(for: relativePath)
     }
 
     private func matchesFileQuery(_ query: String, title: String, relativePath: String) -> Bool {
-        let lowercasedTitle = title.lowercased()
-        let lowercasedPath = relativePath.lowercased()
-        return lowercasedTitle.contains(query)
-            || lowercasedPath.contains(query)
-            || Self.fuzzyMatch(lowercasedTitle, query: query)
-            || Self.fuzzyMatch(lowercasedPath, query: query)
+        EditorQuickOpenFilePolicy.matchesFileQuery(query, title: title, relativePath: relativePath)
     }
 
     /// 模糊匹配算法：检查 text 是否按顺序包含 query 的所有字符
     private static func fuzzyMatch(_ text: String, query: String) -> Bool {
-        var queryIndex = query.startIndex
-        for char in text {
-            if char == query[queryIndex] {
-                queryIndex = query.index(after: queryIndex)
-                if queryIndex == query.endIndex {
-                    return true
-                }
-            }
-        }
-        return false
+        EditorQuickOpenFilePolicy.fuzzyMatch(text, query: query)
     }
 
     private func sortRecentEditors(_ lhs: EditorOpenEditorItem, _ rhs: EditorOpenEditorItem) -> Bool {
@@ -317,81 +205,18 @@ struct EditorQuickOpenController {
     }
 
     private func mergeFileCandidate(
-        _ candidate: QuickOpenFileCandidate,
-        into candidatesByPath: inout [String: QuickOpenFileCandidate]
+        _ candidate: EditorQuickOpenFileCandidate,
+        into candidatesByPath: inout [String: EditorQuickOpenFileCandidate]
     ) {
-        let key = candidate.fileURL.standardizedFileURL.path
-        if let existing = candidatesByPath[key] {
-            candidatesByPath[key] = existing.merging(candidate)
-        } else {
-            candidatesByPath[key] = candidate
-        }
+        EditorQuickOpenFilePolicy.mergeCandidate(candidate, into: &candidatesByPath)
     }
 
     private func engineeringFilePriorityBonus(for fileURL: URL) -> Int {
-        switch fileURL.lastPathComponent.lowercased() {
-        case "package.swift":
-            return 20
-        case "project.pbxproj":
-            return 16
-        default:
-            break
-        }
-
-        switch fileURL.pathExtension.lowercased() {
-        case "xcconfig":
-            return 18
-        case "plist":
-            return 12
-        case "entitlements":
-            return 12
-        case "pbxproj":
-            return 16
-        default:
-            return 0
-        }
+        EditorQuickOpenFilePolicy.engineeringFilePriorityBonus(for: fileURL)
     }
 
     private func systemImage(for fileURL: URL) -> String {
-        switch fileURL.lastPathComponent.lowercased() {
-        case "package.swift":
-            return "shippingbox"
-        case "project.pbxproj":
-            return "hammer"
-        default:
-            break
-        }
-
-        switch fileURL.pathExtension.lowercased() {
-        case "xcconfig":
-            return "slider.horizontal.3"
-        case "plist", "entitlements":
-            return "list.bullet.rectangle"
-        case "pbxproj":
-            return "hammer"
-        default:
-            return "doc"
-        }
-    }
-}
-
-private struct QuickOpenFileCandidate {
-    let fileURL: URL
-    let title: String
-    let subtitle: String
-    let parentLabel: String?
-    let score: Int
-    let recentRank: Int
-
-    func merging(_ other: QuickOpenFileCandidate) -> QuickOpenFileCandidate {
-        QuickOpenFileCandidate(
-            fileURL: fileURL,
-            title: title,
-            subtitle: subtitle.count >= other.subtitle.count ? subtitle : other.subtitle,
-            parentLabel: parentLabel ?? other.parentLabel,
-            score: max(score, other.score),
-            recentRank: min(recentRank, other.recentRank)
-        )
+        EditorQuickOpenFilePolicy.systemImage(for: fileURL)
     }
 }
 

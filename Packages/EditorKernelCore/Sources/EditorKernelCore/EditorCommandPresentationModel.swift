@@ -1,15 +1,15 @@
 import Foundation
 
-struct EditorCommandPresentationModel {
-    let recentCommands: [EditorCommandSuggestion]
-    let frequentCommands: [EditorCommandSuggestion]
-    let sections: [EditorCommandSection]
+public struct EditorCommandPresentationModel {
+    public let recentCommands: [EditorCommandSuggestion]
+    public let frequentCommands: [EditorCommandSuggestion]
+    public let sections: [EditorCommandSection]
 
-    var flattenedCommands: [EditorCommandSuggestion] {
+    public var flattenedCommands: [EditorCommandSuggestion] {
         recentCommands + frequentCommands + sections.flatMap(\.commands)
     }
 
-    static func build(
+    public static func build(
         from suggestions: [EditorCommandSuggestion],
         recentCommandIDs: [String],
         commandUsageCounts: [String: Int] = [:],

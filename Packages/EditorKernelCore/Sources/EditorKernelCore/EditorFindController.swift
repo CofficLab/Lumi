@@ -1,34 +1,36 @@
 import Foundation
 
 @MainActor
-final class EditorFindController {
-    func stateForOpeningPanel(_ state: EditorFindReplaceState) -> EditorFindReplaceState {
+public final class EditorFindController {
+    public init() {}
+
+    public func stateForOpeningPanel(_ state: EditorFindReplaceState) -> EditorFindReplaceState {
         var updated = state
         updated.isFindPanelVisible = true
         return updated
     }
 
-    func stateForClosingPanel(_ state: EditorFindReplaceState) -> EditorFindReplaceState {
+    public func stateForClosingPanel(_ state: EditorFindReplaceState) -> EditorFindReplaceState {
         var updated = state
         updated.isFindPanelVisible = false
         return updated
     }
 
-    func stateForUpdatingFindQuery(_ state: EditorFindReplaceState, text: String) -> EditorFindReplaceState {
+    public func stateForUpdatingFindQuery(_ state: EditorFindReplaceState, text: String) -> EditorFindReplaceState {
         var updated = state
         updated.findText = text
         updated.isFindPanelVisible = true
         return updated
     }
 
-    func stateForUpdatingReplaceQuery(_ state: EditorFindReplaceState, text: String) -> EditorFindReplaceState {
+    public func stateForUpdatingReplaceQuery(_ state: EditorFindReplaceState, text: String) -> EditorFindReplaceState {
         var updated = state
         updated.replaceText = text
         updated.isFindPanelVisible = true
         return updated
     }
 
-    func stateForUpdatingOptions(
+    public func stateForUpdatingOptions(
         _ state: EditorFindReplaceState,
         transform: (inout EditorFindReplaceOptions) -> Void
     ) -> EditorFindReplaceState {
@@ -37,7 +39,7 @@ final class EditorFindController {
         return updated
     }
 
-    func matchesResult(
+    public func matchesResult(
         state: EditorFindReplaceState,
         text: String,
         selections: [EditorSelection]
@@ -50,7 +52,7 @@ final class EditorFindController {
         )
     }
 
-    func nextMatchIndex(
+    public func nextMatchIndex(
         matches: [EditorFindMatch],
         selectedMatchIndex: Int?
     ) -> Int? {
@@ -60,7 +62,7 @@ final class EditorFindController {
         )
     }
 
-    func previousMatchIndex(
+    public func previousMatchIndex(
         matches: [EditorFindMatch],
         selectedMatchIndex: Int?
     ) -> Int? {
@@ -70,7 +72,7 @@ final class EditorFindController {
         )
     }
 
-    func replaceCurrentTransaction(
+    public func replaceCurrentTransaction(
         state: EditorFindReplaceState,
         matches: [EditorFindMatch]
     ) -> EditorTransaction? {
@@ -80,7 +82,7 @@ final class EditorFindController {
         )
     }
 
-    func replaceAllTransaction(
+    public func replaceAllTransaction(
         state: EditorFindReplaceState,
         matches: [EditorFindMatch]
     ) -> EditorTransaction? {
@@ -90,7 +92,7 @@ final class EditorFindController {
         )
     }
 
-    func applyMatchesResult(
+    public func applyMatchesResult(
         _ result: EditorFindMatchesResult,
         to state: inout EditorFindReplaceState
     ) {
@@ -99,7 +101,7 @@ final class EditorFindController {
         state.selectedMatchRange = result.selectedMatchRange
     }
 
-    func applySelectedMatch(
+    public func applySelectedMatch(
         index: Int,
         match: EditorFindMatch,
         to state: inout EditorFindReplaceState

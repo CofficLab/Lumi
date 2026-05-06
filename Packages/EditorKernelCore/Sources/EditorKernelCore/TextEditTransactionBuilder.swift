@@ -1,8 +1,8 @@
 import Foundation
 import LanguageServerProtocol
 
-enum TextEditTransactionBuilder {
-    static func makeTransaction(edits: [TextEdit], in text: String) -> EditorTransaction? {
+public enum TextEditTransactionBuilder {
+    public static func makeTransaction(edits: [TextEdit], in text: String) -> EditorTransaction? {
         var replacements: [EditorTransaction.Replacement] = []
         replacements.reserveCapacity(edits.count)
 

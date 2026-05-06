@@ -1,8 +1,7 @@
 import Foundation
-import CodeEditSourceEditor
 
-enum EditorFindReplaceStateController {
-    static func state(
+public enum EditorFindReplaceStateController {
+    public static func state(
         findText: String,
         replaceText: String,
         isFindPanelVisible: Bool,
@@ -17,14 +16,5 @@ enum EditorFindReplaceStateController {
             selectedMatchIndex: existingState?.selectedMatchIndex,
             selectedMatchRange: existingState?.selectedMatchRange
         )
-    }
-
-    static func apply(
-        _ state: EditorFindReplaceState,
-        to editorState: inout SourceEditorState
-    ) {
-        editorState.findText = state.findText
-        editorState.replaceText = state.replaceText
-        editorState.findPanelVisible = state.isFindPanelVisible
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
-enum EditorFindReplaceTransactionBuilder {
-    static func replaceCurrent(
+public enum EditorFindReplaceTransactionBuilder {
+    public static func replaceCurrent(
         state: EditorFindReplaceState,
         matches: [EditorFindMatch]
     ) -> EditorTransaction? {
@@ -24,7 +24,7 @@ enum EditorFindReplaceTransactionBuilder {
         )
     }
 
-    static func replaceAll(
+    public static func replaceAll(
         state: EditorFindReplaceState,
         matches: [EditorFindMatch]
     ) -> EditorTransaction? {
@@ -38,7 +38,7 @@ enum EditorFindReplaceTransactionBuilder {
         )
     }
 
-    static func previewReplacementText(
+    public static func previewReplacementText(
         for match: EditorFindMatch,
         state: EditorFindReplaceState
     ) -> String {
@@ -49,7 +49,7 @@ enum EditorFindReplaceTransactionBuilder {
         for match: EditorFindMatch,
         state: EditorFindReplaceState
     ) -> String {
-        guard state.options.preservesCase else { return state.replaceText }
+        guard state.options.preservesCase == true else { return state.replaceText }
         return preservedCaseReplacement(state.replaceText, matchedText: match.matchedText)
     }
 

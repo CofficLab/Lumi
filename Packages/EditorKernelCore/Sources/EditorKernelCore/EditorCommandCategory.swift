@@ -1,6 +1,6 @@
 import Foundation
 
-enum EditorCommandCategory: String, CaseIterable {
+public enum EditorCommandCategory: String, CaseIterable, Sendable {
     case edit
     case find
     case navigation
@@ -12,7 +12,7 @@ enum EditorCommandCategory: String, CaseIterable {
     case chat
     case other
 
-    var displayTitle: String {
+    public var displayTitle: String {
         switch self {
         case .edit:
             return "Edit"
@@ -37,7 +37,7 @@ enum EditorCommandCategory: String, CaseIterable {
         }
     }
 
-    static let orderedCases: [EditorCommandCategory] = [
+    public static let orderedCases: [EditorCommandCategory] = [
         .edit,
         .find,
         .navigation,
@@ -50,17 +50,17 @@ enum EditorCommandCategory: String, CaseIterable {
         .other
     ]
 
-    static func resolve(_ rawValue: String?) -> EditorCommandCategory {
+    public static func resolve(_ rawValue: String?) -> EditorCommandCategory {
         EditorCommandCategory(rawValue: rawValue ?? "") ?? .other
     }
 
-    static func orderIndex(for rawValue: String?) -> Int {
+    public static func orderIndex(for rawValue: String?) -> Int {
         let category = resolve(rawValue)
         return orderedCases.firstIndex(of: category) ?? Int.max
     }
 }
 
-extension Array where Element == EditorCommandSuggestion {
+public extension Array where Element == EditorCommandSuggestion {
     func sortedForCommandPresentation() -> [EditorCommandSuggestion] {
         sorted { lhs, rhs in
             let lhsCategory = EditorCommandCategory.orderIndex(for: lhs.category)
@@ -81,14 +81,14 @@ extension Array where Element == EditorCommandSuggestion {
     }
 }
 
-enum EditorCommandCategoryScope {
-    static let lspActions: Set<EditorCommandCategory> = [
+public enum EditorCommandCategoryScope {
+    public static let lspActions: Set<EditorCommandCategory> = [
         .navigation,
         .format,
         .lsp
     ]
 
-    static let editorContextMenu: Set<EditorCommandCategory> = [
+    public static let editorContextMenu: Set<EditorCommandCategory> = [
         .navigation,
         .multiCursor,
         .format,

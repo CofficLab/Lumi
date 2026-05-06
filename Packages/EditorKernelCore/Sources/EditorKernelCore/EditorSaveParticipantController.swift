@@ -1,27 +1,38 @@
 import Foundation
 
-struct EditorSaveParticipantOptions: Equatable, Sendable {
-    var trimTrailingWhitespace: Bool
-    var insertFinalNewline: Bool
+public struct EditorSaveParticipantOptions: Equatable, Sendable {
+    public var trimTrailingWhitespace: Bool
+    public var insertFinalNewline: Bool
 
-    static let `default` = EditorSaveParticipantOptions(
+    public static let `default` = EditorSaveParticipantOptions(
         trimTrailingWhitespace: true,
         insertFinalNewline: true
     )
-}
 
-struct EditorSaveParticipantResult: Equatable, Sendable {
-    let text: String
-    let didTrimTrailingWhitespace: Bool
-    let didInsertFinalNewline: Bool
-
-    var changed: Bool {
-        didTrimTrailingWhitespace || didInsertFinalNewline
+    public init(trimTrailingWhitespace: Bool, insertFinalNewline: Bool) {
+        self.trimTrailingWhitespace = trimTrailingWhitespace
+        self.insertFinalNewline = insertFinalNewline
     }
 }
 
-enum EditorSaveParticipantController {
-    static func prepare(
+public struct EditorSaveParticipantResult: Equatable, Sendable {
+    public let text: String
+    public let didTrimTrailingWhitespace: Bool
+    public let didInsertFinalNewline: Bool
+
+    public var changed: Bool {
+        didTrimTrailingWhitespace || didInsertFinalNewline
+    }
+
+    public init(text: String, didTrimTrailingWhitespace: Bool, didInsertFinalNewline: Bool) {
+        self.text = text
+        self.didTrimTrailingWhitespace = didTrimTrailingWhitespace
+        self.didInsertFinalNewline = didInsertFinalNewline
+    }
+}
+
+public enum EditorSaveParticipantController {
+    public static func prepare(
         text: String,
         options: EditorSaveParticipantOptions = .default
     ) -> EditorSaveParticipantResult {
