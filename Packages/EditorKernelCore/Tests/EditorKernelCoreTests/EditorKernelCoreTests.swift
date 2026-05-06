@@ -1430,4 +1430,32 @@ struct EditorKernelCoreTests {
         let fontMatches = EditorSettingsQuickOpenPolicy.matchingItems(items, query: "font")
         #expect(fontMatches.map(\.id) == ["editor.font-size"])
     }
+
+    @Test
+    @MainActor
+    func workspaceSearchPolicyParsesRipgrepOutputAndFormatsMarkdown() {
+        let output = """
+        {"type":"match","data":{"path":{"text":"/tmp/project/Sources/App.swift"},"lines":{"text":"let value = 1"},"line_number":3,"submatches":[{"start":4}]}}
+        {"type":"match","data":{"path":{"text":"/tmp/project/Tests/AppTests.swift"},"lines":{"text":"value should equal 1"},"line_number":8,"submatches":[{"start":0}]}}
+        """
+
+        let response = EditorWorkspaceSearchPolicy.parse(
+            output: output,
+            query: "value",
+            projectRootPath: "/tmp/project",
+            limit: 200
+        )
+
+        #expect(response.summary == .init(query: "value", totalMatches: 2, totalFiles: 2))
+        #expect(response.fileResults.map(\.path) == ["Sources/App.swift", "Tests/AppTests.swift"])
+        #expect(response.fileResults.first?.matches.first?.column == 5)
+
+        let markdown = EditorWorkspaceSearchPolicy.markdownContent(
+            summary: response.summary,
+            fileResults: response.fileResults
+        )
+        #expect(markdown.contains("# Search Results"))
+        #expect(markdown.contains("## Sources/App.swift"))
+        #expect(markdown.contains("`L3:C5` let value = 1"))
+    }
 }
