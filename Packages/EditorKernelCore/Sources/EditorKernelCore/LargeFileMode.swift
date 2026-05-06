@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 public enum LargeFileMode: Equatable, Sendable {
@@ -115,5 +116,40 @@ public enum LongLineDetector: Sendable {
         }
 
         return longestLength >= limit ? LongestDetectedLine(line: longestLine, length: longestLength) : nil
+    }
+}
+
+@MainActor
+public final class ViewportRenderController: ObservableObject {
+    @Published public var visibleStartLine: Int = 0
+    @Published public var visibleEndLine: Int = 0
+    @Published public var totalLines: Int = 0
+
+    public var bufferSize: Int = 50
+
+    public init() {}
+
+    public var renderStartLine: Int {
+        max(0, visibleStartLine - bufferSize)
+    }
+
+    public var renderEndLine: Int {
+        min(totalLines, visibleEndLine + bufferSize)
+    }
+
+    public func isLineVisible(_ line: Int) -> Bool {
+        line >= renderStartLine && line < renderEndLine
+    }
+
+    public func updateVisibleRange(startLine: Int, endLine: Int, totalLines: Int) {
+        visibleStartLine = startLine
+        visibleEndLine = endLine
+        self.totalLines = totalLines
+    }
+
+    public func shouldDebounceUpdate(from previousStartLine: Int, previousEndLine: Int) -> Bool {
+        let startDelta = abs(visibleStartLine - previousStartLine)
+        let endDelta = abs(visibleEndLine - previousEndLine)
+        return startDelta < 5 && endDelta < 5
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
-enum EditorMultiCursorStateController {
-    static func state(from selections: [MultiCursorSelection]) -> MultiCursorState {
+public enum EditorMultiCursorStateController {
+    public static func state(from selections: [MultiCursorSelection]) -> MultiCursorState {
         guard let first = selections.first else {
             return MultiCursorState()
         }
@@ -12,18 +12,18 @@ enum EditorMultiCursorStateController {
         return state
     }
 
-    static func clearSecondary(from state: MultiCursorState) -> MultiCursorState {
+    public static func clearSecondary(from state: MultiCursorState) -> MultiCursorState {
         self.state(from: [state.primary])
     }
 
-    static func replacingPrimary(
+    public static func replacingPrimary(
         in state: MultiCursorState,
         with selection: MultiCursorSelection
     ) -> MultiCursorState {
         self.state(from: [selection] + state.secondary)
     }
 
-    static func addingSelection(
+    public static func addingSelection(
         _ selection: MultiCursorSelection,
         to state: MultiCursorState
     ) -> MultiCursorState {

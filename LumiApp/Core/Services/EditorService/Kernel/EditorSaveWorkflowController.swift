@@ -11,7 +11,7 @@ final class EditorSaveWorkflowController {
         log: (String) -> Void,
         runSave: () -> Void
     ) {
-        guard hasUnsavedChanges else { return }
+        guard EditorSaveWorkflowPolicy.shouldSaveNowIfNeeded(hasUnsavedChanges: hasUnsavedChanges) else { return }
         if verbose {
             log("触发立即保存: 原因=\(reason), 文件=\(fileName ?? "nil")")
         }
@@ -22,7 +22,13 @@ final class EditorSaveWorkflowController {
         saveState: EditorSaveState,
         runSaveTask: () -> Void
     ) {
+        let isSaving: Bool
         if case .saving = saveState {
+            isSaving = true
+        } else {
+            isSaving = false
+        }
+        guard EditorSaveWorkflowPolicy.shouldRunSaveTask(isSaving: isSaving) else {
             return
         }
         runSaveTask()
@@ -123,7 +129,7 @@ final class EditorSaveWorkflowController {
                 }
                 saveStateController.applySaveSuccess(
                     content: content,
-                    documentController: documentController,
+                    markPersistedText: documentController.markPersistedText,
                     clearConflict: clearConflict,
                     syncSession: syncSession,
                     scheduleSuccessClear: scheduleSuccessClear,

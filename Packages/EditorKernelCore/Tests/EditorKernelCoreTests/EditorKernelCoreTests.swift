@@ -531,6 +531,309 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func stateSupportTypesAndOverlayModelsRemainStable() {
+        let bracketMatch = BracketMatchResult(openOffset: 2, closeOffset: 8)
+        #expect(bracketMatch.ranges == [
+            NSRange(location: 2, length: 1),
+            NSRange(location: 8, length: 1),
+        ])
+
+        let hoverPlacement = EditorHoverOverlayPlacement(
+            anchor: .topLeading,
+            origin: CGPoint(x: 12, y: 24),
+            cardSize: CGSize(width: 200, height: 80),
+            isPresentedAboveSymbol: true
+        )
+        #expect(hoverPlacement.isPresentedAboveSymbol)
+
+        let codeActionPlacement = EditorCodeActionIndicatorPlacement(
+            origin: CGPoint(x: 10, y: 20),
+            panelOrigin: CGPoint(x: 28, y: 20)
+        )
+        #expect(codeActionPlacement.panelOrigin.x == 28)
+        #expect(EditorInlinePresentationKind.message(.warning) == .message(.warning))
+        #expect(EditorSurfaceHighlightKind.hoverSymbol == .hoverSymbol)
+    }
+
+    @Test
+    func gutterDecorationModelsPreserveKindsAndDefaults() {
+        let context = EditorGutterDecorationContext(
+            languageId: "swift",
+            currentLine: 10,
+            visibleLineRange: 5..<20,
+            renderLineRange: 0..<40,
+            isLargeFileMode: false
+        )
+        #expect(context.currentLine == 10)
+
+        let suggestion = EditorGutterDecorationSuggestion(
+            id: "diag-10",
+            line: 10,
+            kind: .diagnostic(.error),
+            badgeText: "1"
+        )
+        #expect(suggestion.lane == 0)
+        #expect(suggestion.priority == 0)
+        #expect(suggestion.badgeText == "1")
+        #expect(suggestion.kind == .diagnostic(.error))
+
+        let symbolKind = EditorGutterDecorationKind.symbol(.class)
+        #expect(symbolKind == .symbol(.class))
+        #expect(EditorGutterDecorationKind.gitChange(.added) == .gitChange(.added))
+    }
+
+    @Test
+    @MainActor
+    func undoControllerAndManagerMaintainUndoRedoStacks() {
+        let controller = EditorUndoController()
+        let manager = EditorUndoManager()
+        let before = controller.captureState(
+            currentText: "alpha",
+            selections: [.init(range: .init(location: 0, length: 0))]
+        )
+        let after = controller.captureState(
+            currentText: "beta",
+            selections: [.init(range: .init(location: 2, length: 0))]
+        )
+
+        let flags = controller.recordChange(
+            in: manager,
+            from: before,
+            to: after,
+            reason: "typing",
+            isRestoringUndoState: false
+        )
+        #expect(flags.canUndo)
+        #expect(!flags.canRedo)
+
+        let undone = controller.performUndo(in: manager)
+        #expect(undone?.state == before)
+        #expect(!(undone?.canUndo ?? true))
+        #expect(undone?.canRedo == true)
+
+        let redone = controller.performRedo(in: manager)
+        #expect(redone?.state == after)
+        #expect(redone?.canUndo == true)
+        #expect(redone?.canRedo == false)
+    }
+
+    @Test
+    func editorBufferAppliesTransactionsAndPreservesSelectionPassThrough() {
+        let buffer = EditorBuffer(text: "alpha beta gamma")
+        let result = buffer.apply(
+            EditorTransaction(
+                replacements: [
+                    .init(range: .init(location: 11, length: 5), text: "delta"),
+                    .init(range: .init(location: 0, length: 5), text: "omega"),
+                ]
+            )
+        )
+        #expect(result?.snapshot.text == "omega beta delta")
+        #expect(result?.snapshot.version == 1)
+
+        let emptyResult = buffer.apply(
+            EditorTransaction(
+                replacements: [],
+                updatedSelections: [.init(range: .init(location: 3, length: 0))]
+            )
+        )
+        #expect(emptyResult?.snapshot.version == 1)
+        #expect(emptyResult?.selections == [.init(range: .init(location: 3, length: 0))])
+    }
+
+    @Test
+    func editorBufferRejectsInvalidRangeWithoutMutatingState() {
+        let buffer = EditorBuffer(text: "abc")
+        let result = buffer.apply(
+            EditorTransaction(
+                replacements: [.init(range: .init(location: 10, length: 1), text: "z")]
+            )
+        )
+        #expect(result == nil)
+        #expect(buffer.text == "abc")
+        #expect(buffer.version == 0)
+    }
+
+    @Test
+    func lineEditingControllerSupportsDeleteInsertSortAndTranspose() {
+        let deleted = LineEditingController.deleteLine(
+            in: "one\ntwo\nthree",
+            selections: [NSRange(location: 4, length: 0)]
+        )
+        #expect(deleted?.replacementText == "one\nthree")
+
+        let inserted = LineEditingController.insertLineBelow(
+            in: "    alpha",
+            selections: [NSRange(location: 4, length: 0)]
+        )
+        #expect(inserted?.replacementText == "    alpha\n    ")
+        #expect(inserted?.selectedRanges.first == NSRange(location: 14, length: 0))
+
+        let sorted = LineEditingController.sortLines(
+            in: "b\na\n",
+            selections: [NSRange(location: 0, length: 3)],
+            descending: false
+        )
+        #expect(sorted?.replacementText == "a\nb\n")
+
+        let transposed = LineEditingController.transpose(
+            in: "ab",
+            selections: [NSRange(location: 1, length: 0)]
+        )
+        #expect(transposed?.replacementText == "ba")
+        #expect(transposed?.selectedRanges == [NSRange(location: 2, length: 0)])
+    }
+
+    @Test
+    @MainActor
+    func commandRegistryFiltersAndExecutesCommandsByContext() {
+        let registry = CommandRegistry()
+        defer { registry.clear() }
+
+        var executed = false
+        registry.register([
+            .selectionCommand(
+                id: "selection.only",
+                title: "Selection Only",
+                category: "editing"
+            ) {
+                executed = true
+            },
+            .command(
+                id: "always.on",
+                title: "Always On",
+                category: "editing",
+                order: 1
+            ) {}
+        ])
+
+        var context = CommandContext()
+        context.hasSelection = false
+        #expect(registry.availableCommands(in: context).map(\.id) == ["always.on"])
+        #expect(!registry.execute(id: "selection.only", context: context))
+
+        context.hasSelection = true
+        #expect(registry.availableCommands(in: context).map(\.id) == ["selection.only", "always.on"])
+        #expect(registry.execute(id: "selection.only", context: context))
+        #expect(executed)
+    }
+
+    @Test
+    @MainActor
+    func transactionControllerBuildsCompletionAndCommitPayloads() {
+        let controller = EditorTransactionController()
+
+        #expect(
+            controller.transactionForInputEdit(
+                replacementRange: NSRange(location: NSNotFound, length: 0),
+                replacementText: "x",
+                selectedRanges: []
+            ) == nil
+        )
+
+        let completion = controller.transactionForCompletionEdit(
+            text: "name",
+            replacementRange: NSRange(location: 0, length: 4),
+            replacementText: "value",
+            additionalTextEdits: [
+                TextEdit(
+                    range: LSPRange(
+                        start: Position(line: 0, character: 0),
+                        end: Position(line: 0, character: 0)
+                    ),
+                    newText: "let "
+                )
+            ]
+        )
+        #expect(completion?.replacements.count == 2)
+        #expect(completion?.updatedSelections == [.init(range: .init(location: 9, length: 0))])
+
+        let payload = controller.commitPayload(
+            from: EditorEditResult(
+                snapshot: .init(text: "a\nb\n", version: 4),
+                selections: [
+                    .init(range: .init(location: 2, length: 1)),
+                    .init(range: .init(location: 5, length: 0)),
+                ]
+            )
+        )
+        #expect(payload.text == "a\nb\n")
+        #expect(payload.version == 4)
+        #expect(payload.totalLines == 3)
+        #expect(
+            payload.canonicalSelectionSet
+                == EditorSelectionSet(
+                    selections: [
+                        .init(range: .init(location: 2, length: 1)),
+                        .init(range: .init(location: 5, length: 0)),
+                    ]
+                )
+        )
+        #expect(
+            payload.multiCursorSelections == [
+                .init(location: 2, length: 1),
+                .init(location: 5, length: 0),
+            ]
+        )
+    }
+
+    @Test
+    @MainActor
+    func editorPerformanceCollectsSummariesAndSlowEvents() {
+        let performance = EditorPerformance()
+        performance.clear()
+
+        _ = performance.measure(.editTransaction) {}
+        let slowToken = performance.begin(.renderBracketMatch)
+        performance.end(slowToken, metadata: ["reason": "manual"])
+
+        let summary = performance.summary(for: .editTransaction)
+        #expect(summary?.count == 1)
+        #expect(summary?.event == .editTransaction)
+
+        let report = performance.report()
+        #expect(report.contains("Editor Performance Report"))
+        #expect(report.contains("edit.transaction"))
+    }
+
+    @Test
+    func externalFileReloadPolicyChoosesConflictOrApplyBasedOnDirtyState() {
+        let modDate = Date(timeIntervalSince1970: 123)
+        #expect(
+            EditorExternalFileReloadPolicy.reloadDecision(
+                newContent: "same",
+                currentContent: "same",
+                currentModDate: modDate,
+                hasUnsavedChanges: false
+            ) == .unchanged
+        )
+        #expect(
+            EditorExternalFileReloadPolicy.reloadDecision(
+                newContent: "new",
+                currentContent: "old",
+                currentModDate: modDate,
+                hasUnsavedChanges: true
+            ) == .registerConflict(content: "new", modificationDate: modDate)
+        )
+        #expect(
+            EditorExternalFileReloadPolicy.reloadDecision(
+                newContent: "new",
+                currentContent: "old",
+                currentModDate: modDate,
+                hasUnsavedChanges: false
+            ) == .applyExternalContent(content: "new", modificationDate: modDate)
+        )
+    }
+
+    @Test
+    func saveWorkflowPolicyGuardsAutosaveAndDuplicateSaveRuns() {
+        #expect(EditorSaveWorkflowPolicy.shouldSaveNowIfNeeded(hasUnsavedChanges: true))
+        #expect(!EditorSaveWorkflowPolicy.shouldSaveNowIfNeeded(hasUnsavedChanges: false))
+        #expect(EditorSaveWorkflowPolicy.shouldRunSaveTask(isSaving: false))
+        #expect(!EditorSaveWorkflowPolicy.shouldRunSaveTask(isSaving: true))
+    }
+
+    @Test
     @MainActor
     func editorCommandCategoryAndPresentationRemainStable() {
         #expect(EditorCommandCategory.resolve("find") == .find)
@@ -731,5 +1034,186 @@ struct EditorKernelCoreTests {
                 longestDetectedLine: nil
             ) == true
         )
+    }
+
+    @Test
+    func inlineRenameStatePreviewFlagsRemainStable() {
+        var state = EditorInlineRenameState(
+            originalName: "name",
+            draftName: " renamed ",
+            isLoadingPreview: false,
+            errorMessage: "stale",
+            previewSummary: .init(changedFiles: 1, changedLocations: 2, fileLabels: ["Current File"]),
+            previewEdit: WorkspaceEdit(changes: [:], documentChanges: nil)
+        )
+
+        #expect(state.trimmedDraftName == "renamed")
+        #expect(state.canPreview == true)
+        #expect(state.canApply == true)
+
+        state.invalidatePreview()
+        #expect(state.errorMessage == nil)
+        #expect(state.previewSummary == nil)
+        #expect(state.previewEdit == nil)
+        #expect(state.canApply == false)
+    }
+
+    @Test
+    func workspaceEditSummaryBuilderSummarizesCurrentAndExternalEdits() {
+        let edit = WorkspaceEdit(
+            changes: [
+                "file:///tmp/project/file.swift": [
+                    TextEdit(
+                        range: LSPRange(start: Position(line: 0, character: 0), end: Position(line: 0, character: 1)),
+                        newText: "a"
+                    )
+                ]
+            ],
+            documentChanges: [
+                .textDocumentEdit(
+                    TextDocumentEdit(
+                        textDocument: VersionedTextDocumentIdentifier(uri: "file:///tmp/project/other.swift", version: 1),
+                        edits: [
+                            TextEdit(
+                                range: LSPRange(start: Position(line: 1, character: 0), end: Position(line: 1, character: 2)),
+                                newText: "bb"
+                            )
+                        ]
+                    )
+                ),
+                .deleteFile(
+                    DeleteFile(
+                        kind: "delete",
+                        uri: "file:///tmp/project/old.swift",
+                        options: .init(recursive: false, ignoreIfNotExists: false)
+                    )
+                ),
+            ]
+        )
+
+        let summary = EditorWorkspaceEditSummaryBuilder.summarize(
+            edit,
+            currentURI: "file:///tmp/project/file.swift",
+            projectRootPath: "/tmp/project"
+        )
+
+        #expect(summary.changedFiles == 3)
+        #expect(summary.changedLocations == 3)
+        #expect(summary.fileLabels == ["Current File", "other.swift", "old.swift"])
+        #expect(summary.summaryText == "3 changes in 3 files")
+    }
+
+    @Test
+    @MainActor
+    func saveStateAndControllerRemainStable() {
+        #expect(EditorSaveState.saved.icon == "checkmark.circle.fill")
+        #expect(EditorSaveState.error("x").icon == "exclamationmark.triangle.fill")
+
+        let controller = EditorSaveStateController()
+        var persisted: String?
+        var hasUnsavedChanges = true
+        var saveState: EditorSaveState = .editing
+        var clearedConflict = false
+        var synced = false
+        var scheduledClear = false
+        var notifiedContent: String?
+
+        controller.applySaveSuccess(
+            content: "hello",
+            markPersistedText: { persisted = $0 },
+            clearConflict: { clearedConflict = true },
+            syncSession: { synced = true },
+            scheduleSuccessClear: { scheduledClear = true },
+            notifyDidSave: { notifiedContent = $0 },
+            setHasUnsavedChanges: { hasUnsavedChanges = $0 },
+            setSaveState: { saveState = $0 }
+        )
+
+        #expect(persisted == "hello")
+        #expect(hasUnsavedChanges == false)
+        #expect(clearedConflict == true)
+        #expect(synced == true)
+        #expect(scheduledClear == true)
+        #expect(notifiedContent == "hello")
+        #expect(saveState == .saved)
+    }
+
+    @Test
+    @MainActor
+    func appearanceAndDocumentReplaceControllersRemainStable() {
+        let appearance = EditorAppearanceController()
+        #expect(appearance.syncThemeSilently(currentThemeId: "a", incomingThemeId: "a") == false)
+        #expect(appearance.syncThemeSilently(currentThemeId: "a", incomingThemeId: "b") == true)
+
+        let transactionController = EditorTransactionController()
+        let controller = EditorDocumentReplaceController()
+        let payload = controller.replaceTextPayload(
+            "updated",
+            replaceText: { text in
+                EditorEditResult(
+                    snapshot: EditorSnapshot(text: text, version: 4),
+                    selections: [
+                        EditorSelection(range: EditorRange(location: text.utf16.count, length: 0))
+                    ]
+                )
+            },
+            transactionController: transactionController
+        )
+
+        #expect(payload.commitPayload.text == "updated")
+        #expect(payload.commitPayload.version == 4)
+        #expect(payload.commitPayload.totalLines == 1)
+        #expect(payload.commitPayload.canonicalSelectionSet?.primary?.range.location == 7)
+        #expect(payload.commitPayload.multiCursorSelections == [.init(location: 7, length: 0)])
+        #expect(EditorCursorState.initial.primary?.range.location == 0)
+    }
+
+    @Test
+    func multiCursorStateAndStateControllerRemainStable() {
+        var state = MultiCursorState()
+        state.addSecondary(.init(location: 8, length: 1))
+        state.addSecondary(.init(location: 3, length: 0))
+
+        #expect(state.isEnabled == true)
+        #expect(state.all == [
+            .init(location: 0, length: 0),
+            .init(location: 3, length: 0),
+            .init(location: 8, length: 1),
+        ])
+
+        let rebuilt = EditorMultiCursorStateController.state(from: state.all)
+        #expect(rebuilt == state)
+        #expect(EditorMultiCursorStateController.clearSecondary(from: state).all == [.init(location: 0, length: 0)])
+    }
+
+    @Test
+    func multiCursorMatcherAndSearchControllerRemainStable() {
+        let text = "cat concatenate cat" as NSString
+        let matches = EditorMultiCursorMatcher.ranges(of: "cat", in: text)
+        #expect(matches == [
+            .init(location: 0, length: 3),
+            .init(location: 16, length: 3),
+        ])
+
+        let context = EditorMultiCursorMatcher.searchContext(
+            from: NSRange(location: 0, length: 0),
+            in: text
+        )
+        #expect(context?.query == "cat")
+
+        let session = EditorMultiCursorSearchController.session(for: context!)
+        let next = EditorMultiCursorSearchController.nextSelection(
+            in: matches,
+            currentState: MultiCursorState(primary: .init(location: 0, length: 3), secondary: []),
+            session: session
+        )
+        #expect(next == .init(location: 16, length: 3))
+
+        let collapsed = EditorMultiCursorSearchController.collapsedSession(
+            from: EditorMultiCursorSearchController.appending(.init(location: 16, length: 3), to: session),
+            singleSelection: .init(location: 0, length: 3),
+            in: text
+        )
+        #expect(collapsed?.history == [.init(location: 0, length: 3)])
     }
 }

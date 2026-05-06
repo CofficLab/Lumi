@@ -1,11 +1,5 @@
 import SwiftUI
 
-enum EditorInlinePresentationKind {
-    case message(EditorStatusLevel)
-    case value
-    case diff
-}
-
 struct EditorInlinePresentation: Identifiable {
     let id: String
     let kind: EditorInlinePresentationKind

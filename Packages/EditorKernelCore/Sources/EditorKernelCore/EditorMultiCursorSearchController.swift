@@ -1,23 +1,39 @@
 import Foundation
 
-struct EditorMultiCursorSearchContext: Equatable {
-    let baseSelection: MultiCursorSelection
-    let query: String
+public struct EditorMultiCursorSearchContext: Equatable, Sendable {
+    public let baseSelection: MultiCursorSelection
+    public let query: String
+
+    public init(baseSelection: MultiCursorSelection, query: String) {
+        self.baseSelection = baseSelection
+        self.query = query
+    }
 }
 
-struct EditorMultiCursorSearchSession: Equatable {
-    let query: String
-    let baseSelection: MultiCursorSelection
-    var history: [MultiCursorSelection]
+public struct EditorMultiCursorSearchSession: Equatable, Sendable {
+    public let query: String
+    public let baseSelection: MultiCursorSelection
+    public var history: [MultiCursorSelection]
+
+    public init(query: String, baseSelection: MultiCursorSelection, history: [MultiCursorSelection]) {
+        self.query = query
+        self.baseSelection = baseSelection
+        self.history = history
+    }
 }
 
-struct EditorMultiCursorResolvedContext: Equatable {
-    let context: EditorMultiCursorSearchContext
-    let shouldStartSession: Bool
+public struct EditorMultiCursorResolvedContext: Equatable, Sendable {
+    public let context: EditorMultiCursorSearchContext
+    public let shouldStartSession: Bool
+
+    public init(context: EditorMultiCursorSearchContext, shouldStartSession: Bool) {
+        self.context = context
+        self.shouldStartSession = shouldStartSession
+    }
 }
 
-enum EditorMultiCursorSearchController {
-    static func resolvedContext(
+public enum EditorMultiCursorSearchController {
+    public static func resolvedContext(
         from normalizedRange: NSRange,
         in text: NSString,
         existingSession: EditorMultiCursorSearchSession?
@@ -58,7 +74,7 @@ enum EditorMultiCursorSearchController {
         )
     }
 
-    static func startedSession(
+    public static func startedSession(
         query: String,
         baseSelection: MultiCursorSelection
     ) -> EditorMultiCursorSearchSession {
@@ -69,7 +85,7 @@ enum EditorMultiCursorSearchController {
         )
     }
 
-    static func shouldReuse(
+    public static func shouldReuse(
         session: EditorMultiCursorSearchSession,
         baseSelectionText: String?,
         currentSelectionText: String?
@@ -77,7 +93,7 @@ enum EditorMultiCursorSearchController {
         baseSelectionText == session.query && currentSelectionText == session.query
     }
 
-    static func nextSelection(
+    public static func nextSelection(
         in matches: [MultiCursorSelection],
         currentState: MultiCursorState,
         session: EditorMultiCursorSearchSession
@@ -99,7 +115,7 @@ enum EditorMultiCursorSearchController {
         return nil
     }
 
-    static func appending(
+    public static func appending(
         _ selection: MultiCursorSelection,
         to session: EditorMultiCursorSearchSession
     ) -> EditorMultiCursorSearchSession {
@@ -108,7 +124,7 @@ enum EditorMultiCursorSearchController {
         return updated
     }
 
-    static func allOccurrencesSession(
+    public static func allOccurrencesSession(
         query: String,
         baseSelection: MultiCursorSelection,
         matches: [MultiCursorSelection]
@@ -120,7 +136,7 @@ enum EditorMultiCursorSearchController {
         )
     }
 
-    static func removingLast(
+    public static func removingLast(
         from session: EditorMultiCursorSearchSession
     ) -> EditorMultiCursorSearchSession? {
         guard session.history.count > 1 else { return nil }
@@ -129,7 +145,7 @@ enum EditorMultiCursorSearchController {
         return updated
     }
 
-    static func session(
+    public static func session(
         for context: EditorMultiCursorSearchContext,
         matches: [MultiCursorSelection]? = nil
     ) -> EditorMultiCursorSearchSession {
@@ -146,7 +162,7 @@ enum EditorMultiCursorSearchController {
         )
     }
 
-    static func collapsedSession(
+    public static func collapsedSession(
         from session: EditorMultiCursorSearchSession?,
         singleSelection: MultiCursorSelection,
         in text: NSString

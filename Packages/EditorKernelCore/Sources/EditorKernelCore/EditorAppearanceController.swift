@@ -1,9 +1,10 @@
 import Foundation
-import CoreGraphics
 
 @MainActor
-final class EditorAppearanceController {
-    func syncThemeSilently(
+public final class EditorAppearanceController {
+    public init() {}
+
+    public func syncThemeSilently(
         currentThemeId: String,
         incomingThemeId: String
     ) -> Bool {

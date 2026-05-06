@@ -1,7 +1,7 @@
 import Foundation
 
-enum EditorMultiCursorMatcher {
-    static func selectionText(
+public enum EditorMultiCursorMatcher {
+    public static func selectionText(
         for range: NSRange,
         in text: NSString
     ) -> String? {
@@ -9,7 +9,7 @@ enum EditorMultiCursorMatcher {
         return text.substring(with: range)
     }
 
-    static func selectionText(
+    public static func selectionText(
         for selection: MultiCursorSelection,
         in text: NSString
     ) -> String? {
@@ -17,7 +17,7 @@ enum EditorMultiCursorMatcher {
         return selectionText(for: range, in: text)
     }
 
-    static func normalizedRange(
+    public static func normalizedRange(
         _ range: NSRange,
         in text: NSString
     ) -> NSRange {
@@ -27,7 +27,7 @@ enum EditorMultiCursorMatcher {
         return NSRange(location: location, length: length)
     }
 
-    static func resolvedBaseSelection(
+    public static func resolvedBaseSelection(
         from range: NSRange,
         in text: NSString
     ) -> MultiCursorSelection? {
@@ -41,7 +41,7 @@ enum EditorMultiCursorMatcher {
         return MultiCursorSelection(location: wordRange.location, length: wordRange.length)
     }
 
-    static func searchContext(
+    public static func searchContext(
         from range: NSRange,
         in text: NSString
     ) -> EditorMultiCursorSearchContext? {
@@ -57,7 +57,7 @@ enum EditorMultiCursorMatcher {
         )
     }
 
-    static func ranges(
+    public static func ranges(
         of needle: String,
         in text: NSString
     ) -> [MultiCursorSelection] {

@@ -1,22 +1,43 @@
 import Foundation
 import LanguageServerProtocol
 
-struct EditorTransactionCommitPayload {
-    let text: String
-    let version: Int
-    let totalLines: Int
-    let canonicalSelectionSet: EditorSelectionSet?
-    let multiCursorSelections: [MultiCursorSelection]?
+public struct EditorTransactionCommitPayload: Equatable, Sendable {
+    public let text: String
+    public let version: Int
+    public let totalLines: Int
+    public let canonicalSelectionSet: EditorSelectionSet?
+    public let multiCursorSelections: [MultiCursorSelection]?
+
+    public init(
+        text: String,
+        version: Int,
+        totalLines: Int,
+        canonicalSelectionSet: EditorSelectionSet?,
+        multiCursorSelections: [MultiCursorSelection]?
+    ) {
+        self.text = text
+        self.version = version
+        self.totalLines = totalLines
+        self.canonicalSelectionSet = canonicalSelectionSet
+        self.multiCursorSelections = multiCursorSelections
+    }
 }
 
-struct EditorSnippetTransactionPayload {
-    let transaction: EditorTransaction
-    let session: EditorSnippetSession?
+public struct EditorSnippetTransactionPayload: Equatable, Sendable {
+    public let transaction: EditorTransaction
+    public let session: EditorSnippetSession?
+
+    public init(transaction: EditorTransaction, session: EditorSnippetSession?) {
+        self.transaction = transaction
+        self.session = session
+    }
 }
 
 @MainActor
-final class EditorTransactionController {
-    func transactionForTextEdits(
+public final class EditorTransactionController {
+    public init() {}
+
+    public func transactionForTextEdits(
         _ edits: [TextEdit],
         in text: String,
         currentSelections: [NSRange]
@@ -39,7 +60,7 @@ final class EditorTransactionController {
         return transaction
     }
 
-    func transactionForInputEdit(
+    public func transactionForInputEdit(
         replacementRange: NSRange,
         replacementText: String,
         selectedRanges: [NSRange]
@@ -67,7 +88,7 @@ final class EditorTransactionController {
         )
     }
 
-    func transactionForCompletionEdit(
+    public func transactionForCompletionEdit(
         text: String,
         replacementRange: NSRange,
         replacementText: String,
@@ -117,7 +138,7 @@ final class EditorTransactionController {
         )
     }
 
-    func transactionForSnippetEdit(
+    public func transactionForSnippetEdit(
         text: String,
         replacementRange: NSRange,
         snippet: EditorSnippetParseResult,
@@ -204,11 +225,7 @@ final class EditorTransactionController {
         )
     }
 
-    private func editorRange(from range: NSRange) -> EditorRange {
-        EditorRange(location: range.location, length: range.length)
-    }
-
-    func commitPayload(from result: EditorEditResult) -> EditorTransactionCommitPayload {
+    public func commitPayload(from result: EditorEditResult) -> EditorTransactionCommitPayload {
         let selections = result.selections
         return EditorTransactionCommitPayload(
             text: result.snapshot.text,
@@ -219,6 +236,10 @@ final class EditorTransactionController {
                 MultiCursorSelection(location: $0.range.location, length: $0.range.length)
             }
         )
+    }
+
+    private func editorRange(from range: NSRange) -> EditorRange {
+        EditorRange(location: range.location, length: range.length)
     }
 
     private func remappedSelections(

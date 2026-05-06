@@ -1,15 +1,17 @@
 import Foundation
 
 @MainActor
-final class EditorUndoController {
-    func captureState(
+public final class EditorUndoController {
+    public init() {}
+
+    public func captureState(
         currentText: String,
         selections: [EditorSelection]
     ) -> EditorUndoState {
         EditorUndoState(text: currentText, selections: selections)
     }
 
-    func recordChange(
+    public func recordChange(
         in manager: EditorUndoManager,
         from before: EditorUndoState,
         to after: EditorUndoState,
@@ -24,21 +26,21 @@ final class EditorUndoController {
         return (manager.canUndo, manager.canRedo)
     }
 
-    func performUndo(
+    public func performUndo(
         in manager: EditorUndoManager
     ) -> (state: EditorUndoState, canUndo: Bool, canRedo: Bool)? {
         guard let state = manager.undo() else { return nil }
         return (state, manager.canUndo, manager.canRedo)
     }
 
-    func performRedo(
+    public func performRedo(
         in manager: EditorUndoManager
     ) -> (state: EditorUndoState, canUndo: Bool, canRedo: Bool)? {
         guard let state = manager.redo() else { return nil }
         return (state, manager.canUndo, manager.canRedo)
     }
 
-    func reset(in manager: EditorUndoManager) -> (canUndo: Bool, canRedo: Bool) {
+    public func reset(in manager: EditorUndoManager) -> (canUndo: Bool, canRedo: Bool) {
         manager.reset()
         return (manager.canUndo, manager.canRedo)
     }

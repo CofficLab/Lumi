@@ -1,37 +1,47 @@
 import Foundation
 
-struct EditorSnapshot: Equatable, Sendable {
-    let text: String
-    let version: Int
+public struct EditorSnapshot: Equatable, Sendable {
+    public let text: String
+    public let version: Int
+
+    public init(text: String, version: Int) {
+        self.text = text
+        self.version = version
+    }
 }
 
-struct EditorEditResult: Equatable, Sendable {
-    let snapshot: EditorSnapshot
-    let selections: [EditorSelection]?
+public struct EditorEditResult: Equatable, Sendable {
+    public let snapshot: EditorSnapshot
+    public let selections: [EditorSelection]?
+
+    public init(snapshot: EditorSnapshot, selections: [EditorSelection]?) {
+        self.snapshot = snapshot
+        self.selections = selections
+    }
 }
 
-final class EditorBuffer {
-    private(set) var text: String
-    private(set) var version: Int
+public final class EditorBuffer {
+    public private(set) var text: String
+    public private(set) var version: Int
 
-    init(text: String, version: Int = 0) {
+    public init(text: String, version: Int = 0) {
         self.text = text
         self.version = version
     }
 
-    func snapshot() -> EditorSnapshot {
+    public func snapshot() -> EditorSnapshot {
         EditorSnapshot(text: text, version: version)
     }
 
     @discardableResult
-    func replaceText(_ newText: String) -> EditorEditResult {
+    public func replaceText(_ newText: String) -> EditorEditResult {
         text = newText
         version += 1
         return EditorEditResult(snapshot: snapshot(), selections: nil)
     }
 
     @discardableResult
-    func apply(_ transaction: EditorTransaction) -> EditorEditResult? {
+    public func apply(_ transaction: EditorTransaction) -> EditorEditResult? {
         guard !transaction.replacements.isEmpty else {
             return EditorEditResult(snapshot: snapshot(), selections: transaction.updatedSelections)
         }
