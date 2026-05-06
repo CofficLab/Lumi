@@ -15,6 +15,7 @@ typealias EditorSelectionSet = EditorKernelCore.EditorSelectionSet
 typealias EditorSelectionMappingPolicy = EditorKernelCore.EditorSelectionMappingPolicy
 typealias EditorCursorState = EditorKernelCore.EditorCursorState
 typealias EditorTransaction = EditorKernelCore.EditorTransaction
+typealias EditorInputCommandController = EditorKernelCore.EditorInputCommandController
 typealias EditorCommandCategory = EditorKernelCore.EditorCommandCategory
 typealias EditorCommandCategoryScope = EditorKernelCore.EditorCommandCategoryScope
 typealias EditorCommandPresentationModel = EditorKernelCore.EditorCommandPresentationModel

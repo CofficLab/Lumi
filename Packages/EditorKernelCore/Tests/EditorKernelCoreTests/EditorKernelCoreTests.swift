@@ -57,6 +57,37 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    @MainActor
+    func inputCommandControllerBuildsLineEditAndCursorPlans() {
+        let controller = EditorInputCommandController()
+
+        let commented = controller.lineEditResult(
+            kind: .toggleLineComment,
+            text: "value",
+            selections: [NSRange(location: 0, length: 0)],
+            languageId: "python"
+        )
+        #expect(commented?.replacementText == "# value")
+
+        let deleteLeft = controller.cursorMotionPlan(
+            kind: .deleteWordLeft,
+            text: "foo bar",
+            currentLocation: 7,
+            currentRange: NSRange(location: 7, length: 0)
+        )
+        if case let .transaction(transaction)? = deleteLeft {
+            #expect(transaction.replacements == [
+                .init(range: .init(location: 4, length: 3), text: "")
+            ])
+            #expect(transaction.updatedSelections == [
+                .init(range: .init(location: 4, length: 0))
+            ])
+        } else {
+            Issue.record("Expected delete-word-left transaction")
+        }
+    }
+
+    @Test
     func cursorMotionWordAndLineBehaviorsRemainStable() {
         #expect(CursorMotionController.moveWordLeft(location: 10, text: "foo  +  bar").location == 8)
         #expect(CursorMotionController.moveWordRight(location: 0, text: "foo  +  bar").location == 3)

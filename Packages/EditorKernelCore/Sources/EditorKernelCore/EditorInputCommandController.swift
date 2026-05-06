@@ -1,13 +1,15 @@
 import Foundation
 
 @MainActor
-final class EditorInputCommandController {
-    enum CursorMotionPlan {
+public final class EditorInputCommandController {
+    public enum CursorMotionPlan {
         case selections([NSRange])
         case transaction(EditorTransaction)
     }
 
-    func lineEditResult(
+    public init() {}
+
+    public func lineEditResult(
         kind: LineEditKind,
         text: String,
         selections: [NSRange],
@@ -43,7 +45,7 @@ final class EditorInputCommandController {
         }
     }
 
-    func cursorMotionPlan(
+    public func cursorMotionPlan(
         kind: CursorMotionKind,
         text: String,
         currentLocation: Int,
