@@ -117,6 +117,53 @@ final class EditorServiceKernelTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    func testSmartIndentHandlerBacktabRemovesLeadingSpacesFromCurrentLine() {
+        let text = "    let value = 1"
+
+        let result = SmartIndentHandler.handleBacktab(
+            in: text,
+            selection: NSRange(location: text.count, length: 0),
+            tabSize: 4,
+            useSpaces: true
+        )
+
+        XCTAssertEqual(result?.replacementText, "let value = 1")
+        XCTAssertEqual(result?.selectedRange, NSRange(location: text.count - 4, length: 0))
+    }
+
+    func testSmartIndentHandlerTabIndentsAllSelectedLines() {
+        let text = "first\nsecond"
+
+        let result = SmartIndentHandler.handleTab(
+            in: text,
+            selection: NSRange(location: 0, length: (text as NSString).length),
+            tabSize: 4,
+            useSpaces: true
+        )
+
+        XCTAssertEqual(result?.replacementText, "    first\n    second")
+        XCTAssertEqual(
+            result?.selectedRange,
+            NSRange(location: 0, length: ("    first\n    second" as NSString).length)
+        )
+    }
+
+    func testBracketPairsConfigHTMLDisablesAutoClosingPairs() {
+        let config = BracketPairsConfig.defaultForLanguage("html")
+
+        XCTAssertTrue(config.isOpenBracket("<"))
+        XCTAssertTrue(config.isCloseBracket(">"))
+        XCTAssertTrue(config.autoClosingPairs.isEmpty)
+    }
+
+    func testBracketPairsConfigUnknownLanguageFallsBackToDefaultPairs() {
+        let config = BracketPairsConfig.defaultForLanguage("unknown-lang")
+
+        XCTAssertTrue(config.isOpenBracket("("))
+        XCTAssertEqual(config.matchingClose(for: "{"), "}")
+        XCTAssertFalse(config.autoClosingPairs.isEmpty)
+    }
+
     func testBracketMatcherFindsNestedOuterPair() {
         let config = BracketPairsConfig.defaultForLanguage("swift")
 
@@ -196,6 +243,14 @@ final class EditorServiceKernelTests: XCTestCase {
         )
 
         XCTAssertNil(result)
+    }
+
+    func testBracketMatcherShouldAutoSurroundOnlyBracketCharacters() {
+        let config = BracketPairsConfig.defaultForLanguage("swift")
+
+        XCTAssertTrue(BracketMatcher.shouldAutoSurround(typedChar: "(", config: config))
+        XCTAssertTrue(BracketMatcher.shouldAutoSurround(typedChar: "}", config: config))
+        XCTAssertFalse(BracketMatcher.shouldAutoSurround(typedChar: "a", config: config))
     }
 
     func testEditorTextInputControllerAutoClosingPlanWrapsBracketInsertion() {
