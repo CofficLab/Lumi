@@ -3,7 +3,7 @@ import MagicKit
 import SwiftUI
 
 /// 模型选择器中的单行模型视图
-/// 显示模型名称、上下文大小、能力 badge 和性能指标
+/// 显示模型名称、供应商标签（可选）、上下文大小、能力 badge 和性能指标
 struct ModelSelectorModelRow: View {
     /// 供应商信息
     let provider: LLMProviderInfo
@@ -11,6 +11,8 @@ struct ModelSelectorModelRow: View {
     let model: String
     /// 可选展示名
     let displayName: String?
+    /// 供应商显示名称（跨供应商列表时使用，有值则显示供应商 badge）
+    let providerDisplayName: String?
     /// 是否支持视觉
     let supportsVision: Bool?
     /// 是否支持工具
@@ -37,6 +39,10 @@ struct ModelSelectorModelRow: View {
                                 Text(displayName ?? model)
                                     .font(AppUI.Typography.body)
                                     .lineLimit(1)
+
+                                if let providerDisplayName {
+                                    providerBadge(providerDisplayName)
+                                }
 
                                 Spacer()
                                 if let contextSize = provider.contextWindowSizes[model] {
@@ -142,6 +148,19 @@ struct ModelSelectorModelRow: View {
                 .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
         )
         .help(title)
+    }
+
+    /// 供应商标签
+    private func providerBadge(_ name: String) -> some View {
+        Text(name)
+            .font(.caption2)
+            .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 1)
+            .background(
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+            )
     }
 
     /// 格式化上下文窗口大小

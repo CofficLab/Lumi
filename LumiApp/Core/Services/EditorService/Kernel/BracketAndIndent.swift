@@ -569,7 +569,9 @@ enum SmartIndentHandler {
 
         var updatedText = text
         for lineStart in affectedLineStarts.sorted(by: >) {
-            let stringIndex = updatedText.index(updatedText.startIndex, offsetBy: lineStart)
+            guard let stringIndex = utf16StringIndex(in: updatedText, offset: lineStart) else {
+                return nil
+            }
             updatedText.insert(contentsOf: indentUnit, at: stringIndex)
         }
 
@@ -701,6 +703,19 @@ enum SmartIndentHandler {
             return indentLength
         }
         return 0
+    }
+
+    private static func utf16StringIndex(in text: String, offset: Int) -> String.Index? {
+        guard offset >= 0, offset <= text.utf16.count else { return nil }
+        let utf16Start = text.utf16.startIndex
+        guard let utf16Index = text.utf16.index(
+            utf16Start,
+            offsetBy: offset,
+            limitedBy: text.utf16.endIndex
+        ) else {
+            return nil
+        }
+        return String.Index(utf16Index, within: text)
     }
 
     private static func adjustedSelection(
