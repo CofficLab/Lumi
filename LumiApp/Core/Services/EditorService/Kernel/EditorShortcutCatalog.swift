@@ -1,20 +1,5 @@
 import Foundation
 
-struct EditorShortcutDefinition: Identifiable, Equatable {
-    let id: String
-    let title: String
-    let category: EditorCommandCategory
-    let defaultShortcut: EditorCommandShortcut?
-
-    var searchTokens: [String] {
-        var tokens = [id, title, category.rawValue, category.displayTitle]
-        if let defaultShortcut {
-            tokens.append(defaultShortcut.displayText)
-        }
-        return tokens
-    }
-}
-
 @MainActor
 enum EditorShortcutCatalog {
     static let commands: [EditorShortcutDefinition] = [
@@ -63,31 +48,16 @@ enum EditorShortcutCatalog {
     }
 
     static func filteredCommands(query: String, category: EditorCommandCategory?) -> [EditorShortcutDefinition] {
-        let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        return commands.filter { command in
-            let categoryMatches = category.map { command.category == $0 } ?? true
-            guard categoryMatches else { return false }
-            guard !normalizedQuery.isEmpty else { return true }
-            let effectiveShortcutText = effectiveShortcut(for: command, customBindings: EditorKeybindingStore.shared.customBindings)?.displayText ?? ""
-            return (command.searchTokens + [effectiveShortcutText]).contains {
-                $0.localizedCaseInsensitiveContains(normalizedQuery)
-            }
-        }
-        .sorted {
-            let lhsCategory = EditorCommandCategory.orderIndex(for: $0.category.rawValue)
-            let rhsCategory = EditorCommandCategory.orderIndex(for: $1.category.rawValue)
-            if lhsCategory != rhsCategory {
-                return lhsCategory < rhsCategory
-            }
-            return $0.title.localizedLowercase < $1.title.localizedLowercase
-        }
+        EditorShortcutCatalogPolicy.filteredCommands(
+            commands,
+            query: query,
+            category: category,
+            customBindings: EditorKeybindingStore.shared.customBindings
+        )
     }
 
     static func effectiveShortcut(for command: EditorShortcutDefinition, customBindings: [String: EditorKeybindingEntry]) -> EditorCommandShortcut? {
-        if let custom = customBindings[command.id] {
-            return custom.shortcut
-        }
-        return command.defaultShortcut
+        EditorShortcutCatalogPolicy.effectiveShortcut(for: command, customBindings: customBindings)
     }
 
     static func conflicts(
@@ -95,30 +65,11 @@ enum EditorShortcutCatalog {
         candidate: EditorCommandShortcut,
         customBindings: [String: EditorKeybindingEntry]
     ) -> [EditorShortcutDefinition] {
-        let normalizedCandidate = candidate.normalizedForMatching
-        return commands.filter { command in
-            guard command.id != commandID else { return false }
-            guard let shortcut = effectiveShortcut(for: command, customBindings: customBindings) else { return false }
-            return shortcut.normalizedForMatching == normalizedCandidate
-        }
-    }
-}
-
-private extension EditorCommandShortcut.Modifier {
-    var sortOrder: Int {
-        switch self {
-        case .command: return 0
-        case .shift: return 1
-        case .option: return 2
-        case .control: return 3
-        }
-    }
-}
-
-private extension EditorCommandShortcut {
-    var normalizedForMatching: String {
-        modifiers.sorted { $0.sortOrder < $1.sortOrder }.map(\.rawValue).joined(separator: "+")
-            + "|"
-            + key.lowercased()
+        EditorShortcutCatalogPolicy.conflicts(
+            in: commands,
+            for: commandID,
+            candidate: candidate,
+            customBindings: customBindings
+        )
     }
 }

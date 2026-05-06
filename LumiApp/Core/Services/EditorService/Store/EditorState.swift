@@ -2431,8 +2431,7 @@ final class EditorState: ObservableObject, SuperLog {
     func clearMultiCursors() {
         applyMultiCursorWorkflowResult(
             multiCursorWorkflowController.clearedState(
-                currentState: multiCursorState,
-                using: multiCursorController
+                currentState: multiCursorState
             )
         )
     }
@@ -2442,8 +2441,7 @@ final class EditorState: ObservableObject, SuperLog {
         guard multiCursorState.all.count <= 1 else { return }
         applyMultiCursorWorkflowResult(
             multiCursorWorkflowController.clearedState(
-                currentState: multiCursorState,
-                using: multiCursorController
+                currentState: multiCursorState
             ),
             shouldLog: false
         )
@@ -2453,8 +2451,7 @@ final class EditorState: ObservableObject, SuperLog {
         applyMultiCursorWorkflowResult(
             multiCursorWorkflowController.primarySelectionState(
                 selection,
-                currentState: multiCursorState,
-                using: multiCursorController
+                currentState: multiCursorState
             )
         )
     }
@@ -2463,8 +2460,7 @@ final class EditorState: ObservableObject, SuperLog {
         guard let result = multiCursorWorkflowController.setSelectionsResult(
             selections,
             existingSession: multiCursorSearchSession,
-            text: currentEditorTextStorageString(),
-            using: multiCursorController
+            text: currentEditorTextStorageString()
         ) else {
             clearMultiCursors()
             return
@@ -2542,8 +2538,7 @@ final class EditorState: ObservableObject, SuperLog {
             from: range,
             currentState: multiCursorState,
             existingSession: multiCursorSearchSession,
-            text: text,
-            using: multiCursorController
+            text: text
         ) else { return nil }
 
         applyMultiCursorWorkflowResult(result)
@@ -2555,8 +2550,7 @@ final class EditorState: ObservableObject, SuperLog {
               let result = multiCursorWorkflowController.addAllOccurrencesResult(
                 from: range,
                 currentState: multiCursorState,
-                text: text,
-                using: multiCursorController
+                text: text
               ) else { return nil }
 
         applyMultiCursorWorkflowResult(result)
@@ -2566,8 +2560,7 @@ final class EditorState: ObservableObject, SuperLog {
     func removeLastOccurrenceSelection() -> [NSRange]? {
         guard let result = multiCursorWorkflowController.removeLastOccurrenceResult(
             currentState: multiCursorState,
-            existingSession: multiCursorSearchSession,
-            using: multiCursorController
+            existingSession: multiCursorSearchSession
         ) else { return nil }
 
         applyMultiCursorWorkflowResult(result)

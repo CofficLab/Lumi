@@ -1216,4 +1216,124 @@ struct EditorKernelCoreTests {
         )
         #expect(collapsed?.history == [.init(location: 0, length: 3)])
     }
+
+    @Test
+    @MainActor
+    func multiCursorWorkflowControllerRemainsStable() {
+        let controller = EditorMultiCursorWorkflowController()
+        let text = "cat concatenate cat" as NSString
+
+        let next = controller.addNextOccurrenceResult(
+            from: NSRange(location: 0, length: 0),
+            currentState: .init(),
+            existingSession: nil,
+            text: text
+        )
+
+        #expect(next?.state.all == [
+            .init(location: 0, length: 3),
+            .init(location: 16, length: 3),
+        ])
+        #expect(next?.session?.history == [
+            .init(location: 0, length: 3),
+            .init(location: 16, length: 3),
+        ])
+        #expect(next?.logAction == "addNextOccurrence.added")
+
+        let all = controller.addAllOccurrencesResult(
+            from: NSRange(location: 0, length: 0),
+            currentState: .init(),
+            text: text
+        )
+        #expect(all?.state.all == [
+            .init(location: 0, length: 3),
+            .init(location: 16, length: 3),
+        ])
+
+        let removed = controller.removeLastOccurrenceResult(
+            currentState: all!.state,
+            existingSession: all!.session
+        )
+        #expect(removed?.state.all == [.init(location: 0, length: 3)])
+    }
+
+    @Test
+    @MainActor
+    func multiCursorControllerBuildsTransactionsAndSessions() {
+        let controller = EditorMultiCursorController()
+        let text = "cat dog" as NSString
+        let state = MultiCursorState(
+            primary: .init(location: 0, length: 3),
+            secondary: [.init(location: 4, length: 3)]
+        )
+
+        #expect(controller.nsRanges(from: state) == [
+            NSRange(location: 0, length: 3),
+            NSRange(location: 4, length: 3),
+        ])
+
+        let replacement = controller.replacementResult(
+            text: text as String,
+            selections: state.all,
+            replacement: "x"
+        )
+        #expect(replacement.result.text == "x x")
+        #expect(replacement.transaction.replacements.count == 2)
+
+        let context = controller.allOccurrencesContext(
+            from: NSRange(location: 0, length: 0),
+            in: text
+        )
+        #expect(context?.query == "cat")
+
+        let session = controller.startedSession(for: context!)
+        let collapsed = controller.collapsedSession(
+            from: controller.appending(.init(location: 0, length: 3), to: session),
+            singleSelection: .init(location: 0, length: 3),
+            in: text
+        )
+        #expect(collapsed?.history == [.init(location: 0, length: 3)])
+    }
+
+    @Test
+    @MainActor
+    func shortcutCatalogPolicyFiltersAndDetectsConflicts() {
+        let commands: [EditorShortcutDefinition] = [
+            .init(
+                id: "builtin.find",
+                title: "Find",
+                category: .find,
+                defaultShortcut: .init(key: "f", modifiers: [.command])
+            ),
+            .init(
+                id: "builtin.rename",
+                title: "Rename Symbol",
+                category: .navigation,
+                defaultShortcut: .init(key: "r", modifiers: [.control, .command])
+            ),
+        ]
+        let customBindings = [
+            "builtin.find": EditorKeybindingEntry(
+                commandID: "builtin.find",
+                key: "g",
+                modifiers: [.command, .shift]
+            )
+        ]
+
+        let filtered = EditorShortcutCatalogPolicy.filteredCommands(
+            commands,
+            query: "⌘⇧G",
+            category: nil,
+            customBindings: customBindings
+        )
+        #expect(filtered.map(\.id) == ["builtin.find"])
+
+        let conflicts = EditorShortcutCatalogPolicy.conflicts(
+            in: commands,
+            for: "builtin.rename",
+            candidate: .init(key: "g", modifiers: [.shift, .command]),
+            customBindings: customBindings
+        )
+        #expect(conflicts.map(\.id) == ["builtin.find"])
+    }
 }

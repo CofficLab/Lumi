@@ -12,48 +12,6 @@ import SwiftUI
 // 2. 与 `CommandRegistry` 配合 — 注册命令时查询是否有用户覆盖
 // 3. 命令面板/toolbar — 显示生效的快捷键（默认 or 用户覆盖）
 
-/// 自定义快捷键条目
-struct EditorKeybindingEntry: Equatable, Codable, Sendable {
-    /// 命令 ID（如 "builtin.format-document"）
-    let commandID: String
-    /// 快捷键
-    let key: String
-    /// 修饰键
-    let modifiers: [EditorCommandShortcut.Modifier]
-
-    /// 转换为 EditorCommandShortcut
-    var shortcut: EditorCommandShortcut {
-        EditorCommandShortcut(key: key, modifiers: modifiers)
-    }
-
-    /// 序列化为字典（用于 plist 存储）
-    var dictionaryValue: [String: Any] {
-        [
-            "commandID": commandID,
-            "key": key,
-            "modifiers": modifiers.map(\.rawValue),
-        ]
-    }
-
-    /// 从字典反序列化
-    init?(dictionary: [String: Any]) {
-        guard let commandID = dictionary["commandID"] as? String,
-              let key = dictionary["key"] as? String,
-              let rawModifiers = dictionary["modifiers"] as? [String] else {
-            return nil
-        }
-        self.commandID = commandID
-        self.key = key
-        self.modifiers = rawModifiers.compactMap { EditorCommandShortcut.Modifier(rawValue: $0) }
-    }
-
-    init(commandID: String, key: String, modifiers: [EditorCommandShortcut.Modifier]) {
-        self.commandID = commandID
-        self.key = key
-        self.modifiers = modifiers
-    }
-}
-
 /// 快捷键可配置化存储
 ///
 /// 负责：

@@ -1,35 +1,49 @@
 import Foundation
 
-struct EditorMultiCursorWorkflowResult {
-    let state: MultiCursorState
-    let session: EditorMultiCursorSearchSession?
-    let warningMessage: String?
-    let logAction: String?
-    let logNote: String?
+public struct EditorMultiCursorWorkflowResult: Equatable, Sendable {
+    public let state: MultiCursorState
+    public let session: EditorMultiCursorSearchSession?
+    public let warningMessage: String?
+    public let logAction: String?
+    public let logNote: String?
+
+    public init(
+        state: MultiCursorState,
+        session: EditorMultiCursorSearchSession?,
+        warningMessage: String?,
+        logAction: String?,
+        logNote: String?
+    ) {
+        self.state = state
+        self.session = session
+        self.warningMessage = warningMessage
+        self.logAction = logAction
+        self.logNote = logNote
+    }
 }
 
 @MainActor
-final class EditorMultiCursorWorkflowController {
-    func clearedState(
-        currentState: MultiCursorState,
-        using controller: EditorMultiCursorController
+public final class EditorMultiCursorWorkflowController {
+    public init() {}
+
+    public func clearedState(
+        currentState: MultiCursorState
     ) -> EditorMultiCursorWorkflowResult {
         EditorMultiCursorWorkflowResult(
-            state: controller.clearSecondary(from: currentState),
-            session: controller.clearSession(),
+            state: EditorMultiCursorStateController.clearSecondary(from: currentState),
+            session: nil,
             warningMessage: nil,
             logAction: "clearMultiCursors",
             logNote: nil
         )
     }
 
-    func primarySelectionState(
+    public func primarySelectionState(
         _ selection: MultiCursorSelection,
-        currentState: MultiCursorState,
-        using controller: EditorMultiCursorController
+        currentState: MultiCursorState
     ) -> EditorMultiCursorWorkflowResult {
         EditorMultiCursorWorkflowResult(
-            state: controller.replacingPrimary(in: currentState, with: selection),
+            state: EditorMultiCursorStateController.replacingPrimary(in: currentState, with: selection),
             session: nil,
             warningMessage: nil,
             logAction: "setPrimarySelection",
@@ -37,18 +51,17 @@ final class EditorMultiCursorWorkflowController {
         )
     }
 
-    func setSelectionsResult(
+    public func setSelectionsResult(
         _ selections: [MultiCursorSelection],
         existingSession: EditorMultiCursorSearchSession?,
-        text: NSString?,
-        using controller: EditorMultiCursorController
+        text: NSString?
     ) -> EditorMultiCursorWorkflowResult? {
         guard let first = selections.first else { return nil }
-        let state = controller.state(from: selections)
+        let state = EditorMultiCursorStateController.state(from: selections)
 
         if selections.count == 1,
            let text,
-           let session = controller.collapsedSession(
+           let session = EditorMultiCursorSearchController.collapsedSession(
                 from: existingSession,
                 singleSelection: first,
                 in: text
@@ -64,22 +77,22 @@ final class EditorMultiCursorWorkflowController {
 
         return EditorMultiCursorWorkflowResult(
             state: state,
-            session: controller.clearSession(),
+            session: nil,
             warningMessage: nil,
             logAction: "setSelections",
             logNote: "incomingCount=\(selections.count)"
         )
     }
 
-    func addNextOccurrenceResult(
+    public func addNextOccurrenceResult(
         from range: NSRange,
         currentState: MultiCursorState,
         existingSession: EditorMultiCursorSearchSession?,
-        text: NSString,
-        using controller: EditorMultiCursorController
+        text: NSString
     ) -> EditorMultiCursorWorkflowResult? {
-        guard let resolved = controller.resolvedContext(
-            from: range,
+        let normalized = EditorMultiCursorMatcher.normalizedRange(range, in: text)
+        guard let resolved = EditorMultiCursorSearchController.resolvedContext(
+            from: normalized,
             in: text,
             existingSession: existingSession
         ) else {
@@ -99,12 +112,12 @@ final class EditorMultiCursorWorkflowController {
         let logNote = "query=\(context.query)"
 
         if resolved.shouldStartSession {
-            session = controller.startedSession(for: context)
-            state = controller.state(from: [context.baseSelection])
+            session = EditorMultiCursorSearchController.session(for: context)
+            state = EditorMultiCursorStateController.state(from: [context.baseSelection])
             logAction = "addNextOccurrence.sessionStarted"
         }
 
-        let allMatches = controller.ranges(of: context.query, in: text)
+        let allMatches = EditorMultiCursorMatcher.ranges(of: context.query, in: text)
         guard !allMatches.isEmpty else {
             return EditorMultiCursorWorkflowResult(
                 state: state,
@@ -125,18 +138,18 @@ final class EditorMultiCursorWorkflowController {
             )
         }
 
-        if let candidate = controller.nextSelection(
+        if let candidate = EditorMultiCursorSearchController.nextSelection(
             in: allMatches,
             currentState: state,
             session: session
         ) {
-            let updatedState = controller.addingSelection(candidate, to: state)
-            let updatedSession = controller.appending(candidate, to: session)
+            let updatedState = EditorMultiCursorStateController.addingSelection(candidate, to: state)
+            let updatedSession = EditorMultiCursorSearchController.appending(candidate, to: session)
             return EditorMultiCursorWorkflowResult(
                 state: updatedState,
                 session: updatedSession,
                 warningMessage: nil,
-                logAction: resolved.shouldStartSession ? "addNextOccurrence.added" : "addNextOccurrence.added",
+                logAction: "addNextOccurrence.added",
                 logNote: logNote
             )
         }
@@ -150,13 +163,13 @@ final class EditorMultiCursorWorkflowController {
         )
     }
 
-    func addAllOccurrencesResult(
+    public func addAllOccurrencesResult(
         from range: NSRange,
         currentState: MultiCursorState,
-        text: NSString,
-        using controller: EditorMultiCursorController
+        text: NSString
     ) -> EditorMultiCursorWorkflowResult? {
-        guard let context = controller.allOccurrencesContext(from: range, in: text) else {
+        let normalized = EditorMultiCursorMatcher.normalizedRange(range, in: text)
+        guard let context = EditorMultiCursorMatcher.searchContext(from: normalized, in: text) else {
             return EditorMultiCursorWorkflowResult(
                 state: currentState,
                 session: nil,
@@ -166,33 +179,32 @@ final class EditorMultiCursorWorkflowController {
             )
         }
 
-        let matches = controller.ranges(of: context.query, in: text)
+        let matches = EditorMultiCursorMatcher.ranges(of: context.query, in: text)
         guard !matches.isEmpty else { return nil }
 
         return EditorMultiCursorWorkflowResult(
-            state: controller.state(from: matches),
-            session: controller.allOccurrencesSession(for: context, matches: matches),
+            state: EditorMultiCursorStateController.state(from: matches),
+            session: EditorMultiCursorSearchController.session(for: context, matches: matches),
             warningMessage: nil,
             logAction: "addAllOccurrences",
             logNote: "query=\(context.query)"
         )
     }
 
-    func removeLastOccurrenceResult(
+    public func removeLastOccurrenceResult(
         currentState: MultiCursorState,
-        existingSession: EditorMultiCursorSearchSession?,
-        using controller: EditorMultiCursorController
+        existingSession: EditorMultiCursorSearchSession?
     ) -> EditorMultiCursorWorkflowResult? {
         guard currentState.isEnabled else { return nil }
         guard let session = existingSession else {
-            return clearedState(currentState: currentState, using: controller)
+            return clearedState(currentState: currentState)
         }
-        guard let updatedSession = controller.removingLast(from: session) else {
-            return clearedState(currentState: currentState, using: controller)
+        guard let updatedSession = EditorMultiCursorSearchController.removingLast(from: session) else {
+            return clearedState(currentState: currentState)
         }
 
         return EditorMultiCursorWorkflowResult(
-            state: controller.state(from: updatedSession.history),
+            state: EditorMultiCursorStateController.state(from: updatedSession.history),
             session: updatedSession,
             warningMessage: nil,
             logAction: "removeLastOccurrenceSelection",
