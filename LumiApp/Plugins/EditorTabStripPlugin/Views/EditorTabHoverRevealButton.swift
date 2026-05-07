@@ -57,24 +57,12 @@ struct HoverRevealButton: View {
             RoundedRectangle(cornerRadius: 7)
                 .stroke(isActive ? theme.workspaceTextColor().opacity(0.08) : Color.clear, lineWidth: 1)
         )
-        .onTapGesture {
-            activateSession(tab)
-        }
         .onHover { hovered in
             isHovered = hovered
         }
     }
 
     // MARK: - 操作
-
-    private func activateSession(_ tab: EditorTab) {
-        let sessionStore = editorVM.service.sessionStore
-
-        _ = sessionStore.activate(sessionID: tab.sessionID)
-        if let fileURL = tab.fileURL {
-            projectVM.selectFile(at: fileURL)
-        }
-    }
 
     private func closeSession(_ tab: EditorTab) {
         let sessionStore = editorVM.service.sessionStore

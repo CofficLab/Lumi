@@ -20,19 +20,17 @@ struct EditorTabItemView: View {
     var state: EditorState { service.state }
 
     var body: some View {
-        HoverRevealButton(
-            tab: tab,
-            isActive: isActive,
-            theme: theme
-        )
+        Button(action: {
+            activateSession(tab)
+        }) {
+            HoverRevealButton(
+                tab: tab,
+                isActive: isActive,
+                theme: theme
+            )
+        }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .onDrag {
-            onStartDrag(tab)
-            return NSItemProvider(object: tab.sessionID.uuidString as NSString)
-        } preview: {
-            tabDragPreview
-        }
         .onDrop(of: [.plainText], isTargeted: nil) { _ in
             onDropBefore(tab)
             return true
@@ -48,6 +46,21 @@ struct EditorTabItemView: View {
             Button(String(localized: "Close Others", table: "LumiEditor")) {
                 closeOtherSessions()
             }
+        }
+        .onDrag {
+            onStartDrag(tab)
+            return NSItemProvider(object: tab.sessionID.uuidString as NSString)
+        } preview: {
+            tabDragPreview
+        }
+    }
+
+    // MARK: - 操作
+
+    private func activateSession(_ tab: EditorTab) {
+        _ = sessionStore.activate(sessionID: tab.sessionID)
+        if let fileURL = tab.fileURL {
+            projectVM.selectFile(at: fileURL)
         }
     }
 
