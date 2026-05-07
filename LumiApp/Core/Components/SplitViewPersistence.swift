@@ -123,6 +123,7 @@ struct SplitViewWidthPersistence: NSViewRepresentable {
 
 final class SplitViewWidthPersistenceView: NSView {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "layout.split-persistence")
+    private static let maxApplyRetryCount = 20
 
     var storageKey: String
     var columnIndex: Int
@@ -130,6 +131,8 @@ final class SplitViewWidthPersistenceView: NSView {
     private var resizeObserver: NSObjectProtocol?
     private var didApplySavedValue = false
     private var pendingRetryWorkItem: DispatchWorkItem?
+    private var pendingApplyRetryWorkItem: DispatchWorkItem?
+    private var applyRetryCount = 0
 
     /// 所有栏的最小保护宽度
     static let minimumColumnWidth: CGFloat = 48
@@ -161,8 +164,11 @@ final class SplitViewWidthPersistenceView: NSView {
 
         pendingRetryWorkItem?.cancel()
         pendingRetryWorkItem = nil
+        pendingApplyRetryWorkItem?.cancel()
+        pendingApplyRetryWorkItem = nil
         observedSplitView = splitView
         didApplySavedValue = false
+        applyRetryCount = 0
 
         if let resizeObserver {
             NotificationCenter.default.removeObserver(resizeObserver)
@@ -191,18 +197,23 @@ final class SplitViewWidthPersistenceView: NSView {
         // 从 LayoutVM 读取比例（由 LayoutPlugin 在启动时从磁盘恢复）
         let savedRatio = RootViewContainer.shared.layoutVM.layoutRatios[storageKey]
         guard let savedRatio, savedRatio > 0.0, savedRatio < 1.0 else {
-            didApplySavedValue = true
+            scheduleApplyRetry()
             return
         }
 
-        // 对应的 divider 索引：子视图 i 与子视图 i+1 之间的 divider 编号为 i
-        let dividerIndex = idx
+        pendingApplyRetryWorkItem?.cancel()
+        pendingApplyRetryWorkItem = nil
+
+        let isLastColumn = idx == splitView.arrangedSubviews.count - 1
 
         DispatchQueue.main.async { [weak self, weak splitView] in
             guard let self, let splitView else { return }
             guard splitView.arrangedSubviews.count > self.columnIndex else { return }
             let total = splitView.bounds.width
-            guard total > 0 else { return }
+            guard total > 0 else {
+                self.scheduleApplyRetry()
+                return
+            }
 
             let dividersCount = splitView.arrangedSubviews.count - 1
             let usableWidth = max(1, total - CGFloat(dividersCount) * splitView.dividerThickness)
@@ -210,14 +221,33 @@ final class SplitViewWidthPersistenceView: NSView {
             // 计算此栏之前所有栏占用的宽度（从 ratio 推算）
             let targetWidth = max(Self.minimumColumnWidth, min(usableWidth - Self.minimumColumnWidth, usableWidth * savedRatio))
 
-            // 需要算出 divider 的绝对位置：前面所有栏宽度 + divider 厚度
-            var position: CGFloat = 0
-            for i in 0..<dividerIndex {
-                // 前面尚未恢复的栏使用当前实际宽度
-                position += splitView.arrangedSubviews[i].frame.width
-                position += splitView.dividerThickness
+            let dividerIndex: Int
+            let position: CGFloat
+
+            if isLastColumn {
+                // 最后一栏没有“右侧 divider”，需要移动它左边那个 divider。
+                dividerIndex = max(0, self.columnIndex - 1)
+                position = max(
+                    Self.minimumColumnWidth,
+                    total - targetWidth - splitView.dividerThickness
+                )
+            } else {
+                // 非最后一栏：移动该栏右侧的 divider。
+                dividerIndex = self.columnIndex
+
+                var nextPosition: CGFloat = 0
+                for i in 0..<dividerIndex {
+                    // 前面尚未恢复的栏使用当前实际宽度
+                    nextPosition += splitView.arrangedSubviews[i].frame.width
+                    nextPosition += splitView.dividerThickness
+                }
+                nextPosition += targetWidth
+                position = nextPosition
             }
-            position += targetWidth
+
+            Self.logger.debug(
+                "applySavedRatioIfNeeded: key=\(self.storageKey, privacy: .public), ratio=\(savedRatio, privacy: .public), dividerIndex=\(dividerIndex, privacy: .public), position=\(position, privacy: .public)"
+            )
 
             splitView.setPosition(position, ofDividerAt: dividerIndex)
             self.didApplySavedValue = true
@@ -280,5 +310,22 @@ final class SplitViewWidthPersistenceView: NSView {
         }
         pendingRetryWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: workItem)
+    }
+
+    private func scheduleApplyRetry() {
+        guard !didApplySavedValue else { return }
+        guard applyRetryCount < Self.maxApplyRetryCount else {
+            Self.logger.debug("applySavedRatioIfNeeded: giving up retry for \(self.storageKey, privacy: .public)")
+            return
+        }
+
+        pendingApplyRetryWorkItem?.cancel()
+        applyRetryCount += 1
+
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.applySavedRatioIfNeeded()
+        }
+        pendingApplyRetryWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
     }
 }
