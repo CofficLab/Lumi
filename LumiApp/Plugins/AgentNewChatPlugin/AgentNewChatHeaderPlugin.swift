@@ -1,7 +1,9 @@
 import MagicKit
 import SwiftUI
 
-/// 新建对话头部插件：右侧栏 header 中的新建对话按钮
+/// 新建对话头部插件
+///
+/// 在工具栏右侧提供新建对话按钮（NewChatButton）。
 actor AgentNewChatHeaderPlugin: SuperPlugin {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose: Bool = false
@@ -22,11 +24,11 @@ actor AgentNewChatHeaderPlugin: SuperPlugin {
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
 
-    @MainActor
-    func addRightHeaderLeadingView() -> AnyView? { nil }
+    // MARK: - Toolbar Views
 
+    /// 工具栏右侧：新建对话按钮
     @MainActor
-    func addRightHeaderTrailingItems() -> [AnyView] {
-        [AnyView(NewChatButton())]
+    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(NewChatButton())
     }
 }

@@ -20,9 +20,11 @@ struct DeviceInfoStatusBarContentView: View {
     
     private var helpText: String {
         let coreCount = viewModel.perCoreUsage.count
-        return coreCount > 0
-            ? String(format: "CPU %.0f%% · %d Cores", viewModel.cpuUsage, coreCount)
-            : String(format: "CPU %.0f%%", viewModel.cpuUsage)
+        if coreCount > 0 {
+            return String(format: String(localized: "CPU %.0f%% · %d Cores", table: "DeviceInfo"), viewModel.cpuUsage, coreCount)
+        } else {
+            return String(format: String(localized: "CPU %.0f%%", table: "DeviceInfo"), viewModel.cpuUsage)
+        }
     }
 }
 

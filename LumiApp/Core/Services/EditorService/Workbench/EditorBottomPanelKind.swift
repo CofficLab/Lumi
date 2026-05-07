@@ -1,0 +1,3 @@
+import EditorKernelCore
+
+typealias EditorBottomPanelKind = EditorKernelCore.EditorBottomPanelKind

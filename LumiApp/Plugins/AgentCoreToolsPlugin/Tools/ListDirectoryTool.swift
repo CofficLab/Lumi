@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 import SwiftUI
 
-struct ListDirectoryTool: AgentTool, SuperLog {
+struct ListDirectoryTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = false
     let name = "ls"

@@ -19,17 +19,17 @@ actor AgentCoreToolsPlugin: SuperPlugin {
     static let shared = AgentCoreToolsPlugin()
 
     @MainActor
-    func agentToolFactories() -> [AnyAgentToolFactory] {
-        [AnyAgentToolFactory(CoreToolsFactory())]
+    func agentToolFactories() -> [AnySuperAgentToolFactory] {
+        [AnySuperAgentToolFactory(CoreToolsFactory())]
     }
 }
 
 @MainActor
-private struct CoreToolsFactory: AgentToolFactory {
+private struct CoreToolsFactory: SuperAgentToolFactory {
     let id: String = "core.tools.factory"
     let order: Int = 0
 
-    func makeTools(env: AgentToolEnvironment) -> [AgentTool] {
+    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
         [
             // 文件系统工具
             ListDirectoryTool(),

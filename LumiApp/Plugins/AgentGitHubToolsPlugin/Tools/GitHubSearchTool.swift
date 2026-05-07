@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// GitHub 搜索工具
-struct GitHubSearchTool: AgentTool, SuperLog {
+struct GitHubSearchTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
     nonisolated static let verbose: Bool = false
     let name = "github_search"

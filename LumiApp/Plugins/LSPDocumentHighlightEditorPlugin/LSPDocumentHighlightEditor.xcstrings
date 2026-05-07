@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Highlights all references of the symbol at cursor position.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Highlights all references of the symbol at cursor position." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "高亮显示光标位置符号的所有引用。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "高亮顯示光標位置符號的所有引用。" } }
+      }
+    },
+    "LSP Document Highlight": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Document Highlight" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 文档高亮" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 文件高亮" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

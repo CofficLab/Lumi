@@ -1,0 +1,34 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Provides selection-based Swift code actions.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provides selection-based Swift code actions." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "提供基于选区的 Swift 代码操作。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "提供基於選區的 Swift 代碼操作。" } }
+      }
+    },
+    "Swift Selection Code Actions": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Swift Selection Code Actions" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Swift 选区代码操作" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "Swift 選區代碼操作" } }
+      }
+    },
+    "Wrap Selection in #if DEBUG": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Wrap Selection in #if DEBUG" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用 #if DEBUG 包裹选区" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "使用 #if DEBUG 包裹選區" } }
+      }
+    },
+    "Wrap Selection with print(...)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Wrap Selection with print(...)" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用 print(...) 包裹选区" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "使用 print(...) 包裹選區" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

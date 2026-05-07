@@ -1,0 +1,26 @@
+import SwiftUI
+
+/// 不支持文件类型提示视图。
+///
+/// 当当前文件无法由源码编辑器直接渲染时显示，用于告知用户该文件不在当前
+/// 编辑能力覆盖范围内。
+struct EditorUnsupportedFileView: View {
+    let fileName: String
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "doc.questionmark")
+                .font(.system(size: 36, weight: .thin))
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
+
+            Text(String(localized: "Unsupported File", table: "LumiEditor"))
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(AppUI.Color.semantic.textSecondary)
+
+            Text(fileName)
+                .font(.system(size: 12))
+                .foregroundColor(AppUI.Color.semantic.textTertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}

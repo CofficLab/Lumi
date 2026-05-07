@@ -4,7 +4,7 @@ import SwiftUI
 struct SettingView: View {
     /// 插件 VM
     @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var themeVM: ThemeVM
 
     /// 默认显示的标签
     var defaultTab: SettingTab = .about
@@ -165,7 +165,7 @@ struct SettingView: View {
         }
         .background {
             GeometryReader { proxy in
-                themeManager.currentVariant.theme.makeGlobalBackground(proxy: proxy)
+                themeVM.activeAppTheme.makeGlobalBackground(proxy: proxy)
             }
             .ignoresSafeArea()
         }
@@ -181,7 +181,6 @@ struct SettingView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

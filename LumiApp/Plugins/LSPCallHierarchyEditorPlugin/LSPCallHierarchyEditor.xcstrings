@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LSP Call Hierarchy": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Call Hierarchy" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 调用层级" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 調用層級" } }
+      }
+    },
+    "Shows incoming and outgoing call hierarchy for symbols.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Shows incoming and outgoing call hierarchy for symbols." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "显示符号的传入和传出调用层级。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "顯示符號的傳入和傳出調用層級。" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

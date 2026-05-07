@@ -1,13 +1,13 @@
 import SwiftUI
 import MagicKit
+import MarkdownKit
 
 /// Markdown 渲染视图（用于聊天消息）
 /// 复用 MarkdownKit 的统一渲染逻辑，适配消息列表的滚动行为
 struct MarkdownContent: View {
     let content: String
 
-    @Environment(\.preferOuterScroll) private var preferOuterScroll
-
+    @EnvironmentObject private var themeVM: ThemeVM
     var body: some View {
         MarkdownBlockRenderer(
             markdown: content,
@@ -17,7 +17,8 @@ struct MarkdownContent: View {
 
     /// 聊天消息主题
     private var messageTheme: MarkdownTheme {
-        MarkdownTheme(
+        let theme = themeVM.activeAppTheme
+        return MarkdownTheme(
             headingFont: { level in
                 switch level {
                 case 1: return .system(size: 24, weight: .bold)
@@ -33,7 +34,9 @@ struct MarkdownContent: View {
             codeBlockBackground: AppUI.Color.semantic.textSecondary.opacity(0.06),
             quoteBorderColor: AppUI.Color.semantic.textSecondary.opacity(0.4),
             tableHeaderBackground: AppUI.Color.semantic.textSecondary.opacity(0.1),
-            showLanguageLabel: true
+            showLanguageLabel: true,
+            textColor: theme.workspaceTextColor(),
+            secondaryTextColor: theme.workspaceSecondaryTextColor()
         )
     }
 }

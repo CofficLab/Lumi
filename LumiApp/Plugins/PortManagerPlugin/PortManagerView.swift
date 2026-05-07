@@ -88,6 +88,7 @@ struct PortManagerView: View {
         }, message: {
             Text(errorMessage ?? String(localized: "Unknown error"))
         })
+        .frame(maxWidth: .infinity)
     }
 
     func refresh() async {
@@ -195,8 +196,6 @@ struct PortRowView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(PortManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

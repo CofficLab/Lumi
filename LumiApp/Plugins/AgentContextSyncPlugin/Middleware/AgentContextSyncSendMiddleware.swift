@@ -18,7 +18,7 @@ import os
 /// - 每次发送消息时动态注入最新的项目信息
 /// - 如果未选择项目，静默跳过
 @MainActor
-final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
+final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "🔄"
     nonisolated static let verbose: Bool = false
     let id: String = "agent-context-sync"
@@ -32,7 +32,7 @@ final class AgentContextSyncSendMiddleware: SendMiddleware, SuperLog {
     ) async {
         let projectPath = ctx.projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let projectName = ctx.projectVM.currentProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let selectedFileURL = ctx.projectVM.selectedFileURL
+        let selectedFileURL = ctx.currentFileURL
         let codeSelectionRange = ctx.projectVM.codeSelectionRange
         let recentProjects = ctx.projectVM.getRecentProjects()
 

@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LSP Code Actions": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Code Actions" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 代码操作" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 代碼操作" } }
+      }
+    },
+    "Provides quick-fix code actions and lightbulb suggestions for diagnostics.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provides quick-fix code actions and lightbulb suggestions for diagnostics." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "提供快速修复代码操作和诊断灯泡建议。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "提供快速修復代碼操作和診斷燈泡建議。" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

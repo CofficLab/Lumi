@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// Returns an overview of a project for the model: path, type, structure (2 levels), Git info, manifests, README preview, key files.
-struct ProjectOverviewTool: AgentTool, SuperLog {
+struct ProjectOverviewTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = false
     let name = "project_overview"

@@ -33,7 +33,7 @@ struct SystemMonitorView: View {
             
             // Disk Card
             MonitorCard(title: "Disk I/O", 
-                        value: "R: \(viewModel.metrics.disk.readSpeedString) W: \(viewModel.metrics.disk.writeSpeedString)",
+                        value: String(format: String(localized: "R: %@ W: %@", table: "DeviceInfo"), viewModel.metrics.disk.readSpeedString, viewModel.metrics.disk.writeSpeedString),
                         color: AppUI.Color.semantic.warning) {
                 ZStack {
                     WaveformView(data: viewModel.metrics.disk.readHistory, color: AppUI.Color.semantic.warning, maxVal: 1024*1024*50)
@@ -86,7 +86,6 @@ struct MonitorCard<Content: View>: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

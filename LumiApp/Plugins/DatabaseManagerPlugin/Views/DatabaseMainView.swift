@@ -291,6 +291,7 @@ struct AddConnectionView: View {
                     )
                     Task {
                         do {
+                            await DatabaseDriverBootstrap.registerBuiltinsIfNeeded()
                             try await DatabaseManager.shared.probe(config: config)
                             testMessage = "连接成功"
                             testSuccess = true
@@ -353,7 +354,6 @@ struct AddConnectionView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// GitHub 重新打开 Issue 工具
-struct GitHubReopenIssueTool: AgentTool, SuperLog {
+struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔓"
     nonisolated static let verbose: Bool = false
     let name = "github_reopen_issue"

@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import MagicKit
 import SwiftData
+import os
 
 /// RootView 容器：管理所有服务和 ViewModel 的单例实例。
 ///
@@ -31,10 +32,9 @@ final class RootViewContainer: ObservableObject {
 
     // MARK: - ViewModel
 
-    let appProvider: GlobalVM
     let pluginVM: PluginVM
     let messageRendererVM: MessageRendererVM
-    let mystiqueThemeManager: ThemeManager
+    let themeVM: ThemeVM
     let projectVM: ProjectVM
     let layoutVM: LayoutVM
     let chatHistoryVM: ChatHistoryVM
@@ -51,10 +51,13 @@ final class RootViewContainer: ObservableObject {
     let chatTimelineViewModel: ChatTimelineViewModel
     let conversationSendStatusVM: ConversationStatusVM
     let projectContextRequestVM: ProjectContextRequestVM
-
     let gitVM: GitVM
     let agentSessionConfig: LLMVM
     let captureThinkingContent: Bool
+
+    // MARK: - Editor
+
+    let editorVM: EditorVM
 
     // MARK: - 初始化
 
@@ -69,10 +72,18 @@ final class RootViewContainer: ObservableObject {
         // 初始化上下文服务
         self.contextService = ContextService()
 
-        // 初始化 LLM 服务
-        self.llmService = LLMService()
+        // 初始化插件 VM
+        self.pluginVM = PluginVM.shared
 
-        // 初始化提示词服务（依赖 ContextService）
+        // 初始化供应商注册表（从插件中收集 LLM Provider）
+        let providerRegistry = LLMProviderRegistry()
+        pluginVM.registerLLMProviders(to: providerRegistry)
+        let registeredProviderIDs = providerRegistry.providerTypes.map { $0.id }
+
+        // 初始化 LLM 服务
+        self.llmService = LLMService(registry: providerRegistry)
+
+        // 初始化提示词服务
         self.promptService = PromptService(contextService: contextService)
 
         // 初始化 Slash 命令服务
@@ -86,17 +97,15 @@ final class RootViewContainer: ObservableObject {
             toolService: toolService
         )
 
-        // 复用 LLMService 中的供应商注册表（已通过插件完成注册）
-        self.providerRegistry = llmService.registry
+        // 供应商注册表
+        self.providerRegistry = providerRegistry
 
         // ========================================
         // 基础 ViewModel
         // ========================================
 
-        self.appProvider = GlobalVM()
-        self.pluginVM = PluginVM.shared
         self.messageRendererVM = MessageRendererVM.shared
-        self.mystiqueThemeManager = appProvider.themeManager
+        self.themeVM = ThemeVM()
         self.projectVM = Lumi.ProjectVM(
             contextService: contextService,
             llmService: llmService
@@ -182,6 +191,30 @@ final class RootViewContainer: ObservableObject {
         )
 
         self.conversationSendStatusVM = ConversationStatusVM()
+
+        // ========================================
+        // 编辑器
+        // ========================================
+
+        // 创建编辑器扩展注册中心
+        let editorExtensionRegistry = EditorExtensionRegistry()
+
+        // 让所有已启用的插件自行注册 editor 扩展
+        // （替代通过 providesEditorExtensions 过滤的方案，避免 Swift 6 Actor 动态派发问题）
+        let localPluginVM = pluginVM
+        let pluginsToRegister = localPluginVM.plugins.filter { localPluginVM.isPluginEnabled($0) }
+        for plugin in pluginsToRegister {
+            plugin.registerEditorExtensions(into: editorExtensionRegistry)
+        }
+        // 将实际注册了的插件记录到 registry
+        editorExtensionRegistry.recordInstalledPlugins(pluginsToRegister)
+        
+        os.Logger(subsystem: "com.coffic.lumi", category: "root").info("🔌 RootViewContainer: 插件自注册完成，installedPlugins=\(editorExtensionRegistry.installedPlugins.count)")
+
+        self.editorVM = EditorVM(service: EditorService(editorExtensionRegistry: editorExtensionRegistry))
+
+        // 将 registry 注入到 EditorSettingsState，使其 settingsSuggestions 和 reinstallEditorPlugins 可用
+        EditorSettingsState.shared.configureRegistry(editorExtensionRegistry)
 
         messageQueueVM.objectWillChange
             .sink { [weak self] _ in

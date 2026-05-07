@@ -19,6 +19,9 @@ class DatabaseViewModel: ObservableObject, SuperLog {
     private let manager = DatabaseManager.shared
 
     init() {
+        Task {
+            await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
+        }
         if Self.verbose {
             DatabaseManagerPlugin.logger.info("\(Self.t)初始化数据库视图模型")
         }
@@ -27,6 +30,7 @@ class DatabaseViewModel: ObservableObject, SuperLog {
     }
     
     func connect(config: DatabaseConfig) async {
+        await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
         if Self.verbose {
             DatabaseManagerPlugin.logger.info("\(self.t)连接数据库: \(config.name)")
         }

@@ -59,7 +59,6 @@ struct WaveformView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

@@ -1,0 +1,203 @@
+import CodeEditSourceEditor
+import Combine
+import FilePreviewKit
+import MagicKit
+import MarkdownKit
+import SwiftUI
+import UniformTypeIdentifiers
+
+/// 编辑器主视图
+///
+/// 纯布局职责：组合编辑器内容区域、Banner、Sheet 等 UI 组件。
+/// 所有业务逻辑委托给 `EditorPanelService`，生命周期和事件路由由 `EditorPanelCoordinator` 管理。
+struct EditorPanelView: View {
+    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var layoutVM: LayoutVM
+    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var editorVM: EditorVM
+
+    /// 便利访问
+    private var service: EditorService { editorVM.service }
+    private var state: EditorState { service.state }
+    private var sessionStore: EditorSessionStore { service.sessionStore }
+
+    /// 面板业务逻辑
+    @StateObject private var panelService = EditorPanelService()
+
+    /// 生命周期与事件路由协调器
+    @StateObject private var coordinator = EditorPanelCoordinator()
+
+    /// 标记编辑器协调器是否已完成初始化
+    /// 避免在 SourceEditorView.onAppear (initializeCoordinators) 执行前就触发文件加载导致崩溃
+    @State private var isEditorReady: Bool = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if hasActiveEditorSelection {
+                FileInfoBannerView(
+                    state: state,
+                    warningMessage: panelService.projectContextWarningMessage(state: state)
+                )
+                editorContent
+            } else {
+                EditorEmptyStateView()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+            coordinator.handleProjectPathChange(oldPath: oldPath, newPath: newPath)
+        }
+        .onChange(of: state.currentFileURL) {
+            coordinator.handleCurrentFileURLChange()
+        }
+        .onChange(of: state.cursorLine) {
+            coordinator.handleCursorLineChange()
+        }
+        .onChange(of: state.documentSymbolProvider.symbols.map(\.id)) {
+            coordinator.handleDocumentSymbolsChange()
+        }
+        .onAppear {
+            coordinator.configure(
+                panelService: panelService,
+                state: state,
+                sessionStore: sessionStore,
+                projectVM: projectVM
+            )
+            coordinator.handleAppear()
+        }
+        .onDisappear {
+            coordinator.handleDisappear()
+        }
+        .onReceive(coordinator.subscribeEditorCommands(isCommandPalettePresented: $panelService.isCommandPalettePresented)) { event in
+            coordinator.handleCommandEvent(event)
+        }
+        .background(editorSheetHosts)
+    }
+
+    // MARK: - Sheet Hosts
+
+    private var editorSheetHosts: some View {
+        let sheets = builtinSheets + state.editorExtensions.sheetSuggestions(state: state).filter {
+            $0.id != "builtin.workspace-symbol-sheet" &&
+                $0.id != "builtin.call-hierarchy-sheet"
+        }
+        return ZStack {
+            ForEach(sheets) { sheet in
+                EmptyView()
+                    .sheet(
+                        isPresented: Binding(
+                            get: { sheet.isPresented(state) },
+                            set: { presented in
+                                if !presented {
+                                    sheet.onDismiss(state)
+                                }
+                            }
+                        )
+                    ) {
+                        sheet.content(state)
+                    }
+            }
+        }
+    }
+
+    private var builtinSheets: [EditorSheetSuggestion] {
+        [
+            .init(
+                id: "builtin.command-palette-sheet",
+                order: 0,
+                isPresented: { _ in panelService.isCommandPalettePresented },
+                onDismiss: { _ in panelService.isCommandPalettePresented = false },
+                content: { state in
+                    AnyView(
+                        EditorCommandPaletteView(
+                            state: state,
+                            openEditors: panelService.openEditorItems(sessionStore),
+                            onOpenFile: { url, target, highlightLine in
+                                panelService.openFileFromQuickOpen(
+                                    url,
+                                    target: target,
+                                    highlightLine: highlightLine,
+                                    state: state,
+                                    sessionStore: self.sessionStore,
+                                    projectRootPath: self.projectVM.currentProject?.path,
+                                    currentProjectPath: self.projectVM.currentProjectPath
+                                )
+                            }
+                        ) {
+                            panelService.isCommandPalettePresented = false
+                        }
+                    )
+                }
+            ),
+        ]
+    }
+
+    // MARK: - Editor Content
+
+    /// 文件是否正在加载中（已选中但 loadFile 异步 Task 尚未完成）
+    private var isFileLoading: Bool {
+        hasActiveEditorSelection && !state.canPreview && !state.isBinaryFile && state.currentFileURL == nil
+    }
+
+    /// 编辑器是否存在激活会话（以 Editor 内核作为当前文件真源）
+    private var hasActiveEditorSelection: Bool {
+        sessionStore.activeSessionID != nil || state.currentFileURL != nil
+    }
+
+    /// 编辑器主体（session 驱动）
+    @ViewBuilder
+    private var editorContent: some View {
+        if state.isMarkdownFile {
+            if state.isMarkdownPreviewMode {
+                markdownPreviewContent
+            } else {
+                sourceEditorContent
+            }
+        } else if state.canPreview {
+            sourceEditorContent
+        } else if state.isBinaryFile, let fileURL = state.currentFileURL {
+            FilePreviewView(fileURL: fileURL).frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if isFileLoading {
+            EditorLoadingStateView()
+        } else if hasActiveEditorSelection {
+            EditorUnsupportedFileView(fileName: state.fileName)
+        }
+    }
+
+    @ViewBuilder
+    private var sourceEditorContent: some View {
+        SourceEditorView(state: state)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .clipped()
+    }
+
+    @ViewBuilder
+    private var markdownPreviewContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if let content = state.content?.string, !content.isEmpty {
+                    MarkdownBlockRenderer(markdown: content)
+                        .padding(20)
+                } else {
+                    Text(String(localized: "No content to preview", table: "LumiEditor"))
+                        .font(.system(size: 12))
+                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .padding(40)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+    }
+
+}
+
+// MARK: - Preview
+
+#Preview {
+    EditorPanelView()
+        .inRootView()
+}

@@ -128,7 +128,6 @@ class TaskService: ObservableObject {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

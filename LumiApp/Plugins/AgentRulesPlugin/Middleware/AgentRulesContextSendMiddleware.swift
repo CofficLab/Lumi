@@ -19,7 +19,7 @@ import os
 /// - 大模型可通过 `list_agent_rules` / `create_agent_rule` 工具按需读取完整内容
 /// - 如果规则目录不存在或为空，静默跳过，不阻塞发送流程
 @MainActor
-final class AgentRulesContextSendMiddleware: SendMiddleware, SuperLog {
+final class AgentRulesContextSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "📜"
     nonisolated static let verbose: Bool = false
     let id: String = "agent-rules-context"

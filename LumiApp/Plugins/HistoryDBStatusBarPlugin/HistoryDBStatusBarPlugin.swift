@@ -20,7 +20,7 @@ actor HistoryDBStatusBarPlugin: SuperPlugin {
     static let shared = HistoryDBStatusBarPlugin()
 
     @MainActor
-    func addStatusBarTrailingView() -> AnyView? {
+    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(HistoryDBStatusBarView())
     }
 }

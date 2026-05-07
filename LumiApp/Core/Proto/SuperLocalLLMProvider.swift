@@ -82,7 +82,7 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
     func streamChat(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String?,
         images: [ImageAttachment],
         onChunk: @Sendable (StreamChunk) async -> Void
@@ -122,7 +122,7 @@ protocol SuperLocalLLMProvider: SuperLLMProvider {
     func sendMessage(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String?,
         images: [ImageAttachment]
     ) async throws -> ChatMessage
@@ -141,7 +141,7 @@ extension SuperLocalLLMProvider {
     func sendMessage(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String?,
         images: [ImageAttachment]
     ) async throws -> ChatMessage {

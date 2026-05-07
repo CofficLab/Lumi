@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Adds context menu actions for multi-cursor editing (add next occurrence, select all, clear).": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Adds context menu actions for multi-cursor editing (add next occurrence, select all, clear)." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "添加多光标编辑的上下文菜单操作（添加下一个匹配项、全选、清除）。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "添加多光標編輯的上下文選單操作（添加下一個匹配項、全選、清除）。" } }
+      }
+    },
+    "Multi-Cursor Commands": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Multi-Cursor Commands" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "多光标命令" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "多光標命令" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

@@ -83,6 +83,31 @@ final class FileSearchService: ObservableObject, SuperLog {
         searchQuery = ""
     }
 
+    func quickOpenResults(
+        matching query: String,
+        projectPath: String,
+        limit: Int = 40
+    ) -> [FileResult] {
+        let normalizedProjectPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalizedProjectPath.isEmpty, !normalizedQuery.isEmpty else { return [] }
+
+        if currentProjectPath != normalizedProjectPath {
+            currentProjectPath = normalizedProjectPath
+            indexStore = FileIndexStore(projectPath: normalizedProjectPath)
+        }
+
+        if indexStore.files.isEmpty || indexStore.needsReindex() {
+            indexStore.update(FileSearchHelpers.scanProjectFiles(at: normalizedProjectPath))
+        }
+
+        return Array(
+            FileSearchHelpers
+                .searchInFiles(indexStore.files, query: normalizedQuery)
+                .prefix(limit)
+        )
+    }
+
     // MARK: - Private Methods
 
     /// 重建文件索引
@@ -292,7 +317,15 @@ enum FileSearchHelpers {
                 }
                 return a.0.name < b.0.name
             }
-            .map(\.0)
+            .map { file, score in
+                FileResult(
+                    name: file.name,
+                    path: file.path,
+                    relativePath: file.relativePath,
+                    isDirectory: file.isDirectory,
+                    score: score
+                )
+            }
 
         // 限制最多返回 100 条结果
         return Array(sorted.prefix(100))

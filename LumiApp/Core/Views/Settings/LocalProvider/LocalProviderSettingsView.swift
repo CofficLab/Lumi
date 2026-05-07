@@ -284,6 +284,5 @@ extension LocalProviderSettingsView {
 
 #Preview("Local Provider Settings - Full App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
 }

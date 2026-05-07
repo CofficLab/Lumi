@@ -166,7 +166,7 @@ protocol SuperLLMProvider: Sendable {
     func buildRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any]
 
@@ -205,7 +205,7 @@ protocol SuperLLMProvider: Sendable {
     func buildStreamingRequestBody(
         messages: [ChatMessage],
         model: String,
-        tools: [AgentTool]?,
+        tools: [SuperAgentTool]?,
         systemPrompt: String
     ) throws -> [String: Any]
 }

@@ -29,9 +29,8 @@ final class ProjectController: ObservableObject, SuperLog {
 
     // MARK: - Private
 
-    private func applyConversationProjectContext(path: String?, languagePreference: LanguagePreference) async {
+    private func applyConversationProjectContext(path: String?) async {
         let fullSystemPrompt = await container.promptService.buildSystemPrompt(
-            languagePreference: languagePreference,
             includeContext: true
         )
         upsertRootSystemMessage(fullSystemPrompt)
@@ -49,7 +48,7 @@ final class ProjectController: ObservableObject, SuperLog {
         container.projectVM.clearProject()
 
         let languagePreference = container.projectVM.languagePreference
-        await applyProjectContext(path: nil, languagePreference: languagePreference)
+        await applyProjectContext(path: nil)
 
         let clearMessage: String
         switch languagePreference {
@@ -63,9 +62,8 @@ final class ProjectController: ObservableObject, SuperLog {
         container.messagePendingVM.appendMessage(ChatMessage(role: .assistant, conversationId: conversationId, content: clearMessage))
     }
 
-    private func applyProjectContext(path: String?, languagePreference: LanguagePreference) async {
+    private func applyProjectContext(path: String?) async {
         let fullSystemPrompt = await container.promptService.buildSystemPrompt(
-            languagePreference: languagePreference,
             includeContext: true
         )
         upsertRootSystemMessage(fullSystemPrompt)

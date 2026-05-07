@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.1",
+  "strings": {
+    "Delay Message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delay Message"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延时消息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延時消息"
+          }
+        }
+      }
+    },
+    "Schedule delayed messages to resume conversations automatically.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schedule delayed messages to resume conversations automatically."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延时发送消息以自动恢复对话。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延時發送消息以自動恢復對話。"
+          }
+        }
+      }
+    }
+  }
+}

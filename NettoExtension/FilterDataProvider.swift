@@ -5,7 +5,7 @@ class FilterDataProvider: NEFilterDataProvider {
     static let emoji: String = "🎈"
 
     private var ipc = IPCConnection.shared
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.cofficlab.lumi.extension", category: "FilterDataProvider")
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.coffic.lumi.extension", category: "FilterDataProvider")
 
     /**
      * Start Filter

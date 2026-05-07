@@ -27,26 +27,21 @@ actor DockerManagerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                DockerImagesView()
-            },
-        ]
+    
+
+    @MainActor
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == Self.iconName else { return nil }
+        return AnyView(DockerImagesView())
     }
+
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(DockerManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

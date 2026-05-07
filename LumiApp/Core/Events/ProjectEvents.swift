@@ -7,10 +7,6 @@ extension Notification.Name {
     /// object: ProjectConfig (项目配置)
     static let projectConfigApplied = Notification.Name("ProjectConfigApplied")
 
-    /// 文件选择变化的通知
-    /// object: nil
-    static let fileSelectionChanged = Notification.Name("FileSelectionChanged")
-
     /// 同步选中文件到 ProjectVM 的通知
     /// userInfo: ["path": String]
     static let syncSelectedFile = Notification.Name("SyncSelectedFile")
@@ -25,14 +21,6 @@ extension NotificationCenter {
         NotificationCenter.default.post(
             name: .projectConfigApplied,
             object: config
-        )
-    }
-
-    /// 发送文件选择变化的通知
-    static func postFileSelectionChanged() {
-        NotificationCenter.default.post(
-            name: .fileSelectionChanged,
-            object: nil
         )
     }
 
@@ -58,15 +46,6 @@ extension View {
             if let config = notification.object as? ProjectConfig {
                 action(config)
             }
-        }
-    }
-
-    /// 监听文件选择变化的事件
-    /// - Parameter action: 事件处理闭包
-    /// - Returns: 修改后的视图
-    func onFileSelectionChanged(perform action: @escaping () -> Void) -> some View {
-        self.onReceive(NotificationCenter.default.publisher(for: .fileSelectionChanged)) { _ in
-            action()
         }
     }
 

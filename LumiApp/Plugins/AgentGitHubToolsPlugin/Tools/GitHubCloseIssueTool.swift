@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// GitHub 关闭 Issue 工具
-struct GitHubCloseIssueTool: AgentTool, SuperLog {
+struct GitHubCloseIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔒"
     nonisolated static let verbose: Bool = false
     let name = "github_close_issue"

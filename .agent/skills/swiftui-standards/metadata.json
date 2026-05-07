@@ -1,0 +1,7 @@
+{
+    "name": "swiftui-standards",
+    "title": "SwiftUI Standards",
+    "description": "SwiftUI 开发标准规范，包括代码组织、MARK 分组、日志记录、预览代码和事件监听的统一规范",
+    "triggers": ["swiftui", "swift", "view", "xcode", "code style", "规范"],
+    "version": "1.0.0"
+}

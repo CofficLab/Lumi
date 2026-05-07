@@ -62,7 +62,6 @@ struct ClipboardSettingsView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

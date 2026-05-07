@@ -9,7 +9,7 @@ extension LLMService {
     func sendStreamingMessage(
         messages: [ChatMessage],
         config: LLMConfig,
-        tools: [AgentTool]? = nil,
+        tools: [SuperAgentTool]? = nil,
         onChunk: @Sendable @escaping (StreamChunk) async -> Void,
         onRequestStart: @Sendable @escaping (RequestMetadata) async -> Void = { _ in }
     ) async throws -> ChatMessage {

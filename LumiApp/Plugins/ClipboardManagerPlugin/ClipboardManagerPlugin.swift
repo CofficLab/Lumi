@@ -1,6 +1,6 @@
 import MagicKit
-import SwiftUI
 import os
+import SwiftUI
 
 actor ClipboardManagerPlugin: SuperPlugin {
     /// 插件专用 Logger
@@ -18,8 +18,8 @@ actor ClipboardManagerPlugin: SuperPlugin {
     nonisolated static let isConfigurable: Bool = true
 
     static let shared = ClipboardManagerPlugin()
-    nonisolated private static let settingsStore = ClipboardManagerPluginLocalStore.shared
-    nonisolated private static let monitoringKey = "ClipboardMonitoringEnabled"
+    private nonisolated static let settingsStore = ClipboardManagerPluginLocalStore.shared
+    private nonisolated static let monitoringKey = "ClipboardMonitoringEnabled"
 
     // MARK: - Lifecycle
 
@@ -48,26 +48,18 @@ actor ClipboardManagerPlugin: SuperPlugin {
     // MARK: - UI
 
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                ClipboardHistoryView()
-            },
-        ]
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == Self.iconName else { return nil }
+        return AnyView(ClipboardHistoryView())
     }
+
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(ClipboardManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

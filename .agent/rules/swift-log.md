@@ -239,6 +239,68 @@ log stream --predicate 'subsystem == "com.coffic.lumi" AND category == "plugin.g
 
 ---
 
+## 磁盘日志持久化
+
+所有通过 `os.Logger`（subsystem: `com.coffic.lumi`）输出的日志会自动持久化到磁盘，**无需修改任何现有代码**。
+
+### 实现方式
+
+通过 `FileLogCoordinator`（定义在 `LumiApp/Core/Utils/FileLogCoordinator.swift`）使用 `OSLogStore` 轮询子系统日志，异步写入磁盘文件：
+
+- 启动：`MacAgent.applicationDidFinishLaunching` 中调用 `FileLogCoordinator.shared.start()`
+- 停止：`MacAgent.applicationWillTerminate` 中调用 `FileLogCoordinator.shared.stop()`
+
+### 存储位置
+
+```
+~/Library/Application Support/com.coffic.Lumi/Logs/
+├── 2026-05-02_10-36-00.log
+├── 2026-05-02_11-02-33.log
+└── ...
+```
+
+### 自动管理规则
+
+| 规则 | 值 |
+|------|-----|
+| 单文件大小上限 | 5 MB |
+| 过期清理 | 7 天 |
+| 轮转触发 | 启动时新建 + 超大小自动轮转 |
+| 轮询间隔 | 2 秒 |
+
+### 磁盘日志格式
+
+```
+=== Lumi Log ===
+Version: 1.0.0 (42)
+Date: 2026-05-02 10:36:00 +0000
+===
+
+[10:36:01.234] [INFO] [core] 应用启动完成
+[10:36:01.567] [ERROR] [plugin.github-tools] 请求失败：网络超时
+```
+
+### 查看磁盘日志
+
+```bash
+# 实时查看最新日志
+tail -f ~/Library/Application\ Support/com.coffic.Lumi/Logs/$(ls -t ~/Library/Application\ Support/com.coffic.Lumi/Logs/ | head -1)
+
+# 按级别过滤
+grep "\[ERROR\]" ~/Library/Application\ Support/com.coffic.Lumi/Logs/*.log
+
+# 按模块过滤
+grep "\[plugin.github-tools\]" ~/Library/Application\ Support/com.coffic.Lumi/Logs/*.log
+```
+
+### 约束
+
+1. **禁止手动写磁盘日志** — 所有日志走 `os.Logger`，磁盘持久化由 `FileLogCoordinator` 自动完成
+2. **禁止在磁盘日志中记录敏感信息** — 密码、Token、API Key 等
+3. **禁止在高频路径添加 verbose 日志** — 避免影响性能（如鼠标移动、滚动事件）
+
+---
+
 ## 相关规范
 
 - [代码组织规范](./swift-code-organization.md)

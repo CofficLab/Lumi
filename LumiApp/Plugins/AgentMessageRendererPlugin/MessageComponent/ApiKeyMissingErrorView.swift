@@ -14,6 +14,7 @@ struct ApiKeyMissingErrorView: View {
 
     @State private var currentProviderId: String = ""
     @State private var apiKey: String = ""
+    @State private var hasInitialized = false
 
     private var languagePreference: LanguagePreference {
         projectVM.languagePreference
@@ -91,11 +92,15 @@ struct ApiKeyMissingErrorView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
         .onAppear {
+            guard !hasInitialized else { return }
+            hasInitialized = true
             initializeProviderAndApiKey()
         }
         .onChange(of: message.providerId) { _, newProviderId in
             // 当错误消息的 providerId 发生变化时，重新初始化
-            if let newProviderId = newProviderId, !newProviderId.isEmpty {
+            if let newProviderId = newProviderId,
+               !newProviderId.isEmpty,
+               newProviderId != currentProviderId {
                 currentProviderId = newProviderId
                 reloadApiKeyFromKeychain()
             }
@@ -124,11 +129,7 @@ struct ApiKeyMissingErrorView: View {
 
     /// 保存 API Key 到 Keychain
     private func saveApiKey(_ newValue: String) {
+        guard !currentProviderId.isEmpty else { return }
         agentSessionConfig.setApiKey(newValue, for: currentProviderId)
-
-        // 保存后立即重新加载，确保 UI 显示的是最新保存的值
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [self] in
-            apiKey = agentSessionConfig.getApiKey(for: currentProviderId)
-        }
     }
 }

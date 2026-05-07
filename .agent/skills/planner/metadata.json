@@ -1,0 +1,7 @@
+{
+    "name": "planner",
+    "title": "Project Planner",
+    "description": "项目规划、任务分解和进度管理的专家技能",
+    "triggers": ["plan", "规划", "task", "schedule", "estimate", "里程碑"],
+    "version": "1.0.0"
+}

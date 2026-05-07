@@ -70,3 +70,4 @@ fastlane/test_output
 
 Build
 /DerivedData
+/buildServer.json

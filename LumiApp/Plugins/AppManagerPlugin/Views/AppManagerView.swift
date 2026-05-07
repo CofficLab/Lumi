@@ -139,8 +139,6 @@ struct AppManagerView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(AppManagerPlugin.navigationId)
         .inRootView()
         .withDebugBar()
 }

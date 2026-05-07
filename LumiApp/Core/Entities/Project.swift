@@ -1,7 +1,7 @@
 import Foundation
 
 /// 项目
-public struct Project: Codable, Identifiable, Equatable {
+public struct Project: Codable, Identifiable, Equatable, Sendable {
     public let id = UUID()
     public let name: String
     public let path: String

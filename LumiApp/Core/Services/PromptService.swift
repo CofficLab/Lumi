@@ -38,18 +38,14 @@ actor PromptService: SuperLog {
     // MARK: - 系统提示构建
 
     /// 构建完整的系统提示词
+    ///
     /// - Parameters:
-    ///   - languagePreference: 语言偏好
     ///   - includeContext: 是否包含项目上下文
     /// - Returns: 完整的系统提示词
     func buildSystemPrompt(
-        languagePreference: LanguagePreference,
         includeContext: Bool = true
     ) async -> String {
         var prompt = baseSystemPrompt
-
-        // 添加语言偏好信息
-        prompt += "\n\n" + languagePreference.systemPromptDescription
 
         // 如果需要，添加项目上下文
         if includeContext {
@@ -58,7 +54,7 @@ actor PromptService: SuperLog {
         }
 
         if Self.verbose {
-            logInfo("构建系统提示词，语言偏好：\(languagePreference.displayName)")
+            logInfo("构建系统提示词")
         }
 
         return prompt

@@ -8,7 +8,7 @@ import MagicKit
 /// 当使用 web_extractor 或 web_fetch 工具时，必须同时声明 web_search 工具。
 ///
 /// 当前为轻量级实现，仅返回提示信息，可根据需求后续接入真实搜索 API。
-struct WebSearchTool: AgentTool, SuperLog {
+struct WebSearchTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
     nonisolated static let verbose: Bool = false
     

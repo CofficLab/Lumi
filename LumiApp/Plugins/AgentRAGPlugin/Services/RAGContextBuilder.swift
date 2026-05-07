@@ -4,7 +4,7 @@ enum RAGContextBuilder {
     private static let maxContextChars = 9000
 
     static func buildPrompt(query: String, results: [RAGSearchResult], projectPath: String?) -> String {
-        var prompt = "基于以下代码上下文回答用户问题。\n\n"
+        var prompt = "以下上下文仅供参考，可能存在不准确的情况。\n\n"
         if let projectPath, !projectPath.isEmpty {
             prompt += "项目路径：\(projectPath)\n\n"
         }
@@ -27,8 +27,6 @@ enum RAGContextBuilder {
         if includedCount < results.count {
             prompt += "\n[说明] 由于上下文预算限制，已截断部分片段。\n"
         }
-        prompt += "\n---\n用户问题：\(query)\n"
-        prompt += "请优先依据上述片段回答，并在答案中明确引用来源文件。"
         return prompt
     }
 

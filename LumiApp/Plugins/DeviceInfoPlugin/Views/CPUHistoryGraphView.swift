@@ -41,7 +41,7 @@ struct CPUHistoryGraphView: View {
                             CPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
                                 .stroke(AppUI.Color.semantic.info, lineWidth: 1.5)
                         } else {
-                            Text("收集数据中...")
+                            Text(String(localized: "Collecting...", table: "DeviceInfo"))
                                 .font(.caption)
                                 .foregroundColor(AppUI.Color.semantic.textSecondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -285,7 +285,7 @@ struct CPUTooltipView: View {
 // MARK: - Preview
 
 #Preview("App") {
-    CPUStatusBarPopupView()
+    DeviceInfoStatusBarPopupView()
         .inRootView()
         .frame(width: 300)
         .frame(height: 300)

@@ -11,7 +11,6 @@ import SwiftTerm
 /// SwiftTerm 的 `LocalProcessTerminalView` 收到 zero frame 时会重置终端，
 /// 导致内容丢失。
 class LumiTerminalView: LocalProcessTerminalView {
-
     override func setFrameSize(_ newSize: NSSize) {
         // 忽略 zero size，防止终端缓冲区被清空
         if newSize.width > 0 && newSize.height > 0 {

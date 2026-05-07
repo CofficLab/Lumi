@@ -20,9 +20,8 @@ class LLMService: SuperLog, @unchecked Sendable {
     nonisolated let llmAPI: LLMAPIService
 
     /// 初始化 LLM 服务
-    init() {
-        let registry = LLMProviderRegistry()
-        LLMProviderRegistration.registerAllProviders(to: registry)
+    /// - Parameter registry: 供应商注册表（由外部创建并注册所有供应商）
+    init(registry: LLMProviderRegistry) {
         self.registry = registry
         self.llmAPI = LLMAPIService()
         if Self.verbose >= 1 {

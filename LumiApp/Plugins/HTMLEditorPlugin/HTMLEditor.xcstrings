@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "HTML Editor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML Editor"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 编辑器"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 編輯器"
+          }
+        }
+      }
+    },
+    "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 编辑增强：标签补全、悬浮文档、自动闭合和标签匹配。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 編輯增強：標籤補全、懸浮文件、自動閉合和標籤匹配。"
+          }
+        }
+      }
+    }
+  }
+}

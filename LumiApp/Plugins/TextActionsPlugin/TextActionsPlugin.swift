@@ -11,7 +11,7 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     static let navigationId = "text_actions"
     static let displayName = String(localized: "Text Actions", table: "TextActions")
     static let description = String(localized: "Selected text actions menu", table: "TextActions")
-    static let iconName = "cursorarrow.click.2"
+    static let iconName = "text.cursor"
     nonisolated static let enable: Bool = true
     static var order: Int { 60 }
     
@@ -83,27 +83,21 @@ actor TextActionsPlugin: SuperPlugin, SuperLog {
     
     // MARK: - UI
     
+    
+
     @MainActor
-    func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.id,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                TextActionsSettingsView()
-            }
-        ]
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == Self.iconName else { return nil }
+        return AnyView(TextActionsSettingsView())
     }
+
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }
 
 // MARK: - Preview
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
-        .withNavigation(TextActionsPlugin.id)
         .inRootView()
         .withDebugBar()
 }

@@ -282,7 +282,7 @@ extension ProjectSelectorView {
                 }
             }
         case .failure(let error):
-            RecentProjectsPlugin.logger.error("File import 错误：\(error.localizedDescription)")
+            RecentProjectsPlugin.logger.error("File import error: \(error.localizedDescription)")
         }
     }
 }

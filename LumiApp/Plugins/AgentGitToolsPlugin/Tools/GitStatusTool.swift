@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// Git 状态工具
-struct GitStatusTool: AgentTool, SuperLog {
+struct GitStatusTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📊"
     nonisolated static let verbose: Bool = true
     let name = "git_status"

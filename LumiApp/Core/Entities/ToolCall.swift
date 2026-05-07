@@ -36,7 +36,7 @@ struct ToolCall: Codable, Sendable, Equatable {
     /// 工具名称
     ///
     /// 要执行的工具/函数名称。
-    /// 对应 AgentTool 中定义的工具。
+    /// 对应 SuperAgentTool 中定义的工具。
     /// 例如："read_file", "write_file", "run_command"
     let name: String
     

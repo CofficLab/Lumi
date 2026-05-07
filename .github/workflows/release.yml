@@ -151,22 +151,49 @@ jobs:
 
       - name: Create DMG
         run: |
+          set -euo pipefail
           STAGING_DIR="./temp/dmg_staging"
-          mkdir -p "$STAGING_DIR"
-          # 使用 ditto 替代 cp -r 以完整保留 Bundle 结构、符号链接和元数据
-          ditto "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/${{ env.SCHEME }}.app"
-
-          # 创建 Applications 软链接
-          ln -s /Applications "$STAGING_DIR/Applications"
-
-          # 验证软链接是否存在
-          echo "Checking Staging Dir:"
-          ls -la "$STAGING_DIR"
-
           VOL_NAME="${{ env.SCHEME }}"
           DMG_NAME="./temp/${{ env.SCHEME }}_${{ env.new_version }}.dmg"
 
-          hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
+          # 干净 staging，避免上次失败或增量残留导致 hdiutil 异常
+          rm -rf "$STAGING_DIR"
+          mkdir -p "$STAGING_DIR"
+          ditto "./temp/${{ env.SCHEME }}.app" "$STAGING_DIR/${{ env.SCHEME }}.app"
+          ln -sfn /Applications "$STAGING_DIR/Applications"
+
+          echo "Checking Staging Dir:"
+          ls -la "$STAGING_DIR"
+
+          # 降低 Spotlight 在 runner 上占用源目录导致 EBUSY 的概率
+          mdutil -i off "$STAGING_DIR" 2>/dev/null || true
+          mdutil -i off "./temp" 2>/dev/null || true
+          sync
+          sleep 1
+
+          create_dmg() {
+            # 同名卷若仍挂在 /Volumes（上次失败、并发、本地重跑），会导致 Resource busy
+            hdiutil detach "/Volumes/${VOL_NAME}" -force 2>/dev/null || true
+            rm -f "$DMG_NAME"
+            if hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"; then
+              return 0
+            fi
+            return 1
+          }
+
+          MAX_ATTEMPTS=6
+          attempt=0
+          until create_dmg; do
+            attempt=$((attempt + 1))
+            if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+              echo "hdiutil create failed after $MAX_ATTEMPTS attempts (often Resource busy / EBUSY)"
+              exit 1
+            fi
+            echo "hdiutil create failed (attempt $attempt/$MAX_ATTEMPTS), retrying after backoff..."
+            sleep $((attempt * 3))
+          done
+
+          echo "Created: $DMG_NAME"
 
       - name: Notary
         run: |

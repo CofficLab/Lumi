@@ -3,7 +3,7 @@ import Foundation
 /// 列出 Agent 规则文档工具
 ///
 /// 返回指定项目 .agent/rules 目录中所有规则文档的列表
-struct ListAgentRulesTool: AgentTool {
+struct ListAgentRulesTool: SuperAgentTool {
     let name: String = "list_agent_rules"
     let description: String = String(localized: "List all rule documents in the .agent/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document.", table: "AgentRules")
 

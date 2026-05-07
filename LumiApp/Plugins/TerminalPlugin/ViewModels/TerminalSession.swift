@@ -1,7 +1,7 @@
-import Foundation
-import SwiftUI
 import AppKit
+import Foundation
 import SwiftTerm
+import SwiftUI
 
 @MainActor
 final class TerminalSession: ObservableObject, Identifiable {
@@ -14,19 +14,18 @@ final class TerminalSession: ObservableObject, Identifiable {
     private let initialWorkingDirectory: String?
     /// KVO 观察系统外观变化
     private var appearanceObservation: NSKeyValueObservation?
-    /// 当前编辑器主题名称（用于终端颜色同步）
-    private var currentThemeName: EditorThemeAdapter.PresetTheme
+    /// 当前编辑器主题 ID（用于终端颜色同步）
+    private var currentThemeId: String
 
     init(workingDirectory: String? = nil) {
         self.initialWorkingDirectory = workingDirectory
         self.terminalView = LumiTerminalView(frame: .zero)
 
-        // 读取当前编辑器主题
-        if let themeRaw = EditorConfigStore.loadString(forKey: EditorConfigStore.themeNameKey),
-           let preset = EditorThemeAdapter.PresetTheme(rawValue: themeRaw) {
-            self.currentThemeName = preset
+        // 读取当前统一主题并映射为编辑器主题
+        if let savedThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() {
+            self.currentThemeId = ThemeVM.editorThemeID(for: savedThemeId)
         } else {
-            self.currentThemeName = .xcodeDark
+            self.currentThemeId = "xcode-dark"
         }
 
         setupTerminal()
@@ -51,12 +50,12 @@ final class TerminalSession: ObservableObject, Identifiable {
 
         // 监听编辑器主题变化
         NotificationCenter.default.addObserver(
-            forName: .lumiEditorThemeDidChange,
+            forName: .lumiThemeDidChange,
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let themeName = notification.userInfo?["theme"] as? EditorThemeAdapter.PresetTheme else { return }
-            self?.currentThemeName = themeName
+            guard let editorThemeId = notification.userInfo?["editorThemeId"] as? String else { return }
+            self?.currentThemeId = editorThemeId
             self?.applyThemeColors()
         }
 
@@ -112,7 +111,7 @@ final class TerminalSession: ObservableObject, Identifiable {
 
     /// 应用主题颜色到终端
     private func applyThemeColors() {
-        let colors = TerminalThemeAdapter.colors(for: currentThemeName)
+        let colors = TerminalThemeAdapter.colors(for: currentThemeId)
         TerminalThemeAdapter.apply(colors, to: terminalView)
     }
 
@@ -140,7 +139,6 @@ final class TerminalSession: ObservableObject, Identifiable {
 // MARK: - LocalProcessTerminalViewDelegate
 
 extension TerminalSession: LocalProcessTerminalViewDelegate {
-
     nonisolated func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
 
     nonisolated func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
@@ -156,11 +154,4 @@ extension TerminalSession: LocalProcessTerminalViewDelegate {
             self?.isConnected = false
         }
     }
-}
-
-// MARK: - Notification Name
-
-extension Notification.Name {
-    /// 编辑器主题变更通知
-    static let lumiEditorThemeDidChange = Notification.Name("lumiEditorThemeDidChange")
 }

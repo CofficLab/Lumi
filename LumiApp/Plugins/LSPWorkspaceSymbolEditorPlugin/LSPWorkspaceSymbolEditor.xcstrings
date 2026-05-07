@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "LSP Workspace Symbols": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Workspace Symbols" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 工作区符号" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 工作區符號" } }
+      }
+    },
+    "Provides workspace-wide symbol search.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provides workspace-wide symbol search." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "提供工作区范围的符号搜索。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "提供工作區範圍的符號搜索。" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

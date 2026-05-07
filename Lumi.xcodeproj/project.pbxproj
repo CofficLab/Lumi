@@ -30,6 +30,11 @@
 		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
+		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
+		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
+		A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E12F70000100AAA101 /* MarkdownKit */; };
+		A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E72F70000100AAA101 /* EditorKernelCore */; };
+		A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3EF2F70000100AAA101 /* DatabaseKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -41,6 +46,7 @@
 		F5A640842F3ED7060039A761 /* _ConnectionPoolTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640832F3ED7060039A761 /* _ConnectionPoolTestUtils */; };
 		F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */ = {isa = PBXBuildFile; productRef = F5A640862F3ED72C0039A761 /* MySQLNIO */; };
 		F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F5BE65D02F6BB1130091C1FD /* Markdown */; };
+		F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = F5DF6D172FA3461A00673F72 /* XcodeProj */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -175,6 +181,16 @@
 			path = LumiFinder;
 			sourceTree = "<group>";
 		};
+		A1B2C3D82F70000100AAA101 /* Packages */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		F5819AA43050B3B70038F0A1 /* Tests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Tests;
+			sourceTree = "<group>";
+		};
 		F5A640682F3ED1910039A761 /* NettoExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -225,6 +241,11 @@
 				0B6DF8562F8E77E100FA0CAC /* LanguageServerProtocol in Frameworks */,
 				0B4548682F89F3B500C6B7C8 /* CodeEditSourceEditor in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
+				A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */,
+				A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */,
+				A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */,
+				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
+				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
 				0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */,
 				F5485E322F7A077B00566188 /* CodeEditor in Frameworks */,
@@ -241,6 +262,7 @@
 				0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */,
 				0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */,
 				F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */,
+				F5DF6D182FA3461A00673F72 /* XcodeProj in Frameworks */,
 				0B1A4F7F2F662D8500F15618 /* MLX in Frameworks */,
 				0B1A4F872F662D8500F15618 /* MLXNN in Frameworks */,
 				0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */,
@@ -263,6 +285,8 @@
 			children = (
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
+				A1B2C3D82F70000100AAA101 /* Packages */,
+				F5819AA43050B3B70038F0A1 /* Tests */,
 				0B2F7D622F3A301C00AD7E94 /* LumiFinder */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				A10000012F60000100AAA001 /* LumiTests.xctest */,
@@ -320,6 +344,9 @@
 			dependencies = (
 				A10000092F60000100AAA001 /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				F5819AA43050B3B70038F0A1 /* Tests */,
+			);
 			name = LumiTests;
 			packageProductDependencies = (
 			);
@@ -376,6 +403,12 @@
 				0B6DF8552F8E77E100FA0CAC /* LanguageServerProtocol */,
 				0B6DF8582F8E780800FA0CAC /* LanguageClient */,
 				223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */,
+				A1B2C3DC2F70000100AAA101 /* FilePreviewKit */,
+				A1B2C3E12F70000100AAA101 /* MarkdownKit */,
+				A1B2C3D62F70000100AAA101 /* MarkdownKitCore */,
+				A1B2C3E72F70000100AAA101 /* EditorKernelCore */,
+				A1B2C3EF2F70000100AAA101 /* DatabaseKit */,
+				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -458,6 +491,11 @@
 				0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */,
 				0B6DF8542F8E77E100FA0CAC /* XCRemoteSwiftPackageReference "LanguageServerProtocol" */,
 				0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */,
+				F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */,
+				A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */,
+				A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */,
+				A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */,
+				A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -561,7 +599,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 102;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -587,7 +625,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.67.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiFinder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -606,7 +644,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 102;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -632,7 +670,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.67.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.LumiFinder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -823,7 +861,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 102;
+				CURRENT_PROJECT_VERSION = 100;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
@@ -855,7 +893,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
 				);
-				MARKETING_VERSION = 1.67.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -874,7 +912,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 102;
+				CURRENT_PROJECT_VERSION = 100;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
@@ -906,7 +944,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/LumiApp/ThirdParty/sqlite",
 				);
-				MARKETING_VERSION = 1.67.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -922,7 +960,7 @@
 				CODE_SIGN_ENTITLEMENTS = NettoExtension/NettoExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 102;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -937,7 +975,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.67.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.NettoExtension;
 				PRODUCT_NAME = "$(inherited)";
 				REGISTER_APP_GROUPS = YES;
@@ -956,7 +994,7 @@
 				CODE_SIGN_ENTITLEMENTS = NettoExtension/NettoExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 102;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -971,7 +1009,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.67.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.NettoExtension;
 				PRODUCT_NAME = "$(inherited)";
 				REGISTER_APP_GROUPS = YES;
@@ -1033,6 +1071,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/MarkdownKit;
+		};
+		A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FilePreviewKit;
+		};
+		A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/EditorKernelCore;
+		};
+		A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/DatabaseKit;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		0B1A4F7D2F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
@@ -1179,6 +1236,14 @@
 				minimumVersion = 0.7.3;
 			};
 		};
+		F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tuist/XcodeProj";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.11.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1291,6 +1356,31 @@
 			package = 0F7C1D5EDE3441A587783365 /* XCRemoteSwiftPackageReference "beautiful-mermaid-swift" */;
 			productName = BeautifulMermaid;
 		};
+		A1B2C3D62F70000100AAA101 /* MarkdownKitCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */;
+			productName = MarkdownKitCore;
+		};
+		A1B2C3DC2F70000100AAA101 /* FilePreviewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */;
+			productName = FilePreviewKit;
+		};
+		A1B2C3E12F70000100AAA101 /* MarkdownKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */;
+			productName = MarkdownKit;
+		};
+		A1B2C3E72F70000100AAA101 /* EditorKernelCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */;
+			productName = EditorKernelCore;
+		};
+		A1B2C3EF2F70000100AAA101 /* DatabaseKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */;
+			productName = DatabaseKit;
+		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */;
@@ -1330,6 +1420,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5BE65CF2F6BB1130091C1FD /* XCRemoteSwiftPackageReference "swift-markdown" */;
 			productName = Markdown;
+		};
+		F5DF6D172FA3461A00673F72 /* XcodeProj */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */;
+			productName = XcodeProj;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

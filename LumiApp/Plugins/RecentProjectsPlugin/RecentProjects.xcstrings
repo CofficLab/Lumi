@@ -1,8 +1,29 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Add New Project" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add New Project"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加新项目"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加新項目"
+          }
+        }
+      }
+    },
     "Browse" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -25,53 +46,50 @@
       }
     },
     "Clear Project Selection" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear project selection"
+            "value" : "Clear Project Selection"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "取消选择当前项目"
+            "value" : "清除项目选择"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "取消選擇目前項目"
+            "value" : "清除項目選擇"
           }
         }
       }
     },
     "Click Browse Below" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Click browse below to select a project"
+            "value" : "Click Browse Below"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "点击下方浏览选择项目"
+            "value" : "点击下方浏览按钮"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點擊下方瀏覽選擇項目"
+            "value" : "點擊下方瀏覽按鈕"
           }
         }
       }
     },
     "Current Project" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -88,18 +106,20 @@
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前項目"
+            "value" : "當前項目"
           }
         }
       }
     },
+    "Manage recent projects and current project state" : {
+
+    },
     "No Project Selected" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No project selected"
+            "value" : "No Project Selected"
           }
         },
         "zh-Hans" : {
@@ -117,7 +137,26 @@
       }
     },
     "No recent projects" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recent projects"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有最近项目"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有最近項目"
+          }
+        }
+      }
     },
     "No Recent Projects" : {
       "localizations" : {
@@ -130,33 +169,18 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暂无最近项目"
-          }
-        }
-      }
-    },
-    "Persist recent projects list" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Persist recent projects list"
+            "value" : "没有最近项目"
           }
         },
-        "zh-Hans" : {
+        "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "持久化最近项目列表"
+            "value" : "沒有最近項目"
           }
         }
       }
     },
-    "Persist recent projects list and manage current project" : {
-
-    },
     "Recent Projects" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -178,54 +202,29 @@
         }
       }
     },
-    "Select a project to start" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a project to start"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请选择一个项目以开始"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請選擇一個項目以開始"
-          }
-        }
-      }
-    },
     "Select New Project" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select new project..."
+            "value" : "Select New Project"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择新项目..."
+            "value" : "选择新项目"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇新項目..."
+            "value" : "選擇新項目"
           }
         }
       }
     },
     "Select Project" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -243,23 +242,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇項目"
-          }
-        }
-      }
-    },
-    "Show recent projects in sidebar" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show recent projects in sidebar"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在侧边栏显示最近项目"
           }
         }
       }

@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// GitHub 趋势项目工具
-struct GitHubTrendingTool: AgentTool, SuperLog {
+struct GitHubTrendingTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔥"
     nonisolated static let verbose: Bool = false
     let name = "github_trending"

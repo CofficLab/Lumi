@@ -6,7 +6,7 @@ import MagicKit
 /// 通过分析历史消息中的工具调用模式，检测是否进入无限循环。
 /// 如果检测到循环，将终止本轮发送并向用户显示警告。
 @MainActor
-struct ToolCallLoopDetectionSendMiddleware: SendMiddleware {
+struct ToolCallLoopDetectionSuperSendMiddleware: SuperSendMiddleware {
     let id: String = "tool-call-loop-detection"
     let order: Int = 100  // 较晚执行，在其他预处理之后
 

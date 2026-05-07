@@ -25,7 +25,7 @@
     <key>NetworkExtension</key>
     <dict>
         <key>NEMachServiceName</key>
-        <string>$(TeamIdentifierPrefix)com.cofficlab.lumi.NettoExtension</string>
+        <string>$(TeamIdentifierPrefix)com.coffic.lumi.NettoExtension</string>
         <key>NEProviderClasses</key>
         <dict>
             <key>com.apple.networkextension.filter-data</key>

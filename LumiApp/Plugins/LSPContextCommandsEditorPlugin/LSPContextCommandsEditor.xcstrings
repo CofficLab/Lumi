@@ -1,0 +1,90 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Adds LSP context commands like go to definition and rename.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Adds LSP context commands like go to definition and rename." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "添加 LSP 上下文命令，如跳转到定义与重命名。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "添加 LSP 上下文命令，如跳轉到定義與重命名。" } }
+      }
+    },
+    "Call Hierarchy": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Call Hierarchy" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "调用层级" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "調用層級" } }
+      }
+    },
+    "Find References": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Find References" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "查找引用" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "查找引用" } }
+      }
+    },
+    "Format Document": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Format Document" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "格式化文档" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "格式化文檔" } }
+      }
+    },
+    "Go to Declaration": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go to Declaration" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "跳转到声明" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "跳轉到聲明" } }
+      }
+    },
+    "Go to Definition": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go to Definition" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "跳转到定义" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "跳轉到定義" } }
+      }
+    },
+    "Go to Implementation": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go to Implementation" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "跳转到实现" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "跳轉到實現" } }
+      }
+    },
+    "Go to Type Definition": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go to Type Definition" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "跳转到类型定义" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "跳轉到類型定義" } }
+      }
+    },
+    "LSP Context Commands": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LSP Context Commands" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LSP 上下文命令" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "LSP 上下文命令" } }
+      }
+    },
+    "Rename Symbol": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Rename Symbol" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "重命名符号" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "重命名符號" } }
+      }
+    },
+    "Toggle Problems": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Toggle Problems" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "切换问题面板" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "切換問題面板" } }
+      }
+    },
+    "Workspace Symbols": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Workspace Symbols" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "工作区符号" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "工作區符號" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

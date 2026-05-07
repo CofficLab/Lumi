@@ -1,34 +1,46 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Context Sync" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Context Sync"
+    "Context Sync": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Context Sync"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上下文同步"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上下文同步"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上下文同步"
           }
         }
       }
     },
-    "Sync project context to conversation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sync project context to conversation"
+    "Sync project context to conversation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync project context to conversation"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将项目上下文同步到对话中"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将项目上下文同步到对话中"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將項目上下文同步到對話中"
           }
         }
       }

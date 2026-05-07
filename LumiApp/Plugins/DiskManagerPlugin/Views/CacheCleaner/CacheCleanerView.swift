@@ -67,7 +67,6 @@ struct CacheCleanerView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

@@ -10,13 +10,13 @@ final class MCPService: SuperLog, @unchecked Sendable {
 
     // MARK: - Combine Publishers
 
-    let toolsPublisher = PassthroughSubject<[AgentTool], Never>()
+    let toolsPublisher = PassthroughSubject<[SuperAgentTool], Never>()
 
     // MARK: - State
 
     private(set) var configs: [MCPServerConfig] = []
     private(set) var connectedClients: [String: Client] = [:]
-    private(set) var tools: [AgentTool] = []
+    private(set) var tools: [SuperAgentTool] = []
 
     private var cachedTools: [String: [MCP.Tool]] = [:]
 
@@ -88,7 +88,7 @@ final class MCPService: SuperLog, @unchecked Sendable {
     // MARK: - Tools
 
     func updateToolsFromCache() async {
-        var newTools: [AgentTool] = []
+        var newTools: [SuperAgentTool] = []
 
         for (serverName, mcpTools) in cachedTools {
             guard let client = connectedClients[serverName] else { continue }

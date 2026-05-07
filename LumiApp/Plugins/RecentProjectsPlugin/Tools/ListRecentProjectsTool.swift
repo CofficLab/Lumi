@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 /// 列出最近项目工具
-struct ListRecentProjectsTool: AgentTool, SuperLog {
+struct ListRecentProjectsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = true
     let name = "list_recent_projects"
@@ -28,7 +28,7 @@ struct ListRecentProjectsTool: AgentTool, SuperLog {
         let limit = min((arguments["limit"]?.value as? Int) ?? 5, 500)
 
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)列出最近项目，限制：\(limit)")
+            RecentProjectsPlugin.logger.info("\(Self.t)Listing recent projects, limit: \(limit)")
         }
 
         let store = RecentProjectsStore()

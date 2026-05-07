@@ -11,6 +11,7 @@ enum RClickActionType: String, Codable {
     case deleteFile = "deleteFile"
     case hideFile = "hideFile"
     case showHiddenFiles = "showHiddenFiles"
+    case listHiddenFiles = "listHiddenFiles"
 }
 
 /// 右键菜单项配置

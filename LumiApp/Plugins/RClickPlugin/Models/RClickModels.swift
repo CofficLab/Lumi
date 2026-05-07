@@ -8,6 +8,7 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
     case deleteFile = "deleteFile"
     case hideFile = "hideFile"
     case showHiddenFiles = "showHiddenFiles"
+    case listHiddenFiles = "listHiddenFiles"
 
     public var id: String { rawValue }
 
@@ -20,6 +21,7 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
         case .deleteFile: return String(localized: "Delete File", table: "RClick")
         case .hideFile: return String(localized: "Hide File", table: "RClick")
         case .showHiddenFiles: return String(localized: "Show Hidden Files", table: "RClick")
+        case .listHiddenFiles: return String(localized: "List Hidden Files", table: "RClick")
         }
     }
 
@@ -32,6 +34,7 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
         case .deleteFile: return "trash"
         case .hideFile: return "eye.slash"
         case .showHiddenFiles: return "eye"
+        case .listHiddenFiles: return "list.bullet"
         }
     }
 }

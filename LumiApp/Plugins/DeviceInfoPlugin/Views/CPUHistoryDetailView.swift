@@ -9,7 +9,7 @@ struct CPUHistoryDetailView: View {
         VStack(spacing: 12) {
             // Header with Picker
             HStack {
-                Text("CPU Load Trend")
+                Text(String(localized: "CPU Load Trend", table: "DeviceInfo"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(AppUI.Color.semantic.textTertiary)
 
@@ -17,7 +17,7 @@ struct CPUHistoryDetailView: View {
 
                 Picker("Time Range", selection: $selectedRange) {
                     ForEach(CPUTimeRange.allCases) { range in
-                        Text(range.rawValue).tag(range)
+                        Text(range.displayName).tag(range)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -43,7 +43,7 @@ struct CPUHistoryDetailView: View {
 // MARK: - Preview
 
 #Preview("App") {
-    CPUStatusBarPopupView()
+    DeviceInfoStatusBarPopupView()
         .inRootView()
         .frame(width: 300)
         .frame(height: 300)

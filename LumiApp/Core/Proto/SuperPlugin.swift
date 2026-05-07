@@ -2,6 +2,24 @@ import AppKit
 import SwiftUI
 import Foundation
 
+/// Rail 标签页定义
+///
+/// 插件通过 `addRailTabs()` 返回此结构体，由内核聚合渲染为统一的 Tab Bar。
+struct RailTab: Identifiable, Equatable {
+    /// 唯一标识
+    let id: String
+    /// 显示标题
+    let title: String
+    /// SF Symbol 图标名
+    let systemImage: String
+    /// 排序优先级（数字越小越靠前）
+    let priority: Int
+
+    static func == (lhs: RailTab, rhs: RailTab) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 /// 插件协议，定义插件的基本接口和 UI 贡献方法
 ///
 /// SuperPlugin 是 Lumi 插件系统的核心协议，所有插件都必须实现此协议。
@@ -11,17 +29,19 @@ import Foundation
 ///
 /// 1. **注册阶段**: 插件被自动发现并实例化，调用 `onRegister()`
 /// 2. **启用阶段**: 插件被添加到 UI 树，调用 `onEnable()`
-/// 3. **禁用阶段**: 插件从 UI 移除，调用 `onDisable()`
+/// 3. **禁用阶段**: 插件从 UI 树移除，调用 `onDisable()`
 ///
 /// ## 插件类型
 ///
 /// Lumi 支持以下类型的插件扩展点：
-/// - 侧边栏导航项
-/// - 工具栏视图（前后导区域）
-/// - 详情视图
+/// - 面板视图（活动栏入口，插件自行决定布局）
+/// - 右侧栏视图（窗口右侧独立区域，可多插件堆叠）
+/// - 状态栏视图
+/// - 工具栏视图
 /// - 设置视图
-/// - 状态栏视图（弹窗和内容）
-/// - Agent 模式专用视图（侧边栏、中间栏、详情栏头部/中间/底部）
+/// - Agent 工具与中间件
+/// - 主题贡献
+/// - 编辑器能力（补全、hover、code action、LSP 等），通过 `registerEditorExtensions` 注入
 ///
 /// ## 使用示例
 ///
@@ -32,20 +52,7 @@ import Foundation
 ///     static let iconName = "star.fill"
 ///     static let enable = true
 ///     static let order = 100
-///
 ///     static var isConfigurable: Bool { true }
-///
-///     @MainActor
-///     func addNavigationEntries() -> [NavigationEntry]? {
-///         [
-///             NavigationEntry(
-///                 id: "my-plugin",
-///                 title: "我的插件",
-///                 icon: "star.fill",
-///                 contentProvider: { AnyView(MyPluginView()) }
-///             )
-///         ]
-///     }
 /// }
 /// ```
 protocol SuperPlugin: Actor {
@@ -114,19 +121,95 @@ protocol SuperPlugin: Actor {
     @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View
 
     /// 添加工具栏前导视图
-    @MainActor func addToolBarLeadingView() -> AnyView?
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
+    @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView?
+
+    /// 添加工具栏中间视图
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
+    @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView?
 
     /// 添加工具栏右侧视图
-    @MainActor func addToolBarTrailingView() -> AnyView?
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
+    @MainActor func addToolBarTrailingView(activeIcon: String?) -> AnyView?
 
-    /// 添加详情视图
-    @MainActor func addDetailView() -> AnyView?
+    /// 提供面板图标（SF Symbol 名称）
+    ///
+    /// 用于在左侧活动栏中显示该插件的面板入口图标。
+    /// 只有同时提供 `addPanelView()` 的插件才需要实现此方法。
+    /// 返回 nil 表示使用插件默认的 `iconName`。
+    ///
+    /// ## 注意
+    ///
+    /// 此方法与 `addPanelView()` 配对使用：
+    /// - `addPanelIcon()` 提供活动栏图标
+    /// - `addPanelView()` 提供面板内容视图
+    nonisolated func addPanelIcon() -> String?
+
+    /// 添加面板视图
+    ///
+    /// 提供一个在左侧活动栏中注册的视图入口。插件自行决定视图的布局方式，
+    /// 例如只读列表、可交互的管理界面、或者编辑器等。
+    /// 点击活动栏图标后，该视图会在左侧面板或中间栏中展示。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件应将其与自己的 `addPanelIcon()` 返回值比较，匹配时才提供面板视图。
+    ///   如果为 `nil`，表示没有任何图标被激活。
+    @MainActor func addPanelView(activeIcon: String?) -> AnyView?
+
+    /// 提供 Panel Header 视图
+    ///
+    /// 在面板内容区上方渲染的头部视图。多个插件提供的 header 视图
+    /// 会按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
+    ///
+    /// 典型用例：编辑器的 Tab Strip、面包屑导航等。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件应将其与目标 panel 的 `addPanelIcon()` 返回值比较，
+    ///   仅在匹配时提供 header 视图。
+    @MainActor func addPanelHeaderView(activeIcon: String?) -> AnyView?
+
+    /// 提供 Panel Bottom 视图
+    ///
+    /// 在面板内容区下方渲染的底部视图。多个插件提供的 bottom 视图
+    /// 会按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
+    ///
+    /// 典型用例：编辑器的底部面板（Problems、References、Search Results 等）。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件应将其与目标 panel 的 `addPanelIcon()` 返回值比较，
+    ///   仅在匹配时提供 bottom 视图。
+    @MainActor func addPanelBottomView(activeIcon: String?) -> AnyView?
+
+    /// 提供 Rail 标签页列表
+    ///
+    /// 插件返回一个或多个 `RailTab`，由内核聚合渲染为统一的 Tab Bar。
+    /// 每个 tab 包含 id、标题、图标和排序优先级。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab]
+
+    /// 提供指定 Rail tab 对应的内容视图
+    ///
+    /// 内核在用户选中某个 tab 时调用此方法获取对应的内容视图。
+    ///
+    /// - Parameter tabId: 选中的 tab id，与 `addRailTabs()` 返回的 `RailTab.id` 对应。
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView?
+
+    /// 添加右侧栏视图
+    ///
+    /// 提供一个在窗口右侧显示的侧边栏视图。多个插件提供的侧边栏视图
+    /// 会被水平堆叠，按插件的 `order` 升序排列（order 小的在左，大的在右）。
+    /// 右侧栏与面板内容区之间支持拖拽调整宽度。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    ///   插件可据此判断是否提供侧边栏视图（例如仅在特定插件激活时显示）。
+    ///
+    /// 典型用例：聊天栏、预览面板、属性检查器等。
+    @MainActor func addSidebarView(activeIcon: String?) -> AnyView?
 
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?
-
-    /// 提供导航入口（用于侧边栏导航）
-    @MainActor func addNavigationEntries() -> [NavigationEntry]?
 
     /// 添加状态栏弹窗视图列表
     ///
@@ -144,39 +227,70 @@ protocol SuperPlugin: Actor {
     /// 添加状态栏内容视图
     @MainActor func addStatusBarContentView() -> AnyView?
 
-    /// 添加侧边栏视图（用于 Agent 模式）
-    @MainActor func addSidebarView() -> AnyView?
-
-    /// 添加右侧栏头部左侧视图（用于 Agent 模式，与 trailing 组合成单一 header）
-    @MainActor func addRightHeaderLeadingView() -> AnyView?
-
-    /// 添加右侧栏头部右侧小功能视图列表（用于 Agent 模式，多个插件可各自注入）
-    @MainActor func addRightHeaderTrailingItems() -> [AnyView]
-
-    /// 添加右侧栏中间视图（用于 Agent 模式）
-    @MainActor func addRightMiddleView() -> AnyView?
-
-    /// 添加右侧栏底部视图（用于 Agent 模式）
-    @MainActor func addRightBottomView() -> AnyView?
-
     /// 添加状态栏左侧视图（用于 Agent 模式底部状态栏）
-    @MainActor func addStatusBarLeadingView() -> AnyView?
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
+    @MainActor func addStatusBarLeadingView(activeIcon: String?) -> AnyView?
+
+    /// 添加状态栏中间视图（用于 Agent 模式底部状态栏）
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
+    @MainActor func addStatusBarCenterView(activeIcon: String?) -> AnyView?
 
     /// 添加状态栏右侧视图（用于 Agent 模式底部状态栏）
-    @MainActor func addStatusBarTrailingView() -> AnyView?
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
+    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView?
+
+    /// 提供主题贡献（App + Editor 一体化主题）。
+    @MainActor func addThemeContributions() -> [LumiThemeContribution]
 
     // MARK: - Agent Tools Hooks
 
     /// 提供 Agent 工具列表。
-    @MainActor func agentTools() -> [AgentTool]
+    @MainActor func agentTools() -> [SuperAgentTool]
 
     /// 提供 Agent 工具工厂列表（带依赖注入）。
-    @MainActor func agentToolFactories() -> [AnyAgentToolFactory]
+    @MainActor func agentToolFactories() -> [AnySuperAgentToolFactory]
 
     // MARK: - Send Pipeline
 
     /// 提供「用户消息入队 → 发送模型」管线中间件（按插件 `order` 与中间件 `order` 排序）。
-    @MainActor func sendMiddlewares() -> [AnySendMiddleware]
+    @MainActor func sendMiddlewares() -> [AnySuperSendMiddleware]
+
+    /// 插件提供的 LLM 供应商类型
+    ///
+    /// 如果插件是一个 LLM 供应商插件，返回对应的 `SuperLLMProvider.Type`。
+    /// `PluginVM` 会在插件注册阶段自动收集并注册到 `LLMProviderRegistry`。
+    /// 默认返回 `nil`，表示该插件不提供 LLM 供应商。
+    nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)?
+
+    /// 插件提供的消息渲染器列表
+    ///
+    /// 如果插件提供自定义消息渲染器，返回 `SuperMessageRenderer` 实例数组。
+    /// `PluginVM` 会在插件注册阶段自动收集并注册到 `MessageRendererVM`。
+    /// 默认返回空数组，表示该插件不提供消息渲染器。
+    @MainActor func messageRenderers() -> [any SuperMessageRenderer]
+
+    // MARK: - Editor Extension Points
+
+    /// 标记该插件是否提供编辑器扩展能力
+    ///
+    /// 返回 `true` 表示该插件会向 `EditorExtensionRegistry` 注入编辑器能力
+    ///（如补全、hover、code action、LSP 服务等）。
+    /// `PluginVM` 会据此过滤出编辑器插件，交给 `EditorExtensionRegistry` 安装。
+    /// 默认返回 `false`。
+    nonisolated var providesEditorExtensions: Bool { get }
+
+    /// 向编辑器扩展注册中心注入能力
+    ///
+    /// 当插件的 `providesEditorExtensions` 为 `true` 时，此方法会被调用。
+    /// 插件在此方法中向 `EditorExtensionRegistry` 注册其提供的编辑器能力，例如：
+    /// - `registerCompletionContributor` — 代码补全
+    /// - `registerHoverContributor` — 悬浮提示
+    /// - `registerCodeActionContributor` — 快速修复
+    /// - `registerCommandContributor` — 编辑器命令
+    /// - 其他扩展点
+    ///
+    /// 默认实现为空操作。只有需要贡献编辑器能力的插件才需要重写此方法。
+    @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry)
 
     // MARK: - Lifecycle Hooks
 

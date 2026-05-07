@@ -21,17 +21,14 @@ actor NettoPlugin: SuperPlugin, SuperLog {
     static let shared = NettoPlugin()
     
     // MARK: - UI Contributions
+
     
-    @MainActor func addNavigationEntries() -> [NavigationEntry]? {
-        return [
-            NavigationEntry.create(
-                id: Self.navigationId,
-                title: Self.displayName,
-                icon: Self.iconName,
-                pluginId: Self.id
-            ) {
-                NettoDashboardView()
-            }
-        ]
+
+    @MainActor
+    func addPanelView(activeIcon: String?) -> AnyView? {
+        guard activeIcon == Self.iconName else { return nil }
+        return AnyView(NettoDashboardView())
     }
+
+    nonisolated func addPanelIcon() -> String? { Self.iconName }
 }

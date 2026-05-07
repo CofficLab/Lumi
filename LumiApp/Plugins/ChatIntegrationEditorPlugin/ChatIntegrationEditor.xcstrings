@@ -1,0 +1,20 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Adds context menu actions to send code and locations to the AI chat.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Adds context menu actions to send code and locations to the AI chat." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "添加上下文菜单操作，将代码和位置发送到 AI 聊天。" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "添加上下文選單操作，將代碼和位置發送到 AI 聊天。" } }
+      }
+    },
+    "Chat Integration": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Chat Integration" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "聊天集成" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "聊天整合" } }
+      }
+    }
+  },
+  "version": "1.1"
+}

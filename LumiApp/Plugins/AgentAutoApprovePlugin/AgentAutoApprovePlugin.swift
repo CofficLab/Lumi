@@ -1,19 +1,22 @@
 import MagicKit
+import os
 import SwiftUI
 
 /// 自动批准开关插件
-actor AgentAutoApprovePlugin: SuperPlugin {
+actor AgentAutoApprovePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "✅"
     nonisolated static let verbose: Bool = false
-    static let id = "AgentAutoApproveHeader"
-    static let displayName = String(localized: "Auto-Approve Toggle", table: "AgentAutoApproveHeader")
-    static let description = String(localized: "Auto-approve toggle in chat header", table: "AgentAutoApproveHeader")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-auto-approve")
+
+    static let id = "AgentAutoApprovePlugin"
+    static let displayName = String(localized: "Auto-Approve Toggle", table: "AgentAutoApprovePlugin")
+    static let description = String(localized: "Auto-approve toggle in chat header", table: "AgentAutoApprovePlugin")
     static let iconName = "checkmark.circle"
     static var order: Int { 82 }
-    
+
     /// 核心安全功能，禁止用户配置
     static var isConfigurable: Bool { false }
-    
+
     static let enable: Bool = true
 
     static let shared = AgentAutoApprovePlugin()
@@ -22,16 +25,19 @@ actor AgentAutoApprovePlugin: SuperPlugin {
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
 
-    @MainActor
-    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        AnyView(AutoApprovePersistenceOverlay(content: content()))
-    }
+    // MARK: - Toolbar Views
 
+    /// 工具栏：自动批准开关
     @MainActor
-    func addRightHeaderLeadingView() -> AnyView? { nil }
-
-    @MainActor
-    func addRightHeaderTrailingItems() -> [AnyView] {
-        [AnyView(AutoApproveToggle())]
+    func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(AutoApproveToggle())
     }
+}
+
+// MARK: - Preview
+
+#Preview("Auto Approve Plugin") {
+    AutoApproveToggle()
+        .padding()
+        .inRootView()
 }

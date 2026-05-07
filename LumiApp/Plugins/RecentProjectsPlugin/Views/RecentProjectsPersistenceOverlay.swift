@@ -9,6 +9,7 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { "📋" }
 
     @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var editorVM: EditorVM
     @EnvironmentObject private var conversationVM: ConversationVM
     @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
 
@@ -29,7 +30,7 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             handleProjectPathChange(oldPath: oldPath, newPath: newPath)
         }
-        .onChange(of: projectVM.selectedFileURL) { oldURL, newURL in
+        .onChange(of: editorVM.service.currentFileURL) { oldURL, newURL in
             handleFileSelectionChange(oldURL: oldURL, newURL: newURL)
         }
         .onCurrentProjectDidChange { name, path in
@@ -62,7 +63,8 @@ extension RecentProjectsPersistenceOverlay {
         // 恢复当前文件到 projectVM
         if let currentFile = store.getCurrentFile() {
             let url = URL(fileURLWithPath: currentFile.path)
-            projectVM.selectFile(at: url)
+            _ = editorVM.service.openFile(at: url)
+            editorVM.service.state.loadFile(from: url)
         }
     }
 }
@@ -126,18 +128,18 @@ extension RecentProjectsPersistenceOverlay {
         let url = URL(fileURLWithPath: path)
         
         // 如果路径与当前文件相同，无需切换
-        guard projectVM.selectedFileURL?.path != path else { return }
+        guard editorVM.service.currentFileURL?.path != path else { return }
         
         // 验证文件存在
         guard FileManager.default.fileExists(atPath: path) else {
             if Self.verbose {
-                RecentProjectsPlugin.logger.warning("\(Self.t)⚠️ 文件不存在：\(path)")
+                RecentProjectsPlugin.logger.warning("\(Self.t)⚠️ File does not exist: \(path)")
             }
             return
         }
         
-        // 同步到 ProjectVM
-        projectVM.selectFile(at: url)
+        _ = editorVM.service.openFile(at: url)
+        editorVM.service.state.loadFile(from: url)
     }
 }
 
@@ -151,14 +153,14 @@ extension RecentProjectsPersistenceOverlay {
 
         if switched {
             if Self.verbose {
-                RecentProjectsPlugin.logger.info("\(Self.t)✅ 已切换到项目 [\(projectPath)] 的最近对话")
+                RecentProjectsPlugin.logger.info("\(Self.t)✅ Switched to latest conversation for project [\(projectPath)]")
             }
             return
         }
 
         // 该项目没有关联对话 → 新建一个
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)📁 项目 [\(projectPath)] 无关联对话，创建新对话")
+            RecentProjectsPlugin.logger.info("\(Self.t)📁 No associated conversation for project [\(projectPath)], creating new one")
         }
 
         Task {

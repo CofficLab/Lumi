@@ -74,7 +74,6 @@ struct TerminalMainView: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }

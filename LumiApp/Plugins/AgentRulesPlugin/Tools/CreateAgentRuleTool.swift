@@ -3,7 +3,7 @@ import Foundation
 /// 创建 Agent 规则文档工具
 ///
 /// 在指定项目的 .agent/rules 目录中创建新的规则文档
-struct CreateAgentRuleTool: AgentTool {
+struct CreateAgentRuleTool: SuperAgentTool {
     let name: String = "create_agent_rule"
     let description: String = String(localized: "Create a new rule document in the .agent/rules directory of a project. The document will be created as a Markdown file with the specified title and content.", table: "AgentRules")
 

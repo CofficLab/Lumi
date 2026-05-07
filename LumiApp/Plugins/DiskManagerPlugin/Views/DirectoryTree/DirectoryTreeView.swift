@@ -67,7 +67,6 @@ struct DirectoryTreeRow: View {
 
 #Preview("App") {
     ContentLayout()
-        .hideSidebar()
         .inRootView()
         .withDebugBar()
 }
