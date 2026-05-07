@@ -1265,6 +1265,25 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    @MainActor
+    func externalFileWorkflowControllerDelegatesPollingAndConflictRegistration() {
+        let controller = EditorExternalFileController()
+        let workflow = EditorExternalFileWorkflowController()
+        let modDate = Date(timeIntervalSince1970: 123)
+
+        #expect(workflow.applyConflictRegistration(content: "a", modificationDate: modDate, using: controller))
+        #expect(workflow.pollDecision(currentModDate: modDate.addingTimeInterval(0.2), hasUnsavedChanges: false, using: controller))
+        #expect(
+            workflow.reloadDecision(
+                newContent: "new",
+                currentContent: "old",
+                currentModDate: modDate,
+                hasUnsavedChanges: true
+            ) == .registerConflict(content: "new", modificationDate: modDate)
+        )
+    }
+
+    @Test
     func saveWorkflowPolicyGuardsAutosaveAndDuplicateSaveRuns() {
         #expect(EditorSaveWorkflowPolicy.shouldSaveNowIfNeeded(hasUnsavedChanges: true))
         #expect(!EditorSaveWorkflowPolicy.shouldSaveNowIfNeeded(hasUnsavedChanges: false))
@@ -1505,6 +1524,20 @@ struct EditorKernelCoreTests {
                 longestDetectedLine: nil
             ) == true
         )
+    }
+
+    @Test
+    func runtimeAvailabilityPolicyClampsViewportAndClearDecisions() {
+        #expect(
+            EditorRuntimeAvailabilityPolicy.clampedVisibleRange(
+                startLine: -10,
+                endLine: 120,
+                totalLines: 100
+            ) == 0..<100
+        )
+        #expect(EditorRuntimeAvailabilityPolicy.shouldClearTransientProviders(isPrimaryCursorRendered: false))
+        #expect(EditorRuntimeAvailabilityPolicy.shouldClearProvider(isEnabled: false))
+        #expect(EditorRuntimeAvailabilityPolicy.shouldClearProvider(isEnabled: true) == false)
     }
 
     @Test

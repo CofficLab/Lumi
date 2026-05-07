@@ -100,9 +100,14 @@ final class EditorRuntimeModeController {
         requestInlayHints: @escaping @MainActor () -> Void,
         clearInlayHints: @escaping @MainActor () -> Void
     ) -> ViewportObservation {
+        let visibleRange = EditorRuntimeAvailabilityPolicy.clampedVisibleRange(
+            startLine: startLine,
+            endLine: endLine,
+            totalLines: totalLines
+        )
         let clampedTotalLines = max(0, totalLines)
-        let clampedStart = max(0, min(startLine, clampedTotalLines))
-        let clampedEnd = max(clampedStart, min(endLine, clampedTotalLines))
+        let clampedStart = visibleRange.lowerBound
+        let clampedEnd = visibleRange.upperBound
 
         viewportRenderController.updateVisibleRange(
             startLine: clampedStart,
@@ -205,7 +210,9 @@ final class EditorRuntimeModeController {
         signatureHelpProvider: (any SuperEditorSignatureHelpProvider)?,
         codeActionProvider: (any SuperEditorCodeActionProvider)?
     ) {
-        guard !isPrimaryCursorRendered else { return }
+        guard EditorRuntimeAvailabilityPolicy.shouldClearTransientProviders(
+            isPrimaryCursorRendered: isPrimaryCursorRendered
+        ) else { return }
         documentHighlightProvider?.clear()
         signatureHelpProvider?.clear()
         codeActionProvider?.clear()
@@ -215,7 +222,7 @@ final class EditorRuntimeModeController {
         _ isEnabled: Bool,
         documentHighlightProvider: (any SuperEditorDocumentHighlightProvider)?
     ) {
-        guard !isEnabled else { return }
+        guard EditorRuntimeAvailabilityPolicy.shouldClearProvider(isEnabled: isEnabled) else { return }
         documentHighlightProvider?.clear()
     }
 
@@ -223,7 +230,7 @@ final class EditorRuntimeModeController {
         _ isEnabled: Bool,
         signatureHelpProvider: (any SuperEditorSignatureHelpProvider)?
     ) {
-        guard !isEnabled else { return }
+        guard EditorRuntimeAvailabilityPolicy.shouldClearProvider(isEnabled: isEnabled) else { return }
         signatureHelpProvider?.clear()
     }
 
@@ -231,7 +238,7 @@ final class EditorRuntimeModeController {
         _ isEnabled: Bool,
         codeActionProvider: (any SuperEditorCodeActionProvider)?
     ) {
-        guard !isEnabled else { return }
+        guard EditorRuntimeAvailabilityPolicy.shouldClearProvider(isEnabled: isEnabled) else { return }
         codeActionProvider?.clear()
     }
 

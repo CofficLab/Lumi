@@ -1,8 +1,10 @@
 import Foundation
 
 @MainActor
-final class EditorExternalFileWorkflowController {
-    func pollDecision(
+public final class EditorExternalFileWorkflowController {
+    public init() {}
+
+    public func pollDecision(
         currentModDate: Date,
         hasUnsavedChanges: Bool,
         using controller: EditorExternalFileController
@@ -13,7 +15,7 @@ final class EditorExternalFileWorkflowController {
         )
     }
 
-    func reloadDecision(
+    public func reloadDecision(
         newContent: String,
         currentContent: String,
         currentModDate: Date,
@@ -27,7 +29,7 @@ final class EditorExternalFileWorkflowController {
         )
     }
 
-    func applyConflictRegistration(
+    public func applyConflictRegistration(
         content: String,
         modificationDate: Date,
         using controller: EditorExternalFileController
