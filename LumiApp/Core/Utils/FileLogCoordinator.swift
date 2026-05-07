@@ -20,11 +20,29 @@ import OSLog
 /// FileLogCoordinator（OSLogStore 轮询）
 ///         │
 ///         ▼
-/// ~/Library/Application Support/com.coffic.Lumi/Logs/
+/// ~/Library/Application Support/com.coffic.Lumi/logs_debug_v1/
 ///   ├── 2026-05-02_10-36-00.log
 ///   ├── 2026-05-02_11-02-33.log
 ///   └── ...
 /// ```
+///
+/// ## 版本和环境隔离
+///
+/// 日志存储遵循插件数据存储规范，与数据库使用相同的版本和环境区分策略：
+/// - **版本隔离**：使用主版本号（v1, v2, ...）
+/// - **环境隔离**：Debug 使用 `logs_debug_v1`，Release 使用 `logs_production_v1`
+/// - **目录结构**（与 `db_debug_v1` / `db_production_v1` 是兄弟目录）：
+///   ```
+///   ~/Library/Application Support/com.coffic.Lumi/
+///   ├── db_debug_v1/           # 数据库目录
+///   │   ├── Core/
+///   │   └── [PluginName]/
+///   └── logs_debug_v1/         # 日志目录
+///       ├── 2026-05-02_10-36-00.log
+///       └── ...
+///   ```
+///
+/// 这样可以确保不同版本和环境的日志互不干扰，便于调试和问题追踪。
 ///
 /// ## 自动管理规则
 ///
@@ -64,9 +82,23 @@ final class FileLogCoordinator: @unchecked Sendable {
             fatalError("无法获取 Application Support 目录")
         }
 
+        // 遵循插件数据存储规范，使用与数据库相同的版本和环境区分策略
+        // 路径格式（与 db_debug_v1 / db_production_v1 是兄弟目录）：
+        // - Debug: ~/Library/Application Support/com.coffic.Lumi/logs_debug_v1/
+        // - Release: ~/Library/Application Support/com.coffic.Lumi/logs_production_v1/
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let majorVersion = version.split(separator: ".").first.flatMap { Int($0) } ?? 1
+        let versionSuffix = "v\(majorVersion)"
+
+        #if DEBUG
+        let logsDirectoryName = "logs_debug_\(versionSuffix)"
+        #else
+        let logsDirectoryName = "logs_production_\(versionSuffix)"
+        #endif
+
         let dir = appSupportURL
             .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-            .appendingPathComponent("Logs", isDirectory: true)
+            .appendingPathComponent(logsDirectoryName, isDirectory: true)
 
         try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
 
@@ -119,9 +151,22 @@ final class FileLogCoordinator: @unchecked Sendable {
         // 写入 header
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        
+        // 获取环境标识
+        #if DEBUG
+        let environment = "Debug"
+        #else
+        let environment = "Production"
+        #endif
+        
+        // 获取主版本号
+        let majorVersion = version.split(separator: ".").first.flatMap { Int($0) } ?? 1
+        
         let header = """
         === Lumi Log ===
         Version: \(version) (\(build))
+        Environment: \(environment)
+        Database Version: v\(majorVersion)
         Date: \(Date())
         ===
 

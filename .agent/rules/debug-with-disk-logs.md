@@ -162,16 +162,41 @@ xcodebuild -project Lumi.xcodeproj -scheme Lumi -destination 'platform=macOS' bu
 
 ### 4.1 找到最新日志文件
 
+日志文件按照插件数据存储规范进行版本和环境隔离（与数据库目录是兄弟目录）：
+
+**Debug 环境**：
 ```bash
-ls -lt ~/Library/Application\ Support/com.coffic.Lumi/Logs/ | head -5
+ls -lt ~/Library/Application\ Support/com.coffic.Lumi/logs_debug_v1/ | head -5
+```
+
+**Release 环境**：
+```bash
+ls -lt ~/Library/Application\ Support/com.coffic.Lumi/logs_production_v1/ | head -5
+```
+
+**目录结构**：
+```
+~/Library/Application Support/com.coffic.Lumi/
+├── db_debug_v1/           # 数据库目录
+│   ├── Core/
+│   └── [PluginName]/
+└── logs_debug_v1/         # 日志目录
+    ├── 2026-05-02_10-36-00.log
+    └── ...
 ```
 
 ### 4.2 过滤诊断日志
 
 使用 `📝` 前缀快速过滤（所有诊断日志统一使用此前缀）：
 
+**Debug 环境**：
 ```bash
-grep "📝" ~/Library/Application\ Support/com.coffic.Lumi/Logs/<最新文件>.log
+grep "📝" ~/Library/Application\ Support/com.coffic.Lumi/logs_debug_v1/<最新文件>.log
+```
+
+**Release 环境**：
+```bash
+grep "📝" ~/Library/Application\ Support/com.coffic.Lumi/logs_production_v1/<最新文件>.log
 ```
 
 ### 4.3 按时序分析
