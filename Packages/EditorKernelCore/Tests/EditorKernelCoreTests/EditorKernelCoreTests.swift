@@ -220,6 +220,20 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func referenceResultBuildsStableIdentifiersFromCanonicalPaths() {
+        let result = ReferenceResult(
+            url: URL(fileURLWithPath: "/tmp/project/../project/File.swift"),
+            line: 12,
+            column: 4,
+            path: "Sources/File.swift",
+            preview: "let value = 1"
+        )
+
+        #expect(result.id == "/tmp/project/File.swift#12:4:let value = 1")
+        #expect(result.stableIdentifier == result.id)
+    }
+
+    @Test
     @MainActor
     func saveControllerBuildsPipelineOptionsAndClearsSavedState() async {
         let controller = EditorSaveController(successDisplayDuration: 0.01)
