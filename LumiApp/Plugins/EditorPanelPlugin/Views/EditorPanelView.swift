@@ -37,7 +37,7 @@ struct EditorPanelView: View {
                 fileInfoBanner
                 editorContent
             } else {
-                emptyState
+                EditorEmptyStateView()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -45,16 +45,16 @@ struct EditorPanelView: View {
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             coordinator.handleProjectPathChange(oldPath: oldPath, newPath: newPath)
         }
-        .onChange(of: projectVM.selectedFileURL) { _, newURL in
-            coordinator.handleSelectedFileURLChange(newURL: newURL)
+        .onChange(of: projectVM.selectedFileURL) {
+            coordinator.handleSelectedFileURLChange(newURL: projectVM.selectedFileURL)
         }
-        .onChange(of: state.currentFileURL) { _, _ in
+        .onChange(of: state.currentFileURL) {
             coordinator.handleCurrentFileURLChange()
         }
-        .onChange(of: state.cursorLine) { _, _ in
+        .onChange(of: state.cursorLine) {
             coordinator.handleCursorLineChange()
         }
-        .onChange(of: state.documentSymbolProvider.symbols.map(\.id)) { _, _ in
+        .onChange(of: state.documentSymbolProvider.symbols.map(\.id)) {
             coordinator.handleDocumentSymbolsChange()
         }
         .onAppear {
@@ -157,10 +157,10 @@ struct EditorPanelView: View {
             FilePreviewView(fileURL: fileURL)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if isFileLoading {
-            loadingStateView
+            EditorLoadingStateView()
         } else if projectVM.isFileSelected {
             let _ = EditorPlugin.logger.warning("\(EditorPlugin.t)显示了「不支持的文件」视图. isMarkdownFile=\(state.isMarkdownFile), canPreview=\(state.canPreview), isBinaryFile=\(state.isBinaryFile), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public), fileName=\(state.fileName, privacy: .public), fileExtension=\(state.fileExtension, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
-            unsupportedFileView
+            EditorUnsupportedFileView(fileName: state.fileName)
         }
     }
 
@@ -246,45 +246,6 @@ struct EditorPanelView: View {
             .background(themeVM.activeAppTheme.workspaceBackgroundColor())
             .zIndex(1)
         }
-    }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        EditorEmptyStateView()
-    }
-
-    // MARK: - Loading State
-
-    private var loadingStateView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-                .controlSize(.small)
-
-            Text(String(localized: "Loading...", table: "LumiEditor"))
-                .font(.system(size: 12))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: - Unsupported File
-
-    private var unsupportedFileView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "doc.questionmark")
-                .font(.system(size: 36, weight: .thin))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
-
-            Text(String(localized: "Unsupported File", table: "LumiEditor"))
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-
-            Text(state.fileName)
-                .font(.system(size: 12))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
