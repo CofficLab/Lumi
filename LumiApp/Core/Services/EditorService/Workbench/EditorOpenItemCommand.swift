@@ -72,12 +72,3 @@ extension ResolvedEditorOpenItemCommand {
         self.closeWorkspaceSymbolSearch = kernelValue.closeWorkspaceSymbolSearch
     }
 }
-
-private extension CursorPosition {
-    init(kernelValue: EditorKernelCore.EditorCursorPosition) {
-        self.init(
-            start: .init(line: kernelValue.start.line, column: kernelValue.start.column),
-            end: kernelValue.end.map { .init(line: $0.line, column: $0.column) }
-        )
-    }
-}

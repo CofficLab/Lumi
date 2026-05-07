@@ -30,7 +30,7 @@ enum EditorNavigationController {
     }
 }
 
-private extension CursorPosition {
+extension CursorPosition {
     var kernelValue: EditorKernelCore.EditorCursorPosition {
         .init(start: .init(line: start.line, column: start.column), end: end.map {
             .init(line: $0.line, column: $0.column)
