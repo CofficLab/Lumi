@@ -338,6 +338,27 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func configFileStorePersistsAndRemovesValues() throws {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let store = EditorConfigFileStore(settingsDirectoryURL: root)
+        let fileManager = FileManager.default
+
+        store.saveDict(["fontSize": 14.0, "useSpaces": true], fileManager: fileManager)
+        let loaded = store.loadDict(fileManager: fileManager)
+        #expect(loaded["fontSize"] as? Double == 14.0)
+        #expect(loaded["useSpaces"] as? Bool == true)
+
+        store.savingValue(2, forKey: "tabWidth")
+        #expect(store.loadingValue(forKey: "tabWidth", as: Int.self) == 2)
+
+        store.removingValue(forKey: "tabWidth")
+        #expect(store.loadingValue(forKey: "tabWidth", as: Int.self) == nil)
+
+        try? fileManager.removeItem(at: root)
+    }
+
+    @Test
     @MainActor
     func saveControllerBuildsPipelineOptionsAndClearsSavedState() async {
         let controller = EditorSaveController(successDisplayDuration: 0.01)
