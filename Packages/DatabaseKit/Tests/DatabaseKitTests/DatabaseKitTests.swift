@@ -78,6 +78,59 @@ struct DatabaseKitTests {
 
         #expect(first === second)
     }
+
+    @Test
+    func sqliteDriverCanCreateInsertAndQueryRows() async throws {
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("sqlite")
+        let driver = SQLiteDriver()
+        let config = DatabaseConfig(name: "SQLite", type: .sqlite, database: fileURL.path)
+        let connection = try await driver.connect(config: config)
+
+        _ = try await connection.execute(
+            "CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT, enabled INTEGER)",
+            params: nil
+        )
+        let changes = try await connection.execute(
+            "INSERT INTO items (name, enabled) VALUES (?, ?)",
+            params: [.string("lumi"), .bool(true)]
+        )
+        let result = try await connection.query(
+            "SELECT name, enabled FROM items WHERE name = ?",
+            params: [.string("lumi")]
+        )
+
+        #expect(changes == 1)
+        #expect(result.columns == ["name", "enabled"])
+        #expect(result.rows.count == 1)
+        #expect(result.rows.first == [.string("lumi"), .integer(1)])
+
+        await connection.close()
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
+    @Test
+    func redisRESPCodecEncodesCommandsInRESPFormat() throws {
+        let data = RedisRESPCodec.encodeCommand(["SET", "key", "value"])
+        let string = try #require(String(data: data, encoding: .utf8))
+        #expect(string == "*3\r\n$3\r\nSET\r\n$3\r\nkey\r\n$5\r\nvalue\r\n")
+    }
+
+    @Test
+    func redisRESPCodecParsesNestedArrays() throws {
+        let payload = Data("*2\r\n$1\r\n0\r\n*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n".utf8)
+        let parsed = try RedisRESPCodec.parse(payload)
+        #expect(
+            parsed == .array([
+                .bulkString(Data("0".utf8)),
+                .array([
+                    .bulkString(Data("foo".utf8)),
+                    .bulkString(Data("bar".utf8))
+                ])
+            ])
+        )
+    }
 }
 
 private actor MockDriverRecorder {
