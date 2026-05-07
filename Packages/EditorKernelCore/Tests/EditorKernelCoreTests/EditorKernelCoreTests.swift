@@ -2198,4 +2198,14 @@ struct EditorKernelCoreTests {
         #expect(root.activePath(for: 20) == nil)
     }
 
+    @Test
+    @MainActor
+    func scrollStateDefaultsAndStoresViewportOrigin() {
+        let initial = EditorScrollState()
+        #expect(initial.viewportOrigin == .zero)
+
+        let custom = EditorScrollState(viewportOrigin: CGPoint(x: 12, y: 34))
+        #expect(custom.viewportOrigin == CGPoint(x: 12, y: 34))
+    }
+
 }

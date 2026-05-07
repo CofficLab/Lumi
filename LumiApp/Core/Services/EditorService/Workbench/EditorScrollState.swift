@@ -1,10 +1,3 @@
-import Foundation
-import CoreGraphics
+import EditorKernelCore
 
-struct EditorScrollState: Equatable {
-    var viewportOrigin: CGPoint
-
-    init(viewportOrigin: CGPoint = .zero) {
-        self.viewportOrigin = viewportOrigin
-    }
-}
+typealias EditorScrollState = EditorKernelCore.EditorScrollState
