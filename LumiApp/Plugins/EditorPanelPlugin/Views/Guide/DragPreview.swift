@@ -1,6 +1,9 @@
 import SwiftUI
 
-/// 文件拖拽预览视图
+/// 文件拖拽预览视图。
+///
+/// 负责在拖拽编辑器文件或目录时提供轻量的视觉预览，帮助用户确认当前拖拽
+/// 的目标对象。
 struct DragPreview: View {
     let fileURL: URL
 

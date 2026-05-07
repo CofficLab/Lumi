@@ -1,6 +1,9 @@
 import SwiftUI
 
-/// 不支持的文件类型提示视图
+/// 不支持文件类型提示视图。
+///
+/// 当当前文件无法由源码编辑器直接渲染时显示，用于告知用户该文件不在当前
+/// 编辑能力覆盖范围内。
 struct EditorUnsupportedFileView: View {
     let fileName: String
 

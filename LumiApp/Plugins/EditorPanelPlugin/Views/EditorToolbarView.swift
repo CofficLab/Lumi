@@ -2,8 +2,10 @@ import SwiftUI
 import MagicKit
 import CodeEditTextView
 
-/// 编辑器工具栏视图
-/// 包含字体大小、缩进、主题切换等设置
+/// 编辑器工具栏视图。
+///
+/// 负责承载编辑器级别的常用控制项，例如字体大小、缩进、保存行为、分栏、
+/// 查找替换和状态提示等快捷操作。
 struct EditorToolbarView: View {
     
     @EnvironmentObject private var themeVM: ThemeVM

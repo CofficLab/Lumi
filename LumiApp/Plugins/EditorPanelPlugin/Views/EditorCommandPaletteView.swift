@@ -2,6 +2,10 @@ import SwiftUI
 import MagicKit
 import CodeEditSourceEditor
 
+/// 编辑器命令面板视图。
+///
+/// 负责展示命令搜索、分类筛选、快速打开结果以及命令执行入口，是编辑器内
+/// 统一的键盘驱动操作面板。该视图消费 `EditorState` 提供的数据与动作。
 struct EditorCommandPaletteView: View {
     @ObservedObject var state: EditorState
     let openEditors: [EditorOpenEditorItem]

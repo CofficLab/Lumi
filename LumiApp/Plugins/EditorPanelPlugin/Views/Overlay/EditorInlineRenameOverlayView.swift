@@ -1,5 +1,9 @@
 import SwiftUI
 
+/// 编辑器内联重命名悬浮层。
+///
+/// 负责承载符号重命名输入、预览状态和应用动作，是源码视图顶部的轻量级
+/// rename 交互容器。
 struct EditorInlineRenameOverlayView: View {
     @ObservedObject var state: EditorState
     @Binding var renameState: EditorInlineRenameState

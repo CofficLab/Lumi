@@ -34,7 +34,10 @@ struct EditorPanelView: View {
     var body: some View {
         VStack(spacing: 0) {
             if hasActiveEditorSelection {
-                fileInfoBanner
+                FileInfoBannerView(
+                    state: state,
+                    warningMessage: panelService.projectContextWarningMessage(state: state)
+                )
                 editorContent
             } else {
                 EditorEmptyStateView()
@@ -154,12 +157,10 @@ struct EditorPanelView: View {
         } else if state.canPreview {
             sourceEditorContent
         } else if state.isBinaryFile, let fileURL = state.currentFileURL {
-            FilePreviewView(fileURL: fileURL)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            FilePreviewView(fileURL: fileURL).frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if isFileLoading {
             EditorLoadingStateView()
         } else if hasActiveEditorSelection {
-            let _ = EditorPlugin.logger.warning("\(EditorPlugin.t)显示了「不支持的文件」视图. isMarkdownFile=\(state.isMarkdownFile), canPreview=\(state.canPreview), isBinaryFile=\(state.isBinaryFile), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public), activeSessionID=\(sessionStore.activeSessionID?.uuidString ?? "nil", privacy: .public), fileName=\(state.fileName, privacy: .public), fileExtension=\(state.fileExtension, privacy: .public)")
             EditorUnsupportedFileView(fileName: state.fileName)
         }
     }
@@ -168,7 +169,6 @@ struct EditorPanelView: View {
     private var sourceEditorContent: some View {
         SourceEditorView(state: state)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipped()
     }
 
     @ViewBuilder
@@ -191,62 +191,6 @@ struct EditorPanelView: View {
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
     }
 
-    // MARK: - File Info Banner
-
-    @ViewBuilder
-    private var fileInfoBanner: some View {
-        let warningMessage = panelService.projectContextWarningMessage(state: state)
-        if state.isTruncated || !state.isEditable || warningMessage != nil {
-            VStack(alignment: .leading, spacing: 4) {
-                if state.isTruncated {
-                    HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
-                        Text(
-                            String(
-                                localized: "Preview Truncated for Large File", table: "LumiEditor")
-                        )
-                        .font(.system(size: 9))
-                        .foregroundColor(AppUI.Color.semantic.warning)
-                    }
-                    if state.canLoadFullFile {
-                        Button(String(localized: "Load Full File", table: "LumiEditor")) {
-                            state.loadFullFileFromDisk()
-                        }
-                        .buttonStyle(.link)
-                        .font(.system(size: 9))
-                    }
-                }
-                if !state.isEditable {
-                    HStack(spacing: 4) {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
-                        Text(String(localized: "Large File Read-Only Preview", table: "LumiEditor"))
-                            .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
-                    }
-                }
-                if let warning = warningMessage {
-                    HStack(spacing: 4) {
-                        Image(systemName: "hammer.circle.fill")
-                            .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
-                        Text(warning)
-                            .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(AppUI.Color.semantic.warning.opacity(0.06))
-            .background(themeVM.activeAppTheme.workspaceBackgroundColor())
-            .zIndex(1)
-        }
-    }
 }
 
 // MARK: - Preview

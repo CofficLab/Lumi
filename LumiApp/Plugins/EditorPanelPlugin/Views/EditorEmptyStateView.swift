@@ -1,6 +1,9 @@
 import SwiftUI
 
-/// 编辑器未选择文件时的空白占位视图
+/// 编辑器空白占位视图。
+///
+/// 当当前面板没有选中文件时显示，引导用户从文件树或其他入口选择一个文件
+/// 开始编辑。
 struct EditorEmptyStateView: View {
     @EnvironmentObject private var themeVM: ThemeVM
 

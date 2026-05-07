@@ -1,5 +1,9 @@
 import SwiftUI
 
+/// 编辑器 peek 预览悬浮层。
+///
+/// 负责在当前编辑上下文中展示定义、引用等跳转结果的列表与内容预览，让
+/// 用户无需离开当前文件就能浏览目标位置。
 struct EditorPeekOverlayView: View {
     @ObservedObject var state: EditorState
     let presentation: EditorPeekPresentation

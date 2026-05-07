@@ -4,8 +4,11 @@ import CodeEditTextView
 import CodeEditLanguages
 import MagicKit
 
-/// 代码编辑器主视图
-/// 基于 CodeEditSourceEditor 实现专业级编辑体验
+/// 代码编辑器主视图。
+/// 基于 CodeEditSourceEditor 实现专业级编辑体验。
+///
+/// 该视图负责装配编辑器实例、状态协调器以及各类 overlay 子视图，是
+/// EditorPanel 中源码编辑体验的核心入口。
 struct SourceEditorView: View, SuperLog {
     nonisolated static let emoji = "📝"
     nonisolated static let verbose: Bool = true
@@ -46,10 +49,6 @@ struct SourceEditorView: View, SuperLog {
     }
     
     var body: some View {
-        configuredEditorContent
-    }
-
-    private var configuredEditorContent: some View {
         let base = editorContent
             .onAppear {
                 initializeCoordinators()
@@ -142,22 +141,31 @@ struct SourceEditorView: View, SuperLog {
                 inlayHintsStrip
             }
             .overlay(alignment: .topLeading) {
-                gutterDecorationsOverlay
+                EditorGutterDecorationsOverlayView(
+                    decorations: visibleGutterDecorations,
+                    openDiagnostic: state.openProblem(atLine:)
+                )
             }
             .overlay(alignment: .topLeading) {
-                surfaceHighlightsOverlay
+                EditorSurfaceHighlightsOverlayView(highlights: visibleSurfaceHighlights)
             }
             .overlay(alignment: .topLeading) {
-                secondaryCursorOverlay
+                EditorSecondaryCursorOverlayView(highlights: visibleSecondaryCursorHighlights)
             }
             .overlay(alignment: .topLeading) {
                 GeometryReader { proxy in
-                    inlinePresentationsOverlay(in: proxy.size)
+                    EditorInlinePresentationsOverlayView(
+                        presentations: inlinePresentations(in: proxy.size)
+                    )
                 }
             }
             .overlay(alignment: .topLeading) {
                 GeometryReader { proxy in
-                    hoverPreview(in: proxy.size)
+                    EditorHoverOverlayView(
+                        state: state,
+                        containerSize: proxy.size,
+                        hoverPopoverSize: $hoverPopoverSize
+                    )
                 }
             }
             .overlay(alignment: .bottomTrailing) {
@@ -173,8 +181,7 @@ struct SourceEditorView: View, SuperLog {
                 codeActionOverlay
             }
         } else {
-            Text(String(localized: "No content available", table: "LumiEditor"))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            EditorEmptyContentStateView()
         }
     }
     
@@ -231,74 +238,10 @@ struct SourceEditorView: View, SuperLog {
     
     @ViewBuilder
     private var codeActionOverlay: some View {
-        GeometryReader { proxy in
-            if let textView = state.focusedTextView,
-               let lineTable = contentLineTable,
-               let placement = state.codeActionIndicatorPlacement(
-                    textView: textView,
-                    lineTable: lineTable,
-                    containerSize: proxy.size
-               ) {
-                let actions = state.currentCodeActionOverlayActions
-                VStack(alignment: .leading, spacing: 0) {
-                    codeActionIndicatorButton(actionCount: actions.count)
-                        .offset(x: placement.origin.x, y: placement.origin.y)
-
-                    if state.isCodeActionPanelPresented {
-                        CodeActionPanel(
-                            actions: actions,
-                            selectedIndex: Binding(
-                                get: { state.selectedCodeActionIndex },
-                                set: { state.selectCodeAction(at: $0) }
-                            )
-                        ) { action in
-                            Task { @MainActor in
-                                await state.performCodeActionOverlayAction(action)
-                            }
-                        }
-                        .offset(x: placement.panelOrigin.x, y: placement.panelOrigin.y)
-                        .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .topLeading)))
-                    }
-                }
-                .animation(.easeOut(duration: 0.14), value: state.isCodeActionPanelPresented)
-            }
-        }
-    }
-
-    private func codeActionIndicatorButton(actionCount: Int) -> some View {
-        let style = EditorCodeActionOverlayStyle.standard
-        return Button {
-            state.toggleCodeActionPanel()
-        } label: {
-            ZStack(alignment: .topTrailing) {
-                RoundedRectangle(cornerRadius: style.indicatorCornerRadius)
-                    .fill(AppUI.Color.semantic.warning.opacity(state.isCodeActionPanelPresented ? 0.24 : 0.16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: style.indicatorCornerRadius)
-                            .stroke(AppUI.Color.semantic.warning.opacity(state.isCodeActionPanelPresented ? 0.7 : 0.45), lineWidth: 1)
-                    )
-                    .frame(width: style.indicatorSize, height: style.indicatorSize)
-
-                Image(systemName: "lightbulb.fill")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.warning)
-
-                if actionCount > 1 {
-                    Text("\(actionCount)")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(
-                            Capsule()
-                                .fill(AppUI.Color.semantic.primary)
-                        )
-                        .offset(x: 8, y: -6)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .help(String(localized: "Quick Fix", table: "LumiEditor"))
+        EditorCodeActionOverlayView(
+            state: state,
+            lineTable: contentLineTable
+        )
     }
 
     @ViewBuilder
@@ -322,237 +265,16 @@ struct SourceEditorView: View, SuperLog {
         }
     }
 
-    @ViewBuilder
-    private var gutterDecorationsOverlay: some View {
-        let decorations = visibleGutterDecorations
-        if !decorations.isEmpty {
-            ZStack(alignment: .topLeading) {
-                ForEach(decorations) { decoration in
-                    gutterDecorationView(decoration)
-                        .frame(width: decoration.rect.width, height: decoration.rect.height)
-                        .offset(x: decoration.rect.minX, y: decoration.rect.minY)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func gutterDecorationView(_ decoration: EditorGutterDecoration) -> some View {
-        let content = ZStack {
-            switch decoration.style.shape {
-            case .circle:
-                Circle()
-                    .fill(decoration.style.fillColor)
-                    .overlay(
-                        Circle()
-                            .stroke(decoration.style.strokeColor, lineWidth: 1)
-                    )
-            case .roundedRect:
-                RoundedRectangle(cornerRadius: decoration.style.cornerRadius)
-                    .fill(decoration.style.fillColor)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: decoration.style.cornerRadius)
-                            .stroke(decoration.style.strokeColor, lineWidth: 1)
-                    )
-            case .bar:
-                Capsule()
-                    .fill(decoration.style.fillColor)
-                    .overlay(
-                        Capsule()
-                            .stroke(decoration.style.strokeColor, lineWidth: 0.75)
-                    )
-            }
-
-            if let badgeText = decoration.badgeText {
-                Text(badgeText)
-                    .font(.system(size: 7, weight: .bold))
-                    .foregroundColor(decoration.style.foregroundColor)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-                    .padding(.horizontal, decoration.style.shape == .bar ? 0 : 1)
-            } else if let symbolName = decoration.symbolName {
-                Image(systemName: symbolName)
-                    .font(.system(size: 5.5, weight: .bold))
-                    .foregroundColor(decoration.style.foregroundColor)
-            }
-        }
-
-        if case .diagnostic = decoration.kind {
-            Button {
-                state.openProblem(atLine: decoration.line)
-            } label: {
-                content
-            }
-            .buttonStyle(.plain)
-            .contentShape(Rectangle())
-            .help(String(localized: "Open diagnostic", table: "LumiEditor"))
-        } else {
-            content
-                .allowsHitTesting(false)
-        }
-    }
-
-    @ViewBuilder
-    private var surfaceHighlightsOverlay: some View {
-        let highlights = visibleSurfaceHighlights
-        if !highlights.isEmpty {
-            ZStack(alignment: .topLeading) {
-                ForEach(highlights) { highlight in
-                    RoundedRectangle(cornerRadius: highlight.style.cornerRadius)
-                        .fill(highlight.style.fillColor)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: highlight.style.cornerRadius)
-                                .stroke(highlight.style.strokeColor, lineWidth: highlight.style.lineWidth)
-                        )
-                        .frame(
-                            width: max(highlight.rect.width, highlight.style.minimumWidth),
-                            height: max(highlight.rect.height, highlight.style.minimumHeight)
-                        )
-                        .offset(x: highlight.rect.minX, y: highlight.rect.minY)
-                        .zIndex(highlight.style.zIndex)
-                }
-            }
-            .allowsHitTesting(false)
-        }
-    }
-
-    @ViewBuilder
-    private var secondaryCursorOverlay: some View {
-        let highlights = visibleSecondaryCursorHighlights
-        if !highlights.isEmpty {
-            ZStack(alignment: .topLeading) {
-                ForEach(highlights) { highlight in
-                    RoundedRectangle(cornerRadius: highlight.cornerRadius)
-                        .fill(highlight.fillColor)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: highlight.cornerRadius)
-                                .stroke(
-                                    highlight.strokeColor,
-                                    style: StrokeStyle(lineWidth: highlight.lineWidth, dash: highlight.dash)
-                                )
-                        )
-                        .frame(width: max(highlight.rect.width, 2), height: max(highlight.rect.height, 2))
-                        .offset(x: highlight.rect.minX, y: highlight.rect.minY)
-                }
-            }
-            .allowsHitTesting(false)
-        }
-    }
-
-    @ViewBuilder
-    private func inlinePresentationsOverlay(in containerSize: CGSize) -> some View {
+    private func inlinePresentations(in containerSize: CGSize) -> [EditorInlinePresentation] {
         if let textView = state.focusedTextView,
            let lineTable = contentLineTable {
-            let style = EditorInlinePresentationStyle.standard
-            let presentations = state.inlinePresentations(
+            return state.inlinePresentations(
                 textView: textView,
                 lineTable: lineTable,
                 containerSize: containerSize
             )
-
-            ZStack(alignment: .topLeading) {
-                ForEach(presentations) { presentation in
-                    HStack(spacing: 6) {
-                        Image(systemName: presentation.iconName)
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(presentation.style.accentColor)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(presentation.title)
-                                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                .lineLimit(1)
-
-                            if let detail = presentation.detail {
-                                Text(detail)
-                                    .font(.system(size: 9))
-                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
-                                    .lineLimit(1)
-                            }
-                        }
-
-                        if let badgeText = presentation.badgeText {
-                            Text(badgeText)
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundColor(presentation.style.accentColor)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 2)
-                                .background(
-                                    Capsule()
-                                        .fill(presentation.style.accentColor.opacity(0.12))
-                                )
-                        }
-                    }
-                    .foregroundColor(presentation.style.foregroundColor)
-                    .padding(.horizontal, style.horizontalPadding)
-                    .padding(.vertical, style.verticalPadding)
-                    .frame(width: presentation.size.width, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: style.cornerRadius)
-                            .fill(presentation.style.backgroundColor)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: style.cornerRadius)
-                                    .stroke(
-                                        presentation.style.borderColor,
-                                        lineWidth: style.borderWidth
-                                    )
-                            )
-                    )
-                    .offset(x: presentation.origin.x, y: presentation.origin.y)
-                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .leading)))
-                }
-            }
-            .allowsHitTesting(false)
-            .animation(.easeOut(duration: 0.14), value: presentations.map(\.id))
         }
-    }
-
-    // MARK: - Hover Popover
-
-    @ViewBuilder
-    private func hoverPreview(in containerSize: CGSize) -> some View {
-        if let hoverText = state.currentHoverOverlayText {
-            let style = EditorHoverOverlayStyle.standard
-            let placement = state.hoverOverlayPlacement(
-                in: containerSize,
-                popoverSize: hoverPopoverSize,
-                style: style
-            )
-
-            HoverPopoverView(markdownText: hoverText)
-                .frame(
-                    width: placement.cardSize.width,
-                    height: placement.cardSize.height,
-                    alignment: .topLeading
-                )
-                .onAppear {
-                    if Self.verbose {
-                        state.logger.debug("\(Self.t)悬停预览: 内容长度=\(hoverText.count), 矩形=\(String(describing: state.currentHoverOverlayRect))")
-                        state.logger.debug("\(Self.t)悬停预览: 原始内容=\n\(hoverText.max(200))")
-                    }
-                }
-                .fixedSize(horizontal: false, vertical: false)
-                .background(
-                    GeometryReader { popoverGeo in
-                        Color.clear
-                            .onAppear {
-                                hoverPopoverSize = popoverGeo.size
-                            }
-                            .onChange(of: popoverGeo.size) { _, newSize in
-                                hoverPopoverSize = newSize
-                            }
-                    }
-                )
-                .offset(
-                    x: placement.origin.x,
-                    y: placement.origin.y
-                )
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .scale(scale: 0.97, anchor: placement.isPresentedAboveSymbol ? .bottomLeading : .topLeading)),
-                    removal: .opacity
-                ))
-                .animation(.easeOut(duration: 0.14), value: state.currentHoverOverlayText)
-                .animation(.easeOut(duration: 0.12), value: placement.origin)
-        }
+        return []
     }
 
     // MARK: - Initialization & Delegates
