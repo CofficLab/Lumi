@@ -1,8 +1,10 @@
 import Foundation
 
 @MainActor
-final class EditorFileWatcherController {
-    func setup(
+public final class EditorFileWatcherController {
+    public init() {}
+
+    public func setup(
         for url: URL,
         externalFileController: EditorExternalFileController,
         onPoll: @escaping @MainActor (_ url: URL, _ currentModDate: Date) -> Void,
@@ -14,7 +16,7 @@ final class EditorFileWatcherController {
         logInfo("已启动文件轮询监听：\(url.lastPathComponent)")
     }
 
-    func cleanup(
+    public func cleanup(
         externalFileController: EditorExternalFileController,
         clearConflict: @escaping @MainActor () -> Void
     ) {

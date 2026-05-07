@@ -2294,4 +2294,36 @@ struct EditorKernelCoreTests {
         #expect(closedReference.isWorkspaceSymbolSearchPresented)
     }
 
+    @Test
+    @MainActor
+    func fileWatcherControllerDelegatesSetupAndCleanup() throws {
+        let controller = EditorFileWatcherController()
+        let external = EditorExternalFileController(pollInterval: 10)
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try "hello".write(to: tempURL, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        _ = external.registerConflictIfNeeded(content: "stale", modificationDate: .now)
+        var cleanupCount = 0
+        var logged: String?
+
+        controller.setup(
+            for: tempURL,
+            externalFileController: external,
+            onPoll: { _, _ in },
+            cleanup: { cleanupCount += 1 },
+            logInfo: { logged = $0 }
+        )
+
+        #expect(cleanupCount == 1)
+        #expect(logged == "已启动文件轮询监听：\(tempURL.lastPathComponent)")
+        #expect(external.conflictState == nil)
+
+        controller.cleanup(
+            externalFileController: external,
+            clearConflict: { cleanupCount += 1 }
+        )
+        #expect(cleanupCount == 2)
+    }
+
 }
