@@ -2362,4 +2362,31 @@ struct EditorKernelCoreTests {
         #expect(target.isPinned)
     }
 
+    @Test
+    @MainActor
+    func packageManifestSyntaxParsesDependenciesAndHoverMarkdown() {
+        let content = #"""
+        let package = Package(
+            dependencies: [
+                .package(url: "https://github.com/apple/swift-log.git", from: "1.5.0"),
+                .package(path: "../LocalKit")
+            ]
+        )
+        """#
+
+        let offset = (content as NSString).range(of: "swift-log.git").location
+        let link = PackageManifestSyntax.dependencyLink(at: offset, in: content)
+        #expect(link?.rawURL == "https://github.com/apple/swift-log.git")
+
+        let dependency = PackageManifestSyntax.dependency(at: offset, in: content)
+        #expect(dependency?.repositoryName == "swift-log")
+        #expect(dependency?.requirement?.kind == .from)
+        #expect(dependency?.requirement?.value == "1.5.0")
+
+        let hover = PackageManifestSyntax.hoverMarkdown(line: 2, character: 38, in: content)
+        #expect(hover?.contains("### Swift Package Dependency") == true)
+        #expect(hover?.contains("swift-log") == true)
+        #expect(hover?.contains("from 1.5.0") == true)
+    }
+
 }
