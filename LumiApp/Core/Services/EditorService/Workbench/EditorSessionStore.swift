@@ -29,20 +29,17 @@ final class EditorSessionStore: ObservableObject {
     @discardableResult
     func openOrActivate(fileURL: URL?) -> EditorSession? {
         guard let fileURL else {
-            Self.logger.info("📝[openOrActivate] fileURL 为 nil → activeSessionID=nil")
             activeSessionID = nil
             return nil
         }
 
         if let existing = sessions.first(where: { $0.fileURL == fileURL }) {
-            Self.logger.info("📝[openOrActivate] 复用已有 session, fileURL=\(fileURL.path, privacy: .public), sessionID=\(existing.id), 当前sessions数=\(self.sessions.count)")
             activeSessionID = existing.id
             recordActivation(for: existing)
             return existing
         }
 
         let session = EditorSession(fileURL: fileURL)
-        Self.logger.info("📝[openOrActivate] 创建新 session, fileURL=\(fileURL.path, privacy: .public), sessionID=\(session.id), 当前sessions数=\(self.sessions.count)")
         sessions.append(session)
         tabs.append(EditorTab(sessionID: session.id, fileURL: fileURL))
         activeSessionID = session.id

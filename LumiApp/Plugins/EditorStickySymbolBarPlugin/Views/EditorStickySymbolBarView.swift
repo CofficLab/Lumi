@@ -1,6 +1,26 @@
 import SwiftUI
 import MagicKit
 
+/// 编辑器符号面包屑头部视图。
+struct EditorStickySymbolBarHeaderView: View {
+    @EnvironmentObject private var editorVM: EditorVM
+
+    private var state: EditorState { editorVM.service.state }
+
+    private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
+        state.documentSymbolProvider.activeItems(for: state.cursorLine)
+    }
+
+    var body: some View {
+        if !activeDocumentSymbolTrail.isEmpty {
+            EditorStickySymbolBarView(
+                state: state,
+                symbols: activeDocumentSymbolTrail
+            )
+        }
+    }
+}
+
 /// 符号面包屑导航栏（Sticky Symbol Bar）
 ///
 /// 显示当前光标所在位置的代码符号层级路径（例如：`Class` › `Method` › `Block`）。
@@ -21,18 +41,15 @@ struct EditorStickySymbolBarView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            // 左侧提示标签
             Label(String(localized: "Current Symbol", table: "LumiEditor"), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 
-            // 中间：可横向滚动的符号面包屑链
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     ForEach(Array(symbols.enumerated()), id: \.element.id) { index, symbol in
                         symbolChip(symbol)
 
-                        // 在符号之间添加右箭头分隔符
                         if index < symbols.count - 1 {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 8, weight: .semibold))
@@ -42,10 +59,8 @@ struct EditorStickySymbolBarView: View {
                 }
             }
 
-            // 右侧弹性占位，将行号推到最右边
             Spacer(minLength: 0)
 
-            // 当前光标行号指示器
             Text(String(localized: "Ln \(state.cursorLine)", table: "LumiEditor"))
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
@@ -54,7 +69,6 @@ struct EditorStickySymbolBarView: View {
                 .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.05))
                 .clipShape(Capsule())
         }
-        // 整体背景色与底部细线分隔
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.035))
@@ -65,16 +79,12 @@ struct EditorStickySymbolBarView: View {
         }
     }
 
-    /// 渲染单个符号胶囊按钮
-    /// - Parameter symbol: 文档符号项（包含名称、图标、详情等）
     @ViewBuilder
     private func symbolChip(_ symbol: EditorDocumentSymbolItem) -> some View {
         Button {
-            // 点击执行符号跳转导航
             state.performOpenItem(.documentSymbol(symbol))
         } label: {
             HStack(spacing: 5) {
-                // 符号类型图标（如 struct、func、var 等）
                 Image(systemName: symbol.iconSymbol)
                     .font(.system(size: 9, weight: .semibold))
                 Text(symbol.name)
@@ -88,7 +98,6 @@ struct EditorStickySymbolBarView: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-        // 鼠标悬停时显示符号详情
         .help(symbol.detail ?? symbol.name)
     }
 }

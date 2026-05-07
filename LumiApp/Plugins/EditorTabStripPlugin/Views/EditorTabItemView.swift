@@ -20,13 +20,11 @@ struct EditorTabItemView: View {
     var state: EditorState { service.state }
 
     var body: some View {
-        Button(action: {
-            activateSession(tab)
-        }) {
-            tabContent
-        }
-        .buttonStyle(.plain)
+        tabContent
         .contentShape(Rectangle())
+        .onTapGesture {
+            activateSession(tab)
+        }
         .onDrop(of: [.plainText], isTargeted: nil) { _ in
             onDropBefore(tab)
             return true
@@ -74,16 +72,22 @@ struct EditorTabItemView: View {
                 .foregroundColor(isActive ? theme.workspaceTextColor() : theme.workspaceSecondaryTextColor())
                 .lineLimit(1)
 
-            Image(systemName: "xmark")
-                .font(.system(size: 8, weight: .bold))
-                .foregroundColor(theme.workspaceTertiaryTextColor())
-                .frame(width: 14, height: 14)
-                .contentShape(Rectangle())
-                .opacity(showClose ? 1 : 0)
-                .allowsHitTesting(showClose)
-                .onTapGesture {
-                    closeSession(tab)
-                }
+            Button {
+                closeSession(tab)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(theme.workspaceTertiaryTextColor())
+                    .frame(width: 14, height: 14)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .opacity(showClose ? 1 : 0)
+            .allowsHitTesting(showClose)
+            .help(String(localized: "Close Tab", table: "LumiEditor"))
+            .simultaneousGesture(TapGesture().onEnded {
+                // Prevent the parent tap handler from also activating the tab.
+            })
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)

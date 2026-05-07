@@ -19,12 +19,21 @@ struct PanelContentView: View {
         Group {
             if let activeItem {
                 VStack(spacing: 0) {
-                    ForEach(headerViews.indices, id: \.self) { index in
-                        headerViews[index]
-                    }
+                    ZStack(alignment: .topLeading) {
+                        activeItem.view
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            .clipped()
+                            .padding(.top, headerOverlayHeight(headerViews))
+                            .zIndex(0)
 
-                    activeItem.view
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        VStack(spacing: 0) {
+                            ForEach(headerViews.indices, id: \.self) { index in
+                                headerViews[index]
+                            }
+                        }
+                        .zIndex(10)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                     ForEach(bottomViews.indices, id: \.self) { index in
                         bottomViews[index]
@@ -37,5 +46,12 @@ struct PanelContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+    }
+
+    private func headerOverlayHeight(_ views: [AnyView]) -> CGFloat {
+        // Current editor headers are fixed-height bars stacked vertically.
+        // Reserving space here prevents NSView-backed editor content from
+        // overlapping the interactive header hit area.
+        CGFloat(views.count) * 36
     }
 }

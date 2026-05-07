@@ -487,6 +487,9 @@
         }
       }
     },
+    "Close Tab" : {
+
+    },
     "Code Editor" : {
       "localizations" : {
         "en" : {

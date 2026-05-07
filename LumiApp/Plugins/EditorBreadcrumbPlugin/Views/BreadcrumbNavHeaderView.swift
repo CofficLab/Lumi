@@ -4,8 +4,8 @@ import SwiftUI
 
 /// 面包屑导航头部视图
 ///
-/// 在编辑器面板的 Tab 栏下方显示当前文件的路径面包屑导航。
-/// 仅显示文件路径段，符号面包屑由 EditorTabStripPlugin 的 EditorStickySymbolBarView 负责。
+/// 在编辑器面板中显示当前文件的路径面包屑导航。
+/// 仅显示文件路径段，符号面包屑由 EditorStickySymbolBarPlugin 负责。
 struct BreadcrumbNavHeaderView: View {
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var editorVM: EditorVM
