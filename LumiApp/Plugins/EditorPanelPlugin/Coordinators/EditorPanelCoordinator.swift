@@ -62,7 +62,7 @@ final class EditorPanelCoordinator: ObservableObject {
     func handleAppear() {
         guard let panelService, let state, let sessionStore, let projectVM else { return }
 
-        state.logger.info("📝[onAppear] EditorPanelView 出现, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
+        EditorPlugin.logger.info("\(EditorPlugin.t)onAppear, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
 
         state.projectRootPath = projectVM.currentProject?.path
         panelService.refreshProjectContext(for: projectVM.currentProjectPath, state: state)
@@ -111,7 +111,7 @@ final class EditorPanelCoordinator: ObservableObject {
     func handleProjectPathChange(oldPath: String, newPath: String) {
         guard let panelService, let state, let sessionStore, let projectVM else { return }
 
-        state.logger.info("📝[onChange:currentProjectPath] oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)")
+        EditorPlugin.logger.info("\(EditorPlugin.t)项目路径变化, oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)")
 
         // 保存旧项目的标签页
         if !oldPath.isEmpty {
@@ -145,7 +145,7 @@ final class EditorPanelCoordinator: ObservableObject {
     func handleSelectedFileURLChange(newURL: URL?) {
         guard let panelService, let state, let sessionStore, let projectVM else { return }
 
-        state.logger.info("📝[onChange:selectedFileURL] newURL=\(newURL?.path ?? "nil", privacy: .public)")
+        EditorPlugin.logger.info("\(EditorPlugin.t)选中文件变化, newURL=\(newURL?.path ?? "nil", privacy: .public)")
 
         panelService.openOrActivateSession(
             for: newURL,

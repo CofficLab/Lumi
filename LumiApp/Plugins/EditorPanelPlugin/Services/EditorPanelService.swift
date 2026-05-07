@@ -60,28 +60,28 @@ final class EditorPanelService: ObservableObject {
         selectFile: @MainActor (URL) -> Void
     ) {
         let (persistedTabs, activeTabPath) = tabStore.loadTabs(forProject: projectPath)
-        state.logger.info("📝[restoreTabs] 恢复标签页, projectPath=\(projectPath, privacy: .public), persistedCount=\(persistedTabs.count), activeTabPath=\(activeTabPath ?? "nil", privacy: .public)")
+        EditorPlugin.logger.info("\(EditorPlugin.t)恢复标签页, projectPath=\(projectPath, privacy: .public), persistedCount=\(persistedTabs.count), activeTabPath=\(activeTabPath ?? "nil", privacy: .public)")
 
         // 过滤掉不存在的文件
         let validTabs = persistedTabs.compactMap { tab -> URL? in
             guard let url = tab.fileURL,
                   FileManager.default.isReadableFile(atPath: url.path) else {
-                state.logger.warning("📝[restoreTabs] 跳过不可读文件: \(tab.path, privacy: .public)")
+                EditorPlugin.logger.warning("\(EditorPlugin.t)跳过不可读文件: \(tab.path, privacy: .public)")
                 return nil
             }
             return url
         }
 
-        state.logger.info("📝[restoreTabs] 有效标签页数=\(validTabs.count)")
+        EditorPlugin.logger.info("\(EditorPlugin.t)有效标签页数=\(validTabs.count)")
         guard !validTabs.isEmpty else { return }
 
         // 先打开最后一个保存的活跃标签
         if let activePath = activeTabPath,
            let activateURL = validTabs.first(where: { $0.path == activePath }) {
-            state.logger.info("📝[restoreTabs] 选择活跃标签: \(activateURL.path, privacy: .public)")
+            EditorPlugin.logger.info("\(EditorPlugin.t)选择活跃标签: \(activateURL.path, privacy: .public)")
             selectFile(activateURL)
         } else if let fallbackURL = validTabs.first {
-            state.logger.info("📝[restoreTabs] 选择第一个标签: \(fallbackURL.path, privacy: .public)")
+            EditorPlugin.logger.info("\(EditorPlugin.t)选择第一个标签: \(fallbackURL.path, privacy: .public)")
             selectFile(fallbackURL)
         }
     }
@@ -126,17 +126,17 @@ final class EditorPanelService: ObservableObject {
         currentProjectPath: String,
         selectFile: @MainActor (URL) -> Void
     ) {
-        state.logger.info("📝[openOrActivateSession] 入口, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(currentProjectPath, privacy: .public)")
+        EditorPlugin.logger.info("\(EditorPlugin.t)打开或激活 session, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(currentProjectPath, privacy: .public)")
         state.projectRootPath = projectRootPath
         refreshProjectContext(for: currentProjectPath, state: state)
 
         guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
-            state.logger.info("📝[openOrActivateSession] session 为 nil → loadFile(nil), fileURL=\(fileURL?.path ?? "nil", privacy: .public)")
+            EditorPlugin.logger.info("\(EditorPlugin.t)session 为 nil → loadFile(nil), fileURL=\(fileURL?.path ?? "nil", privacy: .public)")
             state.loadFile(from: nil)
             return
         }
 
-        state.logger.info("📝[openOrActivateSession] 加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public), sessionID=\(session.id)")
+        EditorPlugin.logger.info("\(EditorPlugin.t)加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public), sessionID=\(session.id)")
         state.loadFile(from: session.fileURL)
         restoreInteractionState(for: session, state: state)
         scheduleTabSave(
