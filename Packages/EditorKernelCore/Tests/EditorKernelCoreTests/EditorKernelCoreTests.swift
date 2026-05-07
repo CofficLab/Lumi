@@ -248,6 +248,46 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func foldingStateTracksCollapsedRangesAndEmptyState() {
+        let range = EditorFoldingState.CollapsedRange(
+            startLine: 3,
+            endLine: 9,
+            kind: .region
+        )
+        let state = EditorFoldingState(collapsedRanges: [range])
+
+        #expect(state.isEmpty == false)
+        #expect(state.collapsedRanges.contains(range))
+    }
+
+    @Test
+    func semanticModelsPreserveSeverityReasonAndProblemProjection() {
+        let reason = EditorSemanticAvailabilityReason(
+            id: "missing-index",
+            severity: .warning,
+            title: "Missing Index",
+            message: "Index metadata is unavailable.",
+            suggestion: "Open the workspace in Xcode once."
+        )
+        let report = EditorSemanticAvailabilityReport(reasons: [reason])
+        let problem = EditorSemanticProblem(reason: reason)
+        let error = EditorLanguageFeatureError(
+            domain: "xcode.semantic",
+            code: "missing-index",
+            message: "Index metadata is unavailable.",
+            suggestion: "Open the workspace in Xcode once."
+        )
+
+        #expect(report.reasons == [reason])
+        #expect(problem.id == reason.id)
+        #expect(problem.severity == .warning)
+        #expect(problem.title == reason.title)
+        #expect(problem.message == reason.message)
+        #expect(error.errorDescription == "Index metadata is unavailable.")
+        #expect(error.recoverySuggestion == "Open the workspace in Xcode once.")
+    }
+
+    @Test
     @MainActor
     func saveControllerBuildsPipelineOptionsAndClearsSavedState() async {
         let controller = EditorSaveController(successDisplayDuration: 0.01)

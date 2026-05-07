@@ -1,4 +1,5 @@
 import Foundation
+import EditorKernelCore
 
 @MainActor
 protocol SuperEditorProjectContextCapability: AnyObject {
@@ -117,56 +118,9 @@ enum EditorProjectContextStatus: Equatable, Sendable {
     }
 }
 
-struct EditorWorkspaceFolder: Equatable, Sendable {
-    let uri: String
-    let name: String
-}
-
-enum EditorSemanticPreflightStrength: Sendable {
-    case soft
-    case hard
-}
-
-enum EditorSemanticAvailabilitySeverity: String, Sendable {
-    case info
-    case warning
-    case error
-}
-
-struct EditorSemanticAvailabilityReason: Equatable, Sendable, Identifiable {
-    let id: String
-    let severity: EditorSemanticAvailabilitySeverity
-    let title: String
-    let message: String
-    let suggestion: String?
-
-    init(
-        id: String,
-        severity: EditorSemanticAvailabilitySeverity,
-        title: String,
-        message: String,
-        suggestion: String? = nil
-    ) {
-        self.id = id
-        self.severity = severity
-        self.title = title
-        self.message = message
-        self.suggestion = suggestion
-    }
-}
-
-struct EditorSemanticAvailabilityReport: Equatable, Sendable {
-    let reasons: [EditorSemanticAvailabilityReason]
-
-    static let empty = EditorSemanticAvailabilityReport(reasons: [])
-}
-
-struct EditorLanguageFeatureError: LocalizedError, Equatable, Sendable {
-    let domain: String
-    let code: String
-    let message: String
-    let suggestion: String?
-
-    var errorDescription: String? { message }
-    var recoverySuggestion: String? { suggestion }
-}
+typealias EditorWorkspaceFolder = EditorKernelCore.EditorWorkspaceFolder
+typealias EditorSemanticPreflightStrength = EditorKernelCore.EditorSemanticPreflightStrength
+typealias EditorSemanticAvailabilitySeverity = EditorKernelCore.EditorSemanticAvailabilitySeverity
+typealias EditorSemanticAvailabilityReason = EditorKernelCore.EditorSemanticAvailabilityReason
+typealias EditorSemanticAvailabilityReport = EditorKernelCore.EditorSemanticAvailabilityReport
+typealias EditorLanguageFeatureError = EditorKernelCore.EditorLanguageFeatureError

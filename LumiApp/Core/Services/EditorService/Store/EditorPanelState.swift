@@ -253,20 +253,6 @@ final class EditorPanelState: ObservableObject {
     }
 }
 
-struct EditorSemanticProblem: Identifiable, Equatable, Sendable {
-    let id: String
-    let severity: EditorSemanticAvailabilitySeverity
-    let title: String
-    let message: String
-
-    init(reason: EditorSemanticAvailabilityReason) {
-        self.id = reason.id
-        self.severity = reason.severity
-        self.title = reason.title
-        self.message = reason.message
-    }
-}
-
 struct EditorPanelSessionState: Equatable {
     let mouseHoverContent: String?
     let mouseHoverSymbolRect: CGRect
