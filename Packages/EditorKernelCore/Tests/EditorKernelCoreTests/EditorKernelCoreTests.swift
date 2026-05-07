@@ -2076,6 +2076,42 @@ struct EditorKernelCoreTests {
 
     @Test
     @MainActor
+    func workspaceSearchControllerHandlesEmptyQueryAndExportsMarkdown() async throws {
+        let controller = EditorWorkspaceSearchController()
+        let empty = try await controller.search(
+            query: "   ",
+            projectRootPath: "/tmp/project"
+        )
+        #expect(empty.summary.totalMatches == 0)
+        #expect(empty.summary.query == "   ")
+
+        let url = try controller.exportSearchEditor(
+            summary: .init(query: "value", totalMatches: 1, totalFiles: 1),
+            fileResults: [
+                .init(
+                    url: URL(fileURLWithPath: "/tmp/project/Sources/App.swift"),
+                    path: "Sources/App.swift",
+                    matches: [
+                        .init(
+                            url: URL(fileURLWithPath: "/tmp/project/Sources/App.swift"),
+                            line: 3,
+                            column: 5,
+                            path: "Sources/App.swift",
+                            preview: "let value = 1"
+                        )
+                    ]
+                )
+            ]
+        )
+        defer { try? FileManager.default.removeItem(at: url) }
+        let markdown = try String(contentsOf: url, encoding: .utf8)
+        #expect(url.lastPathComponent.hasPrefix("search-results-"))
+        #expect(markdown.contains("## Sources/App.swift"))
+        #expect(markdown.contains("`L3:C5` let value = 1"))
+    }
+
+    @Test
+    @MainActor
     func statusToastPolicyNormalizesDurationsByLevel() {
         let info = EditorStatusToastPolicy.presentation(level: .info, duration: 0.2)
         #expect(info == .init(level: .info, duration: 1.0, autoDismiss: false))

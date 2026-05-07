@@ -1,8 +1,10 @@
 import Foundation
 
 @MainActor
-final class EditorWorkspaceSearchController {
-    func search(
+public final class EditorWorkspaceSearchController {
+    public init() {}
+
+    public func search(
         query: String,
         projectRootPath: String,
         limit: Int = 200
@@ -26,7 +28,7 @@ final class EditorWorkspaceSearchController {
         return parse(output: output, query: trimmedQuery, projectRootPath: projectRootPath, limit: limit)
     }
 
-    func parse(
+    public func parse(
         output: String,
         query: String,
         projectRootPath: String,
@@ -40,7 +42,7 @@ final class EditorWorkspaceSearchController {
         )
     }
 
-    func exportSearchEditor(
+    public func exportSearchEditor(
         summary: EditorWorkspaceSearchSummary,
         fileResults: [EditorWorkspaceSearchFileResult]
     ) throws -> URL {
@@ -57,7 +59,7 @@ final class EditorWorkspaceSearchController {
         return url
     }
 
-    private static func runSearchProcess(query: String, projectRootPath: String) throws -> String {
+    private nonisolated static func runSearchProcess(query: String, projectRootPath: String) throws -> String {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = [
@@ -94,10 +96,10 @@ final class EditorWorkspaceSearchController {
     }
 }
 
-enum WorkspaceSearchError: LocalizedError {
+public enum WorkspaceSearchError: LocalizedError {
     case processFailed(String)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .processFailed(let message):
             return message
