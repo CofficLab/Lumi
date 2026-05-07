@@ -77,47 +77,8 @@ extension SuperEditorSemanticCapability {
     }
 }
 
-struct EditorProjectContextSnapshot: Equatable, Sendable {
-    let projectPath: String
-    let workspaceName: String
-    let workspacePath: String
-    let activeScheme: String?
-    let activeSchemeBuildableTargets: [String]
-    let activeConfiguration: String?
-    let activeDestination: String?
-    let contextStatus: EditorProjectContextStatus
-    let isStructuredProject: Bool
-    let schemes: [String]
-    let configurations: [String]
-    let currentFilePath: String?
-    let currentFilePrimaryTarget: String?
-    let currentFileMatchedTargets: [String]
-    let currentFileIsInTarget: Bool
-}
-
-enum EditorProjectContextStatus: Equatable, Sendable {
-    case unknown
-    case resolving
-    case available(String?)
-    case unavailable(String)
-    case needsResync
-
-    var displayDescription: String {
-        switch self {
-        case .unknown:
-            return "未初始化"
-        case .resolving:
-            return "解析中"
-        case .available(let detail):
-            return detail ?? "可用"
-        case .unavailable(let reason):
-            return "不可用: \(reason)"
-        case .needsResync:
-            return "需要重新同步"
-        }
-    }
-}
-
+typealias EditorProjectContextSnapshot = EditorKernelCore.EditorProjectContextSnapshot
+typealias EditorProjectContextStatus = EditorKernelCore.EditorProjectContextStatus
 typealias EditorWorkspaceFolder = EditorKernelCore.EditorWorkspaceFolder
 typealias EditorSemanticPreflightStrength = EditorKernelCore.EditorSemanticPreflightStrength
 typealias EditorSemanticAvailabilitySeverity = EditorKernelCore.EditorSemanticAvailabilitySeverity

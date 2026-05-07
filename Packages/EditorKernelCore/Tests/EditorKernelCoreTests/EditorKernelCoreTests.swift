@@ -311,6 +311,33 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func projectContextModelsExposeStatusDescriptionsAndSnapshotFields() {
+        let snapshot = EditorProjectContextSnapshot(
+            projectPath: "/tmp/App",
+            workspaceName: "App",
+            workspacePath: "/tmp/App",
+            activeScheme: "App",
+            activeSchemeBuildableTargets: ["App"],
+            activeConfiguration: "Debug",
+            activeDestination: "My Mac",
+            contextStatus: .available("Indexed"),
+            isStructuredProject: true,
+            schemes: ["App"],
+            configurations: ["Debug", "Release"],
+            currentFilePath: "/tmp/App/Sources/Foo.swift",
+            currentFilePrimaryTarget: "App",
+            currentFileMatchedTargets: ["App"],
+            currentFileIsInTarget: true
+        )
+
+        #expect(snapshot.workspaceName == "App")
+        #expect(snapshot.currentFilePrimaryTarget == "App")
+        #expect(EditorProjectContextStatus.unknown.displayDescription == "未初始化")
+        #expect(EditorProjectContextStatus.needsResync.displayDescription == "需要重新同步")
+        #expect(EditorProjectContextStatus.available("Indexed").displayDescription == "Indexed")
+    }
+
+    @Test
     @MainActor
     func saveControllerBuildsPipelineOptionsAndClearsSavedState() async {
         let controller = EditorSaveController(successDisplayDuration: 0.01)
