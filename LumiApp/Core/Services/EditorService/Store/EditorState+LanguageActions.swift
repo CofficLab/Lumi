@@ -220,7 +220,10 @@ extension EditorState {
                 guard let self else { return [] }
                 return await self.lspClient.requestReferences(line: line, character: character)
             },
-            lspActionController: lspActionController,
+            lspActionProvider: lspActionController,
+            previewLine: { [weak self] url, line in
+                self?.lspActionController.previewLine(from: url, at: line)
+            },
             clearReferences: { [weak self] in
                 self?.panelController.clearData(closeReferences: false)
             },
@@ -359,13 +362,13 @@ extension EditorState {
 
     private func jump(
         to selection: NSRange,
-        kind: EditorLSPActionController.JumpKind,
+        kind: EditorLSPActionJumpKind,
         perform: @escaping (_ range: NSRange) async -> Void
     ) async {
         await languageActionFacade.jump(
             selection: selection,
             kind: kind,
-            lspActionController: lspActionController,
+            lspActionProvider: lspActionController,
             showStatus: { [weak self] message, level, duration in
                 self?.showStatusToast(message, level: level, duration: duration)
             },
@@ -391,7 +394,7 @@ extension EditorState {
                 )
             },
             workspaceEditController: workspaceEditController,
-            renameController: renameController,
+            renamePrompting: renameController,
             applyCurrentDocumentEdits: { [weak self] edits, reason in
                 self?.applyTextEditsToCurrentDocument(edits, reason: reason)
             },

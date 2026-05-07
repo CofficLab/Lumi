@@ -1,8 +1,9 @@
 import Foundation
 import AppKit
+import EditorKernelCore
 
 @MainActor
-final class EditorRenameController {
+final class EditorRenameController: EditorRenamePrompting {
     func promptForNewName() -> String? {
         let alert = NSAlert()
         alert.messageText = String(localized: "Rename Symbol", table: "LumiEditor")
