@@ -131,6 +131,26 @@ struct DatabaseKitTests {
             ])
         )
     }
+
+    @Test
+    func mySQLDriverRejectsMissingRequiredFields() async throws {
+        let driver = MySQLDriver()
+        let config = DatabaseConfig(name: "MySQL", type: .mysql, database: "", username: nil)
+
+        await #expect(throws: DatabaseError.self) {
+            _ = try await driver.connect(config: config)
+        }
+    }
+
+    @Test
+    func postgreSQLDriverRejectsMissingRequiredFields() async throws {
+        let driver = PostgreSQLDriver()
+        let config = DatabaseConfig(name: "Postgres", type: .postgresql, database: "", username: nil)
+
+        await #expect(throws: DatabaseError.self) {
+            _ = try await driver.connect(config: config)
+        }
+    }
 }
 
 private actor MockDriverRecorder {
