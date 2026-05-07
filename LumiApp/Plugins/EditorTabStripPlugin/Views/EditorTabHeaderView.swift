@@ -81,4 +81,23 @@ struct EditorTabHeaderView: View {
     private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
         state.documentSymbolProvider.activeItems(for: state.cursorLine)
     }
+
+    // MARK: - Tab 拖拽动作
+
+    private func beginTabDrag(_ tab: EditorTab) {
+        draggedTabSessionID = tab.sessionID
+    }
+
+    private func dropDraggedTabInActiveStrip(before targetTab: EditorTab?) {
+        guard let draggedTabSessionID else { return }
+        defer { self.draggedTabSessionID = nil }
+
+        if targetTab?.sessionID == draggedTabSessionID { return }
+
+        let targetSessionID = targetTab?.sessionID
+        _ = sessionStore.reorderSession(
+            sessionID: draggedTabSessionID,
+            before: targetSessionID
+        )
+    }
 }
