@@ -19,16 +19,13 @@ struct PanelContentView: View {
         Group {
             if let activeItem {
                 VStack(spacing: 0) {
-                    // Panel Header 视图（由其他插件提供，如 EditorTabStripPlugin）
                     ForEach(headerViews.indices, id: \.self) { index in
                         headerViews[index]
                     }
 
-                    // 面板主体内容
                     activeItem.view
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
-                    // Panel Bottom 视图（由其他插件提供，如 EditorBottomPanelPlugin）
                     ForEach(bottomViews.indices, id: \.self) { index in
                         bottomViews[index]
                     }

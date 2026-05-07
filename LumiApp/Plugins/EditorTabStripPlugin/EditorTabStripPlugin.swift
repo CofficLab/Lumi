@@ -30,7 +30,7 @@ actor EditorTabStripPlugin: SuperPlugin, SuperLog {
     @MainActor
     func addPanelHeaderView(activeIcon: String?) -> AnyView? {
         // 仅在编辑器面板激活时提供 header
-        guard activeIcon == "chevron.left.forwardslash.chevron.right" else { return nil }
+        guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorTabHeaderView())
     }
 }
