@@ -242,6 +242,24 @@ jobs:
           ls -alh updates
 
       # =================================================================================================
+      # 2.5 符号文件归档 (dSYM)
+      # =================================================================================================
+      - name: Package dSYMs
+        run: |
+          DSYM_SOURCE="./temp/${{ env.SCHEME }}.xcarchive/dSYMs"
+          DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip"
+
+          if [ -d "$DSYM_SOURCE" ]; then
+            cd "$DSYM_SOURCE"
+            zip -r "$GITHUB_WORKSPACE/$DSYM_ZIP" ./*.dSYM
+            echo "✅ dSYMs packaged: $(du -sh "$GITHUB_WORKSPACE/$DSYM_ZIP" | cut -f1)"
+            ls -lh "$GITHUB_WORKSPACE/$DSYM_ZIP"
+          else
+            echo "⚠️ No dSYMs directory found in xcarchive"
+            ls -R "./temp/${{ env.SCHEME }}.xcarchive/" || true
+          fi
+
+      # =================================================================================================
       # 3. Appcast 生成 (仅 Release 分支)
       # =================================================================================================
       - name: Generate Appcast
@@ -332,6 +350,7 @@ jobs:
           files: |
             ./updates/*.dmg
             ./appcast.xml
+            ./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip
 
   rebase:
     if: github.ref == 'refs/heads/main'
