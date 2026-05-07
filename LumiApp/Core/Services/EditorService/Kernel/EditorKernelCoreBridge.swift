@@ -32,6 +32,7 @@ typealias EditorCommandSection = EditorKernelCore.EditorCommandSection
 typealias EditorCommandShortcut = EditorKernelCore.EditorCommandShortcut
 typealias EditorCommandSuggestion = EditorKernelCore.EditorCommandSuggestion
 typealias ReferenceResult = EditorKernelCore.ReferenceResult
+typealias EditorReferenceResult = EditorKernelCore.EditorReferenceResult
 typealias EditorFormattingController = EditorKernelCore.EditorFormattingController
 typealias EditorShortcutDefinition = EditorKernelCore.EditorShortcutDefinition
 typealias EditorKeybindingEntry = EditorKernelCore.EditorKeybindingEntry
