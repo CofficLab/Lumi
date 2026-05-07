@@ -3,7 +3,7 @@ import MagicKit
 
 struct EditorCallHierarchyPanelView: View {
     @EnvironmentObject private var themeVM: ThemeVM
-    @ObservedObject var state: EditorState
+    @ObservedObject var service: EditorService
     var showsHeader: Bool = true
 
     var body: some View {
@@ -26,7 +26,7 @@ struct EditorCallHierarchyPanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                state.performPanelCommand(.closeCallHierarchy)
+                service.performPanelCommand(.closeCallHierarchy)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
@@ -41,21 +41,21 @@ struct EditorCallHierarchyPanelView: View {
 
     @ViewBuilder
     private var content: some View {
-        if state.callHierarchyProvider.isLoading {
+        if service.callHierarchyProvider.isLoading {
             emptyState(String(localized: "Loading Call Hierarchy...", table: "EditorCallHierarchyRail"), systemImage: "arrow.triangle.branch")
-        } else if state.callHierarchyProvider.rootItem == nil {
+        } else if service.callHierarchyProvider.rootItem == nil {
             emptyState(String(localized: "No Call Hierarchy", table: "EditorCallHierarchyRail"), systemImage: "point.3.connected.trianglepath.dotted")
         } else {
             HStack(spacing: 0) {
-                callHierarchyColumn(title: String(localized: "Incoming", table: "EditorCallHierarchyRail"), calls: state.callHierarchyProvider.incomingCalls)
+                callHierarchyColumn(title: String(localized: "Incoming", table: "EditorCallHierarchyRail"), calls: service.callHierarchyProvider.incomingCalls)
                 Divider()
-                callHierarchyColumn(title: String(localized: "Outgoing", table: "EditorCallHierarchyRail"), calls: state.callHierarchyProvider.outgoingCalls)
+                callHierarchyColumn(title: String(localized: "Outgoing", table: "EditorCallHierarchyRail"), calls: service.callHierarchyProvider.outgoingCalls)
             }
         }
     }
 
     private var panelTitle: String {
-        let count = state.callHierarchyProvider.incomingCalls.count + state.callHierarchyProvider.outgoingCalls.count
+        let count = service.callHierarchyProvider.incomingCalls.count + service.callHierarchyProvider.outgoingCalls.count
         return count > 0
             ? String(localized: "\(count) Call Hierarchy", table: "EditorCallHierarchyRail")
             : String(localized: "Call Hierarchy", table: "EditorCallHierarchyRail")
@@ -76,7 +76,7 @@ struct EditorCallHierarchyPanelView: View {
                     } else {
                         ForEach(calls) { call in
                             Button {
-                                state.performOpenItem(.callHierarchyItem(call.item))
+                                service.performOpenItem(.callHierarchyItem(call.item))
                             } label: {
                                 panelCard(
                                     title: call.item.name,

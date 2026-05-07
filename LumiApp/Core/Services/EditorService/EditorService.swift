@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import AppKit
 import CodeEditSourceEditor
+import CodeEditTextView
 import CodeEditLanguages
 import LanguageServerProtocol
 
@@ -108,6 +109,19 @@ public final class EditorService: ObservableObject {
     /// 保存当前文件
     func saveNow() {
         state.saveNow()
+    }
+
+    /// 当前文件是否可预览（代码编辑器可渲染）
+    var canPreview: Bool { state.canPreview }
+
+    /// 加载文件内容到编辑器（底层操作，优先使用 openAndRenderFile）
+    func loadFile(from url: URL?) {
+        state.loadFile(from: url)
+    }
+
+    /// 恢复会话交互状态（光标、滚动位置、折叠等）
+    func applySessionRestore(_ session: EditorSession) {
+        state.applySessionRestore(session)
     }
 
     // ========================================================================
@@ -221,6 +235,16 @@ public final class EditorService: ObservableObject {
     @discardableResult
     func goForward() -> EditorSession? {
         sessionStore.goForward()
+    }
+
+    /// 执行导航请求（跳转定义、跳转引用等）
+    func performNavigation(_ request: EditorNavigationRequest) {
+        state.performNavigation(request)
+    }
+
+    /// 执行打开项命令（问题跳转、符号跳转、调用层级跳转等）
+    func performOpenItem(_ command: EditorOpenItemCommand) {
+        state.performOpenItem(command)
     }
 
     // ========================================================================
@@ -341,6 +365,16 @@ public final class EditorService: ObservableObject {
     /// 切换 Problems 面板
     func toggleProblemsPanel() {
         state.performPanelCommand(.toggleProblems)
+    }
+
+    /// 执行面板命令（通用）
+    func performPanelCommand(_ command: EditorPanelCommand) {
+        state.performPanelCommand(command)
+    }
+
+    /// 展示底部面板
+    func presentBottomPanel(_ panel: EditorBottomPanelKind?) {
+        state.presentBottomPanel(panel)
     }
 
     // ========================================================================
@@ -485,6 +519,208 @@ public final class EditorService: ObservableObject {
 
     /// 是否展示调用层级面板
     var isCallHierarchyPresented: Bool { state.isCallHierarchyPresented }
+
+    // ========================================================================
+    // MARK: - 文档大纲与折叠（Document Outline & Folding）
+    // ========================================================================
+
+    /// 刷新文档大纲
+    func refreshDocumentOutline() {
+        state.refreshDocumentOutline()
+    }
+
+    /// 刷新折叠范围
+    func refreshFoldingRanges() {
+        state.refreshFoldingRanges()
+    }
+
+    // ========================================================================
+    // MARK: - 文档格式化（Document Formatting）
+    // ========================================================================
+
+    /// 使用 LSP 格式化当前文档
+    func formatDocumentWithLSP() async {
+        await state.formatDocumentWithLSP()
+    }
+
+    // ========================================================================
+    // MARK: - Quick Open
+    // ========================================================================
+
+    /// 解析 Quick Open 查询
+    func quickOpenQuery(for rawQuery: String) -> EditorQuickOpenQuery {
+        state.quickOpenQuery(for: rawQuery)
+    }
+
+    /// 获取 Quick Open 结果列表
+    func editorQuickOpenItems(
+        matching query: String,
+        openEditors: [EditorOpenEditorItem],
+        onOpenFile: @escaping (URL, CursorPosition?, Bool) -> Void
+    ) async -> [EditorQuickOpenItemSuggestion] {
+        await state.editorQuickOpenItems(
+            matching: query,
+            openEditors: openEditors,
+            onOpenFile: onOpenFile
+        )
+    }
+
+    // ========================================================================
+    // MARK: - 命令系统（Command System - Advanced）
+    // ========================================================================
+
+    /// 执行编辑器命令（带调用上下文）
+    func performCommand(id: String, invocationContext: EditorCommandInvocationContext) {
+        state.performEditorCommand(id: id, invocationContext: invocationContext)
+    }
+
+    /// 获取命令展示模型
+    func editorCommandPresentationModel(matching query: String = "") -> EditorCommandPresentationModel {
+        state.editorCommandPresentationModel(matching: query)
+    }
+
+    /// 获取命令展示模型（带调用上下文）
+    func editorCommandPresentationModel(
+        for invocationContext: EditorCommandInvocationContext,
+        matching query: String = "",
+        categories: Set<EditorCommandCategory>? = nil
+    ) -> EditorCommandPresentationModel {
+        state.editorCommandPresentationModel(
+            for: invocationContext,
+            matching: query,
+            categories: categories
+        )
+    }
+
+    /// 获取右键菜单展示模型
+    func editorContextMenuPresentationModel(
+        for invocationContext: EditorCommandInvocationContext,
+        matching query: String = "",
+        categories: Set<EditorCommandCategory>? = nil
+    ) -> EditorCommandPresentationModel {
+        state.editorContextMenuPresentationModel(
+            for: invocationContext,
+            matching: query,
+            categories: categories
+        )
+    }
+
+    /// 获取命令调用上下文
+    func editorCommandInvocationContext(for textView: TextView?) -> EditorCommandInvocationContext {
+        state.editorCommandInvocationContext(for: textView)
+    }
+
+    /// 获取首选命令面板分类
+    func preferredCommandPaletteCategory() -> EditorCommandCategory? {
+        state.preferredCommandPaletteCategory()
+    }
+
+    /// 设置首选命令面板分类
+    func setPreferredCommandPaletteCategory(_ category: EditorCommandCategory?) {
+        state.setPreferredCommandPaletteCategory(category)
+    }
+
+    // ========================================================================
+    // MARK: - 主题管理（Theme Management）
+    // ========================================================================
+
+    /// 切换主题
+    func setTheme(_ themeId: String) {
+        state.setTheme(themeId)
+    }
+
+    /// 获取所有可用主题
+    func availableThemes() -> [any SuperEditorThemeContributor] {
+        state.availableThemes()
+    }
+
+    /// 由外层同步初始主题（ThemeStatusBarPlugin 调用）
+    func syncInitialThemeFromExternal(_ editorThemeId: String) {
+        state.syncInitialThemeFromExternal(editorThemeId)
+    }
+
+    // ========================================================================
+    // MARK: - 插件管理（Plugin Management）
+    // ========================================================================
+
+    /// 设置编辑器插件启用状态
+    func setEditorFeaturePluginEnabled(_ pluginID: String, enabled: Bool) {
+        state.setEditorFeaturePluginEnabled(pluginID, enabled: enabled)
+    }
+
+    /// 项目上下文能力
+    var projectContextCapability: (any SuperEditorProjectContextCapability)? {
+        state.projectContextCapability
+    }
+
+    /// 语义能力
+    var semanticCapability: (any SuperEditorSemanticCapability)? {
+        state.semanticCapability
+    }
+
+    // ========================================================================
+    // MARK: - 内核视图桥接（Kernel View Bridge）
+    //
+    // ⚠️ 以下 API 仅供 SourceEditorView / SourceEditorViewBridge 等
+    //    内核视图层使用。普通插件不应调用这些方法。
+    // ========================================================================
+
+    /// 当前编辑器状态（内核视图桥接用）
+    var editorState: SourceEditorState { state.editorState }
+
+    /// 当前获得焦点的 TextView（内核视图桥接用）
+    var focusedTextView: TextView? {
+        get { state.focusedTextView }
+        set { state.focusedTextView = newValue }
+    }
+
+    /// 跳转定义代理（内核视图桥接用）
+    var jumpDelegate: EditorJumpToDefinitionDelegate? {
+        get { state.jumpDelegate }
+        set { state.jumpDelegate = newValue }
+    }
+
+    /// 面板状态（内核视图 / 底部面板插件用）
+    var panelState: EditorPanelState { state.panelState }
+
+    /// 编辑器扩展注册中心（内核视图 / 扩展 Contributor 用）
+    var editorExtensions: EditorExtensionRegistry { state.editorExtensions }
+
+    /// 调用层级提供者
+    var callHierarchyProvider: any SuperEditorCallHierarchyProvider { state.callHierarchyProvider }
+
+    /// 工作区符号搜索提供者
+    var workspaceSymbolProvider: any SuperEditorWorkspaceSymbolProvider { state.workspaceSymbolProvider }
+
+    /// 签名帮助提供者
+    var signatureHelpProvider: any SuperEditorSignatureHelpProvider { state.signatureHelpProvider }
+
+    /// 内联提示提供者
+    var inlayHintProvider: any SuperEditorInlayHintProvider { state.inlayHintProvider }
+
+    /// 文档高亮提供者
+    var documentHighlightProvider: any SuperEditorDocumentHighlightProvider { state.documentHighlightProvider }
+
+    /// 折叠范围提供者
+    var foldingRangeProvider: any SuperEditorFoldingRangeProvider { state.foldingRangeProvider }
+
+    /// 面板控制器（内核视图用）
+    var panelController: EditorPanelController { state.panelController }
+
+    /// 执行工作区搜索
+    func performWorkspaceSearch() async {
+        await state.performWorkspaceSearch()
+    }
+
+    /// 在编辑器中打开工作区搜索结果
+    func openWorkspaceSearchResultsInEditor() {
+        state.openWorkspaceSearchResultsInEditor()
+    }
+
+    /// 打开工作区搜索匹配项
+    func openWorkspaceSearchMatch(_ match: EditorWorkspaceSearchMatch) {
+        state.openWorkspaceSearchMatch(match)
+    }
 
     // ========================================================================
     // MARK: - Session Snapshot Sync（内部协调）

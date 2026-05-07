@@ -45,12 +45,12 @@ actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
 struct EditorOutlineRailContentView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
-    private var state: EditorState { editorVM.service.state }
+    private var service: EditorService { editorVM.service }
 
     var body: some View {
-        if let provider = state.documentSymbolProvider as? DocumentSymbolProvider {
+        if let provider = service.documentSymbolProvider as? DocumentSymbolProvider {
             EditorOutlinePanelView(
-                state: state,
+                service: service,
                 provider: provider,
                 showsHeader: false,
                 showsResizeHandle: false

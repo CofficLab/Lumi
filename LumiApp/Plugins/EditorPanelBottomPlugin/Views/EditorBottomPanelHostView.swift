@@ -3,7 +3,7 @@ import MagicKit
 
 struct EditorBottomPanelHostView: View {
     @EnvironmentObject private var themeVM: ThemeVM
-    @ObservedObject var state: EditorState
+    @ObservedObject var service: EditorService
     @State private var activeExtensionPanelID: String?
 
     private let panelHeight: CGFloat = 280
@@ -25,16 +25,16 @@ struct EditorBottomPanelHostView: View {
     }
 
     private var visibleBuiltinPanels: [EditorBottomPanelKind] {
-        state.panelState.visibleBottomPanels
+        service.panelState.visibleBottomPanels
     }
 
     private var activeBuiltinPanel: EditorBottomPanelKind? {
-        state.panelState.activeBottomPanel
+        service.panelState.activeBottomPanel
     }
 
     private var visibleExtensionPanels: [EditorPanelSuggestion] {
-        state.editorExtensions.panelSuggestions(state: state)
-            .filter { $0.placement == .bottom && $0.isPresented(state) }
+        service.editorExtensions.panelSuggestions(state: service.state)
+            .filter { $0.placement == .bottom && $0.isPresented(service.state) }
             .sorted { lhs, rhs in
                 if lhs.order != rhs.order { return lhs.order < rhs.order }
                 return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
@@ -52,9 +52,9 @@ struct EditorBottomPanelHostView: View {
         HStack(spacing: 8) {
             ForEach(visibleBuiltinPanels, id: \.self) { panel in
                 Button {
-                    activeExtensionPanel?.onDismiss(state)
+                    activeExtensionPanel?.onDismiss(service.state)
                     activeExtensionPanelID = nil
-                    state.presentBottomPanel(panel)
+                    service.presentBottomPanel(panel)
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: panel.icon)
@@ -80,9 +80,9 @@ struct EditorBottomPanelHostView: View {
             ForEach(visibleExtensionPanels) { panel in
                 Button {
                     if activeExtensionPanel?.id != panel.id {
-                        activeExtensionPanel?.onDismiss(state)
+                        activeExtensionPanel?.onDismiss(service.state)
                     }
-                    state.presentBottomPanel(nil)
+                    service.presentBottomPanel(nil)
                     activeExtensionPanelID = panel.id
                 } label: {
                     HStack(spacing: 6) {
@@ -109,8 +109,8 @@ struct EditorBottomPanelHostView: View {
             Spacer(minLength: 0)
 
             Button {
-                activeExtensionPanel?.onDismiss(state)
-                state.presentBottomPanel(nil)
+                activeExtensionPanel?.onDismiss(service.state)
+                service.presentBottomPanel(nil)
                 activeExtensionPanelID = nil
             } label: {
                 Image(systemName: "xmark")
@@ -132,16 +132,16 @@ struct EditorBottomPanelHostView: View {
             case .problems:
                 bottomProblemsContent
             case .references:
-                BottomEditorReferencesWorkspacePanelView(state: state, showsHeader: false)
+                BottomEditorReferencesWorkspacePanelView(service: service, showsHeader: false)
             case .searchResults:
-                BottomEditorWorkspaceSearchPanelView(state: state, showsToolbar: true)
+                BottomEditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
             case .workspaceSymbols:
-                BottomEditorWorkspaceSymbolsPanelView(state: state, showsHeader: false)
+                BottomEditorWorkspaceSymbolsPanelView(service: service, showsHeader: false)
             case .callHierarchy:
-                BottomEditorCallHierarchyPanelView(state: state, showsHeader: false)
+                BottomEditorCallHierarchyPanelView(service: service, showsHeader: false)
             }
         } else if let activeExtensionPanel {
-            activeExtensionPanel.content(state)
+            activeExtensionPanel.content(service.state)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             Color.clear
@@ -151,24 +151,24 @@ struct EditorBottomPanelHostView: View {
     private func tabTitle(for panel: EditorBottomPanelKind) -> String {
         switch panel {
         case .problems:
-            let count = state.panelState.semanticProblems.count + state.panelState.problemDiagnostics.count
+            let count = service.panelState.semanticProblems.count + service.panelState.problemDiagnostics.count
             return "\(panel.title) (\(count))"
         case .references:
-            return "\(panel.title) (\(state.panelState.referenceResults.count))"
+            return "\(panel.title) (\(service.panelState.referenceResults.count))"
         case .searchResults:
-            let count = state.panelState.workspaceSearchSummary?.totalMatches ?? 0
+            let count = service.panelState.workspaceSearchSummary?.totalMatches ?? 0
             return count > 0 ? "\(panel.title) (\(count))" : panel.title
         case .workspaceSymbols:
-            let count = state.workspaceSymbolProvider.symbols.count
+            let count = service.workspaceSymbolProvider.symbols.count
             return count > 0 ? "\(panel.title) (\(count))" : panel.title
         case .callHierarchy:
-            let count = state.callHierarchyProvider.incomingCalls.count + state.callHierarchyProvider.outgoingCalls.count
+            let count = service.callHierarchyProvider.incomingCalls.count + service.callHierarchyProvider.outgoingCalls.count
             return count > 0 ? "\(panel.title) (\(count))" : panel.title
         }
     }
 
     private var bottomProblemsContent: some View {
-        BottomEditorProblemsPanelView(state: state, showsHeader: false)
+        BottomEditorProblemsPanelView(service: service, showsHeader: false)
     }
 
     private func emptyState(_ title: String, systemImage: String) -> some View {

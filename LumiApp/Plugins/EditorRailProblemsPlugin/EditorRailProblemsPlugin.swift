@@ -45,9 +45,9 @@ actor EditorRailProblemsPlugin: SuperPlugin, SuperLog {
 struct EditorProblemsRailContentView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
-    private var state: EditorState { editorVM.service.state }
+    private var service: EditorService { editorVM.service }
 
     var body: some View {
-        EditorProblemsPanelView(state: state, showsHeader: false)
+        EditorProblemsPanelView(service: service, showsHeader: false)
     }
 }

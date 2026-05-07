@@ -45,9 +45,9 @@ actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
 struct EditorCallHierarchyRailContentView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
-    private var state: EditorState { editorVM.service.state }
+    private var service: EditorService { editorVM.service }
 
     var body: some View {
-        EditorCallHierarchyPanelView(state: state, showsHeader: false)
+        EditorCallHierarchyPanelView(service: service, showsHeader: false)
     }
 }

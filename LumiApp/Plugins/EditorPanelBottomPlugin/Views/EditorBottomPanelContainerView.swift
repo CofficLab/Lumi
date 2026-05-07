@@ -9,10 +9,10 @@ struct EditorBottomPanelContainerView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
     var body: some View {
-        let state = editorVM.service.state
+        let service = editorVM.service
         EditorBottomPanelContainerInnerView(
-            state: state,
-            panelState: state.panelState
+            service: service,
+            panelState: service.panelState
         )
     }
 }
@@ -20,19 +20,19 @@ struct EditorBottomPanelContainerView: View {
 /// 内部视图：直接 @ObservedObject panelState，
 /// 确保 isProblemsPanelPresented 等 @Published 属性变化时能触发重绘。
 private struct EditorBottomPanelContainerInnerView: View {
-    @ObservedObject var state: EditorState
+    @ObservedObject var service: EditorService
     @ObservedObject var panelState: EditorPanelState
 
     var body: some View {
         if shouldShow {
-            EditorBottomPanelHostView(state: state)
+            EditorBottomPanelHostView(service: service)
         }
     }
 
     private var shouldShow: Bool {
         panelState.activeBottomPanel != nil ||
-        state.editorExtensions.panelSuggestions(state: state).contains {
-            $0.placement == .bottom && $0.isPresented(state)
+        service.editorExtensions.panelSuggestions(state: service.state).contains {
+            $0.placement == .bottom && $0.isPresented(service.state)
         }
     }
 }

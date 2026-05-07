@@ -45,9 +45,9 @@ actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
 struct EditorWorkspaceSymbolsRailContentView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
-    private var state: EditorState { editorVM.service.state }
+    private var service: EditorService { editorVM.service }
 
     var body: some View {
-        EditorWorkspaceSymbolsPanelView(state: state, showsHeader: false)
+        EditorWorkspaceSymbolsPanelView(service: service, showsHeader: false)
     }
 }

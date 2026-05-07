@@ -2,7 +2,7 @@ import SwiftUI
 import MagicKit
 
 struct EditorOutlinePanelView: View {
-    @ObservedObject var state: EditorState
+    @ObservedObject var service: EditorService
     @ObservedObject var provider: DocumentSymbolProvider
     var showsHeader: Bool = true
     var showsResizeHandle: Bool = true
@@ -58,7 +58,7 @@ struct EditorOutlinePanelView: View {
                 }
 
                 Button {
-                    state.performPanelCommand(.closeOutline)
+                    service.performPanelCommand(.closeOutline)
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .bold))
@@ -93,7 +93,7 @@ struct EditorOutlinePanelView: View {
                 .onAppear {
                     syncActiveSymbolPresentation(using: proxy)
                 }
-                .onChange(of: state.cursorLine) { _, _ in
+                .onChange(of: service.cursorLine) { _, _ in
                     syncActiveSymbolPresentation(using: proxy)
                 }
                 .onChange(of: provider.symbols.map(\.id)) { _, _ in
@@ -166,7 +166,7 @@ struct EditorOutlinePanelView: View {
     }
 
     private var activePathIDs: Set<String> {
-        Set(provider.symbols.compactMap { $0.activePath(for: state.cursorLine) }.flatMap { $0 })
+        Set(provider.symbols.compactMap { $0.activePath(for: service.cursorLine) }.flatMap { $0 })
     }
 
     private func filtered(_ item: EditorDocumentSymbolItem, query: String) -> EditorDocumentSymbolItem? {
@@ -204,7 +204,7 @@ struct EditorOutlinePanelView: View {
                     }
 
                     Button {
-                        state.performOpenItem(.documentSymbol(item))
+                        service.performOpenItem(.documentSymbol(item))
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: item.iconSymbol)
@@ -258,10 +258,10 @@ struct EditorOutlinePanelView: View {
     }
 
     private func syncActiveSymbolPresentation(using proxy: ScrollViewProxy) {
-        let activePathIDs = provider.activePathIDs(for: state.cursorLine)
+        let activePathIDs = provider.activePathIDs(for: service.cursorLine)
         guard !activePathIDs.isEmpty else { return }
 
-        let ancestorIDs = provider.activeAncestorIDs(for: state.cursorLine)
+        let ancestorIDs = provider.activeAncestorIDs(for: service.cursorLine)
         collapsedIDs.subtract(ancestorIDs)
 
         guard filterText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,

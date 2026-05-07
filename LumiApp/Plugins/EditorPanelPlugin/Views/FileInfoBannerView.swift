@@ -6,13 +6,13 @@ import SwiftUI
 struct FileInfoBannerView: View {
     @EnvironmentObject private var themeVM: ThemeVM
 
-    let state: EditorState
+    let service: EditorService
     let warningMessage: String?
 
     var body: some View {
-        if state.isTruncated || !state.isEditable || warningMessage != nil {
+        if service.isTruncated || !service.isEditable || warningMessage != nil {
             VStack(alignment: .leading, spacing: 4) {
-                if state.isTruncated {
+                if service.isTruncated {
                     HStack(spacing: 4) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 9))
@@ -24,15 +24,15 @@ struct FileInfoBannerView: View {
                         .font(.system(size: 9))
                         .foregroundColor(AppUI.Color.semantic.warning)
                     }
-                    if state.canLoadFullFile {
+                    if service.canLoadFullFile {
                         Button(String(localized: "Load Full File", table: "LumiEditor")) {
-                            state.loadFullFileFromDisk()
+                            service.loadFullFile()
                         }
                         .buttonStyle(.link)
                         .font(.system(size: 9))
                     }
                 }
-                if !state.isEditable {
+                if !service.isEditable {
                     HStack(spacing: 4) {
                         Image(systemName: "lock.fill")
                             .font(.system(size: 9))

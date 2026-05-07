@@ -3,7 +3,7 @@ import MagicKit
 
 struct BottomEditorReferencesWorkspacePanelView: View {
     @EnvironmentObject private var themeVM: ThemeVM
-    @ObservedObject var state: EditorState
+    @ObservedObject var service: EditorService
     var showsHeader: Bool = true
 
     var body: some View {
@@ -26,7 +26,7 @@ struct BottomEditorReferencesWorkspacePanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                state.performPanelCommand(.closeReferences)
+                service.performPanelCommand(.closeReferences)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
@@ -40,19 +40,19 @@ struct BottomEditorReferencesWorkspacePanelView: View {
     }
 
     private var panelTitle: String {
-        let count = state.panelState.referenceResults.count
+        let count = service.panelState.referenceResults.count
         return count > 0 ? "References (\(count))" : "References"
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                if state.panelState.referenceResults.isEmpty {
+                if service.panelState.referenceResults.isEmpty {
                     emptyState("No References", systemImage: "arrow.triangle.branch")
                 } else {
-                    ForEach(state.panelState.referenceResults) { item in
+                    ForEach(service.panelState.referenceResults) { item in
                         Button {
-                            state.performOpenItem(
+                            service.performOpenItem(
                                 .reference(
                                     .init(
                                         url: item.url,
@@ -68,7 +68,7 @@ struct BottomEditorReferencesWorkspacePanelView: View {
                                 title: "\(item.path):\(item.line):\(item.column)",
                                 subtitle: item.preview,
                                 badge: "Reference",
-                                isSelected: state.panelState.selectedReferenceResult == item
+                                isSelected: service.panelState.selectedReferenceResult == item
                             )
                         }
                         .buttonStyle(.plain)

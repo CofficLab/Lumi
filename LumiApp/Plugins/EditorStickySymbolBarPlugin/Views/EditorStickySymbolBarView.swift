@@ -5,16 +5,16 @@ import MagicKit
 struct EditorStickySymbolBarHeaderView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
-    private var state: EditorState { editorVM.service.state }
+    private var service: EditorService { editorVM.service }
 
     private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
-        state.documentSymbolProvider.activeItems(for: state.cursorLine)
+        service.documentSymbolProvider.activeItems(for: service.cursorLine)
     }
 
     var body: some View {
         if !activeDocumentSymbolTrail.isEmpty {
             EditorStickySymbolBarView(
-                state: state,
+                service: service,
                 symbols: activeDocumentSymbolTrail
             )
         }
@@ -29,13 +29,13 @@ struct EditorStickySymbolBarHeaderView: View {
 struct EditorStickySymbolBarView: View {
     @EnvironmentObject private var themeVM: ThemeVM
 
-    /// 编辑器状态（用于获取光标行号、执行符号跳转等操作）
-    @ObservedObject private var state: EditorState
+    /// 编辑器服务门面（用于获取光标行号、执行符号跳转等操作）
+    @ObservedObject private var service: EditorService
     /// 当前光标所在的符号层级路径列表（从根到当前节点）
     let symbols: [EditorDocumentSymbolItem]
 
-    init(state: EditorState, symbols: [EditorDocumentSymbolItem]) {
-        self._state = ObservedObject(wrappedValue: state)
+    init(service: EditorService, symbols: [EditorDocumentSymbolItem]) {
+        self._service = ObservedObject(wrappedValue: service)
         self.symbols = symbols
     }
 
@@ -61,7 +61,7 @@ struct EditorStickySymbolBarView: View {
 
             Spacer(minLength: 0)
 
-            Text(String(localized: "Ln \(state.cursorLine)", table: "LumiEditor"))
+            Text(String(localized: "Ln \(service.cursorLine)", table: "LumiEditor"))
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                 .padding(.horizontal, 8)
@@ -82,7 +82,7 @@ struct EditorStickySymbolBarView: View {
     @ViewBuilder
     private func symbolChip(_ symbol: EditorDocumentSymbolItem) -> some View {
         Button {
-            state.performOpenItem(.documentSymbol(symbol))
+            service.performOpenItem(.documentSymbol(symbol))
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: symbol.iconSymbol)

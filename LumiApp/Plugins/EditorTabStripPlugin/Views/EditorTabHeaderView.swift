@@ -15,6 +15,9 @@ struct EditorTabHeaderView: View {
     @StateObject private var coordinator = EditorTabStripCoordinator()
 
     var service: EditorService { editorVM.service }
+
+    // ⚠️ sessionStore 用于 EditorTabStripCoordinator 的 Combine 订阅（$tabs, $activeSessionID），
+    // 这些 Publisher 无法通过门面方法转发。
     var sessionStore: EditorSessionStore { service.sessionStore }
 
     // MARK: - Body
@@ -90,7 +93,7 @@ struct EditorTabHeaderView: View {
     }
 
     private var visibleTabs: [EditorTab] {
-        sessionStore.tabs
+        service.tabs
     }
 
     // MARK: - 操作
@@ -105,7 +108,7 @@ struct EditorTabHeaderView: View {
 
         if targetTab?.sessionID == draggedTabSessionID { return }
 
-        _ = sessionStore.reorderSession(
+        _ = service.reorderSession(
             sessionID: draggedTabSessionID,
             before: targetTab?.sessionID
         )

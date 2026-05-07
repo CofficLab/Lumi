@@ -45,9 +45,9 @@ actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
 struct EditorWorkspaceSearchRailContentView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
-    private var state: EditorState { editorVM.service.state }
+    private var service: EditorService { editorVM.service }
 
     var body: some View {
-        EditorWorkspaceSearchPanelView(state: state, showsToolbar: true)
+        EditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
     }
 }
