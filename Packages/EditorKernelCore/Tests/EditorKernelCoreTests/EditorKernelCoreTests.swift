@@ -2497,6 +2497,72 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func panelDataPolicyKeepsOnlyVisibleWorkspaceSearchState() {
+        let url = URL(fileURLWithPath: "/tmp/A.swift")
+        let results = [
+            EditorWorkspaceSearchFileResult(
+                url: url,
+                path: "Sources/A.swift",
+                matches: [
+                    EditorWorkspaceSearchMatch(
+                        url: url,
+                        line: 3,
+                        column: 1,
+                        path: "Sources/A.swift",
+                        preview: "alpha"
+                    )
+                ]
+            )
+        ]
+
+        let normalized = EditorPanelDataPolicy.normalizedWorkspaceSearchState(
+            collapsedFilePaths: ["Sources/A.swift", "Sources/B.swift"],
+            selectedMatchID: "match-b",
+            results: results
+        )
+
+        #expect(normalized.collapsedFilePaths == ["Sources/A.swift"])
+        #expect(normalized.selectedMatchID == nil)
+
+        let retoggled = EditorPanelDataPolicy.toggledCollapsedFilePath(
+            "Sources/A.swift",
+            in: normalized.collapsedFilePaths
+        )
+        #expect(retoggled.isEmpty)
+    }
+
+    @Test
+    func panelDataPolicyDropsReferenceSelectionWhenResultDisappears() {
+        let kept = EditorReferenceResult(
+            url: URL(fileURLWithPath: "/tmp/A.swift"),
+            line: 1,
+            column: 1,
+            path: "A.swift",
+            preview: "alpha"
+        )
+        let removed = EditorReferenceResult(
+            url: URL(fileURLWithPath: "/tmp/B.swift"),
+            line: 2,
+            column: 1,
+            path: "B.swift",
+            preview: "beta"
+        )
+
+        #expect(
+            EditorPanelDataPolicy.normalizedReferenceSelection(
+                selected: removed,
+                availableResults: [kept]
+            ) == nil
+        )
+        #expect(
+            EditorPanelDataPolicy.normalizedReferenceSelection(
+                selected: kept,
+                availableResults: [kept]
+            ) == kept
+        )
+    }
+
+    @Test
     @MainActor
     func fileWatcherControllerDelegatesSetupAndCleanup() throws {
         let controller = EditorFileWatcherController()

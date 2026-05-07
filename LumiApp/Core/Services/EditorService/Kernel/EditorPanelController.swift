@@ -44,10 +44,10 @@ final class EditorPanelController {
     func setReferenceResults(_ results: [ReferenceResult]) {
         let editorResults = results.map(Self.editorReferenceResult(from:))
         panelState.referenceResults = editorResults
-        if let selected = panelState.selectedReferenceResult,
-           editorResults.contains(selected) == false {
-            panelState.selectedReferenceResult = nil
-        }
+        panelState.selectedReferenceResult = EditorPanelDataPolicy.normalizedReferenceSelection(
+            selected: panelState.selectedReferenceResult,
+            availableResults: editorResults
+        )
     }
 
     func setSelectedReferenceResult(_ result: ReferenceResult?) {
@@ -67,25 +67,23 @@ final class EditorPanelController {
         summary: EditorWorkspaceSearchSummary?,
         errorMessage: String?
     ) {
-        let visiblePaths = Set(results.map(\.path))
-        panelState.workspaceSearchCollapsedFilePaths = panelState.workspaceSearchCollapsedFilePaths
-            .intersection(visiblePaths)
+        let normalizedState = EditorPanelDataPolicy.normalizedWorkspaceSearchState(
+            collapsedFilePaths: panelState.workspaceSearchCollapsedFilePaths,
+            selectedMatchID: panelState.selectedWorkspaceSearchMatchID,
+            results: results
+        )
+        panelState.workspaceSearchCollapsedFilePaths = normalizedState.collapsedFilePaths
         panelState.workspaceSearchResults = results
         panelState.workspaceSearchSummary = summary
         panelState.workspaceSearchErrorMessage = errorMessage
-        let visibleMatchIDs = Set(results.flatMap { $0.matches.map(\.id) })
-        if let selectedWorkspaceSearchMatchID = panelState.selectedWorkspaceSearchMatchID,
-           !visibleMatchIDs.contains(selectedWorkspaceSearchMatchID) {
-            panelState.selectedWorkspaceSearchMatchID = nil
-        }
+        panelState.selectedWorkspaceSearchMatchID = normalizedState.selectedMatchID
     }
 
     func toggleWorkspaceSearchFileCollapse(path: String) {
-        if panelState.workspaceSearchCollapsedFilePaths.contains(path) {
-            panelState.workspaceSearchCollapsedFilePaths.remove(path)
-        } else {
-            panelState.workspaceSearchCollapsedFilePaths.insert(path)
-        }
+        panelState.workspaceSearchCollapsedFilePaths = EditorPanelDataPolicy.toggledCollapsedFilePath(
+            path,
+            in: panelState.workspaceSearchCollapsedFilePaths
+        )
     }
 
     func setSelectedWorkspaceSearchMatchID(_ id: String?) {
