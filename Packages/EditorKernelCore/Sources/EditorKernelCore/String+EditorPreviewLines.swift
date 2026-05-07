@@ -1,6 +1,6 @@
 import Foundation
 
-extension String {
+public extension String {
     func getFirstLines(_ count: Int) -> String? {
         var lines = 0
         for (idx, char) in self.enumerated() {

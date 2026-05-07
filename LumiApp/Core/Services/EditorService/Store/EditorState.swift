@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import Combine
+import EditorKernelCore
 import MagicAlert
 import CodeEditSourceEditor
 import CodeEditTextView

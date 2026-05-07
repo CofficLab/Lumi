@@ -2389,4 +2389,14 @@ struct EditorKernelCoreTests {
         #expect(hover?.contains("from 1.5.0") == true)
     }
 
+    @Test
+    @MainActor
+    func stringPreviewLinesReturnsExpectedPrefixesAndSuffixes() {
+        let text = "one\ntwo\nthree\nfour"
+        #expect(text.getFirstLines(2) == "one\ntwo")
+        #expect(text.getLastLines(2) == "three\nfour")
+        #expect(text.getFirstLines(10) == nil)
+        #expect(text.getLastLines(10) == nil)
+    }
+
 }
