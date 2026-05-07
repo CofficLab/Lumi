@@ -34,6 +34,7 @@
 		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
 		A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E12F70000100AAA101 /* MarkdownKit */; };
 		A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E72F70000100AAA101 /* EditorKernelCore */; };
+		A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3EF2F70000100AAA101 /* DatabaseKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -241,6 +242,7 @@
 				0B4548682F89F3B500C6B7C8 /* CodeEditSourceEditor in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
 				A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */,
+				A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */,
 				A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */,
 				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
 				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
@@ -405,6 +407,7 @@
 				A1B2C3E12F70000100AAA101 /* MarkdownKit */,
 				A1B2C3D62F70000100AAA101 /* MarkdownKitCore */,
 				A1B2C3E72F70000100AAA101 /* EditorKernelCore */,
+				A1B2C3EF2F70000100AAA101 /* DatabaseKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 			);
 			productName = "SwiftUI-Template";
@@ -492,6 +495,7 @@
 				A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */,
 				A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */,
 				A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */,
+				A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1081,6 +1085,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/EditorKernelCore;
 		};
+		A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/DatabaseKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1367,6 +1375,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */;
 			productName = EditorKernelCore;
+		};
+		A1B2C3EF2F70000100AAA101 /* DatabaseKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */;
+			productName = DatabaseKit;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
