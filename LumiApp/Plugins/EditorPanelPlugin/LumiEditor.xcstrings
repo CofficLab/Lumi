@@ -1233,6 +1233,7 @@
       }
     },
     "Document formatted" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2082,6 +2083,7 @@
       }
     },
     "Formatting document..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3427,6 +3429,7 @@
       }
     },
     "No formatting changes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

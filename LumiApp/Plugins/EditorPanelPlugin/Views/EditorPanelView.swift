@@ -1,14 +1,16 @@
-import MagicKit
-import SwiftUI
-import Combine
 import CodeEditSourceEditor
+import Combine
 import FilePreviewKit
+import MagicKit
 import MarkdownKit
+import SwiftUI
 import UniformTypeIdentifiers
 
 /// 编辑器主视图
+///
+/// 纯布局职责：组合编辑器内容区域、Banner、Sheet 等 UI 组件。
+/// 所有业务逻辑委托给 `EditorPanelService`，生命周期和事件路由由 `EditorPanelCoordinator` 管理。
 struct EditorPanelView: View {
-
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var layoutVM: LayoutVM
     @EnvironmentObject private var themeVM: ThemeVM
@@ -19,156 +21,17 @@ struct EditorPanelView: View {
     private var state: EditorState { service.state }
     private var sessionStore: EditorSessionStore { service.sessionStore }
 
-    @State private var isCommandPalettePresented = false
-    @State private var draggedTabSessionID: EditorSession.ID?
+    /// 面板业务逻辑
+    @StateObject private var panelService = EditorPanelService()
+
+    /// 生命周期与事件路由协调器
+    @StateObject private var coordinator = EditorPanelCoordinator()
 
     /// 标记编辑器协调器是否已完成初始化
     /// 避免在 SourceEditorView.onAppear (initializeCoordinators) 执行前就触发文件加载导致崩溃
     @State private var isEditorReady: Bool = false
 
-    /// 标签页持久化存储
-    private let tabStore = EditorTabStripStore.shared
-    /// 防抖保存的 Task
-    @State private var tabSaveTask: Task<Void, Never>?
-
-    /// 首次 appear 后延迟恢复标签页的 Task
-    /// 避免在 SourceEditorView 协调器未初始化时就触发文件加载导致崩溃
-    @State private var tabRestoreTask: Task<Void, Never>?
-
     var body: some View {
-        eventBoundRootView
-    }
-
-    private var baseRootView: some View {
-        rootLayout
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(themeVM.activeAppTheme.workspaceBackgroundColor())
-    }
-
-    private var lifecycleBoundRootView: some View {
-        baseRootView
-            .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
-                state.logger.info("📝[onChange:currentProjectPath] oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)")
-                // 保存旧项目的标签页
-                if !oldPath.isEmpty {
-                    saveCurrentTabs(forProject: oldPath)
-                }
-
-                // 保存未保存的变更后关闭所有编辑器会话
-                if state.hasUnsavedChanges { state.saveNow() }
-                sessionStore.closeAll()
-                state.loadFile(from: nil)
-                refreshProjectContext(for: newPath)
-
-                // 恢复新项目的标签页
-                if !newPath.isEmpty {
-                    restoreTabs(forProject: newPath)
-                }
-            }
-            .onChange(of: projectVM.selectedFileURL) { _, newURL in
-                state.logger.info("📝[onChange:selectedFileURL] newURL=\(newURL?.path ?? "nil", privacy: .public)")
-                openOrActivateSession(for: newURL)
-            }
-            .onChange(of: state.currentFileURL) { _, _ in
-                state.refreshDocumentOutline()
-                updateBreadcrumbBridge()
-            }
-            .onChange(of: state.cursorLine) { _, _ in
-                updateBreadcrumbBridge()
-            }
-            .onChange(of: state.documentSymbolProvider.symbols.map(\.id)) { _, _ in
-                updateBreadcrumbBridge()
-            }
-            .onAppear {
-                state.logger.info("📝[onAppear] EditorPanelView 出现, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
-                state.projectRootPath = projectVM.currentProject?.path
-                refreshProjectContext(for: projectVM.currentProjectPath)
-                state.onActiveSessionChanged = { snapshot in
-                    sessionStore.syncActiveSession(from: snapshot)
-                }
-                if projectVM.isFileSelected {
-                    openOrActivateSession(for: projectVM.selectedFileURL)
-                    state.refreshDocumentOutline()
-                }
-                updateBreadcrumbBridge()
-            }
-            .onDisappear {
-                // 保存当前项目的标签页
-                let projectPath = projectVM.currentProjectPath
-                if !projectPath.isEmpty {
-                    saveCurrentTabs(forProject: projectPath)
-                }
-
-                if state.hasUnsavedChanges { state.saveNow() }
-                state.onActiveSessionChanged = nil
-                EditorBreadcrumbContextBridge.shared.update(
-                    currentFileURL: nil,
-                    activeSymbolTrail: [],
-                    openSymbol: nil
-                )
-            }
-    }
-
-    private var editorCommandBoundRootView: some View {
-        let viewWithPrimaryCommands = lifecycleBoundRootView
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorUndo)) { _ in
-                handleEditorCommandEvent("builtin.undo")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorRedo)) { _ in
-                handleEditorCommandEvent("builtin.redo")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFormatDocument)) { _ in
-                handleEditorCommandEvent("builtin.format-document")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindReferences)) { _ in
-                handleEditorCommandEvent("builtin.find-references")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorQuickFix)) { _ in
-                handleEditorCommandEvent("builtin.quick-fix")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorRenameSymbol)) { _ in
-                handleEditorCommandEvent("builtin.rename-symbol")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorWorkspaceSymbols)) { _ in
-                handleEditorCommandEvent("builtin.workspace-symbols")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorCallHierarchy)) { _ in
-                handleEditorCommandEvent("builtin.call-hierarchy")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleFind)) { _ in
-                handleEditorCommandEvent("builtin.find")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorSearchInFiles)) { _ in
-                handleEditorCommandEvent("builtin.search-in-files")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorShowCommandPalette)) { _ in
-                isCommandPalettePresented = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindNext)) { _ in
-                handleEditorCommandEvent("builtin.find-next")
-            }
-
-        return viewWithPrimaryCommands
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorFindPrevious)) { _ in
-                handleEditorCommandEvent("builtin.find-previous")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorReplaceCurrent)) { _ in
-                handleEditorCommandEvent("builtin.replace-current")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorReplaceAll)) { _ in
-                handleEditorCommandEvent("builtin.replace-all")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiEditorToggleOutlinePanel)) { _ in
-                state.performPanelCommand(.toggleOutline)
-            }
-    }
-
-    private var eventBoundRootView: some View {
-        editorCommandBoundRootView
-            .background(editorSheetHosts)
-    }
-
-    private var rootLayout: some View {
         VStack(spacing: 0) {
             if projectVM.isFileSelected {
                 fileInfoBanner
@@ -177,12 +40,47 @@ struct EditorPanelView: View {
                 emptyState
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+            coordinator.handleProjectPathChange(oldPath: oldPath, newPath: newPath)
+        }
+        .onChange(of: projectVM.selectedFileURL) { _, newURL in
+            coordinator.handleSelectedFileURLChange(newURL: newURL)
+        }
+        .onChange(of: state.currentFileURL) { _, _ in
+            coordinator.handleCurrentFileURLChange()
+        }
+        .onChange(of: state.cursorLine) { _, _ in
+            coordinator.handleCursorLineChange()
+        }
+        .onChange(of: state.documentSymbolProvider.symbols.map(\.id)) { _, _ in
+            coordinator.handleDocumentSymbolsChange()
+        }
+        .onAppear {
+            coordinator.configure(
+                panelService: panelService,
+                state: state,
+                sessionStore: sessionStore,
+                projectVM: projectVM
+            )
+            coordinator.handleAppear()
+        }
+        .onDisappear {
+            coordinator.handleDisappear()
+        }
+        .onReceive(coordinator.subscribeEditorCommands(isCommandPalettePresented: $panelService.isCommandPalettePresented)) { event in
+            coordinator.handleCommandEvent(event)
+        }
+        .background(editorSheetHosts)
     }
+
+    // MARK: - Sheet Hosts
 
     private var editorSheetHosts: some View {
         let sheets = builtinSheets + state.editorExtensions.sheetSuggestions(state: state).filter {
             $0.id != "builtin.workspace-symbol-sheet" &&
-            $0.id != "builtin.call-hierarchy-sheet"
+                $0.id != "builtin.call-hierarchy-sheet"
         }
         return ZStack {
             ForEach(sheets) { sheet in
@@ -208,35 +106,33 @@ struct EditorPanelView: View {
             .init(
                 id: "builtin.command-palette-sheet",
                 order: 0,
-                isPresented: { _ in isCommandPalettePresented },
-                onDismiss: { _ in isCommandPalettePresented = false },
+                isPresented: { _ in panelService.isCommandPalettePresented },
+                onDismiss: { _ in panelService.isCommandPalettePresented = false },
                 content: { state in
                     AnyView(
                         EditorCommandPaletteView(
                             state: state,
-                            openEditors: openEditorItems,
-                            onOpenFile: openFileFromQuickOpen
+                            openEditors: panelService.openEditorItems(sessionStore),
+                            onOpenFile: { url, target, highlightLine in
+                                panelService.openFileFromQuickOpen(
+                                    url,
+                                    target: target,
+                                    highlightLine: highlightLine,
+                                    state: state,
+                                    sessionStore: self.sessionStore,
+                                    projectRootPath: self.projectVM.currentProject?.path,
+                                    currentProjectPath: self.projectVM.currentProjectPath
+                                ) { fileURL in
+                                    self.projectVM.selectFile(at: fileURL)
+                                }
+                            }
                         ) {
-                            isCommandPalettePresented = false
+                            panelService.isCommandPalettePresented = false
                         }
                     )
                 }
-            )
+            ),
         ]
-    }
-
-    private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
-        state.documentSymbolProvider.activeItems(for: state.cursorLine)
-    }
-
-    private func updateBreadcrumbBridge() {
-        EditorBreadcrumbContextBridge.shared.update(
-            currentFileURL: state.currentFileURL,
-            activeSymbolTrail: activeDocumentSymbolTrail,
-            openSymbol: { [weak state] symbol in
-                state?.performOpenItem(.documentSymbol(symbol))
-            }
-        )
     }
 
     // MARK: - Editor Content
@@ -299,7 +195,8 @@ struct EditorPanelView: View {
 
     @ViewBuilder
     private var fileInfoBanner: some View {
-        if state.isTruncated || !state.isEditable || shouldShowProjectContextWarning {
+        let warningMessage = panelService.projectContextWarningMessage(state: state)
+        if state.isTruncated || !state.isEditable || warningMessage != nil {
             VStack(alignment: .leading, spacing: 4) {
                 if state.isTruncated {
                     HStack(spacing: 4) {
@@ -331,7 +228,7 @@ struct EditorPanelView: View {
                             .foregroundColor(AppUI.Color.semantic.warning)
                     }
                 }
-                if let warning = projectContextWarningMessage {
+                if let warning = warningMessage {
                     HStack(spacing: 4) {
                         Image(systemName: "hammer.circle.fill")
                             .font(.system(size: 9))
@@ -349,39 +246,6 @@ struct EditorPanelView: View {
             .background(themeVM.activeAppTheme.workspaceBackgroundColor())
             .zIndex(1)
         }
-    }
-
-    private var shouldShowProjectContextWarning: Bool {
-        projectContextWarningMessage != nil
-    }
-
-    private var projectContextWarningMessage: String? {
-        guard let snapshot = state.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
-        switch snapshot.contextStatus {
-        case .unavailable, .needsResync:
-            return String(localized: "Project semantic context is not ready, cross-file semantic capabilities may be unstable.", table: "LumiEditor")
-        default:
-            break
-        }
-        guard state.currentFileURL != nil else { return nil }
-        if !snapshot.currentFileIsInTarget {
-            return String(localized: "Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.", table: "LumiEditor")
-        }
-        if let activeScheme = snapshot.activeScheme,
-           let currentTarget = snapshot.currentFilePrimaryTarget,
-           !currentTarget.isEmpty,
-           !snapshot.activeSchemeBuildableTargets.isEmpty,
-           !snapshot.activeSchemeBuildableTargets.contains(currentTarget) {
-            return String(localized: "Current file belongs to target '\(currentTarget)', but current scheme '\(activeScheme)' may not cover it.", table: "LumiEditor")
-        }
-        if snapshot.currentFileMatchedTargets.count > 1 {
-            if let preferredTarget = snapshot.currentFilePrimaryTarget, !preferredTarget.isEmpty {
-                return String(localized: "Current file belongs to multiple targets; the editor is currently parsing with '\(preferredTarget)' context.", table: "LumiEditor")
-            }
-            let targets = snapshot.currentFileMatchedTargets.joined(separator: ", ")
-            return String(localized: "Current file belongs to multiple targets (\(targets)); semantic results depend on current scheme and configuration.", table: "LumiEditor")
-        }
-        return nil
     }
 
     // MARK: - Empty State
@@ -421,268 +285,6 @@ struct EditorPanelView: View {
                 .foregroundColor(AppUI.Color.semantic.textTertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: - Tab Persistence
-
-    /// 保存当前打开的标签页到持久化存储
-    private func saveCurrentTabs(forProject projectPath: String) {
-        let activeTabPath = state.currentFileURL?.path
-        tabStore.saveTabs(
-            projectPath: projectPath,
-            tabs: sessionStore.tabs,
-            activeTabPath: activeTabPath
-        )
-    }
-
-    /// 从持久化存储恢复标签页
-    private func restoreTabs(forProject projectPath: String) {
-        let (persistedTabs, activeTabPath) = tabStore.loadTabs(forProject: projectPath)
-        state.logger.info("📝[restoreTabs] 恢复标签页, projectPath=\(projectPath, privacy: .public), persistedCount=\(persistedTabs.count), activeTabPath=\(activeTabPath ?? "nil", privacy: .public)")
-
-        // 过滤掉不存在的文件
-        let validTabs = persistedTabs.compactMap { tab -> URL? in
-            guard let url = tab.fileURL,
-                  FileManager.default.isReadableFile(atPath: url.path) else {
-                state.logger.warning("📝[restoreTabs] 跳过不可读文件: \(tab.path, privacy: .public)")
-                return nil
-            }
-            return url
-        }
-
-        state.logger.info("📝[restoreTabs] 有效标签页数=\(validTabs.count)")
-        guard !validTabs.isEmpty else { return }
-
-        // 先打开最后一个保存的活跃标签
-        if let activePath = activeTabPath,
-           let activateURL = validTabs.first(where: { $0.path == activePath }) {
-            state.logger.info("📝[restoreTabs] 选择活跃标签: \(activateURL.path, privacy: .public)")
-            projectVM.selectFile(at: activateURL)
-        } else if let fallbackURL = validTabs.first {
-            state.logger.info("📝[restoreTabs] 选择第一个标签: \(fallbackURL.path, privacy: .public)")
-            projectVM.selectFile(at: fallbackURL)
-        }
-    }
-
-    /// 防抖保存当前标签页（2 秒延迟，避免频繁写入）
-    private func scheduleTabSave() {
-        tabSaveTask?.cancel()
-        tabSaveTask = Task {
-            try? await Task.sleep(for: Duration.seconds(2))
-            guard !Task.isCancelled else { return }
-            let projectPath = projectVM.currentProjectPath
-            if !projectPath.isEmpty {
-                saveCurrentTabs(forProject: projectPath)
-            }
-        }
-    }
-
-    private var openEditorItems: [EditorOpenEditorItem] {
-        sessionStore.tabs.map { tab in
-            EditorOpenEditorItem(
-                sessionID: tab.sessionID,
-                fileURL: tab.fileURL,
-                title: tab.title,
-                isDirty: tab.isDirty,
-                isPinned: tab.isPinned,
-                isActive: tab.sessionID == sessionStore.activeSessionID,
-                recentActivationRank: sessionStore.recentActivationRank(for: tab.sessionID)
-            )
-        }
-        .sorted { lhs, rhs in
-            if lhs.isActive != rhs.isActive {
-                return lhs.isActive && !rhs.isActive
-            }
-            if lhs.recentActivationRank != rhs.recentActivationRank {
-                return (lhs.recentActivationRank ?? .max) < (rhs.recentActivationRank ?? .max)
-            }
-            if lhs.isPinned != rhs.isPinned {
-                return lhs.isPinned && !rhs.isPinned
-            }
-            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
-        }
-    }
-
-    // MARK: - Session Management
-
-    private func openOrActivateSession(for fileURL: URL?) {
-        state.logger.info("📝[openOrActivateSession] 入口, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), isFileSelected=\(projectVM.isFileSelected)")
-        state.projectRootPath = projectVM.currentProject?.path
-        refreshProjectContext(for: projectVM.currentProjectPath)
-        guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
-            state.logger.info("📝[openOrActivateSession] session 为 nil → loadFile(nil), fileURL=\(fileURL?.path ?? "nil", privacy: .public)")
-            state.loadFile(from: nil)
-            return
-        }
-
-        state.logger.info("📝[openOrActivateSession] 加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public), sessionID=\(session.id)")
-        state.loadFile(from: session.fileURL)
-        restoreInteractionState(for: session)
-        scheduleTabSave()
-    }
-
-    private func refreshProjectContext(for projectPath: String) {
-        let trimmedPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedPath.isEmpty else {
-            state.refreshProjectContextSnapshot()
-            return
-        }
-        Task { @MainActor in
-            await state.projectContextCapability?.projectOpened(at: trimmedPath)
-            state.refreshProjectContextSnapshot()
-        }
-    }
-
-    private func activateSession(_ tab: EditorTab) {
-        _ = sessionStore.activate(sessionID: tab.sessionID)
-        if let fileURL = tab.fileURL {
-            projectVM.selectFile(at: fileURL)
-        }
-    }
-
-    private func activateOpenEditor(_ item: EditorOpenEditorItem) {
-        _ = sessionStore.activate(sessionID: item.sessionID)
-        if let fileURL = item.fileURL {
-            projectVM.selectFile(at: fileURL)
-        }
-    }
-
-    private func openFileFromQuickOpen(
-        _ url: URL,
-        target: CursorPosition?,
-        highlightLine: Bool
-    ) {
-        openOrActivateSession(for: url)
-        guard let target else { return }
-        state.performNavigation(.definition(url, target, highlightLine: highlightLine))
-    }
-
-    private func closeSession(_ tab: EditorTab) {
-        guard let session = sessionStore.session(for: tab.sessionID) else { return }
-        let wasActive = session.id == sessionStore.activeSessionID
-        if wasActive, state.hasUnsavedChanges {
-            state.saveNow()
-        }
-
-        let nextSession = sessionStore.close(sessionID: session.id)
-        guard wasActive else { return }
-
-        if let nextFileURL = nextSession?.fileURL {
-            projectVM.selectFile(at: nextFileURL)
-        } else {
-            projectVM.clearFileSelection()
-        }
-    }
-
-    private func closeOtherSessions(_ tab: EditorTab) {
-        guard let session = sessionStore.session(for: tab.sessionID) else { return }
-        if state.currentFileURL != session.fileURL, state.hasUnsavedChanges {
-            state.saveNow()
-        }
-
-        let keptSession = sessionStore.closeOthers(keeping: session.id)
-        if let fileURL = keptSession?.fileURL {
-            projectVM.selectFile(at: fileURL)
-        } else {
-            projectVM.clearFileSelection()
-        }
-    }
-
-    private func navigateBack() {
-        guard let session = sessionStore.goBack(),
-              let fileURL = session.fileURL else { return }
-        projectVM.selectFile(at: fileURL)
-        restoreInteractionState(for: session)
-    }
-
-    private func navigateForward() {
-        guard let session = sessionStore.goForward(),
-              let fileURL = session.fileURL else { return }
-        projectVM.selectFile(at: fileURL)
-        restoreInteractionState(for: session)
-    }
-
-    private func togglePinned(_ tab: EditorTab) {
-        sessionStore.togglePinned(sessionID: tab.sessionID)
-    }
-
-    private func beginTabDrag(_ tab: EditorTab) {
-        draggedTabSessionID = tab.sessionID
-    }
-
-    private func dropDraggedTabInActiveStrip(before targetTab: EditorTab?) {
-        guard let draggedTabSessionID else { return }
-        defer { self.draggedTabSessionID = nil }
-
-        if targetTab?.sessionID == draggedTabSessionID { return }
-
-        _ = sessionStore.reorderSession(
-            sessionID: draggedTabSessionID,
-            before: targetTab?.sessionID
-        )
-    }
-
-    private func closeOpenEditorItem(_ item: EditorOpenEditorItem) {
-        closeSession(
-            EditorTab(
-                sessionID: item.sessionID,
-                fileURL: item.fileURL,
-                title: item.title,
-                isDirty: item.isDirty,
-                isPinned: item.isPinned
-            )
-        )
-    }
-
-    private func closeOtherOpenEditorItems(_ item: EditorOpenEditorItem) {
-        closeOtherSessions(
-            EditorTab(
-                sessionID: item.sessionID,
-                fileURL: item.fileURL,
-                title: item.title,
-                isDirty: item.isDirty,
-                isPinned: item.isPinned
-            )
-        )
-    }
-
-    private func togglePinnedOpenEditorItem(_ item: EditorOpenEditorItem) {
-        togglePinned(
-            EditorTab(
-                sessionID: item.sessionID,
-                fileURL: item.fileURL,
-                title: item.title,
-                isDirty: item.isDirty,
-                isPinned: item.isPinned
-            )
-        )
-    }
-
-    private func handleEditorCommandEvent(_ commandID: String) {
-        guard projectVM.isFileSelected else { return }
-        state.performEditorCommand(id: commandID)
-    }
-
-    /// 恢复交互状态
-    private func restoreInteractionState(for session: EditorSession) {
-        let snapshot = session
-        state.projectRootPath = state.projectRootPath
-
-        guard let fileURL = snapshot.fileURL else { return }
-
-        let canRestoreImmediately =
-            state.currentFileURL == fileURL &&
-            state.content != nil &&
-            state.focusedTextView != nil
-
-        if canRestoreImmediately {
-            state.applySessionRestore(snapshot)
-            return
-        }
-
-        if state.currentFileURL != fileURL {
-            state.loadFile(from: fileURL)
-        }
     }
 }
 
