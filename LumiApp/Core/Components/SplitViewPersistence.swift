@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import os
 
 // MARK: - SplitView Autosave Configurator
 
@@ -88,6 +89,11 @@ final class AutosaveConfiguratorView: NSView {
 /// 支持指定 `columnIndex`，控制 SplitView 中第几个子视图的宽度比例。
 /// 默认 `columnIndex = 0`，即控制第一个子视图（向后兼容）。
 ///
+/// 数据流：
+/// - 读取/写入通过 `LayoutVM.layoutRatios`（纯内存）
+/// - `LayoutPlugin` 观察 `LayoutVM` 变化并持久化到磁盘
+/// - 应用启动时，`LayoutPlugin` 将保存的比例写回 `LayoutVM`
+///
 /// 用法：
 /// ```swift
 /// HSplitView {
@@ -116,6 +122,8 @@ struct SplitViewWidthPersistence: NSViewRepresentable {
 }
 
 final class SplitViewWidthPersistenceView: NSView {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "layout.split-persistence")
+
     var storageKey: String
     var columnIndex: Int
     private var observedSplitView: NSSplitView?
@@ -145,6 +153,7 @@ final class SplitViewWidthPersistenceView: NSView {
     func attachIfNeeded() {
         guard window != nil else { return }
         guard let splitView = findSplitView() else {
+            Self.logger.debug("attachIfNeeded: split view not found for \(self.storageKey, privacy: .public)")
             scheduleRetryAttach()
             return
         }
@@ -179,7 +188,8 @@ final class SplitViewWidthPersistenceView: NSView {
         let idx = columnIndex
         guard idx >= 0, splitView.arrangedSubviews.count > idx, splitView.arrangedSubviews.count >= 2 else { return }
 
-        let savedRatio = AppSettingStore.loadLayoutRatio(forKey: storageKey)
+        // 从 LayoutVM 读取比例（由 LayoutPlugin 在启动时从磁盘恢复）
+        let savedRatio = RootViewContainer.shared.layoutVM.layoutRatios[storageKey]
         guard let savedRatio, savedRatio > 0.0, savedRatio < 1.0 else {
             didApplySavedValue = true
             return
@@ -230,14 +240,35 @@ final class SplitViewWidthPersistenceView: NSView {
         let ratio = columnWidth / usableWidth
         guard ratio > 0.0, ratio < 1.0 else { return }
 
-        AppSettingStore.saveLayoutRatio(ratio, forKey: storageKey)
+        Self.logger.debug("persistCurrentRatio: key=\(self.storageKey, privacy: .public), ratio=\(ratio, privacy: .public)")
+
+        // 写入 LayoutVM（LayoutPlugin 会观察变化并持久化到磁盘）
+        RootViewContainer.shared.layoutVM.setLayoutRatio(ratio, forKey: storageKey)
     }
 
     private func findSplitView() -> NSSplitView? {
         var current: NSView? = self
         while let node = current {
             if let sv = node as? NSSplitView { return sv }
+            if let parent = node.superview {
+                for sibling in parent.subviews where sibling !== node {
+                    if let found = findSplitViewRecursive(in: sibling) {
+                        return found
+                    }
+                }
+            }
             current = node.superview
+        }
+        return nil
+    }
+
+    private func findSplitViewRecursive(in view: NSView?) -> NSSplitView? {
+        guard let view else { return nil }
+        if let sv = view as? NSSplitView { return sv }
+        for subview in view.subviews {
+            if let found = findSplitViewRecursive(in: subview) {
+                return found
+            }
         }
         return nil
     }

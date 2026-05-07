@@ -32,6 +32,10 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
     /// 工具栏右侧：会话列表按钮
     @MainActor
     func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(ConversationListPopoverButton())
+        if activeIcon != EditorPlugin.iconName {
+            return nil
+        }
+        
+        return AnyView(ConversationListPopoverButton())
     }
 }

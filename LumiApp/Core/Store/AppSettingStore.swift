@@ -69,42 +69,6 @@ enum AppSettingStore {
         }
     }
 
-    // MARK: - Layout
-
-    private static let selectedAgentSidebarTabIdKey = "App_SelectedAgentSidebarTabId"
-    private static let selectedAgentDetailIdKey = "App_SelectedAgentDetailId"
-    private static let activePanelIconKey = "App_ActivePanelIcon"
-
-    /// 加载上次选中的活动栏图标名称
-    static func loadActivePanelIcon() -> String? {
-        object(forKey: activePanelIconKey) as? String
-    }
-
-    /// 保存当前选中的活动栏图标名称
-    static func saveActivePanelIcon(_ icon: String?) {
-        set(icon, forKey: activePanelIconKey)
-    }
-
-    /// 加载上次选中的侧边栏 Tab ID
-    static func loadSelectedAgentSidebarTabId() -> String? {
-        object(forKey: selectedAgentSidebarTabIdKey) as? String
-    }
-
-    /// 保存选中的侧边栏 Tab ID
-    static func saveSelectedAgentSidebarTabId(_ id: String?) {
-        set(id, forKey: selectedAgentSidebarTabIdKey)
-    }
-
-    /// 加载上次选中的 Detail ID
-    static func loadSelectedAgentDetailId() -> String? {
-        object(forKey: selectedAgentDetailIdKey) as? String
-    }
-
-    /// 保存选中的 Detail ID
-    static func saveSelectedAgentDetailId(_ id: String?) {
-        set(id, forKey: selectedAgentDetailIdKey)
-    }
-
     // MARK: - Settings Selection
 
     private static let settingsSelectionTypeKey = "App_SettingsSelectionType"
@@ -215,27 +179,6 @@ enum AppSettingStore {
 
     private static let selectedRemoteProviderIdKey = "App_SelectedRemoteProviderId"
     private static let remoteProviderModelsKey = "App_RemoteProviderModels"
-
-    // MARK: - Layout Ratios
-
-    /// 存储 key 前缀
-    private static let layoutRatioPrefix = "App_LayoutRatio_"
-
-    /// 加载布局宽度比例
-    /// - Parameter key: 存储键（如 "Split.Panel.xxx"）
-    /// - Returns: 比例值 (0.0~1.0)，无记录时返回 nil
-    static func loadLayoutRatio(forKey key: String) -> Double? {
-        let value = object(forKey: "\(layoutRatioPrefix)\(key)") as? Double
-        return value
-    }
-
-    /// 保存布局宽度比例
-    /// - Parameters:
-    ///   - ratio: 比例值 (0.0~1.0)
-    ///   - key: 存储键
-    static func saveLayoutRatio(_ ratio: Double, forKey key: String) {
-        set(ratio, forKey: "\(layoutRatioPrefix)\(key)")
-    }
 
     // MARK: - Remote Provider (continued)
 
