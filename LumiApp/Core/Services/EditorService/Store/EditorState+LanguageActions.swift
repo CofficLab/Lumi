@@ -130,7 +130,10 @@ extension EditorState {
             },
             applyExternalFileEdits: { [weak self] edits, url in
                 self?.applyTextEditsToFile(edits, url: url) ?? false
-            }
+            },
+            applyCreateFile: WorkspaceEditFileOperations.applyCreateFile,
+            applyRenameFile: WorkspaceEditFileOperations.applyRenameFile,
+            applyDeleteFile: WorkspaceEditFileOperations.applyDeleteFile
         )
 
         dismissInlineRename()
@@ -341,6 +344,12 @@ extension EditorState {
             self?.applyTextEditsToCurrentDocument(edits, reason: reason)
         } applyExternalFileEdits: { [weak self] edits, url in
             self?.applyTextEditsToFile(edits, url: url) ?? false
+        } applyCreateFile: { operation in
+            WorkspaceEditFileOperations.applyCreateFile(operation)
+        } applyRenameFile: { operation in
+            WorkspaceEditFileOperations.applyRenameFile(operation)
+        } applyDeleteFile: { operation in
+            WorkspaceEditFileOperations.applyDeleteFile(operation)
         }
     }
 

@@ -2,8 +2,10 @@ import Foundation
 import LanguageServerProtocol
 
 @MainActor
-final class EditorWorkspaceEditController {
-    func summarize(
+public final class EditorWorkspaceEditController {
+    public init() {}
+
+    public func summarize(
         _ edit: WorkspaceEdit,
         currentURI: String,
         projectRootPath: String?
@@ -16,12 +18,15 @@ final class EditorWorkspaceEditController {
     }
 
     @discardableResult
-    func apply(
+    public func apply(
         changes: [String: [TextEdit]]?,
         documentChanges: [WorkspaceEditDocumentChange]?,
         currentURI: String,
         applyCurrentDocumentEdits: (_ edits: [TextEdit], _ reason: String) -> Void,
-        applyExternalFileEdits: (_ edits: [TextEdit], _ url: URL) -> Bool
+        applyExternalFileEdits: (_ edits: [TextEdit], _ url: URL) -> Bool,
+        applyCreateFile: (_ operation: CreateFile) -> Bool,
+        applyRenameFile: (_ operation: RenameFile) -> Bool,
+        applyDeleteFile: (_ operation: DeleteFile) -> Bool
     ) -> Int {
         var changedFiles = 0
 
@@ -55,15 +60,15 @@ final class EditorWorkspaceEditController {
                         changedFiles += 1
                     }
                 case .createFile(let operation):
-                    if WorkspaceEditFileOperations.applyCreateFile(operation) {
+                    if applyCreateFile(operation) {
                         changedFiles += 1
                     }
                 case .renameFile(let operation):
-                    if WorkspaceEditFileOperations.applyRenameFile(operation) {
+                    if applyRenameFile(operation) {
                         changedFiles += 1
                     }
                 case .deleteFile(let operation):
-                    if WorkspaceEditFileOperations.applyDeleteFile(operation) {
+                    if applyDeleteFile(operation) {
                         changedFiles += 1
                     }
                 }
@@ -73,7 +78,7 @@ final class EditorWorkspaceEditController {
         return changedFiles
     }
 
-    func applyTextEditsToFile(_ edits: [TextEdit], url: URL) -> Bool {
+    public func applyTextEditsToFile(_ edits: [TextEdit], url: URL) -> Bool {
         do {
             let original = try String(contentsOf: url, encoding: .utf8)
             guard let updated = TextEditApplier.apply(edits: edits, to: original), updated != original else {

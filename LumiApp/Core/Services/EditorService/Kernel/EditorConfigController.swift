@@ -46,8 +46,8 @@ final class EditorConfigController {
     ) -> EditorScopedConfigSnapshot {
         let global = restoreConfig()
         let rawScopes = EditorConfigStore.loadDictionary(forKey: scopedOverridesKey) ?? [:]
-        let workspaceOverrides = decodeOverrideMap(rawScopes["workspace"] as? [String: Any])
-        let languageOverrides = decodeOverrideMap(rawScopes["language"] as? [String: Any])
+        let workspaceOverrides = EditorConfigPersistencePolicy.decodeOverrideMap(rawScopes["workspace"] as? [String: Any])
+        let languageOverrides = EditorConfigPersistencePolicy.decodeOverrideMap(rawScopes["language"] as? [String: Any])
         return EditorScopedConfigSnapshot(
             global: global,
             workspaceOverrides: workspaceOverrides,
@@ -58,20 +58,7 @@ final class EditorConfigController {
     func resolveConfig(
         for context: EditorConfigContext
     ) -> EditorConfigSnapshot {
-        let scoped = restoreScopedConfig()
-        var resolved = scoped.global
-
-        if let workspacePath = context.normalizedWorkspacePath,
-           let workspaceOverride = scoped.workspaceOverrides[workspacePath] {
-            resolved = workspaceOverride.applying(to: resolved)
-        }
-
-        if let languageId = context.normalizedLanguageId,
-           let languageOverride = scoped.languageOverrides[languageId] {
-            resolved = languageOverride.applying(to: resolved)
-        }
-
-        return resolved
+        EditorConfigPersistencePolicy.resolveConfig(for: context, scoped: restoreScopedConfig())
     }
 
     func persistConfig(_ snapshot: EditorConfigSnapshot) {
@@ -93,36 +80,18 @@ final class EditorConfigController {
     func overrideSnapshot(
         for scope: EditorConfigOverrideScope
     ) -> EditorScopedOverrideSnapshot {
-        let scoped = restoreScopedConfig()
-        switch scope {
-        case let .workspace(path):
-            return scoped.workspaceOverrides[EditorConfigContext.normalizePath(path) ?? path] ?? EditorScopedOverrideSnapshot()
-        case let .language(languageId):
-            return scoped.languageOverrides[EditorConfigContext.normalizeLanguageId(languageId) ?? languageId.lowercased()] ?? EditorScopedOverrideSnapshot()
-        }
+        EditorConfigPersistencePolicy.overrideSnapshot(in: restoreScopedConfig(), for: scope)
     }
 
     func persistOverrideSnapshot(
         _ overrideSnapshot: EditorScopedOverrideSnapshot,
         for scope: EditorConfigOverrideScope
     ) {
-        var scoped = restoreScopedConfig()
-        switch scope {
-        case let .workspace(path):
-            let normalized = EditorConfigContext.normalizePath(path) ?? path
-            if overrideSnapshot.isEmpty {
-                scoped.workspaceOverrides.removeValue(forKey: normalized)
-            } else {
-                scoped.workspaceOverrides[normalized] = overrideSnapshot
-            }
-        case let .language(languageId):
-            let normalized = EditorConfigContext.normalizeLanguageId(languageId) ?? languageId.lowercased()
-            if overrideSnapshot.isEmpty {
-                scoped.languageOverrides.removeValue(forKey: normalized)
-            } else {
-                scoped.languageOverrides[normalized] = overrideSnapshot
-            }
-        }
+        let scoped = EditorConfigPersistencePolicy.updating(
+            restoreScopedConfig(),
+            overrideSnapshot: overrideSnapshot,
+            for: scope
+        )
         persistScopedOverrides(scoped)
     }
 
@@ -146,8 +115,8 @@ final class EditorConfigController {
     }
 
     private func persistScopedOverrides(_ scopedSnapshot: EditorScopedConfigSnapshot) {
-        let workspaceOverrides = encodeOverrideMap(scopedSnapshot.workspaceOverrides)
-        let languageOverrides = encodeOverrideMap(scopedSnapshot.languageOverrides)
+        let workspaceOverrides = EditorConfigPersistencePolicy.encodeOverrideMap(scopedSnapshot.workspaceOverrides)
+        let languageOverrides = EditorConfigPersistencePolicy.encodeOverrideMap(scopedSnapshot.languageOverrides)
         if workspaceOverrides.isEmpty && languageOverrides.isEmpty {
             EditorConfigStore.removeValue(forKey: scopedOverridesKey)
             return
@@ -160,20 +129,5 @@ final class EditorConfigController {
             ],
             forKey: scopedOverridesKey
         )
-    }
-
-    private func decodeOverrideMap(_ raw: [String: Any]?) -> [String: EditorScopedOverrideSnapshot] {
-        guard let raw else { return [:] }
-        return raw.reduce(into: [:]) { partialResult, pair in
-            guard let dictionary = pair.value as? [String: Any] else { return }
-            partialResult[pair.key] = EditorScopedOverrideSnapshot.from(dictionary: dictionary)
-        }
-    }
-
-    private func encodeOverrideMap(_ overrides: [String: EditorScopedOverrideSnapshot]) -> [String: Any] {
-        overrides.reduce(into: [:]) { partialResult, pair in
-            guard !pair.value.isEmpty else { return }
-            partialResult[pair.key] = pair.value.dictionaryRepresentation
-        }
     }
 }

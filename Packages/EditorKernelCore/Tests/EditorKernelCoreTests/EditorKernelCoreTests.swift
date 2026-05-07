@@ -171,6 +171,55 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func configPersistencePolicyResolvesScopesAndEncodesOverrides() {
+        let global = EditorConfigSnapshot(
+            fontSize: 13,
+            tabWidth: 4,
+            useSpaces: true,
+            formatOnSave: false,
+            organizeImportsOnSave: false,
+            fixAllOnSave: false,
+            trimTrailingWhitespaceOnSave: true,
+            insertFinalNewlineOnSave: true,
+            wrapLines: true,
+            showMinimap: true,
+            showGutter: true,
+            showFoldingRibbon: true,
+            currentThemeId: "xcode-dark"
+        )
+        let scoped = EditorScopedConfigSnapshot(
+            global: global,
+            workspaceOverrides: ["/tmp/project": .init(tabWidth: 2)],
+            languageOverrides: ["swift": .init(useSpaces: false, formatOnSave: true)]
+        )
+
+        let resolved = EditorConfigPersistencePolicy.resolveConfig(
+            for: .init(workspacePath: "/tmp/project", languageId: "SWIFT"),
+            scoped: scoped
+        )
+        #expect(resolved.tabWidth == 2)
+        #expect(resolved.useSpaces == false)
+        #expect(resolved.formatOnSave)
+
+        let overrideSnapshot = EditorConfigPersistencePolicy.overrideSnapshot(
+            in: scoped,
+            for: .language("swift")
+        )
+        #expect(overrideSnapshot.useSpaces == false)
+
+        let updated = EditorConfigPersistencePolicy.updating(
+            scoped,
+            overrideSnapshot: .init(wrapLines: false),
+            for: .workspace("/tmp/project")
+        )
+        #expect(updated.workspaceOverrides["/tmp/project"]?.wrapLines == false)
+
+        let encoded = EditorConfigPersistencePolicy.encodeOverrideMap(updated.workspaceOverrides)
+        let decoded = EditorConfigPersistencePolicy.decodeOverrideMap(encoded)
+        #expect(decoded["/tmp/project"]?.wrapLines == false)
+    }
+
+    @Test
     @MainActor
     func saveControllerBuildsPipelineOptionsAndClearsSavedState() async {
         let controller = EditorSaveController(successDisplayDuration: 0.01)
@@ -230,6 +279,125 @@ struct EditorKernelCoreTests {
             requestFormatting: { _, _ in [edit] }
         )
         #expect(prepared == "let value")
+    }
+
+    @Test
+    @MainActor
+    func commandSuggestionPolicyDeduplicatesAndTracksRecents() {
+        let suggestions: [EditorCommandSuggestion] = [
+            .init(id: "b", title: "Beta", systemImage: "b.circle", order: 2, isEnabled: true, action: {}),
+            .init(id: "a", title: "Alpha", systemImage: "a.circle", order: 1, isEnabled: true, action: {}),
+            .init(id: "a", title: "Alpha Duplicate", systemImage: "a.circle", order: 3, isEnabled: true, action: {}),
+        ]
+
+        let deduplicated = EditorCommandSuggestionPolicy.deduplicatingSuggestions(suggestions)
+        #expect(deduplicated.map(\.id) == ["a", "b"])
+
+        var recent = ["x", "y"]
+        var usage = ["y": 2]
+        EditorCommandSuggestionPolicy.recordExecution(
+            id: "y",
+            recentCommandIDs: &recent,
+            commandUsageCounts: &usage
+        )
+        #expect(recent == ["y", "x"])
+        #expect(usage["y"] == 3)
+    }
+
+    @Test
+    @MainActor
+    func commandRouterBridgeMapsRegistryCommandsAndFallsBackToLegacy() {
+        let shared = CommandRegistry.shared
+        shared.clear()
+        defer { shared.unregister(id: "registry") }
+
+        var handled = false
+        shared.register([
+            KernelEditorCommand(
+                id: "registry",
+                title: "Registry Command",
+                icon: "star",
+                shortcut: nil,
+                category: "edit",
+                order: 1,
+                enablement: .always
+            ) {
+                handled = true
+            }
+        ])
+
+        let suggestions = EditorCommandRouterBridge.suggestionsFromRegistry(in: CommandContext())
+        #expect(suggestions.map(\.id) == ["registry"])
+
+        #expect(
+            EditorCommandRouterBridge.execute(
+                id: "registry",
+                in: CommandContext(),
+                legacySuggestions: []
+            ) == true
+        )
+        #expect(handled == true)
+
+        var legacyHandled = false
+        let legacy = EditorCommandSuggestion(
+            id: "legacy",
+            title: "Legacy",
+            systemImage: "command",
+            order: 1,
+            isEnabled: true
+        ) {
+            legacyHandled = true
+        }
+        #expect(
+            EditorCommandRouterBridge.execute(
+                id: "legacy",
+                in: CommandContext(),
+                legacySuggestions: [legacy]
+            ) == true
+        )
+        #expect(legacyHandled == true)
+    }
+
+    @Test
+    @MainActor
+    func commandRouterBridgeRegistersLegacySuggestionsAndMapsContext() {
+        let shared = CommandRegistry.shared
+        shared.clear()
+        defer { shared.clear() }
+
+        let legacy = EditorCommandSuggestion(
+            id: "legacy",
+            title: "Legacy",
+            systemImage: "hammer",
+            order: 10,
+            isEnabled: true,
+            action: {}
+        )
+
+        EditorCommandRouterBridge.registerSuggestions([legacy], category: "custom")
+
+        let mapped = EditorCommandRouterBridge.commandContext(
+            from: EditorCommandContext(
+                languageId: "swift",
+                hasSelection: true,
+                line: 12,
+                character: 7
+            ),
+            isEditorActive: true,
+            isMultiCursor: false
+        )
+
+        let suggestions = EditorCommandRouterBridge.suggestionsFromRegistry(
+            in: mapped,
+            filterCategory: "custom"
+        )
+        #expect(suggestions.map(\.id) == ["legacy"])
+        #expect(mapped.languageId == "swift")
+        #expect(mapped.hasSelection)
+        #expect(mapped.line == 12)
+        #expect(mapped.character == 7)
+        #expect(mapped.isEditorActive)
+        #expect(mapped.isMultiCursor == false)
     }
 
     @Test
@@ -1257,6 +1425,16 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func lineOffsetTableSupportsUnicodeAndBounds() {
+        let table = LineOffsetTable(content: "a\n😀b\n")
+        #expect(table.lineCount == 3)
+        #expect(table.utf16Offset(line: 1, character: 2) == 4)
+        #expect(table.lineContaining(utf16Offset: 3) == 1)
+        #expect(table.lineContaining(utf16Offset: 6) == 2)
+        #expect(table.utf16Offset(line: 9, character: 0) == nil)
+    }
+
+    @Test
     func longLineDetectorAndMinimapPolicyRemainStable() {
         #expect(LongLineDetector.findLongestLine(in: "short\nline", limit: 10) == nil)
         #expect(LongLineDetector.findLongestLine(in: "ok\n123456", limit: 6) == .init(line: 1, length: 6))
@@ -1269,6 +1447,28 @@ struct EditorKernelCoreTests {
         #expect(gated.isForcedHidden == true)
         #expect(gated.isVisible == false)
         #expect(gated.statusTitle == "Minimap Gated")
+    }
+
+    @Test
+    func renderedRangePolicyFiltersOffsetsAndMatches() {
+        let table = LineOffsetTable(content: "alpha\nbeta\ncarrot\n")
+        let range = 1..<2
+
+        #expect(EditorRenderedRangePolicy.isRenderedLine(1, renderRange: range))
+        #expect(EditorRenderedRangePolicy.isRenderedOffset(7, renderRange: range, lineTable: table))
+        #expect(EditorRenderedRangePolicy.isRenderedOffset(1, renderRange: range, lineTable: table) == false)
+
+        let matches = [
+            EditorFindMatch(range: .init(location: 1, length: 2), matchedText: "lp"),
+            EditorFindMatch(range: .init(location: 7, length: 2), matchedText: "et"),
+        ]
+        #expect(
+            EditorRenderedRangePolicy.renderedFindMatches(
+                matches,
+                renderRange: range,
+                lineTable: table
+            ).map(\.matchedText) == ["et"]
+        )
     }
 
     @Test
@@ -1372,6 +1572,105 @@ struct EditorKernelCoreTests {
         #expect(summary.changedLocations == 3)
         #expect(summary.fileLabels == ["Current File", "other.swift", "old.swift"])
         #expect(summary.summaryText == "3 changes in 3 files")
+    }
+
+    @Test
+    @MainActor
+    func workspaceEditControllerAppliesDocumentAndFileOperations() throws {
+        let currentURI = "file:///tmp/project/file.swift"
+        let externalURI = "file:///tmp/project/other.swift"
+        let decoder = JSONDecoder()
+        let createFile = try decoder.decode(
+            CreateFile.self,
+            from: #"{"kind":"create","uri":"file:///tmp/project/new.swift","options":{"overwrite":false,"ignoreIfExists":false}}"#.data(using: .utf8)!
+        )
+        let renameFile = try decoder.decode(
+            RenameFile.self,
+            from: #"{"kind":"rename","oldUri":"file:///tmp/project/old.swift","newUri":"file:///tmp/project/renamed.swift","options":{"overwrite":false,"ignoreIfExists":false}}"#.data(using: .utf8)!
+        )
+        let edit = WorkspaceEdit(
+            changes: [
+                currentURI: [
+                    TextEdit(
+                        range: LSPRange(start: Position(line: 0, character: 0), end: Position(line: 0, character: 1)),
+                        newText: "a"
+                    )
+                ],
+                externalURI: [
+                    TextEdit(
+                        range: LSPRange(start: Position(line: 1, character: 0), end: Position(line: 1, character: 2)),
+                        newText: "bb"
+                    )
+                ],
+            ],
+            documentChanges: [
+                .createFile(createFile),
+                .renameFile(renameFile),
+                .deleteFile(
+                    DeleteFile(
+                        kind: "delete",
+                        uri: "file:///tmp/project/delete.swift",
+                        options: .init(recursive: false, ignoreIfNotExists: false)
+                    )
+                ),
+            ]
+        )
+
+        let controller = EditorWorkspaceEditController()
+        var currentReasons: [String] = []
+        var externalPaths: [String] = []
+        var createCount = 0
+        var renameCount = 0
+        var deleteCount = 0
+
+        let changed = controller.apply(
+            changes: edit.changes,
+            documentChanges: edit.documentChanges,
+            currentURI: currentURI,
+            applyCurrentDocumentEdits: { _, reason in currentReasons.append(reason) },
+            applyExternalFileEdits: { _, url in
+                externalPaths.append(url.path)
+                return true
+            },
+            applyCreateFile: { _ in
+                createCount += 1
+                return true
+            },
+            applyRenameFile: { _ in
+                renameCount += 1
+                return true
+            },
+            applyDeleteFile: { _ in
+                deleteCount += 1
+                return true
+            }
+        )
+
+        #expect(changed == 5)
+        #expect(currentReasons == ["lsp_workspace_edit"])
+        #expect(externalPaths == ["/tmp/project/other.swift"])
+        #expect(createCount == 1)
+        #expect(renameCount == 1)
+        #expect(deleteCount == 1)
+    }
+
+    @Test
+    @MainActor
+    func workspaceEditControllerAppliesTextEditsToFiles() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try "hello\nworld\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let edits = [
+            TextEdit(
+                range: LSPRange(start: Position(line: 1, character: 0), end: Position(line: 1, character: 5)),
+                newText: "lumi"
+            )
+        ]
+
+        let controller = EditorWorkspaceEditController()
+        #expect(controller.applyTextEditsToFile(edits, url: url) == true)
+        #expect(try String(contentsOf: url, encoding: .utf8) == "hello\nlumi\n")
     }
 
     @Test

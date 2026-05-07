@@ -31,6 +31,26 @@ public struct EditorCommandShortcut: Equatable, Sendable {
 }
 
 @MainActor
+public struct EditorCommandContext {
+    public let languageId: String
+    public let hasSelection: Bool
+    public let line: Int
+    public let character: Int
+
+    public init(
+        languageId: String,
+        hasSelection: Bool,
+        line: Int,
+        character: Int
+    ) {
+        self.languageId = languageId
+        self.hasSelection = hasSelection
+        self.line = line
+        self.character = character
+    }
+}
+
+@MainActor
 public struct EditorCommandSuggestion: Identifiable {
     public let id: String
     public let title: String

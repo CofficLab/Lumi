@@ -20,31 +20,19 @@ enum CommandRouter {
         _ suggestions: [EditorCommandSuggestion],
         category: String? = nil
     ) {
-        let commands = suggestions.map { suggestion in
-            KernelEditorCommand(
-                id: suggestion.id,
-                title: suggestion.title,
-                icon: suggestion.systemImage,
-                shortcut: suggestion.shortcut,
-                category: category,
-                order: suggestion.order,
-                enablement: CommandEnablement.custom { _ in suggestion.isEnabled },
-                handler: suggestion.action
-            )
-        }
-        CommandRegistry.shared.register(commands)
+        EditorCommandRouterBridge.registerSuggestions(
+            suggestions,
+            category: category
+        )
     }
 
     /// 从旧 context 创建新的 CommandContext。
     static func commandContext(from legacy: EditorCommandContext, isEditorActive: Bool, isMultiCursor: Bool) -> CommandContext {
-        var context = CommandContext()
-        context.hasSelection = legacy.hasSelection
-        context.languageId = legacy.languageId
-        context.line = legacy.line
-        context.character = legacy.character
-        context.isEditorActive = isEditorActive
-        context.isMultiCursor = isMultiCursor
-        return context
+        EditorCommandRouterBridge.commandContext(
+            from: legacy,
+            isEditorActive: isEditorActive,
+            isMultiCursor: isMultiCursor
+        )
     }
 
     /// 从旧 context 和 state 创建 CommandContext。
@@ -63,24 +51,10 @@ enum CommandRouter {
         in context: CommandContext,
         filterCategory: String? = nil
     ) -> [EditorCommandSuggestion] {
-        let commands = CommandRegistry.shared.availableCommands(in: context)
-        let filtered = filterCategory.map { cat in
-            commands.filter { $0.category == cat }
-        } ?? commands
-
-        return filtered.map { command in
-            EditorCommandSuggestion(
-                id: command.id,
-                title: command.title,
-                systemImage: command.icon ?? "command",
-                category: command.category,
-                shortcut: command.shortcut,
-                order: command.order,
-                isEnabled: command.isEnabled(in: context)
-            ) {
-                command.handler()
-            }
-        }
+        EditorCommandRouterBridge.suggestionsFromRegistry(
+            in: context,
+            filterCategory: filterCategory
+        )
     }
 
     /// 执行命令（通过 ID），兼容新旧体系。
@@ -89,16 +63,10 @@ enum CommandRouter {
         in context: CommandContext,
         legacySuggestions: [EditorCommandSuggestion]
     ) -> Bool {
-        // 优先走新 registry
-        if CommandRegistry.shared.execute(id: id, context: context) {
-            return true
-        }
-
-        // Fallback：旧的 editorCommandSuggestions 体系
-        guard let suggestion = legacySuggestions.first(where: { $0.id == id }), suggestion.isEnabled else {
-            return false
-        }
-        suggestion.action()
-        return true
+        EditorCommandRouterBridge.execute(
+            id: id,
+            in: context,
+            legacySuggestions: legacySuggestions
+        )
     }
 }

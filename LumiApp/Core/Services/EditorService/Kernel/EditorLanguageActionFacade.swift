@@ -135,7 +135,10 @@ final class EditorLanguageActionFacade {
             documentChanges: edit.documentChanges,
             currentURI: currentURI,
             applyCurrentDocumentEdits: applyCurrentDocumentEdits,
-            applyExternalFileEdits: applyExternalFileEdits
+            applyExternalFileEdits: applyExternalFileEdits,
+            applyCreateFile: WorkspaceEditFileOperations.applyCreateFile,
+            applyRenameFile: WorkspaceEditFileOperations.applyRenameFile,
+            applyDeleteFile: WorkspaceEditFileOperations.applyDeleteFile
         )
 
         if changedFiles == 0 {

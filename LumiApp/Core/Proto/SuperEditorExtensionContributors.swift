@@ -1,4 +1,5 @@
 import Foundation
+import EditorKernelCore
 import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI
@@ -213,15 +214,6 @@ protocol SuperEditorHighlightProviderContributor: AnyObject {
 }
 
 // MARK: - Command
-
-/// 编辑器命令上下文
-@MainActor
-struct EditorCommandContext {
-    let languageId: String
-    let hasSelection: Bool
-    let line: Int
-    let character: Int
-}
 
 /// 编辑器命令扩展点
 @MainActor

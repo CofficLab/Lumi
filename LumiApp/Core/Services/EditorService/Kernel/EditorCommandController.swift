@@ -25,7 +25,7 @@ final class EditorCommandController {
         legacySuggestions: [EditorCommandSuggestion]
     ) -> [EditorCommandSuggestion] {
         let registrySuggestions = CommandRouter.suggestionsFromRegistry(in: registryContext)
-        return deduplicatingSuggestions(registrySuggestions + legacySuggestions)
+        return EditorCommandSuggestionPolicy.deduplicatingSuggestions(registrySuggestions + legacySuggestions)
     }
 
     func commandSuggestions(
@@ -79,19 +79,10 @@ final class EditorCommandController {
         recentCommandIDs: inout [String],
         commandUsageCounts: inout [String: Int]
     ) {
-        recentCommandIDs.removeAll(where: { $0 == id })
-        recentCommandIDs.insert(id, at: 0)
-        if recentCommandIDs.count > 12 {
-            recentCommandIDs = Array(recentCommandIDs.prefix(12))
-        }
-        commandUsageCounts[id, default: 0] += 1
-    }
-
-    private func deduplicatingSuggestions(_ suggestions: [EditorCommandSuggestion]) -> [EditorCommandSuggestion] {
-        var seen = Set<String>()
-        let deduplicated = suggestions.filter { suggestion in
-            seen.insert(suggestion.id).inserted
-        }
-        return deduplicated.sortedForCommandPresentation()
+        EditorCommandSuggestionPolicy.recordExecution(
+            id: id,
+            recentCommandIDs: &recentCommandIDs,
+            commandUsageCounts: &commandUsageCounts
+        )
     }
 }
