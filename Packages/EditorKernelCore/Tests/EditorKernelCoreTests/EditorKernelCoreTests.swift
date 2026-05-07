@@ -2154,4 +2154,48 @@ struct EditorKernelCoreTests {
         #expect(runTaskCount == 1)
     }
 
+    @Test
+    @MainActor
+    func documentSymbolItemBuildsTreePathsAndIcons() {
+        let leaf = EditorDocumentSymbolItem(
+            id: "Root/child",
+            name: "child",
+            detail: "func",
+            kind: .function,
+            range: .init(
+                start: .init(line: 4, character: 0),
+                end: .init(line: 6, character: 0)
+            ),
+            selectionRange: .init(
+                start: .init(line: 4, character: 4),
+                end: .init(line: 4, character: 9)
+            ),
+            children: []
+        )
+        let root = EditorDocumentSymbolItem(
+            id: "Root",
+            name: "Root",
+            detail: nil,
+            kind: .class,
+            range: .init(
+                start: .init(line: 0, character: 0),
+                end: .init(line: 10, character: 0)
+            ),
+            selectionRange: .init(
+                start: .init(line: 0, character: 0),
+                end: .init(line: 0, character: 4)
+            ),
+            children: [leaf]
+        )
+
+        #expect(root.iconSymbol == "square.stack")
+        #expect(leaf.iconSymbol == "f.cursive")
+        #expect(root.line == 1)
+        #expect(leaf.column == 5)
+        #expect(root.contains(line: 5))
+        #expect(root.activePath(for: 5) == ["Root", "Root/child"])
+        #expect(root.activeItems(for: 5)?.map(\.id) == ["Root", "Root/child"])
+        #expect(root.activePath(for: 20) == nil)
+    }
+
 }

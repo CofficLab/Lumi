@@ -46,6 +46,7 @@ typealias EditorWorkspaceSearchController = EditorKernelCore.EditorWorkspaceSear
 typealias WorkspaceSearchError = EditorKernelCore.WorkspaceSearchError
 typealias EditorStatusToastPresentation = EditorKernelCore.EditorStatusToastPresentation
 typealias EditorStatusToastPolicy = EditorKernelCore.EditorStatusToastPolicy
+typealias EditorDocumentSymbolItem = EditorKernelCore.EditorDocumentSymbolItem
 typealias EditorFindMatch = EditorKernelCore.EditorFindMatch
 typealias EditorFindMatchesResult = EditorKernelCore.EditorFindMatchesResult
 typealias EditorMinimapPolicy = EditorKernelCore.EditorMinimapPolicy
