@@ -1177,13 +1177,6 @@ final class EditorState: ObservableObject, SuperLog {
         observeProjectContextChanges()
     }
 
-    /// 从 PluginVM 过滤并安装编辑器插件（Phase 2）
-    /// 
-    /// ⚠️ 已废弃：插件注册现在由 RootViewContainer 统一处理。
-    /// 保留此方法仅为兼容性，实际不再被调用。
-    @available(*, deprecated, message: "Use RootViewContainer's plugin registration flow instead")
-    private func installEditorPluginsFromPluginVM() {}
-
     private func bindKeybindings() {
         keybindingCancellable?.cancel()
         keybindingCancellable = commandController.observeCustomBindings { [weak self] in
