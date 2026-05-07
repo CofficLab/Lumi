@@ -140,7 +140,8 @@ final class EditorPanelController {
         callHierarchy: Bool? = nil
     ) {
         apply(
-            snapshot: updatedSnapshot(
+            snapshot: EditorPanelVisibilityPolicy.updating(
+                snapshot,
                 openEditors: openEditors,
                 outline: outline,
                 problems: problems,
@@ -153,20 +154,7 @@ final class EditorPanelController {
     }
 
     func presentBottomPanel(_ panel: EditorBottomPanelKind?) {
-        switch panel {
-        case .problems:
-            updateVisibility(problems: true, references: false, workspaceSearch: false, workspaceSymbols: false, callHierarchy: false)
-        case .references:
-            updateVisibility(problems: false, references: true, workspaceSearch: false, workspaceSymbols: false, callHierarchy: false)
-        case .searchResults:
-            updateVisibility(problems: false, references: false, workspaceSearch: true, workspaceSymbols: false, callHierarchy: false)
-        case .workspaceSymbols:
-            updateVisibility(problems: false, references: false, workspaceSearch: false, workspaceSymbols: true, callHierarchy: false)
-        case .callHierarchy:
-            updateVisibility(problems: false, references: false, workspaceSearch: false, workspaceSymbols: false, callHierarchy: true)
-        case nil:
-            updateVisibility(problems: false, references: false, workspaceSearch: false, workspaceSymbols: false, callHierarchy: false)
-        }
+        apply(snapshot: EditorPanelVisibilityPolicy.presentingBottomPanel(panel, in: snapshot))
     }
 
     func updateSelectedProblemDiagnostic(line: Int?, column: Int?) {
@@ -175,49 +163,12 @@ final class EditorPanelController {
             return
         }
 
-        let matchingDiagnostic = panelState.problemDiagnostics.first { diagnostic in
-            let startLine = Int(diagnostic.range.start.line) + 1
-            let endLine = Int(diagnostic.range.end.line) + 1
-            let startColumn = Int(diagnostic.range.start.character) + 1
-            let endColumn = Int(diagnostic.range.end.character) + 1
-
-            if line < startLine || line > endLine {
-                return false
-            }
-            if startLine == endLine {
-                let upperBound = max(endColumn, startColumn)
-                return column >= startColumn && column <= upperBound
-            }
-            if line == startLine {
-                return column >= startColumn
-            }
-            if line == endLine {
-                return column <= max(endColumn, 1)
-            }
-            return true
-        }
-
-        setSelectedProblemDiagnostic(matchingDiagnostic)
-    }
-
-    private func updatedSnapshot(
-        openEditors: Bool? = nil,
-        outline: Bool? = nil,
-        problems: Bool? = nil,
-        references: Bool? = nil,
-        workspaceSearch: Bool? = nil,
-        workspaceSymbols: Bool? = nil,
-        callHierarchy: Bool? = nil
-    ) -> EditorPanelSnapshot {
-        let snapshot = panelState.snapshot
-        return EditorPanelSnapshot(
-            isOpenEditorsPanelPresented: openEditors ?? snapshot.isOpenEditorsPanelPresented,
-            isOutlinePanelPresented: outline ?? snapshot.isOutlinePanelPresented,
-            isProblemsPanelPresented: problems ?? snapshot.isProblemsPanelPresented,
-            isReferencePanelPresented: references ?? snapshot.isReferencePanelPresented,
-            isWorkspaceSearchPresented: workspaceSearch ?? snapshot.isWorkspaceSearchPresented,
-            isWorkspaceSymbolSearchPresented: workspaceSymbols ?? snapshot.isWorkspaceSymbolSearchPresented,
-            isCallHierarchyPresented: callHierarchy ?? snapshot.isCallHierarchyPresented
+        setSelectedProblemDiagnostic(
+            EditorPanelVisibilityPolicy.selectedDiagnostic(
+                in: panelState.problemDiagnostics,
+                line: line,
+                column: column
+            )
         )
     }
 

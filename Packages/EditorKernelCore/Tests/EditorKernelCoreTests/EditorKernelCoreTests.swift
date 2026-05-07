@@ -2434,6 +2434,69 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func panelVisibilityPolicyPresentsExclusiveBottomPanels() {
+        let snapshot = EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: true,
+            isOutlinePanelPresented: false,
+            isProblemsPanelPresented: true,
+            isReferencePanelPresented: false,
+            isWorkspaceSearchPresented: false,
+            isWorkspaceSymbolSearchPresented: false,
+            isCallHierarchyPresented: false
+        )
+
+        let presented = EditorPanelVisibilityPolicy.presentingBottomPanel(.workspaceSymbols, in: snapshot)
+        #expect(presented.isOpenEditorsPanelPresented)
+        #expect(!presented.isProblemsPanelPresented)
+        #expect(!presented.isReferencePanelPresented)
+        #expect(!presented.isWorkspaceSearchPresented)
+        #expect(presented.isWorkspaceSymbolSearchPresented)
+        #expect(!presented.isCallHierarchyPresented)
+    }
+
+    @Test
+    func panelVisibilityPolicySelectsMatchingDiagnosticAcrossSingleAndMultiLineRanges() {
+        let singleLine = Diagnostic(
+            range: .init(
+                start: .init(line: 2, character: 3),
+                end: .init(line: 2, character: 8)
+            ),
+            severity: .warning,
+            message: "single"
+        )
+        let multiLine = Diagnostic(
+            range: .init(
+                start: .init(line: 4, character: 1),
+                end: .init(line: 6, character: 2)
+            ),
+            severity: .error,
+            message: "multi"
+        )
+
+        #expect(
+            EditorPanelVisibilityPolicy.selectedDiagnostic(
+                in: [singleLine, multiLine],
+                line: 3,
+                column: 6
+            )?.message == "single"
+        )
+        #expect(
+            EditorPanelVisibilityPolicy.selectedDiagnostic(
+                in: [singleLine, multiLine],
+                line: 6,
+                column: 1
+            )?.message == "multi"
+        )
+        #expect(
+            EditorPanelVisibilityPolicy.selectedDiagnostic(
+                in: [singleLine, multiLine],
+                line: 1,
+                column: 1
+            ) == nil
+        )
+    }
+
+    @Test
     @MainActor
     func fileWatcherControllerDelegatesSetupAndCleanup() throws {
         let controller = EditorFileWatcherController()
