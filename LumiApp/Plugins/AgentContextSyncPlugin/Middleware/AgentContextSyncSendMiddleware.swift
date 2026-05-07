@@ -32,7 +32,7 @@ final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     ) async {
         let projectPath = ctx.projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let projectName = ctx.projectVM.currentProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let selectedFileURL = ctx.editorVM.service.currentFileURL
+        let selectedFileURL = ctx.currentFileURL
         let codeSelectionRange = ctx.projectVM.codeSelectionRange
         let recentProjects = ctx.projectVM.getRecentProjects()
 

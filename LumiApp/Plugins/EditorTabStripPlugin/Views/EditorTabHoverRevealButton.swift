@@ -78,7 +78,6 @@ struct HoverRevealButton: View {
             return
         }
 
-        let state = editorVM.service.state
         state.loadFile(from: nextSession?.fileURL)
         if let nextSession {
             state.applySessionRestore(nextSession)

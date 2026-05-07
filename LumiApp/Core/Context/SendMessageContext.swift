@@ -8,6 +8,7 @@ final class SendMessageContext {
     let chatHistoryService: ChatHistoryService
     let agentSessionConfig: LLMVM
     let projectVM: ProjectVM
+    let currentFileURL: URL?
     
     /// 仅在当前发送轮次有效的 system 提示词（不落库）
     ///
@@ -25,13 +26,15 @@ final class SendMessageContext {
         message: ChatMessage,
         chatHistoryService: ChatHistoryService,
         agentSessionConfig: LLMVM,
-        projectVM: ProjectVM
+        projectVM: ProjectVM,
+        currentFileURL: URL?
     ) {
         self.conversationId = conversationId
         self.message = message
         self.chatHistoryService = chatHistoryService
         self.agentSessionConfig = agentSessionConfig
         self.projectVM = projectVM
+        self.currentFileURL = currentFileURL
     }
 
     /// 便捷方法：终止并发送系统消息

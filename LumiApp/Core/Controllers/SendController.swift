@@ -132,7 +132,8 @@ final class SendController: ObservableObject, SuperLog {
             message: message,
             chatHistoryService: container.chatHistoryService,
             agentSessionConfig: container.agentSessionConfig,
-            projectVM: container.projectVM
+            projectVM: container.projectVM,
+            currentFileURL: container.editorVM.service.currentFileURL
         )
         ctx.abortTurn = { [weak self] in
             self?.container.conversationSendStatusVM.setStatus(

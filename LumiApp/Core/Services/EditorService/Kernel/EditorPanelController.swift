@@ -118,7 +118,8 @@ final class EditorPanelController {
         setSelectedProblemDiagnostic(nil)
         setSelectedReferenceResult(nil)
         apply(
-            snapshot: updatedSnapshot(
+            snapshot: EditorPanelVisibilityPolicy.updating(
+                snapshot,
                 problems: closeProblems,
                 references: closeReferences,
                 workspaceSearch: closeWorkspaceSearch,
