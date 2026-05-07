@@ -159,3 +159,4 @@ typealias TextEditApplier = EditorKernelCore.TextEditApplier
 typealias TextEditTransactionBuilder = EditorKernelCore.TextEditTransactionBuilder
 typealias EditorFindReplaceTransactionBuilder = EditorKernelCore.EditorFindReplaceTransactionBuilder
 typealias EditorLSPActionPolicy = EditorKernelCore.EditorLSPActionPolicy
+typealias XCConfigSyntaxCore = EditorKernelCore.XCConfigSyntaxCore
