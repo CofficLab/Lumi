@@ -127,7 +127,7 @@ enum EditorFileTreeService {
     static func openInTerminal(_ url: URL) {
         let targetPath: String
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-        
+
         if isDirectory {
             targetPath = url.path
         } else {
@@ -176,17 +176,6 @@ enum EditorFileTreeService {
     static func copyPath(_ url: URL) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(url.path, forType: .string)
-    }
-
-    /// 复制文件相对路径到剪贴板
-    /// - Parameters:
-    ///   - url: 文件 URL
-    ///   - projectPath: 项目根路径
-    static func copyRelativePath(_ url: URL, projectPath: String) {
-        guard !projectPath.isEmpty else { return }
-        let relativePath = url.path.replacingOccurrences(of: projectPath + "/", with: "")
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(relativePath, forType: .string)
     }
 
     // MARK: - 文件系统查询
