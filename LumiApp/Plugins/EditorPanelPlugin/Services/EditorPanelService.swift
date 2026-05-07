@@ -123,8 +123,7 @@ final class EditorPanelService: ObservableObject {
         state: EditorState,
         sessionStore: EditorSessionStore,
         projectRootPath: String?,
-        currentProjectPath: String,
-        selectFile: @MainActor (URL) -> Void
+        currentProjectPath: String
     ) {
         EditorPlugin.logger.info("\(EditorPlugin.t)打开或激活 session, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(currentProjectPath, privacy: .public)")
         state.projectRootPath = projectRootPath
@@ -178,16 +177,14 @@ final class EditorPanelService: ObservableObject {
         state: EditorState,
         sessionStore: EditorSessionStore,
         projectRootPath: String?,
-        currentProjectPath: String,
-        selectFile: @MainActor (URL) -> Void
+        currentProjectPath: String
     ) {
         openOrActivateSession(
             for: url,
             state: state,
             sessionStore: sessionStore,
             projectRootPath: projectRootPath,
-            currentProjectPath: currentProjectPath,
-            selectFile: selectFile
+            currentProjectPath: currentProjectPath
         )
         guard let target else { return }
         state.performNavigation(.definition(url, target, highlightLine: highlightLine))

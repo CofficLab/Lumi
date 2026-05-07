@@ -11,9 +11,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     nonisolated static let verbose: Bool = false
     @Published private(set) var currentProject: Project? = nil
 
-    /// 当前选择的文件 URL
-    @Published private(set) var selectedFileURL: URL?
-
     /// 当前代码选区范围（包含文件路径和行列号，不含具体内容）
     @Published private(set) var codeSelectionRange: CodeSelectionRange?
 
@@ -41,11 +38,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         self.currentProject != nil
     }
 
-    /// 是否已选择文件
-    var isFileSelected: Bool {
-        selectedFileURL != nil
-    }
-
     private let contextService: ContextService
     private let llmService: LLMService
 
@@ -60,7 +52,7 @@ final class ProjectVM: ObservableObject, SuperLog {
 
     /// 清除当前项目，恢复到未选择任何项目的状态
     func clearProject() {
-        clearFileSelection()
+        codeSelectionRange = nil
 
         Task {
             await contextService.setProjectRoot(nil)
@@ -74,7 +66,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 切换到指定项目
     func switchProject(to project: Project) {
         self.currentProject = project
-        clearFileSelection()
+        codeSelectionRange = nil
     }
 
     /// 设置最近项目列表
@@ -85,24 +77,6 @@ final class ProjectVM: ObservableObject, SuperLog {
     /// 获取最近项目列表
     func getRecentProjects() -> [Project] {
         recentProjects
-    }
-
-    /// 选择指定路径（支持文件与目录）
-    func selectFile(at url: URL) {
-        selectedFileURL = url
-        codeSelectionRange = nil
-
-        // 发送文件选择变化通知
-        NotificationCenter.postFileSelectionChanged()
-
-        if Self.verbose {
-            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            if isDirectory {
-                AppLogger.core.info("\(Self.t)📁 已选择目录：\(url.lastPathComponent)")
-            } else {
-                AppLogger.core.info("\(Self.t)📄 已选择文件：\(url.lastPathComponent)")
-            }
-        }
     }
 
     /// 将指定文件或目录移到废纸篓
@@ -116,15 +90,6 @@ final class ProjectVM: ObservableObject, SuperLog {
         } catch {
             AppLogger.core.error("\(Self.t)❌ 移到废纸篓失败：\(error.localizedDescription)")
         }
-    }
-
-    /// 清除文件选择
-    func clearFileSelection() {
-        selectedFileURL = nil
-        codeSelectionRange = nil
-
-        // 发送文件选择变化通知
-        NotificationCenter.postFileSelectionChanged()
     }
 
     /// 更新代码选区范围

@@ -33,7 +33,7 @@ struct EditorPanelView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if projectVM.isFileSelected {
+            if hasActiveEditorSelection {
                 fileInfoBanner
                 editorContent
             } else {
@@ -44,9 +44,6 @@ struct EditorPanelView: View {
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             coordinator.handleProjectPathChange(oldPath: oldPath, newPath: newPath)
-        }
-        .onChange(of: projectVM.selectedFileURL) {
-            coordinator.handleSelectedFileURLChange(newURL: projectVM.selectedFileURL)
         }
         .onChange(of: state.currentFileURL) {
             coordinator.handleCurrentFileURLChange()
@@ -122,9 +119,7 @@ struct EditorPanelView: View {
                                     sessionStore: self.sessionStore,
                                     projectRootPath: self.projectVM.currentProject?.path,
                                     currentProjectPath: self.projectVM.currentProjectPath
-                                ) { fileURL in
-                                    self.projectVM.selectFile(at: fileURL)
-                                }
+                                )
                             }
                         ) {
                             panelService.isCommandPalettePresented = false
@@ -139,7 +134,12 @@ struct EditorPanelView: View {
 
     /// 文件是否正在加载中（已选中但 loadFile 异步 Task 尚未完成）
     private var isFileLoading: Bool {
-        projectVM.isFileSelected && !state.canPreview && !state.isBinaryFile && state.currentFileURL == nil
+        hasActiveEditorSelection && !state.canPreview && !state.isBinaryFile && state.currentFileURL == nil
+    }
+
+    /// 编辑器是否存在激活会话（以 Editor 内核作为当前文件真源）
+    private var hasActiveEditorSelection: Bool {
+        sessionStore.activeSessionID != nil || state.currentFileURL != nil
     }
 
     /// 编辑器主体（session 驱动）
@@ -158,8 +158,8 @@ struct EditorPanelView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if isFileLoading {
             EditorLoadingStateView()
-        } else if projectVM.isFileSelected {
-            let _ = EditorPlugin.logger.warning("\(EditorPlugin.t)显示了「不支持的文件」视图. isMarkdownFile=\(state.isMarkdownFile), canPreview=\(state.canPreview), isBinaryFile=\(state.isBinaryFile), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public), fileName=\(state.fileName, privacy: .public), fileExtension=\(state.fileExtension, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
+        } else if hasActiveEditorSelection {
+            let _ = EditorPlugin.logger.warning("\(EditorPlugin.t)显示了「不支持的文件」视图. isMarkdownFile=\(state.isMarkdownFile), canPreview=\(state.canPreview), isBinaryFile=\(state.isBinaryFile), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public), activeSessionID=\(sessionStore.activeSessionID?.uuidString ?? "nil", privacy: .public), fileName=\(state.fileName, privacy: .public), fileExtension=\(state.fileExtension, privacy: .public)")
             EditorUnsupportedFileView(fileName: state.fileName)
         }
     }

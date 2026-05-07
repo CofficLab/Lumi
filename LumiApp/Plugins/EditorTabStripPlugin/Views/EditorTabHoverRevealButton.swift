@@ -7,7 +7,6 @@ import MagicKit
 /// 不再依赖闭包传递。
 struct HoverRevealButton: View {
     @EnvironmentObject var editorVM: EditorVM
-    @EnvironmentObject var projectVM: ProjectVM
 
     let tab: EditorTab
     let isActive: Bool
@@ -79,10 +78,10 @@ struct HoverRevealButton: View {
             return
         }
 
-        if let nextFileURL = nextSession?.fileURL {
-            projectVM.selectFile(at: nextFileURL)
-        } else {
-            projectVM.clearFileSelection()
+        let state = editorVM.service.state
+        state.loadFile(from: nextSession?.fileURL)
+        if let nextSession {
+            state.applySessionRestore(nextSession)
         }
     }
 }

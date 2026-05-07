@@ -5,7 +5,6 @@ import AppKit
 ///
 /// 悬浮在应用主界面之上的文件搜索框
 struct FileSearchPanelView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
     @StateObject private var hotkeyManager = FileSearchHotkeyManager.shared
     @StateObject private var searchService = FileSearchService.shared
 

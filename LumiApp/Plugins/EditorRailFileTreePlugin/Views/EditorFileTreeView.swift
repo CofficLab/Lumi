@@ -4,6 +4,7 @@ import SwiftUI
 /// AgentEditor 主体系内的文件树视图
 struct EditorFileTreeView: View {
     @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var editorVM: EditorVM
 
     // MARK: - Logging Configuration
 
@@ -27,9 +28,10 @@ struct EditorFileTreeView: View {
                     EditorFileTreeNodeView(
                         url: URL(fileURLWithPath: projectVM.currentProjectPath),
                         depth: 0,  // depth == 0 表示根节点
-                        selectedURL: projectVM.selectedFileURL,
+                        selectedURL: editorVM.service.currentFileURL,
                         onSelect: { selectedURL in
-                            projectVM.selectFile(at: selectedURL)
+                            _ = editorVM.service.openFile(at: selectedURL)
+                            editorVM.service.state.loadFile(from: selectedURL)
                         },
                         refreshToken: rootRefreshToken,
                         projectRootPath: projectVM.currentProjectPath,
@@ -42,7 +44,7 @@ struct EditorFileTreeView: View {
         }
         .frame(maxHeight: .infinity)
         .onChange(of: projectVM.currentProjectPath, onProjectPathChanged)
-        .onChange(of: projectVM.selectedFileURL, onSelectedFileChanged)
+        .onChange(of: editorVM.service.currentFileURL, onSelectedFileChanged)
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
         .onSyncSelectedFile(perform: onSyncSelectedFile)
@@ -55,7 +57,8 @@ struct EditorFileTreeView: View {
 
     private func onSyncSelectedFile(path: String) {
         let url = URL(fileURLWithPath: path)
-        projectVM.selectFile(at: url)
+        _ = editorVM.service.openFile(at: url)
+        editorVM.service.state.loadFile(from: url)
     }
 
     private func onProjectPathChanged() {

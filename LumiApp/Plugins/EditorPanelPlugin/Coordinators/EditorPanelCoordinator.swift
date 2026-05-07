@@ -62,7 +62,9 @@ final class EditorPanelCoordinator: ObservableObject {
     func handleAppear() {
         guard let panelService, let state, let sessionStore, let projectVM else { return }
 
-        EditorPlugin.logger.info("\(EditorPlugin.t)onAppear, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), isFileSelected=\(projectVM.isFileSelected), selectedFileURL=\(projectVM.selectedFileURL?.path ?? "nil", privacy: .public)")
+        EditorPlugin.logger.info(
+            "\(EditorPlugin.t)onAppear, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), activeSessionID=\(sessionStore.activeSessionID?.uuidString ?? "nil", privacy: .public), currentFileURL=\(state.currentFileURL?.path ?? "nil", privacy: .public)"
+        )
 
         state.projectRootPath = projectVM.currentProject?.path
         panelService.refreshProjectContext(for: projectVM.currentProjectPath, state: state)
@@ -71,16 +73,14 @@ final class EditorPanelCoordinator: ObservableObject {
             sessionStore.syncActiveSession(from: snapshot)
         }
 
-        if projectVM.isFileSelected {
+        if sessionStore.activeSessionID != nil || state.currentFileURL != nil {
             panelService.openOrActivateSession(
-                for: projectVM.selectedFileURL,
+                for: state.currentFileURL ?? sessionStore.activeSession?.fileURL,
                 state: state,
                 sessionStore: sessionStore,
                 projectRootPath: projectVM.currentProject?.path,
                 currentProjectPath: projectVM.currentProjectPath
-            ) { url in
-                projectVM.selectFile(at: url)
-            }
+            )
             state.refreshDocumentOutline()
         }
 
@@ -134,27 +134,14 @@ final class EditorPanelCoordinator: ObservableObject {
                 forProject: newPath,
                 state: state
             ) { url in
-                projectVM.selectFile(at: url)
+                panelService.openOrActivateSession(
+                    for: url,
+                    state: state,
+                    sessionStore: sessionStore,
+                    projectRootPath: projectVM.currentProject?.path,
+                    currentProjectPath: projectVM.currentProjectPath
+                )
             }
-        }
-    }
-
-    // MARK: - 文件选择变化
-
-    /// 处理选中的文件 URL 变化
-    func handleSelectedFileURLChange(newURL: URL?) {
-        guard let panelService, let state, let sessionStore, let projectVM else { return }
-
-        EditorPlugin.logger.info("\(EditorPlugin.t)选中文件变化, newURL=\(newURL?.path ?? "nil", privacy: .public)")
-
-        panelService.openOrActivateSession(
-            for: newURL,
-            state: state,
-            sessionStore: sessionStore,
-            projectRootPath: projectVM.currentProject?.path,
-            currentProjectPath: projectVM.currentProjectPath
-        ) { url in
-            projectVM.selectFile(at: url)
         }
     }
 
@@ -222,14 +209,14 @@ final class EditorPanelCoordinator: ObservableObject {
 
     /// 处理编辑器命令事件
     func handleCommandEvent(_ event: EditorCommandEvent) {
-        guard let panelService, let state, let projectVM else { return }
+        guard let panelService, let state, let sessionStore else { return }
 
         switch event {
         case .command(let commandID):
             panelService.handleEditorCommandEvent(
                 commandID,
                 state: state,
-                isFileSelected: projectVM.isFileSelected
+                isFileSelected: sessionStore.activeSessionID != nil || state.currentFileURL != nil
             )
         case .showCommandPalette:
             panelService.isCommandPalettePresented = true

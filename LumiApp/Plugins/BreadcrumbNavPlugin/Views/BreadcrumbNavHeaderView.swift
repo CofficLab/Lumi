@@ -8,10 +8,11 @@ import SwiftUI
 /// 仅显示文件路径段，符号面包屑由 EditorTabStripPlugin 的 EditorStickySymbolBarView 负责。
 struct BreadcrumbNavHeaderView: View {
     @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var editorVM: EditorVM
 
     var body: some View {
         // 仅在有文件打开时显示
-        if let fileURL = projectVM.selectedFileURL, projectVM.isProjectSelected {
+        if let fileURL = editorVM.service.currentFileURL, projectVM.isProjectSelected {
             BreadcrumbNavPathView(fileURL: fileURL)
         }
     }
@@ -22,6 +23,7 @@ struct BreadcrumbNavHeaderView: View {
 /// 面包屑路径视图
 struct BreadcrumbNavPathView: View {
     @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var editorVM: EditorVM
 
     let fileURL: URL
 
@@ -93,7 +95,8 @@ struct BreadcrumbNavPathView: View {
                                 truncatedCrumbWidth: item.index == 0
                                     ? $firstCrumbWidth : $crumbWidth,
                                 onSelectFile: { url in
-                                    projectVM.selectFile(at: url)
+                                    _ = editorVM.service.openFile(at: url)
+                                    editorVM.service.state.loadFile(from: url)
                                 }
                             )
                         }

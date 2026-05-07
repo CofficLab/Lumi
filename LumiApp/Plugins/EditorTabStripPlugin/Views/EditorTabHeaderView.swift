@@ -10,7 +10,6 @@ struct EditorTabHeaderView: View {
     // MARK: - 属性
 
     @EnvironmentObject var editorVM: EditorVM
-    @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var themeVM: ThemeVM
 
     @State var draggedTabSessionID: EditorSession.ID?

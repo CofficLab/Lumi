@@ -7,7 +7,6 @@ import UniformTypeIdentifiers
 /// 封装了标签按钮、拖拽、放置排序以及右键上下文菜单。
 struct EditorTabItemView: View {
     @EnvironmentObject var editorVM: EditorVM
-    @EnvironmentObject var projectVM: ProjectVM
 
     let tab: EditorTab
     let isActive: Bool
@@ -58,10 +57,9 @@ struct EditorTabItemView: View {
     // MARK: - 操作
 
     private func activateSession(_ tab: EditorTab) {
-        _ = sessionStore.activate(sessionID: tab.sessionID)
-        if let fileURL = tab.fileURL {
-            projectVM.selectFile(at: fileURL)
-        }
+        guard let session = sessionStore.activate(sessionID: tab.sessionID) else { return }
+        state.loadFile(from: session.fileURL)
+        state.applySessionRestore(session)
     }
 
     // MARK: - Drag Preview
@@ -93,10 +91,9 @@ struct EditorTabItemView: View {
         }
 
         let keptSession = sessionStore.closeOthers(keeping: session.id)
-        if let fileURL = keptSession?.fileURL {
-            projectVM.selectFile(at: fileURL)
-        } else {
-            projectVM.clearFileSelection()
+        state.loadFile(from: keptSession?.fileURL)
+        if let keptSession {
+            state.applySessionRestore(keptSession)
         }
     }
 

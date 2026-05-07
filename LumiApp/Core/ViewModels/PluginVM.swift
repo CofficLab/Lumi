@@ -144,14 +144,6 @@ final class PluginVM: ObservableObject, SuperLog {
             }
             .store(in: &cancellables)
 
-        // 监听文件选择变化通知
-        // 用于在 Agent 模式中当用户选择不同文件时刷新相关插件的 UI
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleFileSelectionChanged),
-            name: .fileSelectionChanged,
-            object: nil
-        )
     }
 
     // MARK: - Agent Tools Aggregation
@@ -232,30 +224,6 @@ final class PluginVM: ObservableObject, SuperLog {
 
         cachedSuperSendMiddlewares = sorted
         return sorted
-    }
-
-    /// 析构函数，清理资源
-    ///
-    /// 移除所有 NotificationCenter 观察者，防止内存泄漏。
-    deinit {
-        NotificationCenter.default.removeObserver(
-            self,
-            name: .fileSelectionChanged,
-            object: nil
-        )
-    }
-
-    /// 处理文件选择变化通知
-    ///
-    /// 当 Agent 模式中的文件选择改变时调用。
-    /// 触发 objectWillChange 以刷新 UI。
-    ///
-    /// - Parameter notification: 通知对象，包含文件选择信息
-    @objc private func handleFileSelectionChanged(_ notification: Notification) {
-        sidebarViewsCache = nil
-        sidebarViewsCacheKey = nil
-        rightSidebarViewsCache = nil
-        objectWillChange.send()
     }
 
     /// 自动发现并注册所有插件
