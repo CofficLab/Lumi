@@ -10,7 +10,6 @@ struct EditorTabItemView: View {
     @State private var isHovered = false
 
     let tab: EditorTab
-    let isActive: Bool
     let theme: any SuperTheme
     let onStartDrag: (EditorTab) -> Void
     let onDropBefore: (EditorTab?) -> Void
@@ -18,6 +17,10 @@ struct EditorTabItemView: View {
     var service: EditorService { editorVM.service }
     var sessionStore: EditorSessionStore { service.sessionStore }
     var state: EditorState { service.state }
+
+    private var isActive: Bool {
+        sessionStore.activeSessionID == tab.sessionID
+    }
 
     var body: some View {
         tabContent

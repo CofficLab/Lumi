@@ -14,7 +14,6 @@ struct EditorTabHeaderView: View {
                     ForEach(visibleTabs) { tab in
                         EditorTabItemView(
                             tab: tab,
-                            isActive: tab.sessionID == visibleActiveSessionID,
                             theme: theme,
                             onStartDrag: beginTabDrag,
                             onDropBefore: dropDraggedTabInActiveStrip
@@ -49,10 +48,6 @@ struct EditorTabHeaderView: View {
 
     private var visibleTabs: [EditorTab] {
         sessionStore.tabs
-    }
-
-    private var visibleActiveSessionID: EditorSession.ID? {
-        sessionStore.activeSessionID
     }
 
     private func beginTabDrag(_ tab: EditorTab) {
