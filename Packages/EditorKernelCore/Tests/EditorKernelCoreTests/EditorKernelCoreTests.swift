@@ -288,6 +288,29 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func panelSessionStateDefaultsAndSnapshotStayInSync() {
+        let state = EditorPanelSessionState(
+            isOpenEditorsPanelPresented: true,
+            isReferencePanelPresented: true,
+            isWorkspaceSearchPresented: true,
+            isCallHierarchyPresented: false,
+            isProblemsPanelPresented: false
+        )
+
+        #expect(state.referenceResults.isEmpty)
+        #expect(state.semanticProblems.isEmpty)
+        #expect(state.snapshot == EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: true,
+            isOutlinePanelPresented: false,
+            isProblemsPanelPresented: false,
+            isReferencePanelPresented: true,
+            isWorkspaceSearchPresented: true,
+            isWorkspaceSymbolSearchPresented: false,
+            isCallHierarchyPresented: false
+        ))
+    }
+
+    @Test
     @MainActor
     func saveControllerBuildsPipelineOptionsAndClearsSavedState() async {
         let controller = EditorSaveController(successDisplayDuration: 0.01)

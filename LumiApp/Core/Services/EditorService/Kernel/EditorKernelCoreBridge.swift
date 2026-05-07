@@ -47,6 +47,7 @@ typealias EditorWorkspaceSearchPolicy = EditorKernelCore.EditorWorkspaceSearchPo
 typealias EditorWorkspaceSearchController = EditorKernelCore.EditorWorkspaceSearchController
 typealias WorkspaceSearchError = EditorKernelCore.WorkspaceSearchError
 typealias EditorFoldingState = EditorKernelCore.EditorFoldingState
+typealias EditorPanelSessionState = EditorKernelCore.EditorPanelSessionState
 typealias EditorSemanticProblem = EditorKernelCore.EditorSemanticProblem
 typealias EditorStatusToastPresentation = EditorKernelCore.EditorStatusToastPresentation
 typealias EditorStatusToastPolicy = EditorKernelCore.EditorStatusToastPolicy
