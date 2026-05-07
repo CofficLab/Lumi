@@ -66,6 +66,7 @@ typealias EditorPeekTarget = EditorKernelCore.EditorPeekTarget
 typealias EditorPeekItem = EditorKernelCore.EditorPeekItem
 typealias EditorPeekPresentation = EditorKernelCore.EditorPeekPresentation
 typealias EditorPeekController = EditorKernelCore.EditorPeekController
+typealias EditorRenamePolicy = EditorKernelCore.EditorRenamePolicy
 typealias EditorDeferredSaveAction = EditorKernelCore.EditorDeferredSaveAction
 typealias EditorStatusLevel = EditorKernelCore.EditorStatusLevel
 typealias BracketMatchResult = EditorKernelCore.BracketMatchResult

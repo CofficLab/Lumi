@@ -1563,6 +1563,18 @@ struct EditorKernelCoreTests {
     }
 
     @Test
+    func renamePolicyNormalizesInputAndFormatsSummary() {
+        #expect(EditorRenamePolicy.normalizedProposedName("  renamed  ") == "renamed")
+        #expect(EditorRenamePolicy.normalizedProposedName(" \n\t ") == nil)
+        #expect(
+            EditorRenamePolicy.completedMessage(
+                prefix: "Rename completed, updated files:",
+                changedFiles: 3
+            ) == "Rename completed, updated files: 3"
+        )
+    }
+
+    @Test
     func workspaceEditSummaryBuilderSummarizesCurrentAndExternalEdits() {
         let edit = WorkspaceEdit(
             changes: [

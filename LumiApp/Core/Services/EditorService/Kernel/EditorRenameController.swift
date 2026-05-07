@@ -18,8 +18,7 @@ final class EditorRenameController {
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return nil }
 
-        let newName = input.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        return newName.isEmpty ? nil : newName
+        return EditorRenamePolicy.normalizedProposedName(input.stringValue)
     }
 
     func cancelledMessage() -> String {
@@ -39,6 +38,9 @@ final class EditorRenameController {
     }
 
     func completedMessage(changedFiles: Int) -> String {
-        String(localized: "Rename completed, updated files:", table: "LumiEditor") + " \(changedFiles)"
+        EditorRenamePolicy.completedMessage(
+            prefix: String(localized: "Rename completed, updated files:", table: "LumiEditor"),
+            changedFiles: changedFiles
+        )
     }
 }
