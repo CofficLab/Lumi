@@ -9,43 +9,33 @@ struct EditorTabHeaderView: View {
 
     var body: some View {
         if !visibleTabs.isEmpty {
-            VStack(spacing: 0) {
-                ScrollView(.horizontal, showsIndicators: true) {
-                    HStack(spacing: 0) {
-                        ForEach(visibleTabs) { tab in
-                            EditorTabItemView(
-                                tab: tab,
-                                isActive: tab.sessionID == visibleActiveSessionID,
-                                theme: theme,
-                                onStartDrag: beginTabDrag,
-                                onDropBefore: dropDraggedTabInActiveStrip
-                            )
-                        }
-
-                        // Use a small explicit end drop zone so the scroll
-                        // content does not become one oversized hit target.
-                        Color.clear
-                            .frame(width: 24, height: 28)
-                            .contentShape(Rectangle())
-                            .onDrop(of: [.plainText], isTargeted: nil) { _ in
-                                dropDraggedTabInActiveStrip(before: nil)
-                                return true
-                            }
+            ScrollView(.horizontal, showsIndicators: true) {
+                HStack(spacing: 0) {
+                    ForEach(visibleTabs) { tab in
+                        EditorTabItemView(
+                            tab: tab,
+                            isActive: tab.sessionID == visibleActiveSessionID,
+                            theme: theme,
+                            onStartDrag: beginTabDrag,
+                            onDropBefore: dropDraggedTabInActiveStrip
+                        )
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
+
+                    // Use a small explicit end drop zone so the scroll
+                    // content does not become one oversized hit target.
+                    Color.clear
+                        .frame(width: 24, height: 28)
+                        .contentShape(Rectangle())
+                        .onDrop(of: [.plainText], isTargeted: nil) { _ in
+                            dropDraggedTabInActiveStrip(before: nil)
+                            return true
+                        }
                 }
-//                .frame(height: 36)
-                .clipped()
-                .background(theme.workspaceTertiaryTextColor().opacity(0.06))
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(theme.workspaceTertiaryTextColor().opacity(0.08))
-                        .frame(height: 1)
-                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
             }
+            .frame(height: 36)
             .background(theme.workspaceBackgroundColor())
-            .zIndex(1)
         }
     }
 
@@ -63,6 +53,7 @@ struct EditorTabHeaderView: View {
     private var visibleActiveSessionID: EditorSession.ID? {
         sessionStore.activeSessionID
     }
+
     private func beginTabDrag(_ tab: EditorTab) {
         draggedTabSessionID = tab.sessionID
     }

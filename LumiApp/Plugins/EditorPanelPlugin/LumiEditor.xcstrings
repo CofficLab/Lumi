@@ -24,6 +24,7 @@
       }
     },
     "%@ -> %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -68,6 +69,7 @@
       }
     },
     "%lld/%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -90,6 +92,7 @@
       }
     },
     "0/0" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -112,6 +115,7 @@
       }
     },
     "2 Spaces" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -134,6 +138,7 @@
       }
     },
     "4 Spaces" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -156,6 +161,7 @@
       }
     },
     "8 Spaces" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -178,6 +184,7 @@
       }
     },
     "A" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -378,6 +385,7 @@
       }
     },
     "Case Sensitive" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -466,6 +474,7 @@
       }
     },
     "Close Split Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1109,6 +1118,7 @@
       }
     },
     "Editing disabled for truncated preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1531,6 +1541,7 @@
       }
     },
     "Fix All on Save" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1664,6 +1675,7 @@
       }
     },
     "folding" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1686,6 +1698,7 @@
       }
     },
     "Folding ribbon disabled" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1730,6 +1743,7 @@
       }
     },
     "Format on Save" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1818,6 +1832,7 @@
       }
     },
     "In Selection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1840,6 +1855,7 @@
       }
     },
     "inlay" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1862,6 +1878,7 @@
       }
     },
     "Inlay hints disabled" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1884,6 +1901,7 @@
       }
     },
     "Insert Final Newline" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1972,6 +1990,7 @@
       }
     },
     "Keep Editor Version" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2016,6 +2035,7 @@
       }
     },
     "Large File" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2127,6 +2147,7 @@
       }
     },
     "long line" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2149,6 +2170,7 @@
       }
     },
     "Long line: L%lld · %lld chars" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2171,6 +2193,7 @@
       }
     },
     "long-line syntax" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2193,6 +2216,7 @@
       }
     },
     "Medium File" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2215,6 +2239,7 @@
       }
     },
     "Mega File" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2237,6 +2262,7 @@
       }
     },
     "minimap" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2259,6 +2285,7 @@
       }
     },
     "Minimap disabled" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2747,6 +2774,7 @@
       }
     },
     "Normal File" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2925,6 +2953,7 @@
       }
     },
     "Organize Imports on Save" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3035,6 +3064,7 @@
       }
     },
     "Preserve Case" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3257,6 +3287,7 @@
       }
     },
     "Reload from Disk" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3698,6 +3729,7 @@
       }
     },
     "semantic" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3720,6 +3752,7 @@
       }
     },
     "Semantic tokens disabled" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3831,6 +3864,7 @@
       }
     },
     "Split Editor Down" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3853,6 +3887,7 @@
       }
     },
     "Split Editor Right" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3875,6 +3910,7 @@
       }
     },
     "Syntax highlighting limit: first %@ lines" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3897,6 +3933,7 @@
       }
     },
     "Tab (↹)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4052,6 +4089,7 @@
       }
     },
     "Trim Trailing Whitespace" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4074,6 +4112,7 @@
       }
     },
     "truncated" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4228,6 +4267,7 @@
       }
     },
     "Use Lumi Version" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4250,6 +4290,7 @@
       }
     },
     "Use Project Version" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4272,6 +4313,7 @@
       }
     },
     "Use Regular Expression" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4294,6 +4336,7 @@
       }
     },
     "Visible L%lld-%lld · Render L%lld-%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4316,6 +4359,7 @@
       }
     },
     "Whole Word" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

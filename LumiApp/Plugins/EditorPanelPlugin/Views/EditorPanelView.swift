@@ -169,6 +169,8 @@ struct EditorPanelView: View {
     private var sourceEditorContent: some View {
         SourceEditorView(state: state)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .clipped()
     }
 
     @ViewBuilder

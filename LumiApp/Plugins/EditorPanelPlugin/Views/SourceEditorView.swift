@@ -114,6 +114,8 @@ struct SourceEditorView: View, SuperLog {
                 state.dismissInlineRename()
                 state.refreshFoldingRanges()
             }
+            .contentShape(Rectangle())
+            .clipped()
     }
 
     // MARK: - Editor Content
@@ -140,46 +142,46 @@ struct SourceEditorView: View, SuperLog {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 inlayHintsStrip
             }
-            .overlay(alignment: .topLeading) {
-                EditorGutterDecorationsOverlayView(
-                    decorations: visibleGutterDecorations,
-                    openDiagnostic: state.openProblem(atLine:)
-                )
-            }
-            .overlay(alignment: .topLeading) {
-                EditorSurfaceHighlightsOverlayView(highlights: visibleSurfaceHighlights)
-            }
-            .overlay(alignment: .topLeading) {
-                EditorSecondaryCursorOverlayView(highlights: visibleSecondaryCursorHighlights)
-            }
-            .overlay(alignment: .topLeading) {
-                GeometryReader { proxy in
-                    EditorInlinePresentationsOverlayView(
-                        presentations: inlinePresentations(in: proxy.size)
-                    )
-                }
-            }
-            .overlay(alignment: .topLeading) {
-                GeometryReader { proxy in
-                    EditorHoverOverlayView(
-                        state: state,
-                        containerSize: proxy.size,
-                        hoverPopoverSize: $hoverPopoverSize
-                    )
-                }
-            }
-            .overlay(alignment: .bottomTrailing) {
-                peekOverlay
-            }
-            .overlay(alignment: .top) {
-                inlineRenameOverlay
-            }
-            .overlay(alignment: .bottomLeading) {
-                signatureHelpOverlay
-            }
-            .overlay(alignment: .topLeading) {
-                codeActionOverlay
-            }
+//            .overlay(alignment: .topLeading) {
+//                EditorGutterDecorationsOverlayView(
+//                    decorations: visibleGutterDecorations,
+//                    openDiagnostic: state.openProblem(atLine:)
+//                )
+//            }
+//            .overlay(alignment: .topLeading) {
+//                EditorSurfaceHighlightsOverlayView(highlights: visibleSurfaceHighlights)
+//            }
+//            .overlay(alignment: .topLeading) {
+//                EditorSecondaryCursorOverlayView(highlights: visibleSecondaryCursorHighlights)
+//            }
+//            .overlay(alignment: .topLeading) {
+//                GeometryReader { proxy in
+//                    EditorInlinePresentationsOverlayView(
+//                        presentations: inlinePresentations(in: proxy.size)
+//                    )
+//                }
+//            }
+//            .overlay(alignment: .topLeading) {
+//                GeometryReader { proxy in
+//                    EditorHoverOverlayView(
+//                        state: state,
+//                        containerSize: proxy.size,
+//                        hoverPopoverSize: $hoverPopoverSize
+//                    )
+//                }
+//            }
+//            .overlay(alignment: .bottomTrailing) {
+//                peekOverlay
+//            }
+//            .overlay(alignment: .top) {
+//                inlineRenameOverlay
+//            }
+//            .overlay(alignment: .bottomLeading) {
+//                signatureHelpOverlay
+//            }
+//            .overlay(alignment: .topLeading) {
+//                codeActionOverlay
+//            }
         } else {
             EditorEmptyContentStateView()
         }
