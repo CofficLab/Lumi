@@ -2263,4 +2263,35 @@ struct EditorKernelCoreTests {
         #expect(await applied.values == [2])
     }
 
+    @Test
+    @MainActor
+    func panelModelsAndControllerToggleExclusivePanelsAndMetadata() {
+        #expect(EditorBottomPanelKind.problems.title == "Problems")
+        #expect(EditorBottomPanelKind.callHierarchy.icon == "point.3.connected.trianglepath.dotted")
+
+        let snapshot = EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: false,
+            isOutlinePanelPresented: false,
+            isProblemsPanelPresented: false,
+            isReferencePanelPresented: true,
+            isWorkspaceSearchPresented: false,
+            isWorkspaceSymbolSearchPresented: false,
+            isCallHierarchyPresented: false
+        )
+
+        let toggledOpenEditors = EditorPanelCommandController.apply(.toggleOpenEditors, to: snapshot)
+        #expect(toggledOpenEditors.isOpenEditorsPanelPresented)
+        #expect(!toggledOpenEditors.isOutlinePanelPresented)
+        #expect(!toggledOpenEditors.isProblemsPanelPresented)
+        #expect(toggledOpenEditors.isReferencePanelPresented == false)
+
+        let openedSymbols = EditorPanelCommandController.apply(.openWorkspaceSymbolSearch, to: snapshot)
+        #expect(openedSymbols.isWorkspaceSymbolSearchPresented)
+        #expect(openedSymbols.isReferencePanelPresented)
+
+        let closedReference = EditorPanelCommandController.apply(.closeReferences, to: openedSymbols)
+        #expect(!closedReference.isReferencePanelPresented)
+        #expect(closedReference.isWorkspaceSymbolSearchPresented)
+    }
+
 }
