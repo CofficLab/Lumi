@@ -2208,4 +2208,59 @@ struct EditorKernelCoreTests {
         #expect(custom.viewportOrigin == CGPoint(x: 12, y: 34))
     }
 
+    @Test
+    @MainActor
+    func lspRequestPipelineTracksGenerationCancellationAndLatestApply() async {
+        actor AppliedRecorder {
+            var values: [Int] = []
+
+            func append(_ value: Int) {
+                values.append(value)
+            }
+        }
+
+        let generation = RequestGeneration()
+        #expect(generation.generation == 0)
+        let gen1 = generation.next()
+        #expect(gen1 == 1)
+        #expect(generation.isCurrent(1))
+        let gen2 = generation.invalidate()
+        #expect(gen2 == 2)
+        #expect(!generation.isCurrent(1))
+        generation.reset()
+        #expect(generation.generation == 0)
+
+        let cancellation = CancellationContext()
+        #expect(!cancellation.isCancelled)
+        cancellation.cancel()
+        #expect(cancellation.isCancelled)
+        #expect(throws: CancellationError.self) {
+            try cancellation.checkCancellation()
+        }
+
+        let lifecycle = LSPRequestLifecycle()
+        let applied = AppliedRecorder()
+        lifecycle.run(
+            operation: {
+                try? await Task.sleep(for: .milliseconds(40))
+                return 1
+            },
+            apply: { value in
+                Task { await applied.append(value) }
+            }
+        )
+        lifecycle.run(
+            operation: {
+                try? await Task.sleep(for: .milliseconds(5))
+                return 2
+            },
+            apply: { value in
+                Task { await applied.append(value) }
+            }
+        )
+
+        try? await Task.sleep(for: .milliseconds(80))
+        #expect(await applied.values == [2])
+    }
+
 }
