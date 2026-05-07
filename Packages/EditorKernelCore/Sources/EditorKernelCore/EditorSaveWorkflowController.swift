@@ -2,8 +2,10 @@ import Foundation
 import LanguageServerProtocol
 
 @MainActor
-final class EditorSaveWorkflowController {
-    func saveNowIfNeeded(
+public final class EditorSaveWorkflowController {
+    public init() {}
+
+    public func saveNowIfNeeded(
         hasUnsavedChanges: Bool,
         reason: String,
         fileName: String?,
@@ -18,7 +20,7 @@ final class EditorSaveWorkflowController {
         runSave()
     }
 
-    func saveNow(
+    public func saveNow(
         saveState: EditorSaveState,
         runSaveTask: () -> Void
     ) {
@@ -34,7 +36,7 @@ final class EditorSaveWorkflowController {
         runSaveTask()
     }
 
-    func prepareAndSaveNow(
+    public func prepareAndSaveNow(
         currentContent: String?,
         fileURL: URL?,
         saveController: EditorSaveController,
@@ -73,7 +75,7 @@ final class EditorSaveWorkflowController {
         )
     }
 
-    func performSave(
+    public func performSave(
         content: String,
         url: URL?,
         verbose: Bool,
@@ -82,7 +84,7 @@ final class EditorSaveWorkflowController {
         setSaveState: @escaping (EditorSaveState) -> Void,
         saveController: EditorSaveController,
         saveStateController: EditorSaveStateController,
-        documentController: EditorDocumentController,
+        markPersistedText: @escaping (String) -> Void,
         clearConflict: @escaping () -> Void,
         syncSession: @escaping () -> Void,
         scheduleSuccessClear: @escaping () -> Void,
@@ -129,7 +131,7 @@ final class EditorSaveWorkflowController {
                 }
                 saveStateController.applySaveSuccess(
                     content: content,
-                    markPersistedText: documentController.markPersistedText,
+                    markPersistedText: markPersistedText,
                     clearConflict: clearConflict,
                     syncSession: syncSession,
                     scheduleSuccessClear: scheduleSuccessClear,

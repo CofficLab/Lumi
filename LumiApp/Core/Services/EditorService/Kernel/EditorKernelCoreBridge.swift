@@ -110,6 +110,7 @@ typealias EditorAppearanceController = EditorKernelCore.EditorAppearanceControll
 typealias EditorSaveState = EditorKernelCore.EditorSaveState
 typealias EditorSaveStateController = EditorKernelCore.EditorSaveStateController
 typealias EditorSaveController = EditorKernelCore.EditorSaveController
+typealias EditorSaveWorkflowController = EditorKernelCore.EditorSaveWorkflowController
 typealias EditorSaveWorkflowPolicy = EditorKernelCore.EditorSaveWorkflowPolicy
 typealias EditorSaveParticipantOptions = EditorKernelCore.EditorSaveParticipantOptions
 typealias EditorSaveParticipantResult = EditorKernelCore.EditorSaveParticipantResult

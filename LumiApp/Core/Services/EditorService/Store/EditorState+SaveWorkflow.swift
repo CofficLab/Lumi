@@ -40,7 +40,7 @@ extension EditorState {
             setSaveState: { [weak self] state in self?.saveState = state },
             saveController: saveController,
             saveStateController: saveStateController,
-            documentController: documentController,
+            markPersistedText: documentController.markPersistedText,
             clearConflict: { [weak self] in self?.clearExternalFileConflict() },
             syncSession: { [weak self] in self?.syncActiveSessionState() },
             scheduleSuccessClear: { [weak self] in self?.scheduleSuccessClear() },

@@ -2122,4 +2122,36 @@ struct EditorKernelCoreTests {
         let error = EditorStatusToastPolicy.presentation(level: .error, duration: 3.0)
         #expect(error == .init(level: .error, duration: 3.0, autoDismiss: true))
     }
+
+    @Test
+    @MainActor
+    func saveWorkflowControllerRunsOnlyWhenSaveIsNeeded() {
+        let controller = EditorSaveWorkflowController()
+        var saveNowCount = 0
+        controller.saveNowIfNeeded(
+            hasUnsavedChanges: false,
+            reason: "autosave",
+            fileName: "Demo.swift",
+            verbose: true,
+            log: { _ in },
+            runSave: { saveNowCount += 1 }
+        )
+        #expect(saveNowCount == 0)
+
+        controller.saveNowIfNeeded(
+            hasUnsavedChanges: true,
+            reason: "autosave",
+            fileName: "Demo.swift",
+            verbose: false,
+            log: { _ in },
+            runSave: { saveNowCount += 1 }
+        )
+        #expect(saveNowCount == 1)
+
+        var runTaskCount = 0
+        controller.saveNow(saveState: .saving) { runTaskCount += 1 }
+        controller.saveNow(saveState: .editing) { runTaskCount += 1 }
+        #expect(runTaskCount == 1)
+    }
+
 }
