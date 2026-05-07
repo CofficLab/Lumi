@@ -16,15 +16,15 @@ struct EditorTabHeaderView: View {
 
     @State var draggedTabSessionID: EditorSession.ID?
 
+    /// 当前主题
+    private var theme: any SuperTheme {
+        themeVM.activeAppTheme
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if !visibleTabs.isEmpty {
-                EditorTabStripView(
-                    tabs: visibleTabs,
-                    activeSessionID: visibleActiveSessionID,
-                    onStartDrag: beginTabDrag,
-                    onDropBefore: dropDraggedTabInActiveStrip
-                )
+                tabStripBar
             }
 
             if !activeDocumentSymbolTrail.isEmpty {
@@ -35,10 +35,37 @@ struct EditorTabHeaderView: View {
             }
         }
         .background(
-            themeVM.activeAppTheme.workspaceBackgroundColor()
+            theme.workspaceBackgroundColor()
                 .ignoresSafeArea()
         )
         .zIndex(1)
+    }
+
+    // MARK: - Tab Strip Bar
+
+    private var tabStripBar: some View {
+        HStack(spacing: 4) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(visibleTabs) { tab in
+                        EditorTabItemView(
+                            tab: tab,
+                            isActive: tab.sessionID == visibleActiveSessionID,
+                            theme: theme,
+                            onStartDrag: beginTabDrag,
+                            onDropBefore: dropDraggedTabInActiveStrip
+                        )
+                    }
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .onDrop(of: [.plainText], isTargeted: nil) { _ in
+                    dropDraggedTabInActiveStrip(before: nil)
+                    return true
+                }
+            }
+        }
+        .background(theme.workspaceTertiaryTextColor().opacity(0.06))
     }
 
     // MARK: - 计算属性
