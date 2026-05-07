@@ -34,7 +34,8 @@ struct EditorTabHeaderView: View {
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
             }
-            .frame(height: 36)
+            // 如果小一些，整个tab列表的点击事件就失效，不知道为什么
+            .frame(height: 40)
             .background(theme.workspaceBackgroundColor())
         }
     }
