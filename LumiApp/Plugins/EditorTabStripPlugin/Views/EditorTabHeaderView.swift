@@ -2,10 +2,17 @@ import MagicKit
 import SwiftUI
 
 /// 编辑器 Tab Header 视图
+///
+/// 渲染 Tab 栏 UI，并嵌入 `EditorTabStripCoordinator` 实现
+/// 标签页的自动保存和项目切换时的恢复。
 struct EditorTabHeaderView: View {
     @EnvironmentObject var editorVM: EditorVM
+    @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var themeVM: ThemeVM
     @State private var draggedTabSessionID: EditorSession.ID?
+
+    /// 标签页持久化协调器
+    @StateObject private var coordinator = EditorTabStripCoordinator()
 
     var service: EditorService { editorVM.service }
     var sessionStore: EditorSessionStore { service.sessionStore }
@@ -13,8 +20,36 @@ struct EditorTabHeaderView: View {
     // MARK: - Body
 
     var body: some View {
-        if !visibleTabs.isEmpty {
-            tabList
+        Group {
+            if !visibleTabs.isEmpty {
+                tabList
+            }
+        }
+        .onAppear {
+            coordinator.startObserving(
+                sessionStore: sessionStore,
+                projectPathProvider: { [weak projectVM] in
+                    projectVM?.currentProjectPath ?? ""
+                },
+                openFile: { [weak editorVM] url in
+                    editorVM?.service.openAndRenderFile(at: url)
+                }
+            )
+        }
+        .onDisappear {
+            coordinator.stopObserving(
+                sessionStore: sessionStore,
+                projectPath: projectVM.currentProjectPath
+            )
+        }
+        .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
+            coordinator.handleProjectPathChange(
+                oldPath: oldPath,
+                newPath: newPath,
+                sessionStore: sessionStore
+            ) { [weak editorVM] url in
+                editorVM?.service.openAndRenderFile(at: url)
+            }
         }
     }
 

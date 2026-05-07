@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import MagicKit
 import os
@@ -91,11 +92,21 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
     // MARK: - Private Helpers
 
     private func getFileURL(forProject projectPath: String) -> URL {
-        let hash = projectPath.hashValue
-        let safeName = "project_\(abs(hash))"
+        let safeName = stableDirectoryName(for: projectPath)
         return baseDirectory
             .appendingPathComponent(safeName, isDirectory: true)
             .appendingPathComponent("tabs.json", isDirectory: false)
+    }
+
+    /// 对项目路径生成稳定的目录名（SHA-256 前 16 位十六进制）
+    ///
+    /// 不使用 `String.hashValue`，因为它在每次程序启动时会产生不同的值，
+    /// 导致重启后无法找到之前保存的数据。
+    private func stableDirectoryName(for projectPath: String) -> String {
+        let data = Data(projectPath.utf8)
+        let hash = SHA256.hash(data: data)
+        let hex = hash.compactMap { String(format: "%02x", $0) }.joined()
+        return "project_\(String(hex.prefix(16)))"
     }
 
     private func readSnapshot(forProject projectPath: String) -> PersistedProjectTabs? {

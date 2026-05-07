@@ -10,7 +10,7 @@ import os
 ///
 /// ## 职责
 ///
-/// - 项目路径变化时：保存旧 tab → 清理 → 刷新上下文 → 恢复新 tab
+/// - 项目路径变化时：清理 → 刷新上下文
 /// - 文件选择变化时：打开或激活对应会话
 /// - 编辑器命令通知 → 分发到 EditorState
 /// - `onAppear` / `onDisappear` 初始化和清理
@@ -89,16 +89,7 @@ final class EditorPanelCoordinator: ObservableObject {
 
     /// 视图消失时的清理逻辑
     func handleDisappear() {
-        guard let panelService, let state, let projectVM else { return }
-
-        let projectPath = projectVM.currentProjectPath
-        if !projectPath.isEmpty, let sessionStore {
-            panelService.saveCurrentTabs(
-                forProject: projectPath,
-                state: state,
-                sessionStore: sessionStore
-            )
-        }
+        guard let panelService, let state else { return }
 
         if state.hasUnsavedChanges { state.saveNow() }
         state.onActiveSessionChanged = nil
@@ -109,40 +100,15 @@ final class EditorPanelCoordinator: ObservableObject {
 
     /// 处理项目路径变化
     func handleProjectPathChange(oldPath: String, newPath: String) {
-        guard let panelService, let state, let sessionStore, let projectVM else { return }
+        guard let panelService, let state, let sessionStore else { return }
 
         EditorPlugin.logger.info("\(EditorPlugin.t)项目路径变化, oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)")
-
-        // 保存旧项目的标签页
-        if !oldPath.isEmpty {
-            panelService.saveCurrentTabs(
-                forProject: oldPath,
-                state: state,
-                sessionStore: sessionStore
-            )
-        }
 
         // 保存未保存的变更后关闭所有编辑器会话
         if state.hasUnsavedChanges { state.saveNow() }
         sessionStore.closeAll()
         state.loadFile(from: nil)
         panelService.refreshProjectContext(for: newPath, state: state)
-
-        // 恢复新项目的标签页
-        if !newPath.isEmpty {
-            panelService.restoreTabs(
-                forProject: newPath,
-                state: state
-            ) { url in
-                panelService.openOrActivateSession(
-                    for: url,
-                    state: state,
-                    sessionStore: sessionStore,
-                    projectRootPath: projectVM.currentProject?.path,
-                    currentProjectPath: projectVM.currentProjectPath
-                )
-            }
-        }
     }
 
     // MARK: - 当前文件 / 光标 / 符号变化

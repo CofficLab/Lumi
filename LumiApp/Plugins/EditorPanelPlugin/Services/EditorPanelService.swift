@@ -5,7 +5,7 @@ import os
 
 /// 编辑器面板业务逻辑服务
 ///
-/// 封装 Session 操作、标签页持久化、导航、项目上下文刷新等业务逻辑，
+/// 封装 Session 操作、导航、项目上下文刷新等业务逻辑，
 /// 从 EditorPanelView 中提取，使视图层保持纯粹的布局职责。
 ///
 /// ## 使用方式
@@ -15,105 +15,17 @@ import os
 ///
 /// // 在视图中通过 service 调用业务方法
 /// service.openOrActivateSession(for: url, state: state, sessionStore: store)
-/// service.saveCurrentTabs(forProject: path, state: state, sessionStore: store)
 /// ```
 @MainActor
 final class EditorPanelService: ObservableObject {
 
     // MARK: - 属性
 
-    /// 标签页持久化存储
-    private let tabStore = EditorTabStripStore.shared
-
-    /// 防抖保存的 Task
-    private var tabSaveTask: Task<Void, Never>?
-
-    /// 首次 appear 后延迟恢复标签页的 Task
-    private(set) var tabRestoreTask: Task<Void, Never>?
-
     /// 当前拖拽中的标签页 Session ID
     @Published var draggedTabSessionID: EditorSession.ID?
 
     /// 命令面板是否展示
     @Published var isCommandPalettePresented: Bool = false
-
-    // MARK: - Tab 持久化
-
-    /// 保存当前打开的标签页到持久化存储
-    func saveCurrentTabs(
-        forProject projectPath: String,
-        state: EditorState,
-        sessionStore: EditorSessionStore
-    ) {
-        let activeTabPath = state.currentFileURL?.path
-        tabStore.saveTabs(
-            projectPath: projectPath,
-            tabs: sessionStore.tabs,
-            activeTabPath: activeTabPath
-        )
-    }
-
-    /// 从持久化存储恢复标签页
-    func restoreTabs(
-        forProject projectPath: String,
-        state: EditorState,
-        selectFile: @MainActor (URL) -> Void
-    ) {
-        let (persistedTabs, activeTabPath) = tabStore.loadTabs(forProject: projectPath)
-        EditorPlugin.logger.info("\(EditorPlugin.t)恢复标签页, projectPath=\(projectPath, privacy: .public), persistedCount=\(persistedTabs.count), activeTabPath=\(activeTabPath ?? "nil", privacy: .public)")
-
-        // 过滤掉不存在的文件
-        let validTabs = persistedTabs.compactMap { tab -> URL? in
-            guard let url = tab.fileURL,
-                  FileManager.default.isReadableFile(atPath: url.path) else {
-                EditorPlugin.logger.warning("\(EditorPlugin.t)跳过不可读文件: \(tab.path, privacy: .public)")
-                return nil
-            }
-            return url
-        }
-
-        EditorPlugin.logger.info("\(EditorPlugin.t)有效标签页数=\(validTabs.count)")
-        guard !validTabs.isEmpty else { return }
-
-        // 先打开最后一个保存的活跃标签
-        if let activePath = activeTabPath,
-           let activateURL = validTabs.first(where: { $0.path == activePath }) {
-            EditorPlugin.logger.info("\(EditorPlugin.t)选择活跃标签: \(activateURL.path, privacy: .public)")
-            selectFile(activateURL)
-        } else if let fallbackURL = validTabs.first {
-            EditorPlugin.logger.info("\(EditorPlugin.t)选择第一个标签: \(fallbackURL.path, privacy: .public)")
-            selectFile(fallbackURL)
-        }
-    }
-
-    /// 防抖保存当前标签页（2 秒延迟，避免频繁写入）
-    func scheduleTabSave(
-        projectPath: String,
-        state: EditorState,
-        sessionStore: EditorSessionStore
-    ) {
-        tabSaveTask?.cancel()
-        tabSaveTask = Task { [weak self] in
-            try? await Task.sleep(for: Duration.seconds(2))
-            guard !Task.isCancelled else { return }
-            self?.saveCurrentTabs(
-                forProject: projectPath,
-                state: state,
-                sessionStore: sessionStore
-            )
-        }
-    }
-
-    /// 取消标签页恢复任务
-    func cancelTabRestore() {
-        tabRestoreTask?.cancel()
-        tabRestoreTask = nil
-    }
-
-    /// 取消标签页保存任务
-    func cancelTabSave() {
-        tabSaveTask?.cancel()
-    }
 
     // MARK: - Session 管理
 
@@ -138,11 +50,6 @@ final class EditorPanelService: ObservableObject {
         EditorPlugin.logger.info("\(EditorPlugin.t)加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public), sessionID=\(session.id)")
         state.loadFile(from: session.fileURL)
         restoreInteractionState(for: session, state: state)
-        scheduleTabSave(
-            projectPath: currentProjectPath,
-            state: state,
-            sessionStore: sessionStore
-        )
     }
 
     /// 激活指定标签页对应的会话

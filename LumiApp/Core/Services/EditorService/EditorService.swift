@@ -114,10 +114,35 @@ public final class EditorService: ObservableObject {
     // MARK: - 会话管理（Session Management）
     // ========================================================================
 
-    /// 打开或激活文件会话
+    /// 打开或激活文件会话（仅创建 session，不加载内容）
     @discardableResult
     func openFile(at url: URL?) -> EditorSession? {
         sessionStore.openOrActivate(fileURL: url)
+    }
+
+    /// 打开或激活文件会话，并加载内容到编辑器
+    ///
+    /// 完整的「打开文件」流程：创建 session → 加载文件内容 → 恢复交互状态。
+    /// 插件通过 `EditorVM.service.openAndRenderFile(at:)` 调用，
+    /// 无需直接访问 `EditorState`。
+    func openAndRenderFile(at url: URL?) {
+        guard let url else { return }
+
+        guard let session = sessionStore.openOrActivate(fileURL: url) else { return }
+
+        let canRestoreImmediately =
+            state.currentFileURL == url &&
+            state.content != nil &&
+            state.focusedTextView != nil
+
+        if canRestoreImmediately {
+            state.applySessionRestore(session)
+            return
+        }
+
+        if state.currentFileURL != url {
+            state.loadFile(from: url)
+        }
     }
 
     /// 当前活跃会话
