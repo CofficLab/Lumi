@@ -6,20 +6,16 @@ import SwiftUI
 /// 作为 Panel Header 提供给内核，在编辑器面板上方渲染。
 /// 包含标签栏和符号栏（breadcrumb）。
 struct EditorTabHeaderView: View {
+
+    // MARK: - 属性
+
     @EnvironmentObject var editorVM: EditorVM
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var themeVM: ThemeVM
 
-    var service: EditorService { editorVM.service }
-    var sessionStore: EditorSessionStore { service.sessionStore }
-    var state: EditorState { service.state }
-
     @State var draggedTabSessionID: EditorSession.ID?
 
-    /// 当前主题
-    private var theme: any SuperTheme {
-        themeVM.activeAppTheme
-    }
+    // MARK: - 公开方法
 
     var body: some View {
         VStack(spacing: 0) {
@@ -41,7 +37,46 @@ struct EditorTabHeaderView: View {
         .zIndex(1)
     }
 
-    // MARK: - Tab Strip Bar
+    // MARK: - 私有方法
+
+    private func beginTabDrag(_ tab: EditorTab) {
+        draggedTabSessionID = tab.sessionID
+    }
+
+    private func dropDraggedTabInActiveStrip(before targetTab: EditorTab?) {
+        guard let draggedTabSessionID else { return }
+        defer { self.draggedTabSessionID = nil }
+
+        if targetTab?.sessionID == draggedTabSessionID { return }
+
+        let targetSessionID = targetTab?.sessionID
+        _ = sessionStore.reorderSession(
+            sessionID: draggedTabSessionID,
+            before: targetSessionID
+        )
+    }
+
+    // MARK: - 计算属性
+
+    var service: EditorService { editorVM.service }
+    var sessionStore: EditorSessionStore { service.sessionStore }
+    var state: EditorState { service.state }
+
+    private var theme: any SuperTheme {
+        themeVM.activeAppTheme
+    }
+
+    private var visibleTabs: [EditorTab] {
+        sessionStore.tabs
+    }
+
+    private var visibleActiveSessionID: EditorSession.ID? {
+        sessionStore.activeSessionID
+    }
+
+    private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
+        state.documentSymbolProvider.activeItems(for: state.cursorLine)
+    }
 
     private var tabStripBar: some View {
         HStack(spacing: 4) {
@@ -66,38 +101,5 @@ struct EditorTabHeaderView: View {
             }
         }
         .background(theme.workspaceTertiaryTextColor().opacity(0.06))
-    }
-
-    // MARK: - 计算属性
-
-    private var visibleTabs: [EditorTab] {
-        sessionStore.tabs
-    }
-
-    private var visibleActiveSessionID: EditorSession.ID? {
-        sessionStore.activeSessionID
-    }
-
-    private var activeDocumentSymbolTrail: [EditorDocumentSymbolItem] {
-        state.documentSymbolProvider.activeItems(for: state.cursorLine)
-    }
-
-    // MARK: - Tab 拖拽动作
-
-    private func beginTabDrag(_ tab: EditorTab) {
-        draggedTabSessionID = tab.sessionID
-    }
-
-    private func dropDraggedTabInActiveStrip(before targetTab: EditorTab?) {
-        guard let draggedTabSessionID else { return }
-        defer { self.draggedTabSessionID = nil }
-
-        if targetTab?.sessionID == draggedTabSessionID { return }
-
-        let targetSessionID = targetTab?.sessionID
-        _ = sessionStore.reorderSession(
-            sessionID: draggedTabSessionID,
-            before: targetSessionID
-        )
     }
 }
