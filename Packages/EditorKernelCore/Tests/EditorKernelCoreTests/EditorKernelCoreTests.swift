@@ -2326,4 +2326,40 @@ struct EditorKernelCoreTests {
         #expect(cleanupCount == 2)
     }
 
+    @Test
+    @MainActor
+    func sessionItemModelsPreserveIDsAndDefaultTitles() {
+        let sessionID = UUID()
+        let fileURL = URL(fileURLWithPath: "/tmp/Demo.swift")
+
+        let tab = EditorTab(sessionID: sessionID, fileURL: fileURL)
+        #expect(tab.id == sessionID)
+        #expect(tab.title == "Demo.swift")
+
+        let untitled = EditorTab(sessionID: sessionID, fileURL: nil)
+        #expect(untitled.title == "Untitled")
+
+        let openEditor = EditorOpenEditorItem(
+            sessionID: sessionID,
+            fileURL: fileURL,
+            title: "Demo.swift",
+            isDirty: true,
+            isPinned: false,
+            isActive: true,
+            recentActivationRank: 2
+        )
+        #expect(openEditor.id == sessionID)
+        #expect(openEditor.recentActivationRank == 2)
+
+        let target = EditorNavigationTarget(
+            sessionID: sessionID,
+            fileURL: fileURL,
+            title: "Demo.swift",
+            isDirty: true,
+            isPinned: true
+        )
+        #expect(target.sessionID == sessionID)
+        #expect(target.isPinned)
+    }
+
 }
