@@ -1,4 +1,5 @@
 import MagicKit
+import SkillKit
 import SwiftUI
 
 /// Skill 状态栏视图
@@ -22,7 +23,7 @@ struct SkillStatusBarView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 10))
-                        Text("^[\(skills.count) Skill](inflect: true)")
+                        Text(String(localized: "^[\(skills.count) Skill](inflect: true)", table: "Skill"))
                             .font(.system(size: 11, weight: .medium))
                     }
                     .padding(.horizontal, 8)
@@ -87,7 +88,7 @@ struct SkillListPopover: View {
                     .font(.system(size: 14))
                     .foregroundColor(Color(hex: "7C6FFF"))
 
-                Text("^[\(skills.count) Available Skill](inflect: true)")
+                Text(String(localized: "^[\(skills.count) Available Skill](inflect: true)", table: "Skill"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 

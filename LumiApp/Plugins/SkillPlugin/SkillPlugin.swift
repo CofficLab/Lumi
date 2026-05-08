@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import SkillKit
 import os
 
 /// Skill 插件

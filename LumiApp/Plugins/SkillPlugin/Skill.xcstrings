@@ -2,7 +2,6 @@
   "sourceLanguage": "en",
   "strings": {
     "^[%lld Available Skill](inflect: true)": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -25,7 +24,6 @@
       }
     },
     "^[%lld Skill](inflect: true)": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
