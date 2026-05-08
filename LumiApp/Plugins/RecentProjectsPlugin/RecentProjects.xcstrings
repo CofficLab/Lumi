@@ -114,6 +114,50 @@
     "Manage recent projects and current project state" : {
 
     },
+    "Or drag a folder into the window" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or drag a folder into the window"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "或将文件夹拖入窗口"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "或將文件夾拖入窗口"
+          }
+        }
+      }
+    },
+    "Select a project to get started" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a project to get started"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个项目即可开始"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇一個項目即可開始"
+          }
+        }
+      }
+    },
     "No Project Selected" : {
       "localizations" : {
         "en" : {

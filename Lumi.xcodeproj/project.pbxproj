@@ -30,12 +30,12 @@
 		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
+		A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3A12F70000200AAA101 /* SkillKit */; };
 		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
 		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
 		A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E12F70000100AAA101 /* MarkdownKit */; };
 		A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E72F70000100AAA101 /* EditorKernelCore */; };
 		A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3EF2F70000100AAA101 /* DatabaseKit */; };
-		A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3A12F70000200AAA101 /* SkillKit */; };
 		A1B2C4002F70000100AAA101 /* EditorService in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4012F70000100AAA101 /* EditorService */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
@@ -1211,6 +1211,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiCodeEditSourceEditor;
 		};
+		A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SkillKit;
+		};
 		A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/MarkdownKit;
@@ -1234,10 +1238,6 @@
 		A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiUI;
-		};
-		A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/SkillKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 

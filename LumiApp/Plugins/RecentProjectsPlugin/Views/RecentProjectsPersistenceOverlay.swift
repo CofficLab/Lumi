@@ -16,14 +16,31 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
     let content: Content
 
     @State private var restored = false
+    @State private var isFileImporterPresented = false
 
     private let store = RecentProjectsStore()
 
     var body: some View {
         ZStack {
             content
+
+            // 未选择项目时显示引导遮罩
+            if restored && !projectVM.isProjectSelected {
+                NoProjectOverlay(
+                    recentProjects: projectVM.recentProjects,
+                    isFileImporterPresented: $isFileImporterPresented,
+                    onSelectProject: { project in
+                        projectVM.switchProject(to: project)
+                    },
+                    onAddProject: { url in
+                        addProjectAndSwitch(to: url)
+                    }
+                )
+                .transition(.opacity)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.easeInOut(duration: 0.25), value: projectVM.isProjectSelected)
         .onAppear {
             handleOnAppear()
         }
@@ -140,6 +157,22 @@ extension RecentProjectsPersistenceOverlay {
         
         _ = editorVM.service.openFile(at: url)
         editorVM.service.loadFile(from: url)
+    }
+}
+
+// MARK: - Project Add Helper
+
+extension RecentProjectsPersistenceOverlay {
+    private func addProjectAndSwitch(to url: URL) {
+        let standardizedURL = url.standardizedFileURL
+        let project = Project(
+            name: standardizedURL.lastPathComponent,
+            path: standardizedURL.path,
+            lastUsed: Date()
+        )
+        store.addProject(name: project.name, path: project.path)
+        projectVM.setRecentProjects(store.loadProjects())
+        projectVM.switchProject(to: project)
     }
 }
 
