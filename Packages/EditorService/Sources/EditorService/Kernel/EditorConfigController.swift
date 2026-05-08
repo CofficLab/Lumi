@@ -98,8 +98,7 @@ final class EditorConfigController {
     func observeThemeChanges(
         applyResolvedThemeID: @escaping @MainActor (_ themeId: String, _ shouldRegisterThemeContributors: Bool) -> Void
     ) {
-        // 与 LumiApp `ThemeEvents.lumiThemeDidChange` 的 rawValue 保持一致。
-        let notificationName = Notification.Name("lumiThemeDidChange")
+        let notificationName = EditorHostEnvironment.current.notifications.themeDidChange
         NotificationCenter.default.addObserver(
             forName: notificationName,
             object: nil,

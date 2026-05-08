@@ -3,7 +3,7 @@ import CodeEditSourceEditor
 import LanguageServerProtocol
 import EditorKernelCore
 
-enum EditorOpenItemCommand: Equatable {
+public enum EditorOpenItemCommand: Equatable {
     case problem(Diagnostic)
     case reference(ReferenceResult)
     case workspaceSymbol(WorkspaceSymbolItem)

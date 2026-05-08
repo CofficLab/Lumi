@@ -4,14 +4,14 @@ import Foundation
 
 /// 编辑器设置的作用域选择枚举
 /// 定义了三种设置作用域：全局、工作区、语言特定
-enum EditorSettingsScopeSelection: String, CaseIterable, Identifiable {
+public enum EditorSettingsScopeSelection: String, CaseIterable, Identifiable {
     case global
     case workspace
     case language
 
-    var id: String { rawValue }
+    public var id: String { rawValue }
 
-    var title: String {
+    public var title: String {
         switch self {
         case .global: return "Global"
         case .workspace: return "Workspace"
@@ -69,41 +69,41 @@ public final class EditorSettingsState: ObservableObject {
     // MARK: - 作用域选择相关属性
     
     /// 当前选择的设置作用域（全局/工作区/语言）
-    @Published var selectedScope: EditorSettingsScopeSelection = .global { didSet { restoreScopedOverrideDraft() } }
+    @Published public var selectedScope: EditorSettingsScopeSelection = .global { didSet { restoreScopedOverrideDraft() } }
     
     /// 当前选择的语言 ID（当作用域为语言特定时使用）
-    @Published var selectedLanguageID: String = "swift" { didSet { restoreScopedOverrideDraft() } }
+    @Published public var selectedLanguageID: String = "swift" { didSet { restoreScopedOverrideDraft() } }
 
     // MARK: - 作用域特定覆盖设置
     
     /// 是否启用作用域特定的 Tab 宽度覆盖
-    @Published var scopedTabWidthEnabled: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
+    @Published public var scopedTabWidthEnabled: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
     
     /// 作用域特定的 Tab 宽度值
-    @Published var scopedTabWidth: Int = 4 { didSet { persistScopedOverrideIfNeeded() } }
+    @Published public var scopedTabWidth: Int = 4 { didSet { persistScopedOverrideIfNeeded() } }
     
     /// 是否启用作用域特定的空格/Tab 设置覆盖
-    @Published var scopedUseSpacesEnabled: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
+    @Published public var scopedUseSpacesEnabled: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
     
     /// 作用域特定的是否使用空格设置
-    @Published var scopedUseSpaces: Bool = true { didSet { persistScopedOverrideIfNeeded() } }
+    @Published public var scopedUseSpaces: Bool = true { didSet { persistScopedOverrideIfNeeded() } }
     
     /// 是否启用作用域特定的自动换行设置覆盖
-    @Published var scopedWrapLinesEnabled: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
+    @Published public var scopedWrapLinesEnabled: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
     
     /// 作用域特定的自动换行设置
-    @Published var scopedWrapLines: Bool = true { didSet { persistScopedOverrideIfNeeded() } }
+    @Published public var scopedWrapLines: Bool = true { didSet { persistScopedOverrideIfNeeded() } }
     
     /// 是否启用作用域特定的保存时格式化设置覆盖
-    @Published var scopedFormatOnSaveEnabled: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
+    @Published public var scopedFormatOnSaveEnabled: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
     
     /// 作用域特定的保存时格式化设置
-    @Published var scopedFormatOnSave: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
+    @Published public var scopedFormatOnSave: Bool = false { didSet { persistScopedOverrideIfNeeded() } }
 
     // MARK: - 功能支持标志
     
     /// 是否支持渲染空白字符（当前版本暂不支持）
-    let supportsRenderWhitespace = false
+    public let supportsRenderWhitespace = false
 
     // MARK: - 私有依赖和状态
     
@@ -148,7 +148,7 @@ public final class EditorSettingsState: ObservableObject {
     // MARK: - 计算属性
     
     /// 获取插件贡献的设置项列表
-    var contributedSettings: [EditorSettingsItemSuggestion] {
+    public var contributedSettings: [EditorSettingsItemSuggestion] {
         _editorExtensionRegistry?.settingsSuggestions(state: self) ?? []
     }
 
@@ -158,19 +158,19 @@ public final class EditorSettingsState: ObservableObject {
     }
 
     /// 获取所有可用的语言 ID 列表
-    var availableLanguageIDs: [String] {
+    public var availableLanguageIDs: [String] {
         EditorLanguageID.all
     }
 
     /// 是否可以编辑作用域特定的覆盖设置
     /// 只有当选择了非全局作用域时才可编辑
-    var canEditScopedOverrides: Bool {
+    public var canEditScopedOverrides: Bool {
         activeOverrideScope != nil
     }
 
     /// 获取当前作用域的描述标签
     /// 用于在设置界面中显示当前作用域的说明
-    var activeOverrideScopeLabel: String {
+    public var activeOverrideScopeLabel: String {
         switch selectedScope {
         case .global:
             return "Global settings apply to every editor."
@@ -246,7 +246,7 @@ public final class EditorSettingsState: ObservableObject {
         
         // 通知其他组件设置已变化
         NotificationCenter.default.post(
-            name: Notification.Name("LumiEditorSettingsDidChange"),
+            name: EditorHostEnvironment.current.notifications.settingsDidChange,
             object: self,
             userInfo: ["snapshot": snapshot]
         )
@@ -265,7 +265,7 @@ public final class EditorSettingsState: ObservableObject {
         
         // 通知其他组件设置已变化
         NotificationCenter.default.post(
-            name: Notification.Name("LumiEditorSettingsDidChange"),
+            name: EditorHostEnvironment.current.notifications.settingsDidChange,
             object: self,
             userInfo: ["snapshot": snapshot]
         )

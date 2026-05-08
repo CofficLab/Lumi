@@ -1,40 +1,40 @@
 import SwiftUI
 import LanguageServerProtocol
 
-struct EditorGutterDecoration: Identifiable {
-    let id: String
-    let line: Int
-    let lane: Int
-    let kind: EditorGutterDecorationKind
-    let rect: CGRect
-    let style: EditorGutterDecorationResolvedStyle
-    let badgeText: String?
-    let symbolName: String?
+public struct EditorGutterDecoration: Identifiable {
+    public let id: String
+    public let line: Int
+    public let lane: Int
+    public let kind: EditorGutterDecorationKind
+    public let rect: CGRect
+    public let style: EditorGutterDecorationResolvedStyle
+    public let badgeText: String?
+    public let symbolName: String?
 }
 
-enum EditorGutterDecorationShape {
+public enum EditorGutterDecorationShape {
     case circle
     case roundedRect
     case bar
 }
 
-struct EditorGutterDecorationResolvedStyle {
-    let fillColor: SwiftUI.Color
-    let strokeColor: SwiftUI.Color
-    let foregroundColor: SwiftUI.Color
-    let shape: EditorGutterDecorationShape
-    let size: CGSize
-    let cornerRadius: CGFloat
+public struct EditorGutterDecorationResolvedStyle {
+    public let fillColor: SwiftUI.Color
+    public let strokeColor: SwiftUI.Color
+    public let foregroundColor: SwiftUI.Color
+    public let shape: EditorGutterDecorationShape
+    public let size: CGSize
+    public let cornerRadius: CGFloat
 }
 
-struct EditorGutterDecorationStyle {
-    let laneSpacing: CGFloat
-    let baseX: CGFloat
-    let size: CGFloat
-    let barWidth: CGFloat
-    let outerPadding: CGFloat
+public struct EditorGutterDecorationStyle: Sendable {
+    public let laneSpacing: CGFloat
+    public let baseX: CGFloat
+    public let size: CGFloat
+    public let barWidth: CGFloat
+    public let outerPadding: CGFloat
 
-    static let standard = EditorGutterDecorationStyle(
+    public static let standard = EditorGutterDecorationStyle(
         laneSpacing: 11,
         baseX: 8,
         size: 9,
@@ -42,7 +42,7 @@ struct EditorGutterDecorationStyle {
         outerPadding: 4
     )
 
-    func resolvedStyle(for kind: EditorGutterDecorationKind) -> EditorGutterDecorationResolvedStyle {
+    public func resolvedStyle(for kind: EditorGutterDecorationKind) -> EditorGutterDecorationResolvedStyle {
         switch kind {
         case .diagnostic(.error):
             return EditorGutterDecorationResolvedStyle(

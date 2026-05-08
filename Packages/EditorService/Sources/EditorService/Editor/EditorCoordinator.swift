@@ -7,10 +7,10 @@ import SwiftUI
 import LanguageServerProtocol
 import os
 
-fileprivate let editorContextMenuLog = Logger(subsystem: "com.coffic.lumi", category: "editor.contextmenu")
+fileprivate let editorContextMenuLog = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.contextmenu")
 /// 文本变更协调器
 /// 监听 CodeEditSourceEditor 的文本与焦点事件，通知 EditorState 更新脏状态并在失焦时保存
-final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked Sendable {
+public final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked Sendable {
     /// 弱引用状态管理器
     nonisolated static let verbose = false
 
@@ -19,17 +19,17 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked
     private var endEditingObserver: NSObjectProtocol?
     private let bridge = TextViewBridge()
     private let inputRouter = EditorInputRouter()
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.coordinator")
+    private let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.coordinator")
     /// 跳转定义代理（由外部注入）
-    weak var jumpDelegate: EditorJumpToDefinitionDelegate?
+    public weak var jumpDelegate: EditorJumpToDefinitionDelegate?
     
-    init(state: EditorState) {
+    public init(state: EditorState) {
         self.state = state
     }
     
     // MARK: - TextViewCoordinator
     
-    nonisolated func prepareCoordinator(controller: TextViewController) {
+    public nonisolated func prepareCoordinator(controller: TextViewController) {
         MainActor.assumeIsolated {
             textViewController = controller
             endEditingObserver = bridge.attach(
@@ -41,7 +41,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked
         }
     }
     
-    nonisolated func textViewDidChangeText(controller: TextViewController) {
+    public nonisolated func textViewDidChangeText(controller: TextViewController) {
         let payload = MainActor.assumeIsolated {
             let currentText = controller.textView?.string ?? ""
             if Self.verbose {
@@ -65,7 +65,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked
         }
     }
     
-    nonisolated func textViewDidChangeSelection(controller: TextViewController) {
+    public nonisolated func textViewDidChangeSelection(controller: TextViewController) {
         let payload = MainActor.assumeIsolated {
             (
                 state: state,
@@ -87,7 +87,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked
         }
     }
     
-    nonisolated func destroy() {
+    public nonisolated func destroy() {
         MainActor.assumeIsolated {
             if Self.verbose {
                 logger.info("\(EditorState.t)Coordinator 销毁: state=\(self.state != nil)")
@@ -100,7 +100,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked
         }
     }
     
-    func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with string: String) {
+    public func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with string: String) {
         let state = self.state
         _ = MainActor.assumeIsolated {
             bridge.beginNativeReplacement(
@@ -114,7 +114,7 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked
         }
     }
     
-    func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with string: String) {
+    public func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with string: String) {
         let pendingEdit = MainActor.assumeIsolated {
             bridge.consumeNativeReplacement(text: string)
         }
@@ -134,17 +134,17 @@ final class EditorCoordinator: TextViewCoordinator, TextViewDelegate, @unchecked
 
 /// 光标位置协调器
 /// 监听光标位置变化，更新行号/列号信息
-final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
+public final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
     
     private weak var state: EditorState?
     
-    init(state: EditorState) {
+    public init(state: EditorState) {
         self.state = state
     }
     
     // MARK: - TextViewCoordinator
     
-    nonisolated func textViewDidChangeSelection(controller: TextViewController) {
+    public nonisolated func textViewDidChangeSelection(controller: TextViewController) {
         let payload = MainActor.assumeIsolated {
             (state: state, positions: controller.cursorPositions)
         }
@@ -161,9 +161,9 @@ final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
         }
     }
     
-    nonisolated func prepareCoordinator(controller: TextViewController) {}
+    public nonisolated func prepareCoordinator(controller: TextViewController) {}
     
-    nonisolated func controllerDidAppear(controller: TextViewController) {
+    public nonisolated func controllerDidAppear(controller: TextViewController) {
         MainActor.assumeIsolated {
             if controller.isEditable && controller.isSelectable {
                 controller.view.window?.makeFirstResponder(controller.textView)
@@ -171,7 +171,7 @@ final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
         }
     }
     
-    nonisolated func destroy() { MainActor.assumeIsolated { state = nil } }
+    public nonisolated func destroy() { MainActor.assumeIsolated { state = nil } }
 }
 
 // MARK: - Context Menu Coordinator
@@ -186,20 +186,20 @@ final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
 ///
 /// 因此我们通过 ObjC runtime 的 `class_replaceMethod` 替换 textView 实例所属类
 /// 的 `menu(for:)` 实现。新实现先调用原始方法获取标准菜单，再往其中插入自定义项。
-final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable, SuperLog {
+public final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable, SuperLog {
 
-    nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose = true
+    public nonisolated static let emoji = "🖱️"
+    public nonisolated static let verbose = true
 
     private weak var state: EditorState?
 
-    init(state: EditorState) {
+    public init(state: EditorState) {
         self.state = state
     }
 
-    nonisolated func prepareCoordinator(controller: TextViewController) {}
+    public nonisolated func prepareCoordinator(controller: TextViewController) {}
 
-    nonisolated func controllerDidAppear(controller: TextViewController) {
+    public nonisolated func controllerDidAppear(controller: TextViewController) {
         MainActor.assumeIsolated {
             guard let textView = controller.textView, let state else {
                 editorContextMenuLog.warning("\(Self.t)controllerDidAppear: textView=\(controller.textView != nil), state=\(self.state != nil), 跳过注册")
@@ -212,7 +212,7 @@ final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable, Su
         }
     }
 
-    nonisolated func destroy() { MainActor.assumeIsolated { state = nil } }
+    public nonisolated func destroy() { MainActor.assumeIsolated { state = nil } }
 }
 
 // MARK: - Context Menu Manager

@@ -38,7 +38,7 @@ struct CoreApp: App {
         EditorSettingsLifecycle.loadEditorCommandPaletteCategory = { AppSettingStore.loadEditorCommandPaletteCategory() }
         EditorSettingsLifecycle.saveEditorCommandPaletteCategory = { AppSettingStore.saveEditorCommandPaletteCategory($0) }
         EditorSettingsLifecycle.setEditorFeaturePluginEnabled = { pluginID, enabled in
-            PluginSettingsVM.shared.setPluginEnabled(pluginID, enabled)
+            PluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
         }
     }
 
@@ -129,6 +129,7 @@ struct CheckForUpdatesView: View {
 ///
 /// 负责管理更新检查的状态。
 /// 监听 Sparkle 更新器的 canCheckForUpdates 属性。
+@MainActor
 final class CheckForUpdatesViewModel: ObservableObject {
     /// 是否可以检查更新
     ///

@@ -1,3 +1,3 @@
 import EditorKernelCore
 
-typealias PackageManifestSyntax = EditorKernelCore.PackageManifestSyntax
+public typealias PackageManifestSyntax = EditorKernelCore.PackageManifestSyntax

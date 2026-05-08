@@ -1,25 +1,25 @@
 import SwiftUI
 
-struct EditorHoverOverlayStyle {
-    let cornerRadius: CGFloat
-    let borderColor: Color
-    let borderWidth: CGFloat
-    let shadowColor: Color
-    let shadowRadius: CGFloat
-    let shadowYOffset: CGFloat
-    let backgroundTop: Color
-    let backgroundBottom: Color
-    let labelBackground: Color
-    let labelForeground: Color
-    let contentPadding: CGFloat
-    let headerSpacing: CGFloat
-    let maxWidth: CGFloat
-    let minHeight: CGFloat
-    let maxHeight: CGFloat
-    let verticalGap: CGFloat
-    let outerPadding: CGFloat
+public struct EditorHoverOverlayStyle: Sendable {
+    public let cornerRadius: CGFloat
+    public let borderColor: Color
+    public let borderWidth: CGFloat
+    public let shadowColor: Color
+    public let shadowRadius: CGFloat
+    public let shadowYOffset: CGFloat
+    public let backgroundTop: Color
+    public let backgroundBottom: Color
+    public let labelBackground: Color
+    public let labelForeground: Color
+    public let contentPadding: CGFloat
+    public let headerSpacing: CGFloat
+    public let maxWidth: CGFloat
+    public let minHeight: CGFloat
+    public let maxHeight: CGFloat
+    public let verticalGap: CGFloat
+    public let outerPadding: CGFloat
 
-    static let standard = EditorHoverOverlayStyle(
+    public static let standard = EditorHoverOverlayStyle(
         cornerRadius: 10,
         borderColor: Color(nsColor: .separatorColor).opacity(0.55),
         borderWidth: 0.75,

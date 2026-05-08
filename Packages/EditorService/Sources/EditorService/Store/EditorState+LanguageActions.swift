@@ -5,7 +5,7 @@ import LanguageServerProtocol
 
 @MainActor
 extension EditorState {
-    func showQuickFixesFromCurrentCursor() async {
+    public func showQuickFixesFromCurrentCursor() async {
         guard canPreview, isEditable else { return }
         guard let currentFileURL else { return }
         if let preflightMessage = projectLanguagePreflightMessage(operation: "快速修复") {
@@ -34,15 +34,15 @@ extension EditorState {
         }
     }
 
-    func dismissPeek() {
+    public func dismissPeek() {
         currentPeekPresentation = nil
     }
 
-    func dismissInlineRename() {
+    public func dismissInlineRename() {
         currentInlineRenameState = nil
     }
 
-    func updateInlineRenameDraft(_ draft: String) {
+    public func updateInlineRenameDraft(_ draft: String) {
         guard var state = currentInlineRenameState else { return }
         state.draftName = draft
         state.invalidatePreview()
@@ -65,7 +65,7 @@ extension EditorState {
         )
     }
 
-    func previewInlineRename() async {
+    public func previewInlineRename() async {
         guard var renameState = currentInlineRenameState else { return }
         let newName = renameState.trimmedDraftName
         guard !newName.isEmpty else {
@@ -114,7 +114,7 @@ extension EditorState {
         currentInlineRenameState = renameState
     }
 
-    func applyInlineRename() {
+    public func applyInlineRename() {
         guard let renameState = currentInlineRenameState,
               let edit = renameState.previewEdit,
               let currentURI = currentFileURL?.absoluteString else {
@@ -144,7 +144,7 @@ extension EditorState {
         showStatusToast(renameController.completedMessage(changedFiles: changedFiles), level: .success, duration: 1.8)
     }
 
-    func openPeekItem(_ item: EditorPeekItem) {
+    public func openPeekItem(_ item: EditorPeekItem) {
         performNavigation(
             .definition(
                 item.target.url,
@@ -158,7 +158,7 @@ extension EditorState {
         dismissPeek()
     }
 
-    func showPeekDefinitionFromCurrentCursor() async {
+    public func showPeekDefinitionFromCurrentCursor() async {
         if let preflightMessage = projectLanguagePreflightMessage(operation: "Peek Definition") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
@@ -178,7 +178,7 @@ extension EditorState {
         currentPeekPresentation = presentation
     }
 
-    func showPeekReferencesFromCurrentCursor() async {
+    public func showPeekReferencesFromCurrentCursor() async {
         if let preflightMessage = projectLanguagePreflightMessage(operation: "Peek References") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
@@ -200,7 +200,7 @@ extension EditorState {
         currentPeekPresentation = presentation
     }
 
-    func showReferencesFromCurrentCursor() async {
+    public func showReferencesFromCurrentCursor() async {
         if let preflightMessage = projectLanguagePreflightMessage(operation: "查找引用") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
@@ -242,25 +242,25 @@ extension EditorState {
         )
     }
 
-    func goToDefinition(for selection: NSRange) async {
+    public func goToDefinition(for selection: NSRange) async {
         await jump(to: selection, kind: .definition) { [weak self] range in
             await self?.jumpDelegate?.performGoToDefinition(forRange: range)
         }
     }
 
-    func goToDeclaration(for selection: NSRange) async {
+    public func goToDeclaration(for selection: NSRange) async {
         await jump(to: selection, kind: .declaration) { [weak self] range in
             await self?.jumpDelegate?.performGoToDeclaration(forRange: range)
         }
     }
 
-    func goToTypeDefinition(for selection: NSRange) async {
+    public func goToTypeDefinition(for selection: NSRange) async {
         await jump(to: selection, kind: .typeDefinition) { [weak self] range in
             await self?.jumpDelegate?.performGoToTypeDefinition(forRange: range)
         }
     }
 
-    func goToImplementation(for selection: NSRange) async {
+    public func goToImplementation(for selection: NSRange) async {
         await jump(to: selection, kind: .implementation) { [weak self] range in
             await self?.jumpDelegate?.performGoToImplementation(forRange: range)
         }
@@ -270,7 +270,7 @@ extension EditorState {
         statusToastController.show(message: message, level: level, duration: duration)
     }
 
-    func openCallHierarchy() async {
+    public func openCallHierarchy() async {
         if let preflightMessage = projectLanguagePreflightMessage(operation: "调用层级") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
@@ -299,7 +299,7 @@ extension EditorState {
         )
     }
 
-    func promptRenameSymbol() {
+    public func promptRenameSymbol() {
         startInlineRename()
     }
 
@@ -437,7 +437,7 @@ extension EditorState {
         )
     }
 
-    func resyncProjectContext() {
+    public func resyncProjectContext() {
         Task { @MainActor [weak self] in
             guard let self else { return }
             guard !self.isResyncingProjectContext else { return }

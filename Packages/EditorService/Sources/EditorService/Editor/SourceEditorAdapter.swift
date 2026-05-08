@@ -6,14 +6,16 @@ import CodeEditTextView
 import CodeEditLanguages
 
 @MainActor
-struct SourceEditorAdapter {
-    func resolvedLanguage(for state: EditorState) -> CodeLanguage {
+public struct SourceEditorAdapter {
+    public init() {}
+
+    public func resolvedLanguage(for state: EditorState) -> CodeLanguage {
         state.detectedLanguage
             ?? CodeLanguage.allLanguages.first { $0.tsName == "swift" }
             ?? CodeLanguage.allLanguages[0]
     }
 
-    func activeHighlightProviders(
+    public func activeHighlightProviders(
         for state: EditorState,
         treeSitterClient: TreeSitterClient,
         semanticTokenProvider: (any HighlightProviding)?,
@@ -37,7 +39,7 @@ struct SourceEditorAdapter {
         return providers
     }
 
-    func activeCoordinators(
+    public func activeCoordinators(
         textCoordinator: EditorCoordinator?,
         cursorCoordinator: CursorCoordinator?,
         scrollCoordinator: ScrollCoordinator?,
@@ -54,7 +56,7 @@ struct SourceEditorAdapter {
     }
 
     @MainActor
-    func configuration(
+    public func configuration(
         for state: EditorState,
         completionTriggerCharacters: Set<String>
     ) -> SourceEditorConfiguration {
@@ -92,7 +94,7 @@ struct SourceEditorAdapter {
         )
     }
 
-    func visibleSurfaceHighlights(
+    public func visibleSurfaceHighlights(
         for state: EditorState,
         textView: TextView?,
         lineTable: LineOffsetTable?
@@ -105,7 +107,7 @@ struct SourceEditorAdapter {
         return state.renderedSurfaceHighlights(textView: textView, lineTable: lineTable)
     }
 
-    func visibleGutterDecorations(
+    public func visibleGutterDecorations(
         for state: EditorState,
         textView: TextView?,
         lineTable: LineOffsetTable?

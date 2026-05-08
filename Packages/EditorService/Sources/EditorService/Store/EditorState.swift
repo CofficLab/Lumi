@@ -30,7 +30,7 @@ public final class EditorState: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📝"
     nonisolated static let verbose = false
 
-    let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.state")
+    let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.state")
 
     // MARK: - 组合子状态容器（P2.1）
     // 所有 @Published 属性通过 computed properties 桥接到子状态容器，
@@ -43,7 +43,7 @@ public final class EditorState: ObservableObject, SuperLog {
     let fileState = EditorFileState()
 
     /// 面板状态 — Problems、References、Hover、符号搜索、调用层级
-    let panelState = EditorPanelState()
+    public let panelState = EditorPanelState()
     lazy var panelController = EditorPanelController(panelState: panelState)
 
     // MARK: - Problems
@@ -56,10 +56,10 @@ public final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var problemDiagnostics: [Diagnostic] = []
 
     /// 当前文件的项目语义问题（Problems 面板附加数据源）
-    @Published private(set) var semanticProblems: [EditorSemanticProblem] = []
+    @Published public private(set) var semanticProblems: [EditorSemanticProblem] = []
 
     /// 是否正在重新解析项目上下文
-    @Published var isResyncingProjectContext: Bool = false
+    @Published public var isResyncingProjectContext: Bool = false
 
     /// 当前选中的问题，用于列表高亮与编辑器同步
     @Published private(set) var selectedProblemDiagnostic: Diagnostic?
@@ -70,12 +70,12 @@ public final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var canRedo: Bool = false
 
     /// 当前激活会话（Phase 2 起逐步替代散落的会话级状态）
-    @Published private(set) var activeSession = EditorSession()
+    @Published public private(set) var activeSession = EditorSession()
     @Published private(set) var findMatches: [EditorFindMatch] = []
     @Published private(set) var recentCommandIDs: [String] = []
     @Published private(set) var commandUsageCounts: [String: Int] = [:]
     @Published private(set) var viewportVisibleLineRange: Range<Int> = 0..<0
-    @Published private(set) var viewportRenderLineRange: Range<Int> = 0..<0
+    @Published public private(set) var viewportRenderLineRange: Range<Int> = 0..<0
     private let runtimeModeController = EditorRuntimeModeController()
     private let commandController = EditorCommandController()
     private let quickOpenController = EditorQuickOpenController()
@@ -244,7 +244,7 @@ public final class EditorState: ObservableObject, SuperLog {
     // MARK: - File State
     
     /// 当前文件 URL
-    @Published private(set) var currentFileURL: URL? {
+    @Published public private(set) var currentFileURL: URL? {
         didSet {
             SuperEditorRuntimeContext.shared.updateCurrentDocument(
                 fileURL: currentFileURL,
@@ -255,7 +255,7 @@ public final class EditorState: ObservableObject, SuperLog {
     }
     
     /// 当前文件内容（NSTextStorage，CodeEditSourceEditor 要求）
-    @Published var content: NSTextStorage? {
+    @Published public var content: NSTextStorage? {
         didSet {
             SuperEditorRuntimeContext.shared.updateCurrentDocument(
                 fileURL: currentFileURL,
@@ -268,7 +268,7 @@ public final class EditorState: ObservableObject, SuperLog {
     let documentController = EditorDocumentController()
     
     /// 编辑器 LSP 客户端抽象（从 registry 获取）
-    private(set) var lspClient: any SuperEditorLSPClient
+    public private(set) var lspClient: any SuperEditorLSPClient
     /// 已安装的编辑器插件信息（从 registry.installedPlugins 派生）
     var editorFeaturePlugins: [EditorPluginInfo] {
         // 已安装的插件均已通过 PluginVM 启用过滤，因此 isEnabled 恒为 true
@@ -294,11 +294,11 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 编辑器扩展注册中心
-    let editorExtensions: EditorExtensionRegistry
+    public let editorExtensions: EditorExtensionRegistry
     var projectContextCapability: (any SuperEditorProjectContextCapability)? {
         editorExtensions.projectContextCapability(for: projectRootPath)
     }
-    var semanticCapability: (any SuperEditorSemanticCapability)? {
+    public var semanticCapability: (any SuperEditorSemanticCapability)? {
         editorExtensions.semanticCapability(for: currentFileURL?.absoluteString)
     }
     /// 后台扩展点解析器（异步聚合，去重/排序在后台线程执行）
@@ -307,17 +307,17 @@ public final class EditorState: ObservableObject, SuperLog {
     // MARK: - New LSP Providers (协议接口)
     
     /// 签名帮助提供者
-    private(set) var signatureHelpProvider: any SuperEditorSignatureHelpProvider
+    public private(set) var signatureHelpProvider: any SuperEditorSignatureHelpProvider
     /// 内联提示提供者
     private(set) var inlayHintProvider: any SuperEditorInlayHintProvider
     /// 文档高亮提供者
-    private(set) var documentHighlightProvider: any SuperEditorDocumentHighlightProvider
+    public private(set) var documentHighlightProvider: any SuperEditorDocumentHighlightProvider
     /// 代码动作提供者
     private(set) var codeActionProvider: any SuperEditorCodeActionProvider
     /// 工作区符号搜索提供者
-    private(set) var workspaceSymbolProvider: any SuperEditorWorkspaceSymbolProvider
+    public private(set) var workspaceSymbolProvider: any SuperEditorWorkspaceSymbolProvider
     /// 调用层级提供者
-    private(set) var callHierarchyProvider: any SuperEditorCallHierarchyProvider
+    public private(set) var callHierarchyProvider: any SuperEditorCallHierarchyProvider
     /// 当前文件文档符号提供者
     private(set) var documentSymbolProvider: any SuperEditorDocumentSymbolProvider
     /// 当前文件折叠范围提供者
@@ -326,14 +326,14 @@ public final class EditorState: ObservableObject, SuperLog {
     private(set) var diagnosticsProvider: any SuperEditorLSPDiagnosticsProvider
     
     /// 跳转定义代理（右键和 Cmd+Click 共享）
-    weak var jumpDelegate: EditorJumpToDefinitionDelegate?
+    public weak var jumpDelegate: EditorJumpToDefinitionDelegate?
 
     /// 当前获得焦点的 `TextView`（Code Action、Inlay 可见范围等）
-    weak var focusedTextView: TextView?
+    public weak var focusedTextView: TextView?
 
     private var fullLoadOverrides: Set<URL> = []
 
-    var isSyntaxHighlightingEnabledInViewport: Bool {
+    public var isSyntaxHighlightingEnabledInViewport: Bool {
         Self.isViewportSyntaxFeatureEnabled(
             viewportRange: viewportRenderLineRange,
             maxLine: largeFileMode.maxSyntaxHighlightLines,
@@ -346,23 +346,23 @@ public final class EditorState: ObservableObject, SuperLog {
         !largeFileMode.isInlayHintsDisabled && isSyntaxHighlightingEnabledInViewport
     }
 
-    var areDocumentHighlightsEnabled: Bool {
+    public var areDocumentHighlightsEnabled: Bool {
         isSyntaxHighlightingEnabledInViewport
     }
 
-    var areHoversEnabled: Bool {
+    public var areHoversEnabled: Bool {
         isSyntaxHighlightingEnabledInViewport
     }
 
-    var areSignatureHelpEnabled: Bool {
+    public var areSignatureHelpEnabled: Bool {
         isSyntaxHighlightingEnabledInViewport
     }
 
-    var areCodeActionsEnabled: Bool {
+    public var areCodeActionsEnabled: Bool {
         isSyntaxHighlightingEnabledInViewport
     }
 
-    var canLoadFullFile: Bool {
+    public var canLoadFullFile: Bool {
         isTruncated && currentFileURL != nil
     }
 
@@ -499,11 +499,11 @@ public final class EditorState: ObservableObject, SuperLog {
         return match
     }
 
-    var currentRenderedInlayHints: [InlayHintItem] {
+    public var currentRenderedInlayHints: [InlayHintItem] {
         renderedInlayHints(inlayHintProvider.hints)
     }
 
-    var shouldPresentInlayHintsStrip: Bool {
+    public var shouldPresentInlayHintsStrip: Bool {
         !largeFileMode.isInlayHintsDisabled && !currentRenderedInlayHints.isEmpty
     }
 
@@ -515,7 +515,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    var currentHoverOverlayText: String? {
+    public var currentHoverOverlayText: String? {
         overlayController.hoverOverlayText(
             shouldPresent: shouldPresentHoverOverlay,
             hoverText: panelState.mouseHoverContent
@@ -526,15 +526,15 @@ public final class EditorState: ObservableObject, SuperLog {
         panelState.mouseHoverSymbolRect
     }
 
-    var shouldCancelHoverForViewportTransition: Bool {
+    public var shouldCancelHoverForViewportTransition: Bool {
         panelState.hasActiveHover
     }
 
-    func shouldCancelHoverForRuntimeAvailabilityChange(_ isEnabled: Bool) -> Bool {
+    public func shouldCancelHoverForRuntimeAvailabilityChange(_ isEnabled: Bool) -> Bool {
         !isEnabled
     }
 
-    func hoverOverlayPlacement(
+    public func hoverOverlayPlacement(
         in containerSize: CGSize,
         popoverSize: CGSize,
         style: EditorHoverOverlayStyle = .standard
@@ -571,7 +571,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    var currentSignatureHelpOverlayItem: SignatureHelpItem? {
+    public var currentSignatureHelpOverlayItem: SignatureHelpItem? {
         overlayController.signatureHelpOverlayItem(
             shouldPresent: shouldPresentSignatureHelpOverlay,
             currentHelp: signatureHelpProvider.currentHelp
@@ -586,7 +586,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    var currentCodeActionOverlayActions: [CodeActionItem] {
+    public var currentCodeActionOverlayActions: [CodeActionItem] {
         overlayController.codeActionOverlayActions(
             shouldPresent: shouldPresentCodeActionOverlay,
             actions: codeActionProvider.actions
@@ -599,7 +599,7 @@ public final class EditorState: ObservableObject, SuperLog {
         return actions[selectedCodeActionIndex]
     }
 
-    func toggleCodeActionPanel() {
+    public func toggleCodeActionPanel() {
         if isCodeActionPanelPresented {
             dismissCodeActionPanel()
         } else {
@@ -619,13 +619,13 @@ public final class EditorState: ObservableObject, SuperLog {
         return true
     }
 
-    func dismissCodeActionPanel() {
+    public func dismissCodeActionPanel() {
         isCodeActionPanelPresented = false
         selectedCodeActionIndex = 0
         selectedCodeActionIdentity = nil
     }
 
-    func reconcileCodeActionPanelState(preferPreferred: Bool = false) {
+    public func reconcileCodeActionPanelState(preferPreferred: Bool = false) {
         let actions = codeActionProvider.actions
         guard !actions.isEmpty else {
             dismissCodeActionPanel()
@@ -649,7 +649,7 @@ public final class EditorState: ObservableObject, SuperLog {
             : nil
     }
 
-    func selectCodeAction(at index: Int) {
+    public func selectCodeAction(at index: Int) {
         let actions = codeActionProvider.actions
         guard actions.indices.contains(index) else { return }
         selectedCodeActionIndex = index
@@ -668,7 +668,7 @@ public final class EditorState: ObservableObject, SuperLog {
         await performCodeActionOverlayAction(action)
     }
 
-    func performCodeActionOverlayAction(_ action: CodeActionItem) async {
+    public func performCodeActionOverlayAction(_ action: CodeActionItem) async {
         await codeActionProvider.performAction(
             action,
             textView: focusedTextView,
@@ -703,7 +703,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func inlinePresentations(
+    public func inlinePresentations(
         textView: TextView,
         lineTable: LineOffsetTable,
         containerSize: CGSize
@@ -728,7 +728,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func secondaryCursorHighlights(
+    public func secondaryCursorHighlights(
         textView: TextView,
         lineTable: LineOffsetTable
     ) -> [EditorMultiCursorHighlight] {
@@ -750,7 +750,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func codeActionIndicatorPlacement(
+    public func codeActionIndicatorPlacement(
         textView: TextView,
         lineTable: LineOffsetTable,
         containerSize: CGSize,
@@ -775,11 +775,11 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 在光标稳定后刷新可见区域内的 Inlay Hints
-    func scheduleInlayHintsRefreshIfNeeded(controller: TextViewController) {
+    public func scheduleInlayHintsRefreshIfNeeded(controller: TextViewController) {
         scheduleInlayHintsRefreshIfNeeded(textView: controller.textView)
     }
 
-    func handleViewportRuntimeTransition() {
+    public func handleViewportRuntimeTransition() {
         runtimeModeController.handleViewportRuntimeTransition(
             isPrimaryCursorRendered: isPrimaryCursorRendered,
             documentHighlightProvider: documentHighlightProvider,
@@ -788,21 +788,21 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func handleDocumentHighlightRuntimeAvailabilityChange(_ isEnabled: Bool) {
+    public func handleDocumentHighlightRuntimeAvailabilityChange(_ isEnabled: Bool) {
         runtimeModeController.handleDocumentHighlightRuntimeAvailabilityChange(
             isEnabled,
             documentHighlightProvider: documentHighlightProvider
         )
     }
 
-    func handleSignatureHelpRuntimeAvailabilityChange(_ isEnabled: Bool) {
+    public func handleSignatureHelpRuntimeAvailabilityChange(_ isEnabled: Bool) {
         runtimeModeController.handleSignatureHelpRuntimeAvailabilityChange(
             isEnabled,
             signatureHelpProvider: signatureHelpProvider
         )
     }
 
-    func handleCodeActionRuntimeAvailabilityChange(_ isEnabled: Bool) {
+    public func handleCodeActionRuntimeAvailabilityChange(_ isEnabled: Bool) {
         runtimeModeController.handleCodeActionRuntimeAvailabilityChange(
             isEnabled,
             codeActionProvider: codeActionProvider
@@ -810,7 +810,7 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 在 viewport 或光标稳定后刷新可见区域内的 Inlay Hints
-    func scheduleInlayHintsRefreshIfNeeded(textView: TextView?) {
+    public func scheduleInlayHintsRefreshIfNeeded(textView: TextView?) {
         runtimeModeController.scheduleInlayHintsRefreshIfNeeded(
             textView: textView,
             lspSupportsInlayHints: lspClient.supportsInlayHints,
@@ -825,22 +825,22 @@ public final class EditorState: ObservableObject, SuperLog {
     }
     
     /// 当前文件是否可编辑
-    @Published var isEditable: Bool = true
+    @Published public var isEditable: Bool = true
     
     /// 当前文件是否为截断预览
     @Published var isTruncated: Bool = false
     
     /// 当前文件是否可预览
-    @Published var canPreview: Bool = false
+    @Published public var canPreview: Bool = false
 
     /// 当前文件的大文件模式。
-    @Published private(set) var largeFileMode: LargeFileMode = .normal
+    @Published public private(set) var largeFileMode: LargeFileMode = .normal
 
     /// 当前文档检测到的最长长行信息。
     @Published private(set) var longestDetectedLine: LongestDetectedLine?
 
     /// 当前文件是否为 Markdown 预览模式
-    @Published var isMarkdownPreviewMode: Bool = false
+    @Published public var isMarkdownPreviewMode: Bool = false
 
     /// 当前文件是否为 Markdown 格式
     var isMarkdownFile: Bool {
@@ -851,7 +851,7 @@ public final class EditorState: ObservableObject, SuperLog {
     @Published var isBinaryFile: Bool = false
     
     /// 文件扩展名
-    @Published var fileExtension: String = ""
+    @Published public var fileExtension: String = ""
     
     /// 文件名
     @Published var fileName: String = ""
@@ -861,7 +861,7 @@ public final class EditorState: ObservableObject, SuperLog {
     }
     
     /// 当前项目根路径（由 EditorPanelView 设置，用于计算相对路径）
-    var projectRootPath: String? {
+    public var projectRootPath: String? {
         didSet {
             restoreConfig()
             refreshProjectContextSnapshot()
@@ -869,11 +869,11 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 当前项目上下文快照（供 UI / 语言链路读取）
-    @Published private(set) var projectContextSnapshot: EditorProjectContextSnapshot?
+    @Published public private(set) var projectContextSnapshot: EditorProjectContextSnapshot?
     
     /// 当前文件相对于项目根目录的路径（用于构建选区位置信息）
     /// 若无项目则返回文件名
-    var relativeFilePath: String {
+    public var relativeFilePath: String {
         guard let url = currentFileURL else { return "" }
         guard let projectPath = projectRootPath else {
             return url.lastPathComponent
@@ -940,22 +940,22 @@ public final class EditorState: ObservableObject, SuperLog {
     // MARK: - Editor State
     
     /// 编辑器状态（光标位置、滚动位置、查找文本等）
-    @Published var editorState = SourceEditorState()
+    @Published public var editorState = SourceEditorState()
     
     /// 当前行号
-    @Published var cursorLine: Int = 1
+    @Published public var cursorLine: Int = 1
     
     /// 当前列号
-    @Published var cursorColumn: Int = 1
+    @Published public var cursorColumn: Int = 1
 
     // MARK: - Mouse Hover State
 
     /// 当前 LSP Hover 文本（光标移动触发，已废弃，保留兼容）
     @Published private(set) var hoverText: String?
-    @Published var currentPeekPresentation: EditorPeekPresentation?
-    @Published var currentInlineRenameState: EditorInlineRenameState?
-    @Published private(set) var isCodeActionPanelPresented: Bool = false
-    @Published private(set) var selectedCodeActionIndex: Int = 0
+    @Published public var currentPeekPresentation: EditorPeekPresentation?
+    @Published public var currentInlineRenameState: EditorInlineRenameState?
+    @Published public private(set) var isCodeActionPanelPresented: Bool = false
+    @Published public private(set) var selectedCodeActionIndex: Int = 0
     private var pendingFoldingStateRestore: EditorFoldingState?
     private(set) var activeSnippetSession: EditorSnippetSession?
 
@@ -974,7 +974,7 @@ public final class EditorState: ObservableObject, SuperLog {
     @Published private(set) var mouseHoverCharacter: Int = 0
 
     /// 设置鼠标悬停状态（使用 symbol 矩形定位）
-    func setMouseHover(content: String, symbolRect: CGRect, hoverRange: LSPRange? = nil) {
+    public func setMouseHover(content: String, symbolRect: CGRect, hoverRange: LSPRange? = nil) {
         let currentContent = panelState.mouseHoverContent ?? ""
         let currentRect = panelState.mouseHoverSymbolRect
         let epsilon: CGFloat = 0.75
@@ -990,7 +990,7 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 清除鼠标悬停状态
-    func clearMouseHover() {
+    public func clearMouseHover() {
         guard panelState.hasActiveHover else { return }
         if Self.verbose {
             logger.debug("\(Self.t)🚫 清除鼠标悬停")
@@ -1038,7 +1038,7 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 多光标编辑状态
-    @Published var multiCursorState = MultiCursorState()
+    @Published public var multiCursorState = MultiCursorState()
 
     private var selectedCodeActionIdentity: String?
 
@@ -1049,15 +1049,15 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 是否展示 References 面板
     @Published private(set) var isReferencePanelPresented: Bool = false
     /// 是否展示工作区符号搜索面板
-    @Published private(set) var isWorkspaceSymbolSearchPresented: Bool = false
+    @Published public private(set) var isWorkspaceSymbolSearchPresented: Bool = false
     /// 是否展示调用层级面板
-    @Published private(set) var isCallHierarchyPresented: Bool = false
+    @Published public private(set) var isCallHierarchyPresented: Bool = false
 
     /// 总行数
     @Published var totalLines: Int = 0
     
     /// 检测到的语言
-    @Published var detectedLanguage: CodeLanguage? {
+    @Published public var detectedLanguage: CodeLanguage? {
         didSet {
             restoreConfig()
         }
@@ -1066,21 +1066,21 @@ public final class EditorState: ObservableObject, SuperLog {
     // MARK: - Theme
     
     /// 当前主题 ID（与 SuperEditorThemeContributor.id 对应）
-    @Published var currentThemeId: String = "xcode-dark"
+    @Published public var currentThemeId: String = "xcode-dark"
     
     /// 当前主题（缓存，避免每次重建）
-    @Published private(set) var currentTheme: EditorTheme?
+    @Published public private(set) var currentTheme: EditorTheme?
     
     // MARK: - Configuration
     
     /// 字体大小
-    @Published var fontSize: Double = 13.0
+    @Published public var fontSize: Double = 13.0
     
     /// Tab 宽度
-    @Published var tabWidth: Int = 4
+    @Published public var tabWidth: Int = 4
     
     /// 是否使用空格替代 Tab
-    @Published var useSpaces: Bool = true
+    @Published public var useSpaces: Bool = true
 
     /// 保存时是否执行格式化
     @Published var formatOnSave: Bool = false
@@ -1100,16 +1100,16 @@ public final class EditorState: ObservableObject, SuperLog {
     @Published var hasExternalFileConflict: Bool = false
     
     /// 是否自动换行
-    @Published var wrapLines: Bool = true
+    @Published public var wrapLines: Bool = true
     
     /// 是否显示 Minimap
-    @Published var showMinimap: Bool = true
+    @Published public var showMinimap: Bool = true
     
     /// 是否显示行号
-    @Published var showGutter: Bool = true
+    @Published public var showGutter: Bool = true
     
     /// 是否显示代码折叠
-    @Published var showFoldingRibbon: Bool = true
+    @Published public var showFoldingRibbon: Bool = true
 
     var minimapPolicy: EditorMinimapPolicy {
         EditorMinimapPolicy(
@@ -1192,7 +1192,7 @@ public final class EditorState: ObservableObject, SuperLog {
     private func observeProjectContextChanges() {
         projectContextCancellable?.cancel()
         projectContextCancellable = NotificationCenter.default
-            .publisher(for: Notification.Name("LumiEditorProjectContextDidChange"))
+            .publisher(for: EditorHostEnvironment.current.notifications.projectContextDidChange)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.refreshProjectContextSnapshot()
@@ -1203,7 +1203,7 @@ public final class EditorState: ObservableObject, SuperLog {
     private func observeSettingsChanges() {
         settingsCancellable?.cancel()
         settingsCancellable = NotificationCenter.default
-            .publisher(for: Notification.Name("LumiEditorSettingsDidChange"))
+            .publisher(for: EditorHostEnvironment.current.notifications.settingsDidChange)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.restoreConfig()
@@ -1259,11 +1259,11 @@ public final class EditorState: ObservableObject, SuperLog {
         editorCommandPresentationModel(from: suggestions, matching: query).sections
     }
 
-    func editorCommandPresentationModel(matching query: String = "") -> EditorCommandPresentationModel {
+    public func editorCommandPresentationModel(matching query: String = "") -> EditorCommandPresentationModel {
         editorCommandPresentationModel(from: editorCommandSuggestions(), matching: query)
     }
 
-    func editorCommandPresentationModel(
+    public func editorCommandPresentationModel(
         for context: EditorCommandContext,
         textView: TextView?,
         matching query: String = "",
@@ -1314,7 +1314,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func editorCommandPresentationModel(
+    public func editorCommandPresentationModel(
         categories: Set<EditorCommandCategory>,
         matching query: String = ""
     ) -> EditorCommandPresentationModel {
@@ -1339,7 +1339,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func performEditorCommand(id: String) {
+    public func performEditorCommand(id: String) {
         refreshCoreCommandRegistrations()
         let didExecute = commandController.executeCommand(
             id: id,
@@ -1419,12 +1419,12 @@ public final class EditorState: ObservableObject, SuperLog {
         Array(editorCommandPresentationModel(matching: query).frequentCommands.prefix(limit))
     }
 
-    func preferredCommandPaletteCategory() -> EditorCommandCategory? {
+    public func preferredCommandPaletteCategory() -> EditorCommandCategory? {
         guard let rawValue = EditorSettingsLifecycle.loadEditorCommandPaletteCategory?() else { return nil }
         return EditorCommandCategory(rawValue: rawValue)
     }
 
-    func setPreferredCommandPaletteCategory(_ category: EditorCommandCategory?) {
+    public func setPreferredCommandPaletteCategory(_ category: EditorCommandCategory?) {
         EditorSettingsLifecycle.saveEditorCommandPaletteCategory?(category?.rawValue)
     }
 
@@ -1436,11 +1436,11 @@ public final class EditorState: ObservableObject, SuperLog {
         editorExtensions.statusItemSuggestions(state: self)
     }
 
-    func quickOpenQuery(for rawQuery: String) -> EditorQuickOpenQuery {
+    public func quickOpenQuery(for rawQuery: String) -> EditorQuickOpenQuery {
         quickOpenController.parse(rawQuery)
     }
 
-    func editorQuickOpenItems(
+    public func editorQuickOpenItems(
         matching query: String,
         openEditors: [EditorOpenEditorItem],
         onOpenFile: @escaping (URL, CursorPosition?, Bool) -> Void
@@ -1806,7 +1806,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func applySourceEditorBindingUpdate(_ update: EditorSourceEditorBindingUpdate) {
+    public func applySourceEditorBindingUpdate(_ update: EditorSourceEditorBindingUpdate) {
         applyInteractionUpdate(
             .sourceEditorBinding(update)
         )
@@ -1937,7 +1937,7 @@ public final class EditorState: ObservableObject, SuperLog {
         refreshFindMatches()
     }
 
-    func performPanelCommand(_ command: EditorPanelCommand) {
+    public func performPanelCommand(_ command: EditorPanelCommand) {
         panelController.apply(command: command)
         syncActiveSessionState()
     }
@@ -1999,7 +1999,7 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     /// 执行导航请求并在目标文件/位置落点
-    func performNavigation(_ request: EditorNavigationRequest) {
+    public func performNavigation(_ request: EditorNavigationRequest) {
         dismissPeek()
         dismissInlineRename()
         dismissCodeActionPanel()
@@ -2028,7 +2028,7 @@ public final class EditorState: ObservableObject, SuperLog {
         }
     }
 
-    func performOpenItem(_ command: EditorOpenItemCommand) {
+    public func performOpenItem(_ command: EditorOpenItemCommand) {
         guard let resolved = EditorOpenItemCommandController.resolve(command) else {
             switch command {
             case .workspaceSymbol:
@@ -2069,7 +2069,7 @@ public final class EditorState: ObservableObject, SuperLog {
         documentSymbolProvider.refresh()
     }
 
-    func refreshFoldingRanges() {
+    public func refreshFoldingRanges() {
         guard showFoldingRibbon,
               !largeFileMode.isFoldingDisabled,
               let currentFileURL,
@@ -2386,7 +2386,7 @@ public final class EditorState: ObservableObject, SuperLog {
     // MARK: - LSP Actions
 
     /// 执行文档格式化（LSP formatting）
-    func formatDocumentWithLSP() async {
+    public func formatDocumentWithLSP() async {
         if let preflightMessage = projectLanguagePreflightMessage(operation: "格式化文档") {
             showStatusToast(preflightMessage, level: .warning, duration: 2.4)
             return
@@ -2417,7 +2417,7 @@ public final class EditorState: ObservableObject, SuperLog {
     
     // MARK: - LSP Edit Utilities
 
-    func clearMultiCursors() {
+    public func clearMultiCursors() {
         applyMultiCursorWorkflowResult(
             multiCursorWorkflowController.clearedState(
                 currentState: multiCursorState
@@ -2457,7 +2457,7 @@ public final class EditorState: ObservableObject, SuperLog {
         applyMultiCursorWorkflowResult(result)
     }
 
-    func currentSelectionsAsNSRanges() -> [NSRange] {
+    public func currentSelectionsAsNSRanges() -> [NSRange] {
         multiCursorController.nsRanges(from: multiCursorState)
     }
 
@@ -2501,7 +2501,7 @@ public final class EditorState: ObservableObject, SuperLog {
         logger.info("\(self.t)多光标状态 | \(message, privacy: .public)")
     }
 
-    func logMultiCursorInput(action: String, textViewSelections: [NSRange], note: String? = nil) {
+    public func logMultiCursorInput(action: String, textViewSelections: [NSRange], note: String? = nil) {
         guard Self.verbose else { return }
         let details = multiCursorController.inputLogMessage(
             action: action,
@@ -2512,7 +2512,7 @@ public final class EditorState: ObservableObject, SuperLog {
         logMultiCursorState(action: "input-state-sync", note: action)
     }
 
-    func addNextOccurrence() {
+    public func addNextOccurrence() {
         let range = NSRange(
             location: multiCursorState.primary.location,
             length: multiCursorState.primary.length
@@ -2521,7 +2521,7 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     @discardableResult
-    func addNextOccurrence(from range: NSRange) -> [NSRange]? {
+    public func addNextOccurrence(from range: NSRange) -> [NSRange]? {
         guard let text = currentEditorTextStorageString(),
               let result = multiCursorWorkflowController.addNextOccurrenceResult(
             from: range,
@@ -2534,7 +2534,7 @@ public final class EditorState: ObservableObject, SuperLog {
         return currentSelectionsAsNSRanges()
     }
 
-    func addAllOccurrences(from range: NSRange) -> [NSRange]? {
+    public func addAllOccurrences(from range: NSRange) -> [NSRange]? {
         guard let text = currentEditorTextStorageString(),
               let result = multiCursorWorkflowController.addAllOccurrencesResult(
                 from: range,
@@ -2546,7 +2546,7 @@ public final class EditorState: ObservableObject, SuperLog {
         return currentSelectionsAsNSRanges()
     }
 
-    func removeLastOccurrenceSelection() -> [NSRange]? {
+    public func removeLastOccurrenceSelection() -> [NSRange]? {
         guard let result = multiCursorWorkflowController.removeLastOccurrenceResult(
             currentState: multiCursorState,
             existingSession: multiCursorSearchSession
@@ -2576,7 +2576,7 @@ public final class EditorState: ObservableObject, SuperLog {
         multiCursorController.summaryText(for: multiCursorState)
     }
 
-    func applyMultiCursorReplacement(_ replacement: String) -> [MultiCursorSelection]? {
+    public func applyMultiCursorReplacement(_ replacement: String) -> [MultiCursorSelection]? {
         guard let text = documentController.buffer?.text ?? content?.string else { return nil }
         let selections = multiCursorState.all
         guard selections.count > 1 else { return nil }
@@ -2709,7 +2709,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func handleTextInput(_ text: String, replacementRange: NSRange, textViewSelections: [NSRange]) -> Bool {
+    public func handleTextInput(_ text: String, replacementRange: NSRange, textViewSelections: [NSRange]) -> Bool {
         if let currentText = currentEditorTextStorageString() as? String,
            let plan = textInputController.textInputPlan(
                 text: text,
@@ -2731,12 +2731,12 @@ public final class EditorState: ObservableObject, SuperLog {
         return applyMultiCursorOperation(.replaceSelection(text)) != nil
     }
 
-    func handleDeleteBackwardInput() -> Bool {
+    public func handleDeleteBackwardInput() -> Bool {
         guard multiCursorState.all.count > 1 else { return false }
         return applyMultiCursorOperation(.deleteBackward) != nil
     }
 
-    func handleInsertNewlineInput(textViewSelections: [NSRange]) -> Bool {
+    public func handleInsertNewlineInput(textViewSelections: [NSRange]) -> Bool {
         guard let currentText = currentEditorTextStorageString() as? String,
               let plan = textInputController.insertNewlinePlan(
                 textViewSelections: textViewSelections,
@@ -2756,7 +2756,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func handleInsertTabInput(textViewSelections: [NSRange]) -> Bool {
+    public func handleInsertTabInput(textViewSelections: [NSRange]) -> Bool {
         if advanceActiveSnippetSession(forward: true, currentSelections: textViewSelections) {
             return true
         }
@@ -2785,7 +2785,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func handleInsertBacktabInput(textViewSelections: [NSRange]) -> Bool {
+    public func handleInsertBacktabInput(textViewSelections: [NSRange]) -> Bool {
         if advanceActiveSnippetSession(forward: false, currentSelections: textViewSelections) {
             return true
         }
@@ -2813,7 +2813,7 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func applyCompletionEdit(
+    public func applyCompletionEdit(
         replacementRange: NSRange,
         replacementText: String,
         additionalTextEdits: [TextEdit]?
@@ -2830,7 +2830,7 @@ public final class EditorState: ObservableObject, SuperLog {
         return true
     }
 
-    func applySnippetCompletionEdit(
+    public func applySnippetCompletionEdit(
         replacementRange: NSRange,
         snippetText: String,
         additionalTextEdits: [TextEdit]?
@@ -2936,7 +2936,7 @@ public final class EditorState: ObservableObject, SuperLog {
         return true
     }
 
-    func cancelActiveSnippetSession() -> Bool {
+    public func cancelActiveSnippetSession() -> Bool {
         guard let session = activeSnippetSession else { return false }
         activeSnippetSession = nil
         setSelections([MultiCursorSelection(location: session.exitSelection.location, length: session.exitSelection.length)])

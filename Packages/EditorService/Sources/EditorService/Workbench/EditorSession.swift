@@ -3,14 +3,14 @@ import AppKit
 import LanguageServerProtocol
 
 @MainActor
-final class EditorSession: ObservableObject, Identifiable {
-    let id: UUID
+public final class EditorSession: ObservableObject, Identifiable {
+    public let id: UUID
 
-    @Published var fileURL: URL?
+    @Published public var fileURL: URL?
     @Published var multiCursorState: MultiCursorState
     @Published private var storedPanelState: EditorPanelSessionState
     @Published var isDirty: Bool
-    @Published var findReplaceState: EditorFindReplaceState
+    @Published public var findReplaceState: EditorFindReplaceState
     @Published var scrollState: EditorScrollState
     @Published var viewState: EditorViewState
     @Published var foldingState: EditorFoldingState

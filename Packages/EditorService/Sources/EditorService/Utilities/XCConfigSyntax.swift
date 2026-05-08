@@ -3,28 +3,28 @@ import AppKit
 import EditorKernelCore
 
 /// XCConfig 语法高亮和编辑支持
-enum XCConfigSyntax {
-    typealias IncludeDirective = XCConfigSyntaxCore.IncludeDirective
-    typealias KeyOccurrence = XCConfigSyntaxCore.KeyOccurrence
-    typealias Token = XCConfigSyntaxCore.Token
-    typealias TokenType = XCConfigSyntaxCore.TokenType
+public enum XCConfigSyntax {
+    public typealias IncludeDirective = XCConfigSyntaxCore.IncludeDirective
+    public typealias KeyOccurrence = XCConfigSyntaxCore.KeyOccurrence
+    public typealias Token = XCConfigSyntaxCore.Token
+    public typealias TokenType = XCConfigSyntaxCore.TokenType
 
-    static func tokenize(_ content: String) -> [Token] {
+    public static func tokenize(_ content: String) -> [Token] {
         XCConfigSyntaxCore.tokenize(content)
     }
 
-    static func includeDirective(at location: Int, in content: String) -> IncludeDirective? {
+    public static func includeDirective(at location: Int, in content: String) -> IncludeDirective? {
         XCConfigSyntaxCore.includeDirective(at: location, in: content)
     }
 
-    static func resolveIncludedFileURL(
+    public static func resolveIncludedFileURL(
         for directive: IncludeDirective,
         currentFileURL: URL
     ) -> URL? {
         XCConfigSyntaxCore.resolveIncludedFileURL(for: directive, currentFileURL: currentFileURL)
     }
 
-    static func keyOccurrences(in content: String) -> [KeyOccurrence] {
+    public static func keyOccurrences(in content: String) -> [KeyOccurrence] {
         XCConfigSyntaxCore.keyOccurrences(in: content)
     }
     

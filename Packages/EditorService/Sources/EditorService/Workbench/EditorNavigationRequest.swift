@@ -2,7 +2,7 @@ import EditorKernelCore
 import Foundation
 import CodeEditSourceEditor
 
-enum EditorNavigationRequest: Equatable {
+public enum EditorNavigationRequest: Equatable {
     case reference(ReferenceResult)
     case workspaceSymbol(URL, CursorPosition)
     case callHierarchyItem(URL, CursorPosition)

@@ -1,6 +1,7 @@
 #if canImport(XCTest)
 import EditorKernelCore
 import XCTest
+@testable import EditorService
 
 final class EditorSelectionSetTests: XCTestCase {
     func testInitialSelection() {

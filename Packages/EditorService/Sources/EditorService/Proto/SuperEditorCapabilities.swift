@@ -14,9 +14,9 @@ public protocol SuperEditorProjectContextCapability: AnyObject {
 }
 
 extension SuperEditorProjectContextCapability {
-    var priority: Int { 0 }
+    public var priority: Int { 0 }
 
-    func canHandleProject(at path: String?) -> Bool {
+    public func canHandleProject(at path: String?) -> Bool {
         guard let path else { return false }
         return !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -32,7 +32,7 @@ public protocol SuperEditorLanguageIntegrationCapability: AnyObject {
 }
 
 extension SuperEditorLanguageIntegrationCapability {
-    var priority: Int { 0 }
+    public var priority: Int { 0 }
 }
 
 @MainActor
@@ -61,14 +61,14 @@ public protocol SuperEditorSemanticCapability: AnyObject {
 }
 
 extension SuperEditorSemanticCapability {
-    var priority: Int { 0 }
+    public var priority: Int { 0 }
 
-    func canHandle(uri: String?) -> Bool {
+    public func canHandle(uri: String?) -> Bool {
         guard let uri else { return false }
         return !uri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    func missingResultMessage(
+    public func missingResultMessage(
         uri: String?,
         operation: String,
         symbolName: String?

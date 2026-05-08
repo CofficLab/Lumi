@@ -8,13 +8,13 @@ import SwiftUI
 
 @MainActor
 public struct EditorContributionContext {
-    let languageId: String
-    let fileURL: URL?
-    let hasSelection: Bool
-    let line: Int
-    let character: Int
-    let isEditorActive: Bool
-    let isLargeFileMode: Bool
+    public let languageId: String
+    public let fileURL: URL?
+    public let hasSelection: Bool
+    public let line: Int
+    public let character: Int
+    public let isEditorActive: Bool
+    public let isLargeFileMode: Bool
 
     func value(for key: EditorContextKey) -> EditorContextValue {
         switch key {
@@ -79,12 +79,12 @@ public indirect enum EditorWhenClause: Equatable {
 
 @MainActor
 public struct EditorContributionMetadata {
-    let priority: Int
-    let dedupeKey: String?
-    let whenClause: EditorWhenClause?
-    let enablement: (EditorContributionContext) -> Bool
+    public let priority: Int
+    public let dedupeKey: String?
+    public let whenClause: EditorWhenClause?
+    public let enablement: (EditorContributionContext) -> Bool
 
-    init(
+    public init(
         priority: Int = 0,
         dedupeKey: String? = nil,
         whenClause: EditorWhenClause? = nil,
@@ -108,20 +108,40 @@ public struct EditorContributionMetadata {
 /// 编辑器补全上下文
 @MainActor
 public struct EditorCompletionContext {
-    let languageId: String
-    let line: Int
-    let character: Int
-    let prefix: String
-    let isTypeContext: Bool
+    public let languageId: String
+    public let line: Int
+    public let character: Int
+    public let prefix: String
+    public let isTypeContext: Bool
+
+    public init(
+        languageId: String,
+        line: Int,
+        character: Int,
+        prefix: String,
+        isTypeContext: Bool
+    ) {
+        self.languageId = languageId
+        self.line = line
+        self.character = character
+        self.prefix = prefix
+        self.isTypeContext = isTypeContext
+    }
 }
 
 /// 编辑器补全建议（由扩展提供）
-@MainActor
 public struct EditorCompletionSuggestion: Hashable {
-    let label: String
-    let insertText: String
-    let detail: String?
-    let priority: Int
+    public let label: String
+    public let insertText: String
+    public let detail: String?
+    public let priority: Int
+
+    public init(label: String, insertText: String, detail: String?, priority: Int) {
+        self.label = label
+        self.insertText = insertText
+        self.detail = detail
+        self.priority = priority
+    }
 }
 
 /// 编辑器补全扩展点
@@ -136,20 +156,27 @@ public protocol SuperEditorCompletionContributor: AnyObject {
 /// 编辑器悬停上下文
 @MainActor
 public struct EditorHoverContext {
-    let languageId: String
-    let line: Int
-    let character: Int
-    let symbol: String
+    public let languageId: String
+    public let line: Int
+    public let character: Int
+    public let symbol: String
+
+    public init(languageId: String, line: Int, character: Int, symbol: String) {
+        self.languageId = languageId
+        self.line = line
+        self.character = character
+        self.symbol = symbol
+    }
 }
 
 /// 编辑器悬停建议
 @MainActor
 public struct EditorHoverSuggestion: Hashable {
-    let markdown: String
-    let priority: Int
-    let dedupeKey: String?
+    public let markdown: String
+    public let priority: Int
+    public let dedupeKey: String?
 
-    init(markdown: String, priority: Int, dedupeKey: String? = nil) {
+    public init(markdown: String, priority: Int, dedupeKey: String? = nil) {
         self.markdown = markdown
         self.priority = priority
         self.dedupeKey = dedupeKey
@@ -176,12 +203,23 @@ public protocol SuperEditorHoverContentContributor: AnyObject {
 // MARK: - Code Action
 
 /// 编辑器代码动作上下文
-@MainActor
 public struct EditorCodeActionContext {
-    let languageId: String
-    let line: Int
-    let character: Int
-    let selectedText: String?
+    public let languageId: String
+    public let line: Int
+    public let character: Int
+    public let selectedText: String?
+
+    public init(
+        languageId: String,
+        line: Int,
+        character: Int,
+        selectedText: String?
+    ) {
+        self.languageId = languageId
+        self.line = line
+        self.character = character
+        self.selectedText = selectedText
+    }
 }
 
 /// 编辑器代码动作建议
@@ -339,16 +377,16 @@ public enum EditorPanelPlacement: String, Equatable {
 @MainActor
 public struct EditorPanelSuggestion: Identifiable {
     public let id: String
-    let title: String
-    let systemImage: String
-    let placement: EditorPanelPlacement
-    let order: Int
-    let metadata: EditorContributionMetadata
-    let isPresented: (EditorState) -> Bool
-    let onDismiss: (EditorState) -> Void
-    let content: (EditorState) -> AnyView
+    public let title: String
+    public let systemImage: String
+    public let placement: EditorPanelPlacement
+    public let order: Int
+    public let metadata: EditorContributionMetadata
+    public let isPresented: (EditorState) -> Bool
+    public let onDismiss: (EditorState) -> Void
+    public let content: (EditorState) -> AnyView
 
-    init(
+    public init(
         id: String,
         title: String,
         systemImage: String,
@@ -386,16 +424,16 @@ public protocol SuperEditorPanelContributor: AnyObject {
 @MainActor
 public struct EditorSettingsItemSuggestion: Identifiable {
     public let id: String
-    let sectionTitle: String
-    let sectionSummary: String?
-    let title: String
-    let subtitle: String?
-    let keywords: [String]
-    let order: Int
-    let metadata: EditorContributionMetadata
-    let content: (EditorSettingsState) -> AnyView
+    public let sectionTitle: String
+    public let sectionSummary: String?
+    public let title: String
+    public let subtitle: String?
+    public let keywords: [String]
+    public let order: Int
+    public let metadata: EditorContributionMetadata
+    public let content: (EditorSettingsState) -> AnyView
 
-    init(
+    public init(
         id: String,
         sectionTitle: String,
         sectionSummary: String? = nil,
@@ -431,10 +469,24 @@ public protocol SuperEditorSettingsContributor: AnyObject {
 @MainActor
 public struct EditorSheetSuggestion: Identifiable {
     public let id: String
-    let order: Int
-    let isPresented: (EditorState) -> Bool
-    let onDismiss: (EditorState) -> Void
-    let content: (EditorState) -> AnyView
+    public let order: Int
+    public let isPresented: (EditorState) -> Bool
+    public let onDismiss: (EditorState) -> Void
+    public let content: (EditorState) -> AnyView
+
+    public init(
+        id: String,
+        order: Int,
+        isPresented: @escaping (EditorState) -> Bool,
+        onDismiss: @escaping (EditorState) -> Void,
+        content: @escaping (EditorState) -> AnyView
+    ) {
+        self.id = id
+        self.order = order
+        self.isPresented = isPresented
+        self.onDismiss = onDismiss
+        self.content = content
+    }
 }
 
 /// 编辑器弹窗扩展点（Sheet）
@@ -452,19 +504,19 @@ public protocol SuperEditorSheetContributor: AnyObject {
 /// 仍然保留，并由注册中心桥接到这个 contract，便于渐进迁移。
 @MainActor
 public struct EditorStatusItemSuggestion: Identifiable {
-    enum Placement: String, Equatable {
+    public enum Placement: String, Equatable {
         case toolbarCenter
         case toolbarTrailing
         case titleTrailing
     }
 
     public let id: String
-    let order: Int
-    let placement: Placement
-    let metadata: EditorContributionMetadata
-    let content: (EditorState) -> AnyView
+    public let order: Int
+    public let placement: Placement
+    public let metadata: EditorContributionMetadata
+    public let content: (EditorState) -> AnyView
 
-    init(
+    public init(
         id: String,
         order: Int,
         placement: Placement,
@@ -494,17 +546,17 @@ public protocol SuperEditorStatusItemContributor: AnyObject {
 @MainActor
 public struct EditorQuickOpenItemSuggestion: Identifiable {
     public let id: String
-    let sectionTitle: String
-    let title: String
-    let subtitle: String?
-    let systemImage: String
-    let badge: String?
-    let order: Int
-    let isEnabled: Bool
-    let metadata: EditorContributionMetadata
-    let action: () -> Void
+    public let sectionTitle: String
+    public let title: String
+    public let subtitle: String?
+    public let systemImage: String
+    public let badge: String?
+    public let order: Int
+    public let isEnabled: Bool
+    public let metadata: EditorContributionMetadata
+    public let action: () -> Void
 
-    init(
+    public init(
         id: String,
         sectionTitle: String,
         title: String,
@@ -588,10 +640,10 @@ public protocol SuperEditorToolbarContributor: AnyObject {
 /// 编辑器交互上下文（文本/选区变化）
 @MainActor
 public struct EditorInteractionContext {
-    let languageId: String
-    let line: Int
-    let character: Int
-    let typedCharacter: String?
+    public let languageId: String
+    public let line: Int
+    public let character: Int
+    public let typedCharacter: String?
 }
 
 /// 编辑器交互扩展点
@@ -611,13 +663,13 @@ public protocol SuperEditorInteractionContributor: AnyObject {
 }
 
 extension SuperEditorInteractionContributor {
-    func onTextDidChange(
+    public func onTextDidChange(
         context: EditorInteractionContext,
         state: EditorState,
         controller: TextViewController
     ) async {}
 
-    func onSelectionDidChange(
+    public func onSelectionDidChange(
         context: EditorInteractionContext,
         state: EditorState,
         controller: TextViewController

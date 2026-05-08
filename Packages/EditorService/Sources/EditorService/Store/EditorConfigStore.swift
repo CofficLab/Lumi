@@ -3,14 +3,14 @@ import EditorKernelCore
 
 /// Editor plugin config persistence store
 enum EditorConfigStore {
-    private static let pluginDirName = "LumiEditor"
+    private static var pluginDirName: String { EditorHostEnvironment.current.storageDirectoryName }
     private static let settingsFileName = "editor_config.plist"
     private static let tmpFileName = "editor_config.tmp"
 
     private static func resolvedSettingsDirectoryURL() -> URL {
         let base = EditorSettingsLifecycle.hostPersistenceRootURL?()
             ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("LumiEditor", isDirectory: true)
+            .appendingPathComponent(pluginDirName, isDirectory: true)
         return base
             .appendingPathComponent(pluginDirName, isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true)

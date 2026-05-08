@@ -1,25 +1,25 @@
 import SwiftUI
 
 @MainActor
-struct EditorSettingsCatalogSection: Identifiable {
-    let id: String
-    let title: String
-    let subtitle: String?
-    let entries: [EditorSettingsCatalogEntry]
+public struct EditorSettingsCatalogSection: Identifiable {
+    public let id: String
+    public let title: String
+    public let subtitle: String?
+    public let entries: [EditorSettingsCatalogEntry]
 }
 
 @MainActor
-struct EditorSettingsCatalogEntry: Identifiable {
-    let id: String
-    let title: String
-    let subtitle: String?
-    let keywords: [String]
-    let content: (EditorSettingsState) -> AnyView
+public struct EditorSettingsCatalogEntry: Identifiable {
+    public let id: String
+    public let title: String
+    public let subtitle: String?
+    public let keywords: [String]
+    public let content: (EditorSettingsState) -> AnyView
 }
 
 @MainActor
-enum EditorSettingsCatalog {
-    static func builtInSections() -> [EditorSettingsCatalogSection] {
+public enum EditorSettingsCatalog {
+    public static func builtInSections() -> [EditorSettingsCatalogSection] {
         [
             EditorSettingsCatalogSection(
                 id: "editor.typography",

@@ -2,7 +2,7 @@ import Foundation
 import LanguageServerProtocol
 
 @MainActor
-final class EditorPanelController {
+public final class EditorPanelController {
     private let panelState: EditorPanelState
 
     init(panelState: EditorPanelState) {
@@ -54,7 +54,7 @@ final class EditorPanelController {
         panelState.selectedReferenceResult = result.map(Self.editorReferenceResult(from:))
     }
 
-    func setWorkspaceSearchQuery(_ query: String) {
+    public func setWorkspaceSearchQuery(_ query: String) {
         panelState.workspaceSearchQuery = query
     }
 
@@ -79,7 +79,7 @@ final class EditorPanelController {
         panelState.selectedWorkspaceSearchMatchID = normalizedState.selectedMatchID
     }
 
-    func toggleWorkspaceSearchFileCollapse(path: String) {
+    public func toggleWorkspaceSearchFileCollapse(path: String) {
         panelState.workspaceSearchCollapsedFilePaths = EditorPanelDataPolicy.toggledCollapsedFilePath(
             path,
             in: panelState.workspaceSearchCollapsedFilePaths

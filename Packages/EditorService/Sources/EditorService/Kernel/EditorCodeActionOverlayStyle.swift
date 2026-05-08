@@ -1,14 +1,14 @@
 import SwiftUI
 
-struct EditorCodeActionOverlayStyle {
-    let indicatorSize: CGFloat
-    let indicatorCornerRadius: CGFloat
-    let indicatorInsetX: CGFloat
-    let panelGap: CGFloat
-    let panelWidth: CGFloat
-    let maxPanelHeight: CGFloat
+public struct EditorCodeActionOverlayStyle: Sendable {
+    public let indicatorSize: CGFloat
+    public let indicatorCornerRadius: CGFloat
+    public let indicatorInsetX: CGFloat
+    public let panelGap: CGFloat
+    public let panelWidth: CGFloat
+    public let maxPanelHeight: CGFloat
 
-    static let standard = EditorCodeActionOverlayStyle(
+    public static let standard = EditorCodeActionOverlayStyle(
         indicatorSize: 20,
         indicatorCornerRadius: 6,
         indicatorInsetX: 28,

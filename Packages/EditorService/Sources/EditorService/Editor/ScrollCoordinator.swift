@@ -3,22 +3,22 @@ import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView
 
-final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
+public final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
     private weak var state: EditorState?
     private var boundsObserver: NSObjectProtocol?
     private var frameObserver: NSObjectProtocol?
 
-    init(state: EditorState) {
+    public init(state: EditorState) {
         self.state = state
     }
 
-    nonisolated func prepareCoordinator(controller: TextViewController) {
+    public nonisolated func prepareCoordinator(controller: TextViewController) {
         MainActor.assumeIsolated {
             prepareOnMain(controller: controller)
         }
     }
 
-    nonisolated func destroy() {
+    public nonisolated func destroy() {
         MainActor.assumeIsolated {
             removeObservers()
             state = nil

@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     " cursors" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -566,6 +567,7 @@
       }
     },
     "Copy Line Down" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -588,6 +590,7 @@
       }
     },
     "Copy Line Up" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -788,6 +791,7 @@
       }
     },
     "Cursor Document End" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -810,6 +814,7 @@
       }
     },
     "Cursor Document Start" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -832,6 +837,7 @@
       }
     },
     "Cursor Line End" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -854,6 +860,7 @@
       }
     },
     "Cursor Line End Select" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -876,6 +883,7 @@
       }
     },
     "Cursor Paragraph Backward" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -898,6 +906,7 @@
       }
     },
     "Cursor Paragraph Forward" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -920,6 +929,7 @@
       }
     },
     "Cursor Smart Home" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -942,6 +952,7 @@
       }
     },
     "Cursor Smart Home Select" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -964,6 +975,7 @@
       }
     },
     "Cursor Word Left" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -986,6 +998,7 @@
       }
     },
     "Cursor Word Left Select" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1008,6 +1021,7 @@
       }
     },
     "Cursor Word Right" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1030,6 +1044,7 @@
       }
     },
     "Cursor Word Right Select" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1052,6 +1067,7 @@
       }
     },
     "Delete Line" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1074,6 +1090,7 @@
       }
     },
     "Delete Word Left" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1096,6 +1113,7 @@
       }
     },
     "Delete Word Right" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1141,6 +1159,7 @@
       }
     },
     "Editing..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1185,6 +1204,7 @@
       }
     },
     "Enter a new symbol name:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1299,6 +1319,7 @@
       }
     },
     "File too large. Preview is truncated." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1343,6 +1364,7 @@
       }
     },
     "Find" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1365,6 +1387,7 @@
       }
     },
     "Find All References" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1387,6 +1410,7 @@
       }
     },
     "Find Next" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1409,6 +1433,7 @@
       }
     },
     "Find Previous" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1431,6 +1456,7 @@
       }
     },
     "Finding declaration..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1453,6 +1479,7 @@
       }
     },
     "Finding definition..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1475,6 +1502,7 @@
       }
     },
     "Finding implementation..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1520,6 +1548,7 @@
       }
     },
     "Finding type definition..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1565,6 +1594,7 @@
       }
     },
     "Fold All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1587,6 +1617,7 @@
       }
     },
     "Fold Current Block" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1609,6 +1640,7 @@
       }
     },
     "Fold Level 1" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1631,6 +1663,7 @@
       }
     },
     "Fold Level 2" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1722,6 +1755,7 @@
       }
     },
     "Format Document" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1812,6 +1846,7 @@
       }
     },
     "Go to Symbol in Workspace" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1926,6 +1961,7 @@
       }
     },
     "Insert Line Above" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1948,6 +1984,7 @@
       }
     },
     "Insert Line Below" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2310,6 +2347,7 @@
       }
     },
     "Move Line Down" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2332,6 +2370,7 @@
       }
     },
     "Move Line Up" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2511,6 +2550,7 @@
       }
     },
     "No Changes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2577,6 +2617,7 @@
       }
     },
     "No declaration found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2599,6 +2640,7 @@
       }
     },
     "No definition found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2621,6 +2663,7 @@
       }
     },
     "No implementation found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2755,6 +2798,7 @@
       }
     },
     "No type definition found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2800,6 +2844,7 @@
       }
     },
     "OK" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2866,6 +2911,7 @@
       }
     },
     "Open Editors" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2934,6 +2980,7 @@
       }
     },
     "Open Search Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2979,6 +3026,7 @@
       }
     },
     "Outline" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3268,6 +3316,7 @@
       }
     },
     "Redo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3313,6 +3362,7 @@
       }
     },
     "Remove Last Occurrence" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3357,6 +3407,7 @@
       }
     },
     "Rename" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3379,6 +3430,7 @@
       }
     },
     "Rename cancelled" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3401,6 +3453,7 @@
       }
     },
     "Rename completed, updated files:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3423,6 +3476,7 @@
       }
     },
     "Rename failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3445,6 +3499,7 @@
       }
     },
     "Rename not applied" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3489,6 +3544,7 @@
       }
     },
     "Renaming symbol..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3511,6 +3567,7 @@
       }
     },
     "Replace" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3533,6 +3590,7 @@
       }
     },
     "Replace All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3600,6 +3658,7 @@
       }
     },
     "Save" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3622,6 +3681,7 @@
       }
     },
     "Saved" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3644,6 +3704,7 @@
       }
     },
     "Saving..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3666,6 +3727,7 @@
       }
     },
     "Search in Files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3778,6 +3840,7 @@
       }
     },
     "Show Call Hierarchy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3823,6 +3886,7 @@
       }
     },
     "Sort Lines Ascending" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3845,6 +3909,7 @@
       }
     },
     "Sort Lines Descending" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4004,6 +4069,7 @@
       }
     },
     "Toggle Line Comment" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4026,6 +4092,7 @@
       }
     },
     "Transpose Characters" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4048,6 +4115,7 @@
       }
     },
     "Trigger Completion" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4070,6 +4138,7 @@
       }
     },
     "Trigger Parameter Hints" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4138,6 +4207,7 @@
       }
     },
     "Undo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4160,6 +4230,7 @@
       }
     },
     "Unfold All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4182,6 +4253,7 @@
       }
     },
     "Unfold Current Block" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

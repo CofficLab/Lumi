@@ -2,37 +2,37 @@ import SwiftUI
 import AppKit
 import CodeEditSourceEditor
 
-struct EditorSurfaceHighlightStyle {
-    let fillColor: Color
-    let strokeColor: Color
-    let cornerRadius: CGFloat
-    let lineWidth: CGFloat
-    let minimumWidth: CGFloat
-    let minimumHeight: CGFloat
-    let zIndex: Double
+public struct EditorSurfaceHighlightStyle {
+    public let fillColor: Color
+    public let strokeColor: Color
+    public let cornerRadius: CGFloat
+    public let lineWidth: CGFloat
+    public let minimumWidth: CGFloat
+    public let minimumHeight: CGFloat
+    public let zIndex: Double
 }
 
-struct EditorSurfaceHighlight: Identifiable {
-    let kind: EditorSurfaceHighlightKind
-    let rect: CGRect
-    let style: EditorSurfaceHighlightStyle
+public struct EditorSurfaceHighlight: Identifiable {
+    public let kind: EditorSurfaceHighlightKind
+    public let rect: CGRect
+    public let style: EditorSurfaceHighlightStyle
 
-    var id: String {
+    public var id: String {
         "\(kind)-\(rect.minX)-\(rect.minY)-\(rect.width)-\(rect.height)"
     }
 }
 
 @MainActor
-struct EditorSurfaceOverlayPalette {
+public struct EditorSurfaceOverlayPalette {
     private let lineHighlight: NSColor
     private let selection: NSColor
 
-    init(theme: EditorTheme?) {
+    public init(theme: EditorTheme?) {
         self.lineHighlight = theme?.lineHighlight ?? EditorThemeAdapter.fallbackTheme().lineHighlight
         self.selection = theme?.selection ?? EditorThemeAdapter.fallbackTheme().selection
     }
 
-    func style(for kind: EditorSurfaceHighlightKind) -> EditorSurfaceHighlightStyle {
+    public func style(for kind: EditorSurfaceHighlightKind) -> EditorSurfaceHighlightStyle {
         switch kind {
         case .currentLine:
             return EditorSurfaceHighlightStyle(

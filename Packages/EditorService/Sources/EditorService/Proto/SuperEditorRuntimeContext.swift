@@ -4,8 +4,8 @@ import Foundation
 public final class SuperEditorRuntimeContext {
     public static let shared = SuperEditorRuntimeContext()
 
-    private(set) var currentFileURL: URL?
-    private(set) var currentContent: String = ""
+    public private(set) var currentFileURL: URL?
+    public private(set) var currentContent: String = ""
 
     private init() {}
 

@@ -39,7 +39,7 @@ enum EditorLanguageID {
 ///   将聚合和去重放到后台线程。
 @MainActor
 public final class EditorExtensionRegistry: ObservableObject, SuperLog {
-    private static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "editor.ext-registry")
+    private static let logger = os.Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.ext-registry")
     nonisolated public static let verbose = false
     nonisolated public static let emoji = "🔌"
 
@@ -110,6 +110,8 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
 
     /// 当前已注册的 commandContributors 数量（用于调试日志）
     public var commandContributorsCount: Int { commandContributors.count }
+
+    public init() {}
 
     public func reset() {
         installedPlugins.removeAll()

@@ -1,35 +1,35 @@
 import SwiftUI
 
-struct EditorInlinePresentation: Identifiable {
-    let id: String
-    let kind: EditorInlinePresentationKind
-    let origin: CGPoint
-    let size: CGSize
-    let iconName: String
-    let title: String
-    let detail: String?
-    let badgeText: String?
-    let style: EditorInlinePresentationResolvedStyle
+public struct EditorInlinePresentation: Identifiable {
+    public let id: String
+    public let kind: EditorInlinePresentationKind
+    public let origin: CGPoint
+    public let size: CGSize
+    public let iconName: String
+    public let title: String
+    public let detail: String?
+    public let badgeText: String?
+    public let style: EditorInlinePresentationResolvedStyle
 }
 
-struct EditorInlinePresentationResolvedStyle {
-    let backgroundColor: Color
-    let borderColor: Color
-    let foregroundColor: Color
-    let accentColor: Color
+public struct EditorInlinePresentationResolvedStyle {
+    public let backgroundColor: Color
+    public let borderColor: Color
+    public let foregroundColor: Color
+    public let accentColor: Color
 }
 
-struct EditorInlinePresentationStyle {
-    let cornerRadius: CGFloat
-    let borderWidth: CGFloat
-    let horizontalPadding: CGFloat
-    let verticalPadding: CGFloat
-    let lineGap: CGFloat
-    let inlineGap: CGFloat
-    let outerPadding: CGFloat
-    let maxWidth: CGFloat
+public struct EditorInlinePresentationStyle: Sendable {
+    public let cornerRadius: CGFloat
+    public let borderWidth: CGFloat
+    public let horizontalPadding: CGFloat
+    public let verticalPadding: CGFloat
+    public let lineGap: CGFloat
+    public let inlineGap: CGFloat
+    public let outerPadding: CGFloat
+    public let maxWidth: CGFloat
 
-    static let standard = EditorInlinePresentationStyle(
+    public static let standard = EditorInlinePresentationStyle(
         cornerRadius: 8,
         borderWidth: 1,
         horizontalPadding: 8,
@@ -40,7 +40,7 @@ struct EditorInlinePresentationStyle {
         maxWidth: 280
     )
 
-    func resolvedStyle(for kind: EditorInlinePresentationKind) -> EditorInlinePresentationResolvedStyle {
+    public func resolvedStyle(for kind: EditorInlinePresentationKind) -> EditorInlinePresentationResolvedStyle {
         switch kind {
         case .message(.error):
             return EditorInlinePresentationResolvedStyle(

@@ -1,3 +1,3 @@
 import EditorKernelCore
 
-typealias EditorTab = EditorKernelCore.EditorTab
+public typealias EditorTab = EditorKernelCore.EditorTab

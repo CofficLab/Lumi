@@ -15,7 +15,7 @@ import LanguageServerProtocol
 /// ## 线程模型
 /// 标记 `@MainActor`，所有属性更新在主线程执行。
 @MainActor
-final class EditorPanelState: ObservableObject {
+public final class EditorPanelState: ObservableObject {
 
     // MARK: - Open Editors 面板
 
@@ -28,10 +28,10 @@ final class EditorPanelState: ObservableObject {
     // MARK: - Problems 面板
 
     /// 当前文件的诊断列表
-    @Published var problemDiagnostics: [Diagnostic] = []
+    @Published public var problemDiagnostics: [Diagnostic] = []
 
     /// 当前文件的项目语义问题
-    @Published var semanticProblems: [EditorSemanticProblem] = []
+    @Published public var semanticProblems: [EditorSemanticProblem] = []
 
     /// 当前选中的问题
     @Published var selectedProblemDiagnostic: Diagnostic?
@@ -42,45 +42,45 @@ final class EditorPanelState: ObservableObject {
     // MARK: - References 面板
 
     /// LSP 引用查询结果
-    @Published var referenceResults: [EditorReferenceResult] = []
+    @Published public var referenceResults: [EditorReferenceResult] = []
 
     /// 当前选中的引用项
-    @Published var selectedReferenceResult: EditorReferenceResult?
+    @Published public var selectedReferenceResult: EditorReferenceResult?
 
     /// 是否展示 References 面板
     @Published var isReferencePanelPresented: Bool = false
 
     // MARK: - 工作区文本搜索
 
-    @Published var workspaceSearchQuery: String = ""
-    @Published var workspaceSearchResults: [EditorWorkspaceSearchFileResult] = []
-    @Published var workspaceSearchSummary: EditorWorkspaceSearchSummary?
-    @Published var workspaceSearchErrorMessage: String?
-    @Published var workspaceSearchCollapsedFilePaths = Set<String>()
-    @Published var selectedWorkspaceSearchMatchID: String?
-    @Published var isWorkspaceSearchLoading: Bool = false
+    @Published public var workspaceSearchQuery: String = ""
+    @Published public var workspaceSearchResults: [EditorWorkspaceSearchFileResult] = []
+    @Published public var workspaceSearchSummary: EditorWorkspaceSearchSummary?
+    @Published public var workspaceSearchErrorMessage: String?
+    @Published public var workspaceSearchCollapsedFilePaths = Set<String>()
+    @Published public var selectedWorkspaceSearchMatchID: String?
+    @Published public var isWorkspaceSearchLoading: Bool = false
     @Published var isWorkspaceSearchPresented: Bool = false
 
     // MARK: - 工作区符号搜索
 
     /// 是否展示工作区符号搜索面板
-    @Published var isWorkspaceSymbolSearchPresented: Bool = false
+    @Published public var isWorkspaceSymbolSearchPresented: Bool = false
 
     // MARK: - 调用层级
 
     /// 是否展示调用层级面板
-    @Published var isCallHierarchyPresented: Bool = false
+    @Published public var isCallHierarchyPresented: Bool = false
 
     // MARK: - Hover 状态
 
     /// 鼠标悬停 Hover 内容（Markdown 格式）
-    @Published var mouseHoverContent: String?
+    @Published public var mouseHoverContent: String?
 
     /// 鼠标悬停对应的 symbol 矩形（编辑器坐标系）
-    @Published var mouseHoverSymbolRect: CGRect = .zero
+    @Published public var mouseHoverSymbolRect: CGRect = .zero
 
     /// 鼠标悬停对应的 LSP Range（用于在编辑器中高亮被 hover 的符号）
-    @Published var mouseHoverRange: LSPRange?
+    @Published public var mouseHoverRange: LSPRange?
 
     var snapshot: EditorPanelSnapshot {
         EditorPanelSnapshot(
@@ -119,11 +119,11 @@ final class EditorPanelState: ObservableObject {
         )
     }
 
-    var hasActiveHover: Bool {
+    public var hasActiveHover: Bool {
         mouseHoverContent?.isEmpty == false || mouseHoverSymbolRect != .zero
     }
 
-    var visibleBottomPanels: [EditorBottomPanelKind] {
+    public var visibleBottomPanels: [EditorBottomPanelKind] {
         var panels: [EditorBottomPanelKind] = []
         if isProblemsPanelPresented { panels.append(.problems) }
         if isReferencePanelPresented { panels.append(.references) }
@@ -133,7 +133,7 @@ final class EditorPanelState: ObservableObject {
         return panels
     }
 
-    var activeBottomPanel: EditorBottomPanelKind? {
+    public var activeBottomPanel: EditorBottomPanelKind? {
         visibleBottomPanels.last
     }
 

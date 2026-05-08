@@ -1,13 +1,13 @@
 import Foundation
 import CodeEditSourceEditor
 
-struct EditorSourceEditorBindingUpdate {
-    let viewState: EditorViewState?
-    let findReplaceState: EditorFindReplaceState
+public struct EditorSourceEditorBindingUpdate {
+    public let viewState: EditorViewState?
+    public let findReplaceState: EditorFindReplaceState
 }
 
-enum EditorSourceEditorBindingController {
-    static func update(
+public enum EditorSourceEditorBindingController {
+    public static func update(
         from sourceEditorState: SourceEditorState,
         multiCursorSelectionCount: Int,
         currentFindReplaceState: EditorFindReplaceState

@@ -7,7 +7,7 @@ import os
 
 @MainActor
 final class EditorInputRouter {
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.input-router")
+    private let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.input-router")
 
     func handleTextDidChange(
         state: EditorState?,

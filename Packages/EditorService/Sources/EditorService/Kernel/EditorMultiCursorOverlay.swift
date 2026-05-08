@@ -1,19 +1,19 @@
 import SwiftUI
 
-enum EditorMultiCursorHighlightKind {
+public enum EditorMultiCursorHighlightKind {
     case secondaryCaret
     case secondarySelection
 }
 
-struct EditorMultiCursorHighlight: Identifiable {
-    let kind: EditorMultiCursorHighlightKind
-    let rect: CGRect
+public struct EditorMultiCursorHighlight: Identifiable {
+    public let kind: EditorMultiCursorHighlightKind
+    public let rect: CGRect
 
-    var id: String {
+    public var id: String {
         "\(kind)-\(rect.minX)-\(rect.minY)-\(rect.width)-\(rect.height)"
     }
 
-    var fillColor: Color {
+    public var fillColor: Color {
         switch kind {
         case .secondaryCaret:
             return Color.accentColor.opacity(0.95)
@@ -22,7 +22,7 @@ struct EditorMultiCursorHighlight: Identifiable {
         }
     }
 
-    var strokeColor: Color {
+    public var strokeColor: Color {
         switch kind {
         case .secondaryCaret:
             return Color.accentColor
@@ -31,7 +31,7 @@ struct EditorMultiCursorHighlight: Identifiable {
         }
     }
 
-    var lineWidth: CGFloat {
+    public var lineWidth: CGFloat {
         switch kind {
         case .secondaryCaret:
             return 0
@@ -40,7 +40,7 @@ struct EditorMultiCursorHighlight: Identifiable {
         }
     }
 
-    var dash: [CGFloat] {
+    public var dash: [CGFloat] {
         switch kind {
         case .secondaryCaret:
             return []
@@ -49,7 +49,7 @@ struct EditorMultiCursorHighlight: Identifiable {
         }
     }
 
-    var cornerRadius: CGFloat {
+    public var cornerRadius: CGFloat {
         switch kind {
         case .secondaryCaret:
             return 1

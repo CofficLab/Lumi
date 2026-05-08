@@ -3,23 +3,23 @@ import Combine
 import os
 
 @MainActor
-final class EditorSessionStore: ObservableObject {
-    @Published private(set) var sessions: [EditorSession] = []
-    @Published private(set) var tabs: [EditorTab] = []
-    @Published private(set) var activeSessionID: EditorSession.ID?
+public final class EditorSessionStore: ObservableObject {
+    @Published public private(set) var sessions: [EditorSession] = []
+    @Published public private(set) var tabs: [EditorTab] = []
+    @Published public private(set) var activeSessionID: EditorSession.ID?
 
     private var navigationHistory = EditorNavigationHistory()
     private var bypassHistoryForSessionID: EditorSession.ID?
 
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.session-store")
+    private static let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.session-store")
 
-    var activeSession: EditorSession? {
+    public var activeSession: EditorSession? {
         guard let activeSessionID else { return nil }
         return sessions.first(where: { $0.id == activeSessionID })
     }
 
-    var canNavigateBack: Bool { navigationHistory.canGoBack }
-    var canNavigateForward: Bool { navigationHistory.canGoForward }
+    public var canNavigateBack: Bool { navigationHistory.canGoBack }
+    public var canNavigateForward: Bool { navigationHistory.canGoForward }
 
     func recentActivationRank(for sessionID: EditorSession.ID) -> Int? {
         guard let index = navigationHistory.sessionIDs.lastIndex(of: sessionID) else { return nil }

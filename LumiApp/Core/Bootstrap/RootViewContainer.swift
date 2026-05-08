@@ -198,6 +198,24 @@ final class RootViewContainer: ObservableObject {
         // 编辑器
         // ========================================
 
+        EditorHostEnvironment.configure(
+            EditorHostEnvironment(
+                logSubsystem: "com.coffic.lumi",
+                localizationTable: "LumiEditor",
+                storageDirectoryName: "LumiEditor",
+                notifications: .init(
+                    projectContextDidChange: Notification.Name("LumiEditorProjectContextDidChange"),
+                    settingsDidChange: Notification.Name("LumiEditorSettingsDidChange"),
+                    themeDidChange: Notification.Name("lumiThemeDidChange"),
+                    toggleOpenEditorsPanel: Notification.Name("LumiEditorToggleOpenEditorsPanel"),
+                    toggleOutlinePanel: Notification.Name("LumiEditorToggleOutlinePanel"),
+                    showCommandPalette: Notification.Name("LumiEditorShowCommandPalette"),
+                    triggerCompletion: Notification.Name("LumiEditorTriggerCompletion"),
+                    triggerSignatureHelp: Notification.Name("LumiEditorTriggerSignatureHelp")
+                )
+            )
+        )
+
         // 创建编辑器扩展注册中心
         let editorExtensionRegistry = EditorExtensionRegistry()
 

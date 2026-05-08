@@ -1,12 +1,12 @@
 import Foundation
 import CodeEditSourceEditor
 
-struct EditorViewState: Equatable {
-    var primaryCursorLine: Int
-    var primaryCursorColumn: Int
-    var cursorPositions: [CursorPosition]
+public struct EditorViewState: Equatable, Sendable {
+    public var primaryCursorLine: Int
+    public var primaryCursorColumn: Int
+    public var cursorPositions: [CursorPosition]
 
-    init(
+    public init(
         primaryCursorLine: Int = 1,
         primaryCursorColumn: Int = 1,
         cursorPositions: [CursorPosition] = []
@@ -16,5 +16,5 @@ struct EditorViewState: Equatable {
         self.cursorPositions = cursorPositions
     }
 
-    static let initial = EditorViewState()
+    public static let initial = EditorViewState()
 }

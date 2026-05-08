@@ -14,9 +14,9 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../EditorKernelCore"),
-        .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
         .package(url: "https://github.com/CodeEditApp/CodeEditSourceEditor", from: "0.15.2"),
-        .package(url: "https://github.com/CodeEditApp/CodeEditTextView", from: "0.12.0"),
+        .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
+        .package(url: "https://github.com/CodeEditApp/CodeEditTextView", from: "0.12.1"),
         .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.20"),
         .package(url: "https://github.com/CofficLab/MagicKit", from: "1.5.23"),
         .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.0"),

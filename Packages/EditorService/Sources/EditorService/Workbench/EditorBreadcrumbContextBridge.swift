@@ -1,17 +1,17 @@
 import Foundation
 
 @MainActor
-final class EditorBreadcrumbContextBridge: ObservableObject {
-    static let shared = EditorBreadcrumbContextBridge()
+public final class EditorBreadcrumbContextBridge: ObservableObject {
+    public static let shared = EditorBreadcrumbContextBridge()
 
-    @Published private(set) var currentFileURL: URL?
-    @Published private(set) var activeSymbolTrail: [EditorDocumentSymbolItem] = []
+    @Published public private(set) var currentFileURL: URL?
+    @Published public private(set) var activeSymbolTrail: [EditorDocumentSymbolItem] = []
 
-    var openSymbol: ((EditorDocumentSymbolItem) -> Void)?
+    public var openSymbol: ((EditorDocumentSymbolItem) -> Void)?
 
     private init() {}
 
-    func update(
+    public func update(
         currentFileURL: URL?,
         activeSymbolTrail: [EditorDocumentSymbolItem],
         openSymbol: ((EditorDocumentSymbolItem) -> Void)? = nil

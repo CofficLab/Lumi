@@ -1,3 +1,3 @@
 import EditorKernelCore
 
-typealias EditorOpenEditorItem = EditorKernelCore.EditorOpenEditorItem
+public typealias EditorOpenEditorItem = EditorKernelCore.EditorOpenEditorItem

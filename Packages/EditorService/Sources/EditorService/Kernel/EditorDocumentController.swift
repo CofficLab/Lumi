@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 import os
 
 final class EditorDocumentController {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.doc-controller")
+    private static let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.doc-controller")
     private static let truncationFileSizeThreshold: Int64 = 2 * 1024 * 1024
 
     struct LoadedTextDocument {
@@ -203,7 +203,7 @@ final class EditorDocumentController {
         } else {
             preview = String(decoding: data, as: UTF8.self)
         }
-        let suffix = "\n\n… " + String(localized: "File too large. Preview is truncated.", table: "LumiEditor")
+        let suffix = "\n\n… " + String(localized: "File too large. Preview is truncated.", table: EditorHostEnvironment.current.localizationTable)
         return preview + suffix
     }
 

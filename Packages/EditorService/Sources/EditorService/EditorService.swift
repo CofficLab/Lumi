@@ -43,10 +43,10 @@ public final class EditorService: ObservableObject {
     // MARK: - Internal Components（不对外暴露）
 
     /// 主编辑器状态（文件内容、光标、面板等）
-    let state: EditorState
+    public let state: EditorState
 
     /// 会话管理（打开的文件标签页、导航历史）
-    let sessionStore: EditorSessionStore
+    public let sessionStore: EditorSessionStore
 
     /// 将 `sessionStore` 的 `objectWillChange` 暴露给宿主（例如 `EditorVM`），而不放宽 `sessionStore` 的访问级别。
     public var sessionObjectWillChange: AnyPublisher<Void, Never> {
@@ -69,7 +69,7 @@ public final class EditorService: ObservableObject {
     }
 
     /// 便捷构造：使用默认实例创建完整编辑器服务
-    convenience init(editorExtensionRegistry: EditorExtensionRegistry) {
+    public convenience init(editorExtensionRegistry: EditorExtensionRegistry) {
         self.init(
             editorExtensionRegistry: editorExtensionRegistry,
             state: EditorState(editorExtensions: editorExtensionRegistry),
@@ -82,50 +82,50 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 当前打开的文件 URL
-    var currentFileURL: URL? { state.currentFileURL }
+    public var currentFileURL: URL? { state.currentFileURL }
 
     /// 当前文件名
-    var fileName: String { state.fileName }
+    public var fileName: String { state.fileName }
 
     /// 当前文件扩展名
-    var fileExtension: String { state.fileExtension }
+    public var fileExtension: String { state.fileExtension }
 
     /// 当前文件内容（NSTextStorage）
-    var content: NSTextStorage? { state.content }
+    public var content: NSTextStorage? { state.content }
 
     /// 当前文件相对于项目根目录的路径
-    var relativeFilePath: String { state.relativeFilePath }
+    public var relativeFilePath: String { state.relativeFilePath }
 
     /// 当前文件是否可编辑
-    var isEditable: Bool { state.isEditable }
+    public var isEditable: Bool { state.isEditable }
 
     /// 当前文件是否为截断预览
-    var isTruncated: Bool { state.isTruncated }
+    public var isTruncated: Bool { state.isTruncated }
 
     /// 当前文件是否为二进制文件
-    var isBinaryFile: Bool { state.isBinaryFile }
+    public var isBinaryFile: Bool { state.isBinaryFile }
 
     /// 当前文件是否为 Markdown 格式
-    var isMarkdownFile: Bool { state.isMarkdownFile }
+    public var isMarkdownFile: Bool { state.isMarkdownFile }
 
     /// 是否有未保存的变更
-    var hasUnsavedChanges: Bool { state.hasUnsavedChanges }
+    public var hasUnsavedChanges: Bool { state.hasUnsavedChanges }
 
     /// 保存当前文件
-    func saveNow() {
+    public func saveNow() {
         state.saveNow()
     }
 
     /// 当前文件是否可预览（代码编辑器可渲染）
-    var canPreview: Bool { state.canPreview }
+    public var canPreview: Bool { state.canPreview }
 
     /// 加载文件内容到编辑器（底层操作，优先使用 openAndRenderFile）
-    func loadFile(from url: URL?) {
+    public func loadFile(from url: URL?) {
         state.loadFile(from: url)
     }
 
     /// 恢复会话交互状态（光标、滚动位置、折叠等）
-    func applySessionRestore(_ session: EditorSession) {
+    public func applySessionRestore(_ session: EditorSession) {
         state.applySessionRestore(session)
     }
 
@@ -135,7 +135,7 @@ public final class EditorService: ObservableObject {
 
     /// 打开或激活文件会话（仅创建 session，不加载内容）
     @discardableResult
-    func openFile(at url: URL?) -> EditorSession? {
+    public func openFile(at url: URL?) -> EditorSession? {
         sessionStore.openOrActivate(fileURL: url)
     }
 
@@ -144,7 +144,7 @@ public final class EditorService: ObservableObject {
     /// 完整的「打开文件」流程：创建 session → 加载文件内容 → 恢复交互状态。
     /// 插件通过 `EditorVM.service.openAndRenderFile(at:)` 调用，
     /// 无需直接访问 `EditorState`。
-    func openAndRenderFile(at url: URL?) {
+    public func openAndRenderFile(at url: URL?) {
         guard let url else { return }
 
         guard let session = sessionStore.openOrActivate(fileURL: url) else { return }
@@ -165,58 +165,58 @@ public final class EditorService: ObservableObject {
     }
 
     /// 当前活跃会话
-    var activeSession: EditorSession? { sessionStore.activeSession }
+    public var activeSession: EditorSession? { sessionStore.activeSession }
 
     /// 当前活跃会话 ID
-    var activeSessionID: EditorSession.ID? { sessionStore.activeSessionID }
+    public var activeSessionID: EditorSession.ID? { sessionStore.activeSessionID }
 
     /// 所有打开的会话
     var sessions: [EditorSession] { sessionStore.sessions }
 
     /// 所有标签页
-    var tabs: [EditorTab] { sessionStore.tabs }
+    public var tabs: [EditorTab] { sessionStore.tabs }
 
     /// 关闭指定会话
     @discardableResult
-    func closeSession(id: EditorSession.ID) -> EditorSession? {
+    public func closeSession(id: EditorSession.ID) -> EditorSession? {
         sessionStore.close(sessionID: id)
     }
 
     /// 关闭其他会话（保留指定会话）
     @discardableResult
-    func closeOtherSessions(keeping id: EditorSession.ID) -> EditorSession? {
+    public func closeOtherSessions(keeping id: EditorSession.ID) -> EditorSession? {
         sessionStore.closeOthers(keeping: id)
     }
 
     /// 关闭所有会话
-    func closeAllSessions() {
+    public func closeAllSessions() {
         sessionStore.closeAll()
     }
 
     /// 激活指定会话
     @discardableResult
-    func activateSession(id: EditorSession.ID) -> EditorSession? {
+    public func activateSession(id: EditorSession.ID) -> EditorSession? {
         sessionStore.activate(sessionID: id)
     }
 
     /// 切换固定状态
-    func togglePinned(sessionID: EditorSession.ID) {
+    public func togglePinned(sessionID: EditorSession.ID) {
         sessionStore.togglePinned(sessionID: sessionID)
     }
 
     /// 重新排序标签页
     @discardableResult
-    func reorderSession(sessionID: EditorSession.ID, before targetID: EditorSession.ID?) -> Bool {
+    public func reorderSession(sessionID: EditorSession.ID, before targetID: EditorSession.ID?) -> Bool {
         sessionStore.reorderSession(sessionID: sessionID, before: targetID)
     }
 
     /// 获取指定会话
-    func session(for sessionID: EditorSession.ID) -> EditorSession? {
+    public func session(for sessionID: EditorSession.ID) -> EditorSession? {
         sessionStore.session(for: sessionID)
     }
 
     /// 获取指定会话的最近激活排名
-    func recentActivationRank(for sessionID: EditorSession.ID) -> Int? {
+    public func recentActivationRank(for sessionID: EditorSession.ID) -> Int? {
         sessionStore.recentActivationRank(for: sessionID)
     }
 
@@ -232,23 +232,23 @@ public final class EditorService: ObservableObject {
 
     /// 后退导航
     @discardableResult
-    func goBack() -> EditorSession? {
+    public func goBack() -> EditorSession? {
         sessionStore.goBack()
     }
 
     /// 前进导航
     @discardableResult
-    func goForward() -> EditorSession? {
+    public func goForward() -> EditorSession? {
         sessionStore.goForward()
     }
 
     /// 执行导航请求（跳转定义、跳转引用等）
-    func performNavigation(_ request: EditorNavigationRequest) {
+    public func performNavigation(_ request: EditorNavigationRequest) {
         state.performNavigation(request)
     }
 
     /// 执行打开项命令（问题跳转、符号跳转、调用层级跳转等）
-    func performOpenItem(_ command: EditorOpenItemCommand) {
+    public func performOpenItem(_ command: EditorOpenItemCommand) {
         state.performOpenItem(command)
     }
 
@@ -257,16 +257,16 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 当前行号
-    var cursorLine: Int { state.cursorLine }
+    public var cursorLine: Int { state.cursorLine }
 
     /// 当前列号
-    var cursorColumn: Int { state.cursorColumn }
+    public var cursorColumn: Int { state.cursorColumn }
 
     /// 总行数
     var totalLines: Int { state.totalLines }
 
     /// 检测到的语言
-    var detectedLanguage: CodeLanguage? { state.detectedLanguage }
+    public var detectedLanguage: CodeLanguage? { state.detectedLanguage }
 
     /// 是否可以撤销
     var canUndo: Bool { state.canUndo }
@@ -292,7 +292,10 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 当前文件的诊断列表
-    var problemDiagnostics: [Diagnostic] { state.problemDiagnostics }
+    public var problemDiagnostics: [Diagnostic] { state.problemDiagnostics }
+
+    /// 当前文件的语义问题列表
+    public var semanticProblems: [EditorSemanticProblem] { state.semanticProblems }
 
     /// 是否展示 Problems 面板
     var isProblemsPanelPresented: Bool { state.isProblemsPanelPresented }
@@ -308,38 +311,38 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 当前主题
-    var currentTheme: EditorTheme? { state.currentTheme }
+    public var currentTheme: EditorTheme? { state.currentTheme }
 
     /// 当前主题 ID
-    var currentThemeId: String { state.currentThemeId }
+    public var currentThemeId: String { state.currentThemeId }
 
     /// 字体大小
-    var fontSize: Double { state.fontSize }
+    public var fontSize: Double { state.fontSize }
 
     /// Tab 宽度
-    var tabWidth: Int { state.tabWidth }
+    public var tabWidth: Int { state.tabWidth }
 
     /// 是否使用空格替代 Tab
-    var useSpaces: Bool { state.useSpaces }
+    public var useSpaces: Bool { state.useSpaces }
 
     /// 是否自动换行
-    var wrapLines: Bool { state.wrapLines }
+    public var wrapLines: Bool { state.wrapLines }
 
     /// 是否显示 Minimap
-    var showMinimap: Bool { state.showMinimap }
+    public var showMinimap: Bool { state.showMinimap }
 
     /// 是否显示行号
-    var showGutter: Bool { state.showGutter }
+    public var showGutter: Bool { state.showGutter }
 
     /// 是否显示代码折叠
-    var showFoldingRibbon: Bool { state.showFoldingRibbon }
+    public var showFoldingRibbon: Bool { state.showFoldingRibbon }
 
     // ========================================================================
     // MARK: - 命令执行（Command Execution）
     // ========================================================================
 
     /// 执行编辑器命令
-    func performCommand(id: String) {
+    public func performCommand(id: String) {
         state.performEditorCommand(id: id)
     }
 
@@ -373,12 +376,12 @@ public final class EditorService: ObservableObject {
     }
 
     /// 执行面板命令（通用）
-    func performPanelCommand(_ command: EditorPanelCommand) {
+    public func performPanelCommand(_ command: EditorPanelCommand) {
         state.performPanelCommand(command)
     }
 
     /// 展示底部面板
-    func presentBottomPanel(_ panel: EditorBottomPanelKind?) {
+    public func presentBottomPanel(_ panel: EditorBottomPanelKind?) {
         state.presentBottomPanel(panel)
     }
 
@@ -387,18 +390,18 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 当前项目根路径
-    var projectRootPath: String? {
+    public var projectRootPath: String? {
         get { state.projectRootPath }
         set { state.projectRootPath = newValue }
     }
 
     /// 当前项目上下文快照
-    var projectContextSnapshot: EditorProjectContextSnapshot? {
+    public var projectContextSnapshot: EditorProjectContextSnapshot? {
         state.projectContextSnapshot
     }
 
     /// 刷新项目上下文
-    func refreshProjectContext() {
+    public func refreshProjectContext() {
         state.refreshProjectContextSnapshot()
     }
 
@@ -412,12 +415,12 @@ public final class EditorService: ObservableObject {
     }
 
     /// 文档符号提供者
-    var documentSymbolProvider: any SuperEditorDocumentSymbolProvider {
+    public var documentSymbolProvider: any SuperEditorDocumentSymbolProvider {
         state.documentSymbolProvider
     }
 
     /// 代码动作提供者
-    var codeActionProvider: any SuperEditorCodeActionProvider {
+    public var codeActionProvider: any SuperEditorCodeActionProvider {
         state.codeActionProvider
     }
 
@@ -426,7 +429,7 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// LSP 客户端
-    var lspClient: any SuperEditorLSPClient {
+    public var lspClient: any SuperEditorLSPClient {
         state.lspClient
     }
 
@@ -472,22 +475,22 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 大文件模式
-    var largeFileMode: LargeFileMode { state.largeFileMode }
+    public var largeFileMode: LargeFileMode { state.largeFileMode }
 
     /// 加载完整文件
-    func loadFullFile() {
+    public func loadFullFile() {
         state.loadFullFileFromDisk()
     }
 
     /// 是否可以加载完整文件
-    var canLoadFullFile: Bool { state.canLoadFullFile }
+    public var canLoadFullFile: Bool { state.canLoadFullFile }
 
     // ========================================================================
     // MARK: - 显示状态（Display State）
     // ========================================================================
 
     /// 是否为 Markdown 预览模式
-    var isMarkdownPreviewMode: Bool { state.isMarkdownPreviewMode }
+    public var isMarkdownPreviewMode: Bool { state.isMarkdownPreviewMode }
 
     /// 切换 Markdown 预览模式
     func toggleMarkdownPreview() {
@@ -495,10 +498,10 @@ public final class EditorService: ObservableObject {
     }
 
     /// 是否展示 Code Action 面板
-    var isCodeActionPanelPresented: Bool { state.isCodeActionPanelPresented }
+    public var isCodeActionPanelPresented: Bool { state.isCodeActionPanelPresented }
 
     /// 切换 Code Action 面板
-    func toggleCodeActionPanel() {
+    public func toggleCodeActionPanel() {
         state.toggleCodeActionPanel()
     }
 
@@ -510,32 +513,32 @@ public final class EditorService: ObservableObject {
     var hoverText: String? { state.hoverText }
 
     /// 当前 Peek 表示
-    var currentPeekPresentation: EditorPeekPresentation? { state.currentPeekPresentation }
+    public var currentPeekPresentation: EditorPeekPresentation? { state.currentPeekPresentation }
 
     /// 当前内联重命名状态
-    var currentInlineRenameState: EditorInlineRenameState? { state.currentInlineRenameState }
+    public var currentInlineRenameState: EditorInlineRenameState? { state.currentInlineRenameState }
 
     // ========================================================================
     // MARK: - Workspace Search / Call Hierarchy
     // ========================================================================
 
     /// 是否展示工作区符号搜索面板
-    var isWorkspaceSymbolSearchPresented: Bool { state.isWorkspaceSymbolSearchPresented }
+    public var isWorkspaceSymbolSearchPresented: Bool { state.isWorkspaceSymbolSearchPresented }
 
     /// 是否展示调用层级面板
-    var isCallHierarchyPresented: Bool { state.isCallHierarchyPresented }
+    public var isCallHierarchyPresented: Bool { state.isCallHierarchyPresented }
 
     // ========================================================================
     // MARK: - 文档大纲与折叠（Document Outline & Folding）
     // ========================================================================
 
     /// 刷新文档大纲
-    func refreshDocumentOutline() {
+    public func refreshDocumentOutline() {
         state.refreshDocumentOutline()
     }
 
     /// 刷新折叠范围
-    func refreshFoldingRanges() {
+    public func refreshFoldingRanges() {
         state.refreshFoldingRanges()
     }
 
@@ -544,7 +547,7 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 使用 LSP 格式化当前文档
-    func formatDocumentWithLSP() async {
+    public func formatDocumentWithLSP() async {
         await state.formatDocumentWithLSP()
     }
 
@@ -553,12 +556,12 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 解析 Quick Open 查询
-    func quickOpenQuery(for rawQuery: String) -> EditorQuickOpenQuery {
+    public func quickOpenQuery(for rawQuery: String) -> EditorQuickOpenQuery {
         state.quickOpenQuery(for: rawQuery)
     }
 
     /// 获取 Quick Open 结果列表
-    func editorQuickOpenItems(
+    public func editorQuickOpenItems(
         matching query: String,
         openEditors: [EditorOpenEditorItem],
         onOpenFile: @escaping (URL, CursorPosition?, Bool) -> Void
@@ -580,7 +583,7 @@ public final class EditorService: ObservableObject {
     }
 
     /// 获取命令展示模型
-    func editorCommandPresentationModel(matching query: String = "") -> EditorCommandPresentationModel {
+    public func editorCommandPresentationModel(matching query: String = "") -> EditorCommandPresentationModel {
         state.editorCommandPresentationModel(matching: query)
     }
 
@@ -616,12 +619,12 @@ public final class EditorService: ObservableObject {
     }
 
     /// 获取首选命令面板分类
-    func preferredCommandPaletteCategory() -> EditorCommandCategory? {
+    public func preferredCommandPaletteCategory() -> EditorCommandCategory? {
         state.preferredCommandPaletteCategory()
     }
 
     /// 设置首选命令面板分类
-    func setPreferredCommandPaletteCategory(_ category: EditorCommandCategory?) {
+    public func setPreferredCommandPaletteCategory(_ category: EditorCommandCategory?) {
         state.setPreferredCommandPaletteCategory(category)
     }
 
@@ -654,12 +657,12 @@ public final class EditorService: ObservableObject {
     }
 
     /// 项目上下文能力
-    var projectContextCapability: (any SuperEditorProjectContextCapability)? {
+    public var projectContextCapability: (any SuperEditorProjectContextCapability)? {
         state.projectContextCapability
     }
 
     /// 语义能力
-    var semanticCapability: (any SuperEditorSemanticCapability)? {
+    public var semanticCapability: (any SuperEditorSemanticCapability)? {
         state.semanticCapability
     }
 
@@ -671,59 +674,59 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 当前编辑器状态（内核视图桥接用）
-    var editorState: SourceEditorState { state.editorState }
+    public var editorState: SourceEditorState { state.editorState }
 
     /// 当前获得焦点的 TextView（内核视图桥接用）
-    var focusedTextView: TextView? {
+    public var focusedTextView: TextView? {
         get { state.focusedTextView }
         set { state.focusedTextView = newValue }
     }
 
     /// 跳转定义代理（内核视图桥接用）
-    var jumpDelegate: EditorJumpToDefinitionDelegate? {
+    public var jumpDelegate: EditorJumpToDefinitionDelegate? {
         get { state.jumpDelegate }
         set { state.jumpDelegate = newValue }
     }
 
     /// 面板状态（内核视图 / 底部面板插件用）
-    var panelState: EditorPanelState { state.panelState }
+    public var panelState: EditorPanelState { state.panelState }
 
     /// 编辑器扩展注册中心（内核视图 / 扩展 Contributor 用）
-    var editorExtensions: EditorExtensionRegistry { state.editorExtensions }
+    public var editorExtensions: EditorExtensionRegistry { state.editorExtensions }
 
     /// 调用层级提供者
-    var callHierarchyProvider: any SuperEditorCallHierarchyProvider { state.callHierarchyProvider }
+    public var callHierarchyProvider: any SuperEditorCallHierarchyProvider { state.callHierarchyProvider }
 
     /// 工作区符号搜索提供者
-    var workspaceSymbolProvider: any SuperEditorWorkspaceSymbolProvider { state.workspaceSymbolProvider }
+    public var workspaceSymbolProvider: any SuperEditorWorkspaceSymbolProvider { state.workspaceSymbolProvider }
 
     /// 签名帮助提供者
-    var signatureHelpProvider: any SuperEditorSignatureHelpProvider { state.signatureHelpProvider }
+    public var signatureHelpProvider: any SuperEditorSignatureHelpProvider { state.signatureHelpProvider }
 
     /// 内联提示提供者
-    var inlayHintProvider: any SuperEditorInlayHintProvider { state.inlayHintProvider }
+    public var inlayHintProvider: any SuperEditorInlayHintProvider { state.inlayHintProvider }
 
     /// 文档高亮提供者
-    var documentHighlightProvider: any SuperEditorDocumentHighlightProvider { state.documentHighlightProvider }
+    public var documentHighlightProvider: any SuperEditorDocumentHighlightProvider { state.documentHighlightProvider }
 
     /// 折叠范围提供者
-    var foldingRangeProvider: any SuperEditorFoldingRangeProvider { state.foldingRangeProvider }
+    public var foldingRangeProvider: any SuperEditorFoldingRangeProvider { state.foldingRangeProvider }
 
     /// 面板控制器（内核视图用）
-    var panelController: EditorPanelController { state.panelController }
+    public var panelController: EditorPanelController { state.panelController }
 
     /// 执行工作区搜索
-    func performWorkspaceSearch() async {
+    public func performWorkspaceSearch() async {
         await state.performWorkspaceSearch()
     }
 
     /// 在编辑器中打开工作区搜索结果
-    func openWorkspaceSearchResultsInEditor() {
+    public func openWorkspaceSearchResultsInEditor() {
         state.openWorkspaceSearchResultsInEditor()
     }
 
     /// 打开工作区搜索匹配项
-    func openWorkspaceSearchMatch(_ match: EditorWorkspaceSearchMatch) {
+    public func openWorkspaceSearchMatch(_ match: EditorWorkspaceSearchMatch) {
         state.openWorkspaceSearchMatch(match)
     }
 
@@ -732,7 +735,7 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 从快照同步活跃会话
-    func syncActiveSession(from snapshot: EditorSession) {
+    public func syncActiveSession(from snapshot: EditorSession) {
         sessionStore.syncActiveSession(from: snapshot)
     }
 
@@ -741,7 +744,7 @@ public final class EditorService: ObservableObject {
     // ========================================================================
 
     /// 活跃会话变化回调（由 EditorPanelView 注册）
-    var onActiveSessionChanged: ((EditorSession) -> Void)? {
+    public var onActiveSessionChanged: ((EditorSession) -> Void)? {
         get { state.onActiveSessionChanged }
         set { state.onActiveSessionChanged = newValue }
     }

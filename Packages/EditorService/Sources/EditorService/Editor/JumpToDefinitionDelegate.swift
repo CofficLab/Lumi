@@ -21,25 +21,27 @@ import MagicKit
 /// 4. 此方法通过 AST 或正则查找定义位置
 /// 5. 引擎自动执行跳转或显示多定义弹窗
 @preconcurrency
-final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDelegate, SuperLog {
-    nonisolated static let emoji = "🔗"
+public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDelegate, SuperLog {
+    public nonisolated static let emoji = "🔗"
     nonisolated static let verbose = false
-    private let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.jump-to-definition")
+    private let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.jump-to-definition")
     
-    weak var treeSitterClient: TreeSitterClient?
-    weak var textStorage: NSTextStorage?
-    weak var lspClient: (any SuperEditorLSPClient)?
+    public weak var treeSitterClient: TreeSitterClient?
+    public weak var textStorage: NSTextStorage?
+    public weak var lspClient: (any SuperEditorLSPClient)?
     weak var textViewController: TextViewController?
-    var semanticCapabilityProvider: (() -> (any SuperEditorSemanticCapability)?)?
-    var currentFileURLProvider: (() -> URL?)?
-    var onOpenExternalDefinition: ((URL, CursorPosition) -> Void)?
-    var allowsLocalFallbackProvider: (() -> Bool)?
+    public var semanticCapabilityProvider: (() -> (any SuperEditorSemanticCapability)?)?
+    public var currentFileURLProvider: (() -> URL?)?
+    public var onOpenExternalDefinition: ((URL, CursorPosition) -> Void)?
+    public var allowsLocalFallbackProvider: (() -> Bool)?
     private let requestGeneration = RequestGeneration()
+
+    public init() {}
     
     // MARK: - JumpToDefinitionDelegate
     
     /// 查询定义链接 - 当用户 Cmd+Click 时，引擎调用此方法查找目标
-    func queryLinks(forRange range: NSRange, textView: TextViewController) async -> [JumpToDefinitionLink]? {
+    public func queryLinks(forRange range: NSRange, textView: TextViewController) async -> [JumpToDefinitionLink]? {
         guard let textStorage = textStorage else { return nil }
         let generation = requestGeneration.next()
         
@@ -113,7 +115,7 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
     }
     
     /// 打开链接（本地跳转由引擎自动处理，这里仅记录日志）
-    func openLink(link: JumpToDefinitionLink) {
+    public func openLink(link: JumpToDefinitionLink) {
         if Self.verbose {
             logger.debug("\(self.t)打开链接: \(link.label) -> \(link.url?.absoluteString ?? "本地")")
         }
@@ -366,19 +368,19 @@ final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDe
 
         var toastFinding: String {
             switch self {
-            case .definition: return String(localized: "Finding definition...", table: "LumiEditor")
-            case .declaration: return String(localized: "Finding declaration...", table: "LumiEditor")
-            case .typeDefinition: return String(localized: "Finding type definition...", table: "LumiEditor")
-            case .implementation: return String(localized: "Finding implementation...", table: "LumiEditor")
+            case .definition: return String(localized: "Finding definition...", table: EditorHostEnvironment.current.localizationTable)
+            case .declaration: return String(localized: "Finding declaration...", table: EditorHostEnvironment.current.localizationTable)
+            case .typeDefinition: return String(localized: "Finding type definition...", table: EditorHostEnvironment.current.localizationTable)
+            case .implementation: return String(localized: "Finding implementation...", table: EditorHostEnvironment.current.localizationTable)
             }
         }
 
         var toastNotFound: String {
             switch self {
-            case .definition: return String(localized: "No definition found", table: "LumiEditor")
-            case .declaration: return String(localized: "No declaration found", table: "LumiEditor")
-            case .typeDefinition: return String(localized: "No type definition found", table: "LumiEditor")
-            case .implementation: return String(localized: "No implementation found", table: "LumiEditor")
+            case .definition: return String(localized: "No definition found", table: EditorHostEnvironment.current.localizationTable)
+            case .declaration: return String(localized: "No declaration found", table: EditorHostEnvironment.current.localizationTable)
+            case .typeDefinition: return String(localized: "No type definition found", table: EditorHostEnvironment.current.localizationTable)
+            case .implementation: return String(localized: "No implementation found", table: EditorHostEnvironment.current.localizationTable)
             }
         }
     }

@@ -36,11 +36,11 @@ public final class EditorKeybindingStore: ObservableObject {
         let dir: URL
         if let root = EditorSettingsLifecycle.hostPersistenceRootURL?() {
             dir = root
-                .appendingPathComponent("LumiEditor", isDirectory: true)
+                .appendingPathComponent(EditorHostEnvironment.current.storageDirectoryName, isDirectory: true)
                 .appendingPathComponent("settings", isDirectory: true)
         } else {
             dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-                .appendingPathComponent("LumiEditor", isDirectory: true)
+                .appendingPathComponent(EditorHostEnvironment.current.storageDirectoryName, isDirectory: true)
                 .appendingPathComponent("settings", isDirectory: true)
         }
         return dir.appendingPathComponent(Self.bindingsFileName)
