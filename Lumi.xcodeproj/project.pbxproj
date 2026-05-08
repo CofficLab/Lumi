@@ -133,6 +133,8 @@
 		F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5AE9ACF2FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5AE9C862FAD6F1E00F014F8 /* CodeEditSourceEditorExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditSourceEditorExample.xcodeproj; sourceTree = "<group>"; };
+		F5CA2D042FADB30800F67747 /* Lumi.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Lumi.xctestplan; sourceTree = "<group>"; };
+		F5CA2D052FADB58500F67747 /* EditorServiceTests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = EditorServiceTests.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -333,6 +335,8 @@
 		F54F8C752F1A3B6500AABB2A = {
 			isa = PBXGroup;
 			children = (
+				F5CA2D052FADB58500F67747 /* EditorServiceTests.xctestplan */,
+				F5CA2D042FADB30800F67747 /* Lumi.xctestplan */,
 				F534CBA92FAD7A9F00144E66 /* Vendor */,
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,

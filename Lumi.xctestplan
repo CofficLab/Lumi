@@ -1,0 +1,30 @@
+{
+  "configurations" : [
+    {
+      "id" : "18C98422-DA69-4055-9E3E-F01D82D63199",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Lumi.xcodeproj",
+      "identifier" : "F54F8C7D2F1A3B6500AABB2A",
+      "name" : "Lumi"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Lumi.xcodeproj",
+        "identifier" : "A10000042F60000100AAA001",
+        "name" : "LumiTests"
+      }
+    }
+  ],
+  "version" : 1
+}
