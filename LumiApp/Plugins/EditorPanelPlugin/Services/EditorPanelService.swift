@@ -22,7 +22,7 @@ final class EditorPanelService: ObservableObject {
     // MARK: - 属性
 
     /// 当前拖拽中的标签页 Session ID
-    @Published var draggedTabSessionID: EditorSession.ID?
+    @Published var draggedTabSessionID: UUID?
 
     /// 命令面板是否展示
     @Published var isCommandPalettePresented: Bool = false
@@ -160,7 +160,7 @@ final class EditorPanelService: ObservableObject {
     }
 
     /// 切换标签页固定状态
-    func togglePinned(sessionID: EditorSession.ID, service: EditorService) {
+    func togglePinned(sessionID: UUID, service: EditorService) {
         service.togglePinned(sessionID: sessionID)
     }
 

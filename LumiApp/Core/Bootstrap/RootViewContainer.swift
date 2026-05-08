@@ -1,4 +1,6 @@
+import CodeEditTextView
 import Combine
+import EditorService
 import Foundation
 import MagicKit
 import SwiftData
@@ -207,15 +209,60 @@ final class RootViewContainer: ObservableObject {
             plugin.registerEditorExtensions(into: editorExtensionRegistry)
         }
         // 将实际注册了的插件记录到 registry
-        editorExtensionRegistry.recordInstalledPlugins(pluginsToRegister)
+        let pluginRecords = pluginsToRegister.map { plugin -> EditorInstalledPluginRecord in
+            let t = type(of: plugin)
+            return EditorInstalledPluginRecord(
+                id: t.id,
+                displayName: t.displayName,
+                description: t.description,
+                order: t.order,
+                isConfigurable: t.isConfigurable
+            )
+        }
+        editorExtensionRegistry.recordInstalledPlugins(pluginRecords)
         
         os.Logger(subsystem: "com.coffic.lumi", category: "root").info("🔌 RootViewContainer: 插件自注册完成，installedPlugins=\(editorExtensionRegistry.installedPlugins.count)")
+
+        EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
+            for contribution in PluginVM.shared.getThemeContributions() {
+                if let c = contribution.editorThemeContributor as? any SuperEditorThemeContributor {
+                    registry.registerThemeContributor(c)
+                }
+            }
+        }
+
+        EditorSettingsLifecycle.registerMultiCursorTextView = { textView, state in
+            MultiCursorInputInstaller.shared.register(textView: textView, state: state)
+        }
 
         self.editorVM = EditorVM(service: EditorService(editorExtensionRegistry: editorExtensionRegistry))
 
         // 将 registry 注入到 EditorSettingsState，使其 settingsSuggestions 和 reinstallEditorPlugins 可用
         EditorSettingsState.shared.configureRegistry(editorExtensionRegistry)
 
+        EditorSettingsLifecycle.onReinstallPlugins = { registry in
+            let plugins = PluginVM.shared.plugins.filter { PluginVM.shared.isPluginEnabled($0) }
+            for plugin in plugins {
+                plugin.registerEditorExtensions(into: registry)
+            }
+            let records = plugins.map { plugin -> EditorInstalledPluginRecord in
+                let t = type(of: plugin)
+                return EditorInstalledPluginRecord(
+                    id: t.id,
+                    displayName: t.displayName,
+                    description: t.description,
+                    order: t.order,
+                    isConfigurable: t.isConfigurable
+                )
+            }
+            registry.recordInstalledPlugins(records)
+        }
+
+        EditorSettingsLifecycle.onQuickOpenSettingSelected = { searchQuery in
+            AppSettingStore.saveSettingsSelection(type: "core", value: SettingTab.editor.rawValue)
+            AppSettingStore.savePendingEditorSettingsSearchQuery(searchQuery)
+            NotificationCenter.postOpenSettings()
+        }
         messageQueueVM.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()

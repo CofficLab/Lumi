@@ -1,6 +1,6 @@
 #if canImport(XCTest)
+import EditorKernelCore
 import XCTest
-@testable import Lumi
 
 final class EditorServiceUtilitiesTests: XCTestCase {
 

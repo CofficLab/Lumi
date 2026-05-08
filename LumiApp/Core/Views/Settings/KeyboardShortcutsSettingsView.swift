@@ -1,4 +1,5 @@
 import AppKit
+import EditorService
 import SwiftUI
 
 struct KeyboardShortcutsSettingsView: View {

@@ -109,55 +109,6 @@ final class WorkspaceSymbolProvider: ObservableObject, SuperEditorWorkspaceSymbo
     }
 }
 
-struct WorkspaceSymbolItem: Identifiable, Equatable {
-    let id = UUID()
-    let name: String
-    let kind: SymbolKind
-    let location: SymbolLocation
-    let containerName: String?
-    let tags: [SymbolTag]?
-    let detail: String?
-    let data: LanguageServerProtocol.LSPAny?
-    
-    var kindDisplayName: String {
-        switch kind {
-        case .function: return "函数"
-        case .method: return "方法"
-        case .variable: return "变量"
-        case .class: return "类"
-        case .interface: return "接口"
-        case .struct: return "结构体"
-        case .enum: return "枚举"
-        case .property: return "属性"
-        case .constant: return "常量"
-        case .field: return "字段"
-        case .typeParameter: return "类型参数"
-        default: return String(kind.rawValue)
-        }
-    }
-    
-    var iconSymbol: String {
-        switch kind {
-        case .function: return "f.cursive"
-        case .method: return "cube"
-        case .variable: return "text.word.spacing"
-        case .class: return "square.stack"
-        case .interface: return "circle.square"
-        case .struct: return "box"
-        case .enum: return "list.bullet"
-        case .property: return "p.circle"
-        case .constant: return "c.circle"
-        case .field: return "f.circle"
-        default: return "doc"
-        }
-    }
-}
-
-struct SymbolLocation: Equatable {
-    let uri: String
-    let range: LSPRange
-}
-
 struct WorkspaceSymbolItemSearchView: View {
     @ObservedObject var provider: WorkspaceSymbolProvider
     @State private var query: String = ""

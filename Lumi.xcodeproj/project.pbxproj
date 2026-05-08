@@ -35,6 +35,7 @@
 		A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E12F70000100AAA101 /* MarkdownKit */; };
 		A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E72F70000100AAA101 /* EditorKernelCore */; };
 		A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3EF2F70000100AAA101 /* DatabaseKit */; };
+		A1B2C4002F70000100AAA101 /* EditorService in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4012F70000100AAA101 /* EditorService */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -119,6 +120,10 @@
 
 /* Begin PBXFileReference section */
 		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
+		0BC901B12FAD5B56003651CA /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
+		0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
+		0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
 		A10000012F60000100AAA001 /* LumiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -244,6 +249,7 @@
 				A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */,
 				A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */,
 				A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */,
+				A1B2C4002F70000100AAA101 /* EditorService in Frameworks */,
 				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
 				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
@@ -280,6 +286,34 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0BC901712FAD5B54003651CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0BC9031E2FAD5B56003651CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0BC903202FAD5B56003651CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0BC9FE082FAD5B49003651CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		F54F8C752F1A3B6500AABB2A = {
 			isa = PBXGroup;
 			children = (
@@ -407,6 +441,7 @@
 				A1B2C3E12F70000100AAA101 /* MarkdownKit */,
 				A1B2C3D62F70000100AAA101 /* MarkdownKitCore */,
 				A1B2C3E72F70000100AAA101 /* EditorKernelCore */,
+				A1B2C4012F70000100AAA101 /* EditorService */,
 				A1B2C3EF2F70000100AAA101 /* DatabaseKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 			);
@@ -495,11 +530,30 @@
 				A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */,
 				A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */,
 				A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */,
+				A1B2C4022F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
 				A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 0BC901712FAD5B54003651CA /* Products */;
+					ProjectRef = 0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */;
+				},
+				{
+					ProductGroup = 0BC903202FAD5B56003651CA /* Products */;
+					ProjectRef = 0BC901B12FAD5B56003651CA /* Demo.xcodeproj */;
+				},
+				{
+					ProductGroup = 0BC9031E2FAD5B56003651CA /* Products */;
+					ProjectRef = 0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */;
+				},
+				{
+					ProductGroup = 0BC9FE082FAD5B49003651CA /* Products */;
+					ProjectRef = 0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				F54F8C7D2F1A3B6500AABB2A /* Lumi */,
@@ -1089,6 +1143,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/DatabaseKit;
 		};
+		A1B2C4022F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorService" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/EditorService;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1380,6 +1438,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */;
 			productName = DatabaseKit;
+		};
+		A1B2C4012F70000100AAA101 /* EditorService */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4022F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorService" */;
+			productName = EditorService;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

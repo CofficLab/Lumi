@@ -372,34 +372,6 @@ final class CodeActionProvider: ObservableObject, SuperEditorCodeActionProvider 
     }
 }
 
-/// Code Action 数据模型
-struct CodeActionItem: Identifiable {
-    enum Payload {
-        case lsp(CodeAction)
-        case plugin(EditorCodeActionSuggestion)
-    }
-
-    let id = UUID()
-    let title: String
-    let kind: String
-    let payload: Payload
-    let isPreferred: Bool
-
-    var icon: String {
-        if kind == "plugin" {
-            return "puzzlepiece.extension"
-        }
-        if kind.contains("quickfix") {
-            return "lightbulb"
-        } else if kind.contains("refactor") {
-            return "arrow.triangle.2.circlepath"
-        } else if kind.contains("source") {
-            return "gearshape"
-        }
-        return "hammer"
-    }
-}
-
 // MARK: - UI Views
 
 /// 代码动作弹窗

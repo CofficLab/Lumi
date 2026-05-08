@@ -9,7 +9,7 @@ struct EditorTabHeaderView: View {
     @EnvironmentObject var editorVM: EditorVM
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var themeVM: ThemeVM
-    @State private var draggedTabSessionID: EditorSession.ID?
+    @State private var draggedTabSessionID: UUID?
 
     /// 标签页持久化协调器
     @StateObject private var coordinator = EditorTabStripCoordinator()

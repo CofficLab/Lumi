@@ -137,64 +137,6 @@ final class CallHierarchyProvider: ObservableObject, SuperEditorCallHierarchyPro
     }
 }
 
-struct EditorCallHierarchyItem: Identifiable, Equatable, Hashable {
-    let id = UUID()
-    let name: String
-    let kind: SymbolKind
-    let uri: String
-    let range: LSPRange
-    let selectionRange: LSPRange
-    let data: LanguageServerProtocol.LSPAny?
-    
-    init(item: LanguageServerProtocol.CallHierarchyItem) {
-        self.name = item.name
-        self.kind = item.kind
-        self.uri = item.uri
-        self.range = item.range
-        self.selectionRange = item.selectionRange
-        self.data = item.data
-    }
-    
-    var kindDisplayName: String {
-        switch kind {
-        case .function: return "函数"
-        case .method: return "方法"
-        case .constructor: return "构造函数"
-        case .class: return "类"
-        case .interface: return "接口"
-        case .struct: return "结构体"
-        case .enum: return "枚举"
-        case .enumMember: return "枚举成员"
-        default: return String(kind.rawValue)
-        }
-    }
-    
-    var iconSymbol: String {
-        switch kind {
-        case .function: return "f.cursive"
-        case .method: return "cube"
-        case .constructor: return "plus.square"
-        case .class: return "square.stack"
-        case .interface: return "circle.square"
-        case .struct: return "box"
-        case .enum: return "list.bullet"
-        case .enumMember: return "bullet"
-        default: return "doc"
-        }
-    }
-}
-
-struct EditorCallHierarchyCall: Identifiable, Equatable {
-    let id = UUID()
-    let item: EditorCallHierarchyItem
-    let fromRanges: [LSPRange]
-    
-    init(item: LanguageServerProtocol.CallHierarchyItem, fromRanges: [LSPRange]) {
-        self.item = EditorCallHierarchyItem(item: item)
-        self.fromRanges = fromRanges
-    }
-}
-
 struct CallHierarchyTreeView: View {
     let calls: [EditorCallHierarchyCall]
     let direction: CallHierarchyDirection

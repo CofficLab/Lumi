@@ -1,6 +1,6 @@
 #if canImport(XCTest)
+import EditorKernelCore
 import XCTest
-@testable import Lumi
 
 /// EditorService 内核纯逻辑测试。
 ///

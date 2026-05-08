@@ -41,7 +41,7 @@ final class EditorVM: ObservableObject {
         // 使依赖 @EnvironmentObject editorVM 的视图能感知 tabs/session 的增删改。
         // ⚠️ 此处仍需直接访问 sessionStore，因为 objectWillChange 是 Combine 管道，
         // 无法通过门面方法转发（门面不暴露 ObservableObject 协议）。
-        service.sessionStore.objectWillChange
+        service.sessionObjectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)

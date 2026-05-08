@@ -118,21 +118,6 @@ final class SignatureHelpProvider: ObservableObject, SuperEditorSignatureHelpPro
     }
 }
 
-/// 签名帮助数据模型
-struct SignatureHelpItem: Identifiable {
-    let id = UUID()
-    let label: String
-    let documentation: String?
-    let parameters: [SignatureParam]
-    let activeParameterIndex: Int
-}
-
-struct SignatureParam: Identifiable {
-    let id = UUID()
-    let label: String
-    let documentation: String?
-}
-
 // MARK: - UI Views
 
 /// 签名帮助视图
