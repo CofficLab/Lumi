@@ -43,7 +43,12 @@ actor EditorXcodePlugin: SuperPlugin {
         guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(XcodeProjectStatusBar())
     }
-    
+
+    /// 在状态栏右侧显示 Xcode 构建上下文状态
+    @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(XcodeStatusBarTrailingView())
+    }
+
     /// 添加根视图包裹器
     ///
     /// 在应用启动时预加载最近 Xcode 项目的 buildServer.json，
