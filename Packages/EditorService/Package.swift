@@ -14,7 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../EditorKernelCore"),
-        .package(url: "https://github.com/CodeEditApp/CodeEditSourceEditor", from: "0.15.2"),
+        .package(path: "../LumiCodeEditSourceEditor"),
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
         .package(url: "https://github.com/CodeEditApp/CodeEditTextView", from: "0.12.1"),
         .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.20"),
@@ -28,7 +28,7 @@ let package = Package(
             dependencies: [
                 .product(name: "EditorKernelCore", package: "EditorKernelCore"),
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
-                .product(name: "CodeEditSourceEditor", package: "CodeEditSourceEditor"),
+                .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
                 .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
                 .product(name: "MagicKit", package: "MagicKit"),
