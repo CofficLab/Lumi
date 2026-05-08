@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct NetworkDashboardView: View {
     @StateObject private var viewModel = NetworkManagerViewModel()
@@ -14,7 +15,7 @@ struct NetworkDashboardView: View {
                             speed: viewModel.networkState.downloadSpeed,
                             total: viewModel.networkState.totalDownload,
                             icon: "arrow.down.circle.fill",
-                            color: AppUI.Color.semantic.success,
+                            color: Color(hex: "30D158"),
                             viewModel: viewModel
                         )
 
@@ -23,7 +24,7 @@ struct NetworkDashboardView: View {
                             speed: viewModel.networkState.uploadSpeed,
                             total: viewModel.networkState.totalUpload,
                             icon: "arrow.up.circle.fill",
-                            color: AppUI.Color.semantic.info,
+                            color: Color(hex: "0A84FF"),
                             viewModel: viewModel
                         )
                     }
@@ -64,25 +65,25 @@ struct SpeedCard: View {
     let viewModel: NetworkManagerViewModel
 
     var body: some View {
-        GlassCard(cornerRadius: AppUI.Radius.md, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+        GlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+            VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Image(systemName: icon)
                         .font(.title2)
                         .foregroundStyle(color)
                     Text(title)
-                        .font(AppUI.Typography.bodyEmphasized)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Spacer()
                 }
 
                 Text(speed.formattedNetworkSpeed())
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Text(String(localized: "Total: \(Double(total).formattedBytes())"))
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color(hex: "98989E"))
             }
         }
         .mystiqueGlow(intensity: 0.2)
@@ -95,23 +96,23 @@ struct NetworkInfoCard: View {
     let icon: String
 
     var body: some View {
-        GlassCard(cornerRadius: AppUI.Radius.sm) {
-            HStack(spacing: AppUI.Spacing.sm) {
+        GlassCard(cornerRadius: 8) {
+            HStack(spacing: 8) {
                 Image(systemName: icon)
                     .frame(width: 24, height: 24)
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
-                VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color(hex: "98989E"))
                     Text(value)
-                        .font(AppUI.Typography.body)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 }
                 Spacer()
             }
-            .padding(AppUI.Spacing.sm)
+            .padding(8)
         }
     }
 }

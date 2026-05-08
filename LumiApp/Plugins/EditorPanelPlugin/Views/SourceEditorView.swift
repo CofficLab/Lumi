@@ -255,7 +255,7 @@ struct SourceEditorView: View, SuperLog {
                     ForEach(hints.prefix(24)) { hint in
                         Text(String(localized: "L\(hint.line + 1) \(hint.text)", table: "LumiEditor"))
                             .font(.system(size: 10, design: .monospaced))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .lineLimit(1)
                     }
                 }
@@ -263,7 +263,7 @@ struct SourceEditorView: View, SuperLog {
             }
             .frame(height: 22)
             .frame(maxWidth: .infinity)
-            .background(AppUI.Color.semantic.textTertiary.opacity(0.06))
+            .background(Color(hex: "98989E").opacity(0.06))
         }
     }
 

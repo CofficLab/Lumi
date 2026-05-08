@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// About view, displays app details
 struct AboutView: View {
@@ -16,11 +17,11 @@ struct AboutView: View {
         VStack(spacing: 0) {
             // 顶部说明卡片（固定）
             headerCard
-                .padding(AppUI.Spacing.lg)
+                .padding(24)
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
+                VStack(alignment: .leading, spacing: 24) {
                     // 应用信息卡片
                     appInfoCard
 
@@ -35,7 +36,7 @@ struct AboutView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, AppUI.Spacing.lg)
+                .padding(.horizontal, 24)
             }
         }
         .navigationTitle("关于")

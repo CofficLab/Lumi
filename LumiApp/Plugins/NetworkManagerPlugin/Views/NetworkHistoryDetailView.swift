@@ -12,7 +12,7 @@ struct NetworkHistoryDetailView: View {
             HStack {
                 Text(String(localized: "History Trend"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Spacer()
 
@@ -34,7 +34,7 @@ struct NetworkHistoryDetailView: View {
                 timeRange: selectedRange
             )
             .frame(height: 140)
-            .background(AppUI.Material.glass.opacity(0.5))
+            .background(Color.white.opacity(0.08))
             .roundedMedium()
             .padding(.horizontal, 12)
             .padding(.bottom, 12)

@@ -70,28 +70,28 @@ struct GoBuildOutputView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.error)
+                        .foregroundColor(Color(hex: "FF453A"))
                     Text("\(buildManager.errorCount) \(String(localized: "errors", table: "GoEditor"))")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.error)
+                        .foregroundColor(Color(hex: "FF453A"))
                 }
             } else if buildManager.warningCount > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
                     Text("\(buildManager.warningCount) \(String(localized: "warnings", table: "GoEditor"))")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
                 }
             } else if buildManager.state == .success {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.success)
+                        .foregroundColor(Color(hex: "30D158"))
                     Text(String(localized: "Build succeeded", table: "GoEditor"))
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.success)
+                        .foregroundColor(Color(hex: "30D158"))
                 }
             }
 
@@ -123,8 +123,8 @@ struct GoBuildOutputView: View {
                     .font(.system(size: 10))
                     .foregroundColor(
                         issue.severity == .error
-                            ? AppUI.Color.semantic.error
-                            : AppUI.Color.semantic.warning
+                            ? Color(hex: "FF453A")
+                            : Color(hex: "FF9F0A")
                     )
                     .frame(width: 14)
 

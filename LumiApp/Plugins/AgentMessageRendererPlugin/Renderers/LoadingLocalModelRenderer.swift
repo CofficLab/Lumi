@@ -19,13 +19,13 @@ struct LoadingLocalModelRenderer: SuperMessageRenderer {
                         AvatarView.system
                         AppIdentityRow(
                             title: "System",
-                            titleColor: AppUI.Color.semantic.textSecondary
+                            titleColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
                         )
                     }
                 } trailing: {
                     Text(formatTimestamp(message.timestamp))
-                        .font(AppUI.Typography.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
 
                 LoadingLocalModelSystemMessageView(message: message)

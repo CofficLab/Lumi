@@ -236,8 +236,8 @@ struct BreadcrumbNavComponent: View {
                         .font(.system(size: 11, weight: isLastItem ? .semibold : .regular))
                         .foregroundColor(
                             isLastItem
-                                ? AppUI.Color.semantic.textPrimary
-                                : AppUI.Color.semantic.textSecondary
+                                ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+                                : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
                         )
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -251,7 +251,7 @@ struct BreadcrumbNavComponent: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 4)
                         .strokeBorder(
-                            isMenuVisible ? AppUI.Color.semantic.primary.opacity(0.3) : Color.clear,
+                            isMenuVisible ? Color(hex: "7C6FFF").opacity(0.3) : Color.clear,
                             lineWidth: 1
                         )
                 )
@@ -307,12 +307,12 @@ struct BreadcrumbNavComponent: View {
                     Image(systemName: "chevron.down")
                 }
                 .font(.system(size: 6, weight: .bold, design: .default))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
                 .padding(.top, 0.5)
             } else {
                 Image(systemName: "chevron.compact.right")
                     .font(.system(size: 9, weight: .medium, design: .default))
-                    .foregroundStyle(AppUI.Color.semantic.textTertiary)
+                    .foregroundStyle(Color(hex: "98989E"))
                     .scaleEffect(x: 1.30, y: 1.0, anchor: .center)
                     .imageScale(.large)
             }
@@ -380,7 +380,7 @@ struct BreadcrumbNavComponent: View {
         case "go": return Color.cyan
         case "rs": return Color.orange
         case "sh", "bash", "zsh": return Color.green
-        default: return AppUI.Color.semantic.textSecondary
+        default: return Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
         }
     }
 }
@@ -450,7 +450,7 @@ struct BreadcrumbMenuRow: View {
                 if isCurrent {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(AppUI.Color.semantic.primary)
+                        .foregroundColor(Color(hex: "7C6FFF"))
                 }
             }
         }

@@ -112,15 +112,15 @@ struct OpenInGitHubDesktopDetailView: View {
     @EnvironmentObject private var projectVM: ProjectVM
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             // 标题
-            HStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: 8) {
                 Image(systemName: "desktopcomputer")
                     .font(.system(size: 16))
 
                 Text("GitHub Desktop")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
@@ -139,15 +139,15 @@ struct OpenInGitHubDesktopDetailView: View {
             Divider()
 
             // 项目路径显示
-            HStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: 8) {
                 Text("项目")
                     .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 50, alignment: .leading)
 
                 Text(projectVM.currentProjectPath)
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .lineLimit(2)
                     .textSelection(.enabled)
 

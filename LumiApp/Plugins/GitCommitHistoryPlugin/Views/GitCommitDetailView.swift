@@ -161,7 +161,7 @@ struct GitCommitDetailView: View {
 
                 Text(String(localized: "Working State", table: "GitCommitDetail"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
@@ -182,7 +182,7 @@ struct GitCommitDetailView: View {
             HStack {
                 Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
             }
             .padding(.horizontal, 8)
@@ -214,10 +214,10 @@ struct GitCommitDetailView: View {
                             .foregroundColor(.green)
                         Text(String(localized: "Clean Workspace", table: "GitCommitDetail"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         Text(String(localized: "All changes committed", table: "GitCommitDetail"))
                             .font(.system(size: 11))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                     .padding(.top, 40)
                 }
@@ -271,11 +271,11 @@ struct GitCommitDetailView: View {
             HStack(spacing: 8) {
                 Image(systemName: "square.stack.3d.up.fill")
                     .font(.system(size: 16))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
 
                 Text(projectVM.currentProjectName)
-                    .font(DesignTokens.Typography.title3)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .lineLimit(1)
 
                 Spacer()
@@ -290,10 +290,10 @@ struct GitCommitDetailView: View {
                     Text(info.branch)
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
                 }
-                .foregroundColor(DesignTokens.Color.semantic.info)
+                .foregroundColor(Color(hex: "0A84FF"))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
-                .background(DesignTokens.Color.semantic.info.opacity(0.1))
+                .background(Color(hex: "0A84FF").opacity(0.1))
                 .cornerRadius(4)
 
                 // Remote badge
@@ -305,7 +305,7 @@ struct GitCommitDetailView: View {
                             .font(.system(size: 11, weight: .medium, design: .monospaced))
                             .lineLimit(1)
                     }
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(Color.secondary.opacity(0.08))
@@ -338,7 +338,7 @@ struct GitCommitDetailView: View {
             // Total Commits
             repoStatCard(
                 icon: "sourcecontrol",
-                iconColor: DesignTokens.Color.semantic.primary,
+                iconColor: Color(hex: "7C6FFF"),
                 value: "\(info.totalCommits)",
                 label: String(localized: "Total Commits", table: "GitCommitDetail")
             )
@@ -346,7 +346,7 @@ struct GitCommitDetailView: View {
             // Contributors
             repoStatCard(
                 icon: "person.2.fill",
-                iconColor: DesignTokens.Color.semantic.warning,
+                iconColor: Color(hex: "FF9F0A"),
                 value: "\(info.contributors.count)",
                 label: String(localized: "Contributors", table: "GitCommitDetail")
             )
@@ -364,12 +364,12 @@ struct GitCommitDetailView: View {
                     .foregroundColor(iconColor)
                 Text(label)
                     .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
             Text(value)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -392,10 +392,10 @@ struct GitCommitDetailView: View {
             HStack(spacing: 5) {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Text(String(localized: "Latest Commit", table: "GitCommitDetail"))
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
             // Commit 内容卡片
@@ -403,7 +403,7 @@ struct GitCommitDetailView: View {
                 // Commit message
                 Text(info.lastCommitMessage)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .lineLimit(2)
                     .textSelection(.enabled)
 
@@ -419,7 +419,7 @@ struct GitCommitDetailView: View {
                             .foregroundColor(.secondary)
                         Text(info.lastCommitAuthor)
                             .font(.system(size: 11))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .lineLimit(1)
                     }
 
@@ -430,7 +430,7 @@ struct GitCommitDetailView: View {
                             .foregroundColor(.secondary)
                         Text(info.lastCommitDate)
                             .font(.system(size: 11))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                 }
             }
@@ -456,16 +456,16 @@ struct GitCommitDetailView: View {
             HStack(spacing: 5) {
                 Image(systemName: "person.2")
                     .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Text(String(localized: "Contributors", table: "GitCommitDetail"))
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 Spacer()
 
                 Text("\(info.contributors.count)")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             }
 
             // 贡献者列表
@@ -484,7 +484,7 @@ struct GitCommitDetailView: View {
 
                         Text(name)
                             .font(.system(size: 11))
-                            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                             .lineLimit(1)
                     }
                     .padding(.horizontal, 8)
@@ -533,7 +533,7 @@ struct GitCommitDetailView: View {
 
                 Text(detail.message)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .lineLimit(2)
                     .textSelection(.enabled)
 
@@ -554,7 +554,7 @@ struct GitCommitDetailView: View {
             if !detail.body.isEmpty {
                 Text(detail.body)
                     .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .lineLimit(3)
                     .textSelection(.enabled)
                     .padding(.leading, 16)
@@ -572,7 +572,7 @@ struct GitCommitDetailView: View {
                 .foregroundColor(.secondary)
             Text(value)
                 .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .lineLimit(1)
         }
     }
@@ -581,7 +581,7 @@ struct GitCommitDetailView: View {
         HStack(spacing: 2) {
             Text(detail.hash.prefix(7))
                 .font(.system(size: 10, design: .monospaced))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             Button {
                 GitCommitDetailService.copyHash(detail.hash)
@@ -604,7 +604,7 @@ struct GitCommitDetailView: View {
 
     private func statsBadges(_ stats: GitDiffStats) -> some View {
         HStack(spacing: 8) {
-            statBadge(value: "\(stats.filesChanged)", label: String(localized: "files", table: "GitCommitDetail"), color: AppUI.Color.semantic.textPrimary)
+            statBadge(value: "\(stats.filesChanged)", label: String(localized: "files", table: "GitCommitDetail"), color: Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             statBadge(value: "+\(stats.insertions)", label: nil, color: .green)
             statBadge(value: "-\(stats.deletions)", label: nil, color: .red)
         }
@@ -618,7 +618,7 @@ struct GitCommitDetailView: View {
             if let label = label {
                 Text(label)
                     .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
         }
     }
@@ -628,7 +628,7 @@ struct GitCommitDetailView: View {
             HStack {
                 Text(String(localized: "\(commitChangedFiles.count) \(commitChangedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
             }
             .padding(.horizontal, 8)
@@ -652,7 +652,7 @@ struct GitCommitDetailView: View {
 
             Text(file.path)
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .textSelection(.enabled)
@@ -683,7 +683,7 @@ struct GitCommitDetailView: View {
 
                     Text(file)
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .lineLimit(1)
                         .truncationMode(.middle)
 
@@ -701,7 +701,7 @@ struct GitCommitDetailView: View {
                             .controlSize(.small)
                         Text(String(localized: "Loading diff...", table: "GitCommitDetail"))
                             .font(.system(size: 10))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if oldText.isEmpty && newText.isEmpty {
@@ -711,7 +711,7 @@ struct GitCommitDetailView: View {
                             .foregroundColor(.secondary.opacity(0.5))
                         Text(String(localized: "Cannot display diff for this file", table: "GitCommitDetail"))
                             .font(.system(size: 10))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -729,7 +729,7 @@ struct GitCommitDetailView: View {
                         .foregroundColor(.secondary.opacity(0.4))
                     Text(String(localized: "Select a file to view diff", table: "GitCommitDetail"))
                         .font(.system(size: 11))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -745,7 +745,7 @@ struct GitCommitDetailView: View {
                 .foregroundColor(.secondary.opacity(0.4))
             Text(String(localized: "No file changes in this commit", table: "GitCommitDetail"))
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -756,7 +756,7 @@ struct GitCommitDetailView: View {
                 .controlSize(.regular)
             Text(String(localized: "Loading...", table: "GitCommitDetail"))
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -768,10 +768,10 @@ struct GitCommitDetailView: View {
                 .foregroundColor(.orange.opacity(0.6))
             Text(String(localized: "Failed to load", table: "GitCommitDetail"))
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             Text(error)
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -785,7 +785,7 @@ struct GitCommitDetailView: View {
                 .foregroundColor(.secondary.opacity(0.5))
             Text(String(localized: "Please select a commit from the sidebar", table: "GitCommitDetail"))
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -797,7 +797,7 @@ struct GitCommitDetailView: View {
                 .foregroundColor(.secondary.opacity(0.5))
             Text(String(localized: "Please select a project first", table: "GitCommitDetail"))
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeDraculaPlugin: SuperPlugin {
+    static let shared = ThemeDraculaPlugin()
     static let id: String = "dracula"
     static let displayName: String = "Dracula"
     static let description: String = "Dracula Official dark theme"

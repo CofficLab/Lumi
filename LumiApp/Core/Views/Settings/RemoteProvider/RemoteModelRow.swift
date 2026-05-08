@@ -11,11 +11,11 @@ struct RemoteModelRow: View {
     var body: some View {
         GlassRow {
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: AppUI.Spacing.md) {
+                HStack(spacing: 16) {
                     // 模型名称
                     Text(model)
-                        .font(AppUI.Typography.body)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Spacer()
 
@@ -60,12 +60,12 @@ struct RemoteModelRow: View {
             Text(title)
                 .font(.caption2)
         }
-        .foregroundColor(AppUI.Color.semantic.textSecondary)
+        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         .padding(.horizontal, 4)
         .padding(.vertical, 1)
         .background(
             RoundedRectangle(cornerRadius: 3)
-                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
         )
         .help(title)
     }

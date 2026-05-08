@@ -37,7 +37,7 @@ struct DockerImagesView: View {
                     } label: {
                         GlassRow {
                             Label("Sort", systemImage: "arrow.up.arrow.down")
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         }
                         .frame(width: 90)
                     }
@@ -47,7 +47,7 @@ struct DockerImagesView: View {
                     }
                 }
                 .padding(8)
-                .background(AppUI.Material.glass)
+                .background(Material.regularMaterial)
 
                 GlassDivider()
 
@@ -90,7 +90,7 @@ struct DockerImagesView: View {
                 HStack {
                     Text("\(viewModel.filteredImages.count) images")
                         .font(.caption)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Spacer()
                     GlassButton(title: "Import", style: .secondary) {
                         showFileImporter = true
@@ -100,7 +100,7 @@ struct DockerImagesView: View {
                     }
                 }
                 .padding(8)
-                .background(AppUI.Material.glass)
+                .background(Material.regularMaterial)
             }
             .frame(minWidth: 250, maxWidth: 400)
 
@@ -111,20 +111,20 @@ struct DockerImagesView: View {
                 VStack {
                     Image(systemName: "cube.box")
                         .font(.system(size: 48))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text("Select an image to view details")
                         .font(.title2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppUI.Material.glass)
+                .background(Material.regularMaterial)
             }
         }
         .sheet(isPresented: $showPullSheet) {
             VStack(spacing: 20) {
                 Text("Pull New Image")
-                    .font(AppUI.Typography.title2)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 GlassTextField(
                     title: "Image",
                     text: $pullImageName,
@@ -152,12 +152,12 @@ struct DockerImagesView: View {
         .sheet(isPresented: $showTagSheet) {
             VStack(spacing: 20) {
                 Text("Tag Image")
-                    .font(AppUI.Typography.title2)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 if let img = imageToTag {
                     Text("Source: \(img.name)")
                         .font(.caption)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 GlassTextField(
                     title: "New Tag",
@@ -232,25 +232,25 @@ struct DockerImageRow: View {
     var body: some View {
         HStack {
             Image(systemName: "cube")
-                .foregroundColor(AppUI.Color.semantic.info)
+                .foregroundColor(Color(hex: "0A84FF"))
             VStack(alignment: .leading) {
                 Text(image.name)
                     .font(.body)
                     .fontWeight(.medium)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text(image.shortID)
                     .font(.caption)
                     .fontDesign(.monospaced)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             Spacer()
             VStack(alignment: .trailing) {
                 Text(image.Size)
                     .font(.caption)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text(image.CreatedSince)
                     .font(.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
         }
         .padding(.vertical, 4)
@@ -273,16 +273,16 @@ struct DockerImageDetailView: View {
                         Text(image.Repository)
                             .font(.title)
                             .fontWeight(.bold)
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         HStack {
                             Text(image.Tag)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(AppUI.Color.semantic.info.opacity(0.1))
+                                .background(Color(hex: "0A84FF").opacity(0.1))
                                 .cornerRadius(4)
                             Text(image.imageID)
                                 .font(.monospaced(.caption)())
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
                     }
                     Spacer()
@@ -296,28 +296,28 @@ struct DockerImageDetailView: View {
                     }
                 }
                 .padding()
-                .background(AppUI.Material.glass)
+                .background(Material.regularMaterial)
                 .cornerRadius(8)
 
                 // Scan Result
                 if let scanResult = viewModel.scanResult {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Security Scan")
-                            .font(AppUI.Typography.bodyEmphasized)
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                         ScrollView([.horizontal, .vertical]) {
                             Text(scanResult)
                                 .font(.monospaced(.caption)())
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                 .padding()
                         }
                         .frame(maxHeight: 200)
-                        .background(AppUI.Material.glass)
+                        .background(Material.regularMaterial)
                         .cornerRadius(4)
                     }
                     .padding()
-                    .background(AppUI.Material.glass)
+                    .background(Material.regularMaterial)
                     .cornerRadius(8)
                 }
 
@@ -330,15 +330,15 @@ struct DockerImageDetailView: View {
                         InfoRow(title: "Virtual Size", value: ByteCountFormatter.string(fromByteCount: detail.VirtualSize ?? 0, countStyle: .file))
                     }
                     .padding()
-                    .background(AppUI.Material.glass)
+                    .background(Material.regularMaterial)
                     .cornerRadius(8)
 
                     // Config
                     if let config = detail.Config {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Configuration")
-                                .font(AppUI.Typography.bodyEmphasized)
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                             if let cmds = config.Cmd {
                                 Text("CMD: " + cmds.joined(separator: " "))
@@ -349,21 +349,21 @@ struct DockerImageDetailView: View {
                                 Text("ENV:")
                                     .font(.caption)
                                     .fontWeight(.bold)
-                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 ForEach(envs.prefix(5), id: \.self) { env in
                                     Text(env)
                                         .font(.monospaced(.caption)())
-                                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 }
                                 if envs.count > 5 {
                                     Text("... (+ \(envs.count - 5) more)")
                                         .font(.caption)
-                                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                        .foregroundColor(Color(hex: "98989E"))
                                 }
                             }
                         }
                         .padding()
-                        .background(AppUI.Material.glass)
+                        .background(Material.regularMaterial)
                         .cornerRadius(8)
                     }
                 }
@@ -371,38 +371,38 @@ struct DockerImageDetailView: View {
                 // History/Layers
                 VStack(alignment: .leading, spacing: 8) {
                     Text("History / Layers")
-                        .font(AppUI.Typography.bodyEmphasized)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     ForEach(history) { layer in
                         HStack(alignment: .top) {
                             Text(layer.id.prefix(8))
                                 .font(.monospaced(.caption)())
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(width: 60, alignment: .leading)
 
                             Text(layer.CreatedBy)
                                 .font(.monospaced(.caption)())
                                 .lineLimit(2)
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                             Spacer()
 
                             Text(layer.Size)
                                 .font(.caption)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
                         .padding(.vertical, 4)
                         GlassDivider()
                     }
                 }
                 .padding()
-                .background(AppUI.Material.glass)
+                .background(Material.regularMaterial)
                 .cornerRadius(8)
             }
             .padding()
         }
-        .background(AppUI.Material.glass)
+        .background(Material.regularMaterial)
         .alert("Confirm Delete", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
@@ -422,11 +422,11 @@ struct InfoRow: View {
     var body: some View {
         HStack {
             Text(title)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             Spacer()
             Text(value)
                 .fontWeight(.medium)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
         }
     }
 }

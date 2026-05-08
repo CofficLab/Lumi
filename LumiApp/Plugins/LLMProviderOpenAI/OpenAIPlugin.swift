@@ -2,6 +2,7 @@ import Foundation
 
 /// OpenAI LLM 供应商插件
 actor OpenAIPlugin: SuperPlugin {
+    static let shared = OpenAIPlugin()
     static let id = "LLMProviderOpenAI"
     static let displayName = "OpenAI"
     static let description = "OpenAI GPT Models"

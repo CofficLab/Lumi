@@ -13,6 +13,7 @@ import MagicKit
 /// LSP 能力（补全/跳转/悬停/诊断）复用内核 LSPService，
 /// 已内置支持 typescript-language-server。
 actor JSEditorPlugin: SuperPlugin, SuperLog {
+    static let shared = JSEditorPlugin()
     nonisolated static let emoji = "🟨"
 
     static let id = "JSEditor"

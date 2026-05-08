@@ -22,18 +22,18 @@ struct ProcessRow: View {
                 } else {
                     Image(systemName: "gearshape")
                         .frame(width: 24, height: 24)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(process.name)
                         .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text(String(localized: "PID: \(process.id)", table: "NetworkManager"))
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
             }
             .frame(width: availableWidth * 0.50, alignment: .leading)
@@ -66,11 +66,11 @@ struct SpeedText: View {
 
     var color: Color {
         if speed >= thresholdRed {
-            return AppUI.Color.semantic.error
+            return Color(hex: "FF453A")
         } else if speed >= thresholdOrange {
-            return AppUI.Color.semantic.warning
+            return Color(hex: "FF9F0A")
         } else {
-            return AppUI.Color.semantic.textPrimary
+            return Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
         }
     }
 

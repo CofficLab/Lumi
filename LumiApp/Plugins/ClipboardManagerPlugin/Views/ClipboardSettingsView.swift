@@ -39,11 +39,11 @@ struct ClipboardSettingsView: View {
                         await ClipboardStorage.shared.clear()
                     }
                 }
-                .foregroundColor(AppUI.Color.semantic.error)
+                .foregroundColor(Color(hex: "FF453A"))
                 
                 Text("All data is stored locally in SwiftData database and will not be uploaded to any server.")
                     .font(.caption)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
         }
         .padding()

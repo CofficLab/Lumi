@@ -27,7 +27,7 @@ struct EditorInlinePresentationsOverlayView: View {
                             if let detail = presentation.detail {
                                 Text(detail)
                                     .font(.system(size: 9))
-                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                     .lineLimit(1)
                             }
                         }

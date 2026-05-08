@@ -3,6 +3,7 @@ import SwiftUI
 
 /// CSS 语言编辑器插件：提供 CSS 补全和悬浮提示
 actor CSSEditorPlugin: SuperPlugin {
+    static let shared = CSSEditorPlugin()
     static let id = "CSSEditor"
     static let displayName = "CSS Language Tools"
     static let description = "Provides CSS completions and hover help for common properties and values."

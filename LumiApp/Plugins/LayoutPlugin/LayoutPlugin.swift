@@ -20,6 +20,7 @@ import os
 /// - `LayoutVM.selectedAgentDetailId`：Agent 模式 Detail 视图
 /// - `LayoutVM.layoutRatios`：分栏布局宽度比例（由 SplitViewPersistence 组件更新）
 actor LayoutPlugin: SuperPlugin {
+    static let shared = LayoutPlugin()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     nonisolated static let emoji = "📐"
     nonisolated static let enable: Bool = true

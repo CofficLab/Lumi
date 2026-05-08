@@ -29,10 +29,10 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
         .padding(.vertical, 6)
         .background(headerBackground)
         .overlay(
-            RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(theme.workspaceTertiaryTextColor().opacity(isHovered ? 0.18 : 0.10), lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
@@ -43,7 +43,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
 
     private var headerBackground: some View {
         let theme = themeVM.activeAppTheme
-        return RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
+        return RoundedRectangle(cornerRadius: 8, style: .continuous)
             .fill(
                 isHovered
                     ? theme.workspaceSecondaryTextColor().opacity(0.14)

@@ -38,7 +38,7 @@ struct LocalModelSectionView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             headerRow
             errorAndFeedbackBlock
             if localModelsLoading {
@@ -50,9 +50,9 @@ struct LocalModelSectionView: View {
                     let downloadedModels = localAvailableModels.filter { localCachedIds.contains($0.id) }
                     if !downloadedModels.isEmpty {
                         Label("已下载", systemImage: "arrow.down.circle.fill")
-                            .font(AppUI.Typography.callout)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
-                        VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        VStack(alignment: .leading, spacing: 8) {
                             ForEach(downloadedModels) { model in
                                 LocalModelRow(
                                     model: model,
@@ -73,15 +73,15 @@ struct LocalModelSectionView: View {
                             }
                         }
                     } else {
-                        HStack(spacing: AppUI.Spacing.sm) {
+                        HStack(spacing: 8) {
                             Image(systemName: "tray")
                                 .font(.system(size: 16))
-                                .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.6))
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.6))
                             Text("暂无已下载的模型")
-                                .font(AppUI.Typography.caption1)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
-                        .padding(AppUI.Spacing.sm)
+                        .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 case .all:
@@ -93,7 +93,7 @@ struct LocalModelSectionView: View {
 
     private var headerRow: some View {
         HStack {
-            HStack(spacing: AppUI.Spacing.sm) {
+            HStack(spacing: 8) {
                 SeriesTabButton(title: "已下载", isSelected: selectedMainTab == .downloaded) {
                     selectedMainTab = .downloaded
                 }
@@ -104,7 +104,7 @@ struct LocalModelSectionView: View {
             Spacer()
             Button(action: onOpenCacheDirectory) {
                 Label("打开下载目录", systemImage: "folder")
-                    .font(AppUI.Typography.caption1)
+                    .font(.system(size: 12, weight: .regular))
             }
             .buttonStyle(.bordered)
             .accessibilityLabel("打开下载目录")
@@ -115,43 +115,43 @@ struct LocalModelSectionView: View {
     @ViewBuilder
     private var errorAndFeedbackBlock: some View {
         if let errorMessage = localActionError {
-            HStack(alignment: .top, spacing: AppUI.Spacing.xs) {
+            HStack(alignment: .top, spacing: 4) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 14))
-                    .foregroundColor(AppUI.Color.semantic.error)
+                    .foregroundColor(Color(hex: "FF453A"))
                 Text(errorMessage)
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.error)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color(hex: "FF453A"))
             }
         }
         if showUnloadSuccess {
-            HStack(spacing: AppUI.Spacing.xs) {
+            HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 14))
-                    .foregroundColor(AppUI.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
                 Text("已卸载")
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.primary)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color(hex: "7C6FFF"))
             }
         }
     }
 
     private var loadingPlaceholder: some View {
-        HStack(spacing: AppUI.Spacing.sm) {
+        HStack(spacing: 8) {
             ProgressView()
                 .scaleEffect(0.8)
             Label("正在加载模型列表…", systemImage: "list.bullet")
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, AppUI.Spacing.sm)
+        .padding(.vertical, 8)
     }
 
     private var availableModelsList: some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+        VStack(alignment: .leading, spacing: 8) {
             // 系列 Tab
-            HStack(spacing: AppUI.Spacing.sm) {
+            HStack(spacing: 8) {
                 ForEach(localModelsBySeries) { section in
                     SeriesTabButton(
                         title: section.seriesName,
@@ -163,7 +163,7 @@ struct LocalModelSectionView: View {
             }
             // 模型列表（展示该系列下全部模型，已下载/未下载均显示）
             if let section = localModelsBySeries.first(where: { $0.seriesName == selectedSeriesName }) ?? localModelsBySeries.first {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+                VStack(alignment: .leading, spacing: 8) {
                     ForEach(section.models) { model in
                         let isCached = localCachedIds.contains(model.id)
                         LocalModelRow(

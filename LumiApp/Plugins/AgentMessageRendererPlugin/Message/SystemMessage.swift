@@ -46,14 +46,14 @@ struct SystemMessage: View {
                 AvatarView.system
                 AppIdentityRow(
                     title: "System",
-                    titleColor: AppUI.Color.semantic.textSecondary
+                    titleColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
                 )
             }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
                 Text(formatTimestamp(message.timestamp))
-                    .font(AppUI.Typography.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }
@@ -105,9 +105,9 @@ struct LoadingLocalModelSystemMessageView: View {
             HStack(spacing: 10) {
                 statusIcon
                 Text(statusText)
-                    .font(AppUI.Typography.callout)
+                    .font(.system(size: 16, weight: .medium))
                     .fontWeight(.medium)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Spacer(minLength: 0)
             }
 
@@ -149,9 +149,9 @@ struct LoadingLocalModelSystemMessageView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text(info.displayName)
-                    .font(AppUI.Typography.callout)
+                    .font(.system(size: 16, weight: .medium))
                     .fontWeight(.medium)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 if let series = info.series, !series.isEmpty {
                     AppTag(series)
                 }
@@ -159,8 +159,8 @@ struct LoadingLocalModelSystemMessageView: View {
 
             if !info.description.isEmpty {
                 Text(info.description)
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -189,8 +189,8 @@ struct LoadingLocalModelSystemMessageView: View {
     private func fallbackModelLine(_ line: String) -> some View {
         HStack(spacing: 6) {
             Text(line)
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -206,7 +206,7 @@ struct LoadingLocalModelSystemMessageView: View {
         } else {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 14))
-                .foregroundColor(AppUI.Color.semantic.success)
+                .foregroundColor(Color(hex: "30D158"))
         }
     }
 }

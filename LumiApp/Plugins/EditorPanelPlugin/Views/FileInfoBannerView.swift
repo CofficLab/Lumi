@@ -16,13 +16,13 @@ struct FileInfoBannerView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                         Text(
                             String(
                                 localized: "Preview Truncated for Large File", table: "LumiEditor")
                         )
                         .font(.system(size: 9))
-                        .foregroundColor(AppUI.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
                     }
                     if service.canLoadFullFile {
                         Button(String(localized: "Load Full File", table: "LumiEditor")) {
@@ -36,27 +36,27 @@ struct FileInfoBannerView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "lock.fill")
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                         Text(String(localized: "Large File Read-Only Preview", table: "LumiEditor"))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                     }
                 }
                 if let warning = warningMessage {
                     HStack(spacing: 4) {
                         Image(systemName: "hammer.circle.fill")
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                         Text(warning)
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(AppUI.Color.semantic.warning.opacity(0.06))
+            .background(Color(hex: "FF9F0A").opacity(0.06))
             .background(themeVM.activeAppTheme.workspaceBackgroundColor())
             .zIndex(1)
         }

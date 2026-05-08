@@ -2,6 +2,7 @@ import Foundation
 
 /// 编辑器 hover / panel 样例插件：演示统一 hover content 与 panel contribution point。
 actor SampleInsightsEditorPlugin: SuperPlugin {
+    static let shared = SampleInsightsEditorPlugin()
     static let id = "SampleInsightsEditor"
     static let displayName = "Sample Insights"
     static let description = "Demonstrates hover, panel, and title action contributions."

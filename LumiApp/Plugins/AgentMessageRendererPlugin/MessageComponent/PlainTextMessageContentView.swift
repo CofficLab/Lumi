@@ -12,14 +12,14 @@ struct PlainTextMessageContentView: View {
         Group {
             if preferOuterScroll {
                 Text(verbatim: content)
-                    .font(monospaced ? AppUI.Typography.code : AppUI.Typography.body)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(monospaced ? .system(size: 13, weight: .regular, design: .monospaced) : .system(size: 15, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 TextEditor(text: .constant(content))
-                    .font(monospaced ? AppUI.Typography.code : AppUI.Typography.body)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(monospaced ? .system(size: 13, weight: .regular, design: .monospaced) : .system(size: 15, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .textSelection(.enabled)
                     .scrollContentBackground(.hidden)
             }

@@ -48,15 +48,15 @@ struct GoTestResultView: View {
                 if failed > 0 {
                     Text("\(passed) \(String(localized: "passed", table: "GoEditor")), \(failed) \(String(localized: "failed", table: "GoEditor")), \(skipped) \(String(localized: "skipped", table: "GoEditor"))")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.error)
+                        .foregroundColor(Color(hex: "FF453A"))
                 } else if !buildManager.testEvents.isEmpty {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 10))
-                            .foregroundColor(AppUI.Color.semantic.success)
+                            .foregroundColor(Color(hex: "30D158"))
                         Text("\(passed) \(String(localized: "passed", table: "GoEditor"))")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(AppUI.Color.semantic.success)
+                            .foregroundColor(Color(hex: "30D158"))
                     }
                 }
             }
@@ -99,9 +99,9 @@ struct GoTestResultView: View {
                 .font(.system(size: 10))
                 .foregroundColor(
                     event.status == .pass
-                        ? AppUI.Color.semantic.success
+                        ? Color(hex: "30D158")
                         : event.status == .fail
-                            ? AppUI.Color.semantic.error
+                            ? Color(hex: "FF453A")
                             : themeVM.activeAppTheme.workspaceTertiaryTextColor()
                 )
                 .frame(width: 14)

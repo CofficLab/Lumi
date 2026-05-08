@@ -2,6 +2,7 @@ import Foundation
 
 /// Chat 集成编辑器插件：提供代码发送到 AI chat 的上下文菜单操作
 actor ChatIntegrationEditorPlugin: SuperPlugin {
+    static let shared = ChatIntegrationEditorPlugin()
     static let id = "ChatIntegrationEditor"
     static let displayName = String(localized: "Chat Integration", table: "ChatIntegrationEditor")
     static let description = String(localized: "Adds context menu actions to send code and locations to the AI chat.", table: "ChatIntegrationEditor")

@@ -7,15 +7,15 @@ struct GitBranchDetailView: View {
     let isDirty: Bool?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 8) {
                 Image(systemName: "arrow.triangle.branch")
                     .font(.system(size: 16))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
 
                 Text(String(localized: "Git Information", table: "GitBranchStatusBar"))
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
             }
@@ -26,39 +26,39 @@ struct GitBranchDetailView: View {
                 GitInfoRow(label: String(localized: "Current Branch", table: "GitBranchStatusBar"), value: branch)
 
                 if let dirty = isDirty {
-                    HStack(spacing: DesignTokens.Spacing.sm) {
+                    HStack(spacing: 8) {
                         Text(String(localized: "Status", table: "GitBranchStatusBar"))
                             .font(.system(size: 12))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .frame(width: 70, alignment: .leading)
 
                         HStack(spacing: 4) {
                             Circle()
-                                .fill(dirty ? DesignTokens.Color.semantic.warning : DesignTokens.Color.semantic.success)
+                                .fill(dirty ? Color(hex: "FF9F0A") : Color(hex: "30D158"))
                                 .frame(width: 6, height: 6)
 
                             Text(dirty
                                 ? String(localized: "Uncommitted Changes", table: "GitBranchStatusBar")
                                 : String(localized: "Clean Working Tree", table: "GitBranchStatusBar"))
                                 .font(.system(size: 12))
-                                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         }
 
                         Spacer()
                     }
                 }
             } else {
-                VStack(spacing: DesignTokens.Spacing.sm) {
+                VStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.system(size: 32))
-                        .foregroundColor(DesignTokens.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
 
                     Text(String(localized: "Unable to Get Git Information", table: "GitBranchStatusBar"))
                         .font(.system(size: 13))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, DesignTokens.Spacing.lg)
+                .padding(.vertical, 24)
             }
         }
     }
@@ -70,15 +70,15 @@ struct GitInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .frame(width: 70, alignment: .leading)
 
             Text(value)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 .lineLimit(2)
                 .textSelection(.enabled)
 

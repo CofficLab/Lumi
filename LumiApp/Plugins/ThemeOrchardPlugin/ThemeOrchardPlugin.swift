@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeOrchardPlugin: SuperPlugin {
+    static let shared = ThemeOrchardPlugin()
     static let id: String = "orchard"
     static let displayName: String = "Orchard"
     static let description: String = "Orchard red app theme"

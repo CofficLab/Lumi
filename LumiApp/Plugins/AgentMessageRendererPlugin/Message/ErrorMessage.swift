@@ -181,8 +181,8 @@ struct ErrorMessage: View {
                 )
 
                 Text(formatTimestamp(message.timestamp))
-                    .font(AppUI.Typography.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 RawMessageToggleButton(showRawMessage: $showRawMessage)
             }

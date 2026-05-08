@@ -2,6 +2,7 @@ import Foundation
 
 /// AiRouter LLM 供应商插件
 actor AiRouterPlugin: SuperPlugin {
+    static let shared = AiRouterPlugin()
     static let id = "LLMProviderAiRouter"
     static let displayName = "AiRouter"
     static let description = "AiRouter LLM Gateway"

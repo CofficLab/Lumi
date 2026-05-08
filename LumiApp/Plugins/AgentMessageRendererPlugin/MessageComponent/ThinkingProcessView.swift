@@ -32,17 +32,17 @@ struct ThinkingProcessView: View {
                     HStack(spacing: 6) {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                         Text("思考过程")
-                            .font(AppUI.Typography.caption1)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                         // 折叠时展示一小段预览
                         if !isExpanded, !previewText.isEmpty {
                             Text(previewText)
-                                .font(AppUI.Typography.caption2)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.8))
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.8))
                                 .lineLimit(1)
                         }
                     }
@@ -61,8 +61,8 @@ struct ThinkingProcessView: View {
                     Divider()
                         .opacity(0.2)
                     Text(thinkingText)
-                        .font(AppUI.Typography.code)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 13, weight: .regular, design: .monospaced))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

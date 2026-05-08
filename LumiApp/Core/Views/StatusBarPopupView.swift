@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import LumiUI
 
 /// 状态栏弹窗视图
 struct StatusBarPopupView: View {
@@ -59,11 +60,11 @@ struct StatusBarPopupView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Lumi")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text("v\(appVersion)")
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                 }
 
                 Spacer()
@@ -112,7 +113,7 @@ struct StatusBarPopupView: View {
             // 退出应用
             MenuItemRow(
                 title: "退出 Lumi",
-                color: AppUI.Color.semantic.error,
+                color: Color(hex: "FF453A"),
                 action: onQuit
             )
         }
@@ -137,9 +138,9 @@ struct MenuItemRow: View {
             GlassRow {
                 HStack(spacing: 12) {
                     Text(title)
-                        .font(AppUI.Typography.body)
+                        .font(.system(size: 15, weight: .regular))
                         .foregroundColor(color)
-                        .padding(.horizontal, AppUI.Spacing.sm)
+                        .padding(.horizontal, 8)
 
                     Spacer()
                 }

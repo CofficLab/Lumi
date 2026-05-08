@@ -60,7 +60,7 @@ struct ModelLatencyProgressBar: View {
                 if sampleCount > 1 {
                     Text("(\(sampleCount))")
                         .font(.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
             }
         }

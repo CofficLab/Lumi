@@ -13,7 +13,7 @@ struct RegistryManagerView: View {
                     
                     Text(String(localized: "Manage all your package registries in one place", table: "RegistryManager"))
                         .font(.subheadline)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 .padding(.horizontal)
                 .padding(.top, 24)

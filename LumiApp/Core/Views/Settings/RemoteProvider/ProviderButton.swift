@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 供应商选择按钮组件
 struct ProviderButton: View {
@@ -12,7 +13,7 @@ struct ProviderButton: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Text(provider.displayName)
-                    .font(AppUI.Typography.caption1)
+                    .font(.system(size: 12, weight: .regular))
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -35,13 +36,13 @@ struct ProviderButton: View {
     }
 
     private var backgroundColor: Color {
-        if isSelected { return AppUI.Color.semantic.primary }
+        if isSelected { return Color(hex: "7C6FFF") }
         if isHovered { return Color.white.opacity(0.12) }
         return Color.white.opacity(0.05)
     }
 
     private var foregroundColor: Color {
         if isSelected { return .white }
-        return AppUI.Color.semantic.textSecondary
+        return Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
     }
 }

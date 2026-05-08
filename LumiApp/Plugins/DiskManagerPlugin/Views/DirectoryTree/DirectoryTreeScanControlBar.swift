@@ -17,18 +17,18 @@ struct DirectoryTreeScanControlBar: View {
                     title: { Text(viewModel.isScanning ? "停止分析" : "分析目录") },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "folder.badge.gear") }
                 )
-                .font(AppUI.Typography.bodyEmphasized)
+                .font(.system(size: 15, weight: .medium))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? AppUI.Color.semantic.error : AppUI.Color.semantic.primary)
+            .tint(viewModel.isScanning ? Color(hex: "FF453A") : Color(hex: "7C6FFF"))
 
             Spacer()
 
             Text("扫描目录：用户主目录")
                 .font(.caption)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .padding(.horizontal)
     }

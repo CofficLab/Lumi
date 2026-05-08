@@ -2,6 +2,7 @@ import Foundation
 
 /// LSP 文档高亮编辑器插件：高亮光标处符号的所有引用
 actor LSPDocumentHighlightEditorPlugin: SuperPlugin {
+    static let shared = LSPDocumentHighlightEditorPlugin()
     static let id = "LSPDocumentHighlightEditor"
     static let displayName = String(localized: "LSP Document Highlight", table: "LSPDocumentHighlightEditor")
     static let description = String(localized: "Highlights all references of the symbol at cursor position.", table: "LSPDocumentHighlightEditor")

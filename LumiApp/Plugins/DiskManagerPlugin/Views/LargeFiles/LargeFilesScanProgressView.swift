@@ -18,7 +18,7 @@ struct LargeFilesScanProgressView: View {
                 // 外圈光晕
                 Circle()
                     .stroke(
-                        AppUI.Color.semantic.info.opacity(0.2),
+                        Color(hex: "0A84FF").opacity(0.2),
                         lineWidth: 10
                     )
                     .frame(width: 88, height: 88)
@@ -30,7 +30,7 @@ struct LargeFilesScanProgressView: View {
                 Circle()
                     .trim(from: 0, to: 0.7)
                     .stroke(
-                        AppUI.Color.semantic.info,
+                        Color(hex: "0A84FF"),
                         style: StrokeStyle(lineWidth: 6, lineCap: .round)
                     )
                     .frame(width: 88, height: 88)
@@ -40,22 +40,22 @@ struct LargeFilesScanProgressView: View {
                 // 中心图标
                 Image(systemName: "doc.text.magnifyingglass")
                     .font(.system(size: 34, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.info)
+                    .foregroundColor(Color(hex: "0A84FF"))
             }
 
             // 进度信息
             VStack(spacing: 6) {
                 Text("正在扫描大文件")
                     .font(.title3)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 HStack(spacing: 4) {
                     Image(systemName: "folder.fill")
                         .font(.caption)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text(URL(fileURLWithPath: currentPath).lastPathComponent)
                         .font(.caption)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -68,20 +68,20 @@ struct LargeFilesScanProgressView: View {
                         Text("\(scannedTotal)")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(AppUI.Color.semantic.primary)
+                            .foregroundColor(Color(hex: "7C6FFF"))
                     } icon: {
                         Image(systemName: "doc.fill")
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
 
                     Label {
                         Text(viewModel.formatBytes(Int64(scannedBytes)))
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(AppUI.Color.semantic.info)
+                            .foregroundColor(Color(hex: "0A84FF"))
                     } icon: {
                         Image(systemName: "internaldrive.fill")
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                 }
             }
@@ -90,11 +90,11 @@ struct LargeFilesScanProgressView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(AppUI.Color.semantic.info.opacity(0.1))
+                .fill(Color(hex: "0A84FF").opacity(0.1))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(AppUI.Color.semantic.info.opacity(0.2), lineWidth: 1)
+                .stroke(Color(hex: "0A84FF").opacity(0.2), lineWidth: 1)
         )
         .padding(.horizontal, 12)
         .padding(.vertical, 12)

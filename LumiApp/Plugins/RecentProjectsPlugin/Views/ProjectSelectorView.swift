@@ -18,8 +18,8 @@ struct ProjectSelectorView: View {
             // Header
             HStack {
                 Text(String(localized: "Select Project", table: "RecentProjects"))
-                    .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
@@ -28,12 +28,12 @@ struct ProjectSelectorView: View {
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 .buttonStyle(.plain)
             }
             .padding()
-            .background(AppUI.Material.glassThick)
+            .background(Material.thickMaterial)
             .overlay(
                 Rectangle()
                     .frame(height: 1)
@@ -49,7 +49,7 @@ struct ProjectSelectorView: View {
                         Text(String(localized: "Current Project", table: "RecentProjects"))
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .padding(.horizontal)
                             .padding(.top)
 
@@ -62,7 +62,7 @@ struct ProjectSelectorView: View {
                             Text(String(localized: "Recent Projects", table: "RecentProjects"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .padding(.horizontal)
 
                             ForEach(recentProjects) { project in
@@ -76,7 +76,7 @@ struct ProjectSelectorView: View {
                         Text(String(localized: "Browse", table: "RecentProjects"))
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .padding(.horizontal)
 
                         browseButton
@@ -114,11 +114,11 @@ struct ProjectSelectorView: View {
                     Text(projectVM.currentProjectName.isEmpty ? String(localized: "No Project Selected", table: "RecentProjects") : projectVM.currentProjectName)
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text(projectVM.currentProjectPath.isEmpty ? String(localized: "Click Browse Below", table: "RecentProjects") : projectVM.currentProjectPath)
                         .font(.caption)
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                         .lineLimit(2)
                 }
 
@@ -132,7 +132,7 @@ struct ProjectSelectorView: View {
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .symbolRenderingMode(.hierarchical)
                     }
                     .buttonStyle(.plain)
@@ -155,7 +155,7 @@ struct ProjectSelectorView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "folder")
                             .font(.system(size: 20))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .frame(width: 36, height: 36)
                             .background(Color.black.opacity(0.05))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -164,11 +164,11 @@ struct ProjectSelectorView: View {
                             Text(project.name)
                                 .font(.body)
                                 .fontWeight(.medium)
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                             Text(project.path)
                                 .font(.caption)
-                                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                .foregroundColor(Color(hex: "98989E"))
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
@@ -177,7 +177,7 @@ struct ProjectSelectorView: View {
 
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     }
                 }
                 .buttonStyle(.plain)
@@ -213,13 +213,13 @@ struct ProjectSelectorView: View {
 
                 Text(String(localized: "Select New Project", table: "RecentProjects"))
                     .font(.body)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             }
             .padding()
             .background(

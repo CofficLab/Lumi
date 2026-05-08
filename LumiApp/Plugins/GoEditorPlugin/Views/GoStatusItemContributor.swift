@@ -45,7 +45,7 @@ private struct GoStatusIndicatorView: View {
             case .idle:
                 Image(systemName: "goforward")
                     .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             case .building:
                 ProgressView()
@@ -53,7 +53,7 @@ private struct GoStatusIndicatorView: View {
                     .frame(width: 10, height: 10)
                 Text(String(localized: "Building", table: "GoEditor"))
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             case .testing:
                 ProgressView()
@@ -61,21 +61,21 @@ private struct GoStatusIndicatorView: View {
                     .frame(width: 10, height: 10)
                 Text(String(localized: "Testing", table: "GoEditor"))
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             case .success:
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.success)
+                    .foregroundColor(Color(hex: "30D158"))
 
             case .failed:
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.error)
+                    .foregroundColor(Color(hex: "FF453A"))
                 if buildManager.errorCount > 0 {
                     Text("\(buildManager.errorCount)")
                         .font(.system(size: 9, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.error)
+                        .foregroundColor(Color(hex: "FF453A"))
                 }
             }
         }

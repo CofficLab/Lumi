@@ -1849,6 +1849,9 @@
         }
       }
     },
+    "Re-resolve" : {
+
+    },
     "Re-resolve Build Context" : {
       "localizations" : {
         "en" : {
@@ -2706,6 +2709,9 @@
           }
         }
       }
+    },
+    "Xcode Build Context" : {
+
     },
     "Xcode Context" : {
       "localizations" : {

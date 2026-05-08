@@ -24,7 +24,7 @@ struct EditorPeekOverlayView: View {
                 .fill(Color(nsColor: .textBackgroundColor))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(AppUI.Color.semantic.textTertiary.opacity(0.16), lineWidth: 1)
+                        .stroke(Color(hex: "98989E").opacity(0.16), lineWidth: 1)
                 )
         )
         .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
@@ -37,15 +37,15 @@ struct EditorPeekOverlayView: View {
         HStack(spacing: 10) {
             Image(systemName: presentation.mode == .definition ? "arrow.turn.down.right" : "arrow.triangle.branch")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.primary)
+                .foregroundColor(Color(hex: "7C6FFF"))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(presentation.mode.title)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text(presentation.summary)
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
                     .lineLimit(1)
             }
 
@@ -56,7 +56,7 @@ struct EditorPeekOverlayView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -84,39 +84,39 @@ struct EditorPeekOverlayView: View {
                     HStack(spacing: 8) {
                         Text(selectedItem.title)
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                             .lineLimit(1)
 
                         Text(selectedItem.badgeText)
                             .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(AppUI.Color.semantic.primary)
+                            .foregroundColor(Color(hex: "7C6FFF"))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
                             .background(
                                 Capsule()
-                                    .fill(AppUI.Color.semantic.primary.opacity(0.12))
+                                    .fill(Color(hex: "7C6FFF").opacity(0.12))
                             )
                     }
 
                     Text(selectedItem.subtitle)
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
 
                     ScrollView {
                         Text(selectedItem.preview)
                             .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(10)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(AppUI.Color.semantic.textTertiary.opacity(0.06))
+                                    .fill(Color(hex: "98989E").opacity(0.06))
                             )
                     }
                 } else {
                     Text(String(localized: "No preview available", table: "LumiEditor"))
                         .font(.system(size: 11))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                 }
             }
             .padding(12)
@@ -128,7 +128,7 @@ struct EditorPeekOverlayView: View {
         HStack {
             Text(String(localized: "\(presentation.items.count) items", table: "LumiEditor"))
                 .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
 
             Spacer(minLength: 0)
 
@@ -165,22 +165,22 @@ struct EditorPeekOverlayView: View {
                 HStack(spacing: 6) {
                     Text(item.title)
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .lineLimit(1)
                     Spacer(minLength: 0)
                     Text(item.badgeText)
                         .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(AppUI.Color.semantic.primary)
+                        .foregroundColor(Color(hex: "7C6FFF"))
                 }
 
                 Text(item.subtitle)
                     .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
                     .lineLimit(1)
 
                 Text(item.preview)
                     .font(.system(size: 9, design: .monospaced))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .lineLimit(2)
             }
             .padding(.horizontal, 8)
@@ -190,14 +190,14 @@ struct EditorPeekOverlayView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(
                         isSelected
-                            ? AppUI.Color.semantic.primary.opacity(0.12)
-                            : AppUI.Color.semantic.textTertiary.opacity(0.05)
+                            ? Color(hex: "7C6FFF").opacity(0.12)
+                            : Color(hex: "98989E").opacity(0.05)
                     )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(
-                        isSelected ? AppUI.Color.semantic.primary.opacity(0.28) : .clear,
+                        isSelected ? Color(hex: "7C6FFF").opacity(0.28) : .clear,
                         lineWidth: 1
                     )
             )

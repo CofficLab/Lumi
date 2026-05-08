@@ -33,7 +33,7 @@ struct DeviceInfoStatusBarContentView: View {
 #Preview("Device Info Status Bar Content") {
     HStack(spacing: 4) {
         Circle()
-            .fill(AppUI.Color.semantic.info)
+            .fill(Color(hex: "0A84FF"))
             .frame(width: 16, height: 16)
         
         DeviceInfoStatusBarContentView()

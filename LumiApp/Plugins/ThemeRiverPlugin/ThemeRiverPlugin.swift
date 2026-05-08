@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeRiverPlugin: SuperPlugin {
+    static let shared = ThemeRiverPlugin()
     static let id: String = "river"
     static let displayName: String = "River"
     static let description: String = "River cyan app theme"

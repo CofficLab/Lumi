@@ -24,8 +24,8 @@ struct ModelSelectorTabSidebar: View {
             // MARK: - 下半区：供应商列表（可滚动）
 
             Text(String(localized: "Providers", table: "AgentChat"))
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(Color(hex: "98989E"))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
 
@@ -53,10 +53,10 @@ struct ModelSelectorTabSidebar: View {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 16, alignment: .center)
                 Text(title)
-                    .font(AppUI.Typography.body)
+                    .font(.system(size: 15, weight: .regular))
                     .lineLimit(1)
                 Spacer()
             }
@@ -84,10 +84,10 @@ struct ModelSelectorTabSidebar: View {
             HStack(spacing: 8) {
                 Image(systemName: provider.isLocal ? "laptopcomputer" : "cloud")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 16, alignment: .center)
                 Text(provider.displayName)
-                    .font(AppUI.Typography.body)
+                    .font(.system(size: 15, weight: .regular))
                     .lineLimit(1)
                 Spacer()
             }

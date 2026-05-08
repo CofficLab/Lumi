@@ -35,15 +35,15 @@ struct CPUHistoryGraphView: View {
                         if !dataPoints.isEmpty {
                             // Usage Area
                             CPUGraphArea(data: dataPoints.map { $0.usage }, maxValue: maxValue)
-                                .fill(LinearGradient(gradient: Gradient(colors: [AppUI.Color.semantic.info.opacity(0.5), AppUI.Color.semantic.info.opacity(0.1)]), startPoint: .top, endPoint: .bottom))
+                                .fill(LinearGradient(gradient: Gradient(colors: [Color(hex: "0A84FF").opacity(0.5), Color(hex: "0A84FF").opacity(0.1)]), startPoint: .top, endPoint: .bottom))
 
                             // Usage Line
                             CPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
-                                .stroke(AppUI.Color.semantic.info, lineWidth: 1.5)
+                                .stroke(Color(hex: "0A84FF"), lineWidth: 1.5)
                         } else {
                             Text(String(localized: "Collecting...", table: "DeviceInfo"))
                                 .font(.caption)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
 
@@ -54,7 +54,7 @@ struct CPUHistoryGraphView: View {
                                 path.move(to: CGPoint(x: hoverLocation.x, y: 0))
                                 path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
                             }
-                            .stroke(AppUI.Color.semantic.textPrimary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .stroke(Color.adaptive(light: "1C1C1E", dark: "FFFFFF").opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                             // Tooltip
                             CPUTooltipView(point: point, timeRange: timeRange)
@@ -94,7 +94,7 @@ struct CPUHistoryGraphView: View {
                     if index > 0 {
                         Text(formatYValue(for: index))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
                     }
                 }
@@ -102,7 +102,7 @@ struct CPUHistoryGraphView: View {
                 // 底部 0 标签
                 Text("0")
                     .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             }
             .padding(.trailing, 4)
         }
@@ -120,7 +120,7 @@ struct CPUHistoryGraphView: View {
                     if let firstPoint = dataPoints.first {
                         Text(formatXAxisDate(firstPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     }
 
                     Spacer()
@@ -129,7 +129,7 @@ struct CPUHistoryGraphView: View {
                     if let lastPoint = dataPoints.last {
                         Text(formatXAxisDate(lastPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     }
                 }
                 .padding(.horizontal, 8)
@@ -148,7 +148,7 @@ struct CPUHistoryGraphView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                .stroke(AppUI.Color.semantic.textTertiary.opacity(0.15), lineWidth: 0.5)
+                .stroke(Color(hex: "98989E").opacity(0.15), lineWidth: 0.5)
             }
         }
     }
@@ -251,19 +251,19 @@ struct CPUTooltipView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(formatDate(point.timestamp))
                 .font(.system(size: 10, weight: .bold))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             
             HStack(spacing: 4) {
                 Circle()
-                    .fill(AppUI.Color.semantic.info)
+                    .fill(Color(hex: "0A84FF"))
                     .frame(width: 6, height: 6)
                 Text("\(Int(point.usage))%")
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
         }
         .padding(6)
-        .background(AppUI.Material.glass)
+        .background(Material.regularMaterial)
         .cornerRadius(6)
     }
     

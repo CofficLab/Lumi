@@ -11,15 +11,15 @@ struct EditorUnsupportedFileView: View {
         VStack(spacing: 12) {
             Image(systemName: "doc.questionmark")
                 .font(.system(size: 36, weight: .thin))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
 
             Text(String(localized: "Unsupported File", table: "LumiEditor"))
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             Text(fileName)
                 .font(.system(size: 12))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

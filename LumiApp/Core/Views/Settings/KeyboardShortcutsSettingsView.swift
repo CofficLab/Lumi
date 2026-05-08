@@ -1,6 +1,7 @@
 import AppKit
 import EditorService
 import SwiftUI
+import LumiUI
 
 struct KeyboardShortcutsSettingsView: View {
     @StateObject private var keybindingStore = EditorKeybindingStore.shared
@@ -24,11 +25,11 @@ struct KeyboardShortcutsSettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerCard
-                .padding(AppUI.Spacing.lg)
+                .padding(24)
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
+                VStack(alignment: .leading, spacing: 24) {
                     controlsCard
 
                     if let validationMessage {
@@ -45,7 +46,7 @@ struct KeyboardShortcutsSettingsView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, AppUI.Spacing.lg)
+                .padding(.horizontal, 24)
             }
         }
         .navigationTitle("快捷键")
@@ -53,7 +54,7 @@ struct KeyboardShortcutsSettingsView: View {
 
     private var headerCard: some View {
         GlassCard {
-            HStack(alignment: .top, spacing: AppUI.Spacing.md) {
+            HStack(alignment: .top, spacing: 16) {
                 GlassSectionHeader(
                     icon: "keyboard",
                     title: "快捷键",
@@ -76,7 +77,7 @@ struct KeyboardShortcutsSettingsView: View {
 
     private var controlsCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+            VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "command",
                     title: "命令搜索",
@@ -86,7 +87,7 @@ struct KeyboardShortcutsSettingsView: View {
                 AppSearchBar(text: $searchText, placeholder: "搜索快捷键或命令…")
 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppUI.Spacing.sm) {
+                    HStack(spacing: 8) {
                         categoryChip(title: "全部", isSelected: selectedCategory == nil) {
                             selectedCategory = nil
                         }
@@ -100,41 +101,41 @@ struct KeyboardShortcutsSettingsView: View {
                 }
 
                 Text(summaryText)
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color(hex: "98989E"))
             }
         }
     }
 
     private var emptyStateCard: some View {
         GlassCard {
-            VStack(spacing: AppUI.Spacing.md) {
+            VStack(spacing: 16) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 36))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 Text("没有匹配的快捷键")
-                    .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Text("试试搜索命令名、命令 ID，或者像 `⌘⇧P` 这样的快捷键。")
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color(hex: "98989E"))
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, AppUI.Spacing.xl)
+            .padding(.vertical, 32)
         }
     }
 
     private func warningCard(_ message: String) -> some View {
         GlassCard {
-            HStack(spacing: AppUI.Spacing.sm) {
+            HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(AppUI.Color.semantic.warning)
+                    .foregroundColor(Color(hex: "FF9F0A"))
 
                 Text(message)
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -142,7 +143,7 @@ struct KeyboardShortcutsSettingsView: View {
 
     private func categoryCard(_ category: EditorCommandCategory, commands: [EditorShortcutDefinition]) -> some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+            VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: iconName(for: category),
                     title: category.displayTitle,
@@ -151,7 +152,7 @@ struct KeyboardShortcutsSettingsView: View {
 
                 GlassDivider()
 
-                VStack(spacing: AppUI.Spacing.xs) {
+                VStack(spacing: 4) {
                     ForEach(commands) { command in
                         shortcutRow(command)
                     }
@@ -166,28 +167,28 @@ struct KeyboardShortcutsSettingsView: View {
         let isRecording = recordingCommandID == command.id
 
         return GlassRow {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
-                HStack(alignment: .center, spacing: AppUI.Spacing.md) {
-                    VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(command.title)
-                            .font(AppUI.Typography.bodyEmphasized)
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                         Text(command.id)
-                            .font(AppUI.Typography.caption1)
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(Color(hex: "98989E"))
                     }
 
                     Spacer()
 
-                    VStack(alignment: .trailing, spacing: AppUI.Spacing.xs) {
+                    VStack(alignment: .trailing, spacing: 4) {
                         Text(effectiveShortcut?.displayText ?? "未设置")
-                            .font(AppUI.Typography.bodyEmphasized)
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                         Text(isCustomized ? "自定义" : "默认")
-                            .font(AppUI.Typography.caption2)
-                            .foregroundColor(isCustomized ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textTertiary)
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundColor(isCustomized ? Color(hex: "7C6FFF") : Color(hex: "98989E"))
                     }
                     .frame(width: 90, alignment: .trailing)
 
@@ -210,7 +211,7 @@ struct KeyboardShortcutsSettingsView: View {
                 }
 
                 if isRecording {
-                    VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+                    VStack(alignment: .leading, spacing: 8) {
                         ShortcutRecorderField(commandTitle: command.title) { shortcut in
                             applyRecordedShortcut(shortcut, for: command)
                         } onCancel: {
@@ -218,8 +219,8 @@ struct KeyboardShortcutsSettingsView: View {
                         }
 
                         Text(recorderHint(for: command))
-                            .font(AppUI.Typography.caption2)
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundColor(Color(hex: "98989E"))
                     }
                 }
             }
@@ -262,21 +263,21 @@ struct KeyboardShortcutsSettingsView: View {
     private func categoryChip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
-                .padding(.horizontal, AppUI.Spacing.md)
-                .padding(.vertical, AppUI.Spacing.xs)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 4)
                 .background(
                     Capsule()
                         .fill(
                             isSelected
-                                ? AnyShapeStyle(AppUI.Color.semantic.primary.opacity(0.18))
-                                : AnyShapeStyle(AppUI.Material.glass)
+                                ? AnyShapeStyle(Color(hex: "7C6FFF").opacity(0.18))
+                                : AnyShapeStyle(Material.regularMaterial)
                         )
                 )
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? AppUI.Color.semantic.primary.opacity(0.4) : Color.white.opacity(0.08), lineWidth: 1)
+                        .stroke(isSelected ? Color(hex: "7C6FFF").opacity(0.4) : Color.white.opacity(0.08), lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
@@ -353,7 +354,7 @@ private final class RecorderView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.cornerRadius = AppUI.Radius.sm
+        layer?.cornerRadius = 8
         layer?.borderWidth = 1
         layer?.borderColor = NSColor.white.withAlphaComponent(0.12).cgColor
         layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.22).cgColor

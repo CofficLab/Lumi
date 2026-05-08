@@ -48,11 +48,11 @@ struct PendingMessagesView: View, SuperLog {
                 HStack(spacing: 6) {
                     Image(systemName: "clock")
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     Text(String(localized: "Waiting to Send", table: "AgentChat"))
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     Text("(\(waitingMessages.count))")
                         .font(.system(size: 10))

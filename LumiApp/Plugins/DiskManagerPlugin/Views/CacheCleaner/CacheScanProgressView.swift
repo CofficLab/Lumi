@@ -12,7 +12,7 @@ struct CacheScanProgressView: View {
                 // 外圈光晕
                 Circle()
                     .stroke(
-                        AppUI.Color.semantic.warning.opacity(0.2),
+                        Color(hex: "FF9F0A").opacity(0.2),
                         lineWidth: 10
                     )
                     .frame(width: 88, height: 88)
@@ -24,7 +24,7 @@ struct CacheScanProgressView: View {
                 Circle()
                     .trim(from: 0, to: 0.7)
                     .stroke(
-                        AppUI.Color.semantic.warning,
+                        Color(hex: "FF9F0A"),
                         style: StrokeStyle(lineWidth: 6, lineCap: .round)
                     )
                     .frame(width: 88, height: 88)
@@ -34,22 +34,22 @@ struct CacheScanProgressView: View {
                 // 中心图标
                 Image(systemName: "doc.badge.gearshape")
                     .font(.system(size: 34, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.warning)
+                    .foregroundColor(Color(hex: "FF9F0A"))
             }
 
             // 进度信息
             VStack(spacing: 6) {
                 Text("正在扫描系统缓存")
                     .font(.title3)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 HStack(spacing: 4) {
                     Image(systemName: "folder.badge.gear")
                         .font(.caption)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text(viewModel.scanProgress.isEmpty ? "用户主目录" : viewModel.scanProgress)
                         .font(.caption)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -62,20 +62,20 @@ struct CacheScanProgressView: View {
                         Text("\(viewModel.categories.count)")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(AppUI.Color.semantic.primary)
+                            .foregroundColor(Color(hex: "7C6FFF"))
                     } icon: {
                         Image(systemName: "folder.fill")
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
 
                     Label {
                         Text("分类")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                     } icon: {
                         Image(systemName: "doc.badge.clock")
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                 }
             }
@@ -84,11 +84,11 @@ struct CacheScanProgressView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(AppUI.Color.semantic.warning.opacity(0.05))
+                .fill(Color(hex: "FF9F0A").opacity(0.05))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(AppUI.Color.semantic.warning.opacity(0.2), lineWidth: 1)
+                .stroke(Color(hex: "FF9F0A").opacity(0.2), lineWidth: 1)
         )
         .padding(.horizontal, 12)
         .padding(.vertical, 12)

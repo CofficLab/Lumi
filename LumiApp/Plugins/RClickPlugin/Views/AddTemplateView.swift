@@ -11,8 +11,8 @@ struct AddTemplateView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Add New Template")
-                .font(AppUI.Typography.bodyEmphasized)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Form {
                 TextField(LocalizedStringKey(String(localized: "Name (e.g. Python Script)")), text: $name)
@@ -22,7 +22,7 @@ struct AddTemplateView: View {
                     TextEditor(text: $content)
                         .frame(height: 100)
                         .font(.monospaced(.body)())
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppUI.Color.semantic.textTertiary.opacity(0.3)))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: "98989E").opacity(0.3)))
                 }
             }
             .formStyle(.grouped)

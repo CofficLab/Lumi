@@ -33,7 +33,7 @@ struct ProjectDropdownMenu: View {
                 )
 
                 if !recentProjects.isEmpty {
-                    Divider().padding(.horizontal, DesignTokens.Spacing.sm)
+                    Divider().padding(.horizontal, 8)
                 }
             }
 
@@ -41,7 +41,7 @@ struct ProjectDropdownMenu: View {
             ForEach(recentProjects) { project in
                 DropdownItemView(
                     icon: "folder",
-                    iconColor: AppUI.Color.semantic.textSecondary,
+                    iconColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5"),
                     title: project.name,
                     subtitle: project.path,
                     isCurrent: false,
@@ -54,12 +54,12 @@ struct ProjectDropdownMenu: View {
             // 浏览按钮
             if recentProjects.isEmpty && projectVM.currentProjectPath.isEmpty {
                 Text(String(localized: "No recent projects", table: "RecentProjects"))
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color(hex: "98989E"))
                     .padding()
             }
 
-            Divider().padding(.horizontal, DesignTokens.Spacing.sm)
+            Divider().padding(.horizontal, 8)
 
             // 打开文件选择器
             BrowseRowView(isFileImporterPresented: $isFileImporterPresented)
@@ -67,7 +67,7 @@ struct ProjectDropdownMenu: View {
         .padding()
         .frame(width: 320)
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.md))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.15), radius: 12, y: 4)
         .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
         .fileImporter(
@@ -116,7 +116,7 @@ private struct DropdownItemView: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 13))
                     .foregroundColor(iconColor)
@@ -126,13 +126,13 @@ private struct DropdownItemView: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(AppUI.Typography.body)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .lineLimit(1)
 
                     Text(subtitle)
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color(hex: "98989E"))
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -145,17 +145,17 @@ private struct DropdownItemView: View {
                         .foregroundColor(.accentColor)
                 }
             }
-            .padding(.horizontal, DesignTokens.Spacing.sm)
-            .padding(.vertical, DesignTokens.Spacing.xs)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             .background(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                RoundedRectangle(cornerRadius: 8)
                     .fill(hoverBackgroundColor)
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
+            withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
         }

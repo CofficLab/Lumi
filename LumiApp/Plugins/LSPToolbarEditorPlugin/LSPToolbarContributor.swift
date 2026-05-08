@@ -52,10 +52,10 @@ private struct LSPStatusToolbarItem: View {
                     HStack(spacing: 3) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.error)
+                            .foregroundColor(Color(hex: "FF453A"))
                         Text("\(diagnosticsManager.errorCount)")
                             .font(.system(size: 9, weight: .medium))
-                            .foregroundColor(AppUI.Color.semantic.error)
+                            .foregroundColor(Color(hex: "FF453A"))
                     }
                 }
 
@@ -63,17 +63,17 @@ private struct LSPStatusToolbarItem: View {
                     HStack(spacing: 3) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                         Text("\(diagnosticsManager.warningCount)")
                             .font(.system(size: 9, weight: .medium))
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                     }
                 }
 
                 if !lspService.isAvailable {
                     Image(systemName: "circle")
                         .font(.system(size: 6))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                         .help(String(localized: "LSP not available", table: "LSPToolbarEditor"))
                 } else if lspService.isInitializing {
                     ProgressView()
@@ -82,7 +82,7 @@ private struct LSPStatusToolbarItem: View {
                 } else {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 9))
-                        .foregroundColor(AppUI.Color.semantic.success)
+                        .foregroundColor(Color(hex: "30D158"))
                         .help(String(localized: "LSP active", table: "LSPToolbarEditor"))
                 }
             }
@@ -135,7 +135,7 @@ private struct LSPActionsToolbarItem: View {
         } label: {
             Image(systemName: "wand.and.stars")
                 .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .frame(width: 22, height: 22)
         }
         .menuStyle(.borderlessButton)
@@ -159,13 +159,13 @@ private struct LSPActionsToolbarItem: View {
             HStack(spacing: 8) {
                 if emphasizeRecent {
                     Image(systemName: "clock.arrow.circlepath")
-                        .foregroundColor(AppUI.Color.semantic.primary)
+                        .foregroundColor(Color(hex: "7C6FFF"))
                 }
                 Label(command.title, systemImage: command.systemImage)
                 if let shortcut = command.shortcut {
                     Spacer(minLength: 12)
                     Text(shortcut.displayText)
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                 }
             }
         }

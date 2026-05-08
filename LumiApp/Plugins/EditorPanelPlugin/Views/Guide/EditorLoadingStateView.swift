@@ -12,7 +12,7 @@ struct EditorLoadingStateView: View {
 
             Text(String(localized: "Loading...", table: "LumiEditor"))
                 .font(.system(size: 12))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

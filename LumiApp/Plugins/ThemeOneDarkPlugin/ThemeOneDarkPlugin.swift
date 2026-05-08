@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeOneDarkPlugin: SuperPlugin {
+    static let shared = ThemeOneDarkPlugin()
     static let id: String = "one-dark"
     static let displayName: String = "One Dark"
     static let description: String = "Atom One Dark classic dark theme"

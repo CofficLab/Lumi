@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 底部状态栏视图
 struct StatusBar: View {

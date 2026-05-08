@@ -34,8 +34,8 @@ struct AddRuleFormView: View {
             // 标题
             HStack {
                 Text("Add New Rule")
-                    .font(AppUI.Typography.title3)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Spacer()
             }
 

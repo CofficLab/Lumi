@@ -36,7 +36,7 @@ struct EditorOutlinePanelView: View {
             .overlay(alignment: .leading) {
                 if showsResizeHandle {
                     Rectangle()
-                        .fill(AppUI.Color.semantic.textTertiary.opacity(0.12))
+                        .fill(Color(hex: "98989E").opacity(0.12))
                         .frame(width: 1)
                 }
             }
@@ -48,7 +48,7 @@ struct EditorOutlinePanelView: View {
             HStack(spacing: 8) {
                 Text(String(localized: "Outline", table: "EditorOutlineRail"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer(minLength: 0)
 
@@ -62,7 +62,7 @@ struct EditorOutlinePanelView: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .frame(width: 20, height: 20)
                 }
                 .buttonStyle(.plain)
@@ -107,11 +107,11 @@ struct EditorOutlinePanelView: View {
         VStack(spacing: 10) {
             Image(systemName: "list.bullet.indent")
                 .font(.system(size: 26, weight: .thin))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
 
             Text(provider.isLoading ? String(localized: "Loading Outline...", table: "EditorOutlineRail") : String(localized: "No Symbols", table: "EditorOutlineRail"))
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 20)
@@ -124,15 +124,15 @@ struct EditorOutlinePanelView: View {
             .contentShape(Rectangle())
             .background(
                 isResizeHandleHovering
-                    ? AppUI.Color.semantic.primary.opacity(0.08)
+                    ? Color(hex: "7C6FFF").opacity(0.08)
                     : .clear
             )
             .overlay(
                 Rectangle()
                     .fill(
                         isResizeHandleHovering
-                            ? AppUI.Color.semantic.primary.opacity(0.5)
-                            : AppUI.Color.semantic.textTertiary.opacity(0.12)
+                            ? Color(hex: "7C6FFF").opacity(0.5)
+                            : Color(hex: "98989E").opacity(0.12)
                     )
                     .frame(width: 1)
             )
@@ -195,7 +195,7 @@ struct EditorOutlinePanelView: View {
                         } label: {
                             Image(systemName: collapsedIDs.contains(item.id) ? "chevron.right" : "chevron.down")
                                 .font(.system(size: 9, weight: .semibold))
-                                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                .foregroundColor(Color(hex: "98989E"))
                                 .frame(width: 12)
                         }
                         .buttonStyle(.plain)
@@ -209,18 +209,18 @@ struct EditorOutlinePanelView: View {
                         HStack(spacing: 8) {
                             Image(systemName: item.iconSymbol)
                                 .font(.system(size: 10))
-                                .foregroundColor(activePathIDs.contains(item.id) ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(activePathIDs.contains(item.id) ? Color(hex: "7C6FFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(width: 14)
 
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(item.name)
                                     .font(.system(size: 11, weight: activePathIDs.contains(item.id) ? .semibold : .regular))
-                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                     .lineLimit(1)
 
                                 Text("L\(item.line)" + (item.detail.map { " · \($0)" } ?? ""))
                                     .font(.system(size: 9))
-                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                    .foregroundColor(Color(hex: "98989E"))
                                     .lineLimit(1)
                             }
 
@@ -231,7 +231,7 @@ struct EditorOutlinePanelView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(activePathIDs.contains(item.id)
-                                    ? AppUI.Color.semantic.primary.opacity(0.08)
+                                    ? Color(hex: "7C6FFF").opacity(0.08)
                                     : Color.clear)
                         )
                     }

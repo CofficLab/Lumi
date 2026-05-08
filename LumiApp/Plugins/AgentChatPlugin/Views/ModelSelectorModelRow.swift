@@ -37,7 +37,7 @@ struct ModelSelectorModelRow: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text(displayName ?? model)
-                                    .font(AppUI.Typography.body)
+                                    .font(.system(size: 15, weight: .regular))
                                     .lineLimit(1)
 
                                 if let providerDisplayName {
@@ -123,12 +123,12 @@ struct ModelSelectorModelRow: View {
     private func contextSizeBadge(_ tokens: Int) -> some View {
         Text(formatContextSize(tokens))
             .font(.caption2)
-            .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
             .background(
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                    .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
             )
     }
 
@@ -140,12 +140,12 @@ struct ModelSelectorModelRow: View {
             Text(title)
                 .font(.caption2)
         }
-        .foregroundColor(AppUI.Color.semantic.textSecondary)
+        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         .padding(.horizontal, 4)
         .padding(.vertical, 1)
         .background(
             RoundedRectangle(cornerRadius: 3)
-                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
         )
         .help(title)
     }
@@ -154,12 +154,12 @@ struct ModelSelectorModelRow: View {
     private func providerBadge(_ name: String) -> some View {
         Text(name)
             .font(.caption2)
-            .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
             .background(
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                    .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
             )
     }
 
@@ -201,12 +201,12 @@ struct ModelSelectorModelRow: View {
             Text("\(count)")
                 .font(.caption2)
         }
-        .foregroundColor(AppUI.Color.semantic.textSecondary)
+        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         .padding(.horizontal, 4)
         .padding(.vertical, 1)
         .background(
             RoundedRectangle(cornerRadius: 3)
-                .fill(AppUI.Color.semantic.textSecondary.opacity(0.12))
+                .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.12))
         )
     }
 

@@ -17,18 +17,18 @@ struct ProjectScanControlBar: View {
                     title: { Text(viewModel.isScanning ? "停止扫描" : "扫描项目") },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "folder.badge.gearshape") }
                 )
-                .font(AppUI.Typography.bodyEmphasized)
+                .font(.system(size: 15, weight: .medium))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? AppUI.Color.semantic.error : AppUI.Color.semantic.warning)
+            .tint(viewModel.isScanning ? Color(hex: "FF453A") : Color(hex: "FF9F0A"))
 
             Spacer()
 
             Text("扫描范围：Code、Projects、Developer 等目录")
                 .font(.caption)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .padding(.horizontal)
     }

@@ -2,6 +2,7 @@ import Foundation
 
 /// Swift 关键字悬浮提示编辑器插件：显示常见 Swift 关键字的文档
 actor EditorSwiftKeywordHoverPlugin: SuperPlugin {
+    static let shared = EditorSwiftKeywordHoverPlugin()
     static let id = "EditorSwiftKeywordHover"
     static let displayName = String(localized: "Editor Swift Keyword Hover", table: "EditorSwiftKeywordHover")
     static let description = String(localized: "Shows inline hover documentation for common Swift keywords.", table: "EditorSwiftKeywordHover")
