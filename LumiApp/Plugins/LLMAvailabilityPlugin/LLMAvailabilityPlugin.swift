@@ -45,4 +45,9 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         []
     }
+
+    @MainActor
+    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(LLMAvailabilityStatusBarView())
+    }
 }
