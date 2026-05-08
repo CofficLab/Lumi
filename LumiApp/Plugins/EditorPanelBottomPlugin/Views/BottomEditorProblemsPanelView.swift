@@ -3,7 +3,7 @@ import MagicKit
 
 struct BottomEditorProblemsPanelView: View {
     @EnvironmentObject private var themeVM: ThemeVM
-    @ObservedObject var state: EditorState
+    @ObservedObject var service: EditorService
     var showsHeader: Bool = true
 
     var body: some View {
@@ -26,7 +26,7 @@ struct BottomEditorProblemsPanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                state.presentBottomPanel(nil)
+                service.presentBottomPanel(nil)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
@@ -40,33 +40,33 @@ struct BottomEditorProblemsPanelView: View {
     }
 
     private var panelTitle: String {
-        let count = state.panelState.semanticProblems.count + state.panelState.problemDiagnostics.count
+        let count = service.panelState.semanticProblems.count + service.panelState.problemDiagnostics.count
         return count > 0 ? "Problems (\(count))" : "Problems"
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                if state.panelState.semanticProblems.isEmpty && state.panelState.problemDiagnostics.isEmpty {
+                if service.panelState.semanticProblems.isEmpty && service.panelState.problemDiagnostics.isEmpty {
                     emptyState("No Problems", systemImage: "checkmark.circle")
                 } else {
-                    if !state.panelState.semanticProblems.isEmpty {
+                    if !service.panelState.semanticProblems.isEmpty {
                         sectionLabel("Project Context")
-                        ForEach(state.panelState.semanticProblems) { problem in
+                        ForEach(service.panelState.semanticProblems) { problem in
                             panelCard(title: problem.title, subtitle: problem.message, badge: "Project")
                         }
                     }
 
-                    if !state.panelState.problemDiagnostics.isEmpty {
+                    if !service.panelState.problemDiagnostics.isEmpty {
                         sectionLabel("Diagnostics")
-                        ForEach(Array(state.panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
+                        ForEach(Array(service.panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
                             let line = Int(diagnostic.range.start.line) + 1
                             let column = Int(diagnostic.range.start.character) + 1
                             Button {
-                                state.performOpenItem(.problem(diagnostic))
+                                service.performOpenItem(.problem(diagnostic))
                             } label: {
                                 panelCard(
-                                    title: "\(state.relativeFilePath):\(line):\(column)",
+                                    title: "\(service.relativeFilePath):\(line):\(column)",
                                     subtitle: diagnostic.message,
                                     badge: diagnostic.source ?? "LSP"
                                 )

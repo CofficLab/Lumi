@@ -1,3 +1,0 @@
-import EditorKernelCore
-
-typealias EditorOpenEditorItem = EditorKernelCore.EditorOpenEditorItem

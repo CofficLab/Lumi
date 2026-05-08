@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct EditorWorkspaceSymbolsPanelView: View {
-    @ObservedObject var state: EditorState
+    @ObservedObject var service: EditorService
     var showsHeader: Bool = true
 
     var body: some View {
@@ -10,9 +10,9 @@ struct EditorWorkspaceSymbolsPanelView: View {
                 header
                 Divider()
             }
-            if let provider = state.workspaceSymbolProvider as? WorkspaceSymbolProvider {
+            if let provider = service.workspaceSymbolProvider as? WorkspaceSymbolProvider {
                 WorkspaceSymbolItemSearchView(provider: provider) { symbol in
-                    state.performOpenItem(.workspaceSymbol(symbol))
+                    service.performOpenItem(.workspaceSymbol(symbol))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -31,7 +31,7 @@ struct EditorWorkspaceSymbolsPanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                state.performPanelCommand(.closeWorkspaceSymbolSearch)
+                service.performPanelCommand(.closeWorkspaceSymbolSearch)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
@@ -44,7 +44,7 @@ struct EditorWorkspaceSymbolsPanelView: View {
     }
 
     private var panelTitle: String {
-        let count = state.workspaceSymbolProvider.symbols.count
+        let count = service.workspaceSymbolProvider.symbols.count
         return count > 0 ? String(localized: "\(count) Workspace Symbols", table: "EditorRailWorkspaceSymbols") : String(localized: "Workspace Symbols", table: "EditorRailWorkspaceSymbols")
     }
 }

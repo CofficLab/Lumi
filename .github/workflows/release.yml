@@ -28,7 +28,35 @@ env:
   SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY_GITOK }}
 
 jobs:
+  package_tests:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26.3"
+
+      - name: Run Swift Package Tests
+        run: |
+          set -euo pipefail
+
+          echo "==> Running package tests"
+          swift test --package-path Packages/DatabaseKit
+          swift test --package-path Packages/EditorKernelCore
+          swift test --package-path Packages/FilePreviewKit
+          swift test --package-path Packages/MarkdownKit
+          swift test --package-path Packages/LumiCodeEditSymbols
+          swift test --package-path Packages/LumiCodeEditSourceEditor
+          swift test --package-path Packages/EditorService
+
   release_pipeline:
+    needs: package_tests
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
@@ -242,6 +270,24 @@ jobs:
           ls -alh updates
 
       # =================================================================================================
+      # 2.5 符号文件归档 (dSYM)
+      # =================================================================================================
+      - name: Package dSYMs
+        run: |
+          DSYM_SOURCE="./temp/${{ env.SCHEME }}.xcarchive/dSYMs"
+          DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip"
+
+          if [ -d "$DSYM_SOURCE" ]; then
+            cd "$DSYM_SOURCE"
+            zip -r "$GITHUB_WORKSPACE/$DSYM_ZIP" ./*.dSYM
+            echo "✅ dSYMs packaged: $(du -sh "$GITHUB_WORKSPACE/$DSYM_ZIP" | cut -f1)"
+            ls -lh "$GITHUB_WORKSPACE/$DSYM_ZIP"
+          else
+            echo "⚠️ No dSYMs directory found in xcarchive"
+            ls -R "./temp/${{ env.SCHEME }}.xcarchive/" || true
+          fi
+
+      # =================================================================================================
       # 3. Appcast 生成 (仅 Release 分支)
       # =================================================================================================
       - name: Generate Appcast
@@ -332,6 +378,7 @@ jobs:
           files: |
             ./updates/*.dmg
             ./appcast.xml
+            ./temp/${{ env.SCHEME }}_${{ env.new_version }}_dSYMs.zip
 
   rebase:
     if: github.ref == 'refs/heads/main'

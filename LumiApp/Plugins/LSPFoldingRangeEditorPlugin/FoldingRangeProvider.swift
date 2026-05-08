@@ -54,17 +54,3 @@ final class FoldingRangeProvider: ObservableObject, SuperEditorFoldingRangeProvi
         requestLifecycle.reset()
     }
 }
-
-struct FoldingRangeItem: Identifiable, Hashable {
-    let id = UUID()
-    let startLine: Int
-    let endLine: Int
-    let startCharacter: Int?
-    let kind: FoldingRangeKind?
-    var collapsedText: String?
-    
-    var isComment: Bool { kind == .comment }
-    var isImports: Bool { kind == .imports }
-    var isRegion: Bool { kind == .region }
-    var hiddenLineCount: Int { max(0, endLine - startLine) }
-}

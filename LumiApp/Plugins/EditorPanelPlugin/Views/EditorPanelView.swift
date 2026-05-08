@@ -18,8 +18,6 @@ struct EditorPanelView: View {
 
     /// 便利访问
     private var service: EditorService { editorVM.service }
-    private var state: EditorState { service.state }
-    private var sessionStore: EditorSessionStore { service.sessionStore }
 
     /// 面板业务逻辑
     @StateObject private var panelService = EditorPanelService()
@@ -35,8 +33,8 @@ struct EditorPanelView: View {
         VStack(spacing: 0) {
             if hasActiveEditorSelection {
                 FileInfoBannerView(
-                    state: state,
-                    warningMessage: panelService.projectContextWarningMessage(state: state)
+                    service: service,
+                    warningMessage: panelService.projectContextWarningMessage(service: service)
                 )
                 editorContent
             } else {
@@ -48,20 +46,19 @@ struct EditorPanelView: View {
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             coordinator.handleProjectPathChange(oldPath: oldPath, newPath: newPath)
         }
-        .onChange(of: state.currentFileURL) {
+        .onChange(of: service.currentFileURL) {
             coordinator.handleCurrentFileURLChange()
         }
-        .onChange(of: state.cursorLine) {
+        .onChange(of: service.cursorLine) {
             coordinator.handleCursorLineChange()
         }
-        .onChange(of: state.documentSymbolProvider.symbols.map(\.id)) {
+        .onChange(of: service.documentSymbolProvider.symbols.map(\.id)) {
             coordinator.handleDocumentSymbolsChange()
         }
         .onAppear {
             coordinator.configure(
                 panelService: panelService,
-                state: state,
-                sessionStore: sessionStore,
+                service: service,
                 projectVM: projectVM
             )
             coordinator.handleAppear()
@@ -78,7 +75,7 @@ struct EditorPanelView: View {
     // MARK: - Sheet Hosts
 
     private var editorSheetHosts: some View {
-        let sheets = builtinSheets + state.editorExtensions.sheetSuggestions(state: state).filter {
+        let sheets = builtinSheets + service.editorExtensions.sheetSuggestions(state: service.state).filter {
             $0.id != "builtin.workspace-symbol-sheet" &&
                 $0.id != "builtin.call-hierarchy-sheet"
         }
@@ -87,15 +84,15 @@ struct EditorPanelView: View {
                 EmptyView()
                     .sheet(
                         isPresented: Binding(
-                            get: { sheet.isPresented(state) },
+                            get: { sheet.isPresented(service.state) },
                             set: { presented in
                                 if !presented {
-                                    sheet.onDismiss(state)
+                                    sheet.onDismiss(service.state)
                                 }
                             }
                         )
                     ) {
-                        sheet.content(state)
+                        sheet.content(service.state)
                     }
             }
         }
@@ -112,14 +109,13 @@ struct EditorPanelView: View {
                     AnyView(
                         EditorCommandPaletteView(
                             state: state,
-                            openEditors: panelService.openEditorItems(sessionStore),
+                            openEditors: panelService.openEditorItems(service),
                             onOpenFile: { url, target, highlightLine in
                                 panelService.openFileFromQuickOpen(
                                     url,
                                     target: target,
                                     highlightLine: highlightLine,
-                                    state: state,
-                                    sessionStore: self.sessionStore,
+                                    service: service,
                                     projectRootPath: self.projectVM.currentProject?.path,
                                     currentProjectPath: self.projectVM.currentProjectPath
                                 )
@@ -137,37 +133,37 @@ struct EditorPanelView: View {
 
     /// 文件是否正在加载中（已选中但 loadFile 异步 Task 尚未完成）
     private var isFileLoading: Bool {
-        hasActiveEditorSelection && !state.canPreview && !state.isBinaryFile && state.currentFileURL == nil
+        hasActiveEditorSelection && !service.canPreview && !service.isBinaryFile && service.currentFileURL == nil
     }
 
     /// 编辑器是否存在激活会话（以 Editor 内核作为当前文件真源）
     private var hasActiveEditorSelection: Bool {
-        sessionStore.activeSessionID != nil || state.currentFileURL != nil
+        service.activeSessionID != nil || service.currentFileURL != nil
     }
 
     /// 编辑器主体（session 驱动）
     @ViewBuilder
     private var editorContent: some View {
-        if state.isMarkdownFile {
-            if state.isMarkdownPreviewMode {
+        if service.isMarkdownFile {
+            if service.isMarkdownPreviewMode {
                 markdownPreviewContent
             } else {
                 sourceEditorContent
             }
-        } else if state.canPreview {
+        } else if service.canPreview {
             sourceEditorContent
-        } else if state.isBinaryFile, let fileURL = state.currentFileURL {
+        } else if service.isBinaryFile, let fileURL = service.currentFileURL {
             FilePreviewView(fileURL: fileURL).frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if isFileLoading {
             EditorLoadingStateView()
         } else if hasActiveEditorSelection {
-            EditorUnsupportedFileView(fileName: state.fileName)
+            EditorUnsupportedFileView(fileName: service.fileName)
         }
     }
 
     @ViewBuilder
     private var sourceEditorContent: some View {
-        SourceEditorView(state: state)
+        SourceEditorView(state: service.state)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
             .clipped()
@@ -177,7 +173,7 @@ struct EditorPanelView: View {
     private var markdownPreviewContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if let content = state.content?.string, !content.isEmpty {
+                if let content = service.content?.string, !content.isEmpty {
                     MarkdownBlockRenderer(markdown: content)
                         .padding(20)
                 } else {

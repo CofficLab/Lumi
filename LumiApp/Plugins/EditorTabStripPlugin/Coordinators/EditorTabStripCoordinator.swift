@@ -160,7 +160,7 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     /// 从 tabs 和 activeSessionID 中提取活跃标签的文件路径
     private func activeTabPath(
         from tabs: [EditorTab],
-        activeSessionID: EditorSession.ID?
+        activeSessionID: UUID?
     ) -> String? {
         guard let activeSessionID else { return nil }
         return tabs.first(where: { $0.sessionID == activeSessionID })?.fileURL?.path

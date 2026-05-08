@@ -45,9 +45,9 @@ actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
 struct EditorReferencesRailContentView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
-    private var state: EditorState { editorVM.service.state }
+    private var service: EditorService { editorVM.service }
 
     var body: some View {
-        EditorReferencesWorkspacePanelView(state: state, showsHeader: false)
+        EditorReferencesWorkspacePanelView(service: service, showsHeader: false)
     }
 }

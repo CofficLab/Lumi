@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "CEAF066C-2394-4BA4-9E2C-B89B73D78FFA",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "EditorServiceTests",
+        "name" : "EditorServiceTests"
+      }
+    }
+  ],
+  "version" : 1
+}

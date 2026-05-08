@@ -1,5 +1,0 @@
-import EditorKernelCore
-
-typealias EditorFindReplaceOptions = EditorKernelCore.EditorFindReplaceOptions
-typealias EditorFindReplaceState = EditorKernelCore.EditorFindReplaceState
-typealias EditorFindReplaceStateController = EditorKernelCore.EditorFindReplaceStateController

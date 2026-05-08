@@ -28,20 +28,7 @@ struct EditorFileTreeEmptyView: View {
     }
 }
 
-/// 文件树无项目视图（未选择项目）
-struct EditorFileTreeNoProjectView: View {
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "folder")
-                .font(.system(size: 24))
-                .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "No project", table: "EditorRailFileTree"))
-                .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
+
 
 #Preview {
     VStack(spacing: 20) {

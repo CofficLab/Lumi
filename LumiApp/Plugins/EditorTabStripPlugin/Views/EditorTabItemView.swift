@@ -15,11 +15,9 @@ struct EditorTabItemView: View {
     let onDropBefore: (EditorTab?) -> Void
 
     var service: EditorService { editorVM.service }
-    var sessionStore: EditorSessionStore { service.sessionStore }
-    var state: EditorState { service.state }
 
     private var isActive: Bool {
-        sessionStore.activeSessionID == tab.sessionID
+        service.activeSessionID == tab.sessionID
     }
 
     var body: some View {
@@ -111,26 +109,26 @@ struct EditorTabItemView: View {
     // MARK: - 操作
 
     private func activateSession(_ tab: EditorTab) {
-        guard let session = sessionStore.activate(sessionID: tab.sessionID) else { return }
-        state.loadFile(from: session.fileURL)
-        state.applySessionRestore(session)
+        guard let session = service.activateSession(id: tab.sessionID) else { return }
+        service.loadFile(from: session.fileURL)
+        service.applySessionRestore(session)
     }
 
     private func closeSession(_ tab: EditorTab) {
-        guard let session = sessionStore.session(for: tab.sessionID) else { return }
-        let wasActive = session.id == sessionStore.activeSessionID
-        if wasActive, state.hasUnsavedChanges {
-            state.saveNow()
+        guard let session = service.session(for: tab.sessionID) else { return }
+        let wasActive = session.id == service.activeSessionID
+        if wasActive, service.hasUnsavedChanges {
+            service.saveNow()
         }
 
-        let nextSession = sessionStore.close(sessionID: session.id)
+        let nextSession = service.closeSession(id: session.id)
         guard wasActive else {
             return
         }
 
-        state.loadFile(from: nextSession?.fileURL)
+        service.loadFile(from: nextSession?.fileURL)
         if let nextSession {
-            state.applySessionRestore(nextSession)
+            service.applySessionRestore(nextSession)
         }
     }
 
@@ -157,19 +155,19 @@ struct EditorTabItemView: View {
     // MARK: - 操作
 
     private func closeOtherSessions() {
-        guard let session = sessionStore.session(for: tab.sessionID) else { return }
-        if state.currentFileURL != session.fileURL, state.hasUnsavedChanges {
-            state.saveNow()
+        guard let session = service.session(for: tab.sessionID) else { return }
+        if service.currentFileURL != session.fileURL, service.hasUnsavedChanges {
+            service.saveNow()
         }
 
-        let keptSession = sessionStore.closeOthers(keeping: session.id)
-        state.loadFile(from: keptSession?.fileURL)
+        let keptSession = service.closeOtherSessions(keeping: session.id)
+        service.loadFile(from: keptSession?.fileURL)
         if let keptSession {
-            state.applySessionRestore(keptSession)
+            service.applySessionRestore(keptSession)
         }
     }
 
     private func togglePinned() {
-        sessionStore.togglePinned(sessionID: tab.sessionID)
+        service.togglePinned(sessionID: tab.sessionID)
     }
 }

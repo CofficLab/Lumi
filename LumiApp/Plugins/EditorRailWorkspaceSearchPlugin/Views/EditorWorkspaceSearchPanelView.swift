@@ -3,7 +3,7 @@ import MagicKit
 
 struct EditorWorkspaceSearchPanelView: View {
     @EnvironmentObject private var themeVM: ThemeVM
-    @ObservedObject var state: EditorState
+    @ObservedObject var service: EditorService
     var showsToolbar: Bool = true
 
     var body: some View {
@@ -22,37 +22,37 @@ struct EditorWorkspaceSearchPanelView: View {
             TextField(
                 String(localized: "Search in files", table: "EditorRailWorkspaceSearch"),
                 text: Binding(
-                    get: { state.panelState.workspaceSearchQuery },
-                    set: { state.panelController.setWorkspaceSearchQuery($0) }
+                    get: { service.panelState.workspaceSearchQuery },
+                    set: { service.panelController.setWorkspaceSearchQuery($0) }
                 )
             )
             .textFieldStyle(.roundedBorder)
             .onSubmit {
                 Task { @MainActor in
-                    await state.performWorkspaceSearch()
+                    await service.performWorkspaceSearch()
                 }
             }
 
             Button(String(localized: "Search", table: "EditorRailWorkspaceSearch")) {
                 Task { @MainActor in
-                    await state.performWorkspaceSearch()
+                    await service.performWorkspaceSearch()
                 }
             }
             .buttonStyle(.borderedProminent)
-            .disabled(state.panelState.workspaceSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .disabled(service.panelState.workspaceSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             Button(String(localized: "Open Search Editor", table: "EditorRailWorkspaceSearch")) {
-                state.openWorkspaceSearchResultsInEditor()
+                service.openWorkspaceSearchResultsInEditor()
             }
             .buttonStyle(.bordered)
-            .disabled(state.panelState.workspaceSearchResults.isEmpty)
+            .disabled(service.panelState.workspaceSearchResults.isEmpty)
         }
         .padding(10)
     }
 
     @ViewBuilder
     private var content: some View {
-        if state.panelState.isWorkspaceSearchLoading {
+        if service.panelState.isWorkspaceSearchLoading {
             VStack(spacing: 10) {
                 ProgressView()
                 Text(String(localized: "Searching workspace…", table: "EditorRailWorkspaceSearch"))
@@ -60,25 +60,25 @@ struct EditorWorkspaceSearchPanelView: View {
                     .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let error = state.panelState.workspaceSearchErrorMessage {
+        } else if let error = service.panelState.workspaceSearchErrorMessage {
             emptyState(error, systemImage: "exclamationmark.triangle")
-        } else if state.panelState.workspaceSearchQuery.isEmpty {
+        } else if service.panelState.workspaceSearchQuery.isEmpty {
             emptyState(String(localized: "Enter a query and press Return", table: "EditorRailWorkspaceSearch"), systemImage: "magnifyingglass")
-        } else if state.panelState.workspaceSearchResults.isEmpty {
+        } else if service.panelState.workspaceSearchResults.isEmpty {
             emptyState(String(localized: "No results", table: "EditorRailWorkspaceSearch"), systemImage: "doc.text.magnifyingglass")
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
-                    if let summary = state.panelState.workspaceSearchSummary {
+                    if let summary = service.panelState.workspaceSearchSummary {
                         Text(String(localized: "\(summary.totalMatches) matches in \(summary.totalFiles) files", table: "EditorRailWorkspaceSearch"))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     }
 
-                    ForEach(state.panelState.workspaceSearchResults) { file in
+                    ForEach(service.panelState.workspaceSearchResults) { file in
                         VStack(alignment: .leading, spacing: 6) {
                             Button {
-                                state.panelController.toggleWorkspaceSearchFileCollapse(path: file.path)
+                                service.panelController.toggleWorkspaceSearchFileCollapse(path: file.path)
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: isCollapsed(file) ? "chevron.right" : "chevron.down")
@@ -101,7 +101,7 @@ struct EditorWorkspaceSearchPanelView: View {
                             if !isCollapsed(file) {
                                 ForEach(file.matches) { match in
                                     Button {
-                                        state.openWorkspaceSearchMatch(match)
+                                        service.openWorkspaceSearchMatch(match)
                                     } label: {
                                         HStack(alignment: .top, spacing: 10) {
                                             Text("L\(match.line):C\(match.column)")
@@ -142,7 +142,7 @@ struct EditorWorkspaceSearchPanelView: View {
     }
 
     private func isCollapsed(_ file: EditorWorkspaceSearchFileResult) -> Bool {
-        state.panelState.workspaceSearchCollapsedFilePaths.contains(file.path)
+        service.panelState.workspaceSearchCollapsedFilePaths.contains(file.path)
     }
 
     private func fileMatchSummary(_ file: EditorWorkspaceSearchFileResult) -> String {
@@ -153,13 +153,13 @@ struct EditorWorkspaceSearchPanelView: View {
     }
 
     private func rowBackground(for match: EditorWorkspaceSearchMatch) -> Color {
-        state.panelState.selectedWorkspaceSearchMatchID == match.id
+        service.panelState.selectedWorkspaceSearchMatchID == match.id
             ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.1)
             : themeVM.activeAppTheme.workspaceTextColor().opacity(0.05)
     }
 
     private func rowBorder(for match: EditorWorkspaceSearchMatch) -> Color {
-        state.panelState.selectedWorkspaceSearchMatchID == match.id
+        service.panelState.selectedWorkspaceSearchMatchID == match.id
             ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.18)
             : .clear
     }

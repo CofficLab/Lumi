@@ -1,4 +1,0 @@
-import EditorKernelCore
-
-typealias EditorPanelCommand = EditorKernelCore.EditorPanelCommand
-typealias EditorPanelSnapshot = EditorKernelCore.EditorPanelSnapshot

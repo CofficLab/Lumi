@@ -1,0 +1,4 @@
+import EditorKernelCore
+
+public typealias WorkspaceEditFileOperationsExecutor = EditorKernelCore.WorkspaceEditFileOperationsExecutor
+public typealias WorkspaceEditFileOperations = EditorKernelCore.WorkspaceEditFileOperations

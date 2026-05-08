@@ -64,7 +64,7 @@ extension RecentProjectsPersistenceOverlay {
         if let currentFile = store.getCurrentFile() {
             let url = URL(fileURLWithPath: currentFile.path)
             _ = editorVM.service.openFile(at: url)
-            editorVM.service.state.loadFile(from: url)
+            editorVM.service.loadFile(from: url)
         }
     }
 }
@@ -139,7 +139,7 @@ extension RecentProjectsPersistenceOverlay {
         }
         
         _ = editorVM.service.openFile(at: url)
-        editorVM.service.state.loadFile(from: url)
+        editorVM.service.loadFile(from: url)
     }
 }
 

@@ -1,0 +1,677 @@
+import Foundation
+import EditorKernelCore
+import CodeEditSourceEditor
+import CodeEditTextView
+import SwiftUI
+
+// MARK: - Contribution Context
+
+@MainActor
+public struct EditorContributionContext {
+    public let languageId: String
+    public let fileURL: URL?
+    public let hasSelection: Bool
+    public let line: Int
+    public let character: Int
+    public let isEditorActive: Bool
+    public let isLargeFileMode: Bool
+
+    func value(for key: EditorContextKey) -> EditorContextValue {
+        switch key {
+        case .languageId:
+            .string(languageId)
+        case .hasFileURL:
+            .bool(fileURL != nil)
+        case .hasSelection:
+            .bool(hasSelection)
+        case .line:
+            .int(line)
+        case .character:
+            .int(character)
+        case .isEditorActive:
+            .bool(isEditorActive)
+        case .isLargeFileMode:
+            .bool(isLargeFileMode)
+        }
+    }
+}
+
+public enum EditorContextValue: Equatable {
+    case bool(Bool)
+    case int(Int)
+    case string(String)
+}
+
+public enum EditorContextKey: String, CaseIterable, Equatable {
+    case languageId = "editor.languageId"
+    case hasFileURL = "editor.hasFileURL"
+    case hasSelection = "editor.hasSelection"
+    case line = "editor.line"
+    case character = "editor.character"
+    case isEditorActive = "editor.isEditorActive"
+    case isLargeFileMode = "editor.isLargeFileMode"
+}
+
+public indirect enum EditorWhenClause: Equatable {
+    case key(EditorContextKey)
+    case equals(EditorContextKey, EditorContextValue)
+    case not(EditorWhenClause)
+    case all([EditorWhenClause])
+    case any([EditorWhenClause])
+
+    @MainActor
+    func evaluate(in context: EditorContributionContext) -> Bool {
+        switch self {
+        case .key(let key):
+            guard case .bool(let value) = context.value(for: key) else { return false }
+            return value
+        case .equals(let key, let expected):
+            return context.value(for: key) == expected
+        case .not(let clause):
+            return !clause.evaluate(in: context)
+        case .all(let clauses):
+            return clauses.allSatisfy { $0.evaluate(in: context) }
+        case .any(let clauses):
+            return clauses.contains { $0.evaluate(in: context) }
+        }
+    }
+}
+
+@MainActor
+public struct EditorContributionMetadata {
+    public let priority: Int
+    public let dedupeKey: String?
+    public let whenClause: EditorWhenClause?
+    public let enablement: (EditorContributionContext) -> Bool
+
+    public init(
+        priority: Int = 0,
+        dedupeKey: String? = nil,
+        whenClause: EditorWhenClause? = nil,
+        isEnabled: @escaping (EditorContributionContext) -> Bool = { _ in true }
+    ) {
+        self.priority = priority
+        self.dedupeKey = dedupeKey
+        self.whenClause = whenClause
+        self.enablement = isEnabled
+    }
+
+    @MainActor
+    func matches(_ context: EditorContributionContext) -> Bool {
+        let whenMatches = whenClause?.evaluate(in: context) ?? true
+        return whenMatches && enablement(context)
+    }
+}
+
+// MARK: - Completion
+
+/// 编辑器补全上下文
+@MainActor
+public struct EditorCompletionContext {
+    public let languageId: String
+    public let line: Int
+    public let character: Int
+    public let prefix: String
+    public let isTypeContext: Bool
+
+    public init(
+        languageId: String,
+        line: Int,
+        character: Int,
+        prefix: String,
+        isTypeContext: Bool
+    ) {
+        self.languageId = languageId
+        self.line = line
+        self.character = character
+        self.prefix = prefix
+        self.isTypeContext = isTypeContext
+    }
+}
+
+/// 编辑器补全建议（由扩展提供）
+public struct EditorCompletionSuggestion: Hashable {
+    public let label: String
+    public let insertText: String
+    public let detail: String?
+    public let priority: Int
+
+    public init(label: String, insertText: String, detail: String?, priority: Int) {
+        self.label = label
+        self.insertText = insertText
+        self.detail = detail
+        self.priority = priority
+    }
+}
+
+/// 编辑器补全扩展点
+@MainActor
+public protocol SuperEditorCompletionContributor: AnyObject {
+    var id: String { get }
+    func provideSuggestions(context: EditorCompletionContext) async -> [EditorCompletionSuggestion]
+}
+
+// MARK: - Hover
+
+/// 编辑器悬停上下文
+@MainActor
+public struct EditorHoverContext {
+    public let languageId: String
+    public let line: Int
+    public let character: Int
+    public let symbol: String
+
+    public init(languageId: String, line: Int, character: Int, symbol: String) {
+        self.languageId = languageId
+        self.line = line
+        self.character = character
+        self.symbol = symbol
+    }
+}
+
+/// 编辑器悬停建议
+@MainActor
+public struct EditorHoverSuggestion: Hashable {
+    public let markdown: String
+    public let priority: Int
+    public let dedupeKey: String?
+
+    public init(markdown: String, priority: Int, dedupeKey: String? = nil) {
+        self.markdown = markdown
+        self.priority = priority
+        self.dedupeKey = dedupeKey
+    }
+}
+
+/// 编辑器悬停扩展点
+@MainActor
+public protocol SuperEditorHoverContributor: AnyObject {
+    var id: String { get }
+    func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion]
+}
+
+/// 编辑器悬停内容扩展点
+///
+/// 相比旧的 `SuperEditorHoverContributor`，这个命名更明确地强调它只负责贡献 hover 内容，
+/// 不负责 hover 的触发时机、请求生命周期或卡片布局。
+@MainActor
+public protocol SuperEditorHoverContentContributor: AnyObject {
+    var id: String { get }
+    func provideHoverContent(context: EditorHoverContext) async -> [EditorHoverSuggestion]
+}
+
+// MARK: - Code Action
+
+/// 编辑器代码动作上下文
+public struct EditorCodeActionContext {
+    public let languageId: String
+    public let line: Int
+    public let character: Int
+    public let selectedText: String?
+
+    public init(
+        languageId: String,
+        line: Int,
+        character: Int,
+        selectedText: String?
+    ) {
+        self.languageId = languageId
+        self.line = line
+        self.character = character
+        self.selectedText = selectedText
+    }
+}
+
+/// 编辑器代码动作建议
+public struct EditorCodeActionSuggestion: Hashable, Sendable {
+    public let id: String
+    public let title: String
+    public let command: String
+    public let priority: Int
+
+    public init(id: String, title: String, command: String, priority: Int) {
+        self.id = id
+        self.title = title
+        self.command = command
+        self.priority = priority
+    }
+}
+
+/// 编辑器代码动作扩展点
+@MainActor
+public protocol SuperEditorCodeActionContributor: AnyObject {
+    var id: String { get }
+    func provideCodeActions(context: EditorCodeActionContext) async -> [EditorCodeActionSuggestion]
+}
+
+// MARK: - Highlight Provider
+
+/// 编辑器高亮 provider 扩展点
+///
+/// 允许插件按语言注入 `CodeEditSourceEditor` 的高亮 provider，
+/// 例如 Markdown、特殊 DSL、额外语义层等。
+@MainActor
+public protocol SuperEditorHighlightProviderContributor: AnyObject {
+    var id: String { get }
+    func supports(languageId: String) -> Bool
+    func provideHighlightProviders(languageId: String) -> [any HighlightProviding]
+}
+
+// MARK: - Command
+
+/// 编辑器命令扩展点
+@MainActor
+public protocol SuperEditorCommandContributor: AnyObject {
+    var id: String { get }
+    func provideCommands(
+        context: EditorCommandContext,
+        state: EditorState,
+        textView: TextView?
+    ) -> [EditorCommandSuggestion]
+}
+
+/// 编辑器右键菜单建议
+@MainActor
+public struct EditorContextMenuItemSuggestion: Identifiable {
+    public let id: String
+    let title: String
+    let systemImage: String
+    let category: String?
+    let shortcut: EditorCommandShortcut?
+    let order: Int
+    let isEnabled: Bool
+    let metadata: EditorContributionMetadata
+    let action: () -> Void
+
+    init(
+        id: String,
+        title: String,
+        systemImage: String,
+        category: String? = nil,
+        shortcut: EditorCommandShortcut? = nil,
+        order: Int,
+        isEnabled: Bool,
+        metadata: EditorContributionMetadata = .init(),
+        action: @escaping () -> Void
+    ) {
+        self.id = id
+        self.title = title
+        self.systemImage = systemImage
+        self.category = category
+        self.shortcut = shortcut
+        self.order = order
+        self.isEnabled = isEnabled
+        self.metadata = metadata
+        self.action = action
+    }
+
+    init(command suggestion: EditorCommandSuggestion) {
+        self.init(
+            id: suggestion.id,
+            title: suggestion.title,
+            systemImage: suggestion.systemImage,
+            category: suggestion.category,
+            shortcut: suggestion.shortcut,
+            order: suggestion.order,
+            isEnabled: suggestion.isEnabled,
+            metadata: .init(priority: suggestion.order, dedupeKey: suggestion.id),
+            action: suggestion.action
+        )
+    }
+
+    var asCommandSuggestion: EditorCommandSuggestion {
+        EditorCommandSuggestion(
+            id: id,
+            title: title,
+            systemImage: systemImage,
+            category: category,
+            shortcut: shortcut,
+            order: order,
+            isEnabled: isEnabled,
+            action: action
+        )
+    }
+}
+
+/// 编辑器右键菜单扩展点
+@MainActor
+public protocol SuperEditorContextMenuContributor: AnyObject {
+    var id: String { get }
+    func provideContextMenuItems(
+        context: EditorCommandContext,
+        state: EditorState,
+        textView: TextView?
+    ) -> [EditorContextMenuItemSuggestion]
+}
+
+// MARK: - Gutter Decoration
+
+/// 编辑器 decoration 扩展点
+///
+/// 当前先以 gutter decoration 作为第一批稳定 surface。
+/// 后续如果扩展到 inline / block / overlay decoration，可以继续在这个语义层上外扩。
+@MainActor
+public protocol SuperEditorDecorationContributor: SuperEditorGutterDecorationContributor {}
+
+@MainActor
+public protocol SuperEditorGutterDecorationContributor: AnyObject {
+    var id: String { get }
+    func provideGutterDecorations(
+        context: EditorGutterDecorationContext,
+        state: EditorState
+    ) -> [EditorGutterDecorationSuggestion]
+}
+
+// MARK: - Panel
+
+@MainActor
+public enum EditorPanelPlacement: String, Equatable {
+    case sheet
+    case bottom
+}
+
+/// 编辑器统一面板建议
+///
+/// 用于把 sheet 与 bottom panel 收口到一个统一 contribution point。
+/// 旧的 `SuperEditorSheetContributor` 仍然保留，便于渐进迁移。
+@MainActor
+public struct EditorPanelSuggestion: Identifiable {
+    public let id: String
+    public let title: String
+    public let systemImage: String
+    public let placement: EditorPanelPlacement
+    public let order: Int
+    public let metadata: EditorContributionMetadata
+    public let isPresented: (EditorState) -> Bool
+    public let onDismiss: (EditorState) -> Void
+    public let content: (EditorState) -> AnyView
+
+    public init(
+        id: String,
+        title: String,
+        systemImage: String,
+        placement: EditorPanelPlacement,
+        order: Int,
+        metadata: EditorContributionMetadata = .init(),
+        isPresented: @escaping (EditorState) -> Bool,
+        onDismiss: @escaping (EditorState) -> Void,
+        content: @escaping (EditorState) -> AnyView
+    ) {
+        self.id = id
+        self.title = title
+        self.systemImage = systemImage
+        self.placement = placement
+        self.order = order
+        self.metadata = metadata
+        self.isPresented = isPresented
+        self.onDismiss = onDismiss
+        self.content = content
+    }
+}
+
+/// 编辑器统一面板扩展点
+@MainActor
+public protocol SuperEditorPanelContributor: AnyObject {
+    var id: String { get }
+    func providePanels(state: EditorState) -> [EditorPanelSuggestion]
+}
+
+// MARK: - Settings
+
+/// 编辑器设置项建议
+///
+/// 用于把内置 editor settings 与插件贡献设置收口到统一展示模型。
+@MainActor
+public struct EditorSettingsItemSuggestion: Identifiable {
+    public let id: String
+    public let sectionTitle: String
+    public let sectionSummary: String?
+    public let title: String
+    public let subtitle: String?
+    public let keywords: [String]
+    public let order: Int
+    public let metadata: EditorContributionMetadata
+    public let content: (EditorSettingsState) -> AnyView
+
+    public init(
+        id: String,
+        sectionTitle: String,
+        sectionSummary: String? = nil,
+        title: String,
+        subtitle: String? = nil,
+        keywords: [String] = [],
+        order: Int,
+        metadata: EditorContributionMetadata = .init(),
+        content: @escaping (EditorSettingsState) -> AnyView
+    ) {
+        self.id = id
+        self.sectionTitle = sectionTitle
+        self.sectionSummary = sectionSummary
+        self.title = title
+        self.subtitle = subtitle
+        self.keywords = keywords
+        self.order = order
+        self.metadata = metadata
+        self.content = content
+    }
+}
+
+/// 编辑器设置项扩展点
+@MainActor
+public protocol SuperEditorSettingsContributor: AnyObject {
+    var id: String { get }
+    func provideSettingsItems(state: EditorSettingsState) -> [EditorSettingsItemSuggestion]
+}
+
+// MARK: - Sheet
+
+/// 编辑器弹窗建议（Sheet）
+@MainActor
+public struct EditorSheetSuggestion: Identifiable {
+    public let id: String
+    public let order: Int
+    public let isPresented: (EditorState) -> Bool
+    public let onDismiss: (EditorState) -> Void
+    public let content: (EditorState) -> AnyView
+
+    public init(
+        id: String,
+        order: Int,
+        isPresented: @escaping (EditorState) -> Bool,
+        onDismiss: @escaping (EditorState) -> Void,
+        content: @escaping (EditorState) -> AnyView
+    ) {
+        self.id = id
+        self.order = order
+        self.isPresented = isPresented
+        self.onDismiss = onDismiss
+        self.content = content
+    }
+}
+
+/// 编辑器弹窗扩展点（Sheet）
+@MainActor
+public protocol SuperEditorSheetContributor: AnyObject {
+    var id: String { get }
+    func provideSheets(state: EditorState) -> [EditorSheetSuggestion]
+}
+
+// MARK: - Status Item
+
+/// 编辑器状态项建议
+///
+/// 统一描述 toolbar 与 title 区的可插拔状态项。旧的 `SuperEditorToolbarContributor`
+/// 仍然保留，并由注册中心桥接到这个 contract，便于渐进迁移。
+@MainActor
+public struct EditorStatusItemSuggestion: Identifiable {
+    public enum Placement: String, Equatable {
+        case toolbarCenter
+        case toolbarTrailing
+        case titleTrailing
+    }
+
+    public let id: String
+    public let order: Int
+    public let placement: Placement
+    public let metadata: EditorContributionMetadata
+    public let content: (EditorState) -> AnyView
+
+    public init(
+        id: String,
+        order: Int,
+        placement: Placement,
+        metadata: EditorContributionMetadata = .init(),
+        content: @escaping (EditorState) -> AnyView
+    ) {
+        self.id = id
+        self.order = order
+        self.placement = placement
+        self.metadata = metadata
+        self.content = content
+    }
+}
+
+/// 编辑器状态项扩展点
+@MainActor
+public protocol SuperEditorStatusItemContributor: AnyObject {
+    var id: String { get }
+    func provideStatusItems(state: EditorState) -> [EditorStatusItemSuggestion]
+}
+
+// MARK: - Quick Open
+
+/// 编辑器 Quick Open 建议
+///
+/// 用于统一文件、符号、命令等可搜索入口在 command palette 风格界面中的展示合同。
+@MainActor
+public struct EditorQuickOpenItemSuggestion: Identifiable {
+    public let id: String
+    public let sectionTitle: String
+    public let title: String
+    public let subtitle: String?
+    public let systemImage: String
+    public let badge: String?
+    public let order: Int
+    public let isEnabled: Bool
+    public let metadata: EditorContributionMetadata
+    public let action: () -> Void
+
+    public init(
+        id: String,
+        sectionTitle: String,
+        title: String,
+        subtitle: String?,
+        systemImage: String,
+        badge: String? = nil,
+        order: Int,
+        isEnabled: Bool,
+        metadata: EditorContributionMetadata = .init(),
+        action: @escaping () -> Void
+    ) {
+        self.id = id
+        self.sectionTitle = sectionTitle
+        self.title = title
+        self.subtitle = subtitle
+        self.systemImage = systemImage
+        self.badge = badge
+        self.order = order
+        self.isEnabled = isEnabled
+        self.metadata = metadata
+        self.action = action
+    }
+}
+
+/// 编辑器 Quick Open 扩展点
+@MainActor
+public protocol SuperEditorQuickOpenContributor: AnyObject {
+    var id: String { get }
+    func provideQuickOpenItems(
+        query: String,
+        state: EditorState
+    ) async -> [EditorQuickOpenItemSuggestion]
+}
+
+// MARK: - Toolbar
+
+/// 编辑器工具栏项建议
+@MainActor
+public struct EditorToolbarItemSuggestion: Identifiable {
+    enum Placement {
+        case center
+        case trailing
+    }
+
+    public let id: String
+    let order: Int
+    let placement: Placement
+    let content: (EditorState) -> AnyView
+
+    init(
+        id: String,
+        order: Int,
+        placement: Placement,
+        content: @escaping (EditorState) -> AnyView
+    ) {
+        self.id = id
+        self.order = order
+        self.placement = placement
+        self.content = content
+    }
+
+    init(statusItem suggestion: EditorStatusItemSuggestion) {
+        self.init(
+            id: suggestion.id,
+            order: suggestion.order,
+            placement: suggestion.placement == .toolbarCenter ? .center : .trailing,
+            content: suggestion.content
+        )
+    }
+}
+
+/// 编辑器工具栏扩展点
+@MainActor
+public protocol SuperEditorToolbarContributor: AnyObject {
+    var id: String { get }
+    func provideToolbarItems(state: EditorState) -> [EditorToolbarItemSuggestion]
+}
+
+// MARK: - Interaction
+
+/// 编辑器交互上下文（文本/选区变化）
+@MainActor
+public struct EditorInteractionContext {
+    public let languageId: String
+    public let line: Int
+    public let character: Int
+    public let typedCharacter: String?
+}
+
+/// 编辑器交互扩展点
+@MainActor
+public protocol SuperEditorInteractionContributor: AnyObject {
+    var id: String { get }
+    func onTextDidChange(
+        context: EditorInteractionContext,
+        state: EditorState,
+        controller: TextViewController
+    ) async
+    func onSelectionDidChange(
+        context: EditorInteractionContext,
+        state: EditorState,
+        controller: TextViewController
+    ) async
+}
+
+extension SuperEditorInteractionContributor {
+    public func onTextDidChange(
+        context: EditorInteractionContext,
+        state: EditorState,
+        controller: TextViewController
+    ) async {}
+
+    public func onSelectionDidChange(
+        context: EditorInteractionContext,
+        state: EditorState,
+        controller: TextViewController
+    ) async {}
+}

@@ -31,7 +31,7 @@ struct EditorFileTreeView: View {
                         selectedURL: editorVM.service.currentFileURL,
                         onSelect: { selectedURL in
                             _ = editorVM.service.openFile(at: selectedURL)
-                            editorVM.service.state.loadFile(from: selectedURL)
+                            editorVM.service.loadFile(from: selectedURL)
                         },
                         refreshToken: rootRefreshToken,
                         projectRootPath: projectVM.currentProjectPath,
@@ -58,7 +58,7 @@ struct EditorFileTreeView: View {
     private func onSyncSelectedFile(path: String) {
         let url = URL(fileURLWithPath: path)
         _ = editorVM.service.openFile(at: url)
-        editorVM.service.state.loadFile(from: url)
+        editorVM.service.loadFile(from: url)
     }
 
     private func onProjectPathChanged() {

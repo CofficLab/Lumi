@@ -1,4 +1,5 @@
 import AppKit
+import EditorService
 import MagicKit
 import Sparkle
 import SwiftUI
@@ -27,6 +28,20 @@ import SwiftUI
 /// - ConfigCommand: 配置命令
 @main
 struct CoreApp: App {
+    init() {
+        EditorSettingsLifecycle.hostPersistenceRootURL = { AppConfig.getDBFolderURL() }
+        EditorSettingsLifecycle.editorThemeIDForAppThemeID = { ThemeVM.editorThemeID(for: $0) }
+        EditorSettingsLifecycle.loadEditorRecentCommandIDs = { AppSettingStore.loadEditorRecentCommandIDs() }
+        EditorSettingsLifecycle.saveEditorRecentCommandIDs = { AppSettingStore.saveEditorRecentCommandIDs($0) }
+        EditorSettingsLifecycle.loadEditorCommandUsageCounts = { AppSettingStore.loadEditorCommandUsageCounts() }
+        EditorSettingsLifecycle.saveEditorCommandUsageCounts = { AppSettingStore.saveEditorCommandUsageCounts($0) }
+        EditorSettingsLifecycle.loadEditorCommandPaletteCategory = { AppSettingStore.loadEditorCommandPaletteCategory() }
+        EditorSettingsLifecycle.saveEditorCommandPaletteCategory = { AppSettingStore.saveEditorCommandPaletteCategory($0) }
+        EditorSettingsLifecycle.setEditorFeaturePluginEnabled = { pluginID, enabled in
+            PluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
+        }
+    }
+
     /// macOS 应用代理，处理应用级别的生命周期事件
     ///
     /// MacAgent 负责：
@@ -114,6 +129,7 @@ struct CheckForUpdatesView: View {
 ///
 /// 负责管理更新检查的状态。
 /// 监听 Sparkle 更新器的 canCheckForUpdates 属性。
+@MainActor
 final class CheckForUpdatesViewModel: ObservableObject {
     /// 是否可以检查更新
     ///

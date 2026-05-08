@@ -1,0 +1,3 @@
+import EditorKernelCore
+
+typealias LSPViewportScheduler = EditorKernelCore.LSPViewportScheduler

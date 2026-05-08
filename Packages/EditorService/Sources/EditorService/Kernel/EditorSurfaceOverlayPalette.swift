@@ -1,0 +1,97 @@
+import SwiftUI
+import AppKit
+import CodeEditSourceEditor
+
+public struct EditorSurfaceHighlightStyle {
+    public let fillColor: Color
+    public let strokeColor: Color
+    public let cornerRadius: CGFloat
+    public let lineWidth: CGFloat
+    public let minimumWidth: CGFloat
+    public let minimumHeight: CGFloat
+    public let zIndex: Double
+}
+
+public struct EditorSurfaceHighlight: Identifiable {
+    public let kind: EditorSurfaceHighlightKind
+    public let rect: CGRect
+    public let style: EditorSurfaceHighlightStyle
+
+    public var id: String {
+        "\(kind)-\(rect.minX)-\(rect.minY)-\(rect.width)-\(rect.height)"
+    }
+}
+
+@MainActor
+public struct EditorSurfaceOverlayPalette {
+    private let lineHighlight: NSColor
+    private let selection: NSColor
+
+    public init(theme: EditorTheme?) {
+        self.lineHighlight = theme?.lineHighlight ?? EditorThemeAdapter.fallbackTheme().lineHighlight
+        self.selection = theme?.selection ?? EditorThemeAdapter.fallbackTheme().selection
+    }
+
+    public func style(for kind: EditorSurfaceHighlightKind) -> EditorSurfaceHighlightStyle {
+        switch kind {
+        case .currentLine:
+            return EditorSurfaceHighlightStyle(
+                fillColor: Color(nsColor: lineHighlight.withAlphaComponent(0.7)),
+                strokeColor: .clear,
+                cornerRadius: 0,
+                lineWidth: 0,
+                minimumWidth: 0,
+                minimumHeight: 2,
+                zIndex: 0
+            )
+
+        case .findMatch:
+            let accent = selection.blended(withFraction: 0.45, of: lineHighlight) ?? selection
+            return EditorSurfaceHighlightStyle(
+                fillColor: Color(nsColor: accent.withAlphaComponent(0.18)),
+                strokeColor: Color(nsColor: accent.withAlphaComponent(0.38)),
+                cornerRadius: 3,
+                lineWidth: 0.5,
+                minimumWidth: 2,
+                minimumHeight: 2,
+                zIndex: 1
+            )
+
+        case .currentMatch:
+            return EditorSurfaceHighlightStyle(
+                fillColor: Color(nsColor: selection.withAlphaComponent(0.58)),
+                strokeColor: Color(nsColor: selection.withAlphaComponent(0.96)),
+                cornerRadius: 4,
+                lineWidth: 1,
+                minimumWidth: 2,
+                minimumHeight: 2,
+                zIndex: 2
+            )
+
+        case .bracketMatch:
+            let accent = selection.blended(withFraction: 0.35, of: lineHighlight) ?? selection
+            return EditorSurfaceHighlightStyle(
+                fillColor: Color(nsColor: accent.withAlphaComponent(0.34)),
+                strokeColor: Color(nsColor: accent.withAlphaComponent(0.78)),
+                cornerRadius: 2,
+                lineWidth: 1,
+                minimumWidth: 3,
+                minimumHeight: 2,
+                zIndex: 3
+            )
+
+        case .hoverSymbol:
+            // VSCode 风格的 hover 符号高亮：醒目的边框勾勒 + 柔和背景填充
+            let accent = selection.blended(withFraction: 0.55, of: lineHighlight) ?? selection
+            return EditorSurfaceHighlightStyle(
+                fillColor: Color(nsColor: accent.withAlphaComponent(0.28)),
+                strokeColor: Color(nsColor: accent.withAlphaComponent(0.82)),
+                cornerRadius: 3,
+                lineWidth: 1.25,
+                minimumWidth: 3,
+                minimumHeight: 2,
+                zIndex: 4
+            )
+        }
+    }
+}

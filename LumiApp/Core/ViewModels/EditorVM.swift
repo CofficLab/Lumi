@@ -39,7 +39,9 @@ final class EditorVM: ObservableObject {
 
         // 将 sessionStore 的 objectWillChange 转发到 EditorVM，
         // 使依赖 @EnvironmentObject editorVM 的视图能感知 tabs/session 的增删改。
-        service.sessionStore.objectWillChange
+        // ⚠️ 此处仍需直接访问 sessionStore，因为 objectWillChange 是 Combine 管道，
+        // 无法通过门面方法转发（门面不暴露 ObservableObject 协议）。
+        service.sessionObjectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
@@ -51,6 +53,6 @@ final class EditorVM: ObservableObject {
     ///
     /// 解决 ThemeVM 初始化时发出的通知在 EditorState 注册监听之前已发出的时序问题。
     func syncInitialEditorTheme(_ editorThemeId: String) {
-        service.state.syncInitialThemeFromExternal(editorThemeId)
+        service.syncInitialThemeFromExternal(editorThemeId)
     }
 }

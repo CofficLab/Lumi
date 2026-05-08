@@ -14,7 +14,7 @@ import os
 /// @StateObject private var service = EditorPanelService()
 ///
 /// // 在视图中通过 service 调用业务方法
-/// service.openOrActivateSession(for: url, state: state, sessionStore: store)
+/// service.openOrActivateSession(for: url, service: service, ...)
 /// ```
 @MainActor
 final class EditorPanelService: ObservableObject {
@@ -22,7 +22,7 @@ final class EditorPanelService: ObservableObject {
     // MARK: - 属性
 
     /// 当前拖拽中的标签页 Session ID
-    @Published var draggedTabSessionID: EditorSession.ID?
+    @Published var draggedTabSessionID: UUID?
 
     /// 命令面板是否展示
     @Published var isCommandPalettePresented: Bool = false
@@ -32,33 +32,32 @@ final class EditorPanelService: ObservableObject {
     /// 打开或激活一个编辑器会话
     func openOrActivateSession(
         for fileURL: URL?,
-        state: EditorState,
-        sessionStore: EditorSessionStore,
+        service: EditorService,
         projectRootPath: String?,
         currentProjectPath: String
     ) {
         EditorPlugin.logger.info("\(EditorPlugin.t)打开或激活 session, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(currentProjectPath, privacy: .public)")
-        state.projectRootPath = projectRootPath
-        refreshProjectContext(for: currentProjectPath, state: state)
+        service.projectRootPath = projectRootPath
+        refreshProjectContext(for: currentProjectPath, service: service)
 
-        guard let session = sessionStore.openOrActivate(fileURL: fileURL) else {
+        guard let session = service.openFile(at: fileURL) else {
             EditorPlugin.logger.info("\(EditorPlugin.t)session 为 nil → loadFile(nil), fileURL=\(fileURL?.path ?? "nil", privacy: .public)")
-            state.loadFile(from: nil)
+            service.loadFile(from: nil)
             return
         }
 
         EditorPlugin.logger.info("\(EditorPlugin.t)加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public), sessionID=\(session.id)")
-        state.loadFile(from: session.fileURL)
-        restoreInteractionState(for: session, state: state)
+        service.loadFile(from: session.fileURL)
+        restoreInteractionState(for: session, service: service)
     }
 
     /// 激活指定标签页对应的会话
     func activateSession(
         _ tab: EditorTab,
-        sessionStore: EditorSessionStore,
+        service: EditorService,
         selectFile: @MainActor (URL) -> Void
     ) {
-        _ = sessionStore.activate(sessionID: tab.sessionID)
+        _ = service.activateSession(id: tab.sessionID)
         if let fileURL = tab.fileURL {
             selectFile(fileURL)
         }
@@ -67,10 +66,10 @@ final class EditorPanelService: ObservableObject {
     /// 激活 Open Editor 列表中的条目
     func activateOpenEditor(
         _ item: EditorOpenEditorItem,
-        sessionStore: EditorSessionStore,
+        service: EditorService,
         selectFile: @MainActor (URL) -> Void
     ) {
-        _ = sessionStore.activate(sessionID: item.sessionID)
+        _ = service.activateSession(id: item.sessionID)
         if let fileURL = item.fileURL {
             selectFile(fileURL)
         }
@@ -81,37 +80,34 @@ final class EditorPanelService: ObservableObject {
         _ url: URL,
         target: CursorPosition?,
         highlightLine: Bool,
-        state: EditorState,
-        sessionStore: EditorSessionStore,
+        service: EditorService,
         projectRootPath: String?,
         currentProjectPath: String
     ) {
         openOrActivateSession(
             for: url,
-            state: state,
-            sessionStore: sessionStore,
+            service: service,
             projectRootPath: projectRootPath,
             currentProjectPath: currentProjectPath
         )
         guard let target else { return }
-        state.performNavigation(.definition(url, target, highlightLine: highlightLine))
+        service.performNavigation(.definition(url, target, highlightLine: highlightLine))
     }
 
     /// 关闭指定标签页的会话
     func closeSession(
         _ tab: EditorTab,
-        state: EditorState,
-        sessionStore: EditorSessionStore,
+        service: EditorService,
         clearFileSelection: @MainActor () -> Void,
         selectFile: @MainActor (URL) -> Void
     ) {
-        guard let session = sessionStore.session(for: tab.sessionID) else { return }
-        let wasActive = session.id == sessionStore.activeSessionID
-        if wasActive, state.hasUnsavedChanges {
-            state.saveNow()
+        guard let session = service.session(for: tab.sessionID) else { return }
+        let wasActive = session.id == service.activeSessionID
+        if wasActive, service.hasUnsavedChanges {
+            service.saveNow()
         }
 
-        let nextSession = sessionStore.close(sessionID: session.id)
+        let nextSession = service.closeSession(id: session.id)
         guard wasActive else { return }
 
         if let nextFileURL = nextSession?.fileURL {
@@ -124,17 +120,16 @@ final class EditorPanelService: ObservableObject {
     /// 关闭除指定标签页外的所有会话
     func closeOtherSessions(
         _ tab: EditorTab,
-        state: EditorState,
-        sessionStore: EditorSessionStore,
+        service: EditorService,
         clearFileSelection: @MainActor () -> Void,
         selectFile: @MainActor (URL) -> Void
     ) {
-        guard let session = sessionStore.session(for: tab.sessionID) else { return }
-        if state.currentFileURL != session.fileURL, state.hasUnsavedChanges {
-            state.saveNow()
+        guard let session = service.session(for: tab.sessionID) else { return }
+        if service.currentFileURL != session.fileURL, service.hasUnsavedChanges {
+            service.saveNow()
         }
 
-        let keptSession = sessionStore.closeOthers(keeping: session.id)
+        let keptSession = service.closeOtherSessions(keeping: session.id)
         if let fileURL = keptSession?.fileURL {
             selectFile(fileURL)
         } else {
@@ -144,31 +139,29 @@ final class EditorPanelService: ObservableObject {
 
     /// 导航后退
     func navigateBack(
-        sessionStore: EditorSessionStore,
-        state: EditorState,
+        service: EditorService,
         selectFile: @MainActor (URL) -> Void
     ) {
-        guard let session = sessionStore.goBack(),
+        guard let session = service.goBack(),
               let fileURL = session.fileURL else { return }
         selectFile(fileURL)
-        restoreInteractionState(for: session, state: state)
+        restoreInteractionState(for: session, service: service)
     }
 
     /// 导航前进
     func navigateForward(
-        sessionStore: EditorSessionStore,
-        state: EditorState,
+        service: EditorService,
         selectFile: @MainActor (URL) -> Void
     ) {
-        guard let session = sessionStore.goForward(),
+        guard let session = service.goForward(),
               let fileURL = session.fileURL else { return }
         selectFile(fileURL)
-        restoreInteractionState(for: session, state: state)
+        restoreInteractionState(for: session, service: service)
     }
 
     /// 切换标签页固定状态
-    func togglePinned(sessionID: EditorSession.ID, sessionStore: EditorSessionStore) {
-        sessionStore.togglePinned(sessionID: sessionID)
+    func togglePinned(sessionID: UUID, service: EditorService) {
+        service.togglePinned(sessionID: sessionID)
     }
 
     /// 拖拽排序 — 开始拖拽
@@ -179,14 +172,14 @@ final class EditorPanelService: ObservableObject {
     /// 拖拽排序 — 放下
     func dropDraggedTabInActiveStrip(
         before targetTab: EditorTab?,
-        sessionStore: EditorSessionStore
+        service: EditorService
     ) {
         guard let draggedTabSessionID else { return }
         defer { self.draggedTabSessionID = nil }
 
         if targetTab?.sessionID == draggedTabSessionID { return }
 
-        _ = sessionStore.reorderSession(
+        _ = service.reorderSession(
             sessionID: draggedTabSessionID,
             before: targetTab?.sessionID
         )
@@ -195,28 +188,28 @@ final class EditorPanelService: ObservableObject {
     // MARK: - 项目上下文
 
     /// 刷新项目上下文
-    func refreshProjectContext(for projectPath: String, state: EditorState) {
+    func refreshProjectContext(for projectPath: String, service: EditorService) {
         let trimmedPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPath.isEmpty else {
-            state.refreshProjectContextSnapshot()
+            service.refreshProjectContext()
             return
         }
         Task { @MainActor in
-            await state.projectContextCapability?.projectOpened(at: trimmedPath)
-            state.refreshProjectContextSnapshot()
+            await service.projectContextCapability?.projectOpened(at: trimmedPath)
+            service.refreshProjectContext()
         }
     }
 
     // MARK: - 面包屑
 
     /// 更新面包屑桥接
-    func updateBreadcrumbBridge(state: EditorState) {
-        let activeSymbolTrail = state.documentSymbolProvider.activeItems(for: state.cursorLine)
+    func updateBreadcrumbBridge(service: EditorService) {
+        let activeSymbolTrail = service.documentSymbolProvider.activeItems(for: service.cursorLine)
         EditorBreadcrumbContextBridge.shared.update(
-            currentFileURL: state.currentFileURL,
+            currentFileURL: service.currentFileURL,
             activeSymbolTrail: activeSymbolTrail,
-            openSymbol: { [weak state] symbol in
-                state?.performOpenItem(.documentSymbol(symbol))
+            openSymbol: { [weak service] symbol in
+                service?.performOpenItem(.documentSymbol(symbol))
             }
         )
     }
@@ -233,46 +226,44 @@ final class EditorPanelService: ObservableObject {
     // MARK: - 打开的编辑器列表
 
     /// 获取排序后的打开编辑器列表
-    var openEditorItems: (EditorSessionStore) -> [EditorOpenEditorItem] {
-        return { sessionStore in
-            sessionStore.tabs.map { tab in
-                EditorOpenEditorItem(
-                    sessionID: tab.sessionID,
-                    fileURL: tab.fileURL,
-                    title: tab.title,
-                    isDirty: tab.isDirty,
-                    isPinned: tab.isPinned,
-                    isActive: tab.sessionID == sessionStore.activeSessionID,
-                    recentActivationRank: sessionStore.recentActivationRank(for: tab.sessionID)
-                )
+    func openEditorItems(_ service: EditorService) -> [EditorOpenEditorItem] {
+        service.tabs.map { tab in
+            EditorOpenEditorItem(
+                sessionID: tab.sessionID,
+                fileURL: tab.fileURL,
+                title: tab.title,
+                isDirty: tab.isDirty,
+                isPinned: tab.isPinned,
+                isActive: tab.sessionID == service.activeSessionID,
+                recentActivationRank: service.recentActivationRank(for: tab.sessionID)
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.isActive != rhs.isActive {
+                return lhs.isActive && !rhs.isActive
             }
-            .sorted { lhs, rhs in
-                if lhs.isActive != rhs.isActive {
-                    return lhs.isActive && !rhs.isActive
-                }
-                if lhs.recentActivationRank != rhs.recentActivationRank {
-                    return (lhs.recentActivationRank ?? .max) < (rhs.recentActivationRank ?? .max)
-                }
-                if lhs.isPinned != rhs.isPinned {
-                    return lhs.isPinned && !rhs.isPinned
-                }
-                return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+            if lhs.recentActivationRank != rhs.recentActivationRank {
+                return (lhs.recentActivationRank ?? .max) < (rhs.recentActivationRank ?? .max)
             }
+            if lhs.isPinned != rhs.isPinned {
+                return lhs.isPinned && !rhs.isPinned
+            }
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
         }
     }
 
     // MARK: - 项目上下文警告
 
     /// 项目上下文警告信息（用于文件信息 Banner 显示）
-    func projectContextWarningMessage(state: EditorState) -> String? {
-        guard let snapshot = state.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
+    func projectContextWarningMessage(service: EditorService) -> String? {
+        guard let snapshot = service.projectContextSnapshot, snapshot.isStructuredProject else { return nil }
         switch snapshot.contextStatus {
         case .unavailable, .needsResync:
             return String(localized: "Project semantic context is not ready, cross-file semantic capabilities may be unstable.", table: "LumiEditor")
         default:
             break
         }
-        guard state.currentFileURL != nil else { return nil }
+        guard service.currentFileURL != nil else { return nil }
         if !snapshot.currentFileIsInTarget {
             return String(localized: "Current file is not bound to any build target, cross-file navigation and diagnostics may be unavailable.", table: "LumiEditor")
         }
@@ -298,33 +289,33 @@ final class EditorPanelService: ObservableObject {
     /// 处理编辑器命令事件
     func handleEditorCommandEvent(
         _ commandID: String,
-        state: EditorState,
+        service: EditorService,
         isFileSelected: Bool
     ) {
         guard isFileSelected else { return }
-        state.performEditorCommand(id: commandID)
+        service.performCommand(id: commandID)
     }
 
     // MARK: - 私有方法
 
     /// 恢复交互状态
-    private func restoreInteractionState(for session: EditorSession, state: EditorState) {
+    private func restoreInteractionState(for session: EditorSession, service: EditorService) {
         let snapshot = session
 
         guard let fileURL = snapshot.fileURL else { return }
 
         let canRestoreImmediately =
-            state.currentFileURL == fileURL &&
-            state.content != nil &&
-            state.focusedTextView != nil
+            service.currentFileURL == fileURL &&
+            service.content != nil &&
+            service.focusedTextView != nil
 
         if canRestoreImmediately {
-            state.applySessionRestore(snapshot)
+            service.applySessionRestore(snapshot)
             return
         }
 
-        if state.currentFileURL != fileURL {
-            state.loadFile(from: fileURL)
+        if service.currentFileURL != fileURL {
+            service.loadFile(from: fileURL)
         }
     }
 }
