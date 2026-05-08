@@ -23,7 +23,7 @@ struct SkillStatusBarView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 10))
-                        Text(String(localized: "^[\(skills.count) Skill](inflect: true)", table: "Skill"))
+                        Text("\(skills.count)")
                             .font(.system(size: 11, weight: .medium))
                     }
                     .padding(.horizontal, 8)

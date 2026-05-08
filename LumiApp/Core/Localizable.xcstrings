@@ -555,16 +555,10 @@
         }
       }
     },
-    "^[%lld Available Skill](inflect: true)" : {
-
-    },
     "^[%lld Chunk](inflect: true)" : {
 
     },
     "^[%lld File](inflect: true)" : {
-
-    },
-    "^[%lld Skill](inflect: true)" : {
 
     },
     "+%lld" : {
