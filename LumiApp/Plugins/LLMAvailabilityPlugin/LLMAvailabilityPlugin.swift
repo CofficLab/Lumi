@@ -38,6 +38,7 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     func agentTools() -> [SuperAgentTool] {
         [
             ListAvailableModelsTool(),
+            CheckModelAvailabilityTool(),
         ]
     }
 
