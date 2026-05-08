@@ -125,6 +125,7 @@
 		0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
 		0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
 		A10000012F60000100AAA001 /* LumiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F5050AA32FADA83D002AA7B5 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.coffic.lumi.NettoExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -316,6 +317,13 @@
 			sourceTree = "<group>";
 		};
 		0BC9FE082FAD5B49003651CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5050AA52FADA83D002AA7B5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -591,6 +599,10 @@
 				{
 					ProductGroup = F5AE9B752FAD6E0900F014F8 /* Products */;
 					ProjectRef = F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */;
+				},
+				{
+					ProductGroup = F5050AA52FADA83D002AA7B5 /* Products */;
+					ProjectRef = F5050AA32FADA83D002AA7B5 /* SnapshotTesting.xcodeproj */;
 				},
 				{
 					ProductGroup = 0BC9FE082FAD5B49003651CA /* Products */;
