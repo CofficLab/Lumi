@@ -705,15 +705,14 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
 
         let contributors = highlightProviderContributors
         var merged: [any HighlightProviding] = []
-        var seenProviderIDs: Set<ObjectIdentifier> = []
+        var seenContributorIDs: Set<ObjectIdentifier> = []
 
         for contributor in contributors where contributor.supports(languageId: languageId) {
-            for provider in contributor.provideHighlightProviders(languageId: languageId) {
-                let providerID = ObjectIdentifier(provider)
-                if seenProviderIDs.insert(providerID).inserted {
-                    merged.append(provider)
-                }
-            }
+            // 在 contributor 级别去重，避免对 any HighlightProviding existential
+            // 调用 ObjectIdentifier 导致 swift_getObjectType 空指针崩溃
+            let contributorID = ObjectIdentifier(contributor)
+            guard seenContributorIDs.insert(contributorID).inserted else { continue }
+            merged.append(contentsOf: contributor.provideHighlightProviders(languageId: languageId))
         }
 
         cachedHighlightProvidersByLanguageID[languageId] = merged
