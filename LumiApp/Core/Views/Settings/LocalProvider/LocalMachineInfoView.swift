@@ -44,7 +44,7 @@ struct LocalMachineInfoView: View {
         let diskGB = Self.localDiskTotalGB()
         let osVer = ProcessInfo.processInfo.operatingSystemVersion
         let osString = "macOS \(osVer.majorVersion).\(osVer.minorVersion).\(osVer.patchVersion)"
-        let style = .system(size: 11, weight: .regular)
+        let style: Font = .system(size: 11, weight: .regular)
         let color = Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
