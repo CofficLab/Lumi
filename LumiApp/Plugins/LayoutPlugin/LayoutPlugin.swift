@@ -42,8 +42,7 @@ actor LayoutPlugin: SuperPlugin {
 
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        Self.logger.info("\(LayoutPlugin.emoji) LayoutPlugin addRootView called!")
-        return AnyView(LayoutPersistenceAnchor(content: content()))
+        AnyView(LayoutPersistenceAnchor(content: content()))
     }
 }
 

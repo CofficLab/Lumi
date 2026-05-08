@@ -1,6 +1,5 @@
 import AppKit
 import SwiftUI
-import os
 
 // MARK: - SplitView Autosave Configurator
 
@@ -122,7 +121,6 @@ struct SplitViewWidthPersistence: NSViewRepresentable {
 }
 
 final class SplitViewWidthPersistenceView: NSView {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "layout.split-persistence")
     private static let maxApplyRetryCount = 20
 
     var storageKey: String
@@ -156,7 +154,6 @@ final class SplitViewWidthPersistenceView: NSView {
     func attachIfNeeded() {
         guard window != nil else { return }
         guard let splitView = findSplitView() else {
-            Self.logger.debug("attachIfNeeded: split view not found for \(self.storageKey, privacy: .public)")
             scheduleRetryAttach()
             return
         }
@@ -245,10 +242,6 @@ final class SplitViewWidthPersistenceView: NSView {
                 position = nextPosition
             }
 
-            Self.logger.debug(
-                "applySavedRatioIfNeeded: key=\(self.storageKey, privacy: .public), ratio=\(savedRatio, privacy: .public), dividerIndex=\(dividerIndex, privacy: .public), position=\(position, privacy: .public)"
-            )
-
             splitView.setPosition(position, ofDividerAt: dividerIndex)
             self.didApplySavedValue = true
         }
@@ -269,8 +262,6 @@ final class SplitViewWidthPersistenceView: NSView {
         let columnWidth = splitView.arrangedSubviews[idx].frame.width
         let ratio = columnWidth / usableWidth
         guard ratio > 0.0, ratio < 1.0 else { return }
-
-        Self.logger.debug("persistCurrentRatio: key=\(self.storageKey, privacy: .public), ratio=\(ratio, privacy: .public)")
 
         // 写入 LayoutVM（LayoutPlugin 会观察变化并持久化到磁盘）
         RootViewContainer.shared.layoutVM.setLayoutRatio(ratio, forKey: storageKey)
@@ -315,7 +306,6 @@ final class SplitViewWidthPersistenceView: NSView {
     private func scheduleApplyRetry() {
         guard !didApplySavedValue else { return }
         guard applyRetryCount < Self.maxApplyRetryCount else {
-            Self.logger.debug("applySavedRatioIfNeeded: giving up retry for \(self.storageKey, privacy: .public)")
             return
         }
 
