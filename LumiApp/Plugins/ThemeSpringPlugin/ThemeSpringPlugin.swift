@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeSpringPlugin: SuperPlugin {
+    static let shared = ThemeSpringPlugin()
     static let id: String = "spring"
     static let displayName: String = "Spring"
     static let description: String = "Spring green app theme"

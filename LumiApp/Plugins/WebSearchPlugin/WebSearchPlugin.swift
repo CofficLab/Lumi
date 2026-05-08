@@ -29,7 +29,7 @@ actor WebSearchPlugin: SuperPlugin, SuperLog {
 
     static let shared = WebSearchPlugin()
 
-    init() {}
+    private init() {}
 
     @MainActor
     func agentToolFactories() -> [AnySuperAgentToolFactory] {

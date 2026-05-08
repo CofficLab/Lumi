@@ -2,6 +2,7 @@ import Foundation
 
 /// 小米 LLM 供应商插件
 actor XiaomiPlugin: SuperPlugin {
+    static let shared = XiaomiPlugin()
     static let id = "LLMProviderXiaomi"
     static let displayName = "小米"
     static let description = "Xiaomi MiMo Models"

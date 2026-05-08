@@ -24,7 +24,6 @@ actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
 
     nonisolated var instanceLabel: String { Self.id }
     static let shared = ThemeStatusBarPlugin()
-
     nonisolated func onRegister() {}
 
     // MARK: - Root View（主题持久化锚点）

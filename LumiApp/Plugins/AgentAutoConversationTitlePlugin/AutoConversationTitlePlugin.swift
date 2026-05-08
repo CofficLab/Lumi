@@ -17,7 +17,7 @@ actor AutoConversationTitlePlugin: SuperPlugin, SuperLog {
 
     static let shared = AutoConversationTitlePlugin()
 
-    init() {}
+    private init() {}
 
     // MARK: - Middlewares
 

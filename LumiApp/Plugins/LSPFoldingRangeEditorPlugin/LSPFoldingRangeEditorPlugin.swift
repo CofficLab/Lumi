@@ -2,6 +2,7 @@ import Foundation
 
 /// LSP 折叠范围编辑器插件：提供代码折叠
 actor LSPFoldingRangeEditorPlugin: SuperPlugin {
+    static let shared = LSPFoldingRangeEditorPlugin()
     static let id = "LSPFoldingRangeEditor"
     static let displayName = String(localized: "LSP Folding Ranges", table: "LSPFoldingRangeEditor")
     static let description = String(localized: "Provides code folding ranges from the language server.", table: "LSPFoldingRangeEditor")

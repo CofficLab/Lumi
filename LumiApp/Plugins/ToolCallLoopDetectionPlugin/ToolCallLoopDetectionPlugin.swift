@@ -17,7 +17,7 @@ actor ToolCallLoopDetectionPlugin: SuperPlugin, SuperLog {
 
     static let shared = ToolCallLoopDetectionPlugin()
 
-    init() {}
+    private init() {}
 
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {

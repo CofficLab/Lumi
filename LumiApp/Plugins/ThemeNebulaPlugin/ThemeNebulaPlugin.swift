@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeNebulaPlugin: SuperPlugin {
+    static let shared = ThemeNebulaPlugin()
     static let id: String = "nebula"
     static let displayName: String = "星云粉"
     static let description: String = "浪漫的星云粉，柔和而温暖"

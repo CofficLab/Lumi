@@ -2,6 +2,7 @@ import Foundation
 
 /// 阿里云 LLM 供应商插件
 actor AliyunPlugin: SuperPlugin {
+    static let shared = AliyunPlugin()
     static let id = "LLMProviderAliyun"
     static let displayName = "阿里云"
     static let description = "Aliyun Qwen Models"

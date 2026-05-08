@@ -2,6 +2,7 @@ import Foundation
 
 /// MLX 本地 LLM 供应商插件
 actor MLXPlugin: SuperPlugin {
+    static let shared = MLXPlugin()
     static let id = "LLMProviderMLX"
     static let displayName = "MLX"
     static let description = "Local LLM via Apple MLX"

@@ -9,6 +9,7 @@ import SwiftUI
 /// - 标签自动闭合
 /// - 标签匹配
 actor HTMLEditorPlugin: SuperPlugin {
+    static let shared = HTMLEditorPlugin()
     static let id = "HTMLEditor"
     static let displayName = String(localized: "HTML Editor", table: "HTMLEditor")
     static let description = String(localized: "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching.", table: "HTMLEditor")

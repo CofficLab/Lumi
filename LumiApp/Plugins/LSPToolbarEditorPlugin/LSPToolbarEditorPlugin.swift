@@ -2,6 +2,7 @@ import Foundation
 
 /// LSP 工具栏编辑器插件：添加诊断、进度和快速操作到工具栏
 actor LSPToolbarEditorPlugin: SuperPlugin {
+    static let shared = LSPToolbarEditorPlugin()
     static let id = "LSPToolbarEditor"
     static let displayName = String(localized: "LSP Toolbar", table: "LSPToolbarEditor")
     static let description = String(localized: "Adds diagnostics, progress, and quick action items to the editor toolbar.", table: "LSPToolbarEditor")

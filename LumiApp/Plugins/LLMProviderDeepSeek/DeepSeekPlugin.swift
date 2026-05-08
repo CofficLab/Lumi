@@ -2,6 +2,7 @@ import Foundation
 
 /// DeepSeek LLM 供应商插件
 actor DeepSeekPlugin: SuperPlugin {
+    static let shared = DeepSeekPlugin()
     static let id = "LLMProviderDeepSeek"
     static let displayName = "DeepSeek"
     static let description = "DeepSeek AI"

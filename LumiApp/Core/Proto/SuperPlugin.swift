@@ -57,11 +57,11 @@ struct RailTab: Identifiable, Equatable {
 /// }
 /// ```
 protocol SuperPlugin: Actor {
-    /// 创建插件实例。
+    /// 插件共享实例。
     ///
-    /// PluginVM 的自动发现阶段通过 `SuperPlugin.Type.init()` 安全实例化插件，
-    /// 避免使用 ObjC Runtime 的 `alloc/init` 绕过 Swift actor 初始化语义。
-    init()
+    /// PluginVM 的自动发现阶段通过类型暴露的共享实例拿到插件，
+    /// 避免使用 ObjC Runtime 的 `alloc/init` 或给 Actor 增加同步构造约束。
+    static var shared: Self { get }
 
     // MARK: - Core Properties
 

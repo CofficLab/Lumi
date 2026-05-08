@@ -24,7 +24,7 @@ actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
 
     static let shared = GitHubCLIDetectPlugin()
 
-    init() {}
+    private init() {}
 
     // MARK: - Agent Tool Factories
 

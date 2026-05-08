@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeVscodeDarkPlugin: SuperPlugin {
+    static let shared = ThemeVscodeDarkPlugin()
     static let id: String = "vscode-dark"
     static let displayName: String = "VS Code 深色"
     static let description: String = "Visual Studio Code Dark+ IDE theme"

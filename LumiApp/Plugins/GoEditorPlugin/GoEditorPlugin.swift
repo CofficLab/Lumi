@@ -14,6 +14,7 @@ import os
 /// LSP 基础能力（补全/跳转/悬停/诊断）复用内核 LSPService，
 /// 已内置支持 gopls。
 actor GoEditorPlugin: SuperPlugin, SuperLog {
+    static let shared = GoEditorPlugin()
     nonisolated static let emoji = "🐹"
     nonisolated static let verbose = false
     nonisolated static let logger = Logger(

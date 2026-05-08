@@ -262,13 +262,13 @@ final class PluginVM: ObservableObject, SuperLog {
             // 筛选条件：Lumi 命名空间且以 Plugin 结尾的类
             guard className.hasPrefix("Lumi."), className.hasSuffix("Plugin") else { continue }
             
-            guard let pluginType = cls as? any SuperPlugin.Type else {
+            guard let pluginClass = cls as? any SuperPlugin.Type else {
                 continue
             }
 
-            // 使用 Swift 原生构造路径创建 actor 插件实例，避免通过 ObjC Runtime
-            // 绕过 actor 初始化语义导致实例内部状态不完整。
-            let instance = pluginType.init()
+            // 统一通过插件类型暴露的共享实例拿到 Actor，避免通过 ObjC Runtime
+            // 绕过 actor 初始化语义，也避免给 actor 引入额外的同步初始化要求。
+            let instance = pluginClass.shared
             
             // 检查插件是否启用
             let pluginType = type(of: instance)

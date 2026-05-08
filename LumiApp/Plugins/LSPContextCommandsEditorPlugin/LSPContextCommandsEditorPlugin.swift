@@ -4,6 +4,7 @@ import os
 
 /// LSP 上下文命令编辑器插件：添加跳转到定义和重命名等命令
 actor LSPContextCommandsEditorPlugin: SuperPlugin, SuperLog {
+    static let shared = LSPContextCommandsEditorPlugin()
     nonisolated static let emoji = "🔌"
     nonisolated static let verbose: Bool = false
 

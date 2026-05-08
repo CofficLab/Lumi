@@ -2,6 +2,7 @@ import Foundation
 
 /// LSP 代码动作编辑器插件：提供快速修复和灯泡建议
 actor LSPCodeActionEditorPlugin: SuperPlugin {
+    static let shared = LSPCodeActionEditorPlugin()
     static let id = "LSPCodeActionEditor"
     static let displayName = String(localized: "LSP Code Actions", table: "LSPCodeActionEditor")
     static let description = String(localized: "Provides quick-fix code actions and lightbulb suggestions for diagnostics.", table: "LSPCodeActionEditor")

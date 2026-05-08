@@ -3,6 +3,7 @@ import SwiftUI
 
 /// Xcode 项目编辑器插件：提供 Xcode 项目标识、构建上下文和 sourcekit-lsp 集成
 actor EditorXcodePlugin: SuperPlugin {
+    static let shared = EditorXcodePlugin()
     static let id = "EditorXcode"
     static let displayName = String(localized: "Xcode Project Editor", table: "EditorXcodePlugin")
     static let description = String(localized: "Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects.", table: "EditorXcodePlugin")
