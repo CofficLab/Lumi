@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct GlassBadge: View {
+    @LumiTheme private var theme
+
     public enum Style {
         case neutral
         case success
@@ -31,11 +33,11 @@ public struct GlassBadge: View {
 
     private var foregroundColor: SwiftUI.Color {
         switch style {
-        case .neutral: DesignTokens.Color.semantic.textSecondary
-        case .success: DesignTokens.Color.semantic.success
-        case .warning: DesignTokens.Color.semantic.warning
-        case .error: DesignTokens.Color.semantic.error
-        case .info: DesignTokens.Color.semantic.info
+        case .neutral: theme.textSecondary
+        case .success: theme.success
+        case .warning: theme.warning
+        case .error: theme.error
+        case .info: theme.info
         case let .glow(color): color
         }
     }
@@ -46,13 +48,13 @@ public struct GlassBadge: View {
             RoundedRectangle(cornerRadius: DesignTokens.Radius.full)
                 .fill(DesignTokens.Material.glass.opacity(0.15))
         case .success:
-            DesignTokens.Color.semantic.success.opacity(0.15)
+            theme.success.opacity(0.15)
         case .warning:
-            DesignTokens.Color.semantic.warning.opacity(0.15)
+            theme.warning.opacity(0.15)
         case .error:
-            DesignTokens.Color.semantic.error.opacity(0.15)
+            theme.error.opacity(0.15)
         case .info:
-            DesignTokens.Color.semantic.info.opacity(0.15)
+            theme.info.opacity(0.15)
         case let .glow(color):
             color.opacity(0.2)
         }
@@ -61,10 +63,10 @@ public struct GlassBadge: View {
     private var borderColor: SwiftUI.Color {
         switch style {
         case .neutral: SwiftUI.Color.white
-        case .success: DesignTokens.Color.semantic.success
-        case .warning: DesignTokens.Color.semantic.warning
-        case .error: DesignTokens.Color.semantic.error
-        case .info: DesignTokens.Color.semantic.info
+        case .success: theme.success
+        case .warning: theme.warning
+        case .error: theme.error
+        case .info: theme.info
         case let .glow(color): color
         }
     }

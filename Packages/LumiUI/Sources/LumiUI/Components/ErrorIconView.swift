@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct ErrorIconView: View {
+    @LumiTheme private var theme
+
     let size: CGFloat
     let weight: Font.Weight
 
@@ -12,6 +14,6 @@ public struct ErrorIconView: View {
     public var body: some View {
         Image(systemName: "exclamationmark.triangle.fill")
             .font(.system(size: size, weight: weight))
-            .foregroundColor(AppUI.Color.semantic.error)
+            .foregroundColor(theme.error)
     }
 }

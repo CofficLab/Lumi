@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppDisclosureCard<Content: View>: View {
+    @LumiTheme private var theme
+
     let title: LocalizedStringKey
     let icon: String?
     @ViewBuilder let content: Content
@@ -27,18 +29,18 @@ public struct AppDisclosureCard<Content: View>: View {
             HStack(spacing: AppUI.Spacing.sm) {
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(theme.textSecondary)
                     .frame(width: 12)
 
                 if let icon {
                     Image(systemName: icon)
                         .font(.system(size: 14))
-                        .foregroundColor(AppUI.Color.semantic.primary)
+                        .foregroundColor(theme.primary)
                 }
 
                 Text(title)
                     .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(theme.textPrimary)
 
                 Spacer()
             }

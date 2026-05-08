@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppDualSegmentBar: View {
+    @LumiTheme private var theme
+
     let leadingRatio: Double
     let leadingColor: Color
     let trailingColor: Color
@@ -24,7 +26,7 @@ public struct AppDualSegmentBar: View {
     public var body: some View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: height / 2)
-                .fill(DesignTokens.Color.semantic.textTertiary.opacity(0.18))
+                .fill(theme.textTertiary.opacity(0.18))
                 .frame(width: width, height: height)
 
             HStack(spacing: 0) {

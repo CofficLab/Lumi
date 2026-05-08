@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct GlassSelectionCard<Content: View>: View {
+    @LumiTheme private var theme
+
     var isSelected: Bool
     var showCheckmark: Bool
     var checkmarkColor: Color?
@@ -78,7 +80,7 @@ public struct GlassSelectionCard<Content: View>: View {
     }
 
     private var selectedColor: Color {
-        checkmarkColor ?? DesignTokens.Color.semantic.primary
+        checkmarkColor ?? theme.primary
     }
 }
 

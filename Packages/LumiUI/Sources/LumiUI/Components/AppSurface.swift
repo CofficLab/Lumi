@@ -9,6 +9,8 @@ public enum AppSurfaceStyle {
 }
 
 private struct AppSurfaceModifier: ViewModifier {
+    @LumiTheme private var theme
+
     let style: AppSurfaceStyle
     let cornerRadius: CGFloat
     let borderColor: Color?
@@ -33,7 +35,7 @@ private struct AppSurfaceModifier: ViewModifier {
         case .glassUltraThick:
             AnyShapeStyle(DesignTokens.Material.glassUltraThick)
         case .subtle:
-            AnyShapeStyle(DesignTokens.Color.semantic.textSecondary.opacity(0.06))
+            AnyShapeStyle(theme.textSecondary.opacity(0.06))
         case let .custom(color):
             AnyShapeStyle(color)
         }

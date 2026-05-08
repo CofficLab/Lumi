@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct GlassCard<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
+    @LumiTheme private var theme
 
     var cornerRadius: CGFloat
     var padding: EdgeInsets
@@ -37,7 +38,7 @@ public struct GlassCard<Content: View>: View {
             .overlay(cardBorder)
             .modifier(ShadowModifier(showShadow: showShadow, color: shadowColor, radius: shadowRadius, offset: shadowOffset))
             .glowEffect(
-                color: glowColor ?? DesignTokens.Color.basePalette.glowAccent,
+                color: glowColor ?? theme.glowAccent,
                 radius: glowRadius,
                 intensity: glowIntensity
             )

@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppToggleRow: View {
+    @LumiTheme private var theme
+
     let title: LocalizedStringKey
     let systemImage: String?
     let description: LocalizedStringKey?
@@ -23,19 +25,19 @@ public struct AppToggleRow: View {
             if let systemImage {
                 Image(systemName: systemImage)
                     .font(.system(size: 16))
-                    .foregroundColor(AppUI.Color.semantic.primary)
+                    .foregroundColor(theme.primary)
                     .frame(width: 24)
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(AppUI.Typography.body)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(theme.textPrimary)
 
                 if let description {
                     Text(description)
                         .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(theme.textSecondary)
                 }
             }
 

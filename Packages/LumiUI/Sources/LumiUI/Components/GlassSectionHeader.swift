@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct GlassSectionHeader: View {
+    @LumiTheme private var theme
+
     var icon: String
     var title: String
     var subtitle: String? = nil
@@ -26,18 +28,18 @@ public struct GlassSectionHeader: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundColor(iconColor ?? DesignTokens.Color.semantic.primary)
+                    .foregroundColor(iconColor ?? theme.primary)
                     .frame(width: 32)
 
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                     Text(title)
                         .font(DesignTokens.Typography.bodyEmphasized)
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(theme.textPrimary)
 
                     if let subtitle {
                         Text(subtitle)
                             .font(DesignTokens.Typography.caption1)
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                            .foregroundColor(theme.textTertiary)
                     }
                 }
 

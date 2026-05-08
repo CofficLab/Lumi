@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppTag: View {
+    @LumiTheme private var theme
+
     public enum Style {
         case subtle
         case accent
@@ -46,18 +48,18 @@ public struct AppTag: View {
     private var foregroundColor: Color {
         switch style {
         case .subtle:
-            DesignTokens.Color.semantic.textSecondary
+            theme.textSecondary
         case .accent:
-            DesignTokens.Color.semantic.textPrimary
+            theme.textPrimary
         }
     }
 
     private var backgroundColor: Color {
         switch style {
         case .subtle:
-            DesignTokens.Color.semantic.textSecondary.opacity(0.10)
+            theme.textSecondary.opacity(0.10)
         case .accent:
-            Color.accentColor.opacity(0.14)
+            theme.primary.opacity(0.14)
         }
     }
 
@@ -66,7 +68,7 @@ public struct AppTag: View {
         case .subtle:
             Color.white.opacity(0.06)
         case .accent:
-            Color.accentColor.opacity(0.25)
+            theme.primary.opacity(0.25)
         }
     }
 }

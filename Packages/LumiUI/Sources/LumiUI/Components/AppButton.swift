@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppButton: View {
+    @LumiTheme private var theme
+
     public enum Style {
         case primary
         case secondary
@@ -100,11 +102,11 @@ public struct AppButton: View {
         case .primary:
             .white
         case .secondary:
-            DesignTokens.Color.semantic.textPrimary
+            theme.textPrimary
         case .ghost:
-            .accentColor
+            theme.primary
         case .tonal:
-            DesignTokens.Color.semantic.textSecondary
+            theme.textSecondary
         }
     }
 
@@ -113,7 +115,7 @@ public struct AppButton: View {
             switch style {
             case .primary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(Color.accentColor)
+                    .fill(theme.primary)
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .fill(DesignTokens.Material.glass)
@@ -121,7 +123,7 @@ public struct AppButton: View {
                 Color.clear
             case .tonal:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(DesignTokens.Color.semantic.textSecondary.opacity(0.10))
+                    .fill(theme.textSecondary.opacity(0.10))
             }
         }
     }
@@ -134,7 +136,7 @@ public struct AppButton: View {
                     .stroke(Color.white.opacity(0.12), lineWidth: 1)
             case .ghost:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
+                    .stroke(theme.primary.opacity(0.25), lineWidth: 1)
             default:
                 EmptyView()
             }

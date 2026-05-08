@@ -1,10 +1,12 @@
 import SwiftUI
 
 public struct AppIdentityRow: View {
+    @LumiTheme private var theme
+
     let title: String
     let metadata: [String]
-    let titleColor: Color
-    let metadataColor: Color
+    let titleColor: Color?
+    let metadataColor: Color?
 
     public init(
         title: String,
@@ -14,8 +16,8 @@ public struct AppIdentityRow: View {
     ) {
         self.title = title
         self.metadata = metadata.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        self.titleColor = titleColor ?? DesignTokens.Color.semantic.textPrimary
-        self.metadataColor = metadataColor ?? DesignTokens.Color.semantic.textSecondary
+        self.titleColor = titleColor
+        self.metadataColor = metadataColor
     }
 
     public var body: some View {
@@ -23,15 +25,15 @@ public struct AppIdentityRow: View {
             Text(title)
                 .font(DesignTokens.Typography.caption1)
                 .fontWeight(.medium)
-                .foregroundColor(titleColor)
+                .foregroundColor(titleColor ?? theme.textPrimary)
                 .lineLimit(1)
 
             ForEach(Array(metadata.enumerated()), id: \.offset) { _, item in
                 Text("·")
-                    .foregroundColor(metadataColor)
+                    .foregroundColor(metadataColor ?? theme.textSecondary)
                 Text(item)
                     .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(metadataColor)
+                    .foregroundColor(metadataColor ?? theme.textSecondary)
                     .lineLimit(1)
             }
         }

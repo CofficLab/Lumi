@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct GlassButton: View {
     @Environment(\.colorScheme) private var colorScheme
+    @LumiTheme private var theme
 
     public enum Style {
         case primary
@@ -85,13 +86,13 @@ public struct GlassButton: View {
     private var buttonForegroundColor: Color {
         switch style {
         case .primary:
-            return DesignTokens.Color.basePalette.deepBackground
+            return theme.background
         case .secondary:
-            return DesignTokens.Color.semantic.textPrimary
+            return theme.textPrimary
         case .ghost:
-            return DesignTokens.Color.semantic.textSecondary
+            return theme.textSecondary
         case .danger:
-            return DesignTokens.Color.adaptive.error(for: colorScheme)
+            return theme.error
         }
     }
 
@@ -99,7 +100,7 @@ public struct GlassButton: View {
     private var buttonBackground: some View {
         switch style {
         case .primary:
-            DesignTokens.Color.gradients.energyGradient
+            theme.energyGradient
                 .opacity(isPressing ? 0.8 : (isHovering ? 1.0 : 0.9))
         case .secondary:
             RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
@@ -110,7 +111,7 @@ public struct GlassButton: View {
                 .fill(DesignTokens.Material.glass)
                 .opacity(isHovering ? 0.1 : 0.05)
         case .danger:
-            DesignTokens.Color.adaptive.errorBackground(for: colorScheme)
+            theme.error.opacity(colorScheme == .light ? 0.1 : 0.2)
                 .opacity(isPressing ? 1.0 : (isHovering ? 0.8 : 0.6))
         }
     }

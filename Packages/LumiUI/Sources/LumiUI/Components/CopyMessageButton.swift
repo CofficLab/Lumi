@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 public struct CopyMessageButton: View {
+    @LumiTheme private var theme
+
     let content: String
     @Binding var showFeedback: Bool
 
@@ -45,17 +47,17 @@ public struct CopyMessageButton: View {
 
     private var buttonColor: Color {
         if showFeedback {
-            .green
+            theme.success
         } else {
-            DesignTokens.Color.semantic.textSecondary.opacity(0.8)
+            theme.textSecondary.opacity(0.8)
         }
     }
 
     private var backgroundColor: Color {
         if showFeedback {
-            Color.green.opacity(0.1)
+            theme.success.opacity(0.1)
         } else {
-            isHovered ? DesignTokens.Color.semantic.textSecondary.opacity(0.08) : DesignTokens.Color.semantic.textSecondary.opacity(0.05)
+            isHovered ? theme.textSecondary.opacity(0.08) : theme.textSecondary.opacity(0.05)
         }
     }
 

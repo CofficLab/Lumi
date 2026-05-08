@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppIconButton: View {
+    @LumiTheme private var theme
+
     public enum Size {
         case compact
         case regular
@@ -8,7 +10,7 @@ public struct AppIconButton: View {
 
     let systemImage: String
     let label: String?
-    let tint: Color
+    let tint: Color?
     let size: Size
     let isActive: Bool
     let action: () -> Void
@@ -23,7 +25,7 @@ public struct AppIconButton: View {
     ) {
         self.systemImage = systemImage
         self.label = label
-        self.tint = tint ?? DesignTokens.Color.semantic.textSecondary.opacity(0.8)
+        self.tint = tint
         self.size = size
         self.isActive = isActive
         self.action = action
@@ -39,7 +41,7 @@ public struct AppIconButton: View {
                         .font(labelFont)
                 }
             }
-            .foregroundStyle(tint)
+            .foregroundStyle(tint ?? theme.textSecondary.opacity(0.8))
             .padding(resolvedContentPadding)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
@@ -56,15 +58,15 @@ public struct AppIconButton: View {
 
     private var backgroundColor: Color {
         if isActive {
-            DesignTokens.Color.semantic.textSecondary.opacity(0.16)
+            theme.textSecondary.opacity(0.16)
         } else {
-            DesignTokens.Color.semantic.textSecondary.opacity(0.08)
+            theme.textSecondary.opacity(0.08)
         }
     }
 
     private var borderColor: Color {
         if isActive {
-            DesignTokens.Color.semantic.textSecondary.opacity(0.22)
+            theme.textSecondary.opacity(0.22)
         } else {
             .clear
         }

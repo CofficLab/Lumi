@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppSearchBar: View {
+    @LumiTheme private var theme
+
     @Binding var text: String
     let placeholder: LocalizedStringKey
     let onSubmit: (() -> Void)?
@@ -23,12 +25,12 @@ public struct AppSearchBar: View {
         HStack(spacing: AppUI.Spacing.sm) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(theme.textSecondary)
 
             TextField(placeholder, text: $text)
                 .textFieldStyle(.plain)
                 .font(AppUI.Typography.body)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(theme.textPrimary)
                 .focused($isFocused)
                 .onSubmit {
                     onSubmit?()
@@ -40,7 +42,7 @@ public struct AppSearchBar: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -57,7 +59,7 @@ public struct AppSearchBar: View {
             .fill(AppUI.Material.glass)
             .overlay(
                 RoundedRectangle(cornerRadius: AppUI.Radius.sm)
-                    .stroke(isFocused ? AppUI.Color.semantic.primary.opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(isFocused ? theme.primary.opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1)
             )
     }
 }

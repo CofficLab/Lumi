@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct GlassTextField: View {
+    @LumiTheme private var theme
+
     let title: LocalizedStringKey
     @Binding var text: String
     var placeholder: LocalizedStringKey = ""
@@ -24,7 +26,7 @@ public struct GlassTextField: View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             Text(title)
                 .font(DesignTokens.Typography.caption1)
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(theme.textTertiary)
 
             if isSecure {
                 secureFieldView
@@ -37,7 +39,7 @@ public struct GlassTextField: View {
     private var textFieldView: some View {
         TextField(placeholder, text: $text)
             .font(DesignTokens.Typography.body)
-            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+            .foregroundColor(theme.textPrimary)
             .padding(DesignTokens.Spacing.sm)
             .background(fieldBackground)
             .overlay(fieldBorder)
@@ -47,7 +49,7 @@ public struct GlassTextField: View {
     private var secureFieldView: some View {
         SecureField("", text: $text)
             .font(DesignTokens.Typography.body)
-            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+            .foregroundColor(theme.textPrimary)
             .padding(DesignTokens.Spacing.sm)
             .background(fieldBackground)
             .overlay(fieldBorder)
@@ -61,7 +63,7 @@ public struct GlassTextField: View {
 
     @ViewBuilder private var fieldBorder: some View {
         let borderColor: SwiftUI.Color = isFocused
-            ? DesignTokens.Color.semantic.primary
+            ? theme.primary
             : SwiftUI.Color.white.opacity(0.08)
 
         RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)

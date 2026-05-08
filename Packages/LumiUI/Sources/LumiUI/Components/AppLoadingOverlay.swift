@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppLoadingOverlay: View {
+    @LumiTheme private var theme
+
     public enum Size {
         case small
         case medium
@@ -28,7 +30,7 @@ public struct AppLoadingOverlay: View {
             if let message {
                 Text(message)
                     .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(theme.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

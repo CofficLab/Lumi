@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppListRow<Content: View>: View {
+    @LumiTheme private var theme
+
     let isSelected: Bool
     let action: (() -> Void)?
     let content: Content
@@ -42,7 +44,7 @@ public struct AppListRow<Content: View>: View {
     private var rowBackground: some View {
         Group {
             if isSelected {
-                AppUI.Color.semantic.primary.opacity(0.12)
+                theme.primary.opacity(0.12)
             } else if isHovered {
                 Color.white.opacity(0.08)
             } else {
@@ -55,7 +57,7 @@ public struct AppListRow<Content: View>: View {
     private var rowBorder: some View {
         if isSelected {
             RoundedRectangle(cornerRadius: AppUI.Radius.sm)
-                .stroke(AppUI.Color.semantic.primary.opacity(0.3), lineWidth: 1)
+                .stroke(theme.primary.opacity(0.3), lineWidth: 1)
         } else if isHovered {
             RoundedRectangle(cornerRadius: AppUI.Radius.sm)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)

@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct GlassInfoCard<Content: View>: View {
+    @LumiTheme private var theme
+
     var title: String
     var icon: String
     var iconColor: Color?
@@ -42,17 +44,17 @@ public struct GlassInfoCard<Content: View>: View {
     private var header: some View {
         HStack(spacing: DesignTokens.Spacing.xs) {
             Image(systemName: icon)
-                .foregroundColor(iconColor ?? DesignTokens.Color.semantic.primary)
+                .foregroundColor(iconColor ?? theme.primary)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(DesignTokens.Typography.bodyEmphasized)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(theme.textPrimary)
 
                 if let subtitle {
                     Text(subtitle)
                         .font(DesignTokens.Typography.caption1)
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .foregroundColor(theme.textTertiary)
                 }
             }
 

@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppErrorBanner: View {
+    @LumiTheme private var theme
+
     let message: LocalizedStringKey
     let retryTitle: LocalizedStringKey?
     let onRetry: (() -> Void)?
@@ -21,11 +23,11 @@ public struct AppErrorBanner: View {
         HStack(spacing: AppUI.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 14))
-                .foregroundColor(AppUI.Color.semantic.error)
+                .foregroundColor(theme.error)
 
             Text(message)
                 .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.error)
+                .foregroundColor(theme.error)
                 .lineLimit(nil)
 
             Spacer()
@@ -38,11 +40,11 @@ public struct AppErrorBanner: View {
         .padding(.vertical, AppUI.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: AppUI.Radius.sm)
-                .fill(AppUI.Color.semantic.error.opacity(0.1))
+                .fill(theme.error.opacity(0.1))
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppUI.Radius.sm)
-                .stroke(AppUI.Color.semantic.error.opacity(0.2), lineWidth: 1)
+                .stroke(theme.error.opacity(0.2), lineWidth: 1)
         )
     }
 }

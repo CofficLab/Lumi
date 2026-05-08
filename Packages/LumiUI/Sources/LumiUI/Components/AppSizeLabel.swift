@@ -2,6 +2,8 @@ import Foundation
 import SwiftUI
 
 public struct AppSizeLabel: View {
+    @LumiTheme private var theme
+
     let bytes: Int64
     let style: ByteCountFormatter.CountStyle
 
@@ -13,7 +15,7 @@ public struct AppSizeLabel: View {
     public var body: some View {
         Text(formattedSize)
             .font(AppUI.Typography.caption1)
-            .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .foregroundColor(theme.textSecondary)
     }
 
     var formattedSize: String {

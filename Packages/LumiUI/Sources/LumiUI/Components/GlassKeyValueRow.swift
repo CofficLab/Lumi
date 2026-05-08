@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct GlassKeyValueRow: View {
+    @LumiTheme private var theme
+
     var label: String
     var value: String
     var labelWidth: CGFloat = 100
@@ -25,23 +27,23 @@ public struct GlassKeyValueRow: View {
         HStack(alignment: .top) {
             Text(label)
                 .font(DesignTokens.Typography.subheadline)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(theme.textSecondary)
                 .frame(width: labelWidth, alignment: .leading)
 
             Text(":")
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(theme.textSecondary)
 
             if isValueSelectable {
                 Text(value)
                     .font(DesignTokens.Typography.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(valueColor ?? DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(valueColor ?? theme.textPrimary)
                     .textSelection(.enabled)
             } else {
                 Text(value)
                     .font(DesignTokens.Typography.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(valueColor ?? DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(valueColor ?? theme.textPrimary)
             }
 
             Spacer()

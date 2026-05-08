@@ -45,6 +45,8 @@ public struct AppTabBar: View {
 }
 
 private struct AppTabButton: View {
+    @LumiTheme private var theme
+
     let title: String
     let icon: String?
     let isSelected: Bool
@@ -65,7 +67,7 @@ private struct AppTabButton: View {
                         .font(AppUI.Typography.caption1)
                 }
             }
-            .foregroundColor(isSelected ? .white : AppUI.Color.semantic.textSecondary)
+            .foregroundColor(isSelected ? .white : theme.textSecondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(background)
@@ -82,7 +84,7 @@ private struct AppTabButton: View {
     @ViewBuilder
     private var background: some View {
         if isSelected {
-            AppUI.Color.semantic.primary
+            theme.primary
         } else if isHovered {
             Color.white.opacity(0.12)
         } else {

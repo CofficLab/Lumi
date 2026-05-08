@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppEmptyState: View {
+    @LumiTheme private var theme
+
     let icon: String
     let title: LocalizedStringKey
     let description: LocalizedStringKey?
@@ -37,16 +39,16 @@ public struct AppEmptyState: View {
         VStack(spacing: AppUI.Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 48))
-                .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.6))
+                .foregroundColor(theme.textSecondary.opacity(0.6))
 
             Text(title)
                 .font(AppUI.Typography.bodyEmphasized)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(theme.textSecondary)
 
             if let description {
                 Text(description)
                     .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(theme.textTertiary)
                     .multilineTextAlignment(.center)
             }
 

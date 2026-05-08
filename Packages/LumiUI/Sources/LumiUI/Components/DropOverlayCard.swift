@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct DropOverlayCard: View {
+    @LumiTheme private var theme
+
     let icon: String
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey
@@ -23,7 +25,7 @@ public struct DropOverlayCard: View {
                 .overlay(
                     Rectangle()
                         .stroke(
-                            Color.accentColor.opacity(0.35),
+                            theme.primary.opacity(0.35),
                             style: StrokeStyle(lineWidth: 2, dash: [10, 8])
                         )
                 )
@@ -31,7 +33,7 @@ public struct DropOverlayCard: View {
             VStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(theme.primary)
                 Text(title)
                     .font(.system(size: 18, weight: .semibold))
                 Text(subtitle)

@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct AppLabeledDivider: View {
+    @LumiTheme private var theme
+
     let title: String
     let detail: String?
 
@@ -12,7 +14,7 @@ public struct AppLabeledDivider: View {
     public var body: some View {
         HStack(spacing: 12) {
             Rectangle()
-                .fill(AppUI.Color.semantic.textSecondary.opacity(0.3))
+                .fill(theme.textSecondary.opacity(0.3))
                 .frame(height: 1)
 
             HStack(spacing: 6) {
@@ -25,10 +27,10 @@ public struct AppLabeledDivider: View {
                         .font(AppUI.Typography.caption2)
                 }
             }
-            .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .foregroundColor(theme.textSecondary)
 
             Rectangle()
-                .fill(AppUI.Color.semantic.textSecondary.opacity(0.3))
+                .fill(theme.textSecondary.opacity(0.3))
                 .frame(height: 1)
         }
         .padding(.vertical, 8)
