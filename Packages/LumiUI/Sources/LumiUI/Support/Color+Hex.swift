@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 extension Color {
-    init(hex: String) {
+    public init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
         Scanner(string: hex).scanHexInt64(&int)
@@ -28,11 +28,11 @@ extension Color {
         )
     }
 
-    static func adaptive(light: String, dark: String) -> Color {
+    public static func adaptive(light: String, dark: String) -> Color {
         Color(light: light, dark: dark)
     }
 
-    init(light: String, dark: String) {
+    public init(light: String, dark: String) {
         self.init(nsColor: NSColor(name: nil) { appearance in
             if appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua {
                 return NSColor(Color(hex: dark))
