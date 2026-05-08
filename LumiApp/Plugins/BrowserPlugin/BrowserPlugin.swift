@@ -26,7 +26,7 @@ actor BrowserPlugin: SuperPlugin, SuperLog {
 
     static let shared = BrowserPlugin()
 
-    private init() {}
+    init() {}
 
     @MainActor
     func agentToolFactories() -> [AnySuperAgentToolFactory] {

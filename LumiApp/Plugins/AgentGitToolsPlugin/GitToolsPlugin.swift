@@ -27,7 +27,7 @@ actor GitToolsPlugin: SuperPlugin, SuperLog {
 
     static let shared = GitToolsPlugin()
 
-    private init() {}
+    init() {}
 
     // MARK: - Agent Tool Factories
 

@@ -82,6 +82,7 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
     private var hoverContentContributors: [any SuperEditorHoverContentContributor] = []
     private var codeActionContributors: [any SuperEditorCodeActionContributor] = []
     private var highlightProviderContributors: [any SuperEditorHighlightProviderContributor] = []
+    private var cachedHighlightProvidersByLanguageID: [String: [any HighlightProviding]] = [:]
     private var commandContributors: [any SuperEditorCommandContributor] = []
     private var contextMenuContributors: [any SuperEditorContextMenuContributor] = []
     private var gutterDecorationContributors: [any SuperEditorGutterDecorationContributor] = []
@@ -120,6 +121,7 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
         hoverContentContributors.removeAll()
         codeActionContributors.removeAll()
         highlightProviderContributors.removeAll()
+        cachedHighlightProvidersByLanguageID.removeAll()
         commandContributors.removeAll()
         contextMenuContributors.removeAll()
         gutterDecorationContributors.removeAll()
@@ -180,6 +182,7 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
             return
         }
         highlightProviderContributors.append(contributor)
+        cachedHighlightProvidersByLanguageID.removeAll()
     }
 
     public func registerCommandContributor(_ contributor: any SuperEditorCommandContributor) {
@@ -695,12 +698,16 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
     }
 
     public func highlightProviders(for languageId: String) -> [any HighlightProviding] {
+        if let cached = cachedHighlightProvidersByLanguageID[languageId] {
+            return cached
+        }
         guard !highlightProviderContributors.isEmpty else { return [] }
 
+        let contributors = highlightProviderContributors
         var merged: [any HighlightProviding] = []
         var seenProviderIDs: Set<ObjectIdentifier> = []
 
-        for contributor in highlightProviderContributors where contributor.supports(languageId: languageId) {
+        for contributor in contributors where contributor.supports(languageId: languageId) {
             for provider in contributor.provideHighlightProviders(languageId: languageId) {
                 let providerID = ObjectIdentifier(provider)
                 if seenProviderIDs.insert(providerID).inserted {
@@ -709,6 +716,7 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
             }
         }
 
+        cachedHighlightProvidersByLanguageID[languageId] = merged
         return merged
     }
 

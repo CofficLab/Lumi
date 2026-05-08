@@ -18,7 +18,7 @@ actor RequestLogPlugin: SuperPlugin, SuperLog {
 
     static let shared = RequestLogPlugin()
 
-    private init() {}
+    init() {}
 
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {

@@ -57,6 +57,12 @@ struct RailTab: Identifiable, Equatable {
 /// }
 /// ```
 protocol SuperPlugin: Actor {
+    /// 创建插件实例。
+    ///
+    /// PluginVM 的自动发现阶段通过 `SuperPlugin.Type.init()` 安全实例化插件，
+    /// 避免使用 ObjC Runtime 的 `alloc/init` 绕过 Swift actor 初始化语义。
+    init()
+
     // MARK: - Core Properties
 
     /// 插件唯一标识符

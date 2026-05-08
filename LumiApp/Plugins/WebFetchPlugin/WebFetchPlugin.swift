@@ -25,7 +25,7 @@ actor WebFetchPlugin: SuperPlugin, SuperLog {
 
     static let shared = WebFetchPlugin()
 
-    private init() {}
+    init() {}
 
     @MainActor
     func agentToolFactories() -> [AnySuperAgentToolFactory] {
