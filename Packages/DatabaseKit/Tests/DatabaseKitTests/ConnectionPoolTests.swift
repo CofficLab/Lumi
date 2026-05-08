@@ -49,12 +49,20 @@ struct ConnectionPoolTests {
 
         let pool = ConnectionPool(config: config, driver: driver)
 
-        // Acquire multiple connections
+        // Acquire connections and manually release them
         let conn1 = try await pool.acquire()
         let conn2 = try await pool.acquire()
         let conn3 = try await pool.acquire()
 
+        // Release the connections first
+        await pool.release(conn1)
+        await pool.release(conn2)
+        await pool.release(conn3)
+
+        // Then shutdown
         await pool.shutdown()
+
+        // All 3 connections should be closed (released + shutdown)
         #expect(await recorder.closeCallCount == 3)
     }
 

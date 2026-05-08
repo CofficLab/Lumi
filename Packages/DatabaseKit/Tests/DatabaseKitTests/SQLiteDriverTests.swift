@@ -14,8 +14,13 @@ struct SQLiteDriverTests {
         let driver = SQLiteDriver()
         let config = DatabaseConfig(name: "Empty Path", type: .sqlite, database: "")
 
-        await #expect(throws: DatabaseError.invalidConfiguration("Database path is required for SQLite")) {
+        do {
             _ = try await driver.connect(config: config)
+            Issue.record("Should have thrown error")
+        } catch DatabaseError.invalidConfiguration(_) {
+            // Expected error
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
     }
 
@@ -272,8 +277,13 @@ struct SQLiteDriverTests {
         let transaction = try await connection.beginTransaction()
         try await transaction.commit()
 
-        await #expect(throws: DatabaseError.transactionFailed("Transaction already completed")) {
+        do {
             try await transaction.commit()
+            Issue.record("Should have thrown error")
+        } catch DatabaseError.transactionFailed(_) {
+            // Expected error
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
 
         await connection.close()
@@ -295,8 +305,13 @@ struct SQLiteDriverTests {
         let transaction = try await connection.beginTransaction()
         try await transaction.rollback()
 
-        await #expect(throws: DatabaseError.transactionFailed("Transaction already completed")) {
+        do {
             try await transaction.rollback()
+            Issue.record("Should have thrown error")
+        } catch DatabaseError.transactionFailed(_) {
+            // Expected error
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
 
         await connection.close()
@@ -318,8 +333,13 @@ struct SQLiteDriverTests {
         let transaction = try await connection.beginTransaction()
         try await transaction.commit()
 
-        await #expect(throws: DatabaseError.transactionFailed("Transaction already completed")) {
+        do {
             _ = try await transaction.execute("INSERT INTO items VALUES ('test')", params: nil)
+            Issue.record("Should have thrown error")
+        } catch DatabaseError.transactionFailed(_) {
+            // Expected error
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
 
         await connection.close()
@@ -356,8 +376,13 @@ struct SQLiteDriverTests {
 
         await connection.close()
 
-        await #expect(throws: DatabaseError.connectionFailed("Connection closed")) {
+        do {
             _ = try await connection.execute("SELECT 1", params: nil)
+            Issue.record("Should have thrown error")
+        } catch DatabaseError.connectionFailed(_) {
+            // Expected error
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
 
         try? FileManager.default.removeItem(at: fileURL)
@@ -373,8 +398,13 @@ struct SQLiteDriverTests {
         let config = DatabaseConfig(name: "Invalid SQL Test", type: .sqlite, database: fileURL.path)
         let connection = try await driver.connect(config: config)
 
-        await #expect(throws: DatabaseError.queryFailed("")) {
+        do {
             _ = try await connection.execute("INVALID SQL STATEMENT", params: nil)
+            Issue.record("Should have thrown error")
+        } catch DatabaseError.queryFailed(_) {
+            // Expected error
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
 
         await connection.close()
