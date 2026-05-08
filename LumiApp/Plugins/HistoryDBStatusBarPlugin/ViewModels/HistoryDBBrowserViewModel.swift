@@ -139,7 +139,9 @@ final class HistoryDBBrowserViewModel: ObservableObject {
                 projectId: conversation.projectId ?? "-",
                 createdAt: conversation.createdAt,
                 updatedAt: conversation.updatedAt,
-                messageCount: count
+                messageCount: count,
+                providerId: conversation.providerId,
+                model: conversation.model
             )
         }
 

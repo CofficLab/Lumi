@@ -7,4 +7,6 @@ struct HistoryConversationRow: Identifiable {
     let createdAt: Date
     let updatedAt: Date
     let messageCount: Int
+    let providerId: String?
+    let model: String?
 }

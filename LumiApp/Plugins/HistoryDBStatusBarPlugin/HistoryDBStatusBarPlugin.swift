@@ -2,7 +2,7 @@ import MagicKit
 import SwiftUI
 import Foundation
 
-/// 历史数据库状态栏插件：在 Agent 模式底部状态栏显示数据库图标，点击后以表格形式浏览消息/对话数据
+/// 历史数据库插件：在 Agent 模式底部状态栏显示历史入口，点击后以 Tab 形式浏览消息/对话历史
 actor HistoryDBStatusBarPlugin: SuperPlugin {
     nonisolated static let emoji = "🗄️"
     nonisolated static let enable: Bool = true
