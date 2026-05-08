@@ -1,5 +1,6 @@
 import MagicDiffView
 import MagicKit
+import LibGit2Swift
 import SwiftUI
 
 /// Git 状态栏弹出面板（独立实现，不依赖 GitCommitHistoryPlugin）
@@ -404,10 +405,10 @@ struct GitPluginPopoverView: View {
         loading = true
         errorMessage = nil
 
-        async let branchTask: [GitBranch] = Task.detached {
+        async let branchTask: [(name: String, isCurrent: Bool, message: String)] = Task.detached {
             let items = GitBranchService.listLocalBranches(at: path)
             return items.map {
-                GitBranch(id: $0.name, name: $0.name, isCurrent: $0.isCurrent, upstream: nil, latestCommitHash: "", latestCommitMessage: $0.latestCommitMessage)
+                (name: $0.name, isCurrent: $0.isCurrent, message: $0.latestCommitMessage)
             }
         }.value
 
@@ -415,10 +416,12 @@ struct GitPluginPopoverView: View {
         async let fileTask = GitService.shared.getUncommittedChanges(path: path)
 
         do {
-            let loadedBranches = await branchTask
+            let loadedBranchItems = await branchTask
             let loadedCommits = try await commitTask
             let loadedFiles = try await fileTask
-            branches = loadedBranches
+            branches = loadedBranchItems.map {
+                GitBranch(id: $0.name, name: $0.name, isCurrent: $0.isCurrent, upstream: nil, latestCommitHash: "", latestCommitMessage: $0.message)
+            }
             commits = loadedCommits
             uncommittedFiles = loadedFiles
             if selectedCommitHash == nil {

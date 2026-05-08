@@ -223,6 +223,16 @@
     "%@" : {
 
     },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
     "%@ (%lld%%)" : {
       "localizations" : {
         "en" : {
@@ -904,7 +914,7 @@
         }
       }
     },
-    "AI Commit" : {
+    "AI" : {
 
     },
     "All" : {
@@ -1275,6 +1285,12 @@
         }
       }
     },
+    "Branch name" : {
+
+    },
+    "Branches" : {
+
+    },
     "Browser Cache" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1323,6 +1339,9 @@
         }
       }
     },
+    "Cannot display diff for this file" : {
+
+    },
     "Cask" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1339,6 +1358,9 @@
         }
       }
     },
+    "Checking..." : {
+
+    },
     "Clean" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1354,6 +1376,9 @@
           }
         }
       }
+    },
+    "Clean working tree" : {
+
     },
     "Cleanup Complete" : {
       "localizations" : {
@@ -1609,6 +1634,12 @@
         }
       }
     },
+    "Commit" : {
+
+    },
+    "Commit History" : {
+
+    },
     "Configuration" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1771,6 +1802,12 @@
           }
         }
       }
+    },
+    "Create" : {
+
+    },
+    "Create New Branch" : {
+
     },
     "Created" : {
       "localizations" : {
@@ -2970,6 +3007,12 @@
         }
       }
     },
+    "Loading diff..." : {
+
+    },
+    "Loading..." : {
+
+    },
     "Local IP" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3428,6 +3471,9 @@
           }
         }
       }
+    },
+    "No LLM" : {
+
     },
     "No open terminals" : {
       "localizations" : {
@@ -4170,6 +4216,9 @@
     "Search" : {
 
     },
+    "Search branches..." : {
+
+    },
     "Search clipboard history..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -4303,6 +4352,9 @@
           }
         }
       }
+    },
+    "Select a file to view diff" : {
+
     },
     "Select an image to view details" : {
       "localizations" : {
@@ -5294,6 +5346,9 @@
           }
         }
       }
+    },
+    "Working state (%lld)" : {
+
     },
     "Workspace symbols not available" : {
 
@@ -6657,9 +6712,6 @@
           }
         }
       }
-    },
-    "已提交: %@" : {
-
     },
     "已用" : {
       "localizations" : {
@@ -8180,9 +8232,6 @@
 
     },
     "正在检查索引状态..." : {
-
-    },
-    "正在生成并提交..." : {
 
     },
     "正在索引..." : {
