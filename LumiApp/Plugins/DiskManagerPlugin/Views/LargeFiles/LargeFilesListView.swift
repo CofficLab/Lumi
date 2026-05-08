@@ -21,7 +21,7 @@ struct LargeFilesListView: View {
                 // 错误消息
                 if let error = viewModel.errorMessage {
                     Text(error)
-                        .foregroundColor(AppUI.Color.semantic.error)
+                        .foregroundColor(Color(hex: "FF453A"))
                         .padding()
                 }
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import MagicKit
 
 struct MenuBarSettingsView: View {
@@ -14,7 +15,7 @@ struct MenuBarSettingsView: View {
                         .foregroundStyle(.blue)
                     VStack(alignment: .leading) {
                         Text("Menu Bar Manager")
-                            .font(AppUI.Typography.bodyEmphasized)
+                            .font(.system(size: 15, weight: .medium))
                         Text("Manage your menu bar items")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)

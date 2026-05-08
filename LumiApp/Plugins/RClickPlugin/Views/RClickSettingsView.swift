@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct RClickSettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -9,11 +10,11 @@ struct RClickSettingsView: View {
         VStack(spacing: 0) {
             VStack(spacing: 20) {
                 Text("Preview")
-                    .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 RClickPreviewView(config: configManager.config)
-                    .shadow(color: AppUI.Shadow.subtle.opacity(0.6), radius: AppUI.Shadow.subtleRadius, x: 0, y: AppUI.Shadow.subtleOffset)
+                    .shadow(color: Color.black.opacity(0.09), radius: 12, x: 0, y: 4)
             }
             .padding()
 
@@ -24,27 +25,27 @@ struct RClickSettingsView: View {
                 .rotationEffect(.degrees(90))
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+                VStack(alignment: .leading, spacing: 16) {
                     GlassCard {
-                        VStack(spacing: AppUI.Spacing.sm) {
-                            HStack(spacing: AppUI.Spacing.sm) {
+                        VStack(spacing: 8) {
+                            HStack(spacing: 8) {
                                 Image(systemName: "puzzlepiece.extension")
                                     .font(.system(size: 28))
-                                    .foregroundColor(AppUI.Color.semantic.primary)
+                                    .foregroundColor(Color(hex: "7C6FFF"))
 
-                                VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     Text("Enable Finder Extension")
-                                        .font(AppUI.Typography.title3)
-                                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                     Text("The right-click menu functionality requires the Finder extension to be enabled in System Settings.")
-                                        .font(AppUI.Typography.caption1)
-                                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 }
 
                                 Spacer()
                             }
 
-                            HStack(spacing: AppUI.Spacing.sm) {
+                            HStack(spacing: 8) {
                                 GlassButton(title: LocalizedStringKey(String(localized: "Open System Settings")), style: .primary) {
                                     openFinderExtensionSettings()
                                 }
@@ -53,28 +54,28 @@ struct RClickSettingsView: View {
                                 Spacer()
 
                                 Text("System Settings → Privacy & Security → Extensions → Added Extensions")
-                                    .font(AppUI.Typography.caption2)
-                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                    .font(.system(size: 11, weight: .regular))
+                                    .foregroundColor(Color(hex: "98989E"))
                             }
                         }
                     }
 
                     GlassCard {
-                        VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+                        VStack(alignment: .leading, spacing: 8) {
                             Text("General Actions")
-                                .font(AppUI.Typography.title3)
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                            VStack(spacing: AppUI.Spacing.xs) {
+                            VStack(spacing: 4) {
                                 ForEach(configManager.config.items) { item in
                                     if item.type != .newFile {
                                         GlassRow {
                                             HStack {
                                                 Image(systemName: item.type.iconName)
                                                     .frame(width: 20)
-                                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                                 Text(item.title)
-                                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                                 Spacer()
                                                 Toggle("", isOn: Binding(
                                                     get: { item.isEnabled },
@@ -90,11 +91,11 @@ struct RClickSettingsView: View {
                     }
 
                     GlassCard {
-                        VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+                        VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text("New File Menu")
-                                    .font(AppUI.Typography.title3)
-                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                 Spacer()
                                 GlassButton(title: LocalizedStringKey(String(localized: "Add Template")), style: .secondary) {
                                     showingAddTemplateSheet = true
@@ -107,9 +108,9 @@ struct RClickSettingsView: View {
                                     HStack {
                                         Image(systemName: newFileItem.type.iconName)
                                             .frame(width: 20)
-                                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                         Text("Enable 'New File' Submenu")
-                                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                         Spacer()
                                         Toggle("", isOn: Binding(
                                             get: { newFileItem.isEnabled },
@@ -126,10 +127,10 @@ struct RClickSettingsView: View {
                                         HStack {
                                             VStack(alignment: .leading) {
                                                 Text(template.name)
-                                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                                 Text(".\(template.extensionName)")
-                                                    .font(AppUI.Typography.caption2)
-                                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                                    .font(.system(size: 11, weight: .regular))
+                                                    .foregroundColor(Color(hex: "98989E"))
                                             }
                                             Spacer()
                                             Toggle("", isOn: Binding(
@@ -151,8 +152,8 @@ struct RClickSettingsView: View {
                     GlassCard {
                         HStack {
                             Text("Reset to Defaults")
-                                .font(AppUI.Typography.bodyEmphasized)
-                                .foregroundColor(AppUI.Color.adaptive.error(for: colorScheme))
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(Color.adaptive(light: "FF3B30", dark: "FF453A"))
                             Spacer()
                             GlassButton(title: LocalizedStringKey(String(localized: "Reset")), style: .danger) {
                                 configManager.resetToDefaults()
@@ -161,7 +162,7 @@ struct RClickSettingsView: View {
                         }
                     }
                 }
-                .padding(AppUI.Spacing.md)
+                .padding(16)
             }
             .sheet(isPresented: $showingAddTemplateSheet) {
                 AddTemplateView(isPresented: $showingAddTemplateSheet) { name, ext, content in

@@ -14,17 +14,17 @@ struct SettingsSidebarHeaderView: View {
 
             // App 名称
             Text(appInfo.name)
-                .font(AppUI.Typography.bodyEmphasized)
+                .font(.system(size: 15, weight: .medium))
 
             // 版本和 Build 信息
             VStack(alignment: .center, spacing: 2) {
                 Text("v\(appInfo.version ?? "Unknown")")
-                    .font(AppUI.Typography.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Text("Build \(appInfo.build ?? "Unknown")")
-                    .font(AppUI.Typography.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundColor(Color(hex: "98989E"))
             }
 
             Spacer().frame(height: 16)

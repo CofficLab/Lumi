@@ -2,6 +2,7 @@ import Foundation
 
 /// MegaLLM LLM 供应商插件
 actor MegaLLMPlugin: SuperPlugin {
+    static let shared = MegaLLMPlugin()
     static let id = "LLMProviderMegaLLM"
     static let displayName = "MegaLLM"
     static let description = "MegaLLM Multi-Provider"

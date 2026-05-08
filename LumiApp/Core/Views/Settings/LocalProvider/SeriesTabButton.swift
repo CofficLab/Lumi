@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 系列 Tab 按钮，横向排列
 struct SeriesTabButton: View {
@@ -11,14 +12,14 @@ struct SeriesTabButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(AppUI.Typography.caption1)
+                .font(.system(size: 12, weight: .regular))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .appSurface(
-                    style: .custom(isSelected ? AppUI.Color.semantic.primary : (isHovered ? Color.white.opacity(0.12) : Color.white.opacity(0.05))),
+                    style: .custom(isSelected ? Color(hex: "7C6FFF") : (isHovered ? Color.white.opacity(0.12) : Color.white.opacity(0.05))),
                     cornerRadius: 6
                 )
-                .foregroundColor(isSelected ? .white : AppUI.Color.semantic.textSecondary)
+                .foregroundColor(isSelected ? .white : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)

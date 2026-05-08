@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeSummerPlugin: SuperPlugin {
+    static let shared = ThemeSummerPlugin()
     static let id: String = "summer"
     static let displayName: String = "Summer"
     static let description: String = "Summer blue app theme"

@@ -40,7 +40,7 @@ private struct SampleInsightsStatusItemView: View {
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .fill(store.isPresented ? AppUI.Color.semantic.primary.opacity(0.12) : AppUI.Color.semantic.textTertiary.opacity(0.08))
+                        .fill(store.isPresented ? Color(hex: "7C6FFF").opacity(0.12) : Color(hex: "98989E").opacity(0.08))
                 )
         }
         .buttonStyle(.plain)

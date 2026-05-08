@@ -14,7 +14,7 @@ struct DirectoryTreeView: View {
             // 错误消息
             if let error = viewModel.errorMessage {
                 Text(error)
-                    .foregroundColor(AppUI.Color.semantic.error)
+                    .foregroundColor(Color(hex: "FF453A"))
                     .padding()
             }
 
@@ -57,7 +57,7 @@ struct DirectoryTreeRow: View {
 
             Text(viewModel.formatBytes(entry.size))
                 .font(.monospacedDigit(.caption)())
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .padding(.vertical, 2)
     }

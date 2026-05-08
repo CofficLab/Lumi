@@ -65,15 +65,15 @@ struct RailView: View {
                         Rectangle()
                             .fill(
                                 selectedTabId == tab.id
-                                    ? AppUI.Color.semantic.primary.opacity(0.9)
+                                    ? Color(hex: "7C6FFF").opacity(0.9)
                                     : Color.clear
                             )
                             .frame(height: 2)
                     }
                     .foregroundColor(
                         selectedTabId == tab.id
-                            ? AppUI.Color.semantic.textPrimary
-                            : AppUI.Color.semantic.textSecondary
+                            ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+                            : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
                     )
                     .padding(.horizontal, 6)
                     .padding(.top, 2)

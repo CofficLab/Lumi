@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 // MARK: - 主题选择器
 ///
@@ -10,13 +11,13 @@ struct ThemeSelectorView: View {
 
     // MARK: - 主体
     var body: some View {
-        VStack(spacing: AppUI.Spacing.sm) {
+        VStack(spacing: 8) {
             ForEach(themeVM.themes) { theme in
                 ThemeOptionCard(
                     theme: theme,
                     isSelected: themeVM.currentThemeId == theme.id
                 ) {
-                    withAnimation(DesignAnimations.Preset.bounce) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         themeVM.selectTheme(theme.id)
                     }
                 }
@@ -39,23 +40,23 @@ struct ThemeOptionCard: View {
             selectedBorderColor: theme.iconColor,
             action: action
         ) {
-            HStack(spacing: AppUI.Spacing.md) {
+            HStack(spacing: 16) {
                 // 图标
                 Image(systemName: theme.iconName)
                     .font(.system(size: 24))
-                    .foregroundColor(isSelected ? theme.iconColor : AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(isSelected ? theme.iconColor : Color(hex: "98989E"))
                     .frame(width: 40)
 
-                VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
+                VStack(alignment: .leading, spacing: 4) {
                     // 名称
                     Text(theme.displayName)
-                        .font(AppUI.Typography.body)
-                        .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     // 描述
                     Text(theme.description)
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color(hex: "98989E"))
                 }
             }
         }

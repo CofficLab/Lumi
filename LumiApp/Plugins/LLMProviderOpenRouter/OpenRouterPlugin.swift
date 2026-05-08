@@ -6,6 +6,7 @@ import Foundation
 /// 通过 `SuperPlugin` 的 `llmProviderType()` 方法暴露供应商类型，
 /// 由 PluginVM 统一发现并注册。
 actor OpenRouterPlugin: SuperPlugin {
+    static let shared = OpenRouterPlugin()
     static let id = "LLMProviderOpenRouter"
     static let displayName = "OpenRouter"
     static let description = "Multi-Provider LLM Router"

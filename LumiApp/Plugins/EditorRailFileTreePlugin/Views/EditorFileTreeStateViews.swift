@@ -8,7 +8,7 @@ struct EditorFileTreeLoadingView: View {
                 .scaleEffect(0.6)
             Text(String(localized: "Loading...", table: "EditorRailFileTree"))
                 .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.leading, 24)
@@ -21,7 +21,7 @@ struct EditorFileTreeEmptyView: View {
     var body: some View {
         Text(String(localized: "Empty folder", table: "EditorRailFileTree"))
             .font(.system(size: 10))
-            .foregroundColor(AppUI.Color.semantic.textSecondary)
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 24)
             .padding(.vertical, 4)

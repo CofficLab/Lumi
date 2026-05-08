@@ -7,11 +7,11 @@ struct ConversationListEmptyView: View {
         VStack(spacing: 8) {
             Image(systemName: "message")
                 .font(.system(size: 24))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
 
             Text(String(localized: "No conversations", table: "ConversationList"))
                 .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
         }
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity)

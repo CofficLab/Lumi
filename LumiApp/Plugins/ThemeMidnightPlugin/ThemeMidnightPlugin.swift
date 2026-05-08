@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeMidnightPlugin: SuperPlugin {
+    static let shared = ThemeMidnightPlugin()
     static let id: String = "midnight"
     static let displayName: String = "Midnight"
     static let description: String = "Deep dark blue color scheme"

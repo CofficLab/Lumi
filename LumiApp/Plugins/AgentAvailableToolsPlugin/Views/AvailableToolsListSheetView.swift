@@ -34,12 +34,12 @@ extension AvailableToolsListDetailView {
     private var headerTitle: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(String(localized: "Tools", table: "AgentAvailableToolsPlugin"))
-                .font(AppUI.Typography.title3)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Text(toolsCountText)
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
     }
 
@@ -71,11 +71,11 @@ extension AvailableToolsListDetailView {
     private var emptyStateView: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(String(localized: "No tools found", table: "AgentAvailableToolsPlugin"))
-                .font(AppUI.Typography.body)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .font(.system(size: 15, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             Text(String(localized: "Try a different search keyword.", table: "AgentAvailableToolsPlugin"))
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .padding(.vertical, 10)
     }
@@ -90,16 +90,16 @@ extension AvailableToolsListDetailView {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(tool.name)
-                    .font(AppUI.Typography.body)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .textSelection(.enabled)
                 Spacer()
             }
 
             if !tool.description.isEmpty {
                 Text(tool.description)
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .textSelection(.enabled)
                     .lineLimit(3)
             }

@@ -2,6 +2,7 @@ import Foundation
 
 /// Swift 原始类型编辑器插件：提供 Swift 原始类型补全建议
 actor SwiftPrimitiveTypesEditorPlugin: SuperPlugin {
+    static let shared = SwiftPrimitiveTypesEditorPlugin()
     static let id = "SwiftPrimitiveTypesEditor"
     static let displayName = String(localized: "Swift Primitive Types", table: "SwiftPrimitiveTypesEditor")
     static let description = String(localized: "Provides Swift primitive type completion suggestions.", table: "SwiftPrimitiveTypesEditor")

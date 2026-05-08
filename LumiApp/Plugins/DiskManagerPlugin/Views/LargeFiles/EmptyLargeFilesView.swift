@@ -13,7 +13,7 @@ struct EmptyLargeFilesView: View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .stroke(AppUI.Color.semantic.info.opacity(0.2), lineWidth: 10)
+                    .stroke(Color(hex: "0A84FF").opacity(0.2), lineWidth: 10)
                     .frame(width: 88, height: 88)
                     .scaleEffect(animate ? 1.06 : 0.96)
                     .opacity(animate ? 1.0 : 0.6)
@@ -21,37 +21,37 @@ struct EmptyLargeFilesView: View {
 
                 Image(systemName: "doc.text.magnifyingglass")
                     .font(.system(size: 34, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.info)
+                    .foregroundColor(Color(hex: "0A84FF"))
             }
 
             VStack(spacing: 10) {
                 Text("暂无大文件")
                     .font(.title3)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Text("你可以扫描用户主目录，找到占用空间较大的文件。")
                     .font(.caption)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 Button(action: { viewModel.startScan() }, label: {
                     Label(title: { Text("开始扫描") }, icon: { Image(systemName: "magnifyingglass.circle") })
-                        .font(AppUI.Typography.bodyEmphasized)
+                        .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                 })
                 .buttonStyle(.borderedProminent)
-                .tint(AppUI.Color.semantic.info)
+                .tint(Color(hex: "0A84FF"))
             }
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(AppUI.Color.semantic.info.opacity(0.05))
+                .fill(Color(hex: "0A84FF").opacity(0.05))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(AppUI.Color.semantic.info.opacity(0.2), lineWidth: 1)
+                .stroke(Color(hex: "0A84FF").opacity(0.2), lineWidth: 1)
         )
         .padding(.horizontal, 12)
         .padding(.vertical, 12)

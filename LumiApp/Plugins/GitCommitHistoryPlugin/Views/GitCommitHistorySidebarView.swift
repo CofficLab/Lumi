@@ -144,15 +144,15 @@ struct GitCommitHistorySidebarView: View {
                 if uncommittedFileCount == 0 {
                     Text(String(localized: "Clean working tree", table: "GitCommitHistory"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text(String(localized: "All changes committed", table: "GitCommitHistory"))
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 } else {
                     Text(String(localized: "Current status", table: "GitCommitHistory"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text(String(localized: "Uncommitted files: \(uncommittedFileCount)", table: "GitCommitHistory"))
                         .font(.system(size: 10))
@@ -188,7 +188,7 @@ struct GitCommitHistorySidebarView: View {
                 .controlSize(.regular)
             Text(String(localized: "Loading...", table: "GitCommitHistory"))
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -202,7 +202,7 @@ struct GitCommitHistorySidebarView: View {
                 .foregroundColor(.secondary.opacity(0.5))
             Text(String(localized: "Please select a project first", table: "GitCommitHistory"))
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 20)
@@ -394,7 +394,7 @@ struct GitCommitRow: View {
                     HStack(alignment: .top, spacing: 4) {
                         Text(commit.message)
                             .font(.system(size: 12, weight: isSelected ? .medium : .regular))
-                            .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textPrimary.opacity(0.85))
+                            .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "1C1C1E", dark: "FFFFFF").opacity(0.85))
                             .lineLimit(2)
 
                         Spacer()
@@ -420,7 +420,7 @@ struct GitCommitRow: View {
                             .lineLimit(1)
                     }
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     // 提交哈希
                     Text(commit.hash.prefix(7))

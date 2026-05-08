@@ -262,10 +262,13 @@ final class PluginVM: ObservableObject, SuperLog {
             // 筛选条件：Lumi 命名空间且以 Plugin 结尾的类
             guard className.hasPrefix("Lumi."), className.hasSuffix("Plugin") else { continue }
             
-            // 尝试创建 Actor 实例
-            guard let instance = createActorInstance(cls: cls) as? any SuperPlugin else {
+            guard let pluginClass = cls as? any SuperPlugin.Type else {
                 continue
             }
+
+            // 统一通过插件类型暴露的共享实例拿到 Actor，避免通过 ObjC Runtime
+            // 绕过 actor 初始化语义，也避免给 actor 引入额外的同步初始化要求。
+            let instance = pluginClass.shared
             
             // 检查插件是否启用
             let pluginType = type(of: instance)
@@ -336,41 +339,6 @@ final class PluginVM: ObservableObject, SuperLog {
         }
     }
     
-    /// 创建 actor 实例的辅助函数
-    ///
-    /// 由于 Actor 的特殊性，不能使用普通的 `new` 或 `init()` 创建实例。
-    /// 需要使用 Objective-C Runtime 的 alloc/init 方法。
-    ///
-    /// - Parameter cls: 要实例化的类
-    /// - Returns: 插件实例，如果创建失败则返回 nil
-    private func createActorInstance(cls: AnyClass) -> AnyObject? {
-        // 尝试获取 alloc 方法
-        let allocSelector = NSSelectorFromString("alloc")
-        guard let allocMethod = class_getClassMethod(cls, allocSelector) else {
-            return nil
-        }
-        
-        // 调用 alloc
-        typealias AllocMethod = @convention(c) (AnyClass, Selector) -> AnyObject?
-        let allocImpl = unsafeBitCast(method_getImplementation(allocMethod), to: AllocMethod.self)
-        guard let instance = allocImpl(cls, allocSelector) else {
-            return nil
-        }
-        
-        // 尝试获取 init() 方法
-        let initSelector = NSSelectorFromString("init")
-        guard let initMethod = class_getInstanceMethod(cls, initSelector) else {
-            // 如果没有 init 方法，直接返回 alloc 的实例（虽然这通常不应该发生）
-            return instance
-        }
-        
-        // 调用 init
-        typealias InitMethod = @convention(c) (AnyObject, Selector) -> AnyObject?
-        let initImpl = unsafeBitCast(method_getImplementation(initMethod), to: InitMethod.self)
-        
-        return initImpl(instance, initSelector) ?? instance
-    }
-
     /// 检查插件是否被用户启用
     ///
     /// 判断逻辑：

@@ -18,11 +18,11 @@ struct TopProcessesView: View {
             HStack(spacing: 4) {
                 Image(systemName: "chart.bar.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Text(String(localized: "Top Processes", table: "DeviceInfo"))
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             }
             .padding(.horizontal, 12)
             .padding(.bottom, 6)
@@ -30,7 +30,7 @@ struct TopProcessesView: View {
             if processes.isEmpty {
                 Text(String(localized: "Collecting...", table: "DeviceInfo"))
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 4)
             } else {
@@ -42,7 +42,7 @@ struct TopProcessesView: View {
             }
         }
         .padding(.vertical, 8)
-        .background(AppUI.Material.glass.opacity(0.3))
+        .background(Color.white.opacity(0.06))
     }
 
     // MARK: - 私有方法
@@ -64,17 +64,17 @@ struct TopProcessesView: View {
             // CPU%
             Text(String(format: "%.0f%%", process.cpuUsage))
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(AppUI.Color.semantic.info)
+                .foregroundColor(Color(hex: "0A84FF"))
                 .frame(width: 36, alignment: .trailing)
 
             // 进度条
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(AppUI.Color.semantic.textTertiary.opacity(0.2))
+                        .fill(Color(hex: "98989E").opacity(0.2))
 
                     Capsule()
-                        .fill(AppUI.Color.semantic.info.opacity(0.7))
+                        .fill(Color(hex: "0A84FF").opacity(0.7))
                         .frame(width: geometry.size.width * min(process.cpuUsage / 100.0, 1.0))
                 }
             }

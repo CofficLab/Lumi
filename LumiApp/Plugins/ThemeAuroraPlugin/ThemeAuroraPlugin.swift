@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeAuroraPlugin: SuperPlugin {
+    static let shared = ThemeAuroraPlugin()
     static let id: String = "aurora"
     static let displayName: String = "Aurora"
     static let description: String = "Aurora purple app theme"

@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import MagicKit
 
 struct RegistryCard: View {
@@ -25,7 +26,7 @@ struct RegistryCard: View {
                         .clipShape(Circle())
 
                     Text(type.name)
-                        .font(AppUI.Typography.bodyEmphasized)
+                        .font(.system(size: 15, weight: .medium))
 
                     Spacer()
 

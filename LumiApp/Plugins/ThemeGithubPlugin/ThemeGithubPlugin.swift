@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeGithubPlugin: SuperPlugin {
+    static let shared = ThemeGithubPlugin()
     static let id: String = "github"
     static let displayName: String = "GitHub"
     static let description: String = "GitHub style app theme"

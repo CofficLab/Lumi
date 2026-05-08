@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 本地模型行：显示名称、大小、已缓存、下载进度/加载按钮
 struct LocalModelRow: View {
@@ -24,7 +25,7 @@ struct LocalModelRow: View {
     @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: AppUI.Spacing.sm) {
+        HStack(spacing: 8) {
             // 状态图标
             Group {
                 if isDownloading {
@@ -36,10 +37,10 @@ struct LocalModelRow: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 } else if isCached {
                     Image(systemName: "arrow.down.circle.fill")
-                        .foregroundStyle(AppUI.Color.semantic.primary.opacity(0.8))
+                        .foregroundStyle(Color(hex: "7C6FFF").opacity(0.8))
                 } else {
                     Image(systemName: "circle")
-                        .foregroundStyle(AppUI.Color.semantic.textSecondary)
+                        .foregroundStyle(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
             }
             .frame(width: 20, height: 20)
@@ -48,48 +49,48 @@ struct LocalModelRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(model.displayName)
-                    .font(AppUI.Typography.body)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 // 体积、内存要求、下载状态
                 HStack(spacing: 6) {
                     Text("体积 \(model.size)")
-                        .font(AppUI.Typography.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text("·")
-                        .font(AppUI.Typography.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text("电脑内存 ≥ \(model.minRAM) GB")
-                        .font(AppUI.Typography.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     if isDownloading, case .downloading(let fraction) = downloadStatus {
                         Text("· \(Int(fraction * 100))%")
-                            .font(AppUI.Typography.caption2)
-                            .foregroundColor(AppUI.Color.semantic.primary)
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundColor(Color(hex: "7C6FFF"))
                             .monospacedDigit()
                     } else if isCached {
                         if isLoading {
                             Text("· 加载中…")
-                                .font(AppUI.Typography.caption2)
-                                .foregroundColor(AppUI.Color.semantic.primary)
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(Color(hex: "7C6FFF"))
                         } else {
                             Text("· 已缓存")
-                                .font(AppUI.Typography.caption2)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
                     }
                 }
                 if !model.description.isEmpty {
                     Text(model.description)
-                        .font(AppUI.Typography.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .lineLimit(2)
                 }
                 // 功能特性：工具调用、视觉等，便于用户理解模型能力
                 if model.supportsTools || model.supportsVision {
                     HStack(spacing: 6) {
                         Text("功能特性：")
-                            .font(AppUI.Typography.caption2)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         if model.supportsTools {
                             capabilityTag("工具调用", systemImage: "wrench.and.screwdriver")
                         }
@@ -114,15 +115,15 @@ struct LocalModelRow: View {
             } else {
                 if isThisModelLoaded {
                     Text("已加载")
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 } else if isLoading {
                     HStack(spacing: 6) {
                         ProgressView()
                             .controlSize(.small)
                         Text("加载中…")
-                            .font(AppUI.Typography.caption1)
-                            .foregroundColor(AppUI.Color.semantic.primary)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(Color(hex: "7C6FFF"))
                     }
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 } else {
@@ -138,11 +139,11 @@ struct LocalModelRow: View {
             }
         }
         .animation(.easeInOut(duration: 0.22), value: isLoading)
-        .padding(AppUI.Spacing.sm)
+        .padding(8)
         .contentShape(Rectangle())
         .appSurface(
             style: .custom(rowBackgroundColor),
-            cornerRadius: AppUI.Radius.sm,
+            cornerRadius: 8,
             borderColor: Color.white.opacity(isHovered ? 0.15 : 0),
             lineWidth: 1
         )
@@ -177,15 +178,15 @@ struct LocalModelRow: View {
 
     private var rowBackgroundColor: Color {
         if isLoading {
-            return AppUI.Color.semantic.primary.opacity(0.06)
+            return Color(hex: "7C6FFF").opacity(0.06)
         }
         if isSelected {
-            return AppUI.Color.semantic.primary.opacity(0.08)
+            return Color(hex: "7C6FFF").opacity(0.08)
         }
         if isHovered {
-            return AppUI.Color.semantic.textSecondary.opacity(0.08)
+            return Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.08)
         }
-        return AppUI.Color.semantic.textSecondary.opacity(0.05)
+        return Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.05)
     }
 
     private func capabilityTag(_ title: String, systemImage: String) -> some View {

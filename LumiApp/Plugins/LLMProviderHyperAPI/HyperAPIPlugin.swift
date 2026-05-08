@@ -2,6 +2,7 @@ import Foundation
 
 /// HyperAPI LLM 供应商插件
 actor HyperAPIPlugin: SuperPlugin {
+    static let shared = HyperAPIPlugin()
     static let id = "LLMProviderHyperAPI"
     static let displayName = "HyperAPI"
     static let description = "HyperAPI LLM Gateway"

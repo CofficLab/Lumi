@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import LumiUI
 
 /// 负责完整渲染一条用户消息（包含头部与正文）
 struct UserMessage: View {
@@ -20,7 +21,7 @@ struct UserMessage: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 if !message.images.isEmpty {
-                    UserMessageImageGrid(images: message.images)
+                    AppImagePreviewGrid(imageDataList: message.images.map(\.data))
                 }
 
                 if !message.content.isEmpty {
@@ -40,10 +41,7 @@ struct UserMessage: View {
         MessageHeaderView {
             HStack(alignment: .center, spacing: 6) {
                 AvatarView.user
-                Text(currentUserName)
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                AppIdentityRow(title: currentUserName)
             }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
@@ -54,9 +52,10 @@ struct UserMessage: View {
 
                 ResendButton(action: resend)
 
-                Text(formatTimestamp(message.timestamp))
-                    .font(DesignTokens.Typography.caption2)
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                AppIdentityRow(
+                    title: formatTimestamp(message.timestamp),
+                    titleColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+                )
 
                 // RawMessageToggleButton(showRawMessage: $showRawMessage)
             }

@@ -14,16 +14,16 @@ struct ZhipuQuotaDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             // 标题
-            HStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: 8) {
                 Image(systemName: "chart.bar.fill")
                     .font(.system(size: 16))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
 
                 Text(String(localized: "Zhipu GLM Quota", table: "Zhipu"))
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
@@ -33,7 +33,7 @@ struct ZhipuQuotaDetailView: View {
                 }) {
                     Image(systemName: isRefreshing ? "arrow.clockwise" : "arrow.clockwise")
                         .font(.system(size: 14))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .rotationEffect(.degrees(isRefreshing ? 360 : 0))
                 }
                 .buttonStyle(.plain)
@@ -57,21 +57,21 @@ struct ZhipuQuotaDetailView: View {
 
     /// 加载内容
     private var loadingContent: some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(spacing: 8) {
             ProgressView()
                 .scaleEffect(0.8)
 
             Text(String(localized: "Loading...", table: "Zhipu"))
                 .font(.system(size: 13))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.lg)
+        .padding(.vertical, 24)
     }
 
     /// 配额内容
     private func quotaContent(_ data: ZhipuQuotaData) -> some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+        VStack(alignment: .leading, spacing: 8) {
             // 等级
             QuotaInfoRow(
                 label: String(localized: "Level", table: "Zhipu"),
@@ -83,13 +83,13 @@ struct ZhipuQuotaDetailView: View {
                 HStack {
                     Text(String(localized: "Usage Progress", table: "Zhipu"))
                         .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     Spacer()
 
                     Text("\(data.usedPercent)%")
                         .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
 
                 ProgressView(value: Double(data.usedPercent) / 100.0)
@@ -98,13 +98,13 @@ struct ZhipuQuotaDetailView: View {
                 HStack {
                     Text(String(localized: "Remaining \(data.leftPercent)%", table: "Zhipu"))
                         .font(.system(size: 11))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     Spacer()
 
                     Text(String(localized: "Total 5 hours", table: "Zhipu"))
                         .font(.system(size: 11))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
             }
 
@@ -118,7 +118,7 @@ struct ZhipuQuotaDetailView: View {
                 )
                 Text("（\(data.resetTimeRelative)）")
                     .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
             Divider()
@@ -128,20 +128,20 @@ struct ZhipuQuotaDetailView: View {
                 HStack {
                     Text(String(localized: "MCP Monthly Quota", table: "Zhipu"))
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Spacer()
                 }
 
-                HStack(spacing: DesignTokens.Spacing.md) {
+                HStack(spacing: 16) {
                     // 剩余额度百分比
                     VStack(alignment: .leading, spacing: 4) {
                         Text(String(localized: "Remaining", table: "Zhipu"))
                             .font(.system(size: 10))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         Text("\(data.mcpLeftPercent)%")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(DesignTokens.Color.semantic.success)
+                            .foregroundColor(Color(hex: "30D158"))
                     }
 
                     Spacer()
@@ -150,13 +150,13 @@ struct ZhipuQuotaDetailView: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(String(localized: "Reset", table: "Zhipu"))
                             .font(.system(size: 10))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         Text(data.mcpResetTime)
                             .font(.system(size: 11))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         Text("(\(data.mcpResetTimeRelative))")
                             .font(.system(size: 10))
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     }
                 }
                 .padding(12)
@@ -168,41 +168,41 @@ struct ZhipuQuotaDetailView: View {
 
     /// 认证错误内容
     private var authErrorContent: some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 32))
-                .foregroundColor(DesignTokens.Color.semantic.warning)
+                .foregroundColor(Color(hex: "FF9F0A"))
 
             Text(String(localized: "Auth expired", table: "Zhipu"))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Text(String(localized: "Please check if Zhipu AI API Key is correctly configured", table: "Zhipu"))
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.lg)
+        .padding(.vertical, 24)
     }
 
     /// 不可用内容
     private var unavailableContent: some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 32))
-                .foregroundColor(DesignTokens.Color.semantic.warning)
+                .foregroundColor(Color(hex: "FF9F0A"))
 
             Text(String(localized: "Quota unavailable", table: "Zhipu"))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Text(String(localized: "Please check network connection or try again later", table: "Zhipu"))
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.lg)
+        .padding(.vertical, 24)
     }
 
     /// 根据百分比返回进度条颜色
@@ -234,15 +234,15 @@ struct QuotaInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .frame(width: 70, alignment: .leading)
 
             Text(value)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Spacer()
         }

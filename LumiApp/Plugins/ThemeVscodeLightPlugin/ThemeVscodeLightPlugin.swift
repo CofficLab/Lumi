@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeVscodeLightPlugin: SuperPlugin {
+    static let shared = ThemeVscodeLightPlugin()
     static let id: String = "vscode-light"
     static let displayName: String = "VS Code 亮色"
     static let description: String = "Visual Studio Code Light+ IDE theme"

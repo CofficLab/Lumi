@@ -45,13 +45,13 @@ private struct SampleInsightsSettingsToggleRow: View {
 
     var body: some View {
         GlassRow {
-            HStack(spacing: AppUI.Spacing.md) {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Sample Insights Inline Tips")
-                        .font(AppUI.Typography.bodyEmphasized)
+                        .font(.system(size: 15, weight: .medium))
                     Text("用于演示插件贡献设置如何统一显示在 editor settings 页面。")
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color(hex: "98989E"))
                 }
 
                 Spacer()

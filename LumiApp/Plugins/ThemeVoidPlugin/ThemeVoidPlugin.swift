@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeVoidPlugin: SuperPlugin {
+    static let shared = ThemeVoidPlugin()
     static let id: String = "void"
     static let displayName: String = "虚空深黑"
     static let description: String = "纯粹的虚空黑，深邃而神秘"

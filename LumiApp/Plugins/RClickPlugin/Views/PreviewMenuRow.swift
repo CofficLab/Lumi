@@ -8,18 +8,18 @@ struct PreviewMenuRow: View {
             Image(systemName: item.type.iconName)
                 .font(.system(size: 14))
                 .frame(width: 16)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             Text(item.title)
                 .font(.system(size: 13))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Spacer()
 
             if item.type == .newFile {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             }
         }
         .padding(.vertical, 4)

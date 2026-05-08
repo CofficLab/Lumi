@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct HostsManagerView: View {
     @StateObject private var viewModel = HostsManagerViewModel()
@@ -48,13 +49,13 @@ struct HostsManagerView: View {
                 } label: {
                     GlassRow {
                         Label("More", systemImage: "ellipsis.circle")
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     }
                     .frame(width: 110)
                 }
             }
             .padding()
-            .background(AppUI.Material.glass)
+            .background(Material.regularMaterial)
             
             GlassDivider()
             
@@ -136,13 +137,13 @@ struct HostRowView: View {
             switch entry.type {
             case .groupHeader(let name):
                 Text(name)
-                    .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .padding(.top, 8)
             case .comment(let text):
                 Text(text)
                     .font(.monospaced(.caption)())
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             case .entry(let ip, let domains, let isEnabled, let comment):
                 Toggle("", isOn: Binding(
                     get: { isEnabled },
@@ -156,16 +157,16 @@ struct HostRowView: View {
                         Text(domains.joined(separator: ", "))
                             .font(.body)
                             .fontWeight(.medium)
-                            .foregroundColor(isEnabled ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(isEnabled ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         
                         if let comment = comment {
                             Text("# \(comment)")
-                                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                .foregroundColor(Color(hex: "98989E"))
                         }
                     }
                     Text(ip)
                         .font(.monospaced(.caption)())
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 
                 Spacer()
@@ -174,7 +175,7 @@ struct HostRowView: View {
                     viewModel.deleteEntry(entry)
                 }) {
                     Image(systemName: "trash")
-                        .foregroundColor(AppUI.Color.semantic.error.opacity(0.6))
+                        .foregroundColor(Color(hex: "FF453A").opacity(0.6))
                 }
                 .buttonStyle(.plain)
             case .empty:
@@ -198,16 +199,16 @@ struct HostAddView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Add Host Entry")
-                .font(AppUI.Typography.title2)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             
             GlassCard {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+                VStack(alignment: .leading, spacing: 8) {
                     GlassTextField(title: "IP Address", text: $ip, placeholder: "127.0.0.1")
                     if showIPError {
                         Text("Invalid IP address format")
-                            .foregroundColor(AppUI.Color.semantic.error)
-                            .font(AppUI.Typography.caption1)
+                            .foregroundColor(Color(hex: "FF453A"))
+                            .font(.system(size: 12, weight: .regular))
                     }
 
                     GlassTextField(title: "Domain", text: $domain, placeholder: "dev.example.com")

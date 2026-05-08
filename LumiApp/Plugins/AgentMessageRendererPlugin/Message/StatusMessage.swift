@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import LumiUI
 
 // MARK: - Status Message
 //
@@ -25,7 +26,7 @@ struct StatusMessage: View {
                     content: message.content,
                     monospaced: false
                 )
-                .font(AppUI.Typography.caption1)
+                .font(.system(size: 12, weight: .regular))
                 .messageBubbleStyle(role: message.role, isError: message.isError)
             }
         }
@@ -37,15 +38,13 @@ struct StatusMessage: View {
         MessageHeaderView {
             HStack(alignment: .center, spacing: 6) {
                 AvatarView.status
-                Text("Status")
-                    .font(DesignTokens.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                AppIdentityRow(title: "Status")
             }
         } trailing: {
-            Text(formatTimestamp(message.timestamp))
-                .font(DesignTokens.Typography.caption2)
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            AppIdentityRow(
+                title: formatTimestamp(message.timestamp),
+                titleColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+            )
         }
     }
 

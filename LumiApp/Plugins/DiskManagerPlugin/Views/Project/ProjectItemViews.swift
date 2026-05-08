@@ -7,17 +7,17 @@ struct ProjectSectionHeader: View {
     var body: some View {
         HStack {
             Image(systemName: project.type.icon)
-                .foregroundColor(AppUI.Color.semantic.info)
+                .foregroundColor(Color(hex: "0A84FF"))
             Text(project.name)
-                .font(AppUI.Typography.bodyEmphasized)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             Spacer()
             Text(project.type.displayName)
                 .font(.caption)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(AppUI.Color.semantic.textTertiary.opacity(0.2))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .background(Color(hex: "98989E").opacity(0.2))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .clipShape(Capsule())
         }
     }
@@ -37,15 +37,15 @@ struct ProjectItemRow: View {
             .labelsHidden()
 
             Image(systemName: "folder.fill")
-                .foregroundColor(AppUI.Color.semantic.warning)
+                .foregroundColor(Color(hex: "FF9F0A"))
 
             VStack(alignment: .leading) {
                 Text(item.name)
                     .font(.body)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text(item.path)
                     .font(.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -54,7 +54,7 @@ struct ProjectItemRow: View {
 
             Text(viewModel.formatBytes(item.size))
                 .font(.monospacedDigit(.body)())
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .padding(.vertical, 4)
     }

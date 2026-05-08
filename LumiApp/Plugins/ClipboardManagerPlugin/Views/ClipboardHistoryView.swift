@@ -24,7 +24,7 @@ struct ClipboardHistoryView: View {
                 }
             }
             .padding(10)
-            .background(AppUI.Material.glass)
+            .background(Material.regularMaterial)
             .overlay(GlassDivider(), alignment: .bottom)
             
             // List
@@ -32,10 +32,10 @@ struct ClipboardHistoryView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 40))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text("No clipboard records")
-                        .font(AppUI.Typography.bodyEmphasized)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -67,7 +67,7 @@ struct ClipboardHistoryView: View {
             HStack {
                 Text("\(viewModel.items.count) items")
                     .font(.caption)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
                 GlassButton(title: "Clear All", style: .danger) {
                     viewModel.clearAll()
@@ -75,7 +75,7 @@ struct ClipboardHistoryView: View {
                 .help("Clear History")
             }
             .padding(8)
-            .background(AppUI.Material.glass)
+            .background(Material.regularMaterial)
             .overlay(GlassDivider(), alignment: .top)
         }
         .onAppear {
@@ -92,15 +92,15 @@ struct ClipboardItemRow: View {
             // Icon
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(AppUI.Material.glass)
+                    .fill(Material.regularMaterial)
                     .frame(width: 32, height: 32)
                 
 
                 Image(systemName: iconName(for: ClipboardItemType(rawValue: item.type) ?? .text))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
 //                Image(systemName: iconName(for: item.type))
-//                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+//                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             }
             
@@ -109,7 +109,7 @@ struct ClipboardItemRow: View {
                 Text(item.content)
                     .lineLimit(2)
                     .font(.system(size: 13))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 
                 HStack {
                     if let appName = item.appName {
@@ -117,18 +117,18 @@ struct ClipboardItemRow: View {
                             .font(.caption2)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 2)
-                            .background(AppUI.Color.semantic.textTertiary.opacity(0.15))
+                            .background(Color(hex: "98989E").opacity(0.15))
                             .cornerRadius(4)
                     }
                     
                     Text(item.timestamp, style: .time)
                         .font(.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     
                     if item.isPinned {
                         Image(systemName: "pin.fill")
                             .font(.caption2)
-                            .foregroundColor(AppUI.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                     }
                 }
             }

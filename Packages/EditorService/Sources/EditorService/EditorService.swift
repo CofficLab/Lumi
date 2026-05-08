@@ -84,6 +84,12 @@ public final class EditorService: ObservableObject {
     /// 当前打开的文件 URL
     public var currentFileURL: URL? { state.currentFileURL }
 
+    /// 当前文件是否仍在加载
+    public var isFileLoadInProgress: Bool { state.isFileLoadInProgress }
+
+    /// 最近一次文件加载错误
+    public var fileLoadErrorMessage: String? { state.fileLoadErrorMessage }
+
     /// 当前文件名
     public var fileName: String { state.fileName }
 

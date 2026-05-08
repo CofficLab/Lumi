@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LumiUI
 
 struct TextActionsSettingsView: View {
     @StateObject private var manager = TextSelectionManager.shared
@@ -15,11 +16,11 @@ struct TextActionsSettingsView: View {
                 .frame(maxWidth: .infinity, maxHeight: 1)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+                VStack(alignment: .leading, spacing: 16) {
                     generalSettingsCard
                     supportedActionsCard
                 }
-                .padding(AppUI.Spacing.lg)
+                .padding(24)
             }
         }
         .navigationTitle(String(localized: "Text Actions", table: "TextActions"))
@@ -33,10 +34,10 @@ struct TextActionsSettingsView: View {
 extension TextActionsSettingsView {
     private var generalSettingsCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("General Settings")
-                    .font(AppUI.Typography.title3)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Toggle(isOn: $isEnabled) {
                     Text("Enable Text Selection Menu")
@@ -50,28 +51,28 @@ extension TextActionsSettingsView {
     }
 
     private var permissionWarningView: some View {
-        HStack(spacing: AppUI.Spacing.sm) {
+        HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(AppUI.Color.semantic.warning)
+                .foregroundColor(Color(hex: "FF9F0A"))
             Text("Accessibility permission is required to detect text selection")
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             GlassButton(title: LocalizedStringKey(String(localized: "Open System Settings")), style: .secondary) {
                 openAccessibilitySettings()
             }
             .frame(maxWidth: 180)
         }
-        .padding(.top, AppUI.Spacing.xs)
+        .padding(.top, 4)
     }
 
     private var supportedActionsCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Supported Actions")
-                    .font(AppUI.Typography.title3)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                VStack(spacing: AppUI.Spacing.xs) {
+                VStack(spacing: 4) {
                     ForEach(TextActionType.allCases) { action in
                         actionRow(for: action)
                     }
@@ -85,13 +86,13 @@ extension TextActionsSettingsView {
             HStack {
                 Image(systemName: action.icon)
                     .frame(width: 20)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Text(action.title)
-                    .font(AppUI.Typography.body)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Spacer()
                 Image(systemName: "checkmark")
-                    .foregroundColor(AppUI.Color.semantic.success)
+                    .foregroundColor(Color(hex: "30D158"))
             }
         }
     }

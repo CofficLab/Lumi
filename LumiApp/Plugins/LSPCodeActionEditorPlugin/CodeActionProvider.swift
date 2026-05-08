@@ -385,7 +385,7 @@ struct CodeActionPanel: View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: "lightbulb.fill")
-                    .foregroundColor(AppUI.Color.semantic.warning)
+                    .foregroundColor(Color(hex: "FF9F0A"))
                 Text("Code Actions")
                     .font(.system(size: 12, weight: .semibold))
                 Spacer()
@@ -393,21 +393,21 @@ struct CodeActionPanel: View {
                    actions[selectedIndex].isPreferred {
                     Text("Preferred")
                         .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(AppUI.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
                         .background(
                             Capsule()
-                                .fill(AppUI.Color.semantic.warning.opacity(0.14))
+                                .fill(Color(hex: "FF9F0A").opacity(0.14))
                         )
                 }
                 Text("\(actions.count) available")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(AppUI.Color.semantic.textTertiary.opacity(0.08))
+            .background(Color(hex: "98989E").opacity(0.08))
 
             Divider().opacity(0.3)
 
@@ -436,8 +436,8 @@ struct CodeActionPanel: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            AppUI.Color.semantic.textPrimary.opacity(0.06),
-                            AppUI.Color.semantic.textTertiary.opacity(0.08)
+                            Color.adaptive(light: "1C1C1E", dark: "FFFFFF").opacity(0.06),
+                            Color(hex: "98989E").opacity(0.08)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -464,27 +464,27 @@ struct CodeActionRow: View {
             HStack(spacing: 8) {
                 Image(systemName: action.icon)
                     .font(.system(size: 12))
-                    .foregroundColor(isSelected ? .white : AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(isSelected ? .white : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 16)
 
                 Text(action.title)
                     .font(.system(size: 12))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                    .foregroundColor(isSelected ? .white : AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(isSelected ? .white : Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 if action.isPreferred {
                     Image(systemName: "star.fill")
                         .font(.system(size: 8))
-                        .foregroundColor(isSelected ? .yellow : AppUI.Color.semantic.warning.opacity(0.8))
+                        .foregroundColor(isSelected ? .yellow : Color(hex: "FF9F0A").opacity(0.8))
                 }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
                 isSelected
-                    ? RoundedRectangle(cornerRadius: 6).fill(AppUI.Color.semantic.primary.opacity(0.9))
+                    ? RoundedRectangle(cornerRadius: 6).fill(Color(hex: "7C6FFF").opacity(0.9))
                     : RoundedRectangle(cornerRadius: 4).fill(Color.clear)
             )
             .contentShape(Rectangle())
@@ -504,7 +504,7 @@ struct LightbulbIndicator: View {
         Button(action: onTap) {
             Image(systemName: "lightbulb")
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(hasActions ? AppUI.Color.semantic.warning : AppUI.Color.semantic.textSecondary)
+                .foregroundColor(hasActions ? Color(hex: "FF9F0A") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .opacity(hasActions ? 1 : 0.3)
                 .frame(width: 16, height: 16)
         }

@@ -56,8 +56,8 @@ struct ToolOutputView: View {
                 // 时间戳
                 if let timestamp = timestamp {
                     Text(formatTimestamp(timestamp))
-                        .font(AppUI.Typography.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
             }
         }
@@ -96,8 +96,8 @@ struct ToolOutputView: View {
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(displayedContent)
-                        .font(AppUI.Typography.code)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 13, weight: .regular, design: .monospaced))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(12)

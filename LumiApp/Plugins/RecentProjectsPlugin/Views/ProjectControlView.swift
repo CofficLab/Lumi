@@ -29,7 +29,7 @@ struct ProjectControlView: View {
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundColor(theme.workspaceTertiaryTextColor())
                 .rotationEffect(.degrees(isPopoverPresented ? 180 : 0))
-                .animation(.easeInOut(duration: DesignTokens.Duration.micro), value: isPopoverPresented)
+                .animation(.easeInOut(duration: 0.15), value: isPopoverPresented)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
@@ -63,16 +63,16 @@ struct ProjectControlView: View {
                 .font(.system(size: 9, weight: .medium))
                 .lineLimit(1)
         }
-        .foregroundColor(AppUI.Color.semantic.primary)
+        .foregroundColor(Color(hex: "7C6FFF"))
         .padding(.horizontal, 5)
         .padding(.vertical, 1.5)
         .background(
             Capsule()
-                .fill(AppUI.Color.semantic.primary.opacity(0.1))
+                .fill(Color(hex: "7C6FFF").opacity(0.1))
         )
         .overlay(
             Capsule()
-                .strokeBorder(AppUI.Color.semantic.primary.opacity(0.15), lineWidth: 0.5)
+                .strokeBorder(Color(hex: "7C6FFF").opacity(0.15), lineWidth: 0.5)
         )
     }
 

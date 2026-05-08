@@ -2,6 +2,7 @@ import Foundation
 import MagicKit
 
 actor ThemeMountainPlugin: SuperPlugin {
+    static let shared = ThemeMountainPlugin()
     static let id: String = "mountain"
     static let displayName: String = "Mountain"
     static let description: String = "Mountain gray app theme"

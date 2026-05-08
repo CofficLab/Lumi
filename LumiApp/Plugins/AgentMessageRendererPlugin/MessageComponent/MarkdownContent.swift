@@ -27,13 +27,13 @@ struct MarkdownContent: View {
                 default: return .system(size: 16, weight: .semibold)
                 }
             },
-            bodyFont: AppUI.Typography.body,
-            codeFont: AppUI.Typography.code,
+            bodyFont: .system(size: 15, weight: .regular),
+            codeFont: .system(size: 13, weight: .regular, design: .monospaced),
             blockSpacing: 8,
             listItemSpacing: 4,
-            codeBlockBackground: AppUI.Color.semantic.textSecondary.opacity(0.06),
-            quoteBorderColor: AppUI.Color.semantic.textSecondary.opacity(0.4),
-            tableHeaderBackground: AppUI.Color.semantic.textSecondary.opacity(0.1),
+            codeBlockBackground: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.06),
+            quoteBorderColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.4),
+            tableHeaderBackground: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.1),
             showLanguageLabel: true,
             textColor: theme.workspaceTextColor(),
             secondaryTextColor: theme.workspaceSecondaryTextColor()

@@ -30,27 +30,27 @@ struct XcodeCategorySection: View {
             Button(action: { withAnimation { isExpanded.toggle() } }, label: {
                 Image(systemName: "chevron.right")
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             })
             .buttonStyle(.plain)
 
             Image(systemName: category.iconName)
-                .foregroundColor(AppUI.Color.semantic.info)
+                .foregroundColor(Color(hex: "0A84FF"))
 
             VStack(alignment: .leading) {
                 Text(category.displayName)
-                    .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text(category.description)
                     .font(.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
             Spacer()
 
             Text(viewModel.formatBytes(categorySize))
                 .font(.monospacedDigit(.body)())
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             // 全选/反选 Checkbox
             Toggle("", isOn: Binding(
@@ -77,17 +77,17 @@ struct XcodeItemRow: View {
     var body: some View {
         HStack {
             Image(systemName: "doc")
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .padding(.leading, 24) // Indent
 
             VStack(alignment: .leading) {
                 Text(item.name)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text(item.path.path)
                     .font(.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -96,7 +96,7 @@ struct XcodeItemRow: View {
 
             Text(viewModel.formatBytes(item.size))
                 .font(.monospacedDigit(.caption)())
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             Toggle("", isOn: Binding(
                 get: { item.isSelected },

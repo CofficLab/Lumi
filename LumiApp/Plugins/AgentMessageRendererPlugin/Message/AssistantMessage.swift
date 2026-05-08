@@ -83,8 +83,8 @@ struct AssistantMessage: View {
 
                 // 时间戳
                 Text(formatTimestamp(message.timestamp))
-                    .font(AppUI.Typography.caption2)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 // 切换原始消息按钮
                 // RawMessageToggleButton(showRawMessage: $showRawMessage)

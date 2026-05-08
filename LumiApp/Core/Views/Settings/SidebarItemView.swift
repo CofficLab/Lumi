@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 设置侧边栏菜单项视图
 struct SidebarItemView: View {

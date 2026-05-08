@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 模型选择行组件 - 支持 hover 效果、选中/默认状态高亮
 struct ModelRow: View {
@@ -12,10 +13,10 @@ struct ModelRow: View {
     var body: some View {
         Button(action: action) {
             modelHeader
-                .padding(AppUI.Spacing.sm)
+                .padding(8)
                 .appSurface(
                     style: .custom(rowBackgroundColor),
-                    cornerRadius: AppUI.Radius.sm,
+                    cornerRadius: 8,
                     borderColor: borderColor,
                     lineWidth: borderWidth
                 )
@@ -34,10 +35,10 @@ struct ModelRow: View {
     
     @ViewBuilder
     private var modelHeader: some View {
-        HStack(spacing: AppUI.Spacing.sm) {
+        HStack(spacing: 8) {
             Text(model)
-                .font(AppUI.Typography.body)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .font(.system(size: 15, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             
             Spacer()
             
@@ -56,9 +57,9 @@ struct ModelRow: View {
     
     private var rowBackgroundColor: Color {
         if isSelected {
-            return AppUI.Color.semantic.primary.opacity(0.08)
+            return Color(hex: "7C6FFF").opacity(0.08)
         } else if isDefault {
-            return AppUI.Color.semantic.primary.opacity(0.04)
+            return Color(hex: "7C6FFF").opacity(0.04)
         } else if isHovered {
             return Color.white.opacity(0.08)
         } else {
@@ -68,11 +69,11 @@ struct ModelRow: View {
     
     private var borderColor: Color {
         if isSelected {
-            return AppUI.Color.semantic.primary
+            return Color(hex: "7C6FFF")
         } else if isHovered {
-            return AppUI.Color.semantic.primary.opacity(0.5)
+            return Color(hex: "7C6FFF").opacity(0.5)
         } else if isDefault {
-            return AppUI.Color.semantic.primary.opacity(0.3)
+            return Color(hex: "7C6FFF").opacity(0.3)
         } else {
             return Color.white.opacity(0.1)
         }

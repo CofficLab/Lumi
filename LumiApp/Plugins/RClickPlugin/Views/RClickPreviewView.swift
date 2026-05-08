@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct RClickPreviewView: View {
     let config: RClickConfig
@@ -15,8 +16,8 @@ struct RClickPreviewView: View {
         .frame(width: 220)
         .appSurface(
             style: .glass,
-            cornerRadius: AppUI.Radius.sm,
-            borderColor: AppUI.Color.basePalette.subtleBorder.opacity(0.12),
+            cornerRadius: 8,
+            borderColor: Color.white.opacity(0.12),
             lineWidth: 0.5
         )
     }

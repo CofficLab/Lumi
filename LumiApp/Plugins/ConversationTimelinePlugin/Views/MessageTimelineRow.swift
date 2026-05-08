@@ -9,7 +9,7 @@ struct MessageTimelineRow: View {
     @State private var isHovered = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: DesignTokens.Spacing.md) {
+        HStack(alignment: .top, spacing: 16) {
             // 时间轴线和节点
             timelineIndicator
 
@@ -19,15 +19,15 @@ struct MessageTimelineRow: View {
         .padding(.horizontal, 4)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(isHovered ? DesignTokens.Color.semantic.primary.opacity(0.15) : Color.clear)
+                .fill(isHovered ? Color(hex: "7C6FFF").opacity(0.15) : Color.clear)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(isHovered ? DesignTokens.Color.semantic.primary.opacity(0.3) : Color.clear, lineWidth: 1)
+                .stroke(isHovered ? Color(hex: "7C6FFF").opacity(0.3) : Color.clear, lineWidth: 1)
         )
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
+            withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
         }
@@ -66,20 +66,20 @@ struct MessageTimelineRow: View {
 
                 Text(formattedTime)
                     .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
             // 消息预览（只显示前50个字符）
             Text(messagePreview)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
 
             // 元数据行（模型 / token 统计）
             metadataRow
         }
-        .padding(DesignTokens.Spacing.sm)
+        .padding(8)
     }
 
     // MARK: - 元数据行（模型 + Token）
@@ -100,7 +100,7 @@ struct MessageTimelineRow: View {
                         Text("\(item.providerId!) / \(item.modelName!)")
                             .font(.system(size: 10))
                     }
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
 
                 // Token 信息（仅在有值时显示）
@@ -117,10 +117,10 @@ struct MessageTimelineRow: View {
                         if totalTokens > 0 {
                             Text("总计 \(formatToken(totalTokens))")
                                 .font(.system(size: 10))
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
                     }
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
             }
         }

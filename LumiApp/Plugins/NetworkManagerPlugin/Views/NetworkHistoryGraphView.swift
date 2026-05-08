@@ -30,31 +30,31 @@ struct NetworkHistoryGraphView: View {
                             GraphArea(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
                                 .fill(
                                     LinearGradient(
-                                        gradient: Gradient(colors: [AppUI.Color.semantic.success.opacity(0.5), AppUI.Color.semantic.success.opacity(0.1)]),
+                                        gradient: Gradient(colors: [Color(hex: "30D158").opacity(0.5), Color(hex: "30D158").opacity(0.1)]),
                                         startPoint: .top,
                                         endPoint: .bottom
                                     )
                                 )
 
                             GraphLine(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
-                                .stroke(AppUI.Color.semantic.success, lineWidth: 1.5)
+                                .stroke(Color(hex: "30D158"), lineWidth: 1.5)
 
                             // Upload Graph (Red)
                             GraphArea(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
                                 .fill(
                                     LinearGradient(
-                                        gradient: Gradient(colors: [AppUI.Color.semantic.error.opacity(0.5), AppUI.Color.semantic.error.opacity(0.1)]),
+                                        gradient: Gradient(colors: [Color(hex: "FF453A").opacity(0.5), Color(hex: "FF453A").opacity(0.1)]),
                                         startPoint: .top,
                                         endPoint: .bottom
                                     )
                                 )
 
                             GraphLine(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
-                                .stroke(AppUI.Color.semantic.error, lineWidth: 1.5)
+                                .stroke(Color(hex: "FF453A"), lineWidth: 1.5)
                         } else {
                             Text("收集数据中...")
                                 .font(.caption)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
 
@@ -65,14 +65,14 @@ struct NetworkHistoryGraphView: View {
                                 path.move(to: CGPoint(x: hoverLocation.x, y: 0))
                                 path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
                             }
-                            .stroke(AppUI.Color.semantic.textPrimary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .stroke(Color.adaptive(light: "1C1C1E", dark: "FFFFFF").opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                             // Info Tooltip
                             TooltipView(point: point, timeRange: timeRange)
                                 .position(x: clampedX(hoverLocation.x, width: geometry.size.width), y: 40)
                         }
                     }
-                    .background(AppUI.Material.glass.opacity(0.01))
+                    .background(Color.white.opacity(0.01))
                     .onContinuousHover { phase in
                         switch phase {
                         case let .active(location):
@@ -105,7 +105,7 @@ struct NetworkHistoryGraphView: View {
                     if index > 0 {
                         Text(formatYValue(for: index))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
                     }
                 }
@@ -113,7 +113,7 @@ struct NetworkHistoryGraphView: View {
                 // 底部 0 标签
                 Text("0")
                     .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .padding(.trailing, 4)
         }
@@ -131,7 +131,7 @@ struct NetworkHistoryGraphView: View {
                     if let firstPoint = dataPoints.first {
                         Text(formatXAxisDate(firstPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
 
                     Spacer()
@@ -140,7 +140,7 @@ struct NetworkHistoryGraphView: View {
                     if let lastPoint = dataPoints.last {
                         Text(formatXAxisDate(lastPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                 }
                 .padding(.horizontal, 8)
@@ -159,7 +159,7 @@ struct NetworkHistoryGraphView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                .stroke(AppUI.Color.semantic.textTertiary.opacity(0.2), lineWidth: 0.5)
+                .stroke(Color(hex: "98989E").opacity(0.2), lineWidth: 0.5)
             }
         }
     }
@@ -223,18 +223,18 @@ struct TooltipView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(formatDate(point.timestamp))
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             HStack(spacing: 8) {
                 HStack(spacing: 4) {
-                    Circle().fill(AppUI.Color.semantic.success).frame(width: 6, height: 6)
+                    Circle().fill(Color(hex: "30D158")).frame(width: 6, height: 6)
                     Text(point.downloadSpeed.formattedNetworkSpeed())
                         .font(.system(size: 11, weight: .bold))
                         .monospacedDigit()
                 }
 
                 HStack(spacing: 4) {
-                    Circle().fill(AppUI.Color.semantic.error).frame(width: 6, height: 6)
+                    Circle().fill(Color(hex: "FF453A")).frame(width: 6, height: 6)
                     Text(point.uploadSpeed.formattedNetworkSpeed())
                         .font(.system(size: 11, weight: .bold))
                         .monospacedDigit()
@@ -242,7 +242,7 @@ struct TooltipView: View {
             }
         }
         .padding(8)
-        .background(AppUI.Material.glass)
+        .background(Material.regularMaterial)
         .cornerRadius(6)
         .shadow(radius: 2)
     }

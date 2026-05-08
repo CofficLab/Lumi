@@ -32,17 +32,17 @@ struct RawErrorDetailView: View {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 9, weight: .semibold))
                     Text(toggleText)
-                        .font(AppUI.Typography.caption2)
+                        .font(.system(size: 11, weight: .regular))
                 }
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
             }
             .buttonStyle(.plain)
 
             if isExpanded {
                 ScrollView(.horizontal, showsIndicators: false) {
                     Text(rawDetail)
-                        .font(AppUI.Typography.footnote.monospaced())
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .font(.system(size: 13, weight: .regular, design: .monospaced))
+                        .foregroundColor(Color(hex: "98989E"))
                         .textSelection(.enabled)
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -66,14 +66,14 @@ struct SpecialErrorContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(AppUI.Typography.callout)
+                .font(.system(size: 16, weight: .medium))
                 .fontWeight(.semibold)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             if !description.isEmpty {
                 Text(description)
-                    .font(AppUI.Typography.caption1)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -82,10 +82,10 @@ struct SpecialErrorContentView: View {
                 HStack(alignment: .top, spacing: 6) {
                     Image(systemName: "lightbulb.fill")
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
                     Text(suggestion)
-                        .font(AppUI.Typography.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.top, 4)
@@ -143,8 +143,8 @@ struct DefaultErrorView: View {
                     content: message,
                     monospaced: false
                 )
-                .font(AppUI.Typography.caption1)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
             // 底部：原始 HTTP 错误折叠区域

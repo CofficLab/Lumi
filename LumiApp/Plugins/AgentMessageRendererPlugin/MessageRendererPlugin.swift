@@ -13,6 +13,7 @@ import SwiftUI
 ///
 /// 渲染器实现在 `Renderers/` 目录下，每个渲染器一个文件。
 actor MessageRendererPlugin: SuperPlugin {
+    static let shared = MessageRendererPlugin()
     static let id = "CoreMessageRenderer"
     static let displayName = String(localized: "核心消息渲染器", table: "CoreMessageRenderer")
     static let description = String(localized: "提供内置消息类型的渲染支持", table: "CoreMessageRenderer")

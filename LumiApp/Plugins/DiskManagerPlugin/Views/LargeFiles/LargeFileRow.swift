@@ -16,13 +16,13 @@ struct LargeFileRow: View {
 
             VStack(alignment: .leading) {
                 Text(item.name)
-                    .font(AppUI.Typography.bodyEmphasized)
+                    .font(.system(size: 15, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text(item.path)
                     .font(.caption)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -32,7 +32,7 @@ struct LargeFileRow: View {
             VStack(alignment: .trailing) {
                 Text(viewModel.formatBytes(item.size))
                     .font(.monospacedDigit(.body)())
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 AppTag(item.fileType.rawValue.capitalized, style: .subtle)
             }
@@ -42,7 +42,7 @@ struct LargeFileRow: View {
                     viewModel.revealInFinder(item)
                 }) {
                     Image(systemName: "folder")
-                        .foregroundColor(AppUI.Color.semantic.info)
+                        .foregroundColor(Color(hex: "0A84FF"))
                 }
                 .buttonStyle(.plain)
                 .help("在访达中显示")
@@ -51,7 +51,7 @@ struct LargeFileRow: View {
                     showDeleteConfirm = true
                 }) {
                     Image(systemName: "trash")
-                        .foregroundColor(AppUI.Color.semantic.error)
+                        .foregroundColor(Color(hex: "FF453A"))
                 }
                 .buttonStyle(.plain)
                 .help("删除文件")

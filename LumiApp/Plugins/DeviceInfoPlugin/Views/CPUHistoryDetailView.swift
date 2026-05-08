@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import LumiUI
 
 struct CPUHistoryDetailView: View {
     @ObservedObject private var historyService = CPUHistoryService.shared
@@ -11,7 +12,7 @@ struct CPUHistoryDetailView: View {
             HStack {
                 Text(String(localized: "CPU Load Trend", table: "DeviceInfo"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Spacer()
 

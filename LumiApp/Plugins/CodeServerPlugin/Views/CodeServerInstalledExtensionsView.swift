@@ -12,22 +12,22 @@ struct InstalledExtensionsView: View {
                     .controlSize(.small)
                 Text("加载扩展列表...")
                     .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .frame(maxWidth: .infinity, minHeight: 150)
         } else if manager.installedExtensions.isEmpty {
             VStack(spacing: 8) {
                 Image(systemName: "puzzlepiece.extension")
                     .font(.system(size: 24))
-                    .foregroundColor(DesignTokens.Color.semantic.textDisabled)
+                    .foregroundColor(Color.adaptive(light: "BDBDBD", dark: "48484F"))
 
                 Text("未安装任何扩展")
                     .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 Text("点击上方「市场」标签搜索安装扩展")
                     .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             }
             .frame(maxWidth: .infinity, minHeight: 150)
         } else {
@@ -70,13 +70,13 @@ struct ExtensionRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(ext.id)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .lineLimit(1)
 
                 if let version = ext.version {
                     Text("v\(version)")
                         .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                 }
             }
 
@@ -138,7 +138,7 @@ struct ExtensionRowView: View {
                 }
             }
             .buttonStyle(.plain)
-            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             .help("卸载扩展")
             .disabled(isUninstalling)
         }

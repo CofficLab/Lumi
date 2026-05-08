@@ -364,16 +364,16 @@ struct RAGStatusDetailView: View {
     let isNotInitialized: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             // 标题
-            HStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: 8) {
                 Image(systemName: "doc.text.magnifyingglass")
                     .font(.system(size: 16))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
 
                 Text("RAG 索引状态")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
             }
@@ -396,18 +396,18 @@ struct RAGStatusDetailView: View {
 
     @ViewBuilder
     private func indexingView() -> some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 8) {
                 ProgressView()
                     .scaleEffect(0.8)
 
                 Text("正在索引...")
                     .font(.system(size: 13))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
             }
 
             if let event = progressEvent {
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                VStack(alignment: .leading, spacing: 8) {
                     RAGProgressRow(label: "已扫描", value: "\(event.scannedFiles) / \(event.totalFiles) 文件")
                     RAGProgressRow(label: "已索引", value: "\(event.indexedFiles) 文件")
                     RAGProgressRow(label: "已跳过", value: "\(event.skippedFiles) 文件")
@@ -417,11 +417,11 @@ struct RAGStatusDetailView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("当前文件")
                                 .font(.system(size: 11))
-                                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                             Text((event.currentFilePath as NSString).lastPathComponent)
                                 .font(.system(size: 10))
-                                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                                .foregroundColor(Color(hex: "98989E"))
                                 .lineLimit(2)
                         }
                     }
@@ -432,7 +432,7 @@ struct RAGStatusDetailView: View {
 
     @ViewBuilder
     private func indexStatusView(_ status: RAGIndexStatus) -> some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+        VStack(alignment: .leading, spacing: 8) {
             RAGInfoRow(label: "文件数量", value: "\(status.fileCount)")
             RAGInfoRow(label: "文档块数量", value: "\(status.chunkCount)")
             RAGInfoRow(label: "最后索引", value: formatIndexTime(status.lastIndexedAt))
@@ -440,13 +440,13 @@ struct RAGStatusDetailView: View {
             RAGInfoRow(label: "向量维度", value: "\(status.embeddingDimension)")
 
             if status.isStale {
-                HStack(spacing: DesignTokens.Spacing.sm) {
+                HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(DesignTokens.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
 
                     Text("索引已过期，建议重新索引")
                         .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
                 }
             }
         }
@@ -454,56 +454,56 @@ struct RAGStatusDetailView: View {
 
     @ViewBuilder
     private var notInitializedView: some View {
-        VStack(spacing: DesignTokens.Spacing.md) {
+        VStack(spacing: 16) {
             Image(systemName: "poweroff")
                 .font(.system(size: 32))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
 
             Text("RAG 索引未初始化")
                 .font(.system(size: 13))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             Text("RAG 服务将在插件启用时自动初始化")
                 .font(.system(size: 11))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.lg)
+        .padding(.vertical, 24)
     }
 
     @ViewBuilder
     private var errorView: some View {
-        VStack(spacing: DesignTokens.Spacing.md) {
+        VStack(spacing: 16) {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 32))
-                .foregroundColor(DesignTokens.Color.semantic.error)
+                .foregroundColor(Color(hex: "FF453A"))
 
             Text("获取索引状态失败")
                 .font(.system(size: 13))
-                .foregroundColor(DesignTokens.Color.semantic.error)
+                .foregroundColor(Color(hex: "FF453A"))
 
             if let error = errorMessage {
                 Text(error)
                     .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.lg)
+        .padding(.vertical, 24)
     }
 
     @ViewBuilder
     private var loadingView: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(spacing: 8) {
             ProgressView()
                 .scaleEffect(0.8)
 
             Text("正在检查索引状态...")
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.lg)
+        .padding(.vertical, 24)
     }
 
     private func formatIndexTime(_ date: Date) -> String {
@@ -531,15 +531,15 @@ struct RAGProgressRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .frame(width: 70, alignment: .leading)
 
             Text(value)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Spacer()
         }
@@ -552,15 +552,15 @@ struct RAGInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .frame(width: 70, alignment: .leading)
 
             Text(value)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Spacer()
         }

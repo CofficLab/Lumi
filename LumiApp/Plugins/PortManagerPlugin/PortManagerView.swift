@@ -24,7 +24,7 @@ struct PortManagerView: View {
             // Toolbar / Header
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 GlassTextField(
                     title: LocalizedStringKey(String(localized: "Search port, PID, or process name", table: "PortManager")),
                     text: $searchText
@@ -38,7 +38,7 @@ struct PortManagerView: View {
                 .disabled(isLoading)
             }
             .padding()
-            .background(AppUI.Material.glass)
+            .background(Material.regularMaterial)
 
             GlassDivider()
 
@@ -57,10 +57,10 @@ struct PortManagerView: View {
                     VStack {
                         Image(systemName: "network.slash")
                             .font(.largeTitle)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         Text("No Listening Ports")
-                            .font(AppUI.Typography.bodyEmphasized)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -122,12 +122,12 @@ struct PortRowView: View {
                     Text(port.port)
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(AppUI.Color.semantic.info)
+                        .foregroundColor(Color(hex: "0A84FF"))
                         .frame(minWidth: 50, alignment: .leading)
 
                     Text(port.command)
-                        .font(AppUI.Typography.bodyEmphasized)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Spacer()
                 }
@@ -140,23 +140,23 @@ struct PortRowView: View {
                         .monospaced()
 
                     Text("•")
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     Text("PID: \(port.pid)")
                         .font(.caption)
                         .monospacedDigit()
                         .padding(.horizontal, 4)
-                        .background(AppUI.Color.semantic.textTertiary.opacity(0.2))
+                        .background(Color(hex: "98989E").opacity(0.2))
                         .cornerRadius(4)
 
                     Text("•")
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     Text(port.user)
                         .font(.caption)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
             Spacer()
@@ -165,7 +165,7 @@ struct PortRowView: View {
                 showConfirm = true
             }) {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(AppUI.Color.semantic.error.opacity(0.8))
+                    .foregroundColor(Color(hex: "FF453A").opacity(0.8))
                     .font(.title2)
             }
             .buttonStyle(.borderless)

@@ -9,12 +9,12 @@ struct MarketSearchView: View {
     @State private var debounceTask: Task<Void, Never>?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+        VStack(alignment: .leading, spacing: 8) {
             // 搜索栏
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 TextField("搜索扩展 (如: python, theme)", text: $localSearchQuery)
                     .textFieldStyle(.plain)
@@ -31,7 +31,7 @@ struct MarketSearchView: View {
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 12))
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     }
                     .buttonStyle(.plain)
                 }
@@ -111,10 +111,10 @@ struct CategoryButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 10))
-                .foregroundColor(isSelected ? .white : DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(isSelected ? .white : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(isSelected ? DesignTokens.Color.semantic.primary : Color.gray.opacity(0.1))
+                .background(isSelected ? Color(hex: "7C6FFF") : Color.gray.opacity(0.1))
                 .cornerRadius(4)
         }
         .buttonStyle(.plain)
@@ -130,7 +130,7 @@ struct SearchLoadingView: View {
                 .controlSize(.small)
             Text("搜索中...")
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, minHeight: 200)
     }
@@ -145,15 +145,15 @@ struct SearchErrorView: View {
         VStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 24))
-                .foregroundColor(DesignTokens.Color.semantic.warning)
+                .foregroundColor(Color(hex: "FF9F0A"))
 
             Text("搜索失败")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Text(message)
                 .font(.system(size: 11))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, minHeight: 200)
@@ -167,11 +167,11 @@ struct SearchEmptyView: View {
         VStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 24))
-                .foregroundColor(DesignTokens.Color.semantic.textDisabled)
+                .foregroundColor(Color.adaptive(light: "BDBDBD", dark: "48484F"))
 
             Text("未找到相关扩展")
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, minHeight: 200)
     }
@@ -184,15 +184,15 @@ struct SearchPlaceholderView: View {
         VStack(spacing: 12) {
             Image(systemName: "square.grid.2x2")
                 .font(.system(size: 32))
-                .foregroundColor(DesignTokens.Color.semantic.textDisabled)
+                .foregroundColor(Color.adaptive(light: "BDBDBD", dark: "48484F"))
 
             Text("Open VSX 扩展市场")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Text("搜索并安装来自 Open VSX 的扩展\n支持数千个开源扩展")
                 .font(.system(size: 11))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .multilineTextAlignment(.center)
 
             Link(destination: URL(string: "https://open-vsx.org")!) {
@@ -202,7 +202,7 @@ struct SearchPlaceholderView: View {
                     Text("访问 Open VSX 官网")
                         .font(.system(size: 11))
                 }
-                .foregroundColor(DesignTokens.Color.semantic.primary)
+                .foregroundColor(Color(hex: "7C6FFF"))
             }
             .buttonStyle(.plain)
         }
@@ -219,7 +219,7 @@ struct PopularLoadingView: View {
                 .controlSize(.small)
             Text("正在加载热门扩展...")
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, minHeight: 200)
     }
@@ -288,7 +288,7 @@ struct MarketExtensionRowView: View {
                     .overlay(
                         Image(systemName: "puzzlepiece.extension")
                             .font(.system(size: 14))
-                            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     )
             }
             .frame(width: 32, height: 32)
@@ -299,12 +299,12 @@ struct MarketExtensionRowView: View {
                 HStack(spacing: 4) {
                     Text(ext.displayName)
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .lineLimit(1)
 
                     Text(ext.version)
                         .font(.system(size: 9))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                         .padding(.horizontal, 4)
                         .padding(.vertical, 1)
                         .background(Color.gray.opacity(0.1))
@@ -314,7 +314,7 @@ struct MarketExtensionRowView: View {
                 if let description = ext.description, !description.isEmpty {
                     Text(description)
                         .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .lineLimit(2)
                 }
 
@@ -327,7 +327,7 @@ struct MarketExtensionRowView: View {
                             Text(ext.formattedDownloads)
                                 .font(.system(size: 9))
                         }
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                     }
 
                     if !ext.ratingStars.isEmpty {
@@ -337,12 +337,12 @@ struct MarketExtensionRowView: View {
                             Text(String(format: "%.1f", ext.averageRating ?? 0))
                                 .font(.system(size: 9))
                         }
-                        .foregroundColor(DesignTokens.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
                     }
 
                     Text(ext.publisher ?? "")
                         .font(.system(size: 9))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                 }
             }
 
@@ -372,7 +372,7 @@ struct MarketExtensionRowView: View {
                 } else {
                     Label("已安装", systemImage: "checkmark")
                         .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.success)
+                        .foregroundColor(Color(hex: "30D158"))
                 }
             } else {
                 Button(action: {
