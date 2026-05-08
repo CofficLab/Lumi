@@ -113,6 +113,29 @@ extension ChatHistoryService {
         }
     }
 
+    // MARK: - 更新对话模型偏好
+
+    /// 更新对话的供应商/模型偏好
+    /// - Parameters:
+    ///   - conversation: 目标对话
+    ///   - providerId: 供应商 ID，nil 表示清除对话级偏好（回退到项目偏好）
+    ///   - model: 模型名称，nil 表示清除对话级偏好（回退到项目偏好）
+    func updateModelPreference(_ conversation: Conversation, providerId: String?, model: String?) {
+        conversation.providerId = providerId
+        conversation.model = model
+        conversation.updatedAt = Date()
+
+        saveConversation(conversation)
+
+        if Self.verbose {
+            if let providerId, let model {
+                AppLogger.core.info("\(Self.t)🎯 已保存对话 '\(conversation.title)' 的模型偏好：\(providerId) - \(model)")
+            } else {
+                AppLogger.core.info("\(Self.t)🎯 已清除对话 '\(conversation.title)' 的模型偏好")
+            }
+        }
+    }
+
     // MARK: - 加载对话
 
     /// 获取所有对话

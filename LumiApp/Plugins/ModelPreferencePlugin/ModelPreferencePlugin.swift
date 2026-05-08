@@ -14,7 +14,7 @@ actor ModelPreferencePlugin: SuperPlugin, SuperLog {
     static let id = "ModelPreference"
     static let navigationId: String? = nil
     static let displayName = String(localized: "Model Preference", table: "ModelPreference")
-    static let description = String(localized: "Remember current project's provider and model", table: "ModelPreference")
+    static let description = String(localized: "Remember provider and model per conversation and project", table: "ModelPreference")
     static let iconName = "target"
     static var order: Int { 100 }
 
