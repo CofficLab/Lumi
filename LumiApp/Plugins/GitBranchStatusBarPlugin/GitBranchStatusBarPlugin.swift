@@ -3,7 +3,7 @@ import SwiftUI
 import Foundation
 import os
 
-/// Git 状态栏插件：在 Agent 模式底部状态栏显示当前项目 Git 状态
+/// Git 插件：在 Agent 模式底部状态栏显示当前项目 Git 状态
 actor GitPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
     nonisolated static let emoji = "🌿"
@@ -24,6 +24,6 @@ actor GitPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
-        return AnyView(GitStatusBarView())
+        return AnyView(GitPluginStatusBarView())
     }
 }

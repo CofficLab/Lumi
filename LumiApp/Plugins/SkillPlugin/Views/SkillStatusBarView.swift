@@ -31,7 +31,7 @@ struct SkillStatusBarView: View {
                 }
             }
         }
-        // 与 GitBranchStatusBarView 保持一致的刷新时机
+        // 与 GitPluginStatusBarView 保持一致的刷新时机
         .onAppear {
             refreshSkills()
         }
