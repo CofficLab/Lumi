@@ -1,6 +1,8 @@
 import Foundation
 import os
 import MagicKit
+import SwiftUI
+import Combine
 
 /// 供应商+模型可用性状态
 enum LLMAvailabilityStatus: Equatable, Sendable {
@@ -54,7 +56,7 @@ enum LLMAvailabilityLog: SuperLog {
 
 /// LLM 可用性存储
 /// 维护当前实际可用的供应商+模型列表
-final class LLMAvailabilityStore: @unchecked Sendable {
+final class LLMAvailabilityStore: ObservableObject, @unchecked Sendable {
     static let shared = LLMAvailabilityStore()
 
     private let lock = NSRecursiveLock()
@@ -125,6 +127,11 @@ final class LLMAvailabilityStore: @unchecked Sendable {
         _providers[providerIndex].models[modelIndex].status = status
         lock.unlock()
 
+        // 通知 UI 更新
+        DispatchQueue.main.async { [weak self] in
+            self?.objectWillChange.send()
+        }
+
         switch status {
         case .checking:
             if LLMAvailabilityLog.verbose {
@@ -148,6 +155,11 @@ final class LLMAvailabilityStore: @unchecked Sendable {
         lock.lock()
         _isCheckingAll = value
         lock.unlock()
+
+        // 通知 UI 更新
+        DispatchQueue.main.async { [weak self] in
+            self?.objectWillChange.send()
+        }
 
         if LLMAvailabilityLog.verbose {
             LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)\(value ? "🚀 开始" : "🏁 结束")全局可用性检测")
