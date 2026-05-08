@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import LumiUI
 
 struct MemoryHistoryDetailView: View {
     @ObservedObject private var historyService = MemoryHistoryService.shared
@@ -10,7 +11,7 @@ struct MemoryHistoryDetailView: View {
             HStack {
                 Text(String(localized: "Memory Usage Trend", table: "DeviceInfo"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Spacer()
 

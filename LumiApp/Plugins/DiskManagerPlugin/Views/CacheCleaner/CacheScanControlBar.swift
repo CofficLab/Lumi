@@ -17,18 +17,18 @@ struct CacheScanControlBar: View {
                     title: { Text(viewModel.isScanning ? "停止扫描" : "扫描缓存") },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "doc.badge.gearshape") }
                 )
-                .font(AppUI.Typography.bodyEmphasized)
+                .font(.system(size: 15, weight: .medium))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? AppUI.Color.semantic.error : AppUI.Color.semantic.warning)
+            .tint(viewModel.isScanning ? Color(hex: "FF453A") : Color(hex: "FF9F0A"))
 
             Spacer()
 
             Text("扫描范围：用户主目录")
                 .font(.caption)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .padding(.horizontal)
     }

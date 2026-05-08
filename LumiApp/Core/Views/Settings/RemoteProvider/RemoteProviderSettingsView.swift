@@ -1,5 +1,6 @@
 import os
 import SwiftUI
+import LumiUI
 import MagicKit
 
 /// 云端大模型设置视图（仅展示远程/API 供应商）
@@ -49,13 +50,13 @@ struct RemoteProviderSettingsView: View, SuperLog {
     // MARK: - Body
 
     var body: some View {
-        HStack(alignment: .top, spacing: AppUI.Spacing.lg) {
+        HStack(alignment: .top, spacing: 24) {
             // 云端供应商列表（固定宽度）
             cloudProviderCard
                 .frame(maxWidth: 320, alignment: .topLeading)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
+                VStack(alignment: .leading, spacing: 24) {
                     // 配置卡片（API Key + 模型列表）
                     if selectedProvider != nil {
                         configurationCard
@@ -63,10 +64,10 @@ struct RemoteProviderSettingsView: View, SuperLog {
 
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, AppUI.Spacing.lg)
+                .padding(.horizontal, 24)
             }
         }
-        .padding(AppUI.Spacing.lg)
+        .padding(24)
         .onAppear(perform: onAppear)
         .onChange(of: selectedProviderId) {
             if Self.verbose {
@@ -90,7 +91,7 @@ extension RemoteProviderSettingsView {
     /// 云端供应商卡片（固定）
     private var cloudProviderCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+            VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "cloud.fill",
                     title: "云端 LLM 供应商",
@@ -107,7 +108,7 @@ extension RemoteProviderSettingsView {
     /// 供应商纵向列表（适配大量供应商）
     private var providerList: some View {
         ScrollView {
-            LazyVStack(spacing: AppUI.Spacing.xs) {
+            LazyVStack(spacing: 4) {
                 ForEach(remoteProviders) { provider in
                     ProviderButton(
                         provider: provider,
@@ -120,14 +121,14 @@ extension RemoteProviderSettingsView {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .padding(.vertical, AppUI.Spacing.xs)
+            .padding(.vertical, 4)
         }
     }
 
     /// 配置卡片
     private var configurationCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.xl) {
+            VStack(alignment: .leading, spacing: 32) {
                 // API Key 区块
                 apiKeySection
 
@@ -139,7 +140,7 @@ extension RemoteProviderSettingsView {
 
     /// API Key 配置区块
     private var apiKeySection: some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             GlassSectionHeader(
                 icon: "key.fill",
                 title: "API 密钥",
@@ -149,21 +150,21 @@ extension RemoteProviderSettingsView {
             GlassDivider()
 
             GlassRow {
-                HStack(spacing: AppUI.Spacing.md) {
+                HStack(spacing: 16) {
                     Image(systemName: "lock.fill")
-                        .foregroundColor(AppUI.Color.semantic.warning)
+                        .foregroundColor(Color(hex: "FF9F0A"))
 
                     TextField("输入 API Key", text: $apiKey)
                         .textFieldStyle(.plain)
                         .textContentType(.password)
-                        .font(AppUI.Typography.body)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Spacer()
 
                     if !apiKey.isEmpty {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(AppUI.Color.semantic.success)
+                            .foregroundColor(Color(hex: "30D158"))
                     }
                 }
             }
@@ -172,7 +173,7 @@ extension RemoteProviderSettingsView {
 
     /// 模型列表区块
     private var modelSection: some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             GlassSectionHeader(
                 icon: "cpu.fill",
                 title: "可用模型",

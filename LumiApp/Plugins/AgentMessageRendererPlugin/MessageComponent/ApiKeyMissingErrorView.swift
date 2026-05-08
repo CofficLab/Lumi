@@ -50,13 +50,13 @@ struct ApiKeyMissingErrorView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(titleText)
-                        .font(AppUI.Typography.callout)
+                        .font(.system(size: 16, weight: .medium))
                         .fontWeight(.semibold)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text(descriptionText)
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
             }
 
@@ -65,10 +65,10 @@ struct ApiKeyMissingErrorView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
                         Text(provider.displayName)
-                            .font(AppUI.Typography.caption1)
+                            .font(.system(size: 12, weight: .regular))
                         Spacer()
                     }
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     AppInputField(
                         LocalizedStringKey(

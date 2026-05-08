@@ -208,8 +208,8 @@ extension MessageListView {
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
                 .background(
-                    RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
-                        .fill(AppUI.Color.semantic.textSecondary.opacity(0.08))
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.08))
                 )
                 .accessibilityLabel(String(localized: "Load Earlier Messages", table: "AgentChat"))
                 .accessibilityHint(String(localized: "Load Earlier Messages Hint", table: "AgentChat"))

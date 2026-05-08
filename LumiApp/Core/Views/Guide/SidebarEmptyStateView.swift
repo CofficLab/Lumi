@@ -16,11 +16,11 @@ struct SidebarEmptyStateView: View {
                 .foregroundColor(theme.workspaceSecondaryTextColor())
 
             Text(message)
-                .font(AppUI.Typography.bodyEmphasized)
+                .font(.system(size: 15, weight: .medium))
                 .foregroundColor(theme.workspaceSecondaryTextColor())
 
             Text(subtitle)
-                .font(AppUI.Typography.caption1)
+                .font(.system(size: 12, weight: .regular))
                 .foregroundColor(theme.workspaceTertiaryTextColor())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

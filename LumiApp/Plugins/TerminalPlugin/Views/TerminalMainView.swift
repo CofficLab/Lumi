@@ -1,5 +1,6 @@
 import SwiftTerm
 import SwiftUI
+import LumiUI
 
 struct TerminalMainView: View {
     @EnvironmentObject private var projectVM: ProjectVM
@@ -21,7 +22,7 @@ struct TerminalMainView: View {
                     // 标签之间的分隔线（最后一个标签后不加）
                     if index < viewModel.sessions.count - 1 {
                         Rectangle()
-                            .fill(AppUI.Color.semantic.textTertiary.opacity(0.3))
+                            .fill(Color(hex: "98989E").opacity(0.3))
                             .frame(width: 1, height: 14)
                             .padding(.horizontal, 2)
                     }
@@ -32,7 +33,7 @@ struct TerminalMainView: View {
                 }) {
                     Image(systemName: "plus")
                         .frame(width: 24, height: 24)
-                        .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
+                        .appSurface(style: .glass, cornerRadius: 8)
                 }
                 .buttonStyle(.plain)
                 .padding(.leading, 4)
@@ -44,7 +45,7 @@ struct TerminalMainView: View {
             // 这样可以避免 Tab 切换时视图被销毁重建导致的状态丢失
             if viewModel.sessions.isEmpty {
                 Text("No open terminals")
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ZStack {

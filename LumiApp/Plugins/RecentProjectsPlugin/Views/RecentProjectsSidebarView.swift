@@ -67,7 +67,7 @@ struct RecentProjectsSidebarView: View {
                     Text(project.name)
                         .font(.system(size: 12))
                         .fontWeight(isSelected ? .semibold : .regular)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .lineLimit(1)
 
                     if hasBranch {
@@ -121,16 +121,16 @@ struct RecentProjectsSidebarView: View {
                 .font(.system(size: 9, weight: .medium))
                 .lineLimit(1)
         }
-        .foregroundColor(AppUI.Color.semantic.primary)
+        .foregroundColor(Color(hex: "7C6FFF"))
         .padding(.horizontal, 5)
         .padding(.vertical, 1.5)
         .background(
             Capsule()
-                .fill(AppUI.Color.semantic.primary.opacity(0.1))
+                .fill(Color(hex: "7C6FFF").opacity(0.1))
         )
         .overlay(
             Capsule()
-                .strokeBorder(AppUI.Color.semantic.primary.opacity(0.15), lineWidth: 0.5)
+                .strokeBorder(Color(hex: "7C6FFF").opacity(0.15), lineWidth: 0.5)
         )
     }
 
@@ -143,7 +143,7 @@ struct RecentProjectsSidebarView: View {
                 .foregroundColor(.secondary.opacity(0.5))
             Text(String(localized: "No Recent Projects", table: "RecentProjects"))
                 .font(.system(size: 11))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 20)
@@ -170,7 +170,7 @@ struct RecentProjectsSidebarView: View {
         .foregroundColor(.white)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(AppUI.Color.semantic.primary)
+                .fill(Color(hex: "7C6FFF"))
         )
         .fileImporter(
             isPresented: $isFileImporterPresented,

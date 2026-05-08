@@ -8,8 +8,8 @@ struct AppLoadedPluginsDetailView: View {
 
     private var rowBackground: Color {
         colorScheme == .light
-            ? DesignTokens.Color.semantic.primary.opacity(0.06)
-            : DesignTokens.Color.semantic.primary.opacity(0.14)
+            ? Color(hex: "7C6FFF").opacity(0.06)
+            : Color(hex: "7C6FFF").opacity(0.14)
     }
 
     var body: some View {
@@ -34,7 +34,7 @@ struct AppLoadedPluginsDetailView: View {
         HStack {
             Text(String(localized: "App Plugins", table: "AppLoadedPlugins"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Spacer()
 
@@ -43,7 +43,7 @@ struct AppLoadedPluginsDetailView: View {
             } label: {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .buttonStyle(.plain)
             .help(String(localized: "Refresh", table: "AppLoadedPlugins"))
@@ -58,13 +58,13 @@ struct AppLoadedPluginsDetailView: View {
             )
         )
         .font(.system(size: 11))
-        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
     }
 
     private var emptyView: some View {
         Text(String(localized: "No app plugins loaded", table: "AppLoadedPlugins"))
             .font(.system(size: 12))
-            .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+            .foregroundColor(Color(hex: "98989E"))
             .padding(.vertical, 8)
     }
 
@@ -89,20 +89,20 @@ private struct AppLoadedPluginRowView: View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 11))
-                .foregroundColor(DesignTokens.Color.semantic.primary)
+                .foregroundColor(Color(hex: "7C6FFF"))
                 .padding(.top, 2)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(plugin.displayName)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text(plugin.description)
                     .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .lineLimit(2)
                 Text(plugin.id)
                     .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -110,6 +110,6 @@ private struct AppLoadedPluginRowView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(rowBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

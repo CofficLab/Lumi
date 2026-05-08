@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 磁盘管理器主视图
 struct DiskManagerView: View {
@@ -62,9 +63,9 @@ struct DiskUsageInfoView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("总计：\(formatBytes(usage.total))")
                             Text("已用：\(formatBytes(usage.used))")
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             Text("可用：\(formatBytes(usage.available))")
-                                .foregroundColor(AppUI.Color.semantic.success)
+                                .foregroundColor(Color(hex: "30D158"))
                         }
                         .font(.subheadline)
                     }
@@ -131,18 +132,18 @@ struct ViewModeButton: View {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.title2)
-                    .foregroundColor(isSelected ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(isSelected ? Color(hex: "7C6FFF") : Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(isSelected ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(isSelected ? Color(hex: "7C6FFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? AppUI.Color.semantic.primary.opacity(0.1) : Color.clear)
+                    .fill(isSelected ? Color(hex: "7C6FFF").opacity(0.1) : Color.clear)
             )
             .contentShape(Rectangle())
         }

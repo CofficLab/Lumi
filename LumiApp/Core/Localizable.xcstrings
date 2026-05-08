@@ -20,9 +20,6 @@
     " " : {
 
     },
-    " (%@)" : {
-
-    },
     " to see." : {
       "localizations" : {
         "zh-Hans" : {
@@ -57,6 +54,7 @@
       }
     },
     ":" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4573,9 +4571,6 @@
         }
       }
     },
-    "Status" : {
-
-    },
     "Stop" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5438,6 +5433,9 @@
         }
       }
     },
+    "主按钮" : {
+
+    },
     "主题" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5976,6 +5974,9 @@
         }
       }
     },
+    "危险按钮" : {
+
+    },
     "卸载" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6381,6 +6382,7 @@
 
     },
     "复制消息内容" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6616,6 +6618,7 @@
 
     },
     "已复制" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6752,6 +6755,9 @@
           }
         }
       }
+    },
+    "幽灵按钮" : {
+
     },
     "应用" : {
 
@@ -8050,6 +8056,9 @@
         }
       }
     },
+    "次按钮" : {
+
+    },
     "欢迎使用 Lumi" : {
       "localizations" : {
         "zh-Hans" : {
@@ -9286,6 +9295,7 @@
 
     },
     "重发" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

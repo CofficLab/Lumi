@@ -179,7 +179,7 @@ struct EditorPanelView: View {
                 } else {
                     Text(String(localized: "No content to preview", table: "LumiEditor"))
                         .font(.system(size: 12))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                         .padding(40)
                 }
             }

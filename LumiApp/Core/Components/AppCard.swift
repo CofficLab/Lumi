@@ -14,7 +14,7 @@ struct AppCard<Content: View>: View {
 
     init(
         style: Style = .elevated,
-        padding: EdgeInsets = DesignTokens.Spacing.cardPadding,
+        padding: EdgeInsets = EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16),
         @ViewBuilder content: () -> Content
     ) {
         self.style = style
@@ -27,7 +27,7 @@ struct AppCard<Content: View>: View {
             .padding(padding)
             .background(background)
             .overlay(border)
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var background: some View {
@@ -35,10 +35,10 @@ struct AppCard<Content: View>: View {
         return Group {
             switch style {
             case .elevated:
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                    .fill(DesignTokens.Material.glass)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Material.regularMaterial)
             case .subtle:
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(theme.workspaceSecondaryTextColor().opacity(0.06))
             }
         }
@@ -46,7 +46,7 @@ struct AppCard<Content: View>: View {
 
     private var border: some View {
         let theme = themeVM.activeAppTheme
-        return RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+        return RoundedRectangle(cornerRadius: 16, style: .continuous)
             .stroke(theme.workspaceTertiaryTextColor().opacity(style == .elevated ? 0.12 : 0.06), lineWidth: 1)
     }
 }

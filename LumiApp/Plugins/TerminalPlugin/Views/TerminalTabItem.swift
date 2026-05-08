@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct TerminalTabItem: View {
     let title: String
@@ -9,7 +10,7 @@ struct TerminalTabItem: View {
     var body: some View {
         Text(title)
             .font(.caption)
-            .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
+            .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -29,7 +30,7 @@ struct TerminalTabItem: View {
     var backgroundShape: some View {
         if isSelected {
             Color.clear
-                .appSurface(style: .glassUltraThick, cornerRadius: AppUI.Radius.sm)
+                .appSurface(style: .glassUltraThick, cornerRadius: 8)
         } else {
             Color.clear
         }

@@ -21,13 +21,13 @@ struct ToolExecutionStatusCardView: View {
                 HStack(spacing: 6) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text("工具执行")
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text(snapshot.summary)
-                        .font(AppUI.Typography.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary.opacity(0.8))
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.8))
                         .lineLimit(1)
                 }
             } trailing: {
@@ -38,7 +38,7 @@ struct ToolExecutionStatusCardView: View {
                             taskCancellationVM.requestCancel(conversationId: conversationId)
                         } label: {
                             Text(didRequestStop ? "停止中…" : "停止本轮")
-                                .font(AppUI.Typography.caption2)
+                                .font(.system(size: 11, weight: .regular))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
@@ -50,8 +50,8 @@ struct ToolExecutionStatusCardView: View {
                     AppTag(snapshot.phase.label)
                     if let elapsedSeconds = snapshot.elapsedSeconds {
                         Text("\(elapsedSeconds)s")
-                            .font(AppUI.Typography.caption2)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                 }
             }
@@ -75,34 +75,34 @@ struct ToolExecutionStatusCardView: View {
 
                         HStack(spacing: 10) {
                             Text(snapshot.toolName)
-                                .font(AppUI.Typography.caption1)
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                 .lineLimit(1)
                             Spacer()
                             if let current = snapshot.current, let total = snapshot.total {
                                 Text("\(current)/\(total)")
-                                    .font(AppUI.Typography.caption2)
-                                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                    .font(.system(size: 11, weight: .regular))
+                                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             }
                         }
 
                         if let lines = snapshot.shellLines, let bytes = snapshot.shellBytes {
                             Text("输出：\(lines) 行，\(Self.byteFormatter.string(fromByteCount: Int64(bytes)))")
-                                .font(AppUI.Typography.caption2)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
 
                         if let latestOutput = snapshot.latestOutput, !latestOutput.isEmpty {
                             Text(latestOutput)
-                                .font(AppUI.Typography.code)
-                                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                .font(.system(size: 13, weight: .regular, design: .monospaced))
+                                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                 .lineLimit(3)
                         }
 
                         if let errorSummary = snapshot.errorSummary {
                             Text(errorSummary)
-                                .font(AppUI.Typography.caption2)
-                                .foregroundColor(AppUI.Color.semantic.error)
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundColor(Color(hex: "FF453A"))
                                 .lineLimit(2)
                         }
                     }

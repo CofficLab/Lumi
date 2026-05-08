@@ -8,8 +8,8 @@ struct ProcessNetworkListView: View {
             // Toolbar
             HStack {
                 Text(String(localized: "Process Monitor"))
-                    .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
@@ -25,7 +25,7 @@ struct ProcessNetworkListView: View {
                 .frame(width: 160)
             }
             .padding(10)
-            .background(AppUI.Material.glass)
+            .background(Material.regularMaterial)
 
             // Table Header
             GeometryReader { geometry in
@@ -47,11 +47,11 @@ struct ProcessNetworkListView: View {
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
                 }
                 .font(.caption)
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
                 .padding(.horizontal, horizontalPadding)
                 .padding(.trailing, scrollBarWidth) // Extra padding to align with list (avoid scrollbar)
                 .padding(.vertical, 6)
-                .background(AppUI.Material.glass.opacity(0.5))
+                .background(Color.white.opacity(0.08))
             }
             .frame(height: 28)
 
@@ -62,7 +62,7 @@ struct ProcessNetworkListView: View {
                 VStack {
                     Spacer()
                     Text(String(localized: "No active processes"))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Spacer()
                 }
                 .frame(maxHeight: .infinity)

@@ -15,11 +15,11 @@ struct EditorInlineRenameOverlayView: View {
             HStack(spacing: 8) {
                 Image(systemName: "pencil.line")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
 
                 Text(String(localized: "Rename Symbol", table: "LumiEditor"))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer(minLength: 0)
 
@@ -28,7 +28,7 @@ struct EditorInlineRenameOverlayView: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .frame(width: 20, height: 20)
                 }
                 .buttonStyle(.plain)
@@ -53,7 +53,7 @@ struct EditorInlineRenameOverlayView: View {
             HStack(spacing: 8) {
                 Text(String(localized: "Current: \(renameState.originalName)", table: "LumiEditor"))
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 if renameState.isLoadingPreview {
                     ProgressView()
@@ -61,24 +61,24 @@ struct EditorInlineRenameOverlayView: View {
                 } else if let summary = renameState.previewSummary {
                     Text(summary.summaryText)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(AppUI.Color.semantic.primary)
+                        .foregroundColor(Color(hex: "7C6FFF"))
                 }
             }
 
             if let errorMessage = renameState.errorMessage {
                 Text(errorMessage)
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.error)
+                    .foregroundColor(Color(hex: "FF453A"))
                     .lineLimit(2)
             } else if let summary = renameState.previewSummary, !summary.fileLabels.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(String(localized: "Files", table: "LumiEditor"))
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     ForEach(summary.fileLabels, id: \.self) { label in
                         Text(label)
                             .font(.system(size: 10, design: .monospaced))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                             .lineLimit(1)
                     }
                 }
@@ -114,7 +114,7 @@ struct EditorInlineRenameOverlayView: View {
                 .fill(Color(nsColor: .textBackgroundColor))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(AppUI.Color.semantic.textTertiary.opacity(0.16), lineWidth: 1)
+                        .stroke(Color(hex: "98989E").opacity(0.16), lineWidth: 1)
                 )
         )
         .shadow(color: .black.opacity(0.14), radius: 14, y: 6)

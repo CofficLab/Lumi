@@ -56,8 +56,8 @@ struct ShowImagePreviewPanel: View {
                 if let title = displayItem.title {
                     HStack {
                         Text(title)
-                            .font(DesignTokens.Typography.title2)
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         Spacer()
                     }
                     .padding(.horizontal, 16)
@@ -71,8 +71,8 @@ struct ShowImagePreviewPanel: View {
                             ProgressView()
                                 .controlSize(.regular)
                             Text("加载中…")
-                                .font(DesignTokens.Typography.caption1)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
                         .frame(height: 200)
                     } else if let image = loadedImage {
@@ -95,10 +95,10 @@ struct ShowImagePreviewPanel: View {
                         VStack(spacing: 8) {
                             Image(systemName: "photo.badge.exclamationmark")
                                 .font(.system(size: 32))
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             Text(errorText)
-                                .font(DesignTokens.Typography.caption1)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .multilineTextAlignment(.center)
                         }
                         .frame(height: 150)
@@ -111,27 +111,27 @@ struct ShowImagePreviewPanel: View {
                 // 说明文字
                 if let caption = displayItem.caption {
                     Text(caption)
-                        .font(DesignTokens.Typography.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .padding(.horizontal, 16)
                         .padding(.bottom, 12)
                 }
             }
             .background(
-                DesignTokens.Color.basePalette.surfaceBackground
+                Color(hex: "0D0D12")
                     .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
             )
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(DesignTokens.Color.basePalette.subtleBorder.opacity(0.15), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
             )
             .padding(16)
 
             // 关闭按钮
             AppIconButton(
                 systemImage: "xmark",
-                tint: AppUI.Color.semantic.textSecondary,
+                tint: Color.adaptive(light: "6B6B7B", dark: "EBEBF5"),
                 size: .regular
             ) {
                 onDismiss()

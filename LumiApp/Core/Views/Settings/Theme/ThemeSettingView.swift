@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 主题设置视图
 struct ThemeSettingView: View {
@@ -9,17 +10,17 @@ struct ThemeSettingView: View {
         VStack(spacing: 0) {
             // 顶部说明卡片（固定）
             headerCard
-                .padding(AppUI.Spacing.lg)
+                .padding(24)
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
+                VStack(alignment: .leading, spacing: 24) {
                     // 主题选择器卡片
                     themeSelectorCard
 
                     Spacer()
                 }
-                .padding(.horizontal, AppUI.Spacing.lg)
+                .padding(.horizontal, 24)
             }
         }
         .navigationTitle("主题风格")
@@ -41,7 +42,7 @@ struct ThemeSettingView: View {
 
     private var themeSelectorCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+            VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "swatchpalette",
                     title: "选择主题",

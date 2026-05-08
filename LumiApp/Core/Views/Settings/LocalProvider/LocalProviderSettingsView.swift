@@ -1,6 +1,7 @@
 import AppKit
 import MagicKit
 import SwiftUI
+import LumiUI
 
 /// 本地大模型设置视图（仅展示本地模型供应商）
 struct LocalProviderSettingsView: View {
@@ -66,11 +67,11 @@ struct LocalProviderSettingsView: View {
         VStack(spacing: 0) {
             // 本地供应商卡片（固定）
             providerSelectorCard
-                .padding(AppUI.Spacing.lg)
+                .padding(24)
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
+                VStack(alignment: .leading, spacing: 24) {
                     // 本地模型管理卡片
                     if localProvider != nil {
                         localModelCard
@@ -78,7 +79,7 @@ struct LocalProviderSettingsView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, AppUI.Spacing.lg)
+                .padding(.horizontal, 24)
             }
         }
         .onAppear(perform: onAppear)
@@ -95,7 +96,7 @@ extension LocalProviderSettingsView {
     /// 本地供应商选择器卡片（固定）
     private var providerSelectorCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+            VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "cpu.fill",
                     title: "本地 LLM 供应商",
@@ -105,7 +106,7 @@ extension LocalProviderSettingsView {
                 if localProviders.count > 1 {
                     GlassDivider()
 
-                    HStack(spacing: AppUI.Spacing.sm) {
+                    HStack(spacing: 8) {
                         ForEach(localProviders) { provider in
                             ProviderButton(
                                 provider: provider,

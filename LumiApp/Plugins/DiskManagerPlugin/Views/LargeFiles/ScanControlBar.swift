@@ -31,18 +31,18 @@ struct ScanControlBar: View {
                 Label(title: { Text(viewModel.isScanning ? scanningText : scanText) }, icon: {
                     Image(systemName: viewModel.isScanning ? scanningIcon : icon)
                 })
-                .font(AppUI.Typography.bodyEmphasized)
+                .font(.system(size: 15, weight: .medium))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             })
             .buttonStyle(.borderedProminent)
-            .tint(viewModel.isScanning ? AppUI.Color.semantic.error : AppUI.Color.semantic.info)
+            .tint(viewModel.isScanning ? Color(hex: "FF453A") : Color(hex: "0A84FF"))
 
             Spacer()
 
             Text(description)
                 .font(.caption)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .padding(.horizontal)
     }

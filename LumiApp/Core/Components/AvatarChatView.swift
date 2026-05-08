@@ -40,8 +40,8 @@ public enum AvatarView {
     public static var assistant: some View {
         AppAvatar(
             systemImage: "cpu",
-            tint: AppUI.Color.semantic.primary,
-            backgroundTint: AppUI.Color.semantic.primary.opacity(0.1)
+            tint: Color(hex: "7C6FFF"),
+            backgroundTint: Color(hex: "7C6FFF").opacity(0.1)
         )
     }
 
@@ -49,8 +49,8 @@ public enum AvatarView {
     public static var user: some View {
         AppAvatar(
             systemImage: "person.fill",
-            tint: AppUI.Color.semantic.info,
-            backgroundTint: AppUI.Color.semantic.info.opacity(0.1)
+            tint: Color(hex: "0A84FF"),
+            backgroundTint: Color(hex: "0A84FF").opacity(0.1)
         )
     }
 
@@ -58,8 +58,8 @@ public enum AvatarView {
     public static var tool: some View {
         AppAvatar(
             systemImage: "gearshape.2.fill",
-            tint: AppUI.Color.semantic.textTertiary,
-            backgroundTint: AppUI.Color.semantic.textTertiary.opacity(0.1)
+            tint: Color(hex: "98989E"),
+            backgroundTint: Color(hex: "98989E").opacity(0.1)
         )
     }
 
@@ -67,8 +67,8 @@ public enum AvatarView {
     public static var status: some View {
         AppAvatar(
             systemImage: "sparkles",
-            tint: AppUI.Color.semantic.warning,
-            backgroundTint: AppUI.Color.semantic.warning.opacity(0.12)
+            tint: Color(hex: "FF9F0A"),
+            backgroundTint: Color(hex: "FF9F0A").opacity(0.12)
         )
     }
 
@@ -76,8 +76,8 @@ public enum AvatarView {
     public static var error: some View {
         AppAvatar(
             systemImage: "exclamationmark.triangle.fill",
-            tint: AppUI.Color.semantic.error,
-            backgroundTint: AppUI.Color.semantic.error.opacity(0.12)
+            tint: Color(hex: "FF453A"),
+            backgroundTint: Color(hex: "FF453A").opacity(0.12)
         )
     }
 
@@ -85,8 +85,8 @@ public enum AvatarView {
     public static var system: some View {
         AppAvatar(
             systemImage: "bolt.shield.fill",
-            tint: AppUI.Color.semantic.textSecondary,
-            backgroundTint: AppUI.Color.semantic.textSecondary.opacity(0.10)
+            tint: Color.adaptive(light: "6B6B7B", dark: "EBEBF5"),
+            backgroundTint: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.10)
         )
     }
 }

@@ -16,7 +16,7 @@ struct RecentProjectsPopoverButton: View {
         } label: {
             Image(systemName: "folder.badge.plus")
                 .font(.system(size: iconSize))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .frame(width: iconButtonSize, height: iconButtonSize)
                 .background(Color.black.opacity(0.05))
                 .clipShape(Circle())

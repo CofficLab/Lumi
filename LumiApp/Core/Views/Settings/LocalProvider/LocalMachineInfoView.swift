@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import Darwin
 
 struct LocalMachineInfoView: View {
@@ -43,8 +44,8 @@ struct LocalMachineInfoView: View {
         let diskGB = Self.localDiskTotalGB()
         let osVer = ProcessInfo.processInfo.operatingSystemVersion
         let osString = "macOS \(osVer.majorVersion).\(osVer.minorVersion).\(osVer.patchVersion)"
-        let style = AppUI.Typography.caption2
-        let color = AppUI.Color.semantic.textSecondary
+        let style = .system(size: 11, weight: .regular)
+        let color = Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Label(chip, systemImage: "cpu")
@@ -64,15 +65,15 @@ struct LocalMachineInfoView: View {
                     .foregroundColor(color)
             }
             Text("请根据本机配置选择合适的模型进行下载和加载，以获得更稳定的体验。")
-                .font(AppUI.Typography.caption2)
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .font(.system(size: 11, weight: .regular))
+                .foregroundColor(Color(hex: "98989E"))
         }
-        .padding(.horizontal, AppUI.Spacing.sm)
+        .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
         .appSurface(
-            style: .custom(AppUI.Color.semantic.textSecondary.opacity(0.08)),
-            cornerRadius: AppUI.Radius.sm
+            style: .custom(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.08)),
+            cornerRadius: 8
         )
     }
 }

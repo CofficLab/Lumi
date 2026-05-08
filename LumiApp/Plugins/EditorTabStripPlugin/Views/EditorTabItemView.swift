@@ -58,7 +58,7 @@ struct EditorTabItemView: View {
         return HStack(spacing: 6) {
             if tab.isDirty {
                 Circle()
-                    .fill(AppUI.Color.semantic.warning)
+                    .fill(Color(hex: "FF9F0A"))
                     .frame(width: 6, height: 6)
             }
 

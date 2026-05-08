@@ -11,11 +11,11 @@ struct EditorEmptyStateView: View {
         VStack(spacing: 8) {
             Image(systemName: "doc.text")
                 .font(.system(size: 32, weight: .thin))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
 
             Text(String(localized: "Select a file to start editing", table: "LumiEditor"))
                 .font(.system(size: 13))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())

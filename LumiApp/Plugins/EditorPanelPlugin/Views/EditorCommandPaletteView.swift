@@ -58,18 +58,18 @@ struct EditorCommandPaletteView: View {
             HStack(spacing: 8) {
                 Image(systemName: "command")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Text(String(localized: "Command Palette", table: "LumiEditor"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer(minLength: 0)
 
                 Button(action: onDismiss) {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .frame(width: 20, height: 20)
                 }
                 .buttonStyle(.plain)
@@ -117,7 +117,7 @@ struct EditorCommandPaletteView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(String(localized: "Recently Used", table: "LumiEditor"))
                                     .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                    .foregroundColor(Color(hex: "98989E"))
                                     .padding(.horizontal, 4)
 
                                 ForEach(recentCommands) { command in
@@ -142,7 +142,7 @@ struct EditorCommandPaletteView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(String(localized: "Frequently Used", table: "LumiEditor"))
                                     .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                    .foregroundColor(Color(hex: "98989E"))
                                     .padding(.horizontal, 4)
 
                                 ForEach(frequentCommands) { command in
@@ -167,7 +167,7 @@ struct EditorCommandPaletteView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(section.title)
                                     .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                                    .foregroundColor(Color(hex: "98989E"))
                                     .padding(.horizontal, 4)
 
                                 ForEach(section.commands) { command in
@@ -206,7 +206,7 @@ struct EditorCommandPaletteView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(section.title)
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
                     .padding(.horizontal, 4)
 
                 ForEach(section.items) { item in
@@ -238,7 +238,7 @@ struct EditorCommandPaletteView: View {
 
             Text("\(flattenedSelectionIDs.count)")
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -248,11 +248,11 @@ struct EditorCommandPaletteView: View {
         VStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 24, weight: .thin))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
 
             Text(String(localized: "No Matching Results", table: "LumiEditor"))
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
@@ -322,17 +322,17 @@ struct EditorCommandPaletteView: View {
         HStack(spacing: 6) {
             Text(key)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
                 .background(
                     RoundedRectangle(cornerRadius: 5)
-                        .fill(AppUI.Color.semantic.textTertiary.opacity(0.08))
+                        .fill(Color(hex: "98989E").opacity(0.08))
                 )
 
             Text(label)
                 .font(.system(size: 10))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
         }
     }
 
@@ -347,8 +347,8 @@ struct EditorCommandPaletteView: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(
                     isSelected
-                        ? AppUI.Color.semantic.primary
-                        : AppUI.Color.semantic.textSecondary
+                        ? Color(hex: "7C6FFF")
+                        : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
                 )
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
@@ -356,16 +356,16 @@ struct EditorCommandPaletteView: View {
                     Capsule()
                         .fill(
                             isSelected
-                                ? AppUI.Color.semantic.primary.opacity(0.12)
-                                : AppUI.Color.semantic.textTertiary.opacity(0.08)
+                                ? Color(hex: "7C6FFF").opacity(0.12)
+                                : Color(hex: "98989E").opacity(0.08)
                         )
                 )
                 .overlay(
                     Capsule()
                         .stroke(
                             isSelected
-                                ? AppUI.Color.semantic.primary.opacity(0.35)
-                                : AppUI.Color.semantic.textTertiary.opacity(0.14),
+                                ? Color(hex: "7C6FFF").opacity(0.35)
+                                : Color(hex: "98989E").opacity(0.14),
                             lineWidth: 1
                         )
                 )
@@ -381,13 +381,13 @@ struct EditorCommandPaletteView: View {
         HStack(spacing: 10) {
             Image(systemName: command.systemImage)
                 .font(.system(size: 11))
-                .foregroundColor(command.isEnabled ? AppUI.Color.semantic.textSecondary : AppUI.Color.semantic.textTertiary)
+                .foregroundColor(command.isEnabled ? Color.adaptive(light: "6B6B7B", dark: "EBEBF5") : Color(hex: "98989E"))
                 .frame(width: 16)
 
             if emphasizeRecent {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
             }
 
             if emphasizeFrequent {
@@ -398,13 +398,13 @@ struct EditorCommandPaletteView: View {
 
             Text(command.title)
                 .font(.system(size: 12, weight: command.isEnabled ? .medium : .regular))
-                .foregroundColor(command.isEnabled ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textTertiary)
+                .foregroundColor(command.isEnabled ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color(hex: "98989E"))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if let shortcut = command.shortcut {
                 Text(shortcut.displayText)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             }
         }
         .padding(.horizontal, 10)
@@ -413,15 +413,15 @@ struct EditorCommandPaletteView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(
                     selectedItemID == commandSelectionID(for: command)
-                        ? AppUI.Color.semantic.primary.opacity(command.isEnabled ? 0.14 : 0.08)
-                        : AppUI.Color.semantic.textTertiary.opacity(command.isEnabled ? 0.06 : 0.03)
+                        ? Color(hex: "7C6FFF").opacity(command.isEnabled ? 0.14 : 0.08)
+                        : Color(hex: "98989E").opacity(command.isEnabled ? 0.06 : 0.03)
                 )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(
                     selectedItemID == commandSelectionID(for: command)
-                        ? AppUI.Color.semantic.primary.opacity(0.35)
+                        ? Color(hex: "7C6FFF").opacity(0.35)
                         : .clear,
                     lineWidth: 1
                 )
@@ -433,19 +433,19 @@ struct EditorCommandPaletteView: View {
         HStack(spacing: 10) {
             Image(systemName: item.systemImage)
                 .font(.system(size: 11))
-                .foregroundColor(item.isEnabled ? AppUI.Color.semantic.textSecondary : AppUI.Color.semantic.textTertiary)
+                .foregroundColor(item.isEnabled ? Color.adaptive(light: "6B6B7B", dark: "EBEBF5") : Color(hex: "98989E"))
                 .frame(width: 16)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
                     .font(.system(size: 12, weight: item.isEnabled ? .medium : .regular))
-                    .foregroundColor(item.isEnabled ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(item.isEnabled ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color(hex: "98989E"))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 if let subtitle = item.subtitle {
                     Text(subtitle)
                         .font(.system(size: 10))
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                         .lineLimit(1)
                 }
             }
@@ -453,10 +453,10 @@ struct EditorCommandPaletteView: View {
             if let badge = item.badge {
                 Text(badge)
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
-                    .background(AppUI.Color.semantic.textTertiary.opacity(0.08))
+                    .background(Color(hex: "98989E").opacity(0.08))
                     .clipShape(Capsule())
             }
         }
@@ -466,15 +466,15 @@ struct EditorCommandPaletteView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(
                     selectedItemID == quickOpenSelectionID(for: item)
-                        ? AppUI.Color.semantic.primary.opacity(item.isEnabled ? 0.14 : 0.08)
-                        : AppUI.Color.semantic.textTertiary.opacity(item.isEnabled ? 0.06 : 0.03)
+                        ? Color(hex: "7C6FFF").opacity(item.isEnabled ? 0.14 : 0.08)
+                        : Color(hex: "98989E").opacity(item.isEnabled ? 0.06 : 0.03)
                 )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(
                     selectedItemID == quickOpenSelectionID(for: item)
-                        ? AppUI.Color.semantic.primary.opacity(0.35)
+                        ? Color(hex: "7C6FFF").opacity(0.35)
                         : .clear,
                     lineWidth: 1
                 )

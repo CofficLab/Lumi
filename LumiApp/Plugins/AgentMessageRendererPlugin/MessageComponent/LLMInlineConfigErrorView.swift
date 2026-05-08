@@ -74,13 +74,13 @@ struct LLMInlineConfigErrorView: View {
                 ErrorIconView(size: 14)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(titleText)
-                        .font(AppUI.Typography.callout)
+                        .font(.system(size: 16, weight: .medium))
                         .fontWeight(.semibold)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     if !detailText.isEmpty {
                         Text(detailText)
-                            .font(AppUI.Typography.caption1)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }

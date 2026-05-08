@@ -30,14 +30,14 @@ struct GitCommitInputView: View {
     }
 
     var body: some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(spacing: 8) {
             // 输入区域
-            HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
+            HStack(alignment: .top, spacing: 8) {
                 // Commit message 输入框
                 commitTextField
 
                 // 按钮组
-                VStack(spacing: DesignTokens.Spacing.xs) {
+                VStack(spacing: 4) {
                     // AI 生成按钮
                     aiGenerateButton
 
@@ -52,8 +52,8 @@ struct GitCommitInputView: View {
                 resultMessageView(message)
             }
         }
-        .padding(.horizontal, DesignTokens.Spacing.md)
-        .padding(.vertical, DesignTokens.Spacing.sm)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
         .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
     }
 
@@ -65,7 +65,7 @@ struct GitCommitInputView: View {
             if commitMessage.isEmpty {
                 Text(String(localized: "Enter commit message...", table: "GitCommitHistory"))
                     .font(.system(size: 12))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
                     .padding(.horizontal, 4)
                     .padding(.vertical, 8)
                     .allowsHitTesting(false)
@@ -73,13 +73,13 @@ struct GitCommitInputView: View {
 
             TextEditor(text: $commitMessage)
                 .font(.system(size: 12))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, 2)
                 .padding(.vertical, 4)
                 .frame(minHeight: 36, maxHeight: 80)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.primary.opacity(0.12), lineWidth: 1)
                 )
                 .opacity(commitMessage.isEmpty ? 0.9 : 1.0)
@@ -104,11 +104,11 @@ struct GitCommitInputView: View {
                     .font(.system(size: 11, weight: .medium))
             }
             .frame(maxWidth: .infinity)
-            .foregroundColor(DesignTokens.Color.semantic.primary)
+            .foregroundColor(Color(hex: "7C6FFF"))
             .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                    .fill(DesignTokens.Color.semantic.primary.opacity(0.08))
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(hex: "7C6FFF").opacity(0.08))
             )
         }
         .buttonStyle(.plain)
@@ -136,11 +136,11 @@ struct GitCommitInputView: View {
             .foregroundColor(.white)
             .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                RoundedRectangle(cornerRadius: 8)
                     .fill(
                         canCommit
-                            ? DesignTokens.Color.semantic.primary
-                            : DesignTokens.Color.semantic.primary.opacity(0.3)
+                            ? Color(hex: "7C6FFF")
+                            : Color(hex: "7C6FFF").opacity(0.3)
                     )
             )
         }
@@ -153,11 +153,11 @@ struct GitCommitInputView: View {
         HStack(spacing: 4) {
             Image(systemName: resultType == .success ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                 .font(.system(size: 11))
-                .foregroundColor(resultType == .success ? DesignTokens.Color.semantic.success : DesignTokens.Color.semantic.warning)
+                .foregroundColor(resultType == .success ? Color(hex: "30D158") : Color(hex: "FF9F0A"))
 
             Text(message)
                 .font(.system(size: 11))
-                .foregroundColor(resultType == .success ? DesignTokens.Color.semantic.success : DesignTokens.Color.semantic.warning)
+                .foregroundColor(resultType == .success ? Color(hex: "30D158") : Color(hex: "FF9F0A"))
                 .lineLimit(2)
 
             Spacer()

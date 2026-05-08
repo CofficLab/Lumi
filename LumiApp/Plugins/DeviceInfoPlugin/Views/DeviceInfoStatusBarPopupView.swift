@@ -33,7 +33,7 @@ struct DeviceInfoStatusBarPopupView: View {
             HStack {
                 Text(String(localized: "CPU Usage", table: "DeviceInfo"))
                     .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Spacer()
 
@@ -47,7 +47,7 @@ struct DeviceInfoStatusBarPopupView: View {
                 ZStack(alignment: .leading) {
                     // 背景条
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(AppUI.Color.semantic.textTertiary.opacity(0.2))
+                        .fill(Color(hex: "98989E").opacity(0.2))
 
                     // 进度条
                     RoundedRectangle(cornerRadius: 3)
@@ -76,11 +76,11 @@ struct DeviceInfoStatusBarPopupView: View {
             HStack(spacing: 4) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Text(String(localized: "Last 60 Seconds", table: "DeviceInfo"))
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Spacer()
 
@@ -92,7 +92,7 @@ struct DeviceInfoStatusBarPopupView: View {
                             .frame(width: 5, height: 5)
                         Text(String(localized: "Usage", table: "DeviceInfo"))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     }
                 }
             }
@@ -108,7 +108,7 @@ struct DeviceInfoStatusBarPopupView: View {
                             path.move(to: CGPoint(x: 0, y: y))
                             path.addLine(to: CGPoint(x: geometry.size.width, y: y))
                         }
-                        .stroke(AppUI.Color.semantic.textTertiary.opacity(0.1), lineWidth: 1)
+                        .stroke(Color(hex: "98989E").opacity(0.1), lineWidth: 1)
                     }
 
                     // CPU 使用率区域
@@ -137,7 +137,7 @@ struct DeviceInfoStatusBarPopupView: View {
                     } else {
                         Text(String(localized: "Collecting...", table: "DeviceInfo"))
                             .font(.system(size: 10))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
@@ -146,7 +146,7 @@ struct DeviceInfoStatusBarPopupView: View {
             .padding(.horizontal, 12)
         }
         .padding(.vertical, 8)
-        .background(AppUI.Material.glass.opacity(0.3))
+        .background(Color.white.opacity(0.06))
     }
 
     // MARK: - Top Processes View
@@ -159,9 +159,9 @@ struct DeviceInfoStatusBarPopupView: View {
 
     private var cpuColor: Color {
         let value = viewModel.cpuUsage
-        if value < 60 { return AppUI.Color.semantic.success }
-        if value < 85 { return AppUI.Color.semantic.warning }
-        return AppUI.Color.semantic.error
+        if value < 60 { return Color(hex: "30D158") }
+        if value < 85 { return Color(hex: "FF9F0A") }
+        return Color(hex: "FF453A")
     }
 }
 

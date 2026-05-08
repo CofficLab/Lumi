@@ -80,22 +80,22 @@ struct SkillListPopover: View {
     let skills: [SkillMetadata]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             // 标题
-            HStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: 8) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 14))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
 
                 Text("^[\(skills.count) Available Skill](inflect: true)")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
                 Text(String(localized: "Skills are loaded from .agent/skills/", table: "Skill"))
                     .font(.system(size: 10))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             }
 
             Divider()
@@ -115,11 +115,11 @@ struct SkillRow: View {
     let skill: SkillMetadata
 
     var body: some View {
-        HStack(alignment: .top, spacing: DesignTokens.Spacing.md) {
+        HStack(alignment: .top, spacing: 16) {
             // 图标
             Image(systemName: "sparkle")
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.primary)
+                .foregroundColor(Color(hex: "7C6FFF"))
                 .padding(.top, 2)
 
             // 信息
@@ -127,16 +127,16 @@ struct SkillRow: View {
                 HStack(spacing: 6) {
                     Text(skill.title)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text("v\(skill.version)")
                         .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                 }
 
                 Text(skill.description)
                     .font(.system(size: 11))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .lineLimit(2)
             }
         }

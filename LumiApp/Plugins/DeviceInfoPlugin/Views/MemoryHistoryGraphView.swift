@@ -28,8 +28,8 @@ struct MemoryHistoryGraphView: View {
                                 .fill(
                                     LinearGradient(
                                         gradient: Gradient(colors: [
-                                            AppUI.Color.semantic.primary.opacity(0.5),
-                                            AppUI.Color.semantic.primary.opacity(0.1),
+                                            Color(hex: "7C6FFF").opacity(0.5),
+                                            Color(hex: "7C6FFF").opacity(0.1),
                                         ]),
                                         startPoint: .top,
                                         endPoint: .bottom
@@ -37,11 +37,11 @@ struct MemoryHistoryGraphView: View {
                                 )
 
                             MemoryGraphLine(data: dataPoints.map { $0.usagePercentage }, maxValue: maxValue)
-                                .stroke(AppUI.Color.semantic.primary, lineWidth: 1.5)
+                                .stroke(Color(hex: "7C6FFF"), lineWidth: 1.5)
                         } else {
                             Text(String(localized: "Collecting...", table: "DeviceInfo"))
                                 .font(.caption)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
 
@@ -50,7 +50,7 @@ struct MemoryHistoryGraphView: View {
                                 path.move(to: CGPoint(x: hoverLocation.x, y: 0))
                                 path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
                             }
-                            .stroke(AppUI.Color.semantic.textPrimary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .stroke(Color.adaptive(light: "1C1C1E", dark: "FFFFFF").opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                             MemoryTooltipView(point: point, timeRange: timeRange)
                                 .position(x: clampedX(hoverLocation.x, width: geometry.size.width), y: 40)
@@ -87,14 +87,14 @@ struct MemoryHistoryGraphView: View {
                     if index > 0 {
                         Text(formatYValue(for: index))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
                     }
                 }
 
                 Text("0")
                     .font(.system(size: 9))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
             }
             .padding(.trailing, 4)
         }
@@ -111,7 +111,7 @@ struct MemoryHistoryGraphView: View {
                     if let firstPoint = dataPoints.first {
                         Text(formatXAxisDate(firstPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     }
 
                     Spacer()
@@ -119,7 +119,7 @@ struct MemoryHistoryGraphView: View {
                     if let lastPoint = dataPoints.last {
                         Text(formatXAxisDate(lastPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     }
                 }
                 .padding(.horizontal, 8)
@@ -137,7 +137,7 @@ struct MemoryHistoryGraphView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                .stroke(AppUI.Color.semantic.textTertiary.opacity(0.15), lineWidth: 0.5)
+                .stroke(Color(hex: "98989E").opacity(0.15), lineWidth: 0.5)
             }
         }
     }
@@ -219,19 +219,19 @@ struct MemoryTooltipView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(formatDate(point.timestamp))
                 .font(.system(size: 10, weight: .bold))
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             HStack(spacing: 4) {
                 Circle()
-                    .fill(AppUI.Color.semantic.primary)
+                    .fill(Color(hex: "7C6FFF"))
                     .frame(width: 6, height: 6)
                 Text("\(ByteCountFormatter.string(fromByteCount: Int64(point.usedBytes), countStyle: .memory)) (\(Int(point.usagePercentage))%)")
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
         }
         .padding(6)
-        .background(AppUI.Material.glass)
+        .background(Material.regularMaterial)
         .cornerRadius(6)
     }
 

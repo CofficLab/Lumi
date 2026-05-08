@@ -19,7 +19,7 @@ struct MemoryStatusBarPopupView: View {
             HStack {
                 Text(String(localized: "Memory", table: "DeviceInfo"))
                     .font(.system(size: 11))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Spacer()
 
@@ -30,12 +30,12 @@ struct MemoryStatusBarPopupView: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(AppUI.Color.semantic.textTertiary.opacity(0.2))
+                        .fill(Color(hex: "98989E").opacity(0.2))
 
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [AppUI.Color.semantic.primary, AppUI.Color.semantic.info]),
+                                gradient: Gradient(colors: [Color(hex: "7C6FFF"), Color(hex: "0A84FF")]),
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -56,22 +56,22 @@ struct MemoryStatusBarPopupView: View {
             HStack(spacing: 4) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Text(String(localized: "Last 60 Seconds", table: "DeviceInfo"))
                     .font(.system(size: 10))
-                    .foregroundColor(AppUI.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
 
                 Spacer()
 
                 HStack(spacing: 6) {
                     HStack(spacing: 3) {
                         Circle()
-                            .fill(AppUI.Color.semantic.primary.opacity(0.8))
+                            .fill(Color(hex: "7C6FFF").opacity(0.8))
                             .frame(width: 5, height: 5)
                         Text(String(localized: "Usage", table: "DeviceInfo"))
                             .font(.system(size: 9))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                     }
                 }
             }
@@ -85,7 +85,7 @@ struct MemoryStatusBarPopupView: View {
                             path.move(to: CGPoint(x: 0, y: y))
                             path.addLine(to: CGPoint(x: geometry.size.width, y: y))
                         }
-                        .stroke(AppUI.Color.semantic.textTertiary.opacity(0.1), lineWidth: 1)
+                        .stroke(Color(hex: "98989E").opacity(0.1), lineWidth: 1)
                     }
 
                     if !recentData.isEmpty {
@@ -96,8 +96,8 @@ struct MemoryStatusBarPopupView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    AppUI.Color.semantic.primary.opacity(0.4),
-                                    AppUI.Color.semantic.info.opacity(0.05),
+                                    Color(hex: "7C6FFF").opacity(0.4),
+                                    Color(hex: "0A84FF").opacity(0.05),
                                 ]),
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -108,11 +108,11 @@ struct MemoryStatusBarPopupView: View {
                             data: recentData.map { $0.usagePercentage },
                             maxValue: maxValue
                         )
-                        .stroke(AppUI.Color.semantic.primary.opacity(0.8), lineWidth: 1.2)
+                        .stroke(Color(hex: "7C6FFF").opacity(0.8), lineWidth: 1.2)
                     } else {
                         Text(String(localized: "Collecting...", table: "DeviceInfo"))
                             .font(.system(size: 10))
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
@@ -121,7 +121,7 @@ struct MemoryStatusBarPopupView: View {
             .padding(.horizontal, 12)
         }
         .padding(.vertical, 8)
-        .background(AppUI.Material.glass.opacity(0.3))
+        .background(Color.white.opacity(0.06))
     }
 }
 

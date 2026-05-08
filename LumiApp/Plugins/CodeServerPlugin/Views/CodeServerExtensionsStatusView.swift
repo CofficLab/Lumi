@@ -80,22 +80,22 @@ struct CodeServerExtensionsStatusView: View {
 /// 未运行时的详情视图
 struct ExtensionsInactiveDetailView: View {
     var body: some View {
-        VStack(spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(spacing: 16) {
+            HStack(spacing: 8) {
                 Image(systemName: "puzzlepiece.extension")
                     .font(.system(size: 16))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
 
                 Text("扩展管理")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             }
 
             Divider()
 
             Text("请先启动 code-server 以管理扩展")
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .multilineTextAlignment(.center)
         }
         .padding()
@@ -115,7 +115,7 @@ struct ExtensionsManagerDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             // Tab 切换
             HStack(spacing: 4) {
                 HStack(spacing: 0) {
@@ -136,7 +136,7 @@ struct ExtensionsManagerDetailView: View {
                 }) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 14))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 }
                 .buttonStyle(.plain)
                 .help("刷新扩展列表")
@@ -176,8 +176,8 @@ struct TabButton: View {
             Text(title)
                 .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                 .foregroundColor(
-                    isSelected ? DesignTokens.Color.semantic.primary :
-                        isHovered ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary
+                    isSelected ? Color(hex: "7C6FFF") :
+                        isHovered ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
                 )
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
@@ -205,14 +205,14 @@ struct ErrorBanner: View {
         HStack(spacing: 6) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 10))
-                .foregroundColor(DesignTokens.Color.semantic.warning)
+                .foregroundColor(Color(hex: "FF9F0A"))
             Text(message)
                 .font(.system(size: 10))
-                .foregroundColor(DesignTokens.Color.semantic.warning)
+                .foregroundColor(Color(hex: "FF9F0A"))
                 .lineLimit(2)
         }
         .padding(8)
-        .background(DesignTokens.Color.adaptive.errorBackground(for: .dark))
+        .background(Color.adaptive(light: "FF3B30", dark: "FF453A").opacity(0.2))
         .cornerRadius(6)
     }
 }

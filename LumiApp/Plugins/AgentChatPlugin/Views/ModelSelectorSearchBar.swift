@@ -11,7 +11,7 @@ struct ModelSelectorSearchBar: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             TextField(String(localized: "Search Models", table: "AgentChat"), text: $searchText)
                 .textFieldStyle(.plain)
 
@@ -19,7 +19,7 @@ struct ModelSelectorSearchBar: View {
 
             Button(action: onCancel) {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .buttonStyle(.plain)
         }

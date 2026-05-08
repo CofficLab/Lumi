@@ -1,5 +1,6 @@
 import os
 import SwiftUI
+import LumiUI
 
 struct BrewManagerView: View {
     @StateObject private var viewModel = BrewManagerViewModel()
@@ -51,7 +52,7 @@ struct BrewManagerView: View {
                         packages: viewModel.installedPackages,
                         emptyMessage: String(localized: "No packages installed", table: "BrewManager"),
                         actionButtonTitle: String(localized: "Uninstall", table: "BrewManager"),
-                        actionButtonColor: AppUI.Color.semantic.error
+                        actionButtonColor: Color(hex: "FF453A")
                     ) { package in
                         Task { await viewModel.uninstall(package: package) }
                     }
@@ -72,7 +73,7 @@ struct BrewManagerView: View {
                             packages: viewModel.outdatedPackages,
                             emptyMessage: String(localized: "All packages are up to date", table: "BrewManager"),
                             actionButtonTitle: String(localized: "Update", table: "BrewManager"),
-                            actionButtonColor: AppUI.Color.semantic.info
+                            actionButtonColor: Color(hex: "0A84FF")
                         ) { package in
                             Task { await viewModel.upgrade(package: package) }
                         }
@@ -103,7 +104,7 @@ struct BrewManagerView: View {
                             packages: viewModel.searchResults,
                             emptyMessage: viewModel.searchText.isEmpty ? String(localized: "Enter keywords to start searching", table: "BrewManager") : String(localized: "No related packages found", table: "BrewManager"),
                             actionButtonTitle: String(localized: "Install", table: "BrewManager"),
-                            actionButtonColor: AppUI.Color.semantic.success,
+                            actionButtonColor: Color(hex: "30D158"),
                             showInstalledStatus: true
                         ) { package in
                             // 如果已安装则不显示安装按钮，或者显示为卸载/更新
@@ -119,7 +120,7 @@ struct BrewManagerView: View {
             if viewModel.isLoading && selectedTab != .search {
                 ProgressView(String(localized: "Processing...", table: "BrewManager"))
                     .padding()
-                    .background(AppUI.Material.glass)
+                    .background(Material.regularMaterial)
                     .cornerRadius(8)
             }
         }
@@ -154,7 +155,7 @@ struct BrewListView: View {
             VStack {
                 Spacer()
                 Text(emptyMessage)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
             }
         } else {
@@ -189,7 +190,7 @@ struct BrewPackageRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(package.name)
-                            .font(AppUI.Typography.bodyEmphasized)
+                            .font(.system(size: 15, weight: .medium))
 
                         if package.isCask {
                             AppTag(String(localized: "Cask"), style: .accent)
@@ -199,7 +200,7 @@ struct BrewPackageRow: View {
                             if package.installedVersion != nil {
                                 Text("Installed", tableName: "BrewManager")
                                     .font(.caption)
-                                    .foregroundStyle(AppUI.Color.gradients.energyGradient)
+                                    .foregroundStyle(LinearGradient(colors: [Color(hex: "00D4FF"), Color(hex: "7C6FFF")], startPoint: .leading, endPoint: .trailing))
                             }
                         }
                     }
@@ -207,19 +208,19 @@ struct BrewPackageRow: View {
                     if let desc = package.desc {
                         Text(desc)
                             .font(.caption)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .lineLimit(2)
                     }
 
                     HStack(spacing: 8) {
                         Text(String(localized: "Version: \(package.version)", table: "BrewManager"))
                             .font(.caption2)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                         if let installedVer = package.installedVersion, installedVer != package.version {
                             Text(String(localized: "Installed: \(installedVer)", table: "BrewManager"))
                                 .font(.caption2)
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
                     }
                 }
@@ -229,7 +230,7 @@ struct BrewPackageRow: View {
                 if showInstalledStatus && package.installedVersion != nil {
                     // 如果是搜索结果且已安装，显示已安装状态，不显示操作按钮
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(AppUI.Color.semantic.success)
+                        .foregroundColor(Color(hex: "30D158"))
                 } else {
                     AppButton(LocalizedStringKey(actionButtonTitle), style: .secondary, size: .small, action: action)
                         .foregroundColor(actionButtonColor)

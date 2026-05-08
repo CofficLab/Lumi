@@ -5,13 +5,13 @@ import SwiftUI
 struct AppMessageBubbleStyle {
     var contentPadding: CGFloat = 10
     var assistantTrailingPadding: CGFloat = 20
-    var cornerRadius: CGFloat = DesignTokens.Radius.md
-    var errorBackground: Color = DesignTokens.Color.semantic.error.opacity(0.1)
-    var userBackground: Color = DesignTokens.Color.semantic.info.opacity(0.1)
+    var cornerRadius: CGFloat = 16
+    var errorBackground: Color = Color(hex: "FF453A").opacity(0.1)
+    var userBackground: Color = Color(hex: "0A84FF").opacity(0.1)
     var assistantBackground: Color = .clear
-    var defaultBackground: Color = DesignTokens.Color.semantic.textTertiary.opacity(0.1)
-    var errorForeground: Color = DesignTokens.Color.semantic.error
-    var defaultForeground: Color = DesignTokens.Color.semantic.textPrimary
+    var defaultBackground: Color = Color(hex: "98989E").opacity(0.1)
+    var errorForeground: Color = Color(hex: "FF453A")
+    var defaultForeground: Color = Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
     var backgroundOverride: Color?
     var foregroundOverride: Color?
 

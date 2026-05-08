@@ -18,42 +18,42 @@ struct AppRow: View {
                 )
             } else {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(AppUI.Color.semantic.textTertiary.opacity(0.3))
+                    .fill(Color(hex: "98989E").opacity(0.3))
                     .frame(width: 48, height: 48)
                     .overlay {
                         Image.appleTerminal
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 // 应用名称
                 Text(app.displayName)
-                    .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 // Bundle ID 和版本
                 HStack(spacing: 8) {
                     if let identifier = app.bundleIdentifier {
                         Text(identifier)
                             .font(.caption)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
 
                     if let version = app.version {
                         Text("•")
-                            .foregroundColor(AppUI.Color.semantic.textTertiary)
+                            .foregroundColor(Color(hex: "98989E"))
 
                         Text(version)
                             .font(.caption)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                 }
 
                 // 大小
                 Text(app.formattedSize)
                     .font(.caption)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
             Spacer()

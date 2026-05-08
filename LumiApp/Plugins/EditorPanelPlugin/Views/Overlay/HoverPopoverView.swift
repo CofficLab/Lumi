@@ -43,9 +43,9 @@ struct HoverPopoverView: View {
             codeFont: .system(size: 12, design: .monospaced),
             blockSpacing: 6,
             listItemSpacing: 2,
-            codeBlockBackground: AppUI.Color.semantic.textSecondary.opacity(0.06),
-            quoteBorderColor: AppUI.Color.semantic.textSecondary.opacity(0.4),
-            tableHeaderBackground: AppUI.Color.semantic.textSecondary.opacity(0.1),
+            codeBlockBackground: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.06),
+            quoteBorderColor: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.4),
+            tableHeaderBackground: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.1),
             showLanguageLabel: true
         )
     }

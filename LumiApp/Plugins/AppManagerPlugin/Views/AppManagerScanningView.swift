@@ -9,7 +9,7 @@ struct AppManagerScanningView: View {
             VStack(spacing: 12) {
                 Image(systemName: "magnifyingglass.circle.fill")
                     .font(.system(size: 40))
-                    .foregroundColor(AppUI.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
                     .symbolRenderingMode(.hierarchical)
                 
                 ProgressView()
@@ -17,7 +17,7 @@ struct AppManagerScanningView: View {
                 
                 Text(String(localized: "Scanning related files...", table: "AppManager"))
                     .font(.subheadline)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             
             Spacer()

@@ -212,16 +212,16 @@ struct OpenRemoteDetailView: View {
     let url: URL?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             // 标题
-            HStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: 8) {
                 Image(systemName: "safari")
                     .font(.system(size: 16))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
 
                 Text("远程仓库")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
@@ -243,15 +243,15 @@ struct OpenRemoteDetailView: View {
 
             if let url = url {
                 // URL 显示
-                HStack(spacing: DesignTokens.Spacing.sm) {
+                HStack(spacing: 8) {
                     Text("URL")
                         .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .frame(width: 60, alignment: .leading)
 
                     Text(url.absoluteString)
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .lineLimit(2)
                         .textSelection(.enabled)
 
@@ -271,16 +271,16 @@ struct OpenRemoteDetailView: View {
                 // 无远程仓库
                 HStack {
                     Spacer()
-                    VStack(spacing: DesignTokens.Spacing.sm) {
+                    VStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.system(size: 24))
-                            .foregroundColor(DesignTokens.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
 
                         Text("当前项目没有远程仓库")
                             .font(.system(size: 13))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
-                    .padding(.vertical, DesignTokens.Spacing.md)
+                    .padding(.vertical, 16)
                     Spacer()
                 }
             }

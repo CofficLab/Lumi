@@ -7,14 +7,14 @@ struct DiskUsageRingView: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(AppUI.Color.semantic.textTertiary.opacity(0.2), lineWidth: 10)
+                .stroke(Color(hex: "98989E").opacity(0.2), lineWidth: 10)
 
             if let usage = viewModel.diskUsage {
                 Circle()
                     .trim(from: 0, to: usage.usedPercentage)
                     .stroke(
                         AngularGradient(
-                            gradient: Gradient(colors: [AppUI.Color.semantic.info, AppUI.Color.semantic.primary]),
+                            gradient: Gradient(colors: [Color(hex: "0A84FF"), Color(hex: "7C6FFF")]),
                             center: .center,
                             startAngle: .degrees(-90),
                             endAngle: .degrees(-90 + 360 * usage.usedPercentage)
@@ -29,10 +29,10 @@ struct DiskUsageRingView: View {
                     Text("\(Int(usage.usedPercentage * 100))%")
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     Text("已用")
                         .font(.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 } else {
                     ProgressView()
                         .scaleEffect(0.8)

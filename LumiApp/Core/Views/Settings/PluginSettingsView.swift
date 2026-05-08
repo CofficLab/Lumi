@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 插件设置视图：控制各个插件的启用/禁用状态
 struct PluginSettingsView: View {
@@ -15,11 +16,11 @@ struct PluginSettingsView: View {
         VStack(spacing: 0) {
             // 顶部说明卡片（固定）
             headerCard
-                .padding(AppUI.Spacing.lg)
+                .padding(24)
                 .background(Color.clear)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.lg) {
+                VStack(alignment: .leading, spacing: 24) {
                     // 插件列表卡片
                     if !configurablePlugins.isEmpty {
                         pluginListCard
@@ -32,7 +33,7 @@ struct PluginSettingsView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, AppUI.Spacing.lg)
+                .padding(.horizontal, 24)
             }
         }
         .navigationTitle("插件管理")
@@ -83,25 +84,25 @@ struct PluginSettingsView: View {
 
     private var emptyStateCard: some View {
         GlassCard {
-            VStack(spacing: AppUI.Spacing.lg) {
+            VStack(spacing: 24) {
                 Image(systemName: "puzzlepiece.extension")
                     .font(.system(size: 48))
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-                VStack(spacing: AppUI.Spacing.xs) {
+                VStack(spacing: 4) {
                     Text("暂无可配置的插件")
-                        .font(AppUI.Typography.bodyEmphasized)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text("当插件标记为可配置时，会在此处显示")
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color(hex: "98989E"))
                 }
 
                 Spacer()
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, AppUI.Spacing.xl)
+            .padding(.vertical, 32)
         }
     }
 
@@ -140,26 +141,26 @@ struct PluginToggleRow: View {
 
     var body: some View {
         GlassRow {
-            HStack(spacing: AppUI.Spacing.md) {
+            HStack(spacing: 16) {
                 // 图标
                 Image(systemName: plugin.icon)
                     .font(.system(size: 20))
-                    .foregroundColor(AppUI.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
                     .frame(width: 32, height: 32)
                     .background(
                         Circle()
-                            .fill(AppUI.Color.semantic.primary.opacity(0.1))
+                            .fill(Color(hex: "7C6FFF").opacity(0.1))
                     )
 
                 // 信息
-                VStack(alignment: .leading, spacing: AppUI.Spacing.xs) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(plugin.name)
-                        .font(AppUI.Typography.bodyEmphasized)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text(plugin.description)
-                        .font(AppUI.Typography.caption1)
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color(hex: "98989E"))
                 }
 
                 Spacer()

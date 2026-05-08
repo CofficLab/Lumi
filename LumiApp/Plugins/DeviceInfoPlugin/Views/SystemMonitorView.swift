@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct SystemMonitorView: View {
     @StateObject private var viewModel = SystemMonitorViewModel()
@@ -22,11 +23,11 @@ struct SystemMonitorView: View {
             // Network Card
             MonitorCard(title: "Network", 
                         value: "↓\(viewModel.metrics.network.downloadSpeedString) ↑\(viewModel.metrics.network.uploadSpeedString)",
-                        color: AppUI.Color.semantic.info) {
+                        color: Color(hex: "0A84FF")) {
                 ZStack {
-                    WaveformView(data: viewModel.metrics.network.downloadHistory, color: AppUI.Color.semantic.info, maxVal: 1024*1024*10)
+                    WaveformView(data: viewModel.metrics.network.downloadHistory, color: Color(hex: "0A84FF"), maxVal: 1024*1024*10)
                         .opacity(0.8)
-                    WaveformView(data: viewModel.metrics.network.uploadHistory, color: AppUI.Color.semantic.primary, maxVal: 1024*1024*5)
+                    WaveformView(data: viewModel.metrics.network.uploadHistory, color: Color(hex: "7C6FFF"), maxVal: 1024*1024*5)
                         .opacity(0.6)
                 }
             }
@@ -34,11 +35,11 @@ struct SystemMonitorView: View {
             // Disk Card
             MonitorCard(title: "Disk I/O", 
                         value: String(format: String(localized: "R: %@ W: %@", table: "DeviceInfo"), viewModel.metrics.disk.readSpeedString, viewModel.metrics.disk.writeSpeedString),
-                        color: AppUI.Color.semantic.warning) {
+                        color: Color(hex: "FF9F0A")) {
                 ZStack {
-                    WaveformView(data: viewModel.metrics.disk.readHistory, color: AppUI.Color.semantic.warning, maxVal: 1024*1024*50)
+                    WaveformView(data: viewModel.metrics.disk.readHistory, color: Color(hex: "FF9F0A"), maxVal: 1024*1024*50)
                         .opacity(0.8)
-                    WaveformView(data: viewModel.metrics.disk.writeHistory, color: AppUI.Color.semantic.error, maxVal: 1024*1024*20)
+                    WaveformView(data: viewModel.metrics.disk.writeHistory, color: Color(hex: "FF453A"), maxVal: 1024*1024*20)
                         .opacity(0.6)
                 }
             }
@@ -64,8 +65,8 @@ struct MonitorCard<Content: View>: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(title)
-                        .font(AppUI.Typography.bodyEmphasized)
-                        .foregroundColor(AppUI.Color.semantic.textSecondary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Spacer()
                     Text(value)
                         .font(.system(.body, design: .monospaced))
@@ -75,7 +76,7 @@ struct MonitorCard<Content: View>: View {
                 
                 content()
                     .frame(height: 100)
-                    .background(AppUI.Material.glass.opacity(0.2))
+                    .background(Color.white.opacity(0.04))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }

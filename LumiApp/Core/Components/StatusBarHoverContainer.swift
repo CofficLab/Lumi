@@ -107,7 +107,7 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
     var body: some View {
         return content
             .background(hoverBackground)
-            .animation(DesignAnimations.Preset.fadeIn, value: isHovering)
+            .animation(.easeOut(duration: 0.15), value: isHovering)
             .onHover { hovering in
                 isHovering = hovering
             }
@@ -116,7 +116,7 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
                 guard detailView != nil else { return }
                 
                 // 切换显示状态
-                withAnimation(DesignAnimations.Preset.fadeIn) {
+                withAnimation(.easeOut(duration: 0.15)) {
                     if isPresented {
                         // 如果当前已显示，则关闭
                         isPresented = false
@@ -144,7 +144,7 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
             ZStack {
                 if isHovering {
                     // 使用白色半透明覆盖，确保在彩色状态栏背景（蓝/黄）上都清晰可见
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    RoundedRectangle(cornerRadius: 8)
                         .fill(Color.white.opacity(0.25))
                         .transition(.opacity)
                 }
@@ -163,9 +163,9 @@ struct StatusBarHoverContainer<Content: View, Detail: View>: View {
                         coordinator.open(id: self.id)
                     }
                 }
-                .padding(DesignTokens.Spacing.lg)
+                .padding(24)
                 .frame(width: popoverWidth)
-                .background(DesignTokens.Material.glass)
+                .background(Material.regularMaterial)
         }
     }
 }
@@ -185,15 +185,15 @@ extension StatusBarHoverContainer {
         @ViewBuilder content: @escaping () -> C
     ) -> StatusBarHoverContainer<C, AnyView> {
         let detailContent = AnyView(
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+            VStack(alignment: .leading, spacing: 8) {
                 if let title = title {
                     Text(title)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 }
                 Text(detailText)
                     .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .textSelection(.enabled)
             }
         )

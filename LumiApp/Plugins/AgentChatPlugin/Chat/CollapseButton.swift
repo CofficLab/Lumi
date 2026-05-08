@@ -13,7 +13,7 @@ struct CollapseButton: View {
         AppIconButton(
             systemImage: "chevron.up",
             label: String(localized: "Collapse", table: "AgentChat"),
-            tint: AppUI.Color.semantic.textSecondary.opacity(0.8),
+            tint: Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.8),
             size: .compact,
             action: action
         )

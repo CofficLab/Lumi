@@ -9,11 +9,11 @@ struct CacheCleanerFooter: View {
         HStack {
             VStack(alignment: .leading) {
                 Text("已选择：\(viewModel.formatBytes(viewModel.totalSelectedSize))")
-                    .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text("\(viewModel.selection.count) 个项目")
                     .font(.caption)
-                    .foregroundColor(AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
 
             Spacer()
@@ -26,12 +26,12 @@ struct CacheCleanerFooter: View {
                 } icon: {
                     Image(systemName: "trash.fill")
                 }
-                .font(AppUI.Typography.bodyEmphasized)
+                .font(.system(size: 15, weight: .medium))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             }
             .buttonStyle(.borderedProminent)
-            .tint(AppUI.Color.semantic.warning)
+            .tint(Color(hex: "FF9F0A"))
             .disabled(viewModel.selection.isEmpty || viewModel.isCleaning)
         }
         .padding(.horizontal)

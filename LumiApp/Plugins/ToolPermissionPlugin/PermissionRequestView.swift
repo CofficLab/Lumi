@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 权限请求视图，用于显示工具执行请求并获取用户批准
 struct PermissionRequestView: View {
@@ -45,7 +46,7 @@ extension PermissionRequestView {
                 .font(.title2)
                 .foregroundColor(request.riskLevel.iconColor)
             Text(String(localized: "Permission Request", table: "AgentToolPermission"))
-                .font(AppUI.Typography.bodyEmphasized)
+                .font(.system(size: 15, weight: .medium))
             Spacer()
         }
     }
@@ -58,7 +59,7 @@ extension PermissionRequestView {
 
             Text(String(localized: "The assistant is trying to perform a \(request.riskLevel.displayName) action.", table: "AgentToolPermission"))
                 .font(.caption)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             detailsDisclosure(for: request)
 
@@ -89,7 +90,7 @@ extension PermissionRequestView {
                 .foregroundColor(.blue)
             Text(reason)
                 .font(.caption)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .padding(.top, 4)
     }

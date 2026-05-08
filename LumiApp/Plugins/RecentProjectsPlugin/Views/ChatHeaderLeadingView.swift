@@ -11,20 +11,20 @@ struct ChatHeaderLeadingView: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(projectVM.currentProjectName.isEmpty ? "Lumi" : projectVM.currentProjectName)
-                .font(AppUI.Typography.body)
+                .font(.system(size: 15, weight: .regular))
                 .fontWeight(.medium)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             Image(systemName: "chevron.down")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundColor(AppUI.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
                 .rotationEffect(.degrees(isDropdownPresented ? 180 : 0))
-                .animation(.easeInOut(duration: DesignTokens.Duration.micro), value: isDropdownPresented)
+                .animation(.easeInOut(duration: 0.15), value: isDropdownPresented)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(backgroundColor)
-        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(borderOverlay)
         .onHover { hovering in
             hoverState = hovering
@@ -56,12 +56,12 @@ struct ChatHeaderLeadingView: View {
     private var borderOverlay: some View {
         Group {
             if isDropdownPresented || hoverState {
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.accentColor.opacity(isDropdownPresented ? 0.4 : 0.15), lineWidth: 1)
             }
         }
-        .animation(.easeOut(duration: DesignTokens.Duration.micro), value: isDropdownPresented)
-        .animation(.easeOut(duration: DesignTokens.Duration.micro), value: hoverState)
+        .animation(.easeOut(duration: 0.15), value: isDropdownPresented)
+        .animation(.easeOut(duration: 0.15), value: hoverState)
     }
 
     // MARK: - Dropdown
@@ -84,7 +84,7 @@ struct ChatHeaderLeadingView: View {
     // MARK: - Action
 
     private func toggleDropdown() {
-        withAnimation(.easeInOut(duration: DesignTokens.Duration.standard)) {
+        withAnimation(.easeInOut(duration: 0.20)) {
             isDropdownPresented.toggle()
         }
     }
@@ -93,7 +93,7 @@ struct ChatHeaderLeadingView: View {
         Task { @MainActor in
             projectVM.switchProject(to: project)
         }
-        withAnimation(.easeInOut(duration: DesignTokens.Duration.standard)) {
+        withAnimation(.easeInOut(duration: 0.20)) {
             isDropdownPresented = false
         }
     }

@@ -51,16 +51,16 @@ struct EditorCodeActionOverlayView: View {
         } label: {
             ZStack(alignment: .topTrailing) {
                 RoundedRectangle(cornerRadius: style.indicatorCornerRadius)
-                    .fill(AppUI.Color.semantic.warning.opacity(state.isCodeActionPanelPresented ? 0.24 : 0.16))
+                    .fill(Color(hex: "FF9F0A").opacity(state.isCodeActionPanelPresented ? 0.24 : 0.16))
                     .overlay(
                         RoundedRectangle(cornerRadius: style.indicatorCornerRadius)
-                            .stroke(AppUI.Color.semantic.warning.opacity(state.isCodeActionPanelPresented ? 0.7 : 0.45), lineWidth: 1)
+                            .stroke(Color(hex: "FF9F0A").opacity(state.isCodeActionPanelPresented ? 0.7 : 0.45), lineWidth: 1)
                     )
                     .frame(width: style.indicatorSize, height: style.indicatorSize)
 
                 Image(systemName: "lightbulb.fill")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(AppUI.Color.semantic.warning)
+                    .foregroundColor(Color(hex: "FF9F0A"))
 
                 if actionCount > 1 {
                     Text("\(actionCount)")
@@ -70,7 +70,7 @@ struct EditorCodeActionOverlayView: View {
                         .padding(.vertical, 1)
                         .background(
                             Capsule()
-                                .fill(AppUI.Color.semantic.primary)
+                                .fill(Color(hex: "7C6FFF"))
                         )
                         .offset(x: 8, y: -6)
                 }

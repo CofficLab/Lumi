@@ -72,7 +72,7 @@ struct CaffeinateStatusBarPopupView: View {
             QuickActionMenuItem(
                 title: String(localized: "Prevent sleep & Keep screen on", table: "Caffeinate"),
                 icon: "sun.max.fill",
-                color: AppUI.Color.semantic.warning,
+                color: Color(hex: "FF9F0A"),
                 isSelected: activeAction == .systemAndDisplay,
                 action: {
                     toggleAction(.systemAndDisplay)
@@ -85,7 +85,7 @@ struct CaffeinateStatusBarPopupView: View {
             QuickActionMenuItem(
                 title: String(localized: "Prevent sleep & Allow screen off", table: "Caffeinate"),
                 icon: "moon.fill",
-                color: AppUI.Color.semantic.info,
+                color: Color(hex: "0A84FF"),
                 isSelected: activeAction == .systemOnly,
                 action: {
                     toggleAction(.systemOnly)
@@ -98,7 +98,7 @@ struct CaffeinateStatusBarPopupView: View {
             QuickActionMenuItem(
                 title: String(localized: "Prevent sleep & Turn off screen", table: "Caffeinate"),
                 icon: "power",
-                color: AppUI.Color.semantic.primary,
+                color: Color(hex: "7C6FFF"),
                 showCheckmark: false, // 瞬时操作，不显示对号
                 action: {
                     // 立即关闭屏幕，并切换到"允许关闭"模式
@@ -147,10 +147,10 @@ private struct DurationButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 10))
-                .foregroundColor(isSelected ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
+                .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(isSelected ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textTertiary.opacity(0.2))
+                .background(isSelected ? Color(hex: "7C6FFF") : Color(hex: "98989E").opacity(0.2))
                 .cornerRadius(3)
         }
         .buttonStyle(.plain)
@@ -187,12 +187,12 @@ private struct QuickActionMenuItem: View {
             HStack(spacing: 10) {
                 Image(systemName: icon)
                     .font(.system(size: 11))
-                    .foregroundColor(isHovering ? AppUI.Color.semantic.textPrimary : color)
+                    .foregroundColor(isHovering ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : color)
                     .frame(width: 18)
 
                 Text(title)
                     .font(.system(size: 11))
-                    .foregroundColor(isHovering ? AppUI.Color.semantic.textPrimary : AppUI.Color.semantic.textSecondary)
+                    .foregroundColor(isHovering ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 Spacer()
 
@@ -200,7 +200,7 @@ private struct QuickActionMenuItem: View {
                 if shouldShowCheckmark {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(isHovering ? AppUI.Color.semantic.textPrimary : color)
+                        .foregroundColor(isHovering ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : color)
                 }
             }
             .padding(.horizontal, 12)
@@ -210,7 +210,7 @@ private struct QuickActionMenuItem: View {
         .buttonStyle(.plain)
         .background(
             Rectangle()
-                .fill(isHovering ? AppUI.Color.semantic.primary.opacity(0.2) : Color.clear)
+                .fill(isHovering ? Color(hex: "7C6FFF").opacity(0.2) : Color.clear)
         )
         .onHover { hovering in
             isHovering = hovering

@@ -28,8 +28,8 @@ struct StreamingAssistantRowView: View {
             }
 
             Text(verbatim: visibleContent)
-                .font(AppUI.Typography.body)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .font(.system(size: 15, weight: .regular))
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)

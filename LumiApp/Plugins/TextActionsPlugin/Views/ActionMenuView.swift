@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import AppKit
 
 struct ActionMenuView: View {
@@ -27,22 +28,22 @@ struct ActionMenuView: View {
                     Text(appName)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                     Text("版本 \(appVersion)")
                         .font(.caption2)
-                        .foregroundColor(AppUI.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                 }
 
                 Spacer()
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .background(AppUI.Color.semantic.primary.opacity(0.1))
-            .cornerRadius(AppUI.Radius.sm)
+            .background(Color(hex: "7C6FFF").opacity(0.1))
+            .cornerRadius(8)
 
             Divider()
-                .background(AppUI.Color.semantic.textTertiary.opacity(0.2))
+                .background(Color(hex: "98989E").opacity(0.2))
 
             // 操作按钮
             HStack(spacing: 8) {
@@ -56,13 +57,13 @@ struct ActionMenuView: View {
                             Text(action.title)
                                 .font(.caption)
                         }
-                        .foregroundColor(hoveredAction == action ? AppUI.Color.semantic.primary : AppUI.Color.semantic.textPrimary)
+                        .foregroundColor(hoveredAction == action ? Color(hex: "7C6FFF") : Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .frame(width: 50, height: 25)
                         .contentShape(Rectangle())
-                        .background(hoveredAction == action ? AppUI.Color.semantic.primary.opacity(0.2) : SwiftUI.Color.clear)
+                        .background(hoveredAction == action ? Color(hex: "7C6FFF").opacity(0.2) : SwiftUI.Color.clear)
                     }
                     .buttonStyle(.plain)
-                    .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
+                    .appSurface(style: .glass, cornerRadius: 8)
                     .onHover { isHovering in
                         hoveredAction = isHovering ? action : nil
                         if isHovering {
@@ -75,7 +76,7 @@ struct ActionMenuView: View {
             }
         }
         .padding(8)
-        .appSurface(style: .glass, cornerRadius: AppUI.Radius.sm)
+        .appSurface(style: .glass, cornerRadius: 8)
     }
 }
 

@@ -49,14 +49,14 @@ struct GitBranchPickerPanel: View {
 
     private var currentBranchBackground: Color {
         colorScheme == .light
-            ? DesignTokens.Color.semantic.primary.opacity(0.08)
-            : DesignTokens.Color.semantic.primary.opacity(0.15)
+            ? Color(hex: "7C6FFF").opacity(0.08)
+            : Color(hex: "7C6FFF").opacity(0.15)
     }
 
     private var footerBackground: Color {
         colorScheme == .light
             ? Color(hex: "F5F5F7")
-            : DesignTokens.Color.basePalette.surfaceBackground
+            : Color(hex: "0D0D12")
     }
 
     // MARK: - Body
@@ -98,20 +98,20 @@ struct GitBranchPickerPanel: View {
         VStack(spacing: 0) {
             Divider()
 
-            VStack(spacing: DesignTokens.Spacing.sm) {
-                HStack(spacing: DesignTokens.Spacing.sm) {
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
                     Image(systemName: "pencil.circle.fill")
                         .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.primary)
+                        .foregroundColor(Color(hex: "7C6FFF"))
 
                     Text("AI Commit")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     Spacer()
                 }
 
-                HStack(spacing: DesignTokens.Spacing.sm) {
+                HStack(spacing: 8) {
                     commitButton(
                         title: "EN Commit",
                         icon: "🇬🇧",
@@ -132,30 +132,30 @@ struct GitBranchPickerPanel: View {
                             .scaleEffect(0.7)
                         Text("正在生成并提交...")
                             .font(.system(size: 11))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                 } else if let result = commitResult {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(DesignTokens.Color.semantic.success)
+                            .foregroundColor(Color(hex: "30D158"))
                         Text("已提交: \(result.message)")
                             .font(.system(size: 11))
-                            .foregroundColor(DesignTokens.Color.semantic.success)
+                            .foregroundColor(Color(hex: "30D158"))
                             .lineLimit(1)
                     }
                 } else if let error = commitError {
                     HStack(spacing: 4) {
                         Image(systemName: "exclamationmark.circle.fill")
-                            .foregroundColor(DesignTokens.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                         Text(error)
                             .font(.system(size: 11))
-                            .foregroundColor(DesignTokens.Color.semantic.warning)
+                            .foregroundColor(Color(hex: "FF9F0A"))
                             .lineLimit(1)
                     }
                 }
             }
-            .padding(.horizontal, DesignTokens.Spacing.md)
-            .padding(.vertical, DesignTokens.Spacing.sm)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
         }
     }
 
@@ -170,12 +170,12 @@ struct GitBranchPickerPanel: View {
                 Text(title)
                     .font(.system(size: 12, weight: .medium))
             }
-            .foregroundColor(DesignTokens.Color.semantic.textPrimary)
-            .padding(.horizontal, DesignTokens.Spacing.md)
-            .padding(.vertical, DesignTokens.Spacing.xs)
+            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
             .background(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                    .fill(DesignTokens.Color.semantic.primary.opacity(0.1))
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(hex: "7C6FFF").opacity(0.1))
             )
         }
         .buttonStyle(.plain)
@@ -259,21 +259,21 @@ struct GitBranchPickerPanel: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             TextField(String(localized: "Search branches…", table: "GitBranchStatusBar"), text: $searchText)
                 .font(.system(size: 12))
                 .textFieldStyle(.plain)
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             if !searchText.isEmpty {
                 Button(action: { searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 .buttonStyle(.plain)
             }
@@ -285,7 +285,7 @@ struct GitBranchPickerPanel: View {
                 Button(action: { Task { await loadBranches() } }) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "Refresh", table: "GitBranchStatusBar"))
@@ -293,38 +293,38 @@ struct GitBranchPickerPanel: View {
                 Button(action: { showCreateBranchAlert = true }) {
                     Image(systemName: "plus")
                         .font(.system(size: 12))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "New Branch", table: "GitBranchStatusBar"))
             }
         }
-        .padding(.horizontal, DesignTokens.Spacing.md)
-        .padding(.vertical, DesignTokens.Spacing.sm)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Content
 
     private var contentSection: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+            VStack(alignment: .leading, spacing: 8) {
                 // 当前分支
                 if let current = currentBranch {
                     Text(String(localized: "Current Branch", table: "GitBranchStatusBar"))
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     currentBranchRow(branch: current)
-                        .padding(.bottom, DesignTokens.Spacing.sm)
+                        .padding(.bottom, 8)
                 }
 
                 // 其他分支
                 if !filteredBranches.isEmpty {
-                    Divider().padding(.vertical, DesignTokens.Spacing.xs)
+                    Divider().padding(.vertical, 4)
 
                     Text(String(localized: "Other Branches", table: "GitBranchStatusBar"))
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                     VStack(spacing: 2) {
                         ForEach(filteredBranches) { branch in
@@ -349,7 +349,7 @@ struct GitBranchPickerPanel: View {
                 .scaleEffect(0.7)
             Text(message)
                 .font(.system(size: 11))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             Spacer()
         }
         .background(footerBackground)
@@ -359,32 +359,32 @@ struct GitBranchPickerPanel: View {
 
     /// 当前分支行（不可点击）
     private func currentBranchRow(branch: GitBranch) -> some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(spacing: 8) {
             Image(systemName: "checkmark")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(DesignTokens.Color.semantic.primary)
+                .foregroundColor(Color(hex: "7C6FFF"))
                 .frame(width: 16, alignment: .center)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(branch.name)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(DesignTokens.Color.semantic.primary)
+                    .foregroundColor(Color(hex: "7C6FFF"))
                     .lineLimit(1)
 
                 if !branch.latestCommitMessage.isEmpty {
                     Text(branch.latestCommitMessage)
                         .font(.system(size: 11))
-                        .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .lineLimit(1)
                 }
             }
 
             Spacer()
         }
-        .padding(.horizontal, DesignTokens.Spacing.sm)
-        .padding(.vertical, DesignTokens.Spacing.xs)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
         .background(currentBranchBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     /// 可切换分支行
@@ -392,58 +392,58 @@ struct GitBranchPickerPanel: View {
         Button(action: {
             Task { await performCheckout(branch: branch.name) }
         }) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: 8) {
                 Image(systemName: "arrow.triangle.branch")
                     .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
                     .frame(width: 16, alignment: .center)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(branch.name)
                         .font(.system(size: 13))
-                        .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         .lineLimit(1)
 
                     if !branch.latestCommitMessage.isEmpty {
                         Text(branch.latestCommitMessage)
                             .font(.system(size: 11))
-                            .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .lineLimit(1)
                     }
                 }
 
                 Spacer()
             }
-            .padding(.horizontal, DesignTokens.Spacing.sm)
-            .padding(.vertical, DesignTokens.Spacing.xs)
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
         .disabled(performingAction != nil)
     }
 
     private var loadingView: some View {
-        VStack(spacing: DesignTokens.Spacing.md) {
+        VStack(spacing: 16) {
             ProgressView().scaleEffect(0.8)
             Text(String(localized: "Loading branches…", table: "GitBranchStatusBar"))
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.lg)
+        .padding(.vertical, 24)
     }
 
     private func errorView(message: String) -> some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
+        VStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 24))
-                .foregroundColor(DesignTokens.Color.semantic.warning)
+                .foregroundColor(Color(hex: "FF9F0A"))
 
             Text(message)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, DesignTokens.Spacing.md)
+                .padding(.horizontal, 16)
 
             Button(action: { Task { await loadBranches() } }) {
                 Text(String(localized: "Retry", table: "GitBranchStatusBar"))
@@ -452,20 +452,20 @@ struct GitBranchPickerPanel: View {
             .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.lg)
+        .padding(.vertical, 24)
     }
 
     private func emptyStateView(icon: String, message: String) -> some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
             Text(message)
                 .font(.system(size: 12))
-                .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                .foregroundColor(Color(hex: "98989E"))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.sm)
+        .padding(.vertical, 8)
     }
 
     private var createBranchAlert: Alert {

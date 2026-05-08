@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct DatabaseMainView: View {
     @StateObject private var viewModel = DatabaseViewModel()
@@ -9,8 +10,8 @@ struct DatabaseMainView: View {
             // Sidebar
             VStack(alignment: .leading) {
                 Text("Connections")
-                    .font(AppUI.Typography.bodyEmphasized)
-                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .padding(.horizontal)
                     .padding(.top)
                 
@@ -21,7 +22,7 @@ struct DatabaseMainView: View {
                         Spacer()
                         if viewModel.selectedConfig?.id == config.id && viewModel.isConnected {
                             Circle()
-                                .fill(AppUI.Color.semantic.success)
+                                .fill(Color(hex: "30D158"))
                                 .frame(width: 8, height: 8)
                         }
                     }
@@ -47,11 +48,11 @@ struct DatabaseMainView: View {
                     VStack(spacing: 0) {
                         if viewModel.selectedConfig?.type == .redis {
                             GlassCard {
-                                VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+                                VStack(alignment: .leading, spacing: 8) {
                                     HStack {
                                         Text("Keys")
-                                            .font(AppUI.Typography.bodyEmphasized)
-                                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                            .font(.system(size: 15, weight: .medium))
+                                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                         Spacer()
                                         GlassButton(title: "Load", style: .secondary) {
                                             Task { await viewModel.loadRedisKeys() }
@@ -74,11 +75,11 @@ struct DatabaseMainView: View {
                         }
                         if viewModel.selectedConfig?.type == .sqlite {
                             GlassCard {
-                                VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+                                VStack(alignment: .leading, spacing: 8) {
                                     HStack {
                                         Text("Tables")
-                                            .font(AppUI.Typography.bodyEmphasized)
-                                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                            .font(.system(size: 15, weight: .medium))
+                                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                         Spacer()
                                         GlassButton(title: "Load", style: .secondary) {
                                             Task { await viewModel.loadSQLiteTables() }
@@ -104,7 +105,7 @@ struct DatabaseMainView: View {
                             .font(.monospaced(.body)())
                             .padding(8)
                             .frame(minHeight: 100, maxHeight: 200)
-                            .border(AppUI.Color.semantic.textTertiary.opacity(0.2))
+                            .border(Color(hex: "98989E").opacity(0.2))
                         
                         // Toolbar
                         HStack {
@@ -124,21 +125,21 @@ struct DatabaseMainView: View {
                             .keyboardShortcut(.return, modifiers: .command)
                         }
                         .padding(8)
-                        .background(AppUI.Material.glass)
+                        .background(Material.regularMaterial)
                         
                         GlassDivider()
                         
                         // Results
                         if let error = viewModel.errorMessage {
                             Text(error)
-                                .foregroundColor(AppUI.Color.semantic.error)
+                                .foregroundColor(Color(hex: "FF453A"))
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else if let result = viewModel.queryResult {
                             QueryResultView(result: result)
                         } else {
                             Text("No results")
-                                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                     }
@@ -146,10 +147,10 @@ struct DatabaseMainView: View {
                     VStack {
                         Image(systemName: "database")
                             .font(.system(size: 48))
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         Text("Select a database to connect")
                             .font(.title2)
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -171,14 +172,14 @@ struct QueryResultView: View {
                 HStack(spacing: 0) {
                     ForEach(result.columns, id: \.self) { col in
                         Text(col)
-                            .font(AppUI.Typography.bodyEmphasized)
-                            .foregroundColor(AppUI.Color.semantic.textPrimary)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                             .padding(8)
                             .frame(width: 120, alignment: .leading)
-                            .border(AppUI.Color.semantic.textTertiary.opacity(0.2))
+                            .border(Color(hex: "98989E").opacity(0.2))
                     }
                 }
-                .background(AppUI.Material.glass)
+                .background(Material.regularMaterial)
                 
                 // Rows
                 LazyVStack(spacing: 0) {
@@ -189,10 +190,10 @@ struct QueryResultView: View {
                                 let text = content(for: row[colIndex])
                                 Text(text)
                                     .font(.monospaced(.body)())
-                                    .foregroundColor(AppUI.Color.semantic.textPrimary)
+                                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                     .padding(8)
                                     .frame(width: 160, alignment: .leading)
-                                    .border(AppUI.Color.semantic.textTertiary.opacity(0.1))
+                                    .border(Color(hex: "98989E").opacity(0.1))
                                     .contextMenu {
                                         Button("Copy") {
                                             NSPasteboard.general.clearContents()
@@ -238,16 +239,16 @@ struct AddConnectionView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Add Connection")
-                .font(AppUI.Typography.title2)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             
             GlassCard {
-                VStack(alignment: .leading, spacing: AppUI.Spacing.sm) {
+                VStack(alignment: .leading, spacing: 8) {
                     GlassTextField(title: "Connection Name", text: $name, placeholder: "My Database")
                     
                     HStack {
                         Text("Database Type")
-                            .foregroundColor(AppUI.Color.semantic.textSecondary)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         Spacer()
                         Picker("", selection: $type) {
                             ForEach(DatabaseType.allCases, id: \.self) { t in
@@ -323,9 +324,9 @@ struct AddConnectionView: View {
             if let msg = testMessage {
                 HStack {
                     Image(systemName: testSuccess ? "checkmark.circle" : "xmark.octagon")
-                        .foregroundColor(testSuccess ? AppUI.Color.semantic.success : AppUI.Color.semantic.error)
+                        .foregroundColor(testSuccess ? Color(hex: "30D158") : Color(hex: "FF453A"))
                     Text(msg)
-                        .foregroundColor(testSuccess ? AppUI.Color.semantic.success : AppUI.Color.semantic.error)
+                        .foregroundColor(testSuccess ? Color(hex: "30D158") : Color(hex: "FF453A"))
                     if isTesting {
                         Spacer()
                         ProgressView().scaleEffect(0.5)

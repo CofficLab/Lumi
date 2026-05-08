@@ -7,12 +7,12 @@ struct ThemePickerDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Theme")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(DesignTokens.Color.semantic.textPrimary)
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             if themeVM.themes.isEmpty {
                 Text("No themes available")
                     .font(.system(size: 12))
-                    .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                    .foregroundColor(Color(hex: "98989E"))
                     .padding(.vertical, 8)
             } else {
                 ScrollView {
@@ -36,20 +36,20 @@ struct ThemePickerDetailView: View {
             HStack(spacing: 10) {
                 Image(systemName: theme.iconName)
                     .font(.system(size: 12))
-                    .foregroundColor(isSelected ? .white : DesignTokens.Color.semantic.textSecondary)
+                    .foregroundColor(isSelected ? .white : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 20, height: 20)
                     .background(
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(isSelected ? theme.iconColor : DesignTokens.Color.semantic.textTertiary.opacity(0.12))
+                            .fill(isSelected ? theme.iconColor : Color(hex: "98989E").opacity(0.12))
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(theme.displayName)
                         .font(.system(size: 12, weight: isSelected ? .medium : .regular))
-                        .foregroundColor(isSelected ? DesignTokens.Color.semantic.textPrimary : DesignTokens.Color.semantic.textSecondary)
+                        .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text(theme.description)
                         .font(.system(size: 10))
-                        .foregroundColor(DesignTokens.Color.semantic.textTertiary)
+                        .foregroundColor(Color(hex: "98989E"))
                         .lineLimit(1)
                 }
 
@@ -64,7 +64,7 @@ struct ThemePickerDetailView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                RoundedRectangle(cornerRadius: 8)
                     .fill(isSelected ? theme.iconColor.opacity(0.12) : Color.clear)
             )
             .contentShape(Rectangle())

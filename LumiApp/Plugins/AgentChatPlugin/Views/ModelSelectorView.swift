@@ -91,7 +91,7 @@ struct ModelSelectorView: View, SuperLog {
             }
         }
         .frame(width: 520, height: 400)
-        .background(AppUI.Material.glass)
+        .background(Material.regularMaterial)
         .task {
             await loadAllStats()
         }
@@ -263,7 +263,7 @@ struct ModelSelectorView: View, SuperLog {
             let fallbackSeries = String(localized: "Other", table: "AgentChat")
             let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
-                Section(header: Text(seriesName).font(AppUI.Typography.subheadline).foregroundColor(AppUI.Color.semantic.textSecondary)) {
+                Section(header: Text(seriesName).font(.system(size: 13, weight: .regular)).foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))) {
                     ForEach(grouped[seriesName] ?? [], id: \.id) { info in
                         modelRow(
                             provider: provider,
@@ -335,10 +335,10 @@ extension ModelSelectorView {
     private func sectionHeader(for provider: LLMProviderInfo) -> some View {
         HStack {
             Text("")
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             Text(provider.displayName)
-                .font(AppUI.Typography.bodyEmphasized)
-                .foregroundColor(AppUI.Color.semantic.textPrimary)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             Spacer()
         }
         .padding(.vertical, 4)

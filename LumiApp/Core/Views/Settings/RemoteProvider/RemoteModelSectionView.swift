@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 远程供应商模型区块：API Key 配置 + 可用模型列表
 struct RemoteModelSectionView: View {
@@ -8,26 +9,26 @@ struct RemoteModelSectionView: View {
     let onSelectModel: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             apiKeySection
             modelSection
         }
     }
 
     private var apiKeySection: some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("API 密钥")
-                .font(AppUI.Typography.callout)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             TextField("输入 API Key", text: $apiKey)
                 .textFieldStyle(.plain)
                 .textContentType(.password)
-                .font(AppUI.Typography.body)
-                .padding(AppUI.Spacing.sm)
+                .font(.system(size: 15, weight: .regular))
+                .padding(8)
                 .appSurface(
                     style: .glass,
-                    cornerRadius: AppUI.Radius.sm,
+                    cornerRadius: 8,
                     borderColor: Color.white.opacity(0.1),
                     lineWidth: 1
                 )
@@ -35,12 +36,12 @@ struct RemoteModelSectionView: View {
     }
 
     private var modelSection: some View {
-        VStack(alignment: .leading, spacing: AppUI.Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("可用模型")
-                .font(AppUI.Typography.callout)
-                .foregroundColor(AppUI.Color.semantic.textSecondary)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-            VStack(spacing: AppUI.Spacing.xs) {
+            VStack(spacing: 4) {
                 let models = selectedProvider?.availableModels ?? []
                 ForEach(models, id: \.self) { model in
                     ModelRow(

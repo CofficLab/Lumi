@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 模型耗时进度条组件（设置专用版本）
 /// 用于在设置页面展示模型的 TTFT、响应时间和 TPS 指标

@@ -112,7 +112,7 @@ struct ConversationTimelineDetailView: View, SuperLog {
                     MessageTimelineRow(item: item)
                 }
             }
-            .padding(DesignTokens.Spacing.md)
+            .padding(16)
         }
     }
 }
