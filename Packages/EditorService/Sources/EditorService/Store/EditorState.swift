@@ -263,6 +263,8 @@ public final class EditorState: ObservableObject, SuperLog {
             )
         }
     }
+    @Published public private(set) var isFileLoadInProgress: Bool = false
+    @Published public private(set) var fileLoadErrorMessage: String?
 
     /// Phase 1: 文档文本控制器，逐步收拢 buffer/textStorage 同步与事务应用
     let documentController = EditorDocumentController()
@@ -1623,6 +1625,8 @@ public final class EditorState: ObservableObject, SuperLog {
         saveController.cancelSuccessClear()
         
         guard let url = url else {
+            isFileLoadInProgress = false
+            fileLoadErrorMessage = nil
             logger.info("📝[loadFile] url 为 nil → resetState")
             resetState()
             return
@@ -1630,12 +1634,16 @@ public final class EditorState: ObservableObject, SuperLog {
         
         let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
         if isDirectory {
+            isFileLoadInProgress = false
+            fileLoadErrorMessage = nil
             logger.info("📝[loadFile] url 是目录 → resetState, url=\(url.path, privacy: .public)")
             resetState()
             return
         }
         
         let loadingURL = url
+        isFileLoadInProgress = true
+        fileLoadErrorMessage = nil
         logger.info("📝[loadFile] 开始加载 url=\(loadingURL.path, privacy: .public), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
         
         Task {
@@ -1653,12 +1661,15 @@ public final class EditorState: ObservableObject, SuperLog {
                     let shouldReplaceCurrentBuffer = !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
                     guard shouldReplaceCurrentBuffer else {
                         self.logger.info("📝[loadFile] shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path, privacy: .public)")
+                        self.isFileLoadInProgress = false
                         return
                     }
                     switch loadedDocument {
                     case .binary:
                         self.logger.info("📝[loadFile] → 加载二进制文件, url=\(loadingURL.path, privacy: .public)")
                         self.loadBinaryFile(from: loadingURL, loadedDocument: loadedDocument)
+                        self.isFileLoadInProgress = false
+                        self.fileLoadErrorMessage = nil
                     case .text(let document):
                         let content = document.content
                         let longestLine = LongLineDetector.findLongestLine(in: content)
@@ -1706,6 +1717,8 @@ public final class EditorState: ObservableObject, SuperLog {
                                 closeReferences: false
                             )
                         }
+                        self.isFileLoadInProgress = false
+                        self.fileLoadErrorMessage = nil
                         self.syncActiveSessionState()
                         self.resetUndoHistory()
                         self.setupFileWatcher(for: loadingURL)
@@ -1734,6 +1747,8 @@ public final class EditorState: ObservableObject, SuperLog {
             } catch {
                 self.logger.error("📝[loadFile] 加载失败 error=\(error.localizedDescription, privacy: .public), url=\(loadingURL.path, privacy: .public)")
                 await MainActor.run { [weak self] in
+                    self?.isFileLoadInProgress = false
+                    self?.fileLoadErrorMessage = error.localizedDescription
                     self?.resetState()
                 }
             }
@@ -2172,6 +2187,7 @@ public final class EditorState: ObservableObject, SuperLog {
             detectedLanguage = nil
             largeFileMode = .normal
             longestDetectedLine = nil
+            isFileLoadInProgress = false
             resetViewportObservation()
             resetPrimaryCursorPosition()
             totalLines = 0

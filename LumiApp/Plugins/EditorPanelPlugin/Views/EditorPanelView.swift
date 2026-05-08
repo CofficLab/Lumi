@@ -133,7 +133,7 @@ struct EditorPanelView: View {
 
     /// 文件是否正在加载中（已选中但 loadFile 异步 Task 尚未完成）
     private var isFileLoading: Bool {
-        hasActiveEditorSelection && !service.canPreview && !service.isBinaryFile && service.currentFileURL == nil
+        hasActiveEditorSelection && service.isFileLoadInProgress
     }
 
     /// 编辑器是否存在激活会话（以 Editor 内核作为当前文件真源）
@@ -156,6 +156,8 @@ struct EditorPanelView: View {
             FilePreviewView(fileURL: fileURL).frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if isFileLoading {
             EditorLoadingStateView()
+        } else if let message = service.fileLoadErrorMessage, hasActiveEditorSelection {
+            EditorLoadFailureView(fileName: service.activeSession?.fileURL?.lastPathComponent ?? service.fileName, message: message)
         } else if hasActiveEditorSelection {
             EditorUnsupportedFileView(fileName: service.fileName)
         }
