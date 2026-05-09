@@ -28,6 +28,7 @@ public struct MarkdownBlockRenderer: View {
 
     @State private var blocks: [MarkdownBlock] = []
     @Environment(\.preferOuterScroll) private var preferOuterScroll
+    @Environment(\.codeHighlightProvider) private var highlightProvider
 
     public var body: some View {
         VStack(alignment: .leading, spacing: theme.blockSpacing) {
@@ -134,25 +135,13 @@ public struct MarkdownBlockRenderer: View {
                 .background(Color.secondary.opacity(0.08))
             }
 
-            if preferOuterScroll {
-                // 外层列表控制垂直滚动时，使用只支持水平滚动的 NSScrollView。
-                // 垂直滚轮事件会被转发给外层容器，代码块不会被截断且可以水平滚动。
-                HorizontalScrollView {
-                    Text(verbatim: code)
-                        .font(theme.codeFont)
-                        .textSelection(.enabled)
-                        .multilineTextAlignment(.leading)
-                        .padding(10)
-                }
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    Text(verbatim: code)
-                        .font(theme.codeFont)
-                        .textSelection(.enabled)
-                        .multilineTextAlignment(.leading)
-                        .padding(10)
-                }
-            }
+            HighlightedCodeView(
+                code: code,
+                language: language,
+                font: theme.codeFont,
+                preferOuterScroll: preferOuterScroll,
+                highlightProvider: highlightProvider
+            )
         }
         .background(theme.codeBlockBackground)
         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -242,7 +231,7 @@ public struct MarkdownBlockRenderer: View {
 /// 仅支持水平滚动的 NSScrollView 包装。
 /// 垂直方向的滚轮事件会被转发给视图层级中的外层 NSScrollView（即聊天列表），
 /// 从而实现：代码块水平可滚动、垂直滚动由外层列表接管。
-private struct HorizontalScrollView<Content: View>: NSViewRepresentable {
+struct HorizontalScrollView<Content: View>: NSViewRepresentable {
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -281,7 +270,7 @@ private struct HorizontalScrollView<Content: View>: NSViewRepresentable {
 }
 
 /// NSScrollView 子类：仅消费水平方向的滚轮事件，垂直方向转发给外层 ScrollView。
-private class HorizontalOnlyScrollView: NSScrollView {
+class HorizontalOnlyScrollView: NSScrollView {
     override func scrollWheel(with event: NSEvent) {
         // 判断滚动方向：trackpad 可能同时包含 deltaX 和 deltaY
         // 水平位移大于垂直位移时视为水平滚动，由自身消费

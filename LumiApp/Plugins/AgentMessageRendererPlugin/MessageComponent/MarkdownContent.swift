@@ -1,6 +1,7 @@
 import SwiftUI
 import MagicKit
 import MarkdownKit
+import CodeEditSourceEditor
 
 /// Markdown 渲染视图（用于聊天消息）
 /// 复用 MarkdownKit 的统一渲染逻辑，适配消息列表的滚动行为
@@ -14,6 +15,7 @@ struct MarkdownContent: View {
             markdown: content,
             theme: messageTheme
         )
+        .environment(\.codeHighlightProvider, currentHighlightProvider)
     }
 
     /// 聊天消息主题
@@ -39,5 +41,14 @@ struct MarkdownContent: View {
             textColor: theme.workspaceTextColor(),
             secondaryTextColor: theme.workspaceSecondaryTextColor()
         )
+    }
+
+    /// 当前主题对应的语法高亮提供者
+    private var currentHighlightProvider: TreeSitterCodeHighlightProvider? {
+        guard let contributor = themeVM.currentTheme?.editorThemeContributor
+                as? any SuperEditorThemeContributor else {
+            return nil
+        }
+        return TreeSitterCodeHighlightProvider(editorTheme: contributor.createTheme())
     }
 }
