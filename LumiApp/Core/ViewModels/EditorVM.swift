@@ -20,7 +20,7 @@ import SwiftUI
 /// @EnvironmentObject private var editorVM: EditorVM
 ///
 /// editorVM.service.currentFileURL
-/// editorVM.service.openFile(at: url)
+/// editorVM.service.open(at: url)
 /// editorVM.service.performCommand(id: "builtin.find")
 /// ```
 @MainActor

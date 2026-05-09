@@ -109,9 +109,7 @@ struct EditorTabItemView: View {
     // MARK: - 操作
 
     private func activateSession(_ tab: EditorTab) {
-        guard let session = service.activateSession(id: tab.sessionID) else { return }
-        service.loadFile(from: session.fileURL)
-        service.applySessionRestore(session)
+        service.activateAndRestoreSession(id: tab.sessionID)
     }
 
     private func closeSession(_ tab: EditorTab) {
@@ -122,14 +120,11 @@ struct EditorTabItemView: View {
         }
 
         let nextSession = service.closeSession(id: session.id)
-        guard wasActive else {
-            return
-        }
+        guard wasActive, let nextSession else { return }
 
-        service.loadFile(from: nextSession?.fileURL)
-        if let nextSession {
-            service.applySessionRestore(nextSession)
-        }
+        // closeSession 已切换 activeSessionID，只需加载文件 + 恢复交互状态
+        service.loadFile(from: nextSession.fileURL)
+        service.applySessionRestore(nextSession)
     }
 
     // MARK: - Drag Preview

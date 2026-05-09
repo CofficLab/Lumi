@@ -40,15 +40,14 @@ final class EditorPanelService: ObservableObject {
         service.projectRootPath = projectRootPath
         refreshProjectContext(for: currentProjectPath, service: service)
 
-        guard let session = service.openFile(at: fileURL) else {
-            EditorPlugin.logger.info("\(EditorPlugin.t)session 为 nil → loadFile(nil), fileURL=\(fileURL?.path ?? "nil", privacy: .public)")
+        guard let fileURL else {
+            EditorPlugin.logger.info("\(EditorPlugin.t)fileURL 为 nil → loadFile(nil)")
             service.loadFile(from: nil)
             return
         }
 
-        EditorPlugin.logger.info("\(EditorPlugin.t)加载 session 文件: \(session.fileURL?.path ?? "nil", privacy: .public), sessionID=\(session.id)")
-        service.loadFile(from: session.fileURL)
-        restoreInteractionState(for: session, service: service)
+        EditorPlugin.logger.info("\(EditorPlugin.t)打开文件: \(fileURL.path, privacy: .public)")
+        service.open(at: fileURL)
     }
 
     /// 激活指定标签页对应的会话

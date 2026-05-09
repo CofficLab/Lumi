@@ -95,8 +95,7 @@ struct BreadcrumbNavPathView: View {
                                 truncatedCrumbWidth: item.index == 0
                                     ? $firstCrumbWidth : $crumbWidth,
                                 onSelectFile: { url in
-                                    _ = editorVM.service.openFile(at: url)
-                                    editorVM.service.loadFile(from: url)
+                                    editorVM.service.open(at: url)
                                 }
                             )
                         }
