@@ -26,6 +26,13 @@ final class LayoutVM: ObservableObject, SuperLog {
     /// Key: storageKey（如 "Split.Panel.xxx"），Value: 比例（0.0~1.0）
     /// 由 SplitViewPersistence 组件更新，LayoutPlugin 负责持久化。
     @Published var layoutRatios: [String: Double] = [:]
+
+    /// 编辑器底部面板高度
+    ///
+    /// 用于调节编辑器底部面板（Problems、References、Search 等）的垂直高度。
+    /// 默认 280，最小 33（仅 Tab 栏），最大 600。
+    /// 由 PanelResizerView 更新，LayoutPlugin 负责持久化。
+    @Published var editorBottomPanelHeight: Double = 280
     
     // MARK: - Initialization
     
@@ -122,6 +129,23 @@ final class LayoutVM: ObservableObject, SuperLog {
     /// 由 LayoutPlugin 调用，从本地存储恢复分栏比例
     func restoreFromPlugin(ratios: [String: Double]) {
         layoutRatios = ratios
+    }
+
+    /// 由 LayoutPlugin 调用，从本地存储恢复底部面板高度
+    func restoreFromPlugin(editorBottomPanelHeight: Double) {
+        self.editorBottomPanelHeight = editorBottomPanelHeight
+    }
+
+    /// 设置编辑器底部面板高度。
+    ///
+    /// 自动夹紧到有效范围（33 ~ 600）。
+    func setEditorBottomPanelHeight(_ height: Double) {
+        let clamped = min(max(height, 33), 600)
+        guard editorBottomPanelHeight != clamped else { return }
+        if Self.verbose {
+            AppLogger.layout.info("\(Self.t)Editor bottom panel height = \(clamped)")
+        }
+        editorBottomPanelHeight = clamped
     }
 
     /// 更新指定分栏的宽度比例。

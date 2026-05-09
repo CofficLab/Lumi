@@ -117,6 +117,26 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
         }
     }
 
+    // MARK: - Editor Bottom Panel Height
+
+    /// 加载已保存的底部面板高度
+    /// - Returns: 高度值，默认返回 nil 表示未保存过
+    func loadEditorBottomPanelHeight() -> Double? {
+        queue.sync {
+            readDict()[Keys.editorBottomPanelHeight] as? Double
+        }
+    }
+
+    /// 保存底部面板高度
+    /// - Parameter height: 高度值
+    func saveEditorBottomPanelHeight(_ height: Double) {
+        queue.sync {
+            var dict = readDict()
+            dict[Keys.editorBottomPanelHeight] = height
+            writeDict(dict)
+        }
+    }
+
     // MARK: - Keys
 
     private enum Keys {
@@ -124,6 +144,7 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
         static let selectedAgentSidebarTabId = "selectedAgentSidebarTabId"
         static let selectedAgentDetailId = "selectedAgentDetailId"
         static let layoutRatios = "layoutRatios"
+        static let editorBottomPanelHeight = "editorBottomPanelHeight"
     }
 
     // MARK: - Private Helpers

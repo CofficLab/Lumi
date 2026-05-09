@@ -4,7 +4,7 @@ import SwiftUI
 /// 编辑器底部面板容器视图
 ///
 /// 作为 Panel Bottom 提供给内核，在编辑器面板下方渲染底部面板。
-/// 仅在有活跃的底部面板或扩展面板时才显示。
+/// Tab 栏始终显示（参考 VSCode 行为），仅在有活跃面板时展开内容区域。
 struct EditorBottomPanelContainerView: View {
     @EnvironmentObject private var editorVM: EditorVM
 
@@ -24,15 +24,6 @@ private struct EditorBottomPanelContainerInnerView: View {
     @ObservedObject var panelState: EditorPanelState
 
     var body: some View {
-        if shouldShow {
-            EditorBottomPanelHostView(service: service)
-        }
-    }
-
-    private var shouldShow: Bool {
-        panelState.activeBottomPanel != nil ||
-        service.editorExtensions.panelSuggestions(state: service.state).contains {
-            $0.placement == .bottom && $0.isPresented(service.state)
-        }
+        EditorBottomPanelHostView(service: service)
     }
 }

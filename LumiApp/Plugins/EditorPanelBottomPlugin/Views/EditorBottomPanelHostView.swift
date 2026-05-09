@@ -6,26 +6,15 @@ struct EditorBottomPanelHostView: View {
     @ObservedObject var service: EditorService
     @State private var activeExtensionPanelID: String?
 
-    private let panelHeight: CGFloat = 280
+    /// 有内容时的默认面板高度（首次使用时）
+    private let defaultPanelHeight: CGFloat = 280
 
-    var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider()
-            activePanelContent
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: panelHeight)
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.08))
-                .frame(height: 1)
-        }
-    }
+    /// Tab 栏高度
+    private let tabBarHeight: CGFloat = 33
 
-    private var visibleBuiltinPanels: [EditorBottomPanelKind] {
-        service.panelState.visibleBottomPanels
+    /// 所有内置面板类型，始终显示
+    private var allBuiltinPanels: [EditorBottomPanelKind] {
+        EditorBottomPanelKind.allCases
     }
 
     private var activeBuiltinPanel: EditorBottomPanelKind? {
@@ -48,9 +37,33 @@ struct EditorBottomPanelHostView: View {
         return visibleExtensionPanels.first
     }
 
+    /// 是否有任何面板处于激活状态
+    private var hasActivePanel: Bool {
+        activeBuiltinPanel != nil || activeExtensionPanel != nil
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            if hasActivePanel {
+                Divider()
+                activePanelContent
+                    .frame(maxHeight: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(themeVM.activeAppTheme.workspaceTextColor().opacity(0.08))
+                .frame(height: 1)
+        }
+    }
+
     private var header: some View {
         HStack(spacing: 8) {
-            ForEach(visibleBuiltinPanels, id: \.self) { panel in
+            // 所有内置面板 Tab，始终显示
+            ForEach(allBuiltinPanels, id: \.self) { panel in
                 Button {
                     activeExtensionPanel?.onDismiss(service.state)
                     activeExtensionPanelID = nil
@@ -108,17 +121,19 @@ struct EditorBottomPanelHostView: View {
 
             Spacer(minLength: 0)
 
-            Button {
-                activeExtensionPanel?.onDismiss(service.state)
-                service.presentBottomPanel(nil)
-                activeExtensionPanelID = nil
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                    .frame(width: 22, height: 22)
+            if hasActivePanel {
+                Button {
+                    activeExtensionPanel?.onDismiss(service.state)
+                    service.presentBottomPanel(nil)
+                    activeExtensionPanelID = nil
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
@@ -152,9 +167,10 @@ struct EditorBottomPanelHostView: View {
         switch panel {
         case .problems:
             let count = service.panelState.semanticProblems.count + service.panelState.problemDiagnostics.count
-            return "\(panel.title) (\(count))"
+            return count > 0 ? "\(panel.title) (\(count))" : panel.title
         case .references:
-            return "\(panel.title) (\(service.panelState.referenceResults.count))"
+            let count = service.panelState.referenceResults.count
+            return count > 0 ? "\(panel.title) (\(count))" : panel.title
         case .searchResults:
             let count = service.panelState.workspaceSearchSummary?.totalMatches ?? 0
             return count > 0 ? "\(panel.title) (\(count))" : panel.title
