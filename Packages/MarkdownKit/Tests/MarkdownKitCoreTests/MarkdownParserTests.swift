@@ -111,9 +111,16 @@ struct MarkdownParserTests {
             """
         )
 
+        // normalize 会自动补充分隔线，使表格能被正确解析
         #expect(
             blocks == [
-                .paragraph(text: "| Name | Value |\n| nope | nope |\n| A    | 1    |")
+                .table(
+                    headers: ["Name", "Value"],
+                    rows: [
+                        ["nope", "nope"],
+                        ["A", "1"],
+                    ]
+                )
             ]
         )
     }

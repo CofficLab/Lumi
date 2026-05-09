@@ -8,6 +8,7 @@ struct MarkdownContent: View {
     let content: String
 
     @EnvironmentObject private var themeVM: ThemeVM
+
     var body: some View {
         MarkdownBlockRenderer(
             markdown: content,

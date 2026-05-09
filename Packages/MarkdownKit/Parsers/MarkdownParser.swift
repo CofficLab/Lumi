@@ -9,7 +9,9 @@ public enum MarkdownParser {
 
     /// 将 Markdown 文本解析为块级元素数组
     public static func parse(_ content: String) -> [MarkdownBlock] {
-        let document = Document(parsing: content)
+        // 预处理：修复 LLM 输出中常见的表格格式问题（换行断裂、缺失分隔线等）
+        let normalized = MarkdownTableNormalizer.normalize(content)
+        let document = Document(parsing: normalized)
         var blocks: [MarkdownBlock] = []
         for child in document.children {
             appendBlock(from: child, into: &blocks)
@@ -70,6 +72,10 @@ public enum MarkdownParser {
             }
         case _ as ThematicBreak:
             blocks.append(.thematicBreak)
+        case let table as Table:
+            if let block = parseSwiftMarkdownTable(table) {
+                blocks.append(block)
+            }
         default:
             let fallback = markup.format().trimmingCharacters(in: .whitespacesAndNewlines)
             if let table = parseTableBlock(from: fallback) {
@@ -146,5 +152,27 @@ public enum MarkdownParser {
         return normalized
             .split(separator: "|", omittingEmptySubsequences: false)
             .map { $0.trimmingCharacters(in: .whitespaces) }
+    }
+
+    /// 从 swift-markdown 的 Table AST 节点直接提取表头和行数据
+    private static func parseSwiftMarkdownTable(_ table: Table) -> MarkdownBlock? {
+        let headerCells = Array(table.head.cells)
+        let headers = headerCells.map { cell in
+            cell.plainText.trimmingCharacters(in: .whitespaces)
+        }
+        guard headers.count >= 2 else { return nil }
+
+        let rows: [[String]] = Array(table.body.rows).map { row in
+            let cells = Array(row.cells).map { cell in
+                cell.plainText.trimmingCharacters(in: .whitespaces)
+            }
+            // 统一列数
+            var padded = cells
+            while padded.count < headers.count { padded.append("") }
+            if padded.count > headers.count { padded = Array(padded.prefix(headers.count)) }
+            return padded
+        }
+
+        return .table(headers: headers, rows: rows)
     }
 }

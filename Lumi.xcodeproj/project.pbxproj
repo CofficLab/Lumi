@@ -2020,6 +2020,11 @@
 			package = A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */;
 			productName = ShellKit;
 		};
+		B1C2D3512F80000200BBB201 /* XcodeKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */;
+			productName = XcodeKit;
+		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F53C41582F1A3E6500929321 /* XCRemoteSwiftPackageReference "Sparkle" */;
@@ -2064,11 +2069,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */;
 			productName = XcodeProj;
-		};
-		B1C2D3512F80000200BBB201 /* XcodeKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */;
-			productName = XcodeKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
