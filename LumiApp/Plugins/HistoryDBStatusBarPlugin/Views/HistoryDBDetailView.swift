@@ -154,6 +154,7 @@ struct HistoryDBDetailView: View {
                 TableColumn(String(localized: "Content", table: "HistoryDBStatusBar"), value: \.contentPreview)
                     .width(min: 200)
             }
+            .tableStyle(.inset(alternatingRowBackgrounds: .enabled))
         }
     }
 
