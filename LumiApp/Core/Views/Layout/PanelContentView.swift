@@ -20,6 +20,8 @@ struct PanelContentView: View {
                     VStack(spacing: 0) {
                         ForEach(headerViews.indices, id: \.self) { index in
                             headerViews[index]
+                                // 确保 header 视图在 activeItem 切换时能正确触发 onAppear
+                                .id("header-\(activeItem.id)-\(index)")
                         }
 
                         activeItem.view

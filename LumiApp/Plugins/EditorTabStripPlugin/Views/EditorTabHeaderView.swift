@@ -29,6 +29,7 @@ struct EditorTabHeaderView: View {
             }
         }
         .onAppear {
+            EditorTabStripPlugin.logger.info("[TabRestore-DIAG] 🟢 EditorTabHeaderView.onAppear 被调用, tabs.count=\(sessionStore.tabs.count), activeSessionID=\(sessionStore.activeSessionID?.uuidString ?? "nil", privacy: .public)")
             coordinator.startObserving(
                 sessionStore: sessionStore,
                 projectPathProvider: { [weak projectVM] in
@@ -40,6 +41,7 @@ struct EditorTabHeaderView: View {
             )
         }
         .onDisappear {
+            EditorTabStripPlugin.logger.info("[TabRestore-DIAG] 🔴 EditorTabHeaderView.onDisappear 被调用")
             coordinator.stopObserving(
                 sessionStore: sessionStore,
                 projectPath: projectVM.currentProjectPath
@@ -56,6 +58,19 @@ struct EditorTabHeaderView: View {
         }
         .onCurrentFileDidChange { path in
             handleCurrentFileDidChange(path: path)
+        }
+        .task {
+            // 🔍 诊断日志：task 作为 onAppear 的替代/补充
+            EditorTabStripPlugin.logger.info("[TabRestore-DIAG] 🟡 EditorTabHeaderView.task 被调用, tabs.count=\(sessionStore.tabs.count), activeSessionID=\(sessionStore.activeSessionID?.uuidString ?? "nil", privacy: .public)")
+            coordinator.startObserving(
+                sessionStore: sessionStore,
+                projectPathProvider: { [weak projectVM] in
+                    projectVM?.currentProjectPath ?? ""
+                },
+                openFile: { [weak editorVM] url in
+                    editorVM?.service.open(at: url)
+                }
+            )
         }
     }
 

@@ -34,22 +34,22 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
 
     // MARK: - Public API
 
-    /// 存储值
+    /// 存储值（异步，不阻塞调用线程）
     func set(_ value: Any?, forKey key: String) {
-        queue.sync {
-            var dict = readDict()
+        queue.async { [self] in
+            var dict = self.readDict()
             if let value {
                 dict[key] = value
             } else {
                 dict.removeValue(forKey: key)
             }
-            writeDict(dict)
+            self.writeDict(dict)
         }
     }
 
-    /// 获取值
+    /// 获取值（同步，需要返回值）
     func object(forKey key: String) -> Any? {
-        queue.sync { readDict()[key] }
+        queue.sync { self.readDict()[key] }
     }
 
     /// 获取字符串
@@ -107,33 +107,33 @@ final class LayoutPluginLocalStore: @unchecked Sendable {
         }
     }
 
-    /// 保存分栏布局比例
+    /// 保存分栏布局比例（异步，不阻塞调用线程）
     /// - Parameter ratios: key -> ratio 的字典
     func saveLayoutRatios(_ ratios: [String: Double]) {
-        queue.sync {
-            var dict = readDict()
+        queue.async { [self] in
+            var dict = self.readDict()
             dict[Keys.layoutRatios] = ratios
-            writeDict(dict)
+            self.writeDict(dict)
         }
     }
 
     // MARK: - Editor Bottom Panel Height
 
-    /// 加载已保存的底部面板高度
+    /// 加载已保存的底部面板高度（同步，需要返回值）
     /// - Returns: 高度值，默认返回 nil 表示未保存过
     func loadEditorBottomPanelHeight() -> Double? {
         queue.sync {
-            readDict()[Keys.editorBottomPanelHeight] as? Double
+            self.readDict()[Keys.editorBottomPanelHeight] as? Double
         }
     }
 
-    /// 保存底部面板高度
+    /// 保存底部面板高度（异步，不阻塞调用线程）
     /// - Parameter height: 高度值
     func saveEditorBottomPanelHeight(_ height: Double) {
-        queue.sync {
-            var dict = readDict()
+        queue.async { [self] in
+            var dict = self.readDict()
             dict[Keys.editorBottomPanelHeight] = height
-            writeDict(dict)
+            self.writeDict(dict)
         }
     }
 

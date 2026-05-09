@@ -38,10 +38,21 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     ) {
         trackedProjectPath = projectPathProvider()
 
+        // 🔍 诊断日志
+        Self.logger.info("[TabRestore-DIAG] startObserving 被调用: hasRestored=\(self.hasRestored), tabs.count=\(sessionStore.tabs.count), projectPath=\(self.trackedProjectPath, privacy: .public)")
+
         // 首次启动且 tabs 为空 → 从磁盘恢复
         if !hasRestored && sessionStore.tabs.isEmpty {
+            Self.logger.info("[TabRestore-DIAG] ✅ 满足恢复条件，开始 restoreTabs")
             hasRestored = true
             restoreTabs(forProject: trackedProjectPath, openFile: openFile)
+        } else {
+            // 🔍 诊断日志：为什么不恢复
+            if hasRestored {
+                Self.logger.info("[TabRestore-DIAG] ❌ 跳过恢复：hasRestored 已经为 true")
+            } else if !sessionStore.tabs.isEmpty {
+                Self.logger.info("[TabRestore-DIAG] ❌ 跳过恢复：tabs 不为空（count=\(sessionStore.tabs.count)），说明已有其他地方打开了文件")
+            }
         }
 
         Publishers.CombineLatest(sessionStore.$tabs, sessionStore.$activeSessionID)

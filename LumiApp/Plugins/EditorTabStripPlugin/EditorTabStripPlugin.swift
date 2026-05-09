@@ -29,6 +29,9 @@ actor EditorTabStripPlugin: SuperPlugin, SuperLog {
     /// 当编辑器面板激活时，提供 Panel Header 视图
     @MainActor
     func addPanelHeaderView(activeIcon: String?) -> AnyView? {
+        // 🔍 诊断日志
+        Self.logger.info("[TabRestore-DIAG] addPanelHeaderView 被调用, activeIcon=\(activeIcon ?? "nil", privacy: .public), editorIcon=\(EditorPlugin.iconName, privacy: .public), match=\(activeIcon == EditorPlugin.iconName)")
+
         // 仅在编辑器面板激活时提供 header
         guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorTabHeaderView())
