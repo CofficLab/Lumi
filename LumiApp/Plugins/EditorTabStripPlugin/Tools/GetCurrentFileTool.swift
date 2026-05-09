@@ -2,6 +2,8 @@ import Foundation
 import MagicKit
 
 /// 获取当前文件工具
+///
+/// 基于 EditorTabStripStore 的 activeTabPath 获取当前活跃文件。
 struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = true
@@ -21,16 +23,28 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)Getting current file")
+            EditorTabStripPlugin.logger.info("\(Self.t)Getting current file")
         }
 
-        let store = RecentProjectsStore()
-        guard let fileInfo = store.getCurrentFile() else {
+        // 获取当前项目路径
+        let projectStore = RecentProjectsStore()
+        guard let project = projectStore.getCurrentProject() else {
             return """
             ## Current File Status
-            
+
+            **Status**: No project selected
+
+            Use the `set_current_project` tool to select a project first.
+            """
+        }
+
+        let store = EditorTabStripStore.shared
+        guard let fileInfo = store.getCurrentFilePath(forProject: project.path) else {
+            return """
+            ## Current File Status
+
             **Status**: No file selected
-            
+
             Use the `set_current_file` tool to select a file.
             """
         }
@@ -39,15 +53,15 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
 
         return """
         ## Current File Info
-        
+
         **File Name**: \(fileName)
-        
+
         **File Path**: \(fileInfo.path)
-        
+
         **Last Selected**: \(formatDate(fileInfo.lastSelected))
         """
     }
-    
+
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium

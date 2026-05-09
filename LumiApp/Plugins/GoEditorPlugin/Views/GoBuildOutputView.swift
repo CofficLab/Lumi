@@ -179,6 +179,6 @@ struct GoBuildOutputView: View {
         } else {
             url = URL(fileURLWithPath: file)
         }
-        RootViewContainer.shared.editorVM.service.openFile(at: url)
+        RootViewContainer.shared.editorVM.service.open(at: url)
     }
 }

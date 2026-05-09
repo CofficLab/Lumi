@@ -1,15 +1,15 @@
 import Combine
 import Foundation
-import MagicKit
+import os
 
+/// Memory history service with high-resolution (1s) and long-term (1m) storage.
 @MainActor
-class MemoryHistoryService: ObservableObject, SuperLog {
-    nonisolated static let verbose: Bool = false
-    static let shared = MemoryHistoryService()
-    nonisolated static let emoji = "📈"
+public final class MemoryHistoryService: ObservableObject {
+    public static let shared = MemoryHistoryService()
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.devicemonitorkit", category: "memory-history")
 
-    @Published var recentHistory: [MemoryDataPoint] = []
-    @Published var longTermHistory: [MemoryDataPoint] = []
+    @Published public var recentHistory: [MemoryDataPoint] = []
+    @Published public var longTermHistory: [MemoryDataPoint] = []
 
     private let maxRecentPoints = 3600
     private let maxLongTermPoints = 43200
@@ -21,13 +21,14 @@ class MemoryHistoryService: ObservableObject, SuperLog {
     private let storageFileName = "memory_history.json"
     private let fileManager = FileManager.default
 
-    private var storageFileURL: URL? {
+    /// Storage file URL. Configurable for testing.
+    public var storageFileURL: URL? {
         fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first?
             .appendingPathComponent("com.coffic.lumi/MemoryHistory")
             .appendingPathComponent(storageFileName)
     }
 
-    private init() {
+    package init() {
         createStorageDirectoryIfNeeded()
         loadHistory()
         startRecording()
@@ -35,7 +36,7 @@ class MemoryHistoryService: ObservableObject, SuperLog {
 
     // MARK: - Public Methods
 
-    func startRecording() {
+    public func startRecording() {
         MemoryService.shared.startMonitoring()
         MemoryService.shared.$memoryUsagePercentage
             .combineLatest(MemoryService.shared.$usedMemory)
@@ -45,7 +46,7 @@ class MemoryHistoryService: ObservableObject, SuperLog {
             .store(in: &cancellables)
     }
 
-    func getData(for range: MemoryTimeRange) -> [MemoryDataPoint] {
+    public func getData(for range: MemoryTimeRange) -> [MemoryDataPoint] {
         let now = Date().timeIntervalSince1970
         let cutoff = now - range.duration
 
@@ -63,16 +64,9 @@ class MemoryHistoryService: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - Private Methods
+    // MARK: - Internal Methods
 
-    private func createStorageDirectoryIfNeeded() {
-        guard let directory = storageFileURL?.deletingLastPathComponent() else { return }
-        if !fileManager.fileExists(atPath: directory.path) {
-            try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        }
-    }
-
-    private func recordDataPoint(pct: Double, bytes: UInt64) {
+    func recordDataPoint(pct: Double, bytes: UInt64) {
         let now = Date().timeIntervalSince1970
         let point = MemoryDataPoint(timestamp: now, usagePercentage: pct, usedBytes: bytes)
 
@@ -107,18 +101,22 @@ class MemoryHistoryService: ObservableObject, SuperLog {
         minuteAccumulator.count += 1
     }
 
-    private func saveHistory() {
+    // MARK: - Persistence
+
+    func saveHistory() {
         let historyToSave = longTermHistory
-        guard let url = storageFileURL else { return }
+        let url = storageFileURL
+        guard let url else { return }
 
         Task.detached(priority: .background) {
             try? JSONEncoder().encode(historyToSave).write(to: url, options: .atomic)
         }
     }
 
-    private func loadHistory() {
-        guard let url = storageFileURL,
-              fileManager.fileExists(atPath: url.path),
+    func loadHistory() {
+        let url = storageFileURL
+        guard let url,
+              FileManager.default.fileExists(atPath: url.path),
               let data = try? Data(contentsOf: url) else {
             return
         }
@@ -126,7 +124,16 @@ class MemoryHistoryService: ObservableObject, SuperLog {
         do {
             let history = try JSONDecoder().decode([MemoryDataPoint].self, from: data)
             let cutoff = Date().timeIntervalSince1970 - MemoryTimeRange.month1.duration
-            self.longTermHistory = history.filter { $0.timestamp >= cutoff }
+            longTermHistory = history.filter { $0.timestamp >= cutoff }
         } catch {}
+    }
+
+    // MARK: - Private Methods
+
+    private func createStorageDirectoryIfNeeded() {
+        guard let directory = storageFileURL?.deletingLastPathComponent() else { return }
+        if !fileManager.fileExists(atPath: directory.path) {
+            try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
     }
 }

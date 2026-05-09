@@ -1,6 +1,7 @@
 import Charts
 import SwiftUI
 import LumiUI
+import DeviceMonitorKit
 
 struct DeviceInfoView: View {
     @StateObject private var data = DeviceData()

@@ -1,19 +1,18 @@
 import Foundation
 import Combine
-import MagicKit
 import os
 
+/// CPU history service with high-resolution (1s) and long-term (1m) storage.
 @MainActor
-class CPUHistoryService: ObservableObject, SuperLog {
-    nonisolated static let verbose: Bool = false
-    static let shared = CPUHistoryService()
-    nonisolated static let emoji = "📈"
+public final class CPUHistoryService: ObservableObject {
+    public static let shared = CPUHistoryService()
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.devicemonitorkit", category: "cpu-history")
 
-    // High resolution buffer (1s interval) - Keep last 1 hour
-    @Published var recentHistory: [CPUDataPoint] = []
+    /// High resolution buffer (1s interval) - Keep last 1 hour
+    @Published public var recentHistory: [CPUDataPoint] = []
 
-    // Low resolution buffer (1m interval) - Keep last 30 days
-    @Published var longTermHistory: [CPUDataPoint] = []
+    /// Low resolution buffer (1m interval) - Keep last 30 days
+    @Published public var longTermHistory: [CPUDataPoint] = []
 
     private let maxRecentPoints = 3600 // 1 hour * 60 seconds
     private let maxLongTermPoints = 43200 // 30 days * 24 hours * 60 minutes
@@ -25,26 +24,22 @@ class CPUHistoryService: ObservableObject, SuperLog {
     private let storageFileName = "cpu_history.json"
     private let fileManager = FileManager.default
 
-    private var storageFileURL: URL? {
+    /// Storage file URL. Configurable for testing.
+    public var storageFileURL: URL? {
         fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first?
             .appendingPathComponent("com.coffic.lumi/CPUHistory")
             .appendingPathComponent(storageFileName)
     }
 
-    private init() {
+    package init() {
         createStorageDirectoryIfNeeded()
         loadHistory()
         startRecording()
     }
 
-    private func createStorageDirectoryIfNeeded() {
-        guard let directory = storageFileURL?.deletingLastPathComponent() else { return }
-        if !fileManager.fileExists(atPath: directory.path) {
-            try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        }
-    }
+    // MARK: - Public Methods
 
-    func startRecording() {
+    public func startRecording() {
         CPUService.shared.startMonitoring()
         CPUService.shared.$cpuUsage
             .sink { [weak self] usage in
@@ -53,7 +48,26 @@ class CPUHistoryService: ObservableObject, SuperLog {
             .store(in: &cancellables)
     }
 
-    private func recordDataPoint(usage: Double) {
+    public func getData(for range: CPUTimeRange) -> [CPUDataPoint] {
+        let now = Date().timeIntervalSince1970
+        let cutoff = now - range.duration
+
+        switch range {
+        case .hour1:
+            return recentHistory.filter { $0.timestamp >= cutoff }
+        default:
+            var points = longTermHistory.filter { $0.timestamp >= cutoff }
+            if minuteAccumulator.count > 0 {
+                let avgUsage = minuteAccumulator.sum / Double(minuteAccumulator.count)
+                points.append(CPUDataPoint(timestamp: now, usage: avgUsage))
+            }
+            return points
+        }
+    }
+
+    // MARK: - Internal Methods
+
+    func recordDataPoint(usage: Double) {
         let now = Date().timeIntervalSince1970
         let point = CPUDataPoint(timestamp: now, usage: usage)
 
@@ -90,38 +104,22 @@ class CPUHistoryService: ObservableObject, SuperLog {
         minuteAccumulator.count += 1
     }
 
-    func getData(for range: CPUTimeRange) -> [CPUDataPoint] {
-        let now = Date().timeIntervalSince1970
-        let cutoff = now - range.duration
-
-        switch range {
-        case .hour1:
-            return recentHistory.filter { $0.timestamp >= cutoff }
-        default:
-            var points = longTermHistory.filter { $0.timestamp >= cutoff }
-            // Append current accumulating minute for real-time feel in long views
-            if minuteAccumulator.count > 0 {
-                let avgUsage = minuteAccumulator.sum / Double(minuteAccumulator.count)
-                points.append(CPUDataPoint(timestamp: now, usage: avgUsage))
-            }
-            return points
-        }
-    }
-
     // MARK: - Persistence
 
-    private func saveHistory() {
+    func saveHistory() {
         let historyToSave = longTermHistory
-        guard let url = storageFileURL else { return }
+        let url = storageFileURL
+        guard let url else { return }
 
         Task.detached(priority: .background) {
             try? JSONEncoder().encode(historyToSave).write(to: url, options: .atomic)
         }
     }
 
-    private func loadHistory() {
-        guard let url = storageFileURL,
-              fileManager.fileExists(atPath: url.path),
+    func loadHistory() {
+        let url = storageFileURL
+        guard let url,
+              FileManager.default.fileExists(atPath: url.path),
               let data = try? Data(contentsOf: url) else {
             return
         }
@@ -129,7 +127,16 @@ class CPUHistoryService: ObservableObject, SuperLog {
         do {
             let history = try JSONDecoder().decode([CPUDataPoint].self, from: data)
             let cutoff = Date().timeIntervalSince1970 - CPUTimeRange.month1.duration
-            self.longTermHistory = history.filter { $0.timestamp >= cutoff }
+            longTermHistory = history.filter { $0.timestamp >= cutoff }
         } catch {}
+    }
+
+    // MARK: - Private Methods
+
+    private func createStorageDirectoryIfNeeded() {
+        guard let directory = storageFileURL?.deletingLastPathComponent() else { return }
+        if !fileManager.fileExists(atPath: directory.path) {
+            try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
     }
 }

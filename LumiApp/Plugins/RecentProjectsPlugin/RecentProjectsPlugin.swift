@@ -52,8 +52,6 @@ actor RecentProjectsPlugin: SuperPlugin, SuperLog {
             ListRecentProjectsTool(),
             GetCurrentProjectTool(),
             AddProjectTool(),
-            GetCurrentFileTool(),
-            SetCurrentFileTool(),
         ]
     }
 }

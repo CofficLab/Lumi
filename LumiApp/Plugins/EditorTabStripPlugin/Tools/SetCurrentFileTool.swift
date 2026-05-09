@@ -2,6 +2,8 @@ import Foundation
 import MagicKit
 
 /// 设置当前文件工具
+///
+/// 基于 EditorTabStripStore 的 activeTabPath 设置当前活跃文件。
 struct SetCurrentFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = true
@@ -31,7 +33,7 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)Setting current file: \(path)")
+            EditorTabStripPlugin.logger.info("\(Self.t)Setting current file: \(path)")
         }
 
         // 验证路径是否存在且为文件
@@ -46,22 +48,28 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
             return "❌ Error: Path is a directory, not a file: \(path)"
         }
 
+        // 获取当前项目路径
+        let projectStore = RecentProjectsStore()
+        guard let project = projectStore.getCurrentProject() else {
+            return "❌ Error: No project selected. Use `set_current_project` first."
+        }
+
         let fileName = URL(fileURLWithPath: path).lastPathComponent
-        
-        // 使用 store 设置当前文件
-        let store = RecentProjectsStore()
-        store.setCurrentFile(path: path)
-        
-        // 发送通知，告知 UI 同步到 ProjectVM
+
+        // 通过 EditorTabStripStore 设置当前活跃文件
+        let store = EditorTabStripStore.shared
+        store.setCurrentFilePath(path: path, forProject: project.path)
+
+        // 发送通知，告知 UI 同步
         NotificationCenter.postCurrentFileDidChange(path: path)
 
         return """
         ✅ Successfully set current file
-        
+
         **File Name**: \(fileName)
-        
+
         **File Path**: \(path)
-        
+
         The file has been saved and is ready to use.
         """
     }

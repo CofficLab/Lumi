@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import AppKit
+import DeviceMonitorKit
 
 struct CPUHistoryGraphView: View {
     let dataPoints: [CPUDataPoint]

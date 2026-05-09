@@ -29,7 +29,7 @@ import LanguageServerProtocol
 // @EnvironmentObject private var editor: EditorService
 //
 // // 打开文件
-// editor.openFile(at: url)
+// editor.open(at: url)
 //
 // // 访问当前文件
 // editor.currentFileURL
@@ -125,12 +125,12 @@ public final class EditorService: ObservableObject {
     /// 当前文件是否可预览（代码编辑器可渲染）
     public var canPreview: Bool { state.canPreview }
 
-    /// 加载文件内容到编辑器（底层操作，优先使用 openAndRenderFile）
+    /// 加载文件内容到编辑器（底层操作，优先使用 open(at:)）
     public func loadFile(from url: URL?) {
         state.loadFile(from: url)
     }
 
-    /// 恢复会话交互状态（光标、滚动位置、折叠等）
+    /// 恢复会话交互状态（光标、滚动位置、折叠等，底层操作）
     public func applySessionRestore(_ session: EditorSession) {
         state.applySessionRestore(session)
     }
@@ -145,12 +145,13 @@ public final class EditorService: ObservableObject {
         sessionStore.openOrActivate(fileURL: url)
     }
 
-    /// 打开或激活文件会话，并加载内容到编辑器
+    /// 打开文件
     ///
-    /// 完整的「打开文件」流程：创建 session → 加载文件内容 → 恢复交互状态。
-    /// 插件通过 `EditorVM.service.openAndRenderFile(at:)` 调用，
-    /// 无需直接访问 `EditorState`。
-    public func openAndRenderFile(at url: URL?) {
+    /// 编辑器打开文件的唯一对外入口。完整的「打开文件」流程：
+    /// 创建/激活 Session → 加载文件内容 → 恢复交互状态（光标、滚动位置等）。
+    ///
+    /// - Parameter url: 要打开的文件 URL，传 nil 无效。
+    public func open(at url: URL?) {
         guard let url else { return }
 
         guard let session = sessionStore.openOrActivate(fileURL: url) else { return }
@@ -167,6 +168,32 @@ public final class EditorService: ObservableObject {
 
         if state.currentFileURL != url {
             state.loadFile(from: url)
+        }
+    }
+
+    /// 激活已存在的会话并渲染到编辑器
+    ///
+    /// 用于 Tab 切换场景：激活已有 Session → 加载文件内容 → 恢复交互状态。
+    /// 如果 Session 不存在则忽略。
+    ///
+    /// - Parameter id: 要激活的 Session ID。
+    public func activateAndRestoreSession(id: EditorSession.ID) {
+        guard let session = sessionStore.activate(sessionID: id) else { return }
+
+        let fileURL = session.fileURL
+
+        let canRestoreImmediately =
+            state.currentFileURL == fileURL &&
+            state.content != nil &&
+            state.focusedTextView != nil
+
+        if canRestoreImmediately {
+            state.applySessionRestore(session)
+            return
+        }
+
+        if state.currentFileURL != fileURL {
+            state.loadFile(from: fileURL)
         }
     }
 

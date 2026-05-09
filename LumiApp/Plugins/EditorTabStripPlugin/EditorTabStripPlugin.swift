@@ -33,4 +33,14 @@ actor EditorTabStripPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorTabHeaderView())
     }
+
+    // MARK: - Agent Tools
+
+    @MainActor
+    func agentTools() -> [SuperAgentTool] {
+        [
+            GetCurrentFileTool(),
+            SetCurrentFileTool(),
+        ]
+    }
 }

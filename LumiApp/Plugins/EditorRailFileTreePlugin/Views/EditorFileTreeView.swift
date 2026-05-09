@@ -30,8 +30,7 @@ struct EditorFileTreeView: View {
                         depth: 0,  // depth == 0 表示根节点
                         selectedURL: editorVM.service.currentFileURL,
                         onSelect: { selectedURL in
-                            _ = editorVM.service.openFile(at: selectedURL)
-                            editorVM.service.loadFile(from: selectedURL)
+                            editorVM.service.open(at: selectedURL)
                         },
                         refreshToken: rootRefreshToken,
                         projectRootPath: projectVM.currentProjectPath,
@@ -57,8 +56,7 @@ struct EditorFileTreeView: View {
 
     private func onSyncSelectedFile(path: String) {
         let url = URL(fileURLWithPath: path)
-        _ = editorVM.service.openFile(at: url)
-        editorVM.service.loadFile(from: url)
+        editorVM.service.open(at: url)
     }
 
     private func onProjectPathChanged() {

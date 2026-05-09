@@ -1,48 +1,39 @@
-import AppKit
 import Foundation
 import Combine
 import os
-import Darwin
-import MagicKit
+import AppKit
 
-/// 进程监控服务：通过 libproc 采集 Top N CPU 占用进程
-///
-/// 采用 delta 快照方式计算每个进程的 CPU 占用百分比，
-/// 每 3 秒采样一次，按 CPU% 降序返回前 N 个进程。
+/// Process monitoring service that reports top N CPU-consuming processes via libproc.
 @MainActor
-class ProcessService: ObservableObject, SuperLog {
-    static let shared = ProcessService()
-    nonisolated static let emoji = "⚙️"
-    nonisolated static let verbose: Bool = false
+public final class ProcessService: ObservableObject {
+    public static let shared = ProcessService()
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.devicemonitorkit", category: "process")
 
-    // MARK: - 常量/静态属性
+    // MARK: - Constants
 
-    private static let logger = DeviceInfoPlugin.logger
     private static let processLimit = 5
 
     // MARK: - Published Properties
 
-    @Published var topProcesses: [ProcessMetric] = []
+    @Published public var topProcesses: [ProcessMetric] = []
 
-    // MARK: - 私有属性
+    // MARK: - Private Properties
 
     private var monitoringTimer: Timer?
     private var subscribersCount = 0
 
-    /// 采样快照: [pid: (userTime, systemTime)]，单位 nanoseconds
+    /// Sampling snapshot: [pid: (userTime, systemTime)] in nanoseconds
     private var previousSnapshot: [Int32: (user: UInt64, system: UInt64)] = [:]
     private var previousTimestamp: TimeInterval = 0
 
-    private init() {}
+    package init() {}
 
-    // MARK: - 公开方法
+    // MARK: - Public Methods
 
-    func startMonitoring() {
+    public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            if Self.verbose {
-                Self.logger.info("\(self.t)Starting process monitoring")
-            }
+            Self.logger.debug("Starting process monitoring")
             previousTimestamp = Date().timeIntervalSince1970
             sampleProcesses()
 
@@ -54,12 +45,10 @@ class ProcessService: ObservableObject, SuperLog {
         }
     }
 
-    func stopMonitoring() {
+    public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            if Self.verbose {
-                Self.logger.info("\(self.t)Stopping process monitoring")
-            }
+            Self.logger.debug("Stopping process monitoring")
             monitoringTimer?.invalidate()
             monitoringTimer = nil
             previousSnapshot.removeAll()
@@ -67,23 +56,22 @@ class ProcessService: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - 私有方法
+    // MARK: - Internal Methods
 
-    private func sampleProcesses() {
+    func sampleProcessesInternal() -> [ProcessMetric] {
         let now = Date().timeIntervalSince1970
         let deltaTime = now - previousTimestamp
-        guard deltaTime > 0 else { return }
+        guard deltaTime > 0 else { return [] }
 
-        // 获取所有 PID
         var bufferSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, nil, 0)
-        guard bufferSize > 0 else { return }
+        guard bufferSize > 0 else { return [] }
 
         let maxCount = Int(bufferSize) / MemoryLayout<pid_t>.size
         var pids = [pid_t](repeating: 0, count: maxCount)
 
         bufferSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, &pids, Int32(bufferSize))
         let actualCount = Int(bufferSize) / MemoryLayout<pid_t>.size
-        guard actualCount > 0 else { return }
+        guard actualCount > 0 else { return [] }
 
         var currentSnapshot: [Int32: (user: UInt64, system: UInt64)] = [:]
         var results: [ProcessMetric] = []
@@ -103,13 +91,11 @@ class ProcessService: ObservableObject, SuperLog {
 
             currentSnapshot[pid] = (user: currentUser, system: currentSystem)
 
-            // 与上次快照对比计算 CPU% delta
             if let previous = previousSnapshot[pid] {
                 let deltaUser = currentUser &- previous.user
                 let deltaSystem = currentSystem &- previous.system
                 let totalDelta = deltaUser &+ deltaSystem
 
-                // pti_total_user/system 单位为 nanoseconds
                 let cpuPercent = Double(totalDelta) / (deltaTime * 1_000_000_000) * 100.0
 
                 if cpuPercent > 0.1 {
@@ -130,9 +116,14 @@ class ProcessService: ObservableObject, SuperLog {
         previousSnapshot = currentSnapshot
         previousTimestamp = now
 
-        // 排序取 top N
-        let topN = results.sorted { $0.cpuUsage > $1.cpuUsage }.prefix(Self.processLimit)
-        topProcesses = Array(topN)
+        return results.sorted { $0.cpuUsage > $1.cpuUsage }.prefix(Self.processLimit).map { $0 }
+    }
+
+    // MARK: - Private Methods
+
+    private func sampleProcesses() {
+        let results = sampleProcessesInternal()
+        topProcesses = results
     }
 
     private func getProcessName(pid: Int32) -> String {
@@ -140,8 +131,11 @@ class ProcessService: ObservableObject, SuperLog {
         var nameBuffer = [CChar](repeating: 0, count: bufferSize)
         let result = proc_name(pid, &nameBuffer, UInt32(bufferSize))
 
-        if result > 0, let name = String(validatingUTF8: nameBuffer), !name.isEmpty {
-            return name
+        if result > 0 {
+            let nameStr = String(cString: nameBuffer)
+            if !nameStr.isEmpty {
+                return nameStr
+            }
         }
         return "PID \(pid)"
     }

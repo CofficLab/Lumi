@@ -3,13 +3,14 @@ import SwiftUI
 
 /// 最近项目持久化覆盖层
 /// 在 RootView 出现时恢复最近项目列表和当前项目，监听项目切换保存，
-/// 并在项目切换时自动联动切换到关联的对话
+/// 并在项目切换时自动联动切换到关联的对话。
+///
+/// 当前文件（Editor active tab）的持久化由 EditorTabStripPlugin 负责。
 struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { false }
     nonisolated static var emoji: String { "📋" }
 
     @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var editorVM: EditorVM
     @EnvironmentObject private var conversationVM: ConversationVM
     @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
 
@@ -47,14 +48,8 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             handleProjectPathChange(oldPath: oldPath, newPath: newPath)
         }
-        .onChange(of: editorVM.service.currentFileURL) { oldURL, newURL in
-            handleFileSelectionChange(oldURL: oldURL, newURL: newURL)
-        }
         .onCurrentProjectDidChange { name, path in
             handleCurrentProjectDidChange(name: name, path: path)
-        }
-        .onCurrentFileDidChange { path in
-            handleCurrentFileDidChange(path: path)
         }
     }
 }
@@ -75,13 +70,6 @@ extension RecentProjectsPersistenceOverlay {
         // 恢复当前项目到 projectVM
         if let currentProject = store.getCurrentProject() {
             projectVM.switchProject(to: currentProject)
-        }
-        
-        // 恢复当前文件到 projectVM
-        if let currentFile = store.getCurrentFile() {
-            let url = URL(fileURLWithPath: currentFile.path)
-            _ = editorVM.service.openFile(at: url)
-            editorVM.service.loadFile(from: url)
         }
     }
 }
@@ -130,33 +118,6 @@ extension RecentProjectsPersistenceOverlay {
 
         // Agent 工具触发项目切换 → 同样联动对话
         switchConversationForProject(path)
-    }
-    
-    /// 处理文件选择变化（从 UI 触发）
-    private func handleFileSelectionChange(oldURL: URL?, newURL: URL?) {
-        guard let newURL = newURL else { return }
-        
-        // 保存到持久化存储
-        store.setCurrentFile(path: newURL.path)
-    }
-    
-    /// 处理 SetCurrentFileTool 发出的事件，同步到 ProjectVM
-    private func handleCurrentFileDidChange(path: String) {
-        let url = URL(fileURLWithPath: path)
-        
-        // 如果路径与当前文件相同，无需切换
-        guard editorVM.service.currentFileURL?.path != path else { return }
-        
-        // 验证文件存在
-        guard FileManager.default.fileExists(atPath: path) else {
-            if Self.verbose {
-                RecentProjectsPlugin.logger.warning("\(Self.t)⚠️ File does not exist: \(path)")
-            }
-            return
-        }
-        
-        _ = editorVM.service.openFile(at: url)
-        editorVM.service.loadFile(from: url)
     }
 }
 

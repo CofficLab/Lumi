@@ -1,9 +1,7 @@
-import AppKit
 import SwiftUI
+import AppKit
+import DeviceMonitorKit
 
-/// Top N CPU 占用进程列表
-///
-/// 显示当前 CPU 占用最高的进程，每个进程展示图标、名称、CPU% 和进度条。
 struct TopProcessesView: View {
 
     // MARK: - Properties

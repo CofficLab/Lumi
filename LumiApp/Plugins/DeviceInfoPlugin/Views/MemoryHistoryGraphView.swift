@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import DeviceMonitorKit
 
 struct MemoryHistoryGraphView: View {
     let dataPoints: [MemoryDataPoint]
