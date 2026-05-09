@@ -19,19 +19,6 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
     nonisolated var instanceLabel: String { Self.id }
     static let shared = TerminalPlugin()
 
-    // MARK: - Editor Extensions
-
-    /// 提供编辑器扩展（底部终端面板）
-    nonisolated var providesEditorExtensions: Bool { true }
-
-    /// 注册编辑器扩展到编辑器扩展注册中心
-    @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
-        registry.registerPanelContributor(TerminalPanelContributor())
-
-        // 注册打开终端面板命令
-        registry.registerCommandContributor(TerminalCommandContributor())
-    }
-
     // MARK: - Lifecycle
 
     nonisolated func onRegister() {}

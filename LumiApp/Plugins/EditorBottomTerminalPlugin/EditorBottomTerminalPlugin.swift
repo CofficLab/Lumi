@@ -1,20 +1,65 @@
-import SwiftTerm
-import SwiftUI
-import LumiUI
+import Foundation
 import MagicKit
+import SwiftUI
+import os
 
-/// 底部终端面板视图
+/// 编辑器底部面板 - Terminal 标签页插件
 ///
-/// 在编辑器底部面板区域显示终端，支持多 Tab 会话。
-struct BottomTerminalPanelView: View {
+/// 向内核全局底部面板注册 Terminal Tab 入口，
+/// 内核负责 Tab 栏渲染和切换，本插件只提供 Tab 定义和内容视图。
+actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-terminal")
+
+    nonisolated static let emoji = "💻"
+    nonisolated static let enable: Bool = true
+    nonisolated static let verbose: Bool = false
+    static let id: String = "EditorBottomTerminal"
+    static let displayName: String = String(
+        localized: "Editor Bottom Terminal", table: "EditorBottomTerminal")
+    static let description: String = String(
+        localized: "Terminal panel in the editor bottom area",
+        table: "EditorBottomTerminal")
+    static let iconName: String = "terminal"
+    static var isConfigurable: Bool { false }
+    static var order: Int { 100 }
+
+    nonisolated var instanceLabel: String { Self.id }
+    static let shared = EditorBottomTerminalPlugin()
+
+    // MARK: - Bottom Panel Tabs
+
+    @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab] {
+        // Terminal Tab 仅在编辑器激活时显示
+        guard activeIcon == EditorPlugin.iconName else { return [] }
+        return [BottomPanelTab(
+            id: "editor-bottom-terminal",
+            title: "Terminal",
+            systemImage: "terminal",
+            priority: 100
+        )]
+    }
+
+    @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView? {
+        guard tabId == "editor-bottom-terminal", activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(EditorBottomTerminalContentView())
+    }
+}
+
+/// Terminal 底部面板内容视图
+struct EditorBottomTerminalContentView: View {
+    @EnvironmentObject private var editorVM: EditorVM
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var themeVM: ThemeVM
 
-    /// 工作目录（由编辑器状态传递）
-    let workingDirectory: String?
-
     /// 使用全局单例，与侧边栏 Terminal 共享同一份终端会话状态
     @ObservedObject private var viewModel = TerminalTabsViewModel.shared
+
+    /// 工作目录（使用当前文件所在目录）
+    private var workingDirectory: String? {
+        editorVM.service.state.currentFileURL?.deletingLastPathComponent().path
+            ?? currentProjectPathForTerminal
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,7 +75,7 @@ struct BottomTerminalPanelView: View {
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .onAppear {
-            viewModel.ensureInitialSession(workingDirectory: workingDirectory ?? currentProjectPathForTerminal)
+            viewModel.ensureInitialSession(workingDirectory: workingDirectory)
         }
     }
 
@@ -57,7 +102,7 @@ struct BottomTerminalPanelView: View {
 
             // 新建终端按钮
             Button(action: {
-                viewModel.createSession(workingDirectory: workingDirectory ?? currentProjectPathForTerminal)
+                viewModel.createSession(workingDirectory: workingDirectory)
             }) {
                 Image(systemName: "plus")
                     .font(.system(size: 10, weight: .semibold))
@@ -97,7 +142,7 @@ struct BottomTerminalPanelView: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
             Button("New Terminal") {
-                viewModel.createSession(workingDirectory: workingDirectory ?? currentProjectPathForTerminal)
+                viewModel.createSession(workingDirectory: workingDirectory)
             }
             .font(.system(size: 11, weight: .medium))
         }
