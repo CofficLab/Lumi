@@ -1,6 +1,7 @@
 import XCTest
 @testable import XcodeKit
 
+@MainActor
 final class XcodeProjectResolverTests: XCTestCase {
 
     // MARK: - findWorkspace Tests

@@ -3,12 +3,6 @@ import MagicKit
 import os
 import XcodeKit
 
-/// Xcode 插件日志辅助
-private enum XcodePluginLog {
-    static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.xcode")
-    nonisolated(unsafe) static var verbose = false
-}
-
 /// Xcode 插件根视图包裹器
 @MainActor
 struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
@@ -95,6 +89,10 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
 
             await MainActor.run {
                 self.preloadStatus = .completed(success: successCount, failed: failedCount)
+            }
+
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(Self.t)预加载完成：\(successCount) 成功，\(failedCount) 失败")
             }
         }
     }

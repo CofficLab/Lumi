@@ -1,6 +1,9 @@
 import Foundation
 import XcodeKit
 import CodeEditSourceEditor
+import os
+
+// MARK: - Quick Open Contributor
 
 @MainActor
 final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
@@ -14,18 +17,54 @@ final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
         let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !normalizedQuery.isEmpty else { return [] }
 
-        return collectSuggestions(
-            query: normalizedQuery,
-            projectRootPath: projectRootPath,
-            state: state
-        )
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 开始收集建议，查询：\(normalizedQuery)")
+        }
+
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        // 将文件 I/O 和解析移到后台线程
+        let rawResults: [RawQuickOpenMatch] = await Task.detached(priority: .userInitiated) {
+            Self.collectRawMatches(query: normalizedQuery, projectRootPath: projectRootPath)
+        }.value
+
+        // 回到主线程构造 UI 建议（action 闭包需要访问 MainActor 的 state）
+        let suggestions = rawResults.enumerated().map { index, match in
+            let target = CursorPosition(start: .init(line: match.line, column: 1), end: nil)
+            return EditorQuickOpenItemSuggestion(
+                id: "xcode-key:\(match.filePath):\(match.line):\(match.key)",
+                sectionTitle: String(localized: "Project Keys", table: "EditorXcodePlugin"),
+                title: match.key,
+                subtitle: "\(match.relativePath):\(match.line)",
+                systemImage: match.isXCConfig ? "slider.horizontal.3" : "list.bullet.rectangle",
+                badge: match.isXCConfig ? "xcconfig" : match.fileExtension,
+                order: index,
+                isEnabled: true,
+                metadata: .init(
+                    priority: match.isXCConfig ? 180 : 170,
+                    dedupeKey: "\(match.filePath):\(match.key):\(match.line)"
+                ),
+                action: {
+                    state.performNavigation(.definition(URL(filePath: match.filePath), target, highlightLine: true))
+                }
+            )
+        }
+
+        let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 完成，\(suggestions.count) 条结果，耗时 \(String(format: "%.1f", elapsed))ms")
+        }
+
+        return suggestions
     }
 
-    private func collectSuggestions(
+    // MARK: - Background Data Collection
+
+    /// 后台线程执行：遍历目录、读取文件、匹配键
+    private nonisolated static func collectRawMatches(
         query normalizedQuery: String,
-        projectRootPath: String,
-        state: EditorState
-    ) -> [EditorQuickOpenItemSuggestion] {
+        projectRootPath: String
+    ) -> [RawQuickOpenMatch] {
         let projectRootURL = URL(fileURLWithPath: projectRootPath)
         guard let enumerator = FileManager.default.enumerator(
             at: projectRootURL,
@@ -35,9 +74,10 @@ final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
             return []
         }
 
-        var suggestions: [EditorQuickOpenItemSuggestion] = []
+        var results: [RawQuickOpenMatch] = []
+
         for case let fileURL as URL in enumerator {
-            guard suggestions.count < 24 else { break }
+            guard results.count < 24 else { break }
             let ext = fileURL.pathExtension.lowercased()
             guard ext == "xcconfig" || ext == "plist" || ext == "entitlements" else { continue }
             guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
@@ -52,33 +92,35 @@ final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
                     .map { ($0.key, $0.line) }
             }
 
-            for (index, match) in matches.prefix(max(0, 24 - suggestions.count)).enumerated() {
-                let relativePath = fileURL.path.hasPrefix(projectRootPath + "/")
-                    ? String(fileURL.path.dropFirst(projectRootPath.count + 1))
-                    : fileURL.lastPathComponent
-                let target = CursorPosition(start: .init(line: match.line, column: 1), end: nil)
-                suggestions.append(
-                    EditorQuickOpenItemSuggestion(
-                        id: "xcode-key:\(fileURL.path):\(match.line):\(match.key)",
-                        sectionTitle: String(localized: "Project Keys", table: "EditorXcodePlugin"),
-                        title: match.key,
-                        subtitle: "\(relativePath):\(match.line)",
-                        systemImage: ext == "xcconfig" ? "slider.horizontal.3" : "list.bullet.rectangle",
-                        badge: ext == "xcconfig" ? "xcconfig" : fileURL.pathExtension.lowercased(),
-                        order: suggestions.count + index,
-                        isEnabled: true,
-                        metadata: .init(
-                            priority: ext == "xcconfig" ? 180 : 170,
-                            dedupeKey: "\(fileURL.path):\(match.key):\(match.line)"
-                        ),
-                        action: {
-                            state.performNavigation(.definition(fileURL, target, highlightLine: true))
-                        }
-                    )
-                )
+            let isXCConfig = ext == "xcconfig"
+            let relativePath = fileURL.path.hasPrefix(projectRootPath + "/")
+                ? String(fileURL.path.dropFirst(projectRootPath.count + 1))
+                : fileURL.lastPathComponent
+
+            for match in matches.prefix(max(0, 24 - results.count)) {
+                results.append(RawQuickOpenMatch(
+                    key: match.key,
+                    line: match.line,
+                    filePath: fileURL.path,
+                    relativePath: relativePath,
+                    fileExtension: ext,
+                    isXCConfig: isXCConfig
+                ))
             }
         }
 
-        return suggestions
+        return results
     }
+}
+
+// MARK: - Raw Match Model
+
+/// 后台线程收集的匹配结果（Sendable，用于跨线程传递）
+private struct RawQuickOpenMatch: Sendable {
+    let key: String
+    let line: Int
+    let filePath: String
+    let relativePath: String
+    let fileExtension: String
+    let isXCConfig: Bool
 }

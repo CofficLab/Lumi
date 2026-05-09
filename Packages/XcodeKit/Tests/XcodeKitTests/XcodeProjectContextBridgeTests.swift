@@ -34,9 +34,8 @@ final class XcodeProjectContextBridgeNotificationTests: XCTestCase {
             projectPath: "/test"
         )
         
-        // Verify value semantics
-        var copy = state
-        // BridgeCachedState is a struct with let properties, so copies are independent
+        // Verify value semantics — struct with let properties, copies are independent
+        let copy = state
         XCTAssertEqual(copy.activeScheme, "App")
         XCTAssertEqual(copy.workspaceFolders?.count, 1)
     }

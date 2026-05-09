@@ -72,7 +72,6 @@ final class XcodeEditorContextSnapshotTests: XCTestCase {
             currentFileMatchedTargets: ["App"],
             currentFileIsInTarget: true
         )
-        var rhs = lhs
         // Note: Since it's a struct, we need to create a different one
         let rhs2 = XcodeEditorContextSnapshot(
             projectPath: "/test2",
@@ -172,8 +171,8 @@ final class XcodeEditorContextSnapshotTests: XCTestCase {
     }
 
     func testBridgeCachedStructures() {
-        // Verify it's a struct with value semantics
-        var state1 = BridgeCachedState(
+        // Verify it's a struct with value semantics — all properties are let, copies are independent
+        let state1 = BridgeCachedState(
             workspaceFolders: nil,
             buildServerPath: "/path1",
             activeScheme: "App",
@@ -188,9 +187,10 @@ final class XcodeEditorContextSnapshotTests: XCTestCase {
             configurations: ["Debug"],
             projectPath: "/test"
         )
-        var state2 = state1
-        state2.activeScheme = "Other"
+        let state2 = state1
         XCTAssertEqual(state1.activeScheme, "App")
-        XCTAssertEqual(state2.activeScheme, "Other")
+        XCTAssertEqual(state2.activeScheme, "App")
+        XCTAssertEqual(state1.buildServerPath, "/path1")
+        XCTAssertEqual(state2.buildServerPath, "/path1")
     }
 }

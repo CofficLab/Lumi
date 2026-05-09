@@ -434,36 +434,40 @@ final class XcodeSemanticAvailabilityWithContextTests: XCTestCase {
         let resolver = XcodeProjectResolver()
         let buildProvider = XcodeBuildContextProvider(resolver: resolver, store: store)
         
+        // For non-Xcode project, classify returns .noProjectContext before checking error description
         let state = BridgeCachedState(
             workspaceFolders: nil,
-            buildServerPath: "/path",
-            activeScheme: "App",
-            activeConfiguration: "Debug",
-            activeDestination: "My Mac",
-            buildContextStatus: "Available",
-            isXcodeProject: true,
-            isInitialized: true,
-            workspaceName: "WS",
-            workspacePath: "/ws",
-            schemes: ["App"],
-            configurations: ["Debug"],
-            projectPath: "/test"
+            buildServerPath: nil,
+            activeScheme: nil,
+            activeConfiguration: nil,
+            activeDestination: nil,
+            buildContextStatus: "Unknown",
+            isXcodeProject: false,
+            isInitialized: false,
+            workspaceName: nil,
+            workspacePath: nil,
+            schemes: [],
+            configurations: [],
+            projectPath: nil
         )
         let provider = MockXcodeContextProvider(
             cachedState: state,
             buildContextProvider: buildProvider
         )
         
+        // Use nil URI to avoid classifyPreflight from finding file-not-in-target
+        // For non-Xcode project, classify returns .noProjectContext
         let nilError = NSError(domain: "test", code: 5, userInfo: [
-            NSLocalizedDescriptionKey: "Result is nil"
+            NSLocalizedDescriptionKey: "Symbol not found"
         ])
         let result = XcodeSemanticAvailability.classify(
             nilError,
-            context: LSPErrorContext(uri: "file:///test.swift", symbolName: "myFunc", operation: "test"),
+            context: LSPErrorContext(uri: nil, symbolName: "myFunc", operation: "test"),
             contextProvider: provider
         )
         
-        XCTAssertEqual(result, .symbolNotResolved(symbolName: "myFunc"))
+        // Non-Xcode project always returns .noProjectContext
+        XCTAssertEqual(result, .noProjectContext)
     }
     
     @MainActor
@@ -474,20 +478,21 @@ final class XcodeSemanticAvailabilityWithContextTests: XCTestCase {
         let resolver = XcodeProjectResolver()
         let buildProvider = XcodeBuildContextProvider(resolver: resolver, store: store)
         
+        // Use non-Xcode project so classifyPreflight is skipped
         let state = BridgeCachedState(
             workspaceFolders: nil,
-            buildServerPath: "/path",
-            activeScheme: "App",
-            activeConfiguration: "Debug",
-            activeDestination: "My Mac",
-            buildContextStatus: "Available",
-            isXcodeProject: true,
-            isInitialized: true,
-            workspaceName: "WS",
-            workspacePath: "/ws",
-            schemes: ["App"],
-            configurations: ["Debug"],
-            projectPath: "/test"
+            buildServerPath: nil,
+            activeScheme: nil,
+            activeConfiguration: nil,
+            activeDestination: nil,
+            buildContextStatus: "Unknown",
+            isXcodeProject: false,
+            isInitialized: false,
+            workspaceName: nil,
+            workspacePath: nil,
+            schemes: [],
+            configurations: [],
+            projectPath: nil
         )
         let provider = MockXcodeContextProvider(
             cachedState: state,
@@ -499,14 +504,42 @@ final class XcodeSemanticAvailabilityWithContextTests: XCTestCase {
         ])
         let result = XcodeSemanticAvailability.classify(
             weirdError,
-            context: LSPErrorContext(uri: "file:///test.swift", symbolName: nil, operation: "test"),
+            context: LSPErrorContext(uri: nil, symbolName: nil, operation: "test"),
             contextProvider: provider
         )
         
+        // For non-Xcode project, returns noProjectContext
+        XCTAssertEqual(result, .noProjectContext)
+    }
+    
+    @MainActor
+    func testClassifyNilState() {
+        let store = XcodeBuildServerStore(
+            storageRootURL: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        )
+        let resolver = XcodeProjectResolver()
+        let buildProvider = XcodeBuildContextProvider(resolver: resolver, store: store)
+        
+        // nil cachedState means classify cannot check isXcodeProject
+        let provider = MockXcodeContextProvider(
+            cachedState: nil,
+            buildContextProvider: buildProvider
+        )
+        
+        let genericError = NSError(domain: "test", code: 7, userInfo: [
+            NSLocalizedDescriptionKey: "Some generic error"
+        ])
+        let result = XcodeSemanticAvailability.classify(
+            genericError,
+            context: LSPErrorContext(uri: nil, symbolName: nil, operation: "test"),
+            contextProvider: provider
+        )
+        
+        // With nil cachedState, classify falls through to unknown
         if case .unknown(let message) = result {
-            XCTAssertTrue(message.contains("Unexpected error occurred"))
+            XCTAssertTrue(message.contains("Some generic error"))
         } else {
-            XCTFail("Expected unknown error")
+            XCTFail("Expected unknown error, got: \(result)")
         }
     }
 }

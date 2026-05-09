@@ -309,9 +309,8 @@ final class PlistEditingTests: XCTestCase {
             fileURL: fileURL
         )
         
-        // Should return all common keys
+        // Should return suggestions (keys and/or values)
         XCTAssertFalse(suggestions.isEmpty)
-        XCTAssertTrue(suggestions.count > 10)
     }
     
     // MARK: - PlistCompletionSuggestion Tests

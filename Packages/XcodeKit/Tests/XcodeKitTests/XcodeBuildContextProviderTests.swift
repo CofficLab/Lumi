@@ -1,6 +1,7 @@
 import XCTest
 @testable import XcodeKit
 
+@MainActor
 final class XcodeBuildContextProviderTests: XCTestCase {
     
     // MARK: - selectBestScheme Tests
@@ -262,7 +263,7 @@ final class XcodeBuildContextProviderTests: XCTestCase {
         )
         
         XCTAssertEqual(result.count, 1)
-        XCTAssertTrue(result.containsKey("ws1|Tests|Debug|default"))
+        XCTAssertNotNil(result["ws1|Tests|Debug|default"])
     }
     
     func testInvalidatedBuildSettingsCacheRemovesAll() {

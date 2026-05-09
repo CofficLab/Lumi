@@ -146,10 +146,7 @@ final class XcodeBuildServerStoreTests: XCTestCase {
         
         store.remove(forWorkspace: workspacePath)
         
-        let directory = store.storageRootURL
-            .appendingPathComponent("EditorXcodePlugin")
-        // Note: We can't easily check the specific hash directory,
-        // but we can verify load returns nil after removal
+        // Verify load returns nil after removal
         let config = store.load(forWorkspace: workspacePath)
         XCTAssertNil(config)
     }
