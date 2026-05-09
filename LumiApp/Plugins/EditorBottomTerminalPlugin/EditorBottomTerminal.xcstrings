@@ -1,156 +1,112 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Diagnostics" : {
+    "Editor Bottom Terminal" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diagnostics"
+            "value" : "Editor Bottom Terminal"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "诊断"
+            "value" : "编辑器底部终端"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "診斷"
+            "value" : "編輯器底部終端"
           }
         }
       }
     },
-    "Editor Bottom Problems" : {
+    "New Terminal" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editor Bottom Problems"
+            "value" : "New Terminal"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "编辑器底部问题"
+            "value" : "新建终端"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "編輯器底部問題"
+            "value" : "新建終端"
           }
         }
       }
     },
-    "No Problems" : {
+    "No open terminals" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Problems"
+            "value" : "No open terminals"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "没有问题"
+            "value" : "没有打开的终端"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有問題"
+            "value" : "沒有打開的終端"
           }
         }
       }
     },
-    "Problems" : {
+    "Terminal" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems"
+            "value" : "Terminal"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "问题"
+            "value" : "终端"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "問題"
+            "value" : "終端"
           }
         }
       }
     },
-    "Problems panel in the editor bottom area" : {
+    "Terminal panel in the editor bottom area" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems panel in the editor bottom area"
+            "value" : "Terminal panel in the editor bottom area"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "编辑器底部的问题面板"
+            "value" : "编辑器底部的终端面板"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "編輯器底部的問題面板"
-          }
-        }
-      }
-    },
-    "Project" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Project"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "項目"
-          }
-        }
-      }
-    },
-    "Project Context" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Project Context"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目上下文"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "項目上下文"
+            "value" : "編輯器底部的終端面板"
           }
         }
       }

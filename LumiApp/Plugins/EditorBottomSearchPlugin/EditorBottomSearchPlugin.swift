@@ -33,7 +33,7 @@ actor EditorBottomSearchPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-search",
-            title: "Search",
+            title: String(localized: "Search", table: "EditorBottomSearch"),
             systemImage: "magnifyingglass",
             priority: 2
         )]

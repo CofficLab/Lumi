@@ -41,24 +41,24 @@ struct BottomEditorProblemsPanelView: View {
 
     private var panelTitle: String {
         let count = service.panelState.semanticProblems.count + service.panelState.problemDiagnostics.count
-        return count > 0 ? "Problems (\(count))" : "Problems"
+        return count > 0 ? String(localized: "Problems (\(count))", table: "EditorBottomProblems") : String(localized: "Problems", table: "EditorBottomProblems")
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
                 if service.panelState.semanticProblems.isEmpty && service.panelState.problemDiagnostics.isEmpty {
-                    emptyState("No Problems", systemImage: "checkmark.circle")
+                    emptyState(String(localized: "No Problems", table: "EditorBottomProblems"), systemImage: "checkmark.circle")
                 } else {
                     if !service.panelState.semanticProblems.isEmpty {
-                        sectionLabel("Project Context")
+                        sectionLabel(String(localized: "Project Context", table: "EditorBottomProblems"))
                         ForEach(service.panelState.semanticProblems) { problem in
-                            panelCard(title: problem.title, subtitle: problem.message, badge: "Project")
+                            panelCard(title: problem.title, subtitle: problem.message, badge: String(localized: "Project", table: "EditorBottomProblems"))
                         }
                     }
 
                     if !service.panelState.problemDiagnostics.isEmpty {
-                        sectionLabel("Diagnostics")
+                        sectionLabel(String(localized: "Diagnostics", table: "EditorBottomProblems"))
                         ForEach(Array(service.panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
                             let line = Int(diagnostic.range.start.line) + 1
                             let column = Int(diagnostic.range.start.character) + 1

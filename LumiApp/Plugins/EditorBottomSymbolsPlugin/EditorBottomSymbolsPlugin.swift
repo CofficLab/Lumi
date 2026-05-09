@@ -33,7 +33,7 @@ actor EditorBottomSymbolsPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-symbols",
-            title: "Workspace Symbols",
+            title: String(localized: "Workspace Symbols", table: "EditorBottomSymbols"),
             systemImage: "text.magnifyingglass",
             priority: 3
         )]

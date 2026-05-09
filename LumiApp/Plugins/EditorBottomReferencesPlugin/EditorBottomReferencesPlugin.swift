@@ -33,7 +33,7 @@ actor EditorBottomReferencesPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-references",
-            title: "References",
+            title: String(localized: "References", table: "EditorBottomReferences"),
             systemImage: "arrow.triangle.branch",
             priority: 1
         )]

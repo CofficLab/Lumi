@@ -33,7 +33,7 @@ actor EditorBottomProblemsPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-problems",
-            title: "Problems",
+            title: String(localized: "Problems", table: "EditorBottomProblems"),
             systemImage: "exclamationmark.bubble",
             priority: 0
         )]

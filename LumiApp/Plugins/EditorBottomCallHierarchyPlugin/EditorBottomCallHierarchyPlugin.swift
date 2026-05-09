@@ -33,7 +33,7 @@ actor EditorBottomCallHierarchyPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-call-hierarchy",
-            title: "Call Hierarchy",
+            title: String(localized: "Call Hierarchy", table: "EditorBottomCallHierarchy"),
             systemImage: "point.3.connected.trianglepath.dotted",
             priority: 4
         )]

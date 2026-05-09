@@ -42,21 +42,21 @@ struct BottomEditorCallHierarchyPanelView: View {
     @ViewBuilder
     private var content: some View {
         if service.callHierarchyProvider.isLoading {
-            emptyState("Loading Call Hierarchy...", systemImage: "arrow.triangle.branch")
+            emptyState(String(localized: "Loading Call Hierarchy...", table: "EditorBottomCallHierarchy"), systemImage: "arrow.triangle.branch")
         } else if service.callHierarchyProvider.rootItem == nil {
-            emptyState("No Call Hierarchy", systemImage: "point.3.connected.trianglepath.dotted")
+            emptyState(String(localized: "No Call Hierarchy", table: "EditorBottomCallHierarchy"), systemImage: "point.3.connected.trianglepath.dotted")
         } else {
             HStack(spacing: 0) {
-                callHierarchyColumn(title: "Incoming", calls: service.callHierarchyProvider.incomingCalls)
+                callHierarchyColumn(title: String(localized: "Incoming", table: "EditorBottomCallHierarchy"), calls: service.callHierarchyProvider.incomingCalls)
                 Divider()
-                callHierarchyColumn(title: "Outgoing", calls: service.callHierarchyProvider.outgoingCalls)
+                callHierarchyColumn(title: String(localized: "Outgoing", table: "EditorBottomCallHierarchy"), calls: service.callHierarchyProvider.outgoingCalls)
             }
         }
     }
 
     private var panelTitle: String {
         let count = service.callHierarchyProvider.incomingCalls.count + service.callHierarchyProvider.outgoingCalls.count
-        return count > 0 ? "Call Hierarchy (\(count))" : "Call Hierarchy"
+        return count > 0 ? String(localized: "Call Hierarchy (\(count))", table: "EditorBottomCallHierarchy") : String(localized: "Call Hierarchy", table: "EditorBottomCallHierarchy")
     }
 
     private func callHierarchyColumn(title: String, calls: [EditorCallHierarchyCall]) -> some View {
@@ -70,7 +70,7 @@ struct BottomEditorCallHierarchyPanelView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     if calls.isEmpty {
-                        emptyState("Empty", systemImage: "minus.circle")
+                        emptyState(String(localized: "Empty", table: "EditorBottomCallHierarchy"), systemImage: "minus.circle")
                     } else {
                         ForEach(calls) { call in
                             Button {

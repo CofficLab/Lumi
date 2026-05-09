@@ -23,6 +23,28 @@
         }
       }
     },
+    "Workspace Symbols" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workspace Symbols"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作区符号"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作區符號"
+          }
+        }
+      }
+    },
     "Workspace Symbols panel in the editor bottom area" : {
       "localizations" : {
         "en" : {
@@ -41,6 +63,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "編輯器底部的符號面板"
+          }
+        }
+      }
+    },
+    "Workspace symbols not available" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workspace symbols not available"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作区符号不可用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作區符號不可用"
           }
         }
       }

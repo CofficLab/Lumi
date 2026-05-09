@@ -22,8 +22,7 @@ actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
     static let displayName: String = String(
         localized: "Editor Bottom Terminal", table: "EditorBottomTerminal")
     static let description: String = String(
-        localized: "Terminal panel in the editor bottom area",
-        table: "EditorBottomTerminal")
+        localized: "Terminal panel in the editor bottom area", table: "EditorBottomTerminal")
     static let iconName: String = "terminal"
     static var isConfigurable: Bool { false }
     static var order: Int { 100 }
@@ -38,7 +37,7 @@ actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-terminal",
-            title: "Terminal",
+            title: String(localized: "Terminal", table: "EditorBottomTerminal"),
             systemImage: "terminal",
             priority: 100
         )]
@@ -157,10 +156,10 @@ struct EditorBottomTerminalContentView: View {
             Image(systemName: "terminal")
                 .font(.system(size: 24, weight: .thin))
                 .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
-            Text("No open terminals")
+            Text(String(localized: "No open terminals", table: "EditorBottomTerminal"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-            Button("New Terminal") {
+            Button(String(localized: "New Terminal", table: "EditorBottomTerminal")) {
                 viewModel.createSession(workingDirectory: workingDirectory)
             }
             .font(.system(size: 11, weight: .medium))
