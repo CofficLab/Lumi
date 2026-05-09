@@ -161,7 +161,6 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .dropFirst()
             .sink { newRatios in
                 guard hasRestored else { return }
-                LayoutPlugin.logger.info("\(lp)分栏比例变更: \(newRatios.count, privacy: .public) 项")
                 LayoutPluginLocalStore.shared.saveLayoutRatios(newRatios)
             }
             .store(in: &cancellables)

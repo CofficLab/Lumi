@@ -32,10 +32,6 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
             return "❌ Error: Missing required parameter 'path'"
         }
 
-        if Self.verbose {
-            EditorTabStripPlugin.logger.info("\(Self.t)Setting current file: \(path)")
-        }
-
         // 验证路径是否存在且为文件
         let fm = FileManager.default
         var isDirectory: ObjCBool = false
