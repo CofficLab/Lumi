@@ -22,9 +22,10 @@ struct FontConfigDetailView: View {
             HStack {
                 Image(systemName: "textformat")
                     .font(.system(size: 14))
-                    .foregroundStyle(.blue)
+                    .foregroundColor(Color(hex: "0A84FF"))
                 Text(String(localized: "Editor Font", table: "FontConfig"))
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color(hex: "1C1C1E"))
                 Spacer()
                 currentFontBadge
             }
@@ -33,6 +34,7 @@ struct FontConfigDetailView: View {
             previewSection
 
             Divider()
+                .foregroundColor(Color(hex: "1C1C1E").opacity(0.1))
 
             // 搜索框
             searchField
@@ -47,19 +49,21 @@ struct FontConfigDetailView: View {
     private var currentFontBadge: some View {
         Text(viewModel.displayName)
             .font(.system(size: 10, weight: .medium))
+            .foregroundColor(Color(hex: "98989E"))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Color.white.opacity(0.08))
+            .background(Color(hex: "98989E").opacity(0.12))
             .cornerRadius(6)
     }
 
     private var previewSection: some View {
         Text("abcdefghijklmnopqrstuvwxyz\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789\n{}[]()<>+-=*/%!&|^~")
             .font(.custom(viewModel.selectedPostScriptName ?? "SF Mono", size: 12))
+            .foregroundColor(Color(hex: "1C1C1E"))
             .lineSpacing(2)
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.04))
+            .background(Color(hex: "98989E").opacity(0.06))
             .cornerRadius(6)
     }
 
@@ -67,9 +71,10 @@ struct FontConfigDetailView: View {
         TextField(String(localized: "Search fonts...", table: "FontConfig"), text: $searchText)
             .textFieldStyle(.plain)
             .font(.system(size: 12))
+            .foregroundColor(Color(hex: "1C1C1E"))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color.white.opacity(0.06))
+            .background(Color(hex: "98989E").opacity(0.08))
             .cornerRadius(6)
     }
 
@@ -87,6 +92,7 @@ struct FontConfigDetailView: View {
                 }
 
                 Divider()
+                    .foregroundColor(Color(hex: "1C1C1E").opacity(0.1))
 
                 ForEach(filteredFonts) { font in
                     FontRow(
@@ -99,7 +105,9 @@ struct FontConfigDetailView: View {
                     }
 
                     if font.id != filteredFonts.last?.id {
-                        Divider().padding(.leading, 12)
+                        Divider()
+                            .padding(.leading, 12)
+                            .foregroundColor(Color(hex: "1C1C1E").opacity(0.1))
                     }
                 }
             }
@@ -123,17 +131,17 @@ private struct FontRow: View {
                 // 选中指示
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 12))
-                    .foregroundStyle(isSelected ? .blue : .secondary.opacity(0.4))
+                    .foregroundColor(isSelected ? Color(hex: "0A84FF") : Color(hex: "98989E").opacity(0.4))
 
                 // 字体信息
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(previewFontName.map { .custom($0, size: 12) } ?? .system(size: 12))
-                        .foregroundStyle(.primary)
+                        .foregroundColor(Color(hex: "1C1C1E"))
                         .lineLimit(1)
                     Text(subtitle)
                         .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(Color(hex: "98989E"))
                         .lineLimit(1)
                 }
 
