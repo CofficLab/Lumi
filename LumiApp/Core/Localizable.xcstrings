@@ -721,6 +721,9 @@
         }
       }
     },
+    "abcdefghijklmnopqrstuvwxyz\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789\n{}[]()<>+-=*/%!&|^~" : {
+
+    },
     "About" : {
       "extractionState" : "stale",
       "localizations" : {
