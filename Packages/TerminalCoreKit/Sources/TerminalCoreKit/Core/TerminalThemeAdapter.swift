@@ -11,20 +11,34 @@ import SwiftTerm
 ///
 /// 每个预设编辑器主题都对应一组精心调配的终端 ANSI 颜色，
 /// 确保终端和编辑器的视觉风格一致。
-enum TerminalThemeAdapter {
+public enum TerminalThemeAdapter {
     // MARK: - Terminal Colors
 
     /// 终端颜色配置
-    struct TerminalColors: @unchecked Sendable {
-        let foreground: NSColor
-        let background: NSColor
-        let cursor: NSColor
-        let selection: NSColor
+    public struct TerminalColors: @unchecked Sendable {
+        public let foreground: NSColor
+        public let background: NSColor
+        public let cursor: NSColor
+        public let selection: NSColor
         /// ANSI 16 色板，顺序为：
         /// Black, Red, Green, Yellow, Blue, Magenta, Cyan, White,
         /// BrightBlack, BrightRed, BrightGreen, BrightYellow,
         /// BrightBlue, BrightMagenta, BrightCyan, BrightWhite
-        let ansiColors: [SwiftTerm.Color]
+        public let ansiColors: [SwiftTerm.Color]
+
+        public init(
+            foreground: NSColor,
+            background: NSColor,
+            cursor: NSColor,
+            selection: NSColor,
+            ansiColors: [SwiftTerm.Color]
+        ) {
+            self.foreground = foreground
+            self.background = background
+            self.cursor = cursor
+            self.selection = selection
+            self.ansiColors = ansiColors
+        }
     }
 
     // MARK: - Color Helper
@@ -44,7 +58,7 @@ enum TerminalThemeAdapter {
     // MARK: - Theme Mapping
 
     /// 根据编辑器主题 ID 获取终端颜色
-    static func colors(for themeId: String) -> TerminalColors {
+    public static func colors(for themeId: String) -> TerminalColors {
         switch themeId {
         case "xcode-dark": return xcodeDarkColors()
         case "xcode-light": return xcodeLightColors()
@@ -62,7 +76,7 @@ enum TerminalThemeAdapter {
     }
 
     /// 根据系统外观获取默认颜色（不依赖编辑器主题时的 fallback）
-    static func defaultColors(isDark: Bool) -> TerminalColors {
+    public static func defaultColors(isDark: Bool) -> TerminalColors {
         if isDark {
             return TerminalColors(
                 foreground: NSColor(white: 0.92, alpha: 1.0),
@@ -86,7 +100,7 @@ enum TerminalThemeAdapter {
 
     /// 将颜色配置应用到终端视图
     @MainActor
-    static func apply(_ colors: TerminalColors, to terminalView: LumiTerminalView) {
+    public static func apply(_ colors: TerminalColors, to terminalView: LumiTerminalView) {
         terminalView.nativeForegroundColor = colors.foreground
         terminalView.nativeBackgroundColor = colors.background
         terminalView.caretColor = colors.cursor

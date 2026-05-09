@@ -42,6 +42,7 @@
 		A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4182F70000100AAA102 /* DockerKit */; };
 		A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4212F70000100AAA103 /* DiskManagerKit */; };
 		A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4312F70000100AAA104 /* BrewKit */; };
+		A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4412F70000100AAA105 /* TerminalCoreKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -141,6 +142,8 @@
 		F5AE9C862FAD6F1E00F014F8 /* CodeEditSourceEditorExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditSourceEditorExample.xcodeproj; sourceTree = "<group>"; };
 		F5CA2D4E2FADB71500F67747 /* CodeEditSourceEditorExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditSourceEditorExample.xcodeproj; sourceTree = "<group>"; };
 		F5CA2F3B2FADB75E00F67747 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
+		F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = iOSTerminal.xcodeproj; sourceTree = "<group>"; };
+		F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MacTerminal.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -290,6 +293,7 @@
 				A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */,
 				A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */,
 				A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */,
+				A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -385,6 +389,20 @@
 			sourceTree = "<group>";
 		};
 		F5CA2F3D2FADB75E00F67747 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5E211592FAEF3440005256B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5E2115B2FAEF3440005256B /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -509,6 +527,7 @@
 				A1B2C4182F70000100AAA102 /* DockerKit */,
 				A1B2C4212F70000100AAA103 /* DiskManagerKit */,
 				A1B2C4312F70000100AAA104 /* BrewKit */,
+				A1B2C4412F70000100AAA105 /* TerminalCoreKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 			);
 			productName = "SwiftUI-Template";
@@ -604,6 +623,7 @@
 				A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */,
 				A1B2C4222F70000100AAA103 /* XCLocalSwiftPackageReference "Packages/DiskManagerKit" */,
 				A1B2C4322F70000100AAA104 /* XCLocalSwiftPackageReference "Packages/BrewKit" */,
+				A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -628,6 +648,14 @@
 				{
 					ProductGroup = 0BC9031E2FAD5B56003651CA /* Products */;
 					ProjectRef = 0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */;
+				},
+				{
+					ProductGroup = F5E211592FAEF3440005256B /* Products */;
+					ProjectRef = F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */;
+				},
+				{
+					ProductGroup = F5E2115B2FAEF3440005256B /* Products */;
+					ProjectRef = F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */;
 				},
 				{
 					ProductGroup = F5AE9B772FAD6E0900F014F8 /* Products */;
@@ -1271,6 +1299,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/BrewKit;
 		};
+		A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/TerminalCoreKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1589,6 +1621,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4322F70000100AAA104 /* XCLocalSwiftPackageReference "Packages/BrewKit" */;
 			productName = BrewKit;
+		};
+		A1B2C4412F70000100AAA105 /* TerminalCoreKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */;
+			productName = TerminalCoreKit;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

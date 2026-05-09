@@ -486,17 +486,30 @@ final class PluginVM: ObservableObject, SuperLog {
             .compactMap { $0.addPanelHeaderView(activeIcon: activeIcon) }
     }
 
-    /// 获取当前激活插件的所有 Panel Bottom 视图
+    /// 获取所有插件提供的底部面板标签页
     ///
-    /// 收集所有启用插件通过 `addPanelBottomView(activeIcon:)` 提供的底部视图，
-    /// 按插件 `order` 升序垂直堆叠（order 小的在上，大的在下）。
-    ///
-    /// - Returns: Panel Bottom 视图数组
-    func getActivePanelBottomViews() -> [AnyView] {
+    /// 收集所有启用插件通过 `addBottomPanelTabs()` 提供的标签页，
+    /// 按 priority 升序排列。
+    func getBottomPanelTabs() -> [BottomPanelTab] {
         let activeIcon = activePanelIcon
         return plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addPanelBottomView(activeIcon: activeIcon) }
+            .flatMap { $0.addBottomPanelTabs(activeIcon: activeIcon) }
+            .sorted { $0.priority < $1.priority }
+    }
+
+    /// 获取指定底部面板 Tab 对应的内容视图
+    func getBottomPanelContentView(tabId: String) -> AnyView? {
+        let activeIcon = activePanelIcon
+        return plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addBottomPanelContentView(tabId: tabId, activeIcon: activeIcon) }
+            .first
+    }
+
+    /// 当前是否有底部面板标签页
+    func hasBottomPanelTabs() -> Bool {
+        !getBottomPanelTabs().isEmpty
     }
 
     /// 当前是否有面板视图

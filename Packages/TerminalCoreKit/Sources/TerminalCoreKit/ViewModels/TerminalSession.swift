@@ -3,30 +3,43 @@ import Foundation
 import SwiftTerm
 import SwiftUI
 
+/// 终端会话
+///
+/// 管理单个终端会话的生命周期，包括：
+/// - Shell 进程启动与终止
+/// - 主题颜色应用
+/// - 终端标题更新
 @MainActor
-final class TerminalSession: ObservableObject, Identifiable {
-    let id = UUID()
-    @Published var title: String = "Terminal"
-    @Published var isConnected: Bool = false
+public final class TerminalSession: ObservableObject, Identifiable {
+    public let id = UUID()
+    @Published public var title: String = "Terminal"
+    @Published public var isConnected: Bool = false
 
     /// 自定义终端视图（零尺寸保护 + 无障碍）
-    let terminalView: LumiTerminalView
+    public let terminalView: LumiTerminalView
     private let initialWorkingDirectory: String?
     /// KVO 观察系统外观变化
     private var appearanceObservation: NSKeyValueObservation?
     /// 当前编辑器主题 ID（用于终端颜色同步）
     private var currentThemeId: String
+    /// 主题 ID 提供者（由外部注入）
+    private let themeIdProvider: () -> String
 
-    init(workingDirectory: String? = nil) {
+    /// 初始化终端会话
+    ///
+    /// - Parameters:
+    ///   - workingDirectory: 工作目录
+    ///   - themeId: 初始主题 ID
+    ///   - themeIdProvider: 主题 ID 提供者回调（用于主题切换时更新）
+    public init(
+        workingDirectory: String? = nil,
+        themeId: String = "xcode-dark",
+        themeIdProvider: @escaping () -> String = { "xcode-dark" }
+    ) {
         self.initialWorkingDirectory = workingDirectory
         self.terminalView = LumiTerminalView(frame: .zero)
-
-        // 读取当前统一主题并映射为编辑器主题
-        if let savedThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() {
-            self.currentThemeId = ThemeVM.editorThemeID(for: savedThemeId)
-        } else {
-            self.currentThemeId = "xcode-dark"
-        }
+        self.currentThemeId = themeId
+        self.themeIdProvider = themeIdProvider
 
         setupTerminal()
     }
@@ -48,19 +61,14 @@ final class TerminalSession: ObservableObject, Identifiable {
             }
         }
 
-        // 监听编辑器主题变化
-        NotificationCenter.default.addObserver(
-            forName: .lumiThemeDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let editorThemeId = notification.userInfo?["editorThemeId"] as? String else { return }
-            self?.currentThemeId = editorThemeId
-            self?.applyThemeColors()
-        }
-
         // 启动 shell 进程（使用 Shell Integration）
         startShell()
+    }
+
+    /// 更新主题 ID 并重新应用颜色
+    public func updateTheme(_ themeId: String) {
+        currentThemeId = themeId
+        applyThemeColors()
     }
 
     /// 启动 shell 进程
@@ -111,11 +119,15 @@ final class TerminalSession: ObservableObject, Identifiable {
 
     /// 应用主题颜色到终端
     private func applyThemeColors() {
-        let colors = TerminalThemeAdapter.colors(for: currentThemeId)
+        // 使用 provider 获取最新主题 ID
+        let themeId = themeIdProvider()
+        currentThemeId = themeId
+        let colors = TerminalThemeAdapter.colors(for: themeId)
         TerminalThemeAdapter.apply(colors, to: terminalView)
     }
 
-    func terminate() {
+    /// 终止终端会话
+    public func terminate() {
         // 向整个进程组发送 SIGTERM，确保 shell 及其所有子进程（如 pnpm dev 启动的 node）都被清理
         if let process = terminalView.process, process.shellPid > 0 {
             // forkpty 创建的 shell 会成为新会话的领导者，其 PID 即为进程组 PGID
@@ -139,17 +151,17 @@ final class TerminalSession: ObservableObject, Identifiable {
 // MARK: - LocalProcessTerminalViewDelegate
 
 extension TerminalSession: LocalProcessTerminalViewDelegate {
-    nonisolated func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
+    nonisolated public func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}
 
-    nonisolated func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
+    nonisolated public func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
         Task { @MainActor [weak self] in
             self?.title = title.isEmpty ? "Terminal" : title
         }
     }
 
-    nonisolated func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}
+    nonisolated public func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}
 
-    nonisolated func processTerminated(source: TerminalView, exitCode: Int32?) {
+    nonisolated public func processTerminated(source: TerminalView, exitCode: Int32?) {
         Task { @MainActor [weak self] in
             self?.isConnected = false
         }

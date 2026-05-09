@@ -1,6 +1,7 @@
 import SwiftTerm
 import SwiftUI
 import LumiUI
+import TerminalCoreKit
 
 struct TerminalMainView: View {
     @EnvironmentObject private var projectVM: ProjectVM

@@ -36,6 +36,17 @@ public enum EditorBottomPanelKind: String, CaseIterable, Equatable {
             return "point.3.connected.trianglepath.dotted"
         }
     }
+
+    /// 排序优先级（数字越小越靠前）
+    public var sortOrder: Int {
+        switch self {
+        case .problems: return 0
+        case .references: return 1
+        case .searchResults: return 2
+        case .workspaceSymbols: return 3
+        case .callHierarchy: return 4
+        }
+    }
 }
 
 public enum EditorPanelCommand: Equatable {

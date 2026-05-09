@@ -13,15 +13,15 @@ import Foundation
 /// 4. 注入脚本先 source 用户的真实 rc 文件，再安装 preexec/precmd hooks
 /// 5. preexec: 设置终端标题为正在执行的命令
 /// 6. precmd: 恢复终端标题为 shell 名称
-enum ShellIntegration {
+public enum ShellIntegration {
     // MARK: - Errors
 
-    enum Error: Swift.Error, LocalizedError {
+    public enum Error: Swift.Error, LocalizedError {
         case zshScriptsNotFound
         case bashScriptNotFound
         case failedToCreateTempDirectory
 
-        var errorDescription: String? {
+        public var errorDescription: String? {
             switch self {
             case .zshScriptsNotFound:
                 return "Failed to find zsh shell integration scripts."
@@ -45,11 +45,11 @@ enum ShellIntegration {
 
     // MARK: - Shell Type
 
-    enum Shell: String, CaseIterable {
+    public enum Shell: String, CaseIterable {
         case bash
         case zsh
 
-        var defaultPath: String {
+        public var defaultPath: String {
             switch self {
             case .bash: return "/bin/bash"
             case .zsh: return "/bin/zsh"
@@ -66,7 +66,7 @@ enum ShellIntegration {
     ///   - environment: 环境变量数组（会被修改）
     ///   - useLogin: 是否使用 login shell
     /// - Returns: 传递给 shell 可执行文件的参数
-    static func setupIntegration(
+    public static func setupIntegration(
         for shell: Shell,
         environment: inout [String],
         useLogin: Bool = true
@@ -100,7 +100,7 @@ enum ShellIntegration {
     }
 
     /// 自动检测系统默认 shell
-    static func autoDetectShell() -> Shell {
+    public static func autoDetectShell() -> Shell {
         let envShell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
         let basename = (envShell as NSString).lastPathComponent
         return Shell(rawValue: basename) ?? .zsh

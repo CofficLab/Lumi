@@ -84,6 +84,17 @@ final class ThemeVM: ObservableObject {
         return themes.first(where: { $0.id == themeId })?.editorThemeId ?? "xcode-dark"
     }
 
+    /// 获取当前编辑器主题 ID（用于终端颜色同步）
+    ///
+    /// 从本地存储读取选中的主题 ID，转换为编辑器主题 ID。
+    /// 如果未找到，返回默认值 "xcode-dark"。
+    static func currentEditorThemeId() -> String {
+        if let savedThemeId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() {
+            return editorThemeID(for: savedThemeId)
+        }
+        return "xcode-dark"
+    }
+
     // MARK: - 私有方法
 
     /// 从插件加载主题贡献列表

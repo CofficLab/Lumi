@@ -1,12 +1,16 @@
 import Foundation
 import MagicKit
 import SwiftUI
+import TerminalCoreKit
 import os
 
 /// 编辑器底部面板 - Terminal 标签页插件
 ///
 /// 向内核全局底部面板注册 Terminal Tab 入口，
 /// 内核负责 Tab 栏渲染和切换，本插件只提供 Tab 定义和内容视图。
+///
+/// 注意：此插件使用独立的 TerminalTabsViewModel 实例，
+/// 与 TerminalPlugin（侧边栏终端）完全隔离，不共享会话状态。
 actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-bottom-terminal")
@@ -47,13 +51,22 @@ actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
 }
 
 /// Terminal 底部面板内容视图
+///
+/// 使用独立的 ViewModel 实例，不与侧边栏 Terminal 共享会话。
 struct EditorBottomTerminalContentView: View {
     @EnvironmentObject private var editorVM: EditorVM
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var themeVM: ThemeVM
 
-    /// 使用全局单例，与侧边栏 Terminal 共享同一份终端会话状态
-    @ObservedObject private var viewModel = TerminalTabsViewModel.shared
+    /// 独立的 ViewModel 实例，不使用 .shared
+    @StateObject private var viewModel: TerminalTabsViewModel
+
+    init() {
+        // 初始化时注入主题 ID 提供者
+        _viewModel = StateObject(wrappedValue: TerminalTabsViewModel(
+            themeIdProvider: { ThemeVM.currentEditorThemeId() }
+        ))
+    }
 
     /// 工作目录（使用当前文件所在目录）
     private var workingDirectory: String? {
@@ -76,6 +89,12 @@ struct EditorBottomTerminalContentView: View {
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .onAppear {
             viewModel.ensureInitialSession(workingDirectory: workingDirectory)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiThemeDidChange)) { notification in
+            // 监听主题变化，更新所有会话的主题
+            if let editorThemeId = notification.userInfo?["editorThemeId"] as? String {
+                viewModel.updateThemeForAllSessions(editorThemeId)
+            }
         }
     }
 

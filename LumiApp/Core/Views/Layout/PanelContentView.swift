@@ -13,7 +13,7 @@ struct PanelContentView: View {
     var body: some View {
         let activeItem = pluginProvider.getActivePanelItem()
         let headerViews = pluginProvider.getActivePanelHeaderViews()
-        let bottomViews = pluginProvider.getActivePanelBottomViews()
+        let hasBottomTabs = pluginProvider.hasBottomPanelTabs()
 
         Group {
             if let activeItem {
@@ -30,20 +30,16 @@ struct PanelContentView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                         // ── 可拖拽分隔线 ──
-                        if !bottomViews.isEmpty {
+                        if hasBottomTabs {
                             PanelResizerView()
                         }
 
-                        // ── 下半部分：底部面板 ──
-                        // 高度由 LayoutVM.editorBottomPanelHeight 控制
-                        if !bottomViews.isEmpty {
-                            VStack(spacing: 1) {
-                                ForEach(bottomViews.indices, id: \.self) { index in
-                                    bottomViews[index]
-                                }
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .frame(height: layoutVM.editorBottomPanelHeight)
+                        // ── 下半部分：全局底部面板 ──
+                        // 由内核统一维护，聚合所有插件提供的 BottomPanelTab
+                        if hasBottomTabs {
+                            BottomPanelBarView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .frame(height: layoutVM.editorBottomPanelHeight)
                         }
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
