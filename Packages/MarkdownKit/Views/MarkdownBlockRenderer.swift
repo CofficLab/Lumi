@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import BeautifulMermaid
 import MarkdownKitCore
 
@@ -134,17 +135,15 @@ public struct MarkdownBlockRenderer: View {
             }
 
             if preferOuterScroll {
-                // 外层列表控制垂直滚动时，不使用任何 ScrollView。
-                // 直接用 Text + lineLimit + clipping 展示代码。
-                // 超宽内容会被裁剪，但不会捕获滚轮事件，保证外层 List 正常滚动。
-                Text(verbatim: code)
-                    .font(theme.codeFont)
-                    .textSelection(.enabled)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(code.components(separatedBy: .newlines).count)
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .clipped()
+                // 外层列表控制垂直滚动时，使用只支持水平滚动的 NSScrollView。
+                // 垂直滚轮事件会被转发给外层容器，代码块不会被截断且可以水平滚动。
+                HorizontalScrollView {
+                    Text(verbatim: code)
+                        .font(theme.codeFont)
+                        .textSelection(.enabled)
+                        .multilineTextAlignment(.leading)
+                        .padding(10)
+                }
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     Text(verbatim: code)
@@ -234,6 +233,66 @@ public struct MarkdownBlockRenderer: View {
         case .none:
             Text("•")
                 .font(theme.bodyFont)
+        }
+    }
+}
+
+// MARK: - HorizontalScrollView
+
+/// 仅支持水平滚动的 NSScrollView 包装。
+/// 垂直方向的滚轮事件会被转发给视图层级中的外层 NSScrollView（即聊天列表），
+/// 从而实现：代码块水平可滚动、垂直滚动由外层列表接管。
+private struct HorizontalScrollView<Content: View>: NSViewRepresentable {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    func makeNSView(context: Context) -> HorizontalOnlyScrollView {
+        let scrollView = HorizontalOnlyScrollView()
+        scrollView.drawsBackground = false
+        scrollView.hasHorizontalScroller = false
+        scrollView.hasVerticalScroller = false
+        scrollView.autohidesScrollers = true
+        scrollView.horizontalScrollElasticity = .allowed
+        scrollView.verticalScrollElasticity = .none
+
+        let hostingView = NSHostingView(rootView: content)
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        // 宽度不跟随 clip view，让内容自然撑开以触发水平滚动
+        hostingView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        scrollView.documentView = hostingView
+
+        // hostingView 宽度自由拉伸，高度紧贴 clip view
+        NSLayoutConstraint.activate([
+            hostingView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            hostingView.heightAnchor.constraint(equalTo: scrollView.contentView.heightAnchor),
+        ])
+
+        return scrollView
+    }
+
+    func updateNSView(_ nsView: HorizontalOnlyScrollView, context: Context) {
+        if let hostingView = nsView.documentView as? NSHostingView<Content> {
+            hostingView.rootView = content
+        }
+    }
+}
+
+/// NSScrollView 子类：仅消费水平方向的滚轮事件，垂直方向转发给外层 ScrollView。
+private class HorizontalOnlyScrollView: NSScrollView {
+    override func scrollWheel(with event: NSEvent) {
+        // 判断滚动方向：trackpad 可能同时包含 deltaX 和 deltaY
+        // 水平位移大于垂直位移时视为水平滚动，由自身消费
+        let isHorizontalGesture = abs(event.scrollingDeltaX) >= abs(event.scrollingDeltaY)
+
+        if isHorizontalGesture {
+            // 水平方向自己处理
+            super.scrollWheel(with: event)
+        } else {
+            // 垂直方向转发给外层 ScrollView
+            nextResponder?.scrollWheel(with: event)
         }
     }
 }
