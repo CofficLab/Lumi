@@ -81,6 +81,8 @@ struct RailView: View {
                 }
                 .buttonStyle(.plain)
                 .help(tab.title)
+                // Tab 选中状态变化时平滑过渡
+                .animation(.easeInOut(duration: 0.15), value: selectedTabId == tab.id)
             }
             Spacer(minLength: 0)
         }
@@ -104,6 +106,9 @@ struct RailView: View {
         return Group {
             if let contentView {
                 contentView
+                    // Rail 内容切换时平滑过渡
+                    .transition(.opacity.animation(.easeInOut(duration: 0.15)))
+                    .id(currentId ?? "empty")
             } else {
                 Color.clear
             }

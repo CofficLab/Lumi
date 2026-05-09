@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import MagicKit
-import os
 
 /// 编辑器标签页持久化协调器
 ///
@@ -13,9 +12,6 @@ import os
 @MainActor
 final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     nonisolated static var emoji: String { "📑" }
-    nonisolated static let verbose: Bool = false
-    nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.editor-tab-strip")
 
     // MARK: - 属性
 
@@ -60,10 +56,6 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
                 )
             }
             .store(in: &cancellables)
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)开始订阅 tabs 变化, projectPath=\(self.trackedProjectPath, privacy: .public)")
-        }
     }
 
     /// 停止订阅并立即保存当前状态
@@ -83,10 +75,6 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
             tabs: sessionStore.tabs,
             activeTabPath: activeTabPath
         )
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)停止订阅，已保存 tabs, projectPath=\(projectPath, privacy: .public)")
-        }
     }
 
     // MARK: - 项目切换
@@ -127,19 +115,15 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     ) {
         let (persistedTabs, activeTabPath) = store.loadTabs(forProject: projectPath)
 
-        Self.logger.info("\(Self.t)恢复标签页, projectPath=\(projectPath, privacy: .public), persistedCount=\(persistedTabs.count), activeTabPath=\(activeTabPath ?? "nil", privacy: .public)")
-
         // 过滤掉不存在的文件
         let validURLs = persistedTabs.compactMap { tab -> URL? in
             guard let url = tab.fileURL,
                   FileManager.default.isReadableFile(atPath: url.path) else {
-                Self.logger.warning("\(Self.t)跳过不可读文件: \(tab.path, privacy: .public)")
                 return nil
             }
             return url
         }
 
-        Self.logger.info("\(Self.t)有效标签页数=\(validURLs.count)")
         guard !validURLs.isEmpty else { return }
 
         // 打开所有标签页
@@ -150,7 +134,6 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
         // 最后激活上次保存的活跃标签
         if let activePath = activeTabPath,
            let activateURL = validURLs.first(where: { $0.path == activePath }) {
-            Self.logger.info("\(Self.t)激活活跃标签: \(activateURL.path, privacy: .public)")
             openFile(activateURL)
         }
     }

@@ -28,59 +28,59 @@ final class RClickPluginLocalStore: @unchecked Sendable {
     }
     
     // MARK: - Public API
-    
-    /// 存储值
+
+    /// 存储值（异步，不阻塞调用线程）
     func set(_ value: Any?, forKey key: String) {
-        queue.sync {
-            var dict = readDict()
+        queue.async { [self] in
+            var dict = self.readDict()
             if let value {
                 dict[key] = value
             } else {
                 dict.removeValue(forKey: key)
             }
-            writeDict(dict)
+            self.writeDict(dict)
         }
     }
-    
-    /// 获取值
+
+    /// 获取值（同步，需要返回值）
     func object(forKey key: String) -> Any? {
-        queue.sync { readDict()[key] }
+        queue.sync { self.readDict()[key] }
     }
-    
+
     /// 获取布尔值
     func bool(forKey key: String) -> Bool {
         (object(forKey: key) as? Bool) ?? false
     }
-    
+
     /// 获取字符串
     func string(forKey key: String) -> String? {
         object(forKey: key) as? String
     }
-    
+
     /// 获取整数
     func integer(forKey key: String) -> Int {
         (object(forKey: key) as? Int) ?? 0
     }
-    
+
     /// 获取双精度浮点数
     func double(forKey key: String) -> Double {
         (object(forKey: key) as? Double) ?? 0.0
     }
-    
+
     /// 获取数据
     func data(forKey key: String) -> Data? {
         object(forKey: key) as? Data
     }
-    
-    /// 删除指定键
+
+    /// 删除指定键（异步，不阻塞调用线程）
     func remove(forKey key: String) {
         set(nil, forKey: key)
     }
-    
-    /// 清空所有配置
+
+    /// 清空所有配置（异步，不阻塞调用线程）
     func clearAll() {
-        queue.sync {
-            writeDict([:])
+        queue.async { [self] in
+            self.writeDict([:])
         }
     }
     

@@ -69,6 +69,37 @@ final class ConversationVM: ObservableObject, SuperLog {
         chatHistoryService.saveMessage(message, toConversationId: conversationId)
     }
 
+    // MARK: - 对话模型偏好
+
+    /// 保存当前对话的供应商/模型偏好
+    /// - Parameters:
+    ///   - providerId: 供应商 ID
+    ///   - model: 模型名称
+    func saveModelPreference(providerId: String, model: String) {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)⚠️ 没有选中会话，跳过保存模型偏好")
+            }
+            return
+        }
+        chatHistoryService.updateModelPreference(conversation, providerId: providerId, model: model)
+    }
+
+    /// 获取当前对话的供应商/模型偏好
+    /// - Returns: 包含供应商和模型的元组，如果对话未指定则返回 nil
+    func getModelPreference() -> (providerId: String, model: String)? {
+        guard let conversationId = selectedConversationId,
+              let conversation = chatHistoryService.fetchConversation(id: conversationId) else {
+            return nil
+        }
+        guard let providerId = conversation.providerId,
+              let model = conversation.model else {
+            return nil
+        }
+        return (providerId, model)
+    }
+
     /// 删除指定对话
     /// - Parameter conversation: 要删除的对话
     /// - Note: 调用方（如 AgentRuntime）需要负责清理相关的消息发送队列

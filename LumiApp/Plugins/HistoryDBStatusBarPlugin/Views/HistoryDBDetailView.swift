@@ -13,24 +13,21 @@ struct HistoryDBDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             header
 
             if viewModel.isLoading {
+                Spacer()
                 ProgressView(String(localized: "Loading...", table: "HistoryDBStatusBar"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Spacer()
             } else {
-                contentTable
-                    .environment(\.colorScheme, .light)
-                    .foregroundStyle(Color.black)
-                    .padding(8)
-                    .background(Color.white.opacity(0.96))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                contentView
             }
 
             footer
         }
-        .frame(minHeight: 420)
+        .frame(height: 800)
         .task {
             await viewModel.reload()
         }
@@ -48,121 +45,158 @@ struct HistoryDBDetailView: View {
         }
     }
 
+    // MARK: - Header
+
     private var header: some View {
-        HStack {
-            Image(systemName: "tablecells")
-                .font(.system(size: 15))
-            Text(String(localized: "History Database Browser", table: "HistoryDBStatusBar"))
-                .font(.system(size: 15, weight: .semibold))
+        VStack(spacing: 0) {
+            // 标题行
+            HStack {
+                Image(systemName: "tablecells")
+                    .font(.system(size: 13))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                Text(String(localized: "History Database Browser", table: "HistoryDBStatusBar"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-            Spacer()
+                Spacer()
 
-            Picker("", selection: $viewModel.selectedMode) {
-                Text(String(localized: "Message List", table: "HistoryDBStatusBar"))
-                    .tag(HistoryDBViewMode.messages)
-                Text(String(localized: "Conversation List", table: "HistoryDBStatusBar"))
-                    .tag(HistoryDBViewMode.conversations)
+                Button {
+                    Task { await viewModel.reload() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "Reload", table: "HistoryDBStatusBar"))
             }
-            .pickerStyle(.menu)
-            .frame(width: 160)
 
-            Button {
-                Task { await viewModel.reload() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .foregroundStyle(Color.black)
+            Divider()
+                .padding(.vertical, 6)
+
+            // Tab 切换
+            HStack(spacing: 0) {
+                tabButton(
+                    title: String(localized: "Messages", table: "HistoryDBStatusBar"),
+                    icon: "text.bubble",
+                    mode: .messages
+                )
+
+                tabButton(
+                    title: String(localized: "Conversations", table: "HistoryDBStatusBar"),
+                    icon: "message.fill",
+                    mode: .conversations
+                )
             }
-            .buttonStyle(.plain)
-            .help(String(localized: "Reload", table: "HistoryDBStatusBar"))
         }
-        .foregroundStyle(Color.black)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(Color.white.opacity(0.96))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
     }
+
+    private func tabButton(title: String, icon: String, mode: HistoryDBViewMode) -> some View {
+        Button {
+            viewModel.selectedMode = mode
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(viewModel.selectedMode == mode ? Color.accentColor.opacity(0.15) : Color.clear)
+            .foregroundColor(viewModel.selectedMode == mode ? Color.accentColor : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Content
 
     @ViewBuilder
-    private var contentTable: some View {
+    private var contentView: some View {
         switch viewModel.selectedMode {
         case .messages:
-            if viewModel.messageRows.isEmpty {
-                emptyView
-            } else {
-                Table(viewModel.messageRows) {
-                    TableColumn(String(localized: "Message ID", table: "HistoryDBStatusBar")) { row in
-                        Text(row.id.uuidString)
-                            .font(.system(size: 11, design: .monospaced))
-                            .lineLimit(1)
-                    }
-                    .width(min: 200)
-
-                    TableColumn(String(localized: "Conversation", table: "HistoryDBStatusBar"), value: \.conversationTitle)
-                        .width(min: 120)
-
-                    TableColumn(String(localized: "Role", table: "HistoryDBStatusBar"), value: \.role)
-                        .width(min: 70, max: 90)
-
-                    TableColumn(String(localized: "Model", table: "HistoryDBStatusBar"), value: \.model)
-                        .width(min: 120)
-
-                    TableColumn(String(localized: "Tokens", table: "HistoryDBStatusBar")) { row in
-                        Text("\(row.tokens)")
-                    }
-                    .width(min: 60, max: 80)
-
-                    TableColumn(String(localized: "Timestamp", table: "HistoryDBStatusBar")) { row in
-                        Text(row.timestamp, style: .date)
-                        + Text(" ")
-                        + Text(row.timestamp, style: .time)
-                    }
-                    .width(min: 150)
-
-                    TableColumn(String(localized: "Content", table: "HistoryDBStatusBar"), value: \.contentPreview)
-                        .width(min: 250)
-                }
-            }
-
+            messagesTable
         case .conversations:
-            if viewModel.conversationRows.isEmpty {
-                emptyView
-            } else {
-                Table(viewModel.conversationRows) {
-                    TableColumn(String(localized: "Conversation ID", table: "HistoryDBStatusBar")) { row in
-                        Text(row.id.uuidString)
-                            .font(.system(size: 11, design: .monospaced))
-                            .lineLimit(1)
-                    }
-                    .width(min: 200)
+            conversationsContent
+        }
+    }
 
-                    TableColumn(String(localized: "Title", table: "HistoryDBStatusBar"), value: \.title)
-                        .width(min: 200)
+    // MARK: - Messages Table
 
-                    TableColumn(String(localized: "Project", table: "HistoryDBStatusBar"), value: \.projectId)
-                        .width(min: 180)
-
-                    TableColumn(String(localized: "Created At", table: "HistoryDBStatusBar")) { row in
-                        Text(row.createdAt, style: .date)
-                        + Text(" ")
-                        + Text(row.createdAt, style: .time)
-                    }
-                    .width(min: 150)
-
-                    TableColumn(String(localized: "Updated At", table: "HistoryDBStatusBar")) { row in
-                        Text(row.updatedAt, style: .date)
-                        + Text(" ")
-                        + Text(row.updatedAt, style: .time)
-                    }
-                    .width(min: 150)
-
-                    TableColumn(String(localized: "Messages", table: "HistoryDBStatusBar")) { row in
-                        Text("\(row.messageCount)")
-                    }
-                    .width(min: 70, max: 90)
+    @ViewBuilder
+    private var messagesTable: some View {
+        if viewModel.messageRows.isEmpty {
+            emptyView
+        } else {
+            Table(viewModel.messageRows) {
+                TableColumn(String(localized: "Conversation", table: "HistoryDBStatusBar")) { row in
+                    Text(row.conversationTitle)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 }
+                .width(min: 100)
+
+                TableColumn(String(localized: "Role", table: "HistoryDBStatusBar")) { row in
+                    Text(row.role)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .width(min: 60, max: 80)
+
+                TableColumn(String(localized: "Model", table: "HistoryDBStatusBar")) { row in
+                    Text(row.model)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .width(min: 100)
+
+                TableColumn(String(localized: "Tokens", table: "HistoryDBStatusBar")) { row in
+                    Text("\(row.tokens)")
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .width(min: 50, max: 70)
+
+                TableColumn(String(localized: "Timestamp", table: "HistoryDBStatusBar")) { row in
+                    HStack(spacing: 4) {
+                        Text(row.timestamp, style: .date)
+                        Text(row.timestamp, style: .time)
+                    }
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .width(min: 130)
+
+                TableColumn(String(localized: "Content", table: "HistoryDBStatusBar")) { row in
+                    Text(row.contentPreview)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .width(min: 200)
+            }
+            .tableStyle(.inset(alternatesRowBackgrounds: false))
+            .background(Color.clear)
+        }
+    }
+
+    // MARK: - Conversations Content
+
+    @ViewBuilder
+    private var conversationsContent: some View {
+        if viewModel.conversationRows.isEmpty {
+            emptyView
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 6) {
+                    ForEach(viewModel.conversationRows) { row in
+                        HistoryConversationCardView(row: row)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
             }
         }
     }
+
+    // MARK: - Footer
 
     private var footer: some View {
         HStack(spacing: 12) {
@@ -172,14 +206,15 @@ struct HistoryDBDetailView: View {
                     viewModel.totalCount
                 )
             )
-            .font(.system(size: 12))
-            .foregroundColor(.secondary)
+            .font(.system(size: 11))
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             Spacer()
 
             Button(String(localized: "Prev", table: "HistoryDBStatusBar")) {
                 viewModel.previousPage()
             }
+            .font(.system(size: 11))
             .disabled(viewModel.currentPage <= 1)
 
             Text(
@@ -189,23 +224,31 @@ struct HistoryDBDetailView: View {
                     viewModel.totalPages
                 )
             )
-            .font(.system(size: 12))
-            .foregroundColor(.secondary)
+            .font(.system(size: 11))
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             Button(String(localized: "Next", table: "HistoryDBStatusBar")) {
                 viewModel.nextPage()
             }
+            .font(.system(size: 11))
             .disabled(viewModel.currentPage >= viewModel.totalPages)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
+
+    // MARK: - Empty
 
     private var emptyView: some View {
         VStack(spacing: 8) {
+            Spacer()
             Image(systemName: "tray")
                 .font(.system(size: 24))
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             Text(String(localized: "No data", table: "HistoryDBStatusBar"))
-                .foregroundColor(.secondary)
+                .font(.system(size: 12))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

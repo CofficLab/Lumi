@@ -1,6 +1,7 @@
 import os
 import SwiftUI
 import LumiUI
+import BrewKit
 
 struct BrewManagerView: View {
     @StateObject private var viewModel = BrewManagerViewModel()

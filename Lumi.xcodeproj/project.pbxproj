@@ -30,6 +30,7 @@
 		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
 		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
+		A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3A12F70000200AAA101 /* SkillKit */; };
 		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
 		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
 		A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E12F70000100AAA101 /* MarkdownKit */; };
@@ -38,6 +39,11 @@
 		A1B2C4002F70000100AAA101 /* EditorService in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4012F70000100AAA101 /* EditorService */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
 		A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4162F70000100AAA101 /* DeviceMonitorKit */; };
+		A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4182F70000100AAA102 /* DockerKit */; };
+		A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4212F70000100AAA103 /* DiskManagerKit */; };
+		A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4312F70000100AAA104 /* BrewKit */; };
+		A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4412F70000100AAA105 /* TerminalCoreKit */; };
+		A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4512F70000100AAA106 /* ShellKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -130,6 +136,34 @@
 		F5050AA32FADA83D002AA7B5 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F5679DC02FAF405D0054AB4B /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
+		F5679DD72FAF405D0054AB4B /* AEXML.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXML.xcodeproj; sourceTree = "<group>"; };
+		F5679E1B2FAF405D0054AB4B /* FileSharedAcrossTargets.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = FileSharedAcrossTargets.xcodeproj; sourceTree = "<group>"; };
+		F5679E422FAF405D0054AB4B /* AppWithExtensions.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AppWithExtensions.xcodeproj; sourceTree = "<group>"; };
+		F5679E562FAF405D0054AB4B /* ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj; sourceTree = "<group>"; };
+		F5679E5A2FAF405D0054AB4B /* BuildSettings.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = BuildSettings.xcodeproj; sourceTree = "<group>"; };
+		F5679E5D2FAF405D0054AB4B /* Project.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Project.xcodeproj; sourceTree = "<group>"; };
+		F5679E5E2FAF405D0054AB4B /* ProjectWithoutProductsGroup.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithoutProductsGroup.xcodeproj; sourceTree = "<group>"; };
+		F5679E5F2FAF405D0054AB4B /* ProjectWithXCLocalSwiftPackageReference.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithXCLocalSwiftPackageReference.xcodeproj; sourceTree = "<group>"; };
+		F5679E602FAF405D0054AB4B /* ProjectWithXCLocalSwiftPackageReferences.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithXCLocalSwiftPackageReferences.xcodeproj; sourceTree = "<group>"; };
+		F5679E6E2FAF405D0054AB4B /* SynchronizedRootGroups.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SynchronizedRootGroups.xcodeproj; sourceTree = "<group>"; };
+		F5679E732FAF405D0054AB4B /* TargetWithCustomBuildRules.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = TargetWithCustomBuildRules.xcodeproj; sourceTree = "<group>"; };
+		F5679E842FAF405D0054AB4B /* copy.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = copy.xcodeproj; sourceTree = "<group>"; };
+		F5679E862FAF405D0054AB4B /* Test.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Test.xcodeproj; sourceTree = "<group>"; };
+		F567FDCC2FAF42620054AB4B /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
+		F567FDE32FAF42620054AB4B /* AEXML.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXML.xcodeproj; sourceTree = "<group>"; };
+		F567FE272FAF42620054AB4B /* FileSharedAcrossTargets.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = FileSharedAcrossTargets.xcodeproj; sourceTree = "<group>"; };
+		F567FE4E2FAF42620054AB4B /* AppWithExtensions.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AppWithExtensions.xcodeproj; sourceTree = "<group>"; };
+		F567FE622FAF42620054AB4B /* ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj; sourceTree = "<group>"; };
+		F567FE662FAF42620054AB4B /* BuildSettings.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = BuildSettings.xcodeproj; sourceTree = "<group>"; };
+		F567FE692FAF42620054AB4B /* Project.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Project.xcodeproj; sourceTree = "<group>"; };
+		F567FE6A2FAF42620054AB4B /* ProjectWithoutProductsGroup.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithoutProductsGroup.xcodeproj; sourceTree = "<group>"; };
+		F567FE6B2FAF42620054AB4B /* ProjectWithXCLocalSwiftPackageReference.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithXCLocalSwiftPackageReference.xcodeproj; sourceTree = "<group>"; };
+		F567FE6C2FAF42620054AB4B /* ProjectWithXCLocalSwiftPackageReferences.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProjectWithXCLocalSwiftPackageReferences.xcodeproj; sourceTree = "<group>"; };
+		F567FE7A2FAF42620054AB4B /* SynchronizedRootGroups.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SynchronizedRootGroups.xcodeproj; sourceTree = "<group>"; };
+		F567FE7F2FAF42620054AB4B /* TargetWithCustomBuildRules.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = TargetWithCustomBuildRules.xcodeproj; sourceTree = "<group>"; };
+		F567FE902FAF42620054AB4B /* copy.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = copy.xcodeproj; sourceTree = "<group>"; };
+		F567FE922FAF42620054AB4B /* Test.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Test.xcodeproj; sourceTree = "<group>"; };
 		F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.coffic.lumi.NettoExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A640662F3ED1910039A761 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
@@ -137,6 +171,8 @@
 		F5AE9C862FAD6F1E00F014F8 /* CodeEditSourceEditorExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditSourceEditorExample.xcodeproj; sourceTree = "<group>"; };
 		F5CA2D4E2FADB71500F67747 /* CodeEditSourceEditorExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditSourceEditorExample.xcodeproj; sourceTree = "<group>"; };
 		F5CA2F3B2FADB75E00F67747 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
+		F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = iOSTerminal.xcodeproj; sourceTree = "<group>"; };
+		F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MacTerminal.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -256,6 +292,7 @@
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
 				A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */,
 				A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */,
+				A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */,
 				A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */,
 				A1B2C4002F70000100AAA101 /* EditorService in Frameworks */,
 				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
@@ -282,6 +319,11 @@
 				0B1A4F872F662D8500F15618 /* MLXNN in Frameworks */,
 				0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */,
 				A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */,
+				A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */,
+				A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */,
+				A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */,
+				A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */,
+				A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,6 +390,202 @@
 			);
 			sourceTree = "<group>";
 		};
+		F567010F2FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701112FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701132FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701152FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701172FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701192FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F567011B2FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F567011D2FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F567011F2FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701212FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701232FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701252FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701272FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F56701292FAF42620054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F732FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F752FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F772FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F792FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F7B2FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F7D2FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F7F2FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F812FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F832FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F852FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F872FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F892FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F8B2FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5679F8D2FAF405D0054AB4B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		F5AE9B752FAD6E0900F014F8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -377,6 +615,20 @@
 			sourceTree = "<group>";
 		};
 		F5CA2F3D2FADB75E00F67747 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5E211592FAEF3440005256B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5E2115B2FAEF3440005256B /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -496,7 +748,13 @@
 				A1B2C4012F70000100AAA101 /* EditorService */,
 				A1B2C3EF2F70000100AAA101 /* DatabaseKit */,
 				A1B2C4132F70000100AAA101 /* LumiUI */,
+				A1B2C3A12F70000200AAA101 /* SkillKit */,
 				A1B2C4162F70000100AAA101 /* DeviceMonitorKit */,
+				A1B2C4182F70000100AAA102 /* DockerKit */,
+				A1B2C4212F70000100AAA103 /* DiskManagerKit */,
+				A1B2C4312F70000100AAA104 /* BrewKit */,
+				A1B2C4412F70000100AAA105 /* TerminalCoreKit */,
+				A1B2C4512F70000100AAA106 /* ShellKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 			);
 			productName = "SwiftUI-Template";
@@ -587,12 +845,50 @@
 				A1B2C4022F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
 				A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */,
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
+				A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */,
 				A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */,
+				A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */,
+				A1B2C4222F70000100AAA103 /* XCLocalSwiftPackageReference "Packages/DiskManagerKit" */,
+				A1B2C4322F70000100AAA104 /* XCLocalSwiftPackageReference "Packages/BrewKit" */,
+				A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */,
+				A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
 			projectDirPath = "";
 			projectReferences = (
+				{
+					ProductGroup = F5679F7F2FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679DD72FAF405D0054AB4B /* AEXML.xcodeproj */;
+				},
+				{
+					ProductGroup = F56701152FAF42620054AB4B /* Products */;
+					ProjectRef = F567FDE32FAF42620054AB4B /* AEXML.xcodeproj */;
+				},
+				{
+					ProductGroup = F56701212FAF42620054AB4B /* Products */;
+					ProjectRef = F567FDCC2FAF42620054AB4B /* AEXMLDemo.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F812FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679DC02FAF405D0054AB4B /* AEXMLDemo.xcodeproj */;
+				},
+				{
+					ProductGroup = F56701252FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE4E2FAF42620054AB4B /* AppWithExtensions.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F7D2FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E422FAF405D0054AB4B /* AppWithExtensions.xcodeproj */;
+				},
+				{
+					ProductGroup = F56701292FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE662FAF42620054AB4B /* BuildSettings.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F832FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E5A2FAF405D0054AB4B /* BuildSettings.xcodeproj */;
+				},
 				{
 					ProductGroup = F5AE9D6D2FAD6F1E00F014F8 /* Products */;
 					ProjectRef = F5AE9C862FAD6F1E00F014F8 /* CodeEditSourceEditorExample.xcodeproj */;
@@ -606,12 +902,80 @@
 					ProjectRef = 0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */;
 				},
 				{
+					ProductGroup = F5679F892FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E842FAF405D0054AB4B /* copy.xcodeproj */;
+				},
+				{
+					ProductGroup = F567011F2FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE902FAF42620054AB4B /* copy.xcodeproj */;
+				},
+				{
 					ProductGroup = 0BC903202FAD5B56003651CA /* Products */;
 					ProjectRef = 0BC901B12FAD5B56003651CA /* Demo.xcodeproj */;
 				},
 				{
+					ProductGroup = F56701272FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE272FAF42620054AB4B /* FileSharedAcrossTargets.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F732FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E1B2FAF405D0054AB4B /* FileSharedAcrossTargets.xcodeproj */;
+				},
+				{
 					ProductGroup = 0BC9031E2FAD5B56003651CA /* Products */;
 					ProjectRef = 0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */;
+				},
+				{
+					ProductGroup = F5E211592FAEF3440005256B /* Products */;
+					ProjectRef = F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */;
+				},
+				{
+					ProductGroup = F5E2115B2FAEF3440005256B /* Products */;
+					ProjectRef = F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */;
+				},
+				{
+					ProductGroup = F56701112FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE692FAF42620054AB4B /* Project.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F7B2FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E5D2FAF405D0054AB4B /* Project.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F772FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E5E2FAF405D0054AB4B /* ProjectWithoutProductsGroup.xcodeproj */;
+				},
+				{
+					ProductGroup = F56701192FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE6A2FAF42620054AB4B /* ProjectWithoutProductsGroup.xcodeproj */;
+				},
+				{
+					ProductGroup = F567011B2FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE622FAF42620054AB4B /* ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F8B2FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E562FAF405D0054AB4B /* ProjectWithRelativeXCLocalSwiftPackageReference.xcodeproj */;
+				},
+				{
+					ProductGroup = F56701232FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE6B2FAF42620054AB4B /* ProjectWithXCLocalSwiftPackageReference.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F8D2FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E5F2FAF405D0054AB4B /* ProjectWithXCLocalSwiftPackageReference.xcodeproj */;
+				},
+				{
+					ProductGroup = F56701132FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE6C2FAF42620054AB4B /* ProjectWithXCLocalSwiftPackageReferences.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F792FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E602FAF405D0054AB4B /* ProjectWithXCLocalSwiftPackageReferences.xcodeproj */;
+				},
+				{
+					ProductGroup = F5CA2F3D2FADB75E00F67747 /* Products */;
+					ProjectRef = F5CA2F3B2FADB75E00F67747 /* SnapshotTesting.xcodeproj */;
 				},
 				{
 					ProductGroup = F5AE9B772FAD6E0900F014F8 /* Products */;
@@ -622,16 +986,36 @@
 					ProjectRef = F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */;
 				},
 				{
-					ProductGroup = F5CA2F3D2FADB75E00F67747 /* Products */;
-					ProjectRef = F5CA2F3B2FADB75E00F67747 /* SnapshotTesting.xcodeproj */;
-				},
-				{
 					ProductGroup = F5050AA52FADA83D002AA7B5 /* Products */;
 					ProjectRef = F5050AA32FADA83D002AA7B5 /* SnapshotTesting.xcodeproj */;
 				},
 				{
 					ProductGroup = 0BC9FE082FAD5B49003651CA /* Products */;
 					ProjectRef = 0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */;
+				},
+				{
+					ProductGroup = F567011D2FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE7A2FAF42620054AB4B /* SynchronizedRootGroups.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F872FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E6E2FAF405D0054AB4B /* SynchronizedRootGroups.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F752FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E732FAF405D0054AB4B /* TargetWithCustomBuildRules.xcodeproj */;
+				},
+				{
+					ProductGroup = F56701172FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE7F2FAF42620054AB4B /* TargetWithCustomBuildRules.xcodeproj */;
+				},
+				{
+					ProductGroup = F567010F2FAF42620054AB4B /* Products */;
+					ProjectRef = F567FE922FAF42620054AB4B /* Test.xcodeproj */;
+				},
+				{
+					ProductGroup = F5679F852FAF405D0054AB4B /* Products */;
+					ProjectRef = F5679E862FAF405D0054AB4B /* Test.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -1211,6 +1595,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiCodeEditSourceEditor;
 		};
+		A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SkillKit;
+		};
 		A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/MarkdownKit;
@@ -1238,6 +1626,26 @@
 		A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/DeviceMonitorKit;
+		};
+		A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/DockerKit;
+		};
+		A1B2C4222F70000100AAA103 /* XCLocalSwiftPackageReference "Packages/DiskManagerKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/DiskManagerKit;
+		};
+		A1B2C4322F70000100AAA104 /* XCLocalSwiftPackageReference "Packages/BrewKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/BrewKit;
+		};
+		A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/TerminalCoreKit;
+		};
+		A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ShellKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -1498,6 +1906,11 @@
 			package = 0F7C1D5EDE3441A587783365 /* XCRemoteSwiftPackageReference "beautiful-mermaid-swift" */;
 			productName = BeautifulMermaid;
 		};
+		A1B2C3A12F70000200AAA101 /* SkillKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */;
+			productName = SkillKit;
+		};
 		A1B2C3D62F70000100AAA101 /* MarkdownKitCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */;
@@ -1537,6 +1950,31 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */;
 			productName = DeviceMonitorKit;
+		};
+		A1B2C4182F70000100AAA102 /* DockerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */;
+			productName = DockerKit;
+		};
+		A1B2C4212F70000100AAA103 /* DiskManagerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4222F70000100AAA103 /* XCLocalSwiftPackageReference "Packages/DiskManagerKit" */;
+			productName = DiskManagerKit;
+		};
+		A1B2C4312F70000100AAA104 /* BrewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4322F70000100AAA104 /* XCLocalSwiftPackageReference "Packages/BrewKit" */;
+			productName = BrewKit;
+		};
+		A1B2C4412F70000100AAA105 /* TerminalCoreKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */;
+			productName = TerminalCoreKit;
+		};
+		A1B2C4512F70000100AAA106 /* ShellKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */;
+			productName = ShellKit;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

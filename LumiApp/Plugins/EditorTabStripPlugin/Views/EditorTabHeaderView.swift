@@ -6,9 +6,13 @@ import SwiftUI
 /// 渲染 Tab 栏 UI，并嵌入 `EditorTabStripCoordinator` 实现
 /// 标签页的自动保存和项目切换时的恢复。
 struct EditorTabHeaderView: View {
+
+    // MARK: - 属性
+
     @EnvironmentObject var editorVM: EditorVM
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var themeVM: ThemeVM
+
     @State private var draggedTabSessionID: UUID?
 
     /// 标签页持久化协调器
@@ -23,7 +27,7 @@ struct EditorTabHeaderView: View {
     // MARK: - Body
 
     var body: some View {
-        Group {
+        ZStack {
             if !visibleTabs.isEmpty {
                 tabList
             }
@@ -59,6 +63,16 @@ struct EditorTabHeaderView: View {
         }
     }
 
+    // MARK: - 计算属性
+
+    private var theme: any SuperTheme {
+        themeVM.activeAppTheme
+    }
+
+    private var visibleTabs: [EditorTab] {
+        service.tabs
+    }
+
     // MARK: - 子视图
 
     private var tabList: some View {
@@ -89,22 +103,14 @@ struct EditorTabHeaderView: View {
         .background(theme.workspaceBackgroundColor())
     }
 
-    // MARK: - 计算属性
+    // MARK: - 操作方法
 
-    private var theme: any SuperTheme {
-        themeVM.activeAppTheme
-    }
-
-    private var visibleTabs: [EditorTab] {
-        service.tabs
-    }
-
-    // MARK: - 操作
-
+    /// 开始拖拽标签页
     private func beginTabDrag(_ tab: EditorTab) {
         draggedTabSessionID = tab.sessionID
     }
 
+    /// 将拖拽的标签页放入当前位置
     private func dropDraggedTabInActiveStrip(before targetTab: EditorTab?) {
         guard let draggedTabSessionID else { return }
         defer { self.draggedTabSessionID = nil }
@@ -124,7 +130,6 @@ struct EditorTabHeaderView: View {
 
         // 验证文件存在
         guard FileManager.default.fileExists(atPath: path) else {
-            EditorTabStripPlugin.logger.warning("⚠️ File does not exist: \(path)")
             return
         }
 

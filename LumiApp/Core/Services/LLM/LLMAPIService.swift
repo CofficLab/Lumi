@@ -309,7 +309,6 @@ class LLMAPIService: SuperLog, @unchecked Sendable {
 
         guard (200 ... 299).contains(httpResponse.statusCode) else {
             let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            AppLogger.core.error("\(self.t)LLM API 错误 \(httpResponse.statusCode): \(errorStr.prefix(1000))")
 
             let errorMessage = """
             HTTP Error (\(httpResponse.statusCode))

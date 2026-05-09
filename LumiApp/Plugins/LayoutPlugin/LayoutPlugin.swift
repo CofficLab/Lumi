@@ -42,8 +42,7 @@ actor LayoutPlugin: SuperPlugin {
 
     @MainActor
     func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
-        Self.logger.info("\(LayoutPlugin.emoji) LayoutPlugin addRootView called!")
-        return AnyView(LayoutPersistenceAnchor(content: content()))
+        AnyView(LayoutPersistenceAnchor(content: content()))
     }
 }
 
@@ -162,7 +161,6 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .dropFirst()
             .sink { newRatios in
                 guard hasRestored else { return }
-                LayoutPlugin.logger.info("\(lp)分栏比例变更: \(newRatios.count, privacy: .public) 项")
                 LayoutPluginLocalStore.shared.saveLayoutRatios(newRatios)
             }
             .store(in: &cancellables)

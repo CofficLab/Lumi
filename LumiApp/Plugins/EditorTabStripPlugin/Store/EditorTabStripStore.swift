@@ -46,13 +46,13 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
 
     // MARK: - Public API
 
-    /// 保存指定项目的标签页列表
+    /// 保存指定项目的标签页列表（异步，不阻塞调用线程）
     func saveTabs(
         projectPath: String,
         tabs: [EditorTab],
         activeTabPath: String?
     ) {
-        queue.sync {
+        queue.async { [self] in
             let persisted = tabs.compactMap { tab -> PersistedTab? in
                 guard let url = tab.fileURL else { return nil }
                 return PersistedTab(path: url.path, isPinned: tab.isPinned)
@@ -63,7 +63,11 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
                 activeTabPath: activeTabPath,
                 savedAt: Date()
             )
-            writeSnapshot(snapshot, forProject: projectPath)
+
+            // 🔍 诊断日志
+            Self.logger.info("[TabRestore-DIAG] 💾 saveTabs: projectPath=\(projectPath, privacy: .public), tabs=\(persisted.count), activeTabPath=\(activeTabPath ?? "nil", privacy: .public)")
+
+            self.writeSnapshot(snapshot, forProject: projectPath)
 
             if Self.verbose {
                 Self.logger.info("\(Self.t)保存项目标签：\(projectPath)，共 \(persisted.count) 个标签")
@@ -71,27 +75,35 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
         }
     }
 
-    /// 加载指定项目的标签页列表
+    /// 加载指定项目的标签页列表（同步，需要返回值）
     func loadTabs(forProject projectPath: String) -> (tabs: [PersistedTab], activeTabPath: String?) {
         queue.sync {
-            guard let snapshot = readSnapshot(forProject: projectPath) else {
+            let fileURL = self.getFileURL(forProject: projectPath)
+            let fileExists = self.fileManager.fileExists(atPath: fileURL.path)
+
+            // 🔍 诊断日志
+            Self.logger.info("[TabRestore-DIAG] 📂 loadTabs: projectPath=\(projectPath, privacy: .public), fileExists=\(fileExists), filePath=\(fileURL.path, privacy: .public)")
+
+            guard let snapshot = self.readSnapshot(forProject: projectPath) else {
+                Self.logger.info("[TabRestore-DIAG] 📂 loadTabs: readSnapshot 返回 nil（文件不存在或解析失败）")
                 return ([], nil)
             }
+            Self.logger.info("[TabRestore-DIAG] 📂 loadTabs: 成功读取 \(snapshot.tabs.count) 个标签, activeTabPath=\(snapshot.activeTabPath ?? "nil", privacy: .public)")
             return (snapshot.tabs, snapshot.activeTabPath)
         }
     }
 
-    /// 清除指定项目的标签页记录
+    /// 清除指定项目的标签页记录（异步，不阻塞调用线程）
     func clearTabs(forProject projectPath: String) {
-        queue.sync {
-            let fileURL = getFileURL(forProject: projectPath)
-            try? fileManager.removeItem(at: fileURL)
+        queue.async { [self] in
+            let fileURL = self.getFileURL(forProject: projectPath)
+            try? self.fileManager.removeItem(at: fileURL)
         }
     }
 
     // MARK: - Current File
 
-    /// 获取指定项目的当前活跃文件路径
+    /// 获取指定项目的当前活跃文件路径（同步，需要返回值）
     ///
     /// 读取持久化快照中的 `activeTabPath`，并校验文件仍存在。
     func getCurrentFilePath(forProject projectPath: String) -> (path: String, lastSelected: Date)? {
@@ -105,13 +117,13 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
         }
     }
 
-    /// 设置指定项目的当前活跃文件
+    /// 设置指定项目的当前活跃文件（异步，不阻塞调用线程）
     ///
     /// 如果该文件已在 tabs 中，仅切换 activeTabPath；
     /// 如果不在 tabs 中，则追加一个未钉住的 tab 并设为活跃。
     func setCurrentFilePath(path: String, forProject projectPath: String) {
-        queue.sync {
-            var snapshot = readSnapshot(forProject: projectPath) ?? PersistedProjectTabs(
+        queue.async { [self] in
+            var snapshot = self.readSnapshot(forProject: projectPath) ?? PersistedProjectTabs(
                 projectPath: projectPath,
                 tabs: [],
                 activeTabPath: nil,
@@ -137,7 +149,7 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
                 )
             }
 
-            writeSnapshot(snapshot, forProject: projectPath)
+            self.writeSnapshot(snapshot, forProject: projectPath)
 
             if Self.verbose {
                 Self.logger.info("\(Self.t)设置当前文件：\(path)，项目：\(projectPath)")

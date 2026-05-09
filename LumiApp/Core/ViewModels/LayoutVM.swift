@@ -26,7 +26,7 @@ final class LayoutVM: ObservableObject, SuperLog {
     /// Key: storageKey（如 "Split.Panel.xxx"），Value: 比例（0.0~1.0）
     /// 由 SplitViewPersistence 组件更新，LayoutPlugin 负责持久化。
     @Published var layoutRatios: [String: Double] = [:]
-    
+
     // MARK: - Initialization
     
     init() {

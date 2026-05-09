@@ -71,6 +71,11 @@ public final class EditorPanelState: ObservableObject {
     /// 是否展示调用层级面板
     @Published public var isCallHierarchyPresented: Bool = false
 
+    // MARK: - 终端面板（扩展面板）
+
+    /// 是否展示终端面板
+    @Published public var isTerminalPanelPresented: Bool = false
+
     // MARK: - Hover 状态
 
     /// 鼠标悬停 Hover 内容（Markdown 格式）

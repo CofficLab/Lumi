@@ -1,4 +1,5 @@
 import SwiftUI
+import DiskManagerKit
 
 /// 目录树视图
 struct DirectoryTreeView: View {
@@ -42,10 +43,15 @@ struct DirectoryTreeRow: View {
     let entry: DirectoryEntry
     @ObservedObject var viewModel: DirectoryTreeViewModel
 
+    // 在 UI 层计算图标（避免在 Sendable 模型中存储 NSImage）
+    private var icon: NSImage {
+        NSWorkspace.shared.icon(forFile: entry.path)
+    }
+
     var body: some View {
         HStack {
             AppImageThumbnail(
-                image: Image(nsImage: entry.icon),
+                image: Image(nsImage: icon),
                 size: CGSize(width: 16, height: 16),
                 shape: .none
             )

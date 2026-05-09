@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import SkillKit
 import os
 
 /// Skill 上下文注入中间件
@@ -49,7 +50,7 @@ final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
         }
 
         // 构建 Prompt 并注入
-        let prompt = buildSkillPrompt(skills: skills)
+        let prompt = SkillPromptBuilder.buildPrompt(skills: skills)
         ctx.transientSystemPrompts.append(prompt)
 
         if Self.verbose {
@@ -57,32 +58,5 @@ final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
         }
 
         await next(ctx)
-    }
-
-    // MARK: - 提示词构建
-
-    /// 将 Skill 列表格式化为系统提示词
-    private func buildSkillPrompt(skills: [SkillMetadata]) -> String {
-        var lines: [String] = []
-
-        lines.append("## Available Skills")
-        lines.append("")
-        lines.append("You have access to the following specialized skills. If the user's request matches a skill, follow its instructions and guidelines.")
-        lines.append("")
-        lines.append("| Skill | Description |")
-        lines.append("|-------|-------------|")
-
-        for skill in skills {
-            let escapedDescription = skill.description
-                .replacingOccurrences(of: "|", with: "\\|")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-
-            lines.append("| `\(skill.name)` | \(escapedDescription) |")
-        }
-
-        lines.append("")
-        lines.append("When using a skill, start your response with: `[Skill: <skill-name>]` to indicate activation.")
-
-        return lines.joined(separator: "\n")
     }
 }

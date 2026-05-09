@@ -171,7 +171,21 @@ enum GitCommitService: SuperLog {
     ///   - message: commit message
     ///   - path: 项目路径
     /// - Returns: commit hash
-    static func executeCommit(message: String, at path: String) throws -> String {
+    static func executeCommit(message: String, at path: String) async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let result = try Self.runCommitProcess(message: message, at: path)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// 在后台队列执行 git commit Process
+    private nonisolated static func runCommitProcess(message: String, at path: String) throws -> String {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/bash")
         task.arguments = ["-c", "cd \(path) && git add -A && git commit -m '\(message.replacingOccurrences(of: "'", with: "\\'"))' 2>&1 && git rev-parse --short HEAD"]

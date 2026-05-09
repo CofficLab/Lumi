@@ -252,6 +252,8 @@ struct ContentViewBody<Content: View>: View {
                     themeVM.activeAppTheme.makeGlobalBackground(proxy: proxy)
                 }
             }
+            // 主题切换时平滑过渡颜色变化
+            .animation(.easeInOut(duration: 0.25), value: themeVM.currentThemeId)
             .onAppear(perform: onAppear)
             .onChange(of: columnVisibility) { _, _ in
                 onChangeColumnVisibility()

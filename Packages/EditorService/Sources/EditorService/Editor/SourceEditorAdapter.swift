@@ -61,12 +61,19 @@ public struct SourceEditorAdapter {
         completionTriggerCharacters: Set<String>
     ) -> SourceEditorConfiguration {
         let fontSize = CGFloat(state.fontSize)
+        let font: NSFont
+        if let fontName = state.fontName,
+           let customFont = NSFont(name: fontName, size: fontSize) {
+            font = customFont
+        } else {
+            font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        }
 
         return SourceEditorConfiguration(
             appearance: .init(
                 theme: state.currentTheme ?? EditorThemeAdapter.fallbackTheme(),
                 useThemeBackground: true,
-                font: NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular),
+                font: font,
                 lineHeightMultiple: 1.2,
                 letterSpacing: 1.0,
                 wrapLines: state.wrapLines,

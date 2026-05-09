@@ -7,7 +7,7 @@ import MagicKit
 /// - 视图首次出现（`onAppear`）
 /// - 项目路径变化（`onChange(of: currentProjectPath)`）
 /// - 从其他应用切回（`applicationDidBecomeActive`）
-struct GitBranchStatusBarView: View {
+struct GitPluginStatusBarView: View {
     @EnvironmentObject private var projectVM: ProjectVM
     @State private var branch: String?
 
@@ -15,9 +15,9 @@ struct GitBranchStatusBarView: View {
         Group {
             if let branch {
                 StatusBarHoverContainer(
-                    detailView: GitBranchPickerPanel(),
-                    popoverWidth: 500,
-                    id: "git-branch-status"
+                    detailView: GitPluginPopoverView(),
+                    popoverWidth: 920,
+                    id: "git-status"
                 ) {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.triangle.branch")
@@ -62,7 +62,7 @@ struct GitBranchStatusBarView: View {
 // MARK: - 预览
 
 #Preview("Git Branch Status Bar") {
-    GitBranchStatusBarView()
+    GitPluginStatusBarView()
         .frame(height: 30)
         .inRootView()
 }

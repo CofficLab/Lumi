@@ -27,7 +27,7 @@ actor TerminalPlugin: SuperPlugin, SuperLog {
 
     nonisolated func onDisable() {}
 
-    // MARK: - UI
+    // MARK: - UI (Sidebar Panel)
 
     @MainActor
     func addPanelView(activeIcon: String?) -> AnyView? {

@@ -22,10 +22,6 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        if Self.verbose {
-            EditorTabStripPlugin.logger.info("\(Self.t)Getting current file")
-        }
-
         // 获取当前项目路径
         let projectStore = RecentProjectsStore()
         guard let project = projectStore.getCurrentProject() else {

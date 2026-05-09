@@ -59,6 +59,7 @@ struct SourceEditorView: View, SuperLog {
 
         let appearanceObserved = base
             .onChange(of: state.fontSize) { _, _ in updateConfigCache() }
+            .onChange(of: state.fontName) { _, _ in updateConfigCache() }
             .onChange(of: state.wrapLines) { _, _ in updateConfigCache() }
             .onChange(of: state.showGutter) { _, _ in updateConfigCache() }
             .onChange(of: state.showMinimap) { _, _ in updateConfigCache() }

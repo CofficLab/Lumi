@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import MagicKit
+import DiskManagerKit
 
 @MainActor
 class XcodeCleanerViewModel: ObservableObject, SuperLog {

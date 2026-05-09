@@ -1,4 +1,5 @@
 import SwiftUI
+import DiskManagerKit
 
 /// 大文件行视图
 struct LargeFileRow: View {
@@ -6,10 +7,15 @@ struct LargeFileRow: View {
     @ObservedObject var viewModel: LargeFilesViewModel
     @State private var showDeleteConfirm = false
 
+    // 在 UI 层计算图标（避免在 Sendable 模型中存储 NSImage）
+    private var icon: NSImage {
+        NSWorkspace.shared.icon(forFile: item.path)
+    }
+
     var body: some View {
         HStack {
             AppImageThumbnail(
-                image: Image(nsImage: item.icon),
+                image: Image(nsImage: icon),
                 size: CGSize(width: 32, height: 32),
                 shape: .none
             )

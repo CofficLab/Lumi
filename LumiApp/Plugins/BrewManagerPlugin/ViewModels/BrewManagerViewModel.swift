@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import SwiftUI
 import MagicKit
+import BrewKit
 
 @MainActor
 class BrewManagerViewModel: ObservableObject, SuperLog {

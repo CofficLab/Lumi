@@ -175,6 +175,23 @@ final class ChatTimelineViewModel: ObservableObject {
         }
     }
 
+    /// 从数据库和内存中删除指定消息
+    /// - Parameter messageId: 要删除的消息 ID
+    func deleteMessage(_ messageId: UUID) {
+        guard let conversationId = state.selectedConversationId else { return }
+
+        Task { @MainActor in
+            let deleted = await chatHistoryService.deleteMessagesAsync(
+                messageIds: [messageId],
+                conversationId: conversationId
+            )
+            guard deleted > 0 else { return }
+
+            state.persistedMessages.removeAll { $0.id == messageId }
+            state.totalMessageCount = max(0, state.totalMessageCount - 1)
+        }
+    }
+
     func handleUserDidSendMessage() {
         state.shouldAutoFollow = true
     }

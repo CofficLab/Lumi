@@ -1,6 +1,7 @@
 import Foundation
 import MagicKit
 import SwiftUI
+import DiskManagerKit
 
 @MainActor
 final class ProjectCleanerViewModel: ObservableObject, SuperLog {

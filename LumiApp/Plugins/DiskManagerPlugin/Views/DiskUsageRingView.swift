@@ -1,4 +1,5 @@
 import SwiftUI
+import DiskManagerKit
 
 /// 磁盘使用率环形视图
 struct DiskUsageRingView: View {

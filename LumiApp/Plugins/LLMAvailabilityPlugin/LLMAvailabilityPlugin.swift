@@ -38,11 +38,17 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     func agentTools() -> [SuperAgentTool] {
         [
             ListAvailableModelsTool(),
+            CheckModelAvailabilityTool(),
         ]
     }
 
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         []
+    }
+
+    @MainActor
+    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(LLMAvailabilityStatusBarView())
     }
 }
