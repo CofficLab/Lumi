@@ -37,6 +37,18 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     @MainActor func addStatusBarPopupView() -> AnyView? {
         AnyView(CaffeinateStatusBarPopupView())
     }
+
+    // MARK: - Agent Tools
+
+    @MainActor
+    func agentTools() -> [SuperAgentTool] {
+        [
+            CaffeinateActivateTool(),
+            CaffeinateDeactivateTool(),
+            CaffeinateStatusTool(),
+            CaffeinateTurnOffDisplayTool(),
+        ]
+    }
 }
 
 // MARK: - Preview
