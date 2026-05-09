@@ -29,11 +29,14 @@ struct BottomPanelBarView: View {
             // 内容区（仅在面板展开且有选中 Tab 时显示）
             if isExpanded, let activeTabId, let content = pluginProvider.getBottomPanelContentView(tabId: activeTabId) {
                 Divider()
+                // 使用计算高度，避免 maxHeight: .infinity 与外部固定高度冲突
                 content
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: layoutVM.editorBottomPanelHeight - tabBarHeight - 1)  // 1 = Divider height
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .frame(height: layoutVM.editorBottomPanelHeight)
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .overlay(alignment: .top) {
             Rectangle()

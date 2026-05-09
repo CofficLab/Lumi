@@ -1077,6 +1077,10 @@ public final class EditorState: ObservableObject, SuperLog {
     
     /// 字体大小
     @Published public var fontSize: Double = 13.0
+
+    /// 字体名称（PostScript name），nil 表示使用系统等宽默认字体。
+    /// 由外部插件负责持久化与恢复。
+    @Published public var fontName: String?
     
     /// Tab 宽度
     @Published public var tabWidth: Int = 4
