@@ -1,14 +1,14 @@
 import Foundation
 
-enum BrewError: Error {
+public enum BrewError: Error, Sendable {
     case notInstalled
     case commandFailed(String)
     case parsingError(Error)
     case notFound
 }
 
-actor BrewService {
-    static let shared = BrewService()
+public actor BrewService {
+    public static let shared = BrewService()
 
     private final class LockedDataBuffer: @unchecked Sendable {
         private let lock = NSLock()
@@ -27,17 +27,13 @@ actor BrewService {
             return copy
         }
     }
-    
+
     private var brewPath: String?
-    
-    init() {
-        // Actor-isolated init cannot call non-isolated methods directly that access self,
-        // but findBrewPath is a pure helper.
-        // To satisfy Swift 6 strict concurrency, we can make findBrewPath static or non-isolated.
-        // Here we call a static helper.
+
+    public init() {
         self.brewPath = BrewService.findBrewPathStatic()
     }
-    
+
     private static func findBrewPathStatic() -> String? {
         let possiblePaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
         for path in possiblePaths {
@@ -47,34 +43,26 @@ actor BrewService {
         }
         return nil
     }
-    
-    // Legacy instance method, kept if needed but unused by init
-    private func findBrewPath() -> String? {
-        return Self.findBrewPathStatic()
-    }
-    
-    func checkInstalled() -> Bool {
+
+    public func checkInstalled() -> Bool {
         return brewPath != nil
     }
-    
-    func getVersion() async throws -> String {
+
+    public func getVersion() async throws -> String {
         return try await execute(["--version"])
     }
-    
+
     // MARK: - Core Operations
-    
-    func listInstalled() async throws -> [BrewPackage] {
-        // 获取所有已安装的 Casks 和 Formulae
-        // brew info --json=v2 --installed
+
+    public func listInstalled() async throws -> [BrewPackage] {
         let jsonString = try await execute(["info", "--json=v2", "--installed"])
         guard let data = jsonString.data(using: .utf8) else {
             throw BrewError.parsingError(NSError(domain: "BrewService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid data"]))
         }
-        
+
         let info = try JSONDecoder().decode(BrewInfo.self, from: data)
         var packages: [BrewPackage] = []
-        
-        // 处理 Formulae
+
         for f in info.formulae {
             let version = f.versions?.stable ?? "unknown"
             let installedVer = f.installed?.first?.version
@@ -88,36 +76,32 @@ actor BrewService {
                 isCask: false
             ))
         }
-        
-        // 处理 Casks
+
         for c in info.casks {
             let version = c.version ?? "unknown"
-            // Cask 只要出现在 installed 列表里就是已安装，通常没有详细的 installed 结构
-            // 对于 Cask, version 字段就是当前最新版本，通常认为已安装的就是这个版本，或者需要检查 outdated
             packages.append(BrewPackage(
-                name: c.token ?? c.name, // Cask 使用 token 作为标识符
+                name: c.token ?? c.name,
                 desc: c.desc,
                 homepage: c.homepage,
                 version: version,
-                installedVersion: version, // 简化处理
-                outdated: false, // 暂无法直接从 info 获取 cask outdated 状态，需配合 outdated 命令
+                installedVersion: version,
+                outdated: false,
                 isCask: true
             ))
         }
-        
+
         return packages
     }
-    
-    func getOutdated() async throws -> [BrewPackage] {
-        // brew outdated --json=v2
+
+    public func getOutdated() async throws -> [BrewPackage] {
         let jsonString = try await execute(["outdated", "--json=v2"])
         guard let data = jsonString.data(using: .utf8) else {
             throw BrewError.parsingError(NSError(domain: "BrewService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid data"]))
         }
-        
+
         let info = try JSONDecoder().decode(BrewInfo.self, from: data)
         var packages: [BrewPackage] = []
-        
+
         for f in info.formulae {
             packages.append(BrewPackage(
                 name: f.name,
@@ -129,54 +113,47 @@ actor BrewService {
                 isCask: false
             ))
         }
-        
+
         for c in info.casks {
-             packages.append(BrewPackage(
+            packages.append(BrewPackage(
                 name: c.token ?? c.name,
                 desc: c.desc,
                 homepage: c.homepage,
                 version: c.version ?? "unknown",
-                installedVersion: nil, // Outdated info might not have installed version easily
+                installedVersion: nil,
                 outdated: true,
                 isCask: true
             ))
         }
-        
+
         return packages
     }
-    
-    func search(query: String) async throws -> [BrewPackage] {
-        // brew search --json query (注意：brew search 不支持 json 输出，或者支持有限)
-        // 通常做法：brew search query 获取名称列表，然后 brew info --json=v2 names...
-        
-        // 简化实现：先只支持 Cask 的搜索
-        // brew search --cask query
+
+    public func search(query: String) async throws -> [BrewPackage] {
         let output = try await execute(["search", "--cask", query])
         let names = output.split(separator: "\n").map { String($0) }
-        
+
         if names.isEmpty { return [] }
-        
-        // 获取详细信息
-        // 限制数量，防止请求过多
+
         let limitNames = Array(names.prefix(10))
         return try await getInfo(names: limitNames, isCask: true)
     }
-    
-    func getInfo(names: [String], isCask: Bool) async throws -> [BrewPackage] {
+
+    public func getInfo(names: [String], isCask: Bool) async throws -> [BrewPackage] {
         if names.isEmpty { return [] }
-        
+
         var args = ["info", "--json=v2"]
         if isCask {
             args.append("--cask")
         }
         args.append(contentsOf: names)
-        
+
         let jsonString = try await execute(args)
         guard let data = jsonString.data(using: .utf8) else { return [] }
-        
+
         let info = try JSONDecoder().decode(BrewInfo.self, from: data)
         var packages: [BrewPackage] = []
-        
+
         if isCask {
             for c in info.casks {
                 packages.append(BrewPackage(
@@ -184,7 +161,7 @@ actor BrewService {
                     desc: c.desc,
                     homepage: c.homepage,
                     version: c.version ?? "unknown",
-                    installedVersion: nil, // Info 不包含安装状态，除非 installed
+                    installedVersion: nil,
                     outdated: false,
                     isCask: true
                 ))
@@ -202,13 +179,13 @@ actor BrewService {
                 ))
             }
         }
-        
+
         return packages
     }
-    
+
     // MARK: - Actions
-    
-    func install(name: String, isCask: Bool) async throws {
+
+    public func install(name: String, isCask: Bool) async throws {
         var args = ["install"]
         if isCask {
             args.append("--cask")
@@ -216,8 +193,8 @@ actor BrewService {
         args.append(name)
         _ = try await execute(args)
     }
-    
-    func uninstall(name: String, isCask: Bool) async throws {
+
+    public func uninstall(name: String, isCask: Bool) async throws {
         var args = ["uninstall"]
         if isCask {
             args.append("--cask")
@@ -225,8 +202,8 @@ actor BrewService {
         args.append(name)
         _ = try await execute(args)
     }
-    
-    func upgrade(name: String, isCask: Bool) async throws {
+
+    public func upgrade(name: String, isCask: Bool) async throws {
         var args = ["upgrade"]
         if isCask {
             args.append("--cask")
@@ -234,33 +211,31 @@ actor BrewService {
         args.append(name)
         _ = try await execute(args)
     }
-    
+
     // MARK: - Private Execution
-    
+
     private func execute(_ args: [String]) async throws -> String {
         guard let brewPath = brewPath else {
             throw BrewError.notInstalled
         }
-        
+
         let task = Process()
         task.executableURL = URL(fileURLWithPath: brewPath)
         task.arguments = args
-        
-        // 设置环境变量，防止 brew 报错
+
         var env = ProcessInfo.processInfo.environment
         env["HOMEBREW_NO_AUTO_UPDATE"] = "1"
         env["HOMEBREW_NO_INSTALL_CLEANUP"] = "1"
-        // 尝试修复路径问题
         if let path = env["PATH"] {
-             env["PATH"] = path + ":/opt/homebrew/bin:/usr/local/bin"
+            env["PATH"] = path + ":/opt/homebrew/bin:/usr/local/bin"
         } else {
-             env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+            env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         }
         task.environment = env
-        
+
         let pipe = Pipe()
         task.standardOutput = pipe
-        task.standardError = pipe // 合并 stderr
+        task.standardError = pipe
 
         let buffer = LockedDataBuffer()
         let handle = pipe.fileHandleForReading
