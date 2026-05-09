@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import MagicKit
+import DiskManagerKit
 @MainActor
 final class DirectoryTreeViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"

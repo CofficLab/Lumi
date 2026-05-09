@@ -1,29 +1,29 @@
 import Foundation
-import MagicKit
+import os
 
-/// Xcode 清理服务 - 在后台执行扫描和清理操作
-class XcodeCleanService: @unchecked Sendable, SuperLog {
-    nonisolated static let emoji = "🧼"
-    nonisolated static let verbose: Bool = true
-    static let shared = XcodeCleanService()
+/// Xcode clean service - scans and cleans Xcode-related caches.
+public final class XcodeCleanService: @unchecked Sendable {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.diskmanagerkit", category: "xcode-clean")
+    public static let shared = XcodeCleanService()
     private let fileManager = FileManager.default
 
-    // For testing purposes
-    var customRootDirectory: URL?
+    public var customRootDirectory: URL?
 
-    struct ScanStats {
-        var scannedCategories = 0
-        var totalItems = 0
-        var currentCategory: String = ""
+    public struct ScanStats: Sendable {
+        public var scannedCategories = 0
+        public var totalItems = 0
+        public var currentCategory: String = ""
+
+        public init(scannedCategories: Int = 0, totalItems: Int = 0, currentCategory: String = "") {
+            self.scannedCategories = scannedCategories
+            self.totalItems = totalItems
+            self.currentCategory = currentCategory
+        }
     }
 
     private let coordinator = XcodeScanCoordinator()
 
-    private init() {
-        if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)Xcode cleaning service initialized")
-        }
-    }
+    private init() {}
 
     // MARK: - Paths
 
@@ -60,39 +60,28 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
 
     // MARK: - Scanning
 
-    /// 扫描所有类别 - 返回结果，状态由 ViewModel 管理
-    func scanAllCategories() async -> (scanStats: ScanStats, itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]]) {
+    public func scanAllCategories() async -> (scanStats: ScanStats, itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]]) {
         await coordinator.scanAll { category in
             await self.scan(category: category)
         }
     }
 
-    func progressStream() async -> AsyncStream<ScanStats> {
+    public func progressStream() async -> AsyncStream<ScanStats> {
         await coordinator.progressStream()
     }
 
-    func cancelScan() async {
+    public func cancelScan() async {
         await coordinator.cancelCurrentScan()
     }
 
-    func scan(category: XcodeCleanCategory) async -> [XcodeCleanItem] {
+    public func scan(category: XcodeCleanCategory) async -> [XcodeCleanItem] {
         guard let url = getPath(for: category) else { return [] }
-        let tag = self.t
 
-        if Self.verbose {
-            DiskManagerPlugin.logger.info("\(tag)Scanning \(category.rawValue): \(url.path)")
-        }
-
-        // Heavy I/O (directory listing + size enumeration) must not run on MainActor.
         return await Task.detached(priority: .utility) {
             let fileManager = FileManager.default
 
-            // If directory doesn't exist, return empty
             var isDir: ObjCBool = false
             guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
-                if Self.verbose {
-                    DiskManagerPlugin.logger.info("\(tag)Directory does not exist: \(url.path)")
-                }
                 return []
             }
 
@@ -126,13 +115,8 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
                     )
                     items.append(item)
                 }
-
-                if Self.verbose {
-                    DiskManagerPlugin.logger.info("\(tag)扫描完成：\(category.rawValue)，\(items.count) 项")
-                }
                 return items
             } catch {
-                DiskManagerPlugin.logger.error("\(self.t)扫描失败：\(category.rawValue) - \(error.localizedDescription)")
                 return []
             }
         }.value
@@ -168,24 +152,15 @@ class XcodeCleanService: @unchecked Sendable, SuperLog {
 
     // MARK: - Cleaning
 
-    func delete(items: [XcodeCleanItem]) async throws {
-        let tag = self.t
-        DiskManagerPlugin.logger.info("\(tag)开始删除 \(items.count) 项")
-
+    public func delete(items: [XcodeCleanItem]) async throws {
         let urls = items.map(\.path)
 
         try await Task.detached(priority: .utility) {
             let fileManager = FileManager.default
-
-            for (idx, url) in urls.enumerated() {
-                if Self.verbose {
-                    DiskManagerPlugin.logger.info("\(tag)  └─ 删除[\(idx + 1)/\(urls.count)]：\(url.lastPathComponent)")
-                }
+            for url in urls {
                 try fileManager.removeItem(at: url)
             }
         }.value
-
-        DiskManagerPlugin.logger.info("\(tag)删除完成：\(items.count) 项")
     }
 }
 

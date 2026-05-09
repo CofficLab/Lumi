@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import DiskManagerKit
 
 struct XcodeCleanerView: View {
     @StateObject private var viewModel = XcodeCleanerViewModel()

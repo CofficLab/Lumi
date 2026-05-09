@@ -1,4 +1,5 @@
 import SwiftUI
+import DiskManagerKit
 
 /// 目录树扫描进度视图
 struct DirectoryTreeScanProgressView: View {

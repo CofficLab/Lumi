@@ -1,4 +1,5 @@
 import SwiftUI
+import DiskManagerKit
 
 /// 项目清理扫描进度视图
 struct ProjectScanProgressView: View {

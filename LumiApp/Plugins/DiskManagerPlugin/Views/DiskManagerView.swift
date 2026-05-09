@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import DiskManagerKit
 
 /// 磁盘管理器主视图
 struct DiskManagerView: View {

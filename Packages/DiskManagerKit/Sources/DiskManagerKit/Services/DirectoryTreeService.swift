@@ -1,40 +1,27 @@
-import Foundation
 import AppKit
-import MagicKit
+import Foundation
 
-/// 目录结构分析服务：扫描、进度、取消、Finder 展示
-final class DirectoryTreeService: @unchecked Sendable, SuperLog {
-    nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = true
-    static let shared = DirectoryTreeService()
+/// Directory tree analysis service.
+public final class DirectoryTreeService: @unchecked Sendable {
+    public static let shared = DirectoryTreeService()
     private let coordinator = DirectoryTreeScanCoordinator()
 
     private init() {}
 
-    func scanDirectoryTree(atPath path: String) async throws -> [DirectoryEntry] {
-        if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)开始分析目录结构：\((path as NSString).lastPathComponent)")
-        }
-        let result = await coordinator.scan(path: path)
-        if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)目录结构分析完成：\((path as NSString).lastPathComponent)，根节点 \(result.count) 个")
-        }
-        return result
+    public func scanDirectoryTree(atPath path: String) async throws -> [DirectoryEntry] {
+        return await coordinator.scan(path: path)
     }
 
-    func progressStream() async -> AsyncStream<ScanProgress> {
+    public func progressStream() async -> AsyncStream<ScanProgress> {
         await coordinator.progressStream()
     }
 
-    func cancelScan() async {
-        if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)停止分析目录结构")
-        }
+    public func cancelScan() async {
         await coordinator.cancelCurrentScan()
     }
 
     @MainActor
-    func revealInFinder(path: String) {
+    public func revealInFinder(path: String) {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
 }
@@ -64,9 +51,6 @@ actor DirectoryTreeScanCoordinator {
 
     func progressStream() -> AsyncStream<ScanProgress> {
         let id = UUID()
-        if DirectoryTreeService.verbose {
-            DiskManagerPlugin.logger.info("\(DirectoryTreeService.t)[Coordinator] progressStream subscribed (\(self.progressContinuations.count + 1))")
-        }
         return AsyncStream { continuation in
             Task { await self.addContinuation(id: id, continuation: continuation) }
             continuation.onTermination = { _ in
@@ -84,9 +68,6 @@ actor DirectoryTreeScanCoordinator {
 
     private func removeContinuation(id: UUID) {
         progressContinuations[id] = nil
-        if DirectoryTreeService.verbose {
-            DiskManagerPlugin.logger.info("\(DirectoryTreeService.t)[Coordinator] progressStream unsubscribed (\(self.progressContinuations.count))")
-        }
     }
 
     func scan(path: String) async -> [DirectoryEntry] {
@@ -161,7 +142,6 @@ actor DirectoryTreeScanCoordinator {
             scannedBytes += size
             maybeEmitProgress(lastEmitAt: &lastEmitAt, emit: { self.emitProgressSnapshot(path: rootPath, start: start) })
 
-            // Aggregate size into all ancestor directories (up to rootPath)
             var parentURL = url.deletingLastPathComponent()
             while parentURL.path.hasPrefix(rootPath), parentURL.path != rootPath {
                 dirSizes[parentURL.path, default: 0] += size
@@ -169,7 +149,6 @@ actor DirectoryTreeScanCoordinator {
             }
         }
 
-        // Build directory tree bottom-up (avoid stale value-type copies)
         let allDirPaths = Array(dirSizes.keys)
         let sortedByDepthDesc = allDirPaths.sorted {
             $0.split(separator: "/").count > $1.split(separator: "/").count
@@ -194,7 +173,6 @@ actor DirectoryTreeScanCoordinator {
             )
         }
 
-        // Root entries: children of rootPath
         let rootChildren = built.values
             .filter { URL(fileURLWithPath: $0.path).deletingLastPathComponent().path == rootPath }
             .sorted { $0.size > $1.size }
@@ -230,4 +208,3 @@ actor DirectoryTreeScanCoordinator {
         progressContinuations.removeAll()
     }
 }
-

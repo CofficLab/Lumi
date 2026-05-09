@@ -1,4 +1,5 @@
 import SwiftUI
+import DiskManagerKit
 
 /// 缓存分类列表节视图
 struct CacheCategorySection: View {

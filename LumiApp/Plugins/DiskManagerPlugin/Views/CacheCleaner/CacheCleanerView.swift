@@ -1,4 +1,5 @@
 import SwiftUI
+import DiskManagerKit
 
 struct CacheCleanerView: View {
     @StateObject private var viewModel = CacheCleanerViewModel()

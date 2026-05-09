@@ -1,7 +1,6 @@
 import Foundation
-import AppKit
 
-enum XcodeCleanCategory: String, CaseIterable, Identifiable {
+public enum XcodeCleanCategory: String, CaseIterable, Identifiable, Sendable {
     case derivedData = "Derived Data"
     case archives = "Archives"
     case iOSDeviceSupport = "iOS Device Support"
@@ -9,11 +8,10 @@ enum XcodeCleanCategory: String, CaseIterable, Identifiable {
     case tvOSDeviceSupport = "tvOS Device Support"
     case simulatorCaches = "Simulator Caches"
     case logs = "Logs"
-    // case documentation = "Documentation Cache" // Optional
-    
-    var id: String { rawValue }
 
-    var displayName: String {
+    public var id: String { rawValue }
+
+    public var displayName: String {
         switch self {
         case .derivedData: return String(localized: "Derived Data")
         case .archives: return String(localized: "Archives")
@@ -24,8 +22,8 @@ enum XcodeCleanCategory: String, CaseIterable, Identifiable {
         case .logs: return String(localized: "Logs")
         }
     }
-    
-    var iconName: String {
+
+    public var iconName: String {
         switch self {
         case .derivedData: return "hammer.fill"
         case .archives: return "archivebox.fill"
@@ -36,8 +34,8 @@ enum XcodeCleanCategory: String, CaseIterable, Identifiable {
         case .logs: return "doc.text.fill"
         }
     }
-    
-    var description: String {
+
+    public var description: String {
         switch self {
         case .derivedData: return String(localized: "Intermediate files and indices from the build process, safe to delete.")
         case .archives: return String(localized: "App packaging archive files.")
@@ -50,15 +48,23 @@ enum XcodeCleanCategory: String, CaseIterable, Identifiable {
     }
 }
 
-struct XcodeCleanItem: Identifiable, Equatable {
-    let id = UUID()
-    let name: String
-    let path: URL
-    let size: Int64
-    let category: XcodeCleanCategory
-    let modificationDate: Date
-    var isSelected: Bool = false
-    
-    // Additional info for sorting or display, e.g., version number for DeviceSupport
-    var version: String?
+public struct XcodeCleanItem: Identifiable, Equatable, Sendable {
+    public let id = UUID()
+    public let name: String
+    public let path: URL
+    public let size: Int64
+    public let category: XcodeCleanCategory
+    public let modificationDate: Date
+    public var isSelected: Bool = false
+    public var version: String?
+
+    public init(name: String, path: URL, size: Int64, category: XcodeCleanCategory, modificationDate: Date, isSelected: Bool = false, version: String? = nil) {
+        self.name = name
+        self.path = path
+        self.size = size
+        self.category = category
+        self.modificationDate = modificationDate
+        self.isSelected = isSelected
+        self.version = version
+    }
 }
