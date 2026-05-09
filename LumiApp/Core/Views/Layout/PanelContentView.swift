@@ -10,6 +10,9 @@ struct PanelContentView: View {
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var layoutVM: LayoutVM
 
+    /// 分隔线高度
+    private let resizerHeight: CGFloat = 6
+
     var body: some View {
         let activeItem = pluginProvider.getActivePanelItem()
         let headerViews = pluginProvider.getActivePanelHeaderViews()
@@ -20,6 +23,7 @@ struct PanelContentView: View {
                 GeometryReader { geometry in
                     VStack(spacing: 0) {
                         // ── 上半部分：Header + 主内容 ──
+                        // 使用计算高度，避免与底部面板的 maxHeight: .infinity 竞争
                         VStack(spacing: 1) {
                             ForEach(headerViews.indices, id: \.self) { index in
                                 headerViews[index]
@@ -27,7 +31,12 @@ struct PanelContentView: View {
 
                             activeItem.view
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(
+                            width: geometry.size.width,
+                            height: geometry.size.height
+                                - layoutVM.editorBottomPanelHeight
+                                - (hasBottomTabs ? resizerHeight : 0)
+                        )
 
                         // ── 可拖拽分隔线 ──
                         if hasBottomTabs {
@@ -38,11 +47,10 @@ struct PanelContentView: View {
                         // 由内核统一维护，聚合所有插件提供的 BottomPanelTab
                         if hasBottomTabs {
                             BottomPanelBarView()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .frame(width: geometry.size.width)
                                 .frame(height: layoutVM.editorBottomPanelHeight)
                         }
                     }
-                    .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
         }
