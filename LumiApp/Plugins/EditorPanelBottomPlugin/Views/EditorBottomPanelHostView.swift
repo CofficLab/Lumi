@@ -45,13 +45,17 @@ struct EditorBottomPanelHostView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+
             if hasActivePanel {
                 Divider()
                 activePanelContent
-                    .frame(maxHeight: .infinity)
             }
+            
+            // Spacer 始终存在，无活跃面板时撑满剩余空间，
+            // 有活跃面板时被 activePanelContent 挤占。
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .overlay(alignment: .top) {
             Rectangle()
@@ -157,7 +161,7 @@ struct EditorBottomPanelHostView: View {
             }
         } else if let activeExtensionPanel {
             activeExtensionPanel.content(service.state)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity)
         } else {
             Color.clear
         }
@@ -196,7 +200,7 @@ struct EditorBottomPanelHostView: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
     }
 }
