@@ -1381,6 +1381,29 @@
         }
       }
     },
+    "Resend": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resend"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新发送"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新傳送"
+          }
+        }
+      }
+    },
     "Response Time": {
       "extractionState": "manual",
       "localizations": {
