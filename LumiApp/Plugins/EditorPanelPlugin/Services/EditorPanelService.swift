@@ -30,6 +30,9 @@ final class EditorPanelService: ObservableObject {
     // MARK: - Session 管理
 
     /// 打开或激活一个编辑器会话
+    ///
+    /// 注意：此方法不负责刷新项目上下文，调用方应在此之前单独调用
+    /// `refreshProjectContext(for:service:)` 确保上下文就绪。
     func openOrActivateSession(
         for fileURL: URL?,
         service: EditorService,
@@ -38,7 +41,6 @@ final class EditorPanelService: ObservableObject {
     ) {
         EditorPlugin.logger.info("\(EditorPlugin.t)打开或激活 session, fileURL=\(fileURL?.path ?? "nil", privacy: .public), currentProjectPath=\(currentProjectPath, privacy: .public)")
         service.projectRootPath = projectRootPath
-        refreshProjectContext(for: currentProjectPath, service: service)
 
         guard let fileURL else {
             EditorPlugin.logger.info("\(EditorPlugin.t)fileURL 为 nil → loadFile(nil)")
@@ -83,6 +85,7 @@ final class EditorPanelService: ObservableObject {
         projectRootPath: String?,
         currentProjectPath: String
     ) {
+        refreshProjectContext(for: currentProjectPath, service: service)
         openOrActivateSession(
             for: url,
             service: service,

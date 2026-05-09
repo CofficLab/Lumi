@@ -26,6 +26,12 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
     /// 是否已初始化
     public var isInitialized: Bool = false
 
+    /// 正在初始化中，防止并发 projectOpened 重复执行
+    private var isInitializingInProgress = false
+
+    /// updateCache 防抖 Task（合并短时间内的多次 Combine 回调为一次通知广播）
+    private var cacheDebounceTask: Task<Void, Never>?
+
     /// 当前项目是否为 Xcode 项目
     public var isXcodeProject: Bool = false
 
@@ -99,9 +105,14 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     public func projectOpened(at path: String) async {
         if currentProjectPath == path, isInitialized {
-            updateCache()
+            updateCacheNow()
             return
         }
+        // 防止多个并发的 Task 同时进入初始化流程
+        guard !isInitializingInProgress else { return }
+        isInitializingInProgress = true
+        defer { isInitializingInProgress = false }
+
         currentProjectPath = path
         let projectURL = URL(filePath: path)
         let isXcodeProject = XcodeProjectResolver.isXcodeProjectRoot(projectURL)
@@ -114,7 +125,7 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         }
 
         isInitialized = true
-        updateCache()
+        updateCacheNow()
     }
 
     public func projectClosed() {
@@ -139,13 +150,30 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         provider.invalidateAllContexts()
         await initializeXcodeBuildContext(at: currentProjectPath)
         isInitialized = true
-        updateCache()
+        updateCacheNow()
     }
 
     // MARK: - Cache
 
+    /// 防抖更新缓存（由 Combine 订阅回调触发）
+    /// 短时间内的多次 @Published 变更（如 setActiveScheme 同时修改 scheme/config/destination）
+    /// 会被合并为一次通知广播
     @MainActor
     private func updateCache() {
+        cacheDebounceTask?.cancel()
+        cacheDebounceTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms 防抖
+            guard !Task.isCancelled else { return }
+            updateCacheNow()
+        }
+    }
+
+    /// 立即更新缓存并发送通知（用于 projectOpened / resync 等需要立即反映的场景）
+    @MainActor
+    private func updateCacheNow() {
+        cacheDebounceTask?.cancel()
+        cacheDebounceTask = nil
+
         let schemes = buildContextProvider?.currentWorkspace?.schemes.map(\.name) ?? []
         let configurations = buildContextProvider?.currentWorkspace?.projects.flatMap(\.buildConfigurations).map(\.name) ?? []
         let state = BridgeCachedState(

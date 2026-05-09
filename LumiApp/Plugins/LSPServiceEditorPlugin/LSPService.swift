@@ -121,9 +121,9 @@ final class LSPService: ObservableObject, SuperLog {
     }
 
     private func startServerInternal(for languageId: String, projectPath: String) async -> LanguageServer? {
-        if let capability = Self.projectContextCapability(for: projectPath) {
-            await capability.projectOpened(at: projectPath)
-        }
+        // 不在此处调用 projectOpened — 由 EditorPanelService.refreshProjectContext() 统一负责。
+        // 这里只检查 build context 是否已就绪（纯 O(1) 读取），避免重复触发 scheme 解析
+        // 和 buildServer.json 生成。
         if let existing = server {
             if Self.verbose {
                 Self.logger.info("\(Self.t)正在停止现有服务器")
