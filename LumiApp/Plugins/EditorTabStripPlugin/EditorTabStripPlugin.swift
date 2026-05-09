@@ -7,12 +7,11 @@ import os
 /// 作为 Panel Header 提供者，当编辑器面板激活时，
 /// 在面板内容上方渲染 Tab 栏。
 actor EditorTabStripPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.editor-tab-strip")
-
     nonisolated static let emoji = "📑"
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi", category: "plugin.editor-tab-strip")
     static let id: String = "EditorTabStrip"
     static let displayName: String = String(localized: "Editor Tab Strip", table: "EditorTabStrip")
     static let description: String = String(
@@ -29,9 +28,6 @@ actor EditorTabStripPlugin: SuperPlugin, SuperLog {
     /// 当编辑器面板激活时，提供 Panel Header 视图
     @MainActor
     func addPanelHeaderView(activeIcon: String?) -> AnyView? {
-        // 🔍 诊断日志
-        Self.logger.info("[TabRestore-DIAG] addPanelHeaderView 被调用, activeIcon=\(activeIcon ?? "nil", privacy: .public), editorIcon=\(EditorPlugin.iconName, privacy: .public), match=\(activeIcon == EditorPlugin.iconName)")
-
         // 仅在编辑器面板激活时提供 header
         guard activeIcon == EditorPlugin.iconName else { return nil }
         return AnyView(EditorTabHeaderView())

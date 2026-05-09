@@ -6,9 +6,13 @@ import SwiftUI
 /// 渲染 Tab 栏 UI，并嵌入 `EditorTabStripCoordinator` 实现
 /// 标签页的自动保存和项目切换时的恢复。
 struct EditorTabHeaderView: View {
+
+    // MARK: - 属性
+
     @EnvironmentObject var editorVM: EditorVM
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var themeVM: ThemeVM
+
     @State private var draggedTabSessionID: UUID?
 
     /// 标签页持久化协调器
@@ -23,13 +27,12 @@ struct EditorTabHeaderView: View {
     // MARK: - Body
 
     var body: some View {
-        Group {
+        ZStack {
             if !visibleTabs.isEmpty {
                 tabList
             }
         }
         .onAppear {
-            EditorTabStripPlugin.logger.info("[TabRestore-DIAG] 🟢 EditorTabHeaderView.onAppear 被调用, tabs.count=\(sessionStore.tabs.count), activeSessionID=\(sessionStore.activeSessionID?.uuidString ?? "nil", privacy: .public)")
             coordinator.startObserving(
                 sessionStore: sessionStore,
                 projectPathProvider: { [weak projectVM] in
@@ -41,7 +44,6 @@ struct EditorTabHeaderView: View {
             )
         }
         .onDisappear {
-            EditorTabStripPlugin.logger.info("[TabRestore-DIAG] 🔴 EditorTabHeaderView.onDisappear 被调用")
             coordinator.stopObserving(
                 sessionStore: sessionStore,
                 projectPath: projectVM.currentProjectPath
@@ -59,19 +61,16 @@ struct EditorTabHeaderView: View {
         .onCurrentFileDidChange { path in
             handleCurrentFileDidChange(path: path)
         }
-        .task {
-            // 🔍 诊断日志：task 作为 onAppear 的替代/补充
-            EditorTabStripPlugin.logger.info("[TabRestore-DIAG] 🟡 EditorTabHeaderView.task 被调用, tabs.count=\(sessionStore.tabs.count), activeSessionID=\(sessionStore.activeSessionID?.uuidString ?? "nil", privacy: .public)")
-            coordinator.startObserving(
-                sessionStore: sessionStore,
-                projectPathProvider: { [weak projectVM] in
-                    projectVM?.currentProjectPath ?? ""
-                },
-                openFile: { [weak editorVM] url in
-                    editorVM?.service.open(at: url)
-                }
-            )
-        }
+    }
+
+    // MARK: - 计算属性
+
+    private var theme: any SuperTheme {
+        themeVM.activeAppTheme
+    }
+
+    private var visibleTabs: [EditorTab] {
+        service.tabs
     }
 
     // MARK: - 子视图
@@ -104,22 +103,14 @@ struct EditorTabHeaderView: View {
         .background(theme.workspaceBackgroundColor())
     }
 
-    // MARK: - 计算属性
+    // MARK: - 操作方法
 
-    private var theme: any SuperTheme {
-        themeVM.activeAppTheme
-    }
-
-    private var visibleTabs: [EditorTab] {
-        service.tabs
-    }
-
-    // MARK: - 操作
-
+    /// 开始拖拽标签页
     private func beginTabDrag(_ tab: EditorTab) {
         draggedTabSessionID = tab.sessionID
     }
 
+    /// 将拖拽的标签页放入当前位置
     private func dropDraggedTabInActiveStrip(before targetTab: EditorTab?) {
         guard let draggedTabSessionID else { return }
         defer { self.draggedTabSessionID = nil }
@@ -139,7 +130,6 @@ struct EditorTabHeaderView: View {
 
         // 验证文件存在
         guard FileManager.default.fileExists(atPath: path) else {
-            EditorTabStripPlugin.logger.warning("⚠️ File does not exist: \(path)")
             return
         }
 

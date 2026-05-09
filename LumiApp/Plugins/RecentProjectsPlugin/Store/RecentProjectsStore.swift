@@ -21,16 +21,16 @@ final class RecentProjectsStore: @unchecked Sendable {
 
     // MARK: - Public API
 
-    /// 加载最近项目列表
+    /// 加载最近项目列表（同步，需要返回值）
     func loadProjects() -> [Project] {
-        queue.sync {
-            if let current = loadProjectsFromCurrentFile() {
+        queue.sync { [self] in
+            if let current = self.loadProjectsFromCurrentFile() {
                 return current
             }
 
             // best-effort migration from legacy storage
-            if let legacy = loadProjectsFromLegacyStatePlist() {
-                persistProjectsToCurrentFile(projects: legacy)
+            if let legacy = self.loadProjectsFromLegacyStatePlist() {
+                self.persistProjectsToCurrentFile(projects: legacy)
                 return legacy
             }
 
@@ -38,63 +38,64 @@ final class RecentProjectsStore: @unchecked Sendable {
         }
     }
 
-    /// 保存最近项目列表
+    /// 保存最近项目列表（异步，不阻塞调用线程）
     func saveProjects(_ projects: [Project]) {
-        queue.sync {
-            persistProjectsToCurrentFile(projects: projects)
+        queue.async { [self] in
+            self.persistProjectsToCurrentFile(projects: projects)
         }
     }
 
-    /// 添加或更新项目到列表开头（最多保留 500 条）
+    /// 添加或更新项目到列表开头（异步，不阻塞调用线程）
+    /// 最多保留 500 条
     func addProject(name: String, path: String) {
-        queue.sync {
-            var projects = loadProjectsInternal()
+        queue.async { [self] in
+            var projects = self.loadProjectsInternal()
             projects.removeAll { $0.path == path }
 
             let newProject = Project(name: name, path: path, lastUsed: Date())
             projects.insert(newProject, at: 0)
             projects = Array(projects.prefix(Self.maxProjectsCount))
 
-            persistProjectsToCurrentFile(projects: projects)
+            self.persistProjectsToCurrentFile(projects: projects)
         }
     }
 
-    /// 删除指定项目
+    /// 删除指定项目（异步，不阻塞调用线程）
     func removeProject(_ project: Project) {
-        queue.sync {
-            var projects = loadProjectsInternal()
+        queue.async { [self] in
+            var projects = self.loadProjectsInternal()
             projects.removeAll { $0.id == project.id }
-            persistProjectsToCurrentFile(projects: projects)
+            self.persistProjectsToCurrentFile(projects: projects)
         }
     }
-    
+
     // MARK: - Current Project
-    
-    /// 获取当前选中的项目
+
+    /// 获取当前选中的项目（同步，需要返回值）
     func getCurrentProject() -> Project? {
-        queue.sync {
-            let fileURL = currentProjectFileURL()
+        queue.sync { [self] in
+            let fileURL = self.currentProjectFileURL()
             guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
             guard let data = try? Data(contentsOf: fileURL) else { return nil }
             return try? JSONDecoder().decode(Project.self, from: data)
         }
     }
-    
-    /// 设置当前选中的项目
+
+    /// 设置当前选中的项目（异步，不阻塞调用线程）
     func setCurrentProject(name: String, path: String) {
-        queue.sync {
+        queue.async { [self] in
             let project = Project(name: name, path: path, lastUsed: Date())
-            persistCurrentProject(project)
-            
+            self.persistCurrentProject(project)
+
             // 同时将项目添加到最近列表
-            addProjectInternal(name: name, path: path)
+            self.addProjectInternal(name: name, path: path)
         }
     }
-    
-    /// 清除当前项目
+
+    /// 清除当前项目（异步，不阻塞调用线程）
     func clearCurrentProject() {
-        queue.sync {
-            let fileURL = currentProjectFileURL()
+        queue.async { [self] in
+            let fileURL = self.currentProjectFileURL()
             try? FileManager.default.removeItem(at: fileURL)
         }
     }

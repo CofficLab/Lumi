@@ -30,12 +30,12 @@ final class ThemeStatusBarPluginLocalStore: @unchecked Sendable {
 
     // MARK: - Public API
 
-    /// 加载已保存的主题 ID
+    /// 加载已保存的主题 ID（同步，需要返回值）
     /// - Returns: 保存的主题 ID，如果没有则返回 nil
     func loadSelectedThemeID() -> String? {
-        queue.sync {
-            guard fileManager.fileExists(atPath: settingsFileURL.path),
-                  let data = try? Data(contentsOf: settingsFileURL),
+        queue.sync { [self] in
+            guard self.fileManager.fileExists(atPath: self.settingsFileURL.path),
+                  let data = try? Data(contentsOf: self.settingsFileURL),
                   let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
                   let dict = plist as? [String: Any] else {
                 return nil
@@ -44,13 +44,13 @@ final class ThemeStatusBarPluginLocalStore: @unchecked Sendable {
         }
     }
 
-    /// 保存主题 ID
+    /// 保存主题 ID（异步，不阻塞调用线程）
     /// - Parameter themeID: 主题 ID
     func saveSelectedThemeID(_ themeID: String) {
-        queue.sync {
+        queue.async { [self] in
             var dict: [String: Any] = [:]
-            if fileManager.fileExists(atPath: settingsFileURL.path),
-               let data = try? Data(contentsOf: settingsFileURL),
+            if self.fileManager.fileExists(atPath: self.settingsFileURL.path),
+               let data = try? Data(contentsOf: self.settingsFileURL),
                let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
                let existing = plist as? [String: Any] {
                 dict = existing
@@ -63,20 +63,20 @@ final class ThemeStatusBarPluginLocalStore: @unchecked Sendable {
                 options: 0
             ) else { return }
 
-            let tmpURL = pluginDirectory.appendingPathComponent("settings.tmp")
+            let tmpURL = self.pluginDirectory.appendingPathComponent("settings.tmp")
 
             do {
                 // 原子写入临时文件
                 try newData.write(to: tmpURL, options: .atomic)
 
                 // 替换原文件
-                if fileManager.fileExists(atPath: settingsFileURL.path) {
-                    _ = try? fileManager.replaceItemAt(settingsFileURL, withItemAt: tmpURL)
+                if self.fileManager.fileExists(atPath: self.settingsFileURL.path) {
+                    _ = try? self.fileManager.replaceItemAt(self.settingsFileURL, withItemAt: tmpURL)
                 } else {
-                    try fileManager.moveItem(at: tmpURL, to: settingsFileURL)
+                    try self.fileManager.moveItem(at: tmpURL, to: self.settingsFileURL)
                 }
             } catch {
-                try? fileManager.removeItem(at: tmpURL)
+                try? self.fileManager.removeItem(at: tmpURL)
             }
         }
     }
