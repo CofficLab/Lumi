@@ -1,20 +1,22 @@
 import Foundation
-import MagicKit
 import os
+import MagicKit
 
 /// Xcode 项目解析器：发现并解析 .xcodeproj / .xcworkspace
 @MainActor
-final class XcodeProjectResolver: SuperLog {
-    
-    nonisolated static let emoji = "🔍"
-    nonisolated static let verbose = true
-    
+final public class XcodeProjectResolver: SuperLog {
+
+    nonisolated public static let emoji = "🔍"
+    nonisolated public static let verbose = true
+
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.resolver")
-    
+
+    public init() {}
+
     // MARK: - 项目发现
-    
+
     /// 在指定目录中查找 .xcworkspace，找到第一个
-    static func findWorkspace(in directory: URL) -> URL? {
+    public static func findWorkspace(in directory: URL) -> URL? {
         let fm = FileManager.default
         guard let contents = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else {
             return nil
@@ -26,42 +28,42 @@ final class XcodeProjectResolver: SuperLog {
         // 其次返回 .xcodeproj
         return contents.first(where: { $0.pathExtension == "xcodeproj" })
     }
-    
+
     /// 判断一个目录是否是 Xcode 项目根目录
-    static func isXcodeProjectRoot(_ directory: URL) -> Bool {
+    public static func isXcodeProjectRoot(_ directory: URL) -> Bool {
         findWorkspace(in: directory) != nil
     }
-    
+
     // MARK: - 项目解析
-    
+
     /// 解析一个 workspace / project，返回完整的上下文
     /// 此方法会调用 xcodebuild -list -json 获取结构化数据
-    func resolve(workspaceURL: URL) async -> XcodeWorkspaceContext? {
+    public func resolve(workspaceURL: URL) async -> XcodeWorkspaceContext? {
         let isProject = workspaceURL.pathExtension == "xcodeproj"
         let isWorkspace = workspaceURL.pathExtension == "xcworkspace"
         guard isProject || isWorkspace else {
             Self.logger.warning("\(Self.t)无效的项目路径: \(workspaceURL.path, privacy: .public)")
             return nil
         }
-        
+
         let name = workspaceURL.deletingPathExtension().lastPathComponent
         let projectPath = isProject ? workspaceURL : nil
         let workspacePath = isWorkspace ? workspaceURL : nil
-        
+
         // 获取 xcodebuild -list -json 输出
         guard let listResult = await fetchBuildList(workspaceURL: workspacePath, projectURL: projectPath) else {
             Self.logger.error("\(Self.t)无法获取构建列表: \(workspaceURL.path, privacy: .public)")
             return nil
         }
-        
+
         let schemes = (listResult.workspace?.schemes ?? []) + (listResult.project?.schemes ?? [])
         let uniqueSchemes = Array(Set(schemes))
-        
+
         // 解析 targets
         let targetNames = listResult.project?.targets ?? []
         let configurations = listResult.project?.configurations ?? []
         let targetSourceFiles = resolveTargetSourceFiles(projectLikeURL: workspaceURL)
-        
+
         let targetContexts = targetNames.map { targetName in
             let targetConfigurations = configurations.map { configName in
                 XcodeBuildConfigurationContext(id: "\(targetName)_\(configName)", name: configName)
@@ -74,7 +76,7 @@ final class XcodeProjectResolver: SuperLog {
                 sourceFiles: targetSourceFiles[targetName] ?? []
             )
         }
-        
+
         let projectContext = XcodeProjectContext(
             id: workspaceURL.path,
             name: name,
@@ -93,7 +95,7 @@ final class XcodeProjectResolver: SuperLog {
                 )
             }
         )
-        
+
         let workspaceContext = XcodeWorkspaceContext(
             id: workspaceURL.path,
             name: name,
@@ -110,21 +112,21 @@ final class XcodeProjectResolver: SuperLog {
             },
             activeScheme: nil
         )
-        
+
         return workspaceContext
     }
-    
+
     /// 解析 scheme 列表
-    func resolveSchemes(workspaceURL: URL, projectURL: URL?) async -> [XcodeSchemeContext] {
+    public func resolveSchemes(workspaceURL: URL, projectURL: URL?) async -> [XcodeSchemeContext] {
         guard let listResult = await fetchBuildList(workspaceURL: workspaceURL, projectURL: projectURL) else {
             return []
         }
-        
+
         let schemeNames = (listResult.workspace?.schemes ?? []) + (listResult.project?.schemes ?? [])
         let uniqueSchemes = Array(Set(schemeNames))
         let targetNames = listResult.project?.targets ?? []
         let configurations = listResult.project?.configurations ?? []
-        
+
         return uniqueSchemes.map {
             XcodeSchemeContext(
                 id: $0,
@@ -135,21 +137,21 @@ final class XcodeProjectResolver: SuperLog {
             )
         }
     }
-    
+
     // MARK: - xcodebuild 调用
-    
+
     /// 执行 `xcodebuild -list -json`
     private func fetchBuildList(workspaceURL: URL?, projectURL: URL?) async -> XcodeBuildSettingsParser.ListResult? {
         var args = ["-list", "-json"]
-        
+
         if let workspaceURL {
             args += ["-workspace", workspaceURL.path]
         } else if let projectURL {
             args += ["-project", projectURL.path]
         }
-        
+
         guard let data = await runXcodeBuild(args: args) else { return nil }
-        
+
         do {
             return try XcodeBuildSettingsParser.parseListOutput(data)
         } catch {
@@ -157,29 +159,29 @@ final class XcodeProjectResolver: SuperLog {
             return nil
         }
     }
-    
+
     /// 执行 `xcodebuild -showBuildSettings -json`
-    func fetchBuildSettings(workspaceURL: URL?, projectURL: URL?, scheme: String, configuration: String? = nil, destination: String? = nil) async -> [[String: String]]? {
+    public func fetchBuildSettings(workspaceURL: URL?, projectURL: URL?, scheme: String, configuration: String? = nil, destination: String? = nil) async -> [[String: String]]? {
         var args = ["-showBuildSettings", "-json"]
-        
+
         if let workspaceURL {
             args += ["-workspace", workspaceURL.path]
         } else if let projectURL {
             args += ["-project", projectURL.path]
         }
-        
+
         args += ["-scheme", scheme]
-        
+
         if let configuration, !configuration.isEmpty {
             args += ["-configuration", configuration]
         }
-        
+
         if let destination {
             args += ["-destination", destination]
         }
-        
+
         guard let data = await runXcodeBuild(args: args) else { return nil }
-        
+
         do {
             return try XcodeBuildSettingsParser.parseBuildSettingsOutput(data)
         } catch {
@@ -187,10 +189,10 @@ final class XcodeProjectResolver: SuperLog {
             return nil
         }
     }
-    
+
     // MARK: - 工具方法
 
-    private func resolveTargetSourceFiles(projectLikeURL: URL) -> [String: Set<String>] {
+    func resolveTargetSourceFiles(projectLikeURL: URL) -> [String: Set<String>] {
         let projectURL: URL
         if projectLikeURL.pathExtension == "xcodeproj" {
             projectURL = projectLikeURL
@@ -258,7 +260,7 @@ final class XcodeProjectResolver: SuperLog {
         }
         return files
     }
-    
+
     /// 异步执行 xcodebuild
     private func runXcodeBuild(args: [String]) async -> Data? {
         let process = Process()
@@ -267,14 +269,14 @@ final class XcodeProjectResolver: SuperLog {
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
-        
+
         do {
             try process.run()
         } catch {
             Self.logger.error("\(Self.t)xcodebuild 启动失败: \(error.localizedDescription, privacy: .public)")
             return nil
         }
-        
+
         return await withCheckedContinuation { continuation in
             process.terminationHandler = { _ in
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()

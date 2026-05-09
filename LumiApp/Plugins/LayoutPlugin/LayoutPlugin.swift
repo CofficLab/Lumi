@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import SwiftUI
 import os
+import MagicKit
 
 /// 布局持久化插件
 ///
@@ -19,7 +20,7 @@ import os
 /// - `LayoutVM.selectedAgentSidebarTabId`：Agent 模式侧边栏 Tab
 /// - `LayoutVM.selectedAgentDetailId`：Agent 模式 Detail 视图
 /// - `LayoutVM.layoutRatios`：分栏布局宽度比例（由 SplitViewPersistence 组件更新）
-actor LayoutPlugin: SuperPlugin {
+actor LayoutPlugin: SuperPlugin, SuperLog {
     static let shared = LayoutPlugin()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     nonisolated static let emoji = "📐"
@@ -35,7 +36,7 @@ actor LayoutPlugin: SuperPlugin {
     nonisolated var instanceLabel: String { Self.id }
 
     nonisolated func onRegister() {
-        Self.logger.info("\(LayoutPlugin.emoji) LayoutPlugin registered! instanceLabel=\(self.instanceLabel)")
+        Self.logger.info("\(self.t)已注册，instanceLabel=\(self.instanceLabel)")
     }
 
     // MARK: - Root View（布局持久化锚点）
@@ -66,10 +67,6 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
 
     /// Combine 订阅集合
     @State private var cancellables = Set<AnyCancellable>()
-
-    /// 日志前缀常量
-    private let lp: String = "📐 LayoutPlugin | "
-    
     var body: some View {
         ZStack {
             content
@@ -79,7 +76,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                 .frame(width: 0, height: 0)
                 .allowsHitTesting(false)
                 .onAppear {
-                    LayoutPlugin.logger.info("\(lp)生命周期锚点 appeared")
+                    LayoutPlugin.logger.info("\(LayoutPlugin.t)生命周期锚点 appeared")
                     restoreLayout()
                     startObserving()
                 }
@@ -94,13 +91,13 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .onChange(of: layoutVM.selectedAgentSidebarTabId) { oldValue, newValue in
                 guard hasRestored else { return }
                 guard oldValue != newValue else { return }
-                LayoutPlugin.logger.info("\(lp)侧边栏 Tab 变更: \(oldValue, privacy: .public) → \(newValue, privacy: .public)")
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)侧边栏 Tab 变更: \(oldValue) → \(newValue)")
                 LayoutPluginLocalStore.shared.saveSelectedAgentSidebarTabId(newValue)
             }
             .onChange(of: layoutVM.selectedAgentDetailId) { oldValue, newValue in
                 guard hasRestored else { return }
                 guard oldValue != newValue else { return }
-                LayoutPlugin.logger.info("\(lp)Detail 变更: \(oldValue, privacy: .public) → \(newValue, privacy: .public)")
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)Detail 变更: \(oldValue) → \(newValue)")
                 LayoutPluginLocalStore.shared.saveSelectedAgentDetailId(newValue)
             }
     }
@@ -116,26 +113,26 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
 
         // 恢复活动栏图标
         if let savedIcon = store.loadActivePanelIcon() {
-            LayoutPlugin.logger.info("\(lp)恢复活动栏图标: \(savedIcon, privacy: .public)")
+            LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复活动栏图标: \(savedIcon)")
             pluginVM.activePanelIcon = savedIcon
         }
 
         // 恢复侧边栏 Tab
         if let savedTabId = store.loadSelectedAgentSidebarTabId() {
-            LayoutPlugin.logger.info("\(lp)恢复侧边栏 Tab: \(savedTabId, privacy: .public)")
+            LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复侧边栏 Tab: \(savedTabId)")
             layoutVM.restoreFromPlugin(tabId: savedTabId)
         }
 
         // 恢复 Detail 视图
         if let savedDetailId = store.loadSelectedAgentDetailId() {
-            LayoutPlugin.logger.info("\(lp)恢复 Detail 视图: \(savedDetailId, privacy: .public)")
+            LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复 Detail 视图: \(savedDetailId)")
             layoutVM.restoreFromPlugin(detailId: savedDetailId)
         }
 
         // 恢复分栏比例
         let savedRatios = store.loadLayoutRatios()
         if !savedRatios.isEmpty {
-            LayoutPlugin.logger.info("\(lp)恢复分栏比例: \(savedRatios.count, privacy: .public) 项")
+            LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复分栏比例: \(savedRatios.count) 项")
             layoutVM.restoreFromPlugin(ratios: savedRatios)
         }
     }
@@ -151,7 +148,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .dropFirst()
             .sink { newValue in
                 guard hasRestored else { return }
-                LayoutPlugin.logger.info("\(lp)活动栏图标变更: \(newValue ?? "nil", privacy: .public)")
+                LayoutPlugin.logger.info("\(LayoutPlugin.t)活动栏图标变更: \(newValue ?? "nil")")
                 LayoutPluginLocalStore.shared.saveActivePanelIcon(newValue)
             }
             .store(in: &cancellables)

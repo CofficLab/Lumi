@@ -1,12 +1,14 @@
 import Foundation
+import MagicKit
 import Combine
 import os
 
 /// CPU monitoring service providing real-time CPU usage data.
 @MainActor
-public final class CPUService: ObservableObject {
+public final class CPUService: ObservableObject, SuperLog {
     public static let shared = CPUService()
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.devicemonitorkit", category: "cpu")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.cpu")
+    public nonisolated static let emoji = "🔍"
 
     // MARK: - Published Properties
 
@@ -35,7 +37,7 @@ public final class CPUService: ObservableObject {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.debug("Starting CPU monitoring")
+            Self.logger.info("\(self.t)开始 CPU 监控")
             updateCPUUsage()
 
             monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -49,7 +51,7 @@ public final class CPUService: ObservableObject {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.debug("Stopping CPU monitoring")
+            Self.logger.info("\(self.t)停止 CPU 监控")
             monitoringTimer?.invalidate()
             monitoringTimer = nil
 

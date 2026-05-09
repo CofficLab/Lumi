@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import XcodeKit
 
 // MARK: - XcodeProjectStatusBarViewModel
 
@@ -12,20 +13,20 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
     @Published var configurations: [String] = []
     @Published var activeDestination: String?
     @Published var buildContextStatus: XcodeBuildContextProvider.BuildContextStatus = .unknown
-    @Published var buildContextStatusDescription = String(localized: "Not Initialized", table: "EditorXcodePlugin")
+    @Published var buildContextStatusDescription = "Not Initialized"
     @Published var latestEditorSnapshot: XcodeEditorContextSnapshot?
     @Published var semanticReport: XcodeSemanticAvailability.Report = .init(reasons: [])
     @Published var isResyncingBuildContext = false
     @Published var indexingTask: ProgressTask?
     private var notificationCancellable: AnyCancellable?
-    
+
     private var provider: XcodeBuildContextProvider?
     private var cancellables = Set<AnyCancellable>()
-    
+
     init() {
         setup()
     }
-    
+
     private func setup() {
         let bridge = XcodeProjectContextBridge.shared
         isXcodeProject = bridge.isXcodeProject
@@ -34,16 +35,16 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
         activeDestination = bridge.activeDestination
         buildContextStatusDescription = bridge.buildContextStatusDescription
         latestEditorSnapshot = bridge.latestEditorSnapshot
-        semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString })
+        semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString }, contextProvider: bridge)
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
-        
+
         guard let provider = bridge.buildContextProvider else { return }
         self.provider = provider
         schemes = provider.currentWorkspace?.schemes.map(\.name) ?? []
         configurations = Array(Set(provider.currentWorkspace?.projects.flatMap(\.buildConfigurations).map(\.name) ?? [])).sorted()
         activeConfiguration = provider.activeConfiguration
         buildContextStatus = provider.buildContextStatus
-        
+
         // 订阅 provider 的状态变化
         provider.$buildContextStatus
             .receive(on: DispatchQueue.main)
@@ -52,7 +53,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
                 self?.buildContextStatusDescription = status.displayDescription
             }
             .store(in: &cancellables)
-        
+
         provider.$currentWorkspace
             .receive(on: DispatchQueue.main)
             .sink { [weak self] workspace in
@@ -101,7 +102,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
                 let bridge = XcodeProjectContextBridge.shared
                 self?.activeDestination = bridge.activeDestination
                 self?.latestEditorSnapshot = bridge.latestEditorSnapshot
-                self?.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString })
+                self?.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString }, contextProvider: bridge)
             }
 
         NotificationCenter.default
@@ -110,11 +111,11 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
             .sink { [weak self] _ in
                 let bridge = XcodeProjectContextBridge.shared
                 self?.latestEditorSnapshot = bridge.latestEditorSnapshot
-                self?.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString })
+                self?.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString }, contextProvider: bridge)
             }
             .store(in: &cancellables)
     }
-    
+
     func setActiveScheme(_ schemeName: String) {
         guard let provider, let scheme = provider.currentWorkspace?.schemes.first(where: { $0.name == schemeName }) else { return }
         Task {
@@ -140,7 +141,8 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
             self.activeDestination = bridge.activeDestination
             self.latestEditorSnapshot = bridge.latestEditorSnapshot
             self.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(
-                uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString }
+                uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString },
+                contextProvider: bridge
             )
         }
     }
@@ -152,34 +154,33 @@ final class XcodeProjectStatusBarViewModel: ObservableObject {
     var semanticStatusText: String {
         if let indexingTask {
             if let percentage = indexingTask.percentage {
-                let format = String(localized: "Indexing %d%%", table: "EditorXcodePlugin")
-                return String(format: format, Int(percentage))
+                return String(format: "Indexing %d%%", Int(percentage))
             }
             if let message = indexingTask.message, !message.isEmpty {
                 return message
             }
             return indexingTask.title.isEmpty
-                ? String(localized: "Indexing...", table: "EditorXcodePlugin")
+                ? "Indexing..."
                 : indexingTask.title
         }
 
         switch buildContextStatus {
         case .unknown:
-            return String(localized: "Not Detected", table: "EditorXcodePlugin")
+            return "Not Detected"
         case .resolving:
-            return String(localized: "Resolving...", table: "EditorXcodePlugin")
+            return "Resolving..."
         case .available:
-            return String(localized: "Ready", table: "EditorXcodePlugin")
+            return "Ready"
         case .unavailable:
-            return String(localized: "Error", table: "EditorXcodePlugin")
+            return "Error"
         case .needsResync:
-            return String(localized: "Needs Sync", table: "EditorXcodePlugin")
+            return "Needs Sync"
         }
     }
 
     var semanticStatusDescription: String {
         if let indexingTask {
-            var parts = [String(localized: "Swift semantic indexing in progress", table: "EditorXcodePlugin")]
+            var parts = ["Swift semantic indexing in progress"]
             if !indexingTask.title.isEmpty {
                 parts.append(indexingTask.title)
             }

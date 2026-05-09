@@ -1,12 +1,14 @@
 import Combine
 import Foundation
+import MagicKit
 import os
 
 /// Memory history service with high-resolution (1s) and long-term (1m) storage.
 @MainActor
-public final class MemoryHistoryService: ObservableObject {
+public final class MemoryHistoryService: ObservableObject, SuperLog {
     public static let shared = MemoryHistoryService()
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.devicemonitorkit", category: "memory-history")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.memory-history")
+    nonisolated public static let emoji = "📉"
 
     @Published public var recentHistory: [MemoryDataPoint] = []
     @Published public var longTermHistory: [MemoryDataPoint] = []

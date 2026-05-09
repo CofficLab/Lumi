@@ -9,121 +9,126 @@ import MagicKit
 /// 3. 缓存 build settings
 /// 4. 处理 context invalidation
 @MainActor
-final class XcodeBuildContextProvider: SuperLog, ObservableObject {
-    
-    nonisolated static let emoji = "🏗️"
-    nonisolated static let verbose = true
-    
+final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
+
+    nonisolated public static let emoji = "🏗️"
+    nonisolated public static let verbose = true
+
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.buildcontext")
-    
+
     // MARK: - Published State
-    
-    @Published private(set) var currentWorkspace: XcodeWorkspaceContext?
-    @Published private(set) var activeScheme: XcodeSchemeContext?
-    @Published private(set) var activeConfiguration: String?
-    @Published private(set) var activeDestination: XcodeDestinationContext?
-    @Published var buildContextStatus: BuildContextStatus = .unknown
-    
-    @Published private(set) var buildServerJSONPath: String?
-    @Published private(set) var isGeneratingBuildServer: Bool = false
-    
+
+    @Published public private(set) var currentWorkspace: XcodeWorkspaceContext?
+    @Published public private(set) var activeScheme: XcodeSchemeContext?
+    @Published public private(set) var activeConfiguration: String?
+    @Published public private(set) var activeDestination: XcodeDestinationContext?
+    @Published public var buildContextStatus: BuildContextStatus = .unknown
+
+    @Published public private(set) var buildServerJSONPath: String?
+    @Published public private(set) var isGeneratingBuildServer: Bool = false
+
     // MARK: - Cache
-    
+
     /// build settings 缓存: cacheKey → settings
     private var buildSettingsCache: [String: [[String: String]]] = [:]
-    
+
     /// xcode-build-server 路径缓存
     private var xcodeBuildServerPath: String?
-    
-    // MARK: - 解析器
-    
-    private let resolver = XcodeProjectResolver()
-    
+
+    // MARK: - Dependencies
+
+    /// 解析器
+    public let resolver: XcodeProjectResolver
+
+    /// Build Server 存储管理器
+    public let store: XcodeBuildServerStore
+
     // MARK: - 状态枚举
-    
-    /// Build context 状态（对应 Phase 8：需要 UI 可见）
-    enum BuildContextStatus: Sendable, Equatable {
+
+    /// Build context 状态
+    public enum BuildContextStatus: Sendable, Equatable {
         case unknown
         case resolving
         case available(XcodeBuildServerConfig)
         case unavailable(String)
         case needsResync
-        
+
         /// 人类可读的状态描述
-        var displayDescription: String {
+        public var displayDescription: String {
             switch self {
             case .unknown:
-                return String(localized: "Unknown", table: "EditorXcodePlugin")
+                return "Unknown"
             case .resolving:
-                return String(localized: "Resolving build context...", table: "EditorXcodePlugin")
+                return "Resolving build context..."
             case .available(let config):
-                let format = String(localized: "Available (scheme: %@)", table: "EditorXcodePlugin")
-                return String(format: format, config.scheme)
+                return "Available (scheme: \(config.scheme))"
             case .unavailable(let reason):
-                let format = String(localized: "Unavailable: %@", table: "EditorXcodePlugin")
-                return String(format: format, reason)
+                return "Unavailable: \(reason)"
             case .needsResync:
-                return String(localized: "Needs resync", table: "EditorXcodePlugin")
+                return "Needs resync"
             }
         }
     }
-    
-    struct XcodeBuildServerConfig: Equatable, Sendable {
-        let buildServerJSONPath: String
-        let workspacePath: String
-        let scheme: String
 
-        init(buildServerJSONPath: String, workspacePath: String, scheme: String) {
+    public struct XcodeBuildServerConfig: Equatable, Sendable {
+        public let buildServerJSONPath: String
+        public let workspacePath: String
+        public let scheme: String
+
+        public init(buildServerJSONPath: String, workspacePath: String, scheme: String) {
             self.buildServerJSONPath = buildServerJSONPath
             self.workspacePath = workspacePath
             self.scheme = scheme
         }
 
-        init(from storeConfig: XcodeBuildServerStore.Config) {
+        public init(from storeConfig: XcodeBuildServerStore.Config) {
             self.buildServerJSONPath = storeConfig.buildServerJSONPath
             self.workspacePath = storeConfig.workspacePath
             self.scheme = storeConfig.scheme
         }
     }
-    
+
     // MARK: - 初始化
-    
-    init() {
+
+    public init(
+        resolver: XcodeProjectResolver = XcodeProjectResolver(),
+        store: XcodeBuildServerStore
+    ) {
+        self.resolver = resolver
+        self.store = store
         locateXcodeBuildServer()
     }
-    
+
     // MARK: - 核心方法
-    
+
     /// 打开/识别一个 Xcode 项目
-    func openProject(at projectURL: URL) async {
+    public func openProject(at projectURL: URL) async {
         guard FileManager.default.fileExists(atPath: projectURL.path) else {
-            let format = String(localized: "Project path does not exist: %@", table: "EditorXcodePlugin")
-            buildContextStatus = .unavailable(String(format: format, projectURL.path))
+            buildContextStatus = .unavailable("Project path does not exist: \(projectURL.path)")
             return
         }
-        
+
         let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL)
         guard let workspaceURL else {
-            buildContextStatus = .unavailable(String(localized: "No .xcodeproj / .xcworkspace found", table: "EditorXcodePlugin"))
+            buildContextStatus = .unavailable("No .xcodeproj / .xcworkspace found")
             return
         }
-        
+
         buildContextStatus = .resolving
-        
+
         // 解析项目
         guard let workspaceContext = await resolver.resolve(workspaceURL: workspaceURL) else {
-            buildContextStatus = .unavailable(String(localized: "Unable to parse project", table: "EditorXcodePlugin"))
+            buildContextStatus = .unavailable("Unable to parse project")
             return
         }
-        
+
         currentWorkspace = workspaceContext
         if currentWorkspace?.activeDestination == nil {
             currentWorkspace?.activeDestination = Self.defaultDestination()
         }
         activeDestination = currentWorkspace?.activeDestination
-        
-        // 自动选择最佳 scheme：优先选择与项目同名的 scheme（通常是主 target），
-        // 其次选择与 target 同名的 scheme，最后才 fallback 到第一个
+
+        // 自动选择最佳 scheme
         let bestScheme = Self.selectBestScheme(
             schemes: workspaceContext.schemes,
             projectName: workspaceContext.name,
@@ -133,44 +138,44 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
             await setActiveScheme(bestScheme)
         }
     }
-    
+
     /// 设置 active scheme
-    func setActiveScheme(_ scheme: XcodeSchemeContext) async {
+    public func setActiveScheme(_ scheme: XcodeSchemeContext) async {
         guard let workspace = currentWorkspace else { return }
         let resolvedScheme = Self.resolvedSchemeSelection(
             scheme,
             fallbackDestination: activeDestination ?? currentWorkspace?.activeDestination ?? Self.defaultDestination()
         )
-        
+
         Self.logger.info("\(Self.t)切换 Scheme: \(resolvedScheme.name, privacy: .public)")
-        
+
         activeScheme = resolvedScheme
         activeConfiguration = resolvedScheme.activeConfiguration
         activeDestination = resolvedScheme.activeDestination
         currentWorkspace?.activeScheme = resolvedScheme
         currentWorkspace?.activeDestination = resolvedScheme.activeDestination
-        
+
         // 清除旧缓存
         buildSettingsCache.removeAll()
-        
+
         // 重新生成 buildServer.json
         await generateBuildServerJSON(
             workspaceURL: workspace.path,
             scheme: resolvedScheme.name
         )
     }
-    
+
     /// 设置 active configuration
-    func setActiveConfiguration(_ configurationName: String) async {
+    public func setActiveConfiguration(_ configurationName: String) async {
         guard var scheme = activeScheme else { return }
         scheme = Self.resolvedSchemeConfiguration(scheme, configuration: configurationName)
         activeScheme = scheme
         activeConfiguration = configurationName
         currentWorkspace?.activeScheme = scheme
-        
+
         // 清除缓存
         buildSettingsCache.removeAll()
-        
+
         // 重新生成
         if let workspace = currentWorkspace {
             await generateBuildServerJSON(
@@ -179,63 +184,55 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
             )
         }
     }
-    
+
     // MARK: - buildServer.json 管理
-    
+
     /// 生成 buildServer.json
-    /// 返回 JSON 路径，如果失败返回 nil
-    func generateBuildServerJSON(workspaceURL: URL, scheme: String) async {
+    public func generateBuildServerJSON(workspaceURL: URL, scheme: String) async {
         guard let serverPath = xcodeBuildServerPath else {
-            buildContextStatus = .unavailable(String(localized: "xcode-build-server not installed, please run: brew install xcode-build-server", table: "EditorXcodePlugin"))
+            buildContextStatus = .unavailable("xcode-build-server not installed, please run: brew install xcode-build-server")
             return
         }
-        
+
         isGeneratingBuildServer = true
-        
+
         let isProject = workspaceURL.pathExtension == "xcodeproj"
         let workspaceArg = isProject ? "-project" : "-workspace"
-        
-        let args = [
-            serverPath, "config",
-            workspaceArg, workspaceURL.path,
-            "-scheme", scheme
-        ]
-        
-        Self.logger.info("\(Self.t)生成 buildServer.json: \(args.joined(separator: " "), privacy: .public)")
-        
-        // 关键：xcode-build-server config 会把 buildServer.json 生成到当前工作目录，
-        // 生成到该项目专属的插件存储目录（遵循插件数据存储规范）
-        let outputDirectory = XcodeBuildServerStore.ensureDirectory(forWorkspace: workspaceURL.path)
+
+        Self.logger.info("\(Self.t)生成 buildServer.json: \(serverPath) config \(workspaceArg) \(workspaceURL.path) -scheme \(scheme)")
+
+        // 生成到该项目专属的插件存储目录
+        let outputDirectory = store.ensureDirectory(forWorkspace: workspaceURL.path)
         let success = await runCommand(
             path: serverPath,
             args: ["config", workspaceArg, workspaceURL.path, "-scheme", scheme],
             workingDirectory: outputDirectory
         )
-        
+
         isGeneratingBuildServer = false
-        
+
         if success {
-            if let config = XcodeBuildServerStore.load(forWorkspace: workspaceURL.path) {
+            if let config = store.load(forWorkspace: workspaceURL.path) {
                 buildServerJSONPath = config.buildServerJSONPath
                 buildContextStatus = .available(XcodeBuildServerConfig(from: config))
                 Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)")
             }
         } else {
-            buildContextStatus = .unavailable(String(localized: "Failed to generate buildServer.json", table: "EditorXcodePlugin"))
+            buildContextStatus = .unavailable("Failed to generate buildServer.json")
         }
     }
-    
+
     // MARK: - 文件归属查询
-    
+
     /// 查询文件属于哪个 target
-    func findTargetForFile(fileURL: URL) -> XcodeTargetContext? {
+    public func findTargetForFile(fileURL: URL) -> XcodeTargetContext? {
         resolvePreferredTarget(for: fileURL)
     }
 
     /// 查询文件属于哪些 target
-    func findTargetsForFile(fileURL: URL) -> [XcodeTargetContext] {
+    public func findTargetsForFile(fileURL: URL) -> [XcodeTargetContext] {
         guard let workspace = currentWorkspace else { return [] }
-        
+
         let filePath = fileURL.path
         var matches: [XcodeTargetContext] = []
         for project in workspace.projects {
@@ -248,7 +245,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         return matches
     }
 
-    func resolvePreferredTarget(for fileURL: URL) -> XcodeTargetContext? {
+    public func resolvePreferredTarget(for fileURL: URL) -> XcodeTargetContext? {
         let matches = findTargetsForFile(fileURL: fileURL)
         guard !matches.isEmpty else { return nil }
         if matches.count == 1 {
@@ -257,20 +254,20 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         return preferredTargets(for: matches).first
     }
 
-    func targetsCompatibleWithActiveScheme(for fileURL: URL) -> [XcodeTargetContext] {
+    public func targetsCompatibleWithActiveScheme(for fileURL: URL) -> [XcodeTargetContext] {
         let matches = findTargetsForFile(fileURL: fileURL)
         guard let activeScheme else { return matches }
         return matches.filter { activeScheme.buildableTargets.contains($0.name) || $0.name == activeScheme.name }
     }
-    
+
     /// 获取文件的编译上下文（供 LSP 使用）
-    func buildContextForFile(fileURL: URL) async -> XcodeFileBuildContext? {
+    public func buildContextForFile(fileURL: URL) async -> XcodeFileBuildContext? {
         guard let workspace = currentWorkspace,
               let scheme = activeScheme else { return nil }
         let configuration = activeConfiguration ?? scheme.activeConfiguration
         let matchedTargets = preferredTargets(for: findTargetsForFile(fileURL: fileURL)).map(\.name)
         let destination = activeDestination?.destinationQuery ?? scheme.activeDestination?.destinationQuery
-        
+
         // 先从缓存查找
         let cacheKey = Self.buildSettingsCacheKey(
             workspaceID: workspace.id,
@@ -288,7 +285,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
                 workspacePath: workspace.rootURL.path
             )
         }
-        
+
         // 实时获取
         let workspaceURL = workspace.path.pathExtension == "xcworkspace" ? workspace.path : nil
         let projectURL = workspace.path.pathExtension == "xcodeproj" ? workspace.path : workspace.projects.first?.path
@@ -299,13 +296,13 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
             configuration: configuration,
             destination: destination
         )
-        
+
         guard let settings = settings, !settings.isEmpty else { return nil }
-        
+
         buildSettingsCache[cacheKey] = settings
         let selectedSettings = selectBuildSettings(from: settings, preferredTargetNames: matchedTargets) ?? settings.first!
         updateActiveDestination(using: selectedSettings)
-        
+
         return XcodeFileBuildContext(
             fileURL: fileURL,
             settings: selectedSettings,
@@ -313,46 +310,41 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
             workspacePath: workspace.rootURL.path
         )
     }
-    
+
     // MARK: - Context Invalidation
-    
+
     /// 使所有缓存失效
-    func invalidateAllContexts() {
+    public func invalidateAllContexts() {
         buildSettingsCache.removeAll()
         buildContextStatus = .needsResync
         Self.logger.info("\(Self.t)所有 build context 已失效")
     }
-    
+
     /// 使特定 scheme 的缓存失效
-    func invalidateContext(for schemeName: String) {
+    public func invalidateContext(for schemeName: String) {
         buildSettingsCache = Self.invalidatedBuildSettingsCache(
             buildSettingsCache,
             removingScheme: schemeName
         )
         Self.logger.info("\(Self.t)Scheme '\(schemeName, privacy: .public)' 的 build context 已失效")
     }
-    
+
     // MARK: - Scheme 智能选择
-    
+
     /// 选择最佳 scheme
-    /// 优先级：
-    /// 1. 与项目名同名的 scheme（如 Lumi 项目选 Lumi scheme）
-    /// 2. 与某个 target 同名的 scheme
-    /// 3. 排除已知依赖包 scheme 后的第一个
-    /// 4. 第一个 scheme（兜底）
-    static func selectBestScheme(
+    public static func selectBestScheme(
         schemes: [XcodeSchemeContext],
         projectName: String,
         targets: [String]
     ) -> XcodeSchemeContext? {
         guard !schemes.isEmpty else { return nil }
-        
+
         // 1. 优先：与项目同名的 scheme
         if let match = schemes.first(where: { $0.name == projectName }) {
             logger.info("\(Self.t)自动选择 Scheme（与项目同名）: \(match.name, privacy: .public)")
             return match
         }
-        
+
         // 2. 其次：与某个 target 同名的 scheme（排除 Package scheme）
         let nonPackageTargets = targets.filter { !$0.hasSuffix("-Package") }
         for target in nonPackageTargets {
@@ -361,7 +353,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
                 return match
             }
         }
-        
+
         // 3. 排除已知的依赖包 scheme
         let dependencySuffixes = ["-Package", "-Testing", "Testing"]
         let dependencyPrefixes = ["SwiftTreeSitter", "Semaphore"]
@@ -370,23 +362,23 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
             dependencyPrefixes.contains(where: { name.hasPrefix($0) }) ||
             name == "CodeEditLanguages" || name == "TextStory"
         }
-        
+
         if let match = schemes.first(where: { !isKnownDependency($0.name) }) {
             logger.info("\(Self.t)自动选择 Scheme（排除依赖包后）: \(match.name, privacy: .public)")
             return match
         }
-        
+
         // 4. 兜底
         let fallback = schemes[0]
         logger.info("\(Self.t)自动选择 Scheme（兜底）: \(fallback.name, privacy: .public)")
         return fallback
     }
 
-    static func defaultDestination() -> XcodeDestinationContext {
+    public static func defaultDestination() -> XcodeDestinationContext {
         XcodeDestinationContext.macOSDefault()
     }
 
-    static func resolvedSchemeSelection(
+    public static func resolvedSchemeSelection(
         _ scheme: XcodeSchemeContext,
         fallbackDestination: XcodeDestinationContext
     ) -> XcodeSchemeContext {
@@ -400,7 +392,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         return resolvedScheme
     }
 
-    static func resolvedSchemeConfiguration(
+    public static func resolvedSchemeConfiguration(
         _ scheme: XcodeSchemeContext,
         configuration: String
     ) -> XcodeSchemeContext {
@@ -409,7 +401,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         return resolved
     }
 
-    static func buildSettingsCacheKey(
+    public static func buildSettingsCacheKey(
         workspaceID: String,
         scheme: String,
         configuration: String,
@@ -418,13 +410,13 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         "\(workspaceID)|\(scheme)|\(configuration)|\(destination ?? "default")"
     }
 
-    static func cacheKey(_ key: String, matchesScheme scheme: String) -> Bool {
+    public static func cacheKey(_ key: String, matchesScheme scheme: String) -> Bool {
         let components = key.split(separator: "|", omittingEmptySubsequences: false)
         guard components.count >= 4 else { return false }
         return String(components[1]) == scheme
     }
 
-    static func invalidatedBuildSettingsCache(
+    public static func invalidatedBuildSettingsCache(
         _ cache: [String: [[String: String]]],
         removingScheme scheme: String
     ) -> [String: [[String: String]]] {
@@ -432,16 +424,16 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
             !cacheKey(key, matchesScheme: scheme)
         }
     }
-    
+
     // MARK: - 工具方法
-    
+
     /// 查找 xcode-build-server 路径
     private func locateXcodeBuildServer() {
         let paths = [
             "/opt/homebrew/bin/xcode-build-server",
             "/usr/local/bin/xcode-build-server",
         ]
-        
+
         for path in paths {
             if FileManager.default.fileExists(atPath: path) {
                 xcodeBuildServerPath = path
@@ -449,19 +441,15 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
                 return
             }
         }
-        
+
         // 尝试 PATH
         if let path = try? runShellCommand("which", args: ["xcode-build-server"])?.trimmingCharacters(in: .whitespacesAndNewlines),
            !path.isEmpty {
             xcodeBuildServerPath = path
         }
     }
-    
+
     /// 执行命令
-    /// - Parameters:
-    ///   - path: 可执行文件路径
-    ///   - args: 命令参数
-    ///   - workingDirectory: 工作目录，xcode-build-server config 会将 buildServer.json 生成到此目录
     private func runCommand(path: String, args: [String], workingDirectory: URL? = nil) async -> Bool {
         await withCheckedContinuation { continuation in
             let process = Process()
@@ -472,11 +460,11 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
             if let workingDirectory {
                 process.currentDirectoryURL = workingDirectory
             }
-            
+
             process.terminationHandler = { _ in
                 continuation.resume(returning: process.terminationStatus == 0)
             }
-            
+
             do {
                 try process.run()
             } catch {
@@ -485,7 +473,7 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
             }
         }
     }
-    
+
     private func runShellCommand(_ path: String, args: [String]) throws -> String? {
         let process = Process()
         process.executableURL = URL(filePath: path)
@@ -635,47 +623,4 @@ final class XcodeBuildContextProvider: SuperLog, ObservableObject {
         }
         return 200
     }
-}
-
-// MARK: - Xcode File Build Context
-
-/// 单个文件的编译上下文
-struct XcodeFileBuildContext: Sendable {
-    let fileURL: URL
-    let settings: [String: String]
-    let scheme: String
-    let workspacePath: String
-    
-    /// 提取 SDK 路径
-    var sdkPath: String? { settings["SDKROOT"] }
-    
-    /// 提取 toolchain 路径
-    var toolchainPath: String? { settings["TOOLCHAIN_DIR"] }
-    
-    /// 提取 target triple
-    var targetTriple: String? { settings["LLVM_TARGET_TRIPLE_SUFFIX"] }
-    
-    /// 提取 header search paths
-    var headerSearchPaths: [String] {
-        (settings["HEADER_SEARCH_PATHS"] ?? "")
-            .split(separator: " ")
-            .map(String.init)
-    }
-    
-    /// 提取 framework search paths
-    var frameworkSearchPaths: [String] {
-        (settings["FRAMEWORK_SEARCH_PATHS"] ?? "")
-            .split(separator: " ")
-            .map(String.init)
-    }
-    
-    /// 提取 active compilation conditions
-    var activeCompilationConditions: [String] {
-        (settings["ACTIVE_COMPILATION_CONDITIONS"] ?? "")
-            .split(separator: " ")
-            .map(String.init)
-    }
-    
-    /// 提取 module name
-    var moduleName: String? { settings["PRODUCT_MODULE_NAME"] }
 }

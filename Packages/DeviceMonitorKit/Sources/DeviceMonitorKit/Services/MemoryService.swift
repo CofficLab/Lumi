@@ -1,12 +1,14 @@
 import Combine
 import Foundation
+import MagicKit
 import os
 
 /// Memory monitoring service providing real-time memory usage data.
 @MainActor
-public final class MemoryService: ObservableObject {
+public final class MemoryService: ObservableObject, SuperLog {
     public static let shared = MemoryService()
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.devicemonitorkit", category: "memory")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.memory")
+    nonisolated public static let emoji = "💾"
 
     // MARK: - Published Properties
 
@@ -36,7 +38,7 @@ public final class MemoryService: ObservableObject {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.debug("Starting Memory monitoring")
+            Self.logger.info("\(self.t)开始 Memory 监控")
 
             updateMemoryUsage()
 
@@ -51,7 +53,7 @@ public final class MemoryService: ObservableObject {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.debug("Stopping Memory monitoring")
+            Self.logger.info("\(self.t)停止 Memory 监控")
 
             monitoringTimer?.invalidate()
             monitoringTimer = nil

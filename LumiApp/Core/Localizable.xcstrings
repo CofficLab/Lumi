@@ -163,6 +163,9 @@
         }
       }
     },
+    "\"\\(fileName)\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable." : {
+
+    },
     "(%@)" : {
 
     },

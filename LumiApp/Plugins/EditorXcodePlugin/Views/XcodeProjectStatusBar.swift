@@ -1,4 +1,5 @@
 import SwiftUI
+import XcodeKit
 
 /// Xcode 项目状态栏视图
 struct XcodeProjectStatusBar: View {
@@ -230,10 +231,6 @@ struct XcodeProjectStatusDetailView: View {
     }
 }
 
-// MARK: - 文件归属提示视图
-
-/// 文件未绑定到任何 Target 的提示
-/// 对应 Phase 8: "当前文件未绑定有效 target" 提示
 struct XcodeFileNotInTargetWarning: View {
     let fileName: String
     let onDismiss: () -> Void
@@ -247,8 +244,7 @@ struct XcodeFileNotInTargetWarning: View {
                     .font(.headline)
             }
 
-            let format = String(localized: "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.", table: "EditorXcodePlugin")
-            Text(String(format: format, fileName))
+            Text("\"\\(fileName)\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 

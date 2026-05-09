@@ -1,12 +1,14 @@
 import Foundation
 import Combine
+import MagicKit
 import os
 
 /// CPU history service with high-resolution (1s) and long-term (1m) storage.
 @MainActor
-public final class CPUHistoryService: ObservableObject {
+public final class CPUHistoryService: ObservableObject, SuperLog {
     public static let shared = CPUHistoryService()
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.devicemonitorkit", category: "cpu-history")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.cpu-history")
+    nonisolated public static let emoji = "📈"
 
     /// High resolution buffer (1s interval) - Keep last 1 hour
     @Published public var recentHistory: [CPUDataPoint] = []

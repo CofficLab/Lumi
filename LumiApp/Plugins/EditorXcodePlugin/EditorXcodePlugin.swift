@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import XcodeKit
 
 /// Xcode 项目编辑器插件：提供 Xcode 项目标识、构建上下文和 sourcekit-lsp 集成
 actor EditorXcodePlugin: SuperPlugin {
@@ -15,12 +16,9 @@ actor EditorXcodePlugin: SuperPlugin {
     nonisolated var providesEditorExtensions: Bool { true }
 
     /// Build Context Provider 实例
-    ///
-    /// 使用 lazy var 而非 let 初始化，因为 Actor 通过 ObjC Runtime 的 alloc/init 创建时，
-    /// init() 不在 @MainActor 上运行，会导致 @MainActor 的 ObservableObject 在错误线程初始化，
-    /// 后续在主线程访问 @Published 属性时触发 EXC_BAD_ACCESS。
-    /// lazy var 确保在首次 @MainActor 上下文访问时才初始化。
-    @MainActor lazy var buildContextProvider = XcodeBuildContextProvider()
+    @MainActor lazy var buildContextProvider = XcodeBuildContextProvider(
+        store: XcodeBuildServerStore(storageRootURL: AppConfig.getDBFolderURL())
+    )
     @MainActor private lazy var projectContextCapability = XcodeProjectContextCapabilityAdapter()
     @MainActor private lazy var semanticCapability = XcodeSemanticCapabilityAdapter()
     @MainActor private lazy var languageIntegrationCapability = XcodeLanguageIntegrationCapabilityAdapter()
@@ -50,10 +48,7 @@ actor EditorXcodePlugin: SuperPlugin {
     }
 
     /// 添加根视图包裹器
-    ///
-    /// 在应用启动时预加载最近 Xcode 项目的 buildServer.json，
-    /// 减少首次打开项目时的等待时间。
-    @MainActor func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+    @MainActor func addRootView<Content: View>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
         return AnyView(EditorXcodePluginRootView(content: content()))
     }
 }

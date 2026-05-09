@@ -1583,7 +1583,7 @@ public final class EditorState: ObservableObject, SuperLog {
             return contributor.createTheme()
         }
         // Fallback：插件系统未加载时使用默认 Xcode Dark 主题
-        logger.warning("\(Self.t)resolveTheme: 找不到主题 contributor for '\(id, privacy: .public)'，使用 fallback")
+        logger.warning("\(Self.t)resolveTheme: 找不到主题 contributor for '\(id)'，使用 fallback")
         return EditorThemeAdapter.fallbackTheme()
     }
 
@@ -1595,7 +1595,7 @@ public final class EditorState: ObservableObject, SuperLog {
                 EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)
             }
             guard self.currentThemeId != themeId else { return }
-            self.logger.info("\(Self.t)observeThemeChanges: \(self.currentThemeId, privacy: .public) → \(themeId, privacy: .public)")
+            self.logger.info("\(Self.t)observeThemeChanges: \(self.currentThemeId) → \(themeId)")
             self.currentThemeId = themeId
             self.currentTheme = self.resolveTheme(for: themeId)
         }
@@ -1610,11 +1610,11 @@ public final class EditorState: ObservableObject, SuperLog {
         let before = self.currentThemeId
         guard before != editorThemeId else {
             if Self.verbose {
-                self.logger.debug("\(Self.t)syncInitialThemeFromExternal: 主题一致，跳过（\(before, privacy: .public)）")
+                self.logger.debug("\(Self.t)syncInitialThemeFromExternal: 主题一致，跳过（\(before)）")
             }
             return
         }
-        self.logger.info("\(Self.t)syncInitialThemeFromExternal: \(before, privacy: .public) → \(editorThemeId, privacy: .public)")
+        self.logger.info("\(Self.t)syncInitialThemeFromExternal: \(before) → \(editorThemeId)")
         EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)
         self.currentThemeId = editorThemeId
         self.currentTheme = self.resolveTheme(for: editorThemeId)
@@ -1631,7 +1631,7 @@ public final class EditorState: ObservableObject, SuperLog {
         guard let url = url else {
             isFileLoadInProgress = false
             fileLoadErrorMessage = nil
-            logger.info("📝[loadFile] url 为 nil → resetState")
+            logger.info("\(self.t)loadFile: url 为 nil → resetState")
             resetState()
             return
         }
@@ -1640,7 +1640,7 @@ public final class EditorState: ObservableObject, SuperLog {
         if isDirectory {
             isFileLoadInProgress = false
             fileLoadErrorMessage = nil
-            logger.info("📝[loadFile] url 是目录 → resetState, url=\(url.path, privacy: .public)")
+            logger.info("\(self.t)loadFile: url 是目录 → resetState, url=\(url.path)")
             resetState()
             return
         }
@@ -1648,7 +1648,7 @@ public final class EditorState: ObservableObject, SuperLog {
         let loadingURL = url
         isFileLoadInProgress = true
         fileLoadErrorMessage = nil
-        logger.info("📝[loadFile] 开始加载 url=\(loadingURL.path, privacy: .public), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
+        logger.info("\(self.t)loadFile: 开始加载 url=\(loadingURL.path), forceFullLoad=\(self.fullLoadOverrides.contains(loadingURL.standardizedFileURL))")
         
         Task {
             do {
@@ -1664,13 +1664,13 @@ public final class EditorState: ObservableObject, SuperLog {
                     let isReloadingCurrentFile = self.currentFileURL?.standardizedFileURL == standardizedLoadingURL
                     let shouldReplaceCurrentBuffer = !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
                     guard shouldReplaceCurrentBuffer else {
-                        self.logger.info("📝[loadFile] shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path, privacy: .public)")
+                        self.logger.info("\(self.t)loadFile: shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path)")
                         self.isFileLoadInProgress = false
                         return
                     }
                     switch loadedDocument {
                     case .binary:
-                        self.logger.info("📝[loadFile] → 加载二进制文件, url=\(loadingURL.path, privacy: .public)")
+                        self.logger.info("\(self.t)loadFile: → 加载二进制文件, url=\(loadingURL.path)")
                         self.loadBinaryFile(from: loadingURL, loadedDocument: loadedDocument)
                         self.isFileLoadInProgress = false
                         self.fileLoadErrorMessage = nil
@@ -1732,7 +1732,7 @@ public final class EditorState: ObservableObject, SuperLog {
                             let rootPath = self.projectRootPath ?? loadingURL.deletingLastPathComponent().path
                             if Self.verbose {
                                 self.logger.info(
-                                    "\(Self.t)LSP openFile 准备: file=\(loadingURL.path, privacy: .public), languageId=\(languageId, privacy: .public), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), chosenRoot=\(rootPath, privacy: .public)"
+                                    "\(Self.t)LSP openFile 准备: file=\(loadingURL.path), languageId=\(languageId), projectRoot=\(self.projectRootPath ?? "<nil>"), chosenRoot=\(rootPath)"
                                 )
                             }
                             self.lspClient.setProjectRootPath(rootPath)
@@ -1749,7 +1749,7 @@ public final class EditorState: ObservableObject, SuperLog {
                     }
                 }
             } catch {
-                self.logger.error("📝[loadFile] 加载失败 error=\(error.localizedDescription, privacy: .public), url=\(loadingURL.path, privacy: .public)")
+                self.logger.error("\(self.t)loadFile: 加载失败 error=\(error.localizedDescription), url=\(loadingURL.path)")
                 await MainActor.run { [weak self] in
                     self?.isFileLoadInProgress = false
                     self?.fileLoadErrorMessage = error.localizedDescription
@@ -2518,7 +2518,7 @@ public final class EditorState: ObservableObject, SuperLog {
             selections: multiCursorState.all,
             note: note
         )
-        logger.info("\(self.t)多光标状态 | \(message, privacy: .public)")
+        logger.info("\(self.t)多光标状态 | \(message)")
     }
 
     public func logMultiCursorInput(action: String, textViewSelections: [NSRange], note: String? = nil) {
@@ -2528,7 +2528,7 @@ public final class EditorState: ObservableObject, SuperLog {
             textViewSelections: textViewSelections,
             note: note
         )
-        logger.info("\(self.t)多光标输入 | \(details, privacy: .public)")
+        logger.info("\(self.t)多光标输入 | \(details)")
         logMultiCursorState(action: "input-state-sync", note: action)
     }
 

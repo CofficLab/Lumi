@@ -1,4 +1,5 @@
 import Foundation
+import XcodeKit
 
 @MainActor
 final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapability {
@@ -76,25 +77,24 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
     }
 
     private func status(from description: String) -> EditorProjectContextStatus {
-        if description.contains(String(localized: "Needs resync", table: "EditorXcodePlugin")) {
+        if description.contains("Needs resync") {
             return .needsResync
         }
-        if description.contains(String(localized: "Resolving build context...", table: "EditorXcodePlugin")) {
+        if description.contains("Resolving build context...") {
             return .resolving
         }
-        if description.contains(": ") && !description.contains(String(localized: "Available", table: "EditorXcodePlugin")) {
-            // Unavailable: <reason> format
-            let prefix = String(localized: "Unavailable", table: "EditorXcodePlugin") + ": "
+        if description.contains(": ") && !description.contains("Available") {
+            let prefix = "Unavailable" + ": "
             if description.hasPrefix(prefix) {
                 return .unavailable(String(description.dropFirst(prefix.count)))
             }
             return .unavailable(description)
         }
-        if description.contains(String(localized: "Available", table: "EditorXcodePlugin")) {
+        if description.contains("Available") {
             return .available(description)
         }
-        if description == String(localized: "Not Initialized", table: "EditorXcodePlugin")
-            || description == String(localized: "Unknown", table: "EditorXcodePlugin") {
+        if description == "Not Initialized"
+            || description == "Unknown" {
             return .unknown
         }
         return .available(description)
@@ -150,7 +150,7 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability {
     }
 
     func inspectCurrentFileContext(uri: String?) -> EditorSemanticAvailabilityReport {
-        let report = XcodeSemanticAvailability.inspectCurrentFileContext(uri: uri)
+        let report = XcodeSemanticAvailability.inspectCurrentFileContext(uri: uri, contextProvider: XcodeProjectContextBridge.shared)
         return EditorSemanticAvailabilityReport(
             reasons: report.reasons.map { reason in
                 EditorSemanticAvailabilityReason(
@@ -173,7 +173,8 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability {
             uri: uri,
             operation: operation,
             symbolName: symbolName,
-            strength: strength == .hard ? .hard : .soft
+            strength: strength == .hard ? .hard : .soft,
+            contextProvider: XcodeProjectContextBridge.shared
         )
     }
 
@@ -187,7 +188,8 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability {
             uri: uri,
             operation: operation,
             symbolName: symbolName,
-            strength: strength == .hard ? .hard : .soft
+            strength: strength == .hard ? .hard : .soft,
+            contextProvider: XcodeProjectContextBridge.shared
         ) else {
             return nil
         }
@@ -208,7 +210,8 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability {
         XcodeSemanticAvailability.missingResultMessage(
             uri: uri,
             operation: operation,
-            symbolName: symbolName
+            symbolName: symbolName,
+            contextProvider: XcodeProjectContextBridge.shared
         )
     }
 

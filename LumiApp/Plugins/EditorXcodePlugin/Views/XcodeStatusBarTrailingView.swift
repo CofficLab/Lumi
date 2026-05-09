@@ -1,11 +1,7 @@
 import SwiftUI
+import XcodeKit
 
 /// Xcode 项目状态栏尾部视图
-///
-/// 在编辑器底部状态栏右侧显示 Xcode 构建上下文的简要状态：
-/// - 正常状态：显示状态色圆点 + 简短状态文本
-/// - 加载中：显示旋转指示器 + "Resolving..." 文本
-/// 点击后在 popover 中显示完整的 Xcode Context 详情。
 struct XcodeStatusBarTrailingView: View {
     @StateObject private var viewModel = XcodeProjectStatusBarViewModel()
 
@@ -43,13 +39,11 @@ struct XcodeStatusBarTrailingView: View {
 
 // MARK: - Detail View
 
-/// Xcode 状态栏详情视图（在 popover 中显示）
 struct XcodeStatusBarDetailView: View {
     @ObservedObject var viewModel: XcodeProjectStatusBarViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // 标题栏
             HStack {
                 Image(systemName: "hammer.fill")
                     .font(.system(size: 14))
@@ -62,7 +56,6 @@ struct XcodeStatusBarDetailView: View {
 
             Divider()
 
-            // 基本信息
             if let snapshot = viewModel.latestEditorSnapshot {
                 infoSection(snapshot: snapshot)
             } else {
@@ -73,7 +66,6 @@ struct XcodeStatusBarDetailView: View {
 
             Divider()
 
-            // 操作按钮
             HStack {
                 Spacer()
                 Button {
@@ -99,8 +91,6 @@ struct XcodeStatusBarDetailView: View {
             }
         }
     }
-
-    // MARK: - Subviews
 
     private var buildStatusBadge: some View {
         HStack(spacing: 4) {
@@ -145,7 +135,6 @@ struct XcodeStatusBarDetailView: View {
             )
         }
 
-        // 语义可用性报告
         if !viewModel.semanticReport.reasons.isEmpty {
             Divider()
             VStack(alignment: .leading, spacing: 8) {
@@ -194,8 +183,6 @@ struct XcodeStatusBarDetailView: View {
         }
     }
 }
-
-// MARK: - Preview
 
 #Preview("Xcode Status Bar Trailing") {
     HStack {

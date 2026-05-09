@@ -1,4 +1,5 @@
 import Foundation
+import XcodeKit
 
 @MainActor
 final class XcodePlistCompletionContributor: SuperEditorCompletionContributor {
@@ -13,6 +14,13 @@ final class XcodePlistCompletionContributor: SuperEditorCompletionContributor {
             character: context.character,
             content: runtimeContext.currentContent,
             fileURL: fileURL
-        )
+        ).map { suggestion in
+            EditorCompletionSuggestion(
+                label: suggestion.label,
+                insertText: suggestion.insertText,
+                detail: suggestion.detail,
+                priority: suggestion.priority
+            )
+        }
     }
 }

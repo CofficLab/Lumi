@@ -1,4 +1,5 @@
 import Foundation
+import XcodeKit
 
 @MainActor
 final class XcodePlistHoverContributor: SuperEditorHoverContributor {

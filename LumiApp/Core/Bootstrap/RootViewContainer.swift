@@ -13,7 +13,10 @@ import os
 /// - 插件内部服务由插件自己管理
 /// - 内核不知道具体插件的内部实现
 @MainActor
-final class RootViewContainer: ObservableObject {
+final class RootViewContainer: ObservableObject, SuperLog {
+    nonisolated static let emoji = "🔌"
+    nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "root")
+
     /// 共享实例
     static let shared = RootViewContainer()
 
@@ -239,7 +242,7 @@ final class RootViewContainer: ObservableObject {
         }
         editorExtensionRegistry.recordInstalledPlugins(pluginRecords)
         
-        os.Logger(subsystem: "com.coffic.lumi", category: "root").info("🔌 RootViewContainer: 插件自注册完成，installedPlugins=\(editorExtensionRegistry.installedPlugins.count)")
+        Self.logger.info("\(Self.t)插件自注册完成，installedPlugins=\(editorExtensionRegistry.installedPlugins.count)")
 
         EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
             for contribution in PluginVM.shared.getThemeContributions() {

@@ -3,23 +3,32 @@ import PathKit
 import XcodeProj
 
 /// 基于 XcodeProj 的 pbxproj membership 解析适配层。
-enum XcodePBXProjParser {
+public enum XcodePBXProjParser {
 
-    struct MembershipGraph {
-        let targetRoots: [String: [TargetRoot]]
+    public struct MembershipGraph {
+        public let targetRoots: [String: [TargetRoot]]
+
+        public init(targetRoots: [String: [TargetRoot]]) {
+            self.targetRoots = targetRoots
+        }
     }
 
-    struct TargetRoot {
-        let rootPath: String
-        let excludedRelativePaths: Set<String>
+    public struct TargetRoot {
+        public let rootPath: String
+        public let excludedRelativePaths: Set<String>
+
+        public init(rootPath: String, excludedRelativePaths: Set<String>) {
+            self.rootPath = rootPath
+            self.excludedRelativePaths = excludedRelativePaths
+        }
     }
 
-    static func parseMembershipGraph(projectURL: URL) throws -> MembershipGraph {
+    public static func parseMembershipGraph(projectURL: URL) throws -> MembershipGraph {
         let xcodeProj = try XcodeProj(pathString: projectURL.path)
         return try parseMembershipGraph(xcodeProj: xcodeProj, projectURL: projectURL)
     }
 
-    static func parseMembershipGraph(contents: String) throws -> MembershipGraph {
+    public static func parseMembershipGraph(contents: String) throws -> MembershipGraph {
         guard !contents.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return MembershipGraph(targetRoots: [:])
         }

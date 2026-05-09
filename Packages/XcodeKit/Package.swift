@@ -2,31 +2,31 @@
 import PackageDescription
 
 let package = Package(
-    name: "DeviceMonitorKit",
+    name: "XcodeKit",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
     ],
     products: [
         .library(
-            name: "DeviceMonitorKit",
-            targets: ["DeviceMonitorKit"]
-        )
+            name: "XcodeKit",
+            targets: ["XcodeKit"]
+        ),
     ],
     dependencies: [
+        .package(url: "https://github.com/tuist/XcodeProj", from: "9.11.0"),
         .package(url: "https://github.com/CofficLab/MagicKit", from: "1.5.23"),
     ],
     targets: [
         .target(
-            name: "DeviceMonitorKit",
+            name: "XcodeKit",
             dependencies: [
+                .product(name: "XcodeProj", package: "XcodeProj"),
                 .product(name: "MagicKit", package: "MagicKit"),
-            ],
-            path: "Sources/DeviceMonitorKit"
+            ]
         ),
         .testTarget(
-            name: "DeviceMonitorKitTests",
-            dependencies: ["DeviceMonitorKit"],
-            path: "Tests/DeviceMonitorKitTests"
-        )
+            name: "XcodeKitTests",
+            dependencies: ["XcodeKit"]
+        ),
     ]
 )

@@ -5,50 +5,60 @@ import MagicKit
 
 /// Xcode Project Context Bridge
 /// 职责：在 XcodeProjectEditorPlugin 和 LSPService 之间建立连接
+///
+/// 同时实现 `XcodeContextProviding` 协议，供 `XcodeSemanticAvailability` 等核心逻辑使用。
 @MainActor
-final class XcodeProjectContextBridge: SuperLog {
-    
-    nonisolated static let emoji = "🔗"
-    nonisolated static let verbose = true
-    static let shared = XcodeProjectContextBridge()
-    
+final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
+
+    nonisolated public static let emoji = "🔗"
+    nonisolated public static let verbose = true
+    public static let shared = XcodeProjectContextBridge()
+
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.bridge")
-    
+
     /// build context provider 引用
     private var _buildContextProvider: Any?
     private var cancellables = Set<AnyCancellable>()
-    
+
     /// 项目根路径
     private var currentProjectPath: String?
-    
+
     /// 是否已初始化
-    var isInitialized: Bool = false
-    
+    public var isInitialized: Bool = false
+
     /// 当前项目是否为 Xcode 项目
-    var isXcodeProject: Bool = false
-    
+    public var isXcodeProject: Bool = false
+
     /// 缓存的状态快照（供非主线程安全访问）
-    private(set) var cachedState: BridgeCachedState?
-    private(set) var latestEditorSnapshot: XcodeEditorContextSnapshot?
-    
+    public private(set) var cachedState: BridgeCachedState?
+    public private(set) var latestEditorSnapshot: XcodeEditorContextSnapshot?
+
     /// buildServer.json 路径
-    var buildServerJSONPath: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.buildServerJSONPath } }
-    
+    public var buildServerJSONPath: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.buildServerJSONPath } }
+
     /// active scheme
-    var activeScheme: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.activeScheme?.name } }
-    
+    public var activeScheme: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.activeScheme?.name } }
+
     /// active configuration
-    var activeConfiguration: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.activeConfiguration } }
-    
+    public var activeConfiguration: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.activeConfiguration } }
+
     /// active destination
-    var activeDestination: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.activeDestination?.name } }
-    var activeDestinationQuery: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.activeDestination?.destinationQuery } }
-    
+    public var activeDestination: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.activeDestination?.name } }
+    public var activeDestinationQuery: String? { _buildContextProvider.flatMap { ($0 as? XcodeBuildContextProvider)?.activeDestination?.destinationQuery } }
+
     private init() {}
-    
+
+    // MARK: - XcodeContextProviding
+
+    public var buildContextProvider: XcodeBuildContextProvider? {
+        _buildContextProvider as? XcodeBuildContextProvider
+    }
+
+    public var cachedActiveScheme: String? { cachedState?.activeScheme }
+
     // MARK: - 注册 Build Context Provider
-    
-    func registerBuildContextProvider(_ provider: XcodeBuildContextProvider) {
+
+    public func registerBuildContextProvider(_ provider: XcodeBuildContextProvider) {
         _buildContextProvider = provider
         cancellables.removeAll()
         provider.$currentWorkspace
@@ -84,14 +94,10 @@ final class XcodeProjectContextBridge: SuperLog {
         Self.logger.info("\(Self.t)BuildContextProvider 已注册")
         updateCache()
     }
-    
-    var buildContextProvider: XcodeBuildContextProvider? {
-        _buildContextProvider as? XcodeBuildContextProvider
-    }
-    
+
     // MARK: - 项目打开
-    
-    func projectOpened(at path: String) async {
+
+    public func projectOpened(at path: String) async {
         if currentProjectPath == path, isInitialized {
             updateCache()
             return
@@ -100,32 +106,32 @@ final class XcodeProjectContextBridge: SuperLog {
         let projectURL = URL(filePath: path)
         let isXcodeProject = XcodeProjectResolver.isXcodeProjectRoot(projectURL)
         self.isXcodeProject = isXcodeProject
-        
+
         Self.logger.info("\(Self.t)项目已打开: \(path, privacy: .public), 是 Xcode 项目: \(isXcodeProject)")
-        
+
         if isXcodeProject {
             await initializeXcodeBuildContext(at: path)
         }
-        
+
         isInitialized = true
         updateCache()
     }
-    
-    func projectClosed() {
+
+    public func projectClosed() {
         currentProjectPath = nil
         isXcodeProject = false
         isInitialized = false
-        
+
         if let provider = _buildContextProvider as? XcodeBuildContextProvider {
             provider.invalidateAllContexts()
         }
-        
+
         cachedState = nil
         latestEditorSnapshot = nil
         Self.logger.info("\(Self.t)项目已关闭，build context 已失效")
     }
 
-    func resyncBuildContext() async {
+    public func resyncBuildContext() async {
         guard let currentProjectPath, isXcodeProject else { return }
         guard let provider = _buildContextProvider as? XcodeBuildContextProvider else { return }
 
@@ -135,9 +141,9 @@ final class XcodeProjectContextBridge: SuperLog {
         isInitialized = true
         updateCache()
     }
-    
+
     // MARK: - Cache
-    
+
     @MainActor
     private func updateCache() {
         let schemes = buildContextProvider?.currentWorkspace?.schemes.map(\.name) ?? []
@@ -148,7 +154,7 @@ final class XcodeProjectContextBridge: SuperLog {
             activeScheme: activeScheme,
             activeConfiguration: activeConfiguration,
             activeDestination: activeDestination,
-            buildContextStatus: buildContextProvider?.buildContextStatus.displayDescription ?? String(localized: "Not Initialized", table: "EditorXcodePlugin"),
+            buildContextStatus: buildContextProvider?.buildContextStatus.displayDescription ?? "Not Initialized",
             isXcodeProject: isXcodeProject,
             isInitialized: isInitialized,
             workspaceName: buildContextProvider?.currentWorkspace?.name,
@@ -159,18 +165,17 @@ final class XcodeProjectContextBridge: SuperLog {
         )
         cachedState = state
         NotificationCenter.default.post(name: .lumiEditorProjectContextDidChange, object: nil)
-        // Xcode 专用的项目上下文变更通知（兼容旧监听者）
         NotificationCenter.default.post(name: .lumiEditorProjectSnapshotDidChange, object: nil)
     }
-    
+
     // MARK: - Build Context 初始化
-    
+
     private func initializeXcodeBuildContext(at path: String) async {
         guard let provider = _buildContextProvider as? XcodeBuildContextProvider else {
             Self.logger.warning("\(Self.t)BuildContextProvider 未注册，跳过初始化")
             return
         }
-        
+
         let projectURL = URL(filePath: path)
         if isBuildServerValid(at: path) {
             if let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL) {
@@ -181,20 +186,21 @@ final class XcodeProjectContextBridge: SuperLog {
         }
         await provider.openProject(at: projectURL)
     }
-    
+
     private func isBuildServerValid(at path: String) -> Bool {
         let projectURL = URL(filePath: path)
-        guard let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL) else { return false }
-        return XcodeBuildServerStore.validate(forWorkspace: workspaceURL.path) != nil
+        guard let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL),
+              let provider = _buildContextProvider as? XcodeBuildContextProvider else { return false }
+        return provider.store.validate(forWorkspace: workspaceURL.path) != nil
     }
-    
+
     // MARK: - LSP 参数生成
-    
+
     /// 为 sourcekit-lsp 生成 workspaceFolders 参数
-    func makeWorkspaceFolders() -> [[String: String]]? {
+    public func makeWorkspaceFolders() -> [[String: String]]? {
         cachedState?.workspaceFolders
     }
-    
+
     private func makeWorkspaceFoldersInternal() -> [[String: String]]? {
         guard isXcodeProject, let projectPath = currentProjectPath else { return nil }
         let projectURL = URL(filePath: projectPath)
@@ -202,13 +208,12 @@ final class XcodeProjectContextBridge: SuperLog {
         let rootURL = workspaceURL.deletingLastPathComponent()
         return [["uri": "file://" + rootURL.path, "name": workspaceURL.deletingPathExtension().lastPathComponent]]
     }
-    
-    func getBuildServerPath() -> String? { cachedState?.buildServerPath }
-    var cachedActiveScheme: String? { cachedState?.activeScheme }
-    var buildContextStatusDescription: String { cachedState?.buildContextStatus ?? String(localized: "Not Initialized", table: "EditorXcodePlugin") }
-    var shouldHaveBuildContext: Bool { cachedState?.isXcodeProject ?? false }
-    
-    func makeInitializationOptions() -> [String: Any]? {
+
+    public func getBuildServerPath() -> String? { cachedState?.buildServerPath }
+    public var buildContextStatusDescription: String { cachedState?.buildContextStatus ?? "Not Initialized" }
+    public var shouldHaveBuildContext: Bool { cachedState?.isXcodeProject ?? false }
+
+    public func makeInitializationOptions() -> [String: Any]? {
         guard shouldHaveBuildContext else { return nil }
         var options: [String: Any] = [:]
         if let buildServerPath = getBuildServerPath() { options["buildServerPath"] = buildServerPath }
@@ -218,7 +223,7 @@ final class XcodeProjectContextBridge: SuperLog {
         return options.isEmpty ? nil : options
     }
 
-    func makeEditorContextSnapshot(currentFileURL: URL? = nil) -> XcodeEditorContextSnapshot? {
+    public func makeEditorContextSnapshot(currentFileURL: URL? = nil) -> XcodeEditorContextSnapshot? {
         guard let cachedState else { return nil }
         let workspaceName = cachedState.workspaceName ?? URL(filePath: cachedState.projectPath ?? "").deletingPathExtension().lastPathComponent
         let buildableTargets = buildContextProvider?.activeScheme?.buildableTargets ?? []
@@ -247,26 +252,18 @@ final class XcodeProjectContextBridge: SuperLog {
         )
     }
 
-    func updateLatestEditorSnapshot(_ snapshot: XcodeEditorContextSnapshot?) {
+    public func updateLatestEditorSnapshot(_ snapshot: XcodeEditorContextSnapshot?) {
         guard latestEditorSnapshot != snapshot else { return }
         latestEditorSnapshot = snapshot
         NotificationCenter.default.post(name: .lumiEditorProjectSnapshotDidChange, object: nil)
     }
 }
 
-/// 缓存状态快照（Sendable，供非主线程安全访问）
-struct BridgeCachedState: Sendable {
-    let workspaceFolders: [[String: String]]?
-    let buildServerPath: String?
-    let activeScheme: String?
-    let activeConfiguration: String?
-    let activeDestination: String?
-    let buildContextStatus: String
-    let isXcodeProject: Bool
-    let isInitialized: Bool
-    let workspaceName: String?
-    let workspacePath: String?
-    let schemes: [String]
-    let configurations: [String]
-    let projectPath: String?
+// MARK: - Notification Names
+
+extension Notification.Name {
+    /// 编辑器项目上下文变更通知
+    public static let lumiEditorProjectContextDidChange = Notification.Name("lumiEditorProjectContextDidChange")
+    /// 编辑器项目快照变更通知
+    public static let lumiEditorProjectSnapshotDidChange = Notification.Name("lumiEditorProjectSnapshotDidChange")
 }
