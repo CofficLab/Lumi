@@ -1,6 +1,7 @@
 import MagicKit
 import SwiftUI
 import os
+import DeviceMonitorKit
 
 actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger

@@ -1,7 +1,6 @@
 import Foundation
 import Combine
-import os
-import MagicKit
+import DeviceMonitorKit
 
 @MainActor
 class CPUManagerViewModel: ObservableObject {

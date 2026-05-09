@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import DeviceMonitorKit
 
 struct SystemMonitorView: View {
     @StateObject private var viewModel = SystemMonitorViewModel()

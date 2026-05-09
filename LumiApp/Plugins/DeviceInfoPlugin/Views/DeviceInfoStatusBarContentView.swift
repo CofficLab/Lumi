@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import DeviceMonitorKit
 
 /// 状态栏内容视图（CPU 每核瞬时柱状图）
 struct DeviceInfoStatusBarContentView: View {

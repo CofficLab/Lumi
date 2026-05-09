@@ -1,12 +1,10 @@
 import Combine
 import Foundation
-import MagicKit
-import os
+import DeviceMonitorKit
 
 @MainActor
-class MemoryManagerViewModel: ObservableObject, SuperLog {
-    nonisolated static let emoji = "💾"
-    nonisolated static let verbose: Bool = false
+class MemoryManagerViewModel: ObservableObject {
+    static let emoji = "💾"
 
     @Published var memoryUsagePercentage: Double = 0.0
     @Published var usedMemory: String = "0 GB"

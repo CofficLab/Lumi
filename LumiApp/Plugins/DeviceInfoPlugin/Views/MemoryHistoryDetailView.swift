@@ -1,6 +1,7 @@
 import MagicKit
 import SwiftUI
 import LumiUI
+import DeviceMonitorKit
 
 struct MemoryHistoryDetailView: View {
     @ObservedObject private var historyService = MemoryHistoryService.shared

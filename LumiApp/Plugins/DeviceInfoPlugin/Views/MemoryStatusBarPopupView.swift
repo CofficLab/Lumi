@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import DeviceMonitorKit
 
 struct MemoryStatusBarPopupView: View {
     @StateObject private var viewModel = MemoryManagerViewModel()
