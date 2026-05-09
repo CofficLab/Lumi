@@ -27,24 +27,6 @@ final class LayoutVM: ObservableObject, SuperLog {
     /// 由 SplitViewPersistence 组件更新，LayoutPlugin 负责持久化。
     @Published var layoutRatios: [String: Double] = [:]
 
-    /// 编辑器底部面板高度
-    ///
-    /// 用于调节编辑器底部面板（Problems、References、Search 等）的垂直高度。
-    /// 默认 280，最小 33（仅 Tab 栏），最大 600。
-    /// 由 PanelResizerView 更新，LayoutPlugin 负责持久化。
-    @Published var editorBottomPanelHeight: Double = 280
-
-    /// 底部面板是否正在被拖拽调节
-    ///
-    /// 拖拽过程中 LayoutPlugin 的 sink 会跳过保存，避免频繁 I/O 阻塞。
-    /// 拖拽结束后由 PanelResizerView 手动调用保存方法。
-    @Published var isDraggingBottomPanel: Bool = false
-
-    /// 拖拽开始时底部面板是否已展开（锁定状态）
-    ///
-    /// 用于在拖拽过程中稳定 Tab 栏的样式，避免高度接近临界值时频繁切换导致抖动。
-    @Published var wasExpandedBeforeDrag: Bool = false
-    
     // MARK: - Initialization
     
     init() {
@@ -140,23 +122,6 @@ final class LayoutVM: ObservableObject, SuperLog {
     /// 由 LayoutPlugin 调用，从本地存储恢复分栏比例
     func restoreFromPlugin(ratios: [String: Double]) {
         layoutRatios = ratios
-    }
-
-    /// 由 LayoutPlugin 调用，从本地存储恢复底部面板高度
-    func restoreFromPlugin(editorBottomPanelHeight: Double) {
-        self.editorBottomPanelHeight = editorBottomPanelHeight
-    }
-
-    /// 设置编辑器底部面板高度。
-    ///
-    /// 自动夹紧到有效范围（33 ~ 600）。
-    func setEditorBottomPanelHeight(_ height: Double) {
-        let clamped = min(max(height, 33), 600)
-        guard editorBottomPanelHeight != clamped else { return }
-        if Self.verbose {
-            AppLogger.layout.info("\(Self.t)Editor bottom panel height = \(clamped)")
-        }
-        editorBottomPanelHeight = clamped
     }
 
     /// 更新指定分栏的宽度比例。

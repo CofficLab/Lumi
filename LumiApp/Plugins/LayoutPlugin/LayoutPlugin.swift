@@ -138,12 +138,6 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             LayoutPlugin.logger.info("\(lp)恢复分栏比例: \(savedRatios.count, privacy: .public) 项")
             layoutVM.restoreFromPlugin(ratios: savedRatios)
         }
-
-        // 恢复底部面板高度
-        if let savedHeight = store.loadEditorBottomPanelHeight() {
-            LayoutPlugin.logger.info("\(lp)恢复底部面板高度: \(savedHeight, privacy: .public)")
-            layoutVM.restoreFromPlugin(editorBottomPanelHeight: savedHeight)
-        }
     }
 
     // MARK: - Observe
@@ -169,19 +163,6 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                 guard hasRestored else { return }
                 LayoutPlugin.logger.info("\(lp)分栏比例变更: \(newRatios.count, privacy: .public) 项")
                 LayoutPluginLocalStore.shared.saveLayoutRatios(newRatios)
-            }
-            .store(in: &cancellables)
-
-        // 观察底部面板高度
-        layoutVM.$editorBottomPanelHeight
-            .dropFirst()
-            .sink { newHeight in
-                guard hasRestored else { return }
-                // 拖拽过程中跳过保存，避免频繁 I/O 阻塞
-                // 拖拽结束后由 PanelResizerView 手动调用保存
-                guard !layoutVM.isDraggingBottomPanel else { return }
-                LayoutPlugin.logger.info("\(lp)底部面板高度变更: \(newHeight, privacy: .public)")
-                LayoutPluginLocalStore.shared.saveEditorBottomPanelHeight(newHeight)
             }
             .store(in: &cancellables)
     }

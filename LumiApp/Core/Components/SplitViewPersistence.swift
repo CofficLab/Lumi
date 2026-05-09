@@ -56,36 +56,55 @@ final class AutosaveConfiguratorView: NSView {
     }
 
     private func findSplitView() -> NSSplitView? {
-        var current: NSView? = self
+        SplitViewFinder.find(from: self)
+    }
+}
+
+// MARK: - SplitView Finder
+
+/// 统一的 NSSplitView 查找工具
+///
+/// 从当前视图向上遍历视图层级（包括祖先自身），查找最近的 NSSplitView。
+enum SplitViewFinder {
+    static func find(from view: NSView) -> NSSplitView? {
+        var current: NSView? = view
         while let node = current {
+            // 1. 检查当前节点自身
             if let sv = node as? NSSplitView { return sv }
+
+            // 2. 检查当前节点的兄弟（递归向下搜索）
             if let parent = node.superview {
                 for sibling in parent.subviews where sibling !== node {
-                    if let found = findSplitViewRecursive(in: sibling) {
+                    if let found = findRecursive(in: sibling) {
                         return found
                     }
                 }
             }
+
+            // 3. 继续向上
             current = node.superview
         }
         return nil
     }
 
-    private func findSplitViewRecursive(in view: NSView?) -> NSSplitView? {
-        guard let view = view else { return nil }
+    private static func findRecursive(in view: NSView?) -> NSSplitView? {
+        guard let view else { return nil }
         if let sv = view as? NSSplitView { return sv }
         for subview in view.subviews {
-            if let found = findSplitViewRecursive(in: subview) { return found }
+            if let found = findRecursive(in: subview) {
+                return found
+            }
         }
         return nil
     }
 }
 
-// MARK: - SplitView Width Persistence
+// MARK: - SplitView Size Persistence
 
-/// 为 SplitView 增加显式宽度记忆（比例），用于下次主动恢复。
+/// 为 SplitView 增加显式尺寸记忆（比例），用于下次主动恢复。
 ///
-/// 支持指定 `columnIndex`，控制 SplitView 中第几个子视图的宽度比例。
+/// 自动适配横向（HSplitView）和纵向（VSplitView）。
+/// 支持指定 `columnIndex`，控制 SplitView 中第几个子视图的比例。
 /// 默认 `columnIndex = 0`，即控制第一个子视图（向后兼容）。
 ///
 /// 数据流：
@@ -103,10 +122,19 @@ final class AutosaveConfiguratorView: NSView {
 ///         ))
 ///     OtherView()
 /// }
+///
+/// VSplitView {
+///     TopView()
+///     BottomView()
+///         .background(SplitViewWidthPersistence(
+///             storageKey: "Split.MyPanel.Bottom",
+///             columnIndex: 1
+///         ))
+/// }
 /// ```
 struct SplitViewWidthPersistence: NSViewRepresentable {
     let storageKey: String
-    /// 控制第几个子视图的宽度比例（默认 0，向后兼容）
+    /// 控制第几个子视图的比例（默认 0，向后兼容）
     var columnIndex: Int = 0
 
     func makeNSView(context: Context) -> SplitViewWidthPersistenceView {
@@ -132,8 +160,8 @@ final class SplitViewWidthPersistenceView: NSView {
     private var pendingApplyRetryWorkItem: DispatchWorkItem?
     private var applyRetryCount = 0
 
-    /// 所有栏的最小保护宽度
-    static let minimumColumnWidth: CGFloat = 48
+    /// 所有栏的最小保护尺寸
+    static let minimumColumnSize: CGFloat = 48
 
     init(storageKey: String, columnIndex: Int = 0) {
         self.storageKey = storageKey
@@ -153,7 +181,7 @@ final class SplitViewWidthPersistenceView: NSView {
 
     func attachIfNeeded() {
         guard window != nil else { return }
-        guard let splitView = findSplitView() else {
+        guard let splitView = SplitViewFinder.find(from: self) else {
             scheduleRetryAttach()
             return
         }
@@ -185,6 +213,13 @@ final class SplitViewWidthPersistenceView: NSView {
         }
     }
 
+    /// NSSplitView.isVertical 含义：divider 方向
+    /// - true  = 竖直 divider → HSplitView（左右布局）→ 主轴是 width
+    /// - false = 水平 divider → VSplitView（上下布局）→ 主轴是 height
+    private var isHorizontalLayout: Bool {
+        observedSplitView?.isVertical ?? true
+    }
+
     private func applySavedRatioIfNeeded() {
         guard !didApplySavedValue else { return }
         guard let splitView = observedSplitView else { return }
@@ -206,39 +241,35 @@ final class SplitViewWidthPersistenceView: NSView {
         DispatchQueue.main.async { [weak self, weak splitView] in
             guard let self, let splitView else { return }
             guard splitView.arrangedSubviews.count > self.columnIndex else { return }
-            let total = splitView.bounds.width
+            let total = self.primarySize(of: splitView.bounds)
             guard total > 0 else {
                 self.scheduleApplyRetry()
                 return
             }
 
             let dividersCount = splitView.arrangedSubviews.count - 1
-            let usableWidth = max(1, total - CGFloat(dividersCount) * splitView.dividerThickness)
+            let usableSize = max(1, total - CGFloat(dividersCount) * splitView.dividerThickness)
 
-            // 计算此栏之前所有栏占用的宽度（从 ratio 推算）
-            let targetWidth = max(Self.minimumColumnWidth, min(usableWidth - Self.minimumColumnWidth, usableWidth * savedRatio))
+            let targetSize = max(Self.minimumColumnSize, min(usableSize - Self.minimumColumnSize, usableSize * savedRatio))
 
             let dividerIndex: Int
             let position: CGFloat
 
             if isLastColumn {
-                // 最后一栏没有“右侧 divider”，需要移动它左边那个 divider。
                 dividerIndex = max(0, self.columnIndex - 1)
                 position = max(
-                    Self.minimumColumnWidth,
-                    total - targetWidth - splitView.dividerThickness
+                    Self.minimumColumnSize,
+                    total - targetSize - splitView.dividerThickness
                 )
             } else {
-                // 非最后一栏：移动该栏右侧的 divider。
                 dividerIndex = self.columnIndex
 
                 var nextPosition: CGFloat = 0
                 for i in 0..<dividerIndex {
-                    // 前面尚未恢复的栏使用当前实际宽度
-                    nextPosition += splitView.arrangedSubviews[i].frame.width
+                    nextPosition += self.childPrimarySize(of: splitView.arrangedSubviews[i].frame)
                     nextPosition += splitView.dividerThickness
                 }
-                nextPosition += targetWidth
+                nextPosition += targetSize
                 position = nextPosition
             }
 
@@ -252,46 +283,33 @@ final class SplitViewWidthPersistenceView: NSView {
         let idx = columnIndex
         guard idx >= 0, splitView.arrangedSubviews.count > idx, splitView.arrangedSubviews.count >= 2 else { return }
 
-        let total = splitView.bounds.width
+        let total = primarySize(of: splitView.bounds)
         guard total > 0 else { return }
 
         let dividersCount = splitView.arrangedSubviews.count - 1
-        let usableWidth = total - CGFloat(dividersCount) * splitView.dividerThickness
-        guard usableWidth > 1 else { return }
+        let usableSize = total - CGFloat(dividersCount) * splitView.dividerThickness
+        guard usableSize > 1 else { return }
 
-        let columnWidth = splitView.arrangedSubviews[idx].frame.width
-        let ratio = columnWidth / usableWidth
+        let columnSizeValue = childPrimarySize(of: splitView.arrangedSubviews[idx].frame)
+        let ratio = columnSizeValue / usableSize
         guard ratio > 0.0, ratio < 1.0 else { return }
 
         // 写入 LayoutVM（LayoutPlugin 会观察变化并持久化到磁盘）
         RootViewContainer.shared.layoutVM.setLayoutRatio(ratio, forKey: storageKey)
     }
 
-    private func findSplitView() -> NSSplitView? {
-        var current: NSView? = self
-        while let node = current {
-            if let sv = node as? NSSplitView { return sv }
-            if let parent = node.superview {
-                for sibling in parent.subviews where sibling !== node {
-                    if let found = findSplitViewRecursive(in: sibling) {
-                        return found
-                    }
-                }
-            }
-            current = node.superview
-        }
-        return nil
+    // MARK: - Size Helpers
+
+    /// 获取 SplitView 主轴方向的总尺寸
+    /// - HSplitView (isVertical=true)  → width
+    /// - VSplitView (isVertical=false) → height
+    private func primarySize(of bounds: CGRect) -> CGFloat {
+        isHorizontalLayout ? bounds.width : bounds.height
     }
 
-    private func findSplitViewRecursive(in view: NSView?) -> NSSplitView? {
-        guard let view else { return nil }
-        if let sv = view as? NSSplitView { return sv }
-        for subview in view.subviews {
-            if let found = findSplitViewRecursive(in: subview) {
-                return found
-            }
-        }
-        return nil
+    /// 获取子视图在主轴方向的尺寸
+    private func childPrimarySize(of frame: CGRect) -> CGFloat {
+        isHorizontalLayout ? frame.width : frame.height
     }
 
     private func scheduleRetryAttach() {
