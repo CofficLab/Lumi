@@ -53,8 +53,10 @@ struct HistoryDBDetailView: View {
             HStack {
                 Image(systemName: "tablecells")
                     .font(.system(size: 13))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text(String(localized: "History Database Browser", table: "HistoryDBStatusBar"))
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
@@ -63,6 +65,7 @@ struct HistoryDBDetailView: View {
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 11))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 }
                 .buttonStyle(.plain)
                 .help(String(localized: "Reload", table: "HistoryDBStatusBar"))
@@ -104,7 +107,7 @@ struct HistoryDBDetailView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
             .background(viewModel.selectedMode == mode ? Color.accentColor.opacity(0.15) : Color.clear)
-            .foregroundColor(viewModel.selectedMode == mode ? Color.accentColor : .secondary)
+            .foregroundColor(viewModel.selectedMode == mode ? Color.accentColor : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
@@ -187,7 +190,7 @@ struct HistoryDBDetailView: View {
                 )
             )
             .font(.system(size: 11))
-            .foregroundColor(.secondary)
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             Spacer()
 
@@ -205,7 +208,7 @@ struct HistoryDBDetailView: View {
                 )
             )
             .font(.system(size: 11))
-            .foregroundColor(.secondary)
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             Button(String(localized: "Next", table: "HistoryDBStatusBar")) {
                 viewModel.nextPage()
@@ -224,10 +227,10 @@ struct HistoryDBDetailView: View {
             Spacer()
             Image(systemName: "tray")
                 .font(.system(size: 24))
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             Text(String(localized: "No data", table: "HistoryDBStatusBar"))
                 .font(.system(size: 12))
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

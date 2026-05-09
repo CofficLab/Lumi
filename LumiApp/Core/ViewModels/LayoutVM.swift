@@ -33,6 +33,12 @@ final class LayoutVM: ObservableObject, SuperLog {
     /// 默认 280，最小 33（仅 Tab 栏），最大 600。
     /// 由 PanelResizerView 更新，LayoutPlugin 负责持久化。
     @Published var editorBottomPanelHeight: Double = 280
+
+    /// 底部面板是否正在被拖拽调节
+    ///
+    /// 拖拽过程中 LayoutPlugin 的 sink 会跳过保存，避免频繁 I/O 阻塞。
+    /// 拖拽结束后由 PanelResizerView 手动调用保存方法。
+    @Published var isDraggingBottomPanel: Bool = false
     
     // MARK: - Initialization
     

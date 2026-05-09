@@ -102,6 +102,7 @@ struct PanelResizerView: View {
                 .onChanged { value in
                     if !isDragging {
                         isDragging = true
+                        layoutVM.isDraggingBottomPanel = true
                         heightAtDragStart = layoutVM.editorBottomPanelHeight
                     }
                     // 向上拖拽 → translation.height 为负 → 面板变矮
@@ -111,6 +112,9 @@ struct PanelResizerView: View {
                 }
                 .onEnded { _ in
                     isDragging = false
+                    layoutVM.isDraggingBottomPanel = false
+                    // 拖拽结束时才持久化，避免拖拽过程中频繁 I/O 阻塞
+                    LayoutPluginLocalStore.shared.saveEditorBottomPanelHeight(layoutVM.editorBottomPanelHeight)
                 }
         )
     }

@@ -89,6 +89,9 @@
         }
       }
     },
+    "Problems (%lld)" : {
+
+    },
     "Problems panel in the editor bottom area" : {
       "localizations" : {
         "en" : {

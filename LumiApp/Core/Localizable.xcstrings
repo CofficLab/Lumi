@@ -395,16 +395,6 @@
         }
       }
     },
-    "%lld matches in %lld files" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld matches in %2$lld files"
-          }
-        }
-      }
-    },
     "%lld spaces" : {
 
     },
@@ -3393,9 +3383,6 @@
         }
       }
     },
-    "New Terminal" : {
-
-    },
     "nginx:latest" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3628,9 +3615,6 @@
           }
         }
       }
-    },
-    "Open Search Editor" : {
-
     },
     "Open System Settings" : {
       "localizations" : {
@@ -4240,9 +4224,6 @@
     "Scope" : {
 
     },
-    "Search" : {
-
-    },
     "Search branches..." : {
 
     },
@@ -4310,9 +4291,6 @@
         }
       }
     },
-    "Search in files" : {
-
-    },
     "Search..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -4328,9 +4306,6 @@
           }
         }
       }
-    },
-    "Searching workspace…" : {
-
     },
     "Security Scan" : {
       "localizations" : {
@@ -5384,9 +5359,6 @@
       }
     },
     "Working state (%lld)" : {
-
-    },
-    "Workspace symbols not available" : {
 
     },
     "Xcode" : {

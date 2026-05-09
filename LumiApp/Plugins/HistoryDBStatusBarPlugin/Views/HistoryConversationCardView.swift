@@ -20,6 +20,7 @@ struct HistoryConversationCardView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(row.title)
                     .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -33,7 +34,7 @@ struct HistoryConversationCardView: View {
                             Image(systemName: "folder")
                                 .font(.system(size: 8))
                         }
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
 
                     if let providerId = row.providerId {
@@ -45,7 +46,7 @@ struct HistoryConversationCardView: View {
                             Image(systemName: "server.rack")
                                 .font(.system(size: 8))
                         }
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
 
                     if let model = row.model {
@@ -57,7 +58,7 @@ struct HistoryConversationCardView: View {
                             Image(systemName: "cpu")
                                 .font(.system(size: 8))
                         }
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
 
                     Label {
@@ -67,7 +68,7 @@ struct HistoryConversationCardView: View {
                         Image(systemName: "text.bubble")
                             .font(.system(size: 8))
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
             }
 
@@ -77,15 +78,15 @@ struct HistoryConversationCardView: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text(row.updatedAt, style: .date)
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Text(row.updatedAt, style: .time)
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.adaptive(light: "F2F2F7", dark: "1C1C1E"))
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

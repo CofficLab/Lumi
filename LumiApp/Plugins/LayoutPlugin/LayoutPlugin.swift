@@ -177,6 +177,9 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .dropFirst()
             .sink { newHeight in
                 guard hasRestored else { return }
+                // 拖拽过程中跳过保存，避免频繁 I/O 阻塞
+                // 拖拽结束后由 PanelResizerView 手动调用保存
+                guard !layoutVM.isDraggingBottomPanel else { return }
                 LayoutPlugin.logger.info("\(lp)底部面板高度变更: \(newHeight, privacy: .public)")
                 LayoutPluginLocalStore.shared.saveEditorBottomPanelHeight(newHeight)
             }
