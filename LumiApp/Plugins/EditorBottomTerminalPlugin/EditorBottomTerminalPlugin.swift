@@ -67,10 +67,9 @@ struct EditorBottomTerminalContentView: View {
         ))
     }
 
-    /// 工作目录（使用当前文件所在目录）
+    /// 工作目录（使用当前项目根路径）
     private var workingDirectory: String? {
-        editorVM.service.state.currentFileURL?.deletingLastPathComponent().path
-            ?? currentProjectPathForTerminal
+        currentProjectPathForTerminal
     }
 
     var body: some View {
