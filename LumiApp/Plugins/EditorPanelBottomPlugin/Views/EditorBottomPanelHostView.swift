@@ -45,17 +45,15 @@ struct EditorBottomPanelHostView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+                .fixedSize(horizontal: false, vertical: true)
 
             if hasActivePanel {
                 Divider()
                 activePanelContent
+                    .frame(maxHeight: .infinity)
             }
-            
-            // Spacer 始终存在，无活跃面板时撑满剩余空间，
-            // 有活跃面板时被 activePanelContent 挤占。
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .overlay(alignment: .top) {
             Rectangle()
