@@ -89,6 +89,62 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
         }
     }
 
+    // MARK: - Current File
+
+    /// 获取指定项目的当前活跃文件路径
+    ///
+    /// 读取持久化快照中的 `activeTabPath`，并校验文件仍存在。
+    func getCurrentFilePath(forProject projectPath: String) -> (path: String, lastSelected: Date)? {
+        queue.sync {
+            guard let snapshot = readSnapshot(forProject: projectPath),
+                  let activePath = snapshot.activeTabPath,
+                  fileManager.fileExists(atPath: activePath) else {
+                return nil
+            }
+            return (activePath, snapshot.savedAt)
+        }
+    }
+
+    /// 设置指定项目的当前活跃文件
+    ///
+    /// 如果该文件已在 tabs 中，仅切换 activeTabPath；
+    /// 如果不在 tabs 中，则追加一个未钉住的 tab 并设为活跃。
+    func setCurrentFilePath(path: String, forProject projectPath: String) {
+        queue.sync {
+            var snapshot = readSnapshot(forProject: projectPath) ?? PersistedProjectTabs(
+                projectPath: projectPath,
+                tabs: [],
+                activeTabPath: nil,
+                savedAt: Date()
+            )
+
+            let existingIndex = snapshot.tabs.firstIndex(where: { $0.path == path })
+            if existingIndex == nil {
+                // 文件不在 tabs 中 → 追加
+                snapshot = PersistedProjectTabs(
+                    projectPath: snapshot.projectPath,
+                    tabs: snapshot.tabs + [PersistedTab(path: path, isPinned: false)],
+                    activeTabPath: path,
+                    savedAt: Date()
+                )
+            } else {
+                // 文件已在 tabs 中 → 仅更新 activeTabPath 和时间
+                snapshot = PersistedProjectTabs(
+                    projectPath: snapshot.projectPath,
+                    tabs: snapshot.tabs,
+                    activeTabPath: path,
+                    savedAt: Date()
+                )
+            }
+
+            writeSnapshot(snapshot, forProject: projectPath)
+
+            if Self.verbose {
+                Self.logger.info("\(Self.t)设置当前文件：\(path)，项目：\(projectPath)")
+            }
+        }
+    }
+
     // MARK: - Private Helpers
 
     private func getFileURL(forProject projectPath: String) -> URL {

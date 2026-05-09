@@ -35,7 +35,7 @@ struct EditorTabHeaderView: View {
                     projectVM?.currentProjectPath ?? ""
                 },
                 openFile: { [weak editorVM] url in
-                    editorVM?.service.openAndRenderFile(at: url)
+                    editorVM?.service.open(at: url)
                 }
             )
         }
@@ -51,8 +51,11 @@ struct EditorTabHeaderView: View {
                 newPath: newPath,
                 sessionStore: sessionStore
             ) { [weak editorVM] url in
-                editorVM?.service.openAndRenderFile(at: url)
+                editorVM?.service.open(at: url)
             }
+        }
+        .onCurrentFileDidChange { path in
+            handleCurrentFileDidChange(path: path)
         }
     }
 
@@ -112,5 +115,20 @@ struct EditorTabHeaderView: View {
             sessionID: draggedTabSessionID,
             before: targetTab?.sessionID
         )
+    }
+
+    /// 处理 SetCurrentFileTool 发出的通知，同步到编辑器
+    private func handleCurrentFileDidChange(path: String) {
+        // 如果路径与当前文件相同，无需切换
+        guard service.currentFileURL?.path != path else { return }
+
+        // 验证文件存在
+        guard FileManager.default.fileExists(atPath: path) else {
+            EditorTabStripPlugin.logger.warning("⚠️ File does not exist: \(path)")
+            return
+        }
+
+        let url = URL(fileURLWithPath: path)
+        service.open(at: url)
     }
 }
