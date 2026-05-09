@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import BrewKit
 
@@ -55,17 +56,15 @@ struct BrewKitServiceTests {
     @Test("BrewService shared instance")
     func brewServiceShared() async {
         let service = BrewService.shared
-        #expect(await service.checkInstalled() == true || await service.checkInstalled() == false)
+        let installed = await service.checkInstalled()
+        #expect(installed == true || installed == false)
     }
 
-    @Test("BrewError cases")
-    func brewErrorCases() {
-        let error1 = BrewError.notInstalled
-        let error2 = BrewError.commandFailed("test error")
-        let error3 = BrewError.notFound
-
-        #expect(error1 == BrewError.notInstalled)
-        #expect(error2 == BrewError.commandFailed("test error"))
-        #expect(error3 == BrewError.notFound)
+    @Test("BrewError equality")
+    func brewErrorEquality() {
+        #expect(BrewError.notInstalled == BrewError.notInstalled)
+        #expect(BrewError.commandFailed("test") == BrewError.commandFailed("test"))
+        #expect(BrewError.notFound == BrewError.notFound)
+        #expect(BrewError.notInstalled != BrewError.notFound)
     }
 }

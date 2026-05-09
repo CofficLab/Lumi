@@ -1,10 +1,26 @@
 import Foundation
 
-public enum BrewError: Error, Sendable {
+public enum BrewError: Error, Sendable, Equatable {
     case notInstalled
     case commandFailed(String)
     case parsingError(Error)
     case notFound
+
+    public static func == (lhs: BrewError, rhs: BrewError) -> Bool {
+        switch (lhs, rhs) {
+        case (.notInstalled, .notInstalled):
+            return true
+        case (.commandFailed(let l), .commandFailed(let r)):
+            return l == r
+        case (.parsingError, .parsingError):
+            // Error 不是 Equatable，只比较 case 类型
+            return true
+        case (.notFound, .notFound):
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 public actor BrewService {
