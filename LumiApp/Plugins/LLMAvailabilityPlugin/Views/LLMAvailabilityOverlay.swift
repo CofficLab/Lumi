@@ -34,10 +34,9 @@ extension LLMAvailabilityOverlay {
         }
 
         // 初始化可用性列表（从当前 LLMVM 获取所有供应商+模型）
+        // .task modifier 本身已在 @MainActor 上执行，无需额外调度
         let store = LLMAvailabilityStore.shared
-        await MainActor.run {
-            store.initialize(from: llmVM)
-        }
+        store.initialize(from: llmVM)
 
         // 启动可用性检测（在后台任务中执行）
         // llmService 从 llmVM 中获取
