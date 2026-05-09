@@ -45,6 +45,13 @@ final class EditorVM: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
+
+        // 将 EditorState 的 objectWillChange 转发到 EditorVM，
+        // 使依赖 editorVM 的视图（如文件树高亮）能响应 currentFileURL 等状态变化。
+        service.state.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
     }
 
     // MARK: - Theme Sync
