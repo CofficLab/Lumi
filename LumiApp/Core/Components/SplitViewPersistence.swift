@@ -64,36 +64,15 @@ final class AutosaveConfiguratorView: NSView {
 
 /// 统一的 NSSplitView 查找工具
 ///
-/// 从当前视图向上遍历视图层级（包括祖先自身），查找最近的 NSSplitView。
+/// 从当前视图沿祖先链向上查找最近的 NSSplitView。
+/// 对于 SwiftUI `.background()` 放置的辅助视图，NSSplitView 一定是祖先节点，
+/// 因此优先向上搜索祖先链，而非搜索兄弟子树。
 enum SplitViewFinder {
     static func find(from view: NSView) -> NSSplitView? {
         var current: NSView? = view
         while let node = current {
-            // 1. 检查当前节点自身
             if let sv = node as? NSSplitView { return sv }
-
-            // 2. 检查当前节点的兄弟（递归向下搜索）
-            if let parent = node.superview {
-                for sibling in parent.subviews where sibling !== node {
-                    if let found = findRecursive(in: sibling) {
-                        return found
-                    }
-                }
-            }
-
-            // 3. 继续向上
             current = node.superview
-        }
-        return nil
-    }
-
-    private static func findRecursive(in view: NSView?) -> NSSplitView? {
-        guard let view else { return nil }
-        if let sv = view as? NSSplitView { return sv }
-        for subview in view.subviews {
-            if let found = findRecursive(in: subview) {
-                return found
-            }
         }
         return nil
     }
