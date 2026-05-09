@@ -56,9 +56,14 @@ struct BottomPanelBarView: View {
         }
     }
 
-    /// 面板是否处于展开状态（高度 > Tab 栏高度）
+    /// 面板是否处于展开状态
+    ///
+    /// 拖拽过程中使用锁定状态，避免高度接近临界值时频繁切换导致 Tab 栏抖动。
     private var isExpanded: Bool {
-        layoutVM.editorBottomPanelHeight > tabBarHeight
+        if layoutVM.isDraggingBottomPanel {
+            return layoutVM.wasExpandedBeforeDrag
+        }
+        return layoutVM.editorBottomPanelHeight > tabBarHeight
     }
 
     // MARK: - Tab Bar

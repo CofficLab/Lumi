@@ -103,6 +103,8 @@ struct PanelResizerView: View {
                     if !isDragging {
                         isDragging = true
                         layoutVM.isDraggingBottomPanel = true
+                        // 记录拖拽开始时的展开状态，避免拖拽过程中 Tab 栏样式抖动
+                        layoutVM.wasExpandedBeforeDrag = layoutVM.editorBottomPanelHeight > 33
                         heightAtDragStart = layoutVM.editorBottomPanelHeight
                     }
                     // 向上拖拽 → translation.height 为负 → 面板变矮

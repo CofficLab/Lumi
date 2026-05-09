@@ -39,6 +39,11 @@ final class LayoutVM: ObservableObject, SuperLog {
     /// 拖拽过程中 LayoutPlugin 的 sink 会跳过保存，避免频繁 I/O 阻塞。
     /// 拖拽结束后由 PanelResizerView 手动调用保存方法。
     @Published var isDraggingBottomPanel: Bool = false
+
+    /// 拖拽开始时底部面板是否已展开（锁定状态）
+    ///
+    /// 用于在拖拽过程中稳定 Tab 栏的样式，避免高度接近临界值时频繁切换导致抖动。
+    @Published var wasExpandedBeforeDrag: Bool = false
     
     // MARK: - Initialization
     

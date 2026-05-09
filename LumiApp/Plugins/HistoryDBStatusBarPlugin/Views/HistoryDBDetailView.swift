@@ -133,30 +133,47 @@ struct HistoryDBDetailView: View {
             emptyView
         } else {
             Table(viewModel.messageRows) {
-                TableColumn(String(localized: "Conversation", table: "HistoryDBStatusBar"), value: \.conversationTitle)
-                    .width(min: 100)
+                TableColumn(String(localized: "Conversation", table: "HistoryDBStatusBar")) { row in
+                    Text(row.conversationTitle)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .width(min: 100)
 
-                TableColumn(String(localized: "Role", table: "HistoryDBStatusBar"), value: \.role)
-                    .width(min: 60, max: 80)
+                TableColumn(String(localized: "Role", table: "HistoryDBStatusBar")) { row in
+                    Text(row.role)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .width(min: 60, max: 80)
 
-                TableColumn(String(localized: "Model", table: "HistoryDBStatusBar"), value: \.model)
-                    .width(min: 100)
+                TableColumn(String(localized: "Model", table: "HistoryDBStatusBar")) { row in
+                    Text(row.model)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .width(min: 100)
 
                 TableColumn(String(localized: "Tokens", table: "HistoryDBStatusBar")) { row in
                     Text("\(row.tokens)")
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 }
                 .width(min: 50, max: 70)
 
                 TableColumn(String(localized: "Timestamp", table: "HistoryDBStatusBar")) { row in
-                    Text(row.timestamp, style: .date)
-                    + Text(" ")
-                    + Text(row.timestamp, style: .time)
+                    HStack(spacing: 4) {
+                        Text(row.timestamp, style: .date)
+                        Text(row.timestamp, style: .time)
+                    }
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 }
                 .width(min: 130)
 
-                TableColumn(String(localized: "Content", table: "HistoryDBStatusBar"), value: \.contentPreview)
-                    .width(min: 200)
+                TableColumn(String(localized: "Content", table: "HistoryDBStatusBar")) { row in
+                    Text(row.contentPreview)
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .width(min: 200)
             }
+            .tableStyle(.inset(alternatesRowBackgrounds: false))
+            .background(Color.clear)
         }
     }
 
