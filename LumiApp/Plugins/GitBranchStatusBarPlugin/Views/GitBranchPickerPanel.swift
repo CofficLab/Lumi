@@ -535,7 +535,7 @@ struct GitPluginPopoverView: View {
         isCommitting = true
         resultMessage = nil
         do {
-            let hash = try GitCommitService.executeCommit(message: message, at: path)
+            let hash = try await GitCommitService.executeCommit(message: message, at: path)
             resultMessage = "Committed: \(hash)"
             commitMessage = ""
             await refreshAll()

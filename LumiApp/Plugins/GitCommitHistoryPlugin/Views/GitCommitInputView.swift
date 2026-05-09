@@ -232,7 +232,7 @@ struct GitCommitInputView: View {
         resultMessage = nil
 
         do {
-            let hash = try GitCommitService.executeCommit(message: message, at: path)
+            let hash = try await GitCommitService.executeCommit(message: message, at: path)
 
             await MainActor.run {
                 isCommitting = false
