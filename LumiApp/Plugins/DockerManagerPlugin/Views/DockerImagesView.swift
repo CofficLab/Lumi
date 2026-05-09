@@ -1,4 +1,5 @@
 import SwiftUI
+import DockerKit
 
 struct DockerImagesView: View {
     @StateObject private var viewModel = DockerManagerViewModel()
@@ -66,7 +67,7 @@ struct DockerImagesView: View {
                         .contextMenu {
                             Button("Tag...") {
                                 imageToTag = image
-                                newTag = image.Repository + ":"
+                                newTag = image.repository + ":"
                                 showTagSheet = true
                             }
                             Button("Export...") {
@@ -245,10 +246,10 @@ struct DockerImageRow: View {
             }
             Spacer()
             VStack(alignment: .trailing) {
-                Text(image.Size)
+                Text(image.size)
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                Text(image.CreatedSince)
+                Text(image.createdSince)
                     .font(.caption2)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
@@ -270,12 +271,12 @@ struct DockerImageDetailView: View {
                 // Header
                 HStack {
                     VStack(alignment: .leading) {
-                        Text(image.Repository)
+                        Text(image.repository)
                             .font(.title)
                             .fontWeight(.bold)
                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         HStack {
-                            Text(image.Tag)
+                            Text(image.tag)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(Color(hex: "0A84FF").opacity(0.1))

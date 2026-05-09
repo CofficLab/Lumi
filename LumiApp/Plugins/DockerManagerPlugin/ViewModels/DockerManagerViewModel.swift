@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import MagicKit
+import DockerKit
 
 @MainActor
 class DockerManagerViewModel: ObservableObject, SuperLog {
@@ -70,7 +71,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
 
     func deleteImage(_ image: DockerImage, force: Bool = false) async {
         if Self.verbose {
-            DockerManagerPlugin.logger.info("\(self.t)删除镜像: \(image.Repository)")
+            DockerManagerPlugin.logger.info("\(self.t)删除镜像: \(image.repository)")
         }
         do {
             try await service.removeImage(image.imageID, force: force)
@@ -113,7 +114,7 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         scanResult = nil // Clear previous scan
 
         if Self.verbose {
-            DockerManagerPlugin.logger.info("\(self.t)选中镜像: \(image.Repository)")
+            DockerManagerPlugin.logger.info("\(self.t)选中镜像: \(image.repository)")
         }
 
         // Fetch details in parallel
@@ -179,8 +180,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         // Filter
         if !searchText.isEmpty {
             result = result.filter {
-                $0.Repository.localizedCaseInsensitiveContains(searchText) ||
-                $0.Tag.localizedCaseInsensitiveContains(searchText) ||
+                $0.repository.localizedCaseInsensitiveContains(searchText) ||
+                $0.tag.localizedCaseInsensitiveContains(searchText) ||
                 $0.imageID.localizedCaseInsensitiveContains(searchText)
             }
         }
@@ -189,13 +190,13 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         result.sort { (a, b) -> Bool in
             switch sortOption {
             case .name:
-                return sortDescending ? a.Repository > b.Repository : a.Repository < b.Repository
+                return sortDescending ? a.repository > b.repository : a.repository < b.repository
             case .size:
                 // String comparison for now as Size is string (e.g. "10MB"), would need proper parsing for real sort
-                return sortDescending ? a.Size > b.Size : a.Size < b.Size
+                return sortDescending ? a.size > b.size : a.size < b.size
             case .created:
-                // CreatedAt is string "2023-..."
-                return sortDescending ? a.CreatedAt > b.CreatedAt : a.CreatedAt < b.CreatedAt
+                // createdAt is string "2023-..."
+                return sortDescending ? a.createdAt > b.createdAt : a.createdAt < b.createdAt
             }
         }
         
