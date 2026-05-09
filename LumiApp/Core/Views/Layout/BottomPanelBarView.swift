@@ -25,6 +25,9 @@ struct BottomPanelBarView: View {
                 content
                     .frame(maxWidth: .infinity)
                     .frame(maxHeight: .infinity)
+                    // Bottom Panel 内容切换时平滑过渡
+                    .transition(.opacity.animation(.easeInOut(duration: 0.15)))
+                    .id(activeTabId)
             }
         }
         .frame(maxWidth: .infinity)
@@ -77,6 +80,8 @@ struct BottomPanelBarView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                // Tab 选中状态变化时平滑过渡
+                .animation(.easeInOut(duration: 0.15), value: activeTabId == tab.id)
             }
 
             Spacer(minLength: 0)

@@ -12,7 +12,10 @@ struct ChatBubble: View {
     let isStreaming: Bool
 
     @State private var showRawMessage: Bool = false
+    @State private var showDeleteConfirmation: Bool = false
     @EnvironmentObject var messageRendererVM: MessageRendererVM
+    @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
+    @EnvironmentObject private var inputQueueVM: InputQueueVM
 
     /// 初始化
     /// - Parameters:
@@ -46,6 +49,29 @@ struct ChatBubble: View {
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
             }
+        }
+        .contextMenu {
+            if message.role == .user, !message.content.isEmpty {
+                Button {
+                    inputQueueVM.enqueueText(message.content)
+                } label: {
+                    Label(String(localized: "Resend", table: "AgentChat"), systemImage: "arrow.clockwise")
+                }
+            }
+
+            Button(role: .destructive) {
+                showDeleteConfirmation = true
+            } label: {
+                Label(String(localized: "Delete Message", table: "AgentChat"), systemImage: "trash")
+            }
+        }
+        .alert(String(localized: "Delete Message", table: "AgentChat"), isPresented: $showDeleteConfirmation) {
+            Button(String(localized: "Cancel", table: "AgentChat"), role: .cancel) {}
+            Button(String(localized: "Delete", table: "AgentChat"), role: .destructive) {
+                timelineViewModel.deleteMessage(message.id)
+            }
+        } message: {
+            Text(String(localized: "Are you sure you want to delete this message? This action cannot be undone.", table: "AgentChat"))
         }
     }
 }

@@ -85,10 +85,12 @@ struct ActivityBarButton: View {
 
         Button(action: action) {
             ZStack(alignment: .leading) {
+                // 选中指示条：添加过渡动画
                 if isSelected {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(theme.accentColors().primary)
                         .frame(width: 2.5, height: 20)
+                        .transition(.opacity.combined(with: .scale(scale: 0.8, anchor: .leading)))
                 }
 
                 Image(systemName: icon)
@@ -100,6 +102,8 @@ struct ActivityBarButton: View {
         }
         .buttonStyle(.plain)
         .help(title)
+        // 选中状态变化时平滑过渡
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
         .onHover { hovering in
             isHovered = hovering
         }

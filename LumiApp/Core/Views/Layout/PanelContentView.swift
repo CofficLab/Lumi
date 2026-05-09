@@ -23,6 +23,9 @@ struct PanelContentView: View {
                         }
 
                         activeItem.view
+                            // Panel 内容切换时平滑过渡
+                            .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+                            .id(activeItem.id)
                     }
 
                     // ── 下半部分：全局底部面板 ──
