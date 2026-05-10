@@ -223,16 +223,6 @@
     "%@" : {
 
     },
-    "%@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@"
-          }
-        }
-      }
-    },
     "%@ (%lld%%)" : {
       "localizations" : {
         "en" : {
@@ -1337,9 +1327,6 @@
           }
         }
       }
-    },
-    "Cannot display diff for this file" : {
-
     },
     "Cask" : {
       "localizations" : {
@@ -3016,9 +3003,6 @@
         }
       }
     },
-    "Loading diff..." : {
-
-    },
     "Loading..." : {
 
     },
@@ -4357,9 +4341,6 @@
           }
         }
       }
-    },
-    "Select a file to view diff" : {
-
     },
     "Select an image to view details" : {
       "localizations" : {

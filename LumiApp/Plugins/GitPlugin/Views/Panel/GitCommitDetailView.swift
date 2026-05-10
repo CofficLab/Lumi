@@ -1,4 +1,3 @@
-import MagicDiffView
 import SwiftUI
 import MagicKit
 
@@ -101,8 +100,8 @@ struct GitCommitDetailView: View {
 
     /// 当 Detail 视图出现时，激活左侧栏的 Commit History 标签
     private func activateCommitHistorySidebar() {
-        if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
-            layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id, reason: "CommitDetail: view appeared")
+        if layoutVM.selectedAgentSidebarTabId != GitPlugin.id {
+            layoutVM.selectAgentSidebarTab(GitPlugin.id, reason: "CommitDetail: view appeared")
         }
     }
 
@@ -159,14 +158,14 @@ struct GitCommitDetailView: View {
                         .font(.system(size: 12))
                 }
 
-                Text(String(localized: "Working State", table: "GitCommitDetail"))
+                Text(String(localized: "Working State", table: "GitPlugin"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Spacer()
 
                 if !uncommittedFiles.isEmpty {
-                    Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
+                    Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitPlugin"))
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(.orange)
                 }
@@ -180,7 +179,7 @@ struct GitCommitDetailView: View {
     private var uncommittedFileListSection: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
+                Text(String(localized: "\(uncommittedFiles.count) \(uncommittedFiles.count == 1 ? "file" : "files")", table: "GitPlugin"))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
@@ -192,7 +191,7 @@ struct GitCommitDetailView: View {
             Divider()
 
             List(uncommittedFiles, id: \.path, selection: $selectedFile) { file in
-                fileRow(file)
+                GitChangedFileRow(file: file)
             }
             .listStyle(.plain)
         }
@@ -212,10 +211,10 @@ struct GitCommitDetailView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 28))
                             .foregroundColor(.green)
-                        Text(String(localized: "Clean Workspace", table: "GitCommitDetail"))
+                        Text(String(localized: "Clean Workspace", table: "GitPlugin"))
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                        Text(String(localized: "All changes committed", table: "GitCommitDetail"))
+                        Text(String(localized: "All changes committed", table: "GitPlugin"))
                             .font(.system(size: 11))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
@@ -319,7 +318,7 @@ struct GitCommitDetailView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 10))
                         .foregroundColor(.green)
-                    Text(String(localized: "Clean", table: "GitCommitDetail"))
+                    Text(String(localized: "Clean", table: "GitPlugin"))
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(.green)
                 }
@@ -340,7 +339,7 @@ struct GitCommitDetailView: View {
                 icon: "sourcecontrol",
                 iconColor: Color(hex: "7C6FFF"),
                 value: "\(info.totalCommits)",
-                label: String(localized: "Total Commits", table: "GitCommitDetail")
+                label: String(localized: "Total Commits", table: "GitPlugin")
             )
 
             // Contributors
@@ -348,7 +347,7 @@ struct GitCommitDetailView: View {
                 icon: "person.2.fill",
                 iconColor: Color(hex: "FF9F0A"),
                 value: "\(info.contributors.count)",
-                label: String(localized: "Contributors", table: "GitCommitDetail")
+                label: String(localized: "Contributors", table: "GitPlugin")
             )
 
             Spacer()
@@ -393,7 +392,7 @@ struct GitCommitDetailView: View {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 10))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                Text(String(localized: "Latest Commit", table: "GitCommitDetail"))
+                Text(String(localized: "Latest Commit", table: "GitPlugin"))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
@@ -457,7 +456,7 @@ struct GitCommitDetailView: View {
                 Image(systemName: "person.2")
                     .font(.system(size: 10))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                Text(String(localized: "Contributors", table: "GitCommitDetail"))
+                Text(String(localized: "Contributors", table: "GitPlugin"))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -604,7 +603,7 @@ struct GitCommitDetailView: View {
 
     private func statsBadges(_ stats: GitDiffStats) -> some View {
         HStack(spacing: 8) {
-            statBadge(value: "\(stats.filesChanged)", label: String(localized: "files", table: "GitCommitDetail"), color: Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+            statBadge(value: "\(stats.filesChanged)", label: String(localized: "files", table: "GitPlugin"), color: Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             statBadge(value: "+\(stats.insertions)", label: nil, color: .green)
             statBadge(value: "-\(stats.deletions)", label: nil, color: .red)
         }
@@ -626,7 +625,7 @@ struct GitCommitDetailView: View {
     private func fileListSection(_ detail: GitCommitDetail) -> some View {
         VStack(spacing: 0) {
             HStack {
-                Text(String(localized: "\(commitChangedFiles.count) \(commitChangedFiles.count == 1 ? "file" : "files")", table: "GitCommitDetail"))
+                Text(String(localized: "\(commitChangedFiles.count) \(commitChangedFiles.count == 1 ? "file" : "files")", table: "GitPlugin"))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
@@ -638,104 +637,22 @@ struct GitCommitDetailView: View {
             Divider()
 
             List(commitChangedFiles, id: \.path, selection: $selectedFile) { file in
-                fileRow(file)
+                GitChangedFileRow(file: file)
             }
             .listStyle(.plain)
         }
     }
 
-    private func fileRow(_ file: GitChangedFile) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: GitCommitDetailService.fileIcon(for: file.path))
-                .font(.system(size: 10))
-                .foregroundColor(GitCommitDetailService.fileIconColor(for: file.path))
-
-            Text(file.path)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .textSelection(.enabled)
-
-            Spacer()
-
-            Text(file.changeType.displayLabel)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(file.changeType.color)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1)
-                .background(file.changeType.color.opacity(0.1))
-                .cornerRadius(3)
-        }
-        .padding(.vertical, 2)
-        .contentShape(Rectangle())
-    }
-
     // MARK: - Diff View
 
     private var diffViewSection: some View {
-        VStack(spacing: 0) {
-            if let file = selectedFile {
-                HStack(spacing: 6) {
-                    Image(systemName: "doc.text")
-                        .foregroundColor(.secondary)
-                        .font(.system(size: 11))
-
-                    Text(file)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-
-                    Spacer()
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color(NSColor.controlBackgroundColor))
-
-                Divider()
-
-                if loadingDiff {
-                    VStack(spacing: 6) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text(String(localized: "Loading diff...", table: "GitCommitDetail"))
-                            .font(.system(size: 10))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if oldText.isEmpty && newText.isEmpty {
-                    VStack(spacing: 6) {
-                        Image(systemName: "doc.questionmark")
-                            .font(.system(size: 20))
-                            .foregroundColor(.secondary.opacity(0.5))
-                        Text(String(localized: "Cannot display diff for this file", table: "GitCommitDetail"))
-                            .font(.system(size: 10))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    MagicDiffView(
-                        oldText: oldText,
-                        newText: newText,
-                        enableCollapsing: true,
-                        minUnchangedLines: 3
-                    )
-                }
-            } else {
-                VStack(spacing: 8) {
-                    Image(systemName: "doc.text.magnifyingglass")
-                        .font(.system(size: 24))
-                        .foregroundColor(.secondary.opacity(0.4))
-                    Text(String(localized: "Select a file to view diff", table: "GitCommitDetail"))
-                        .font(.system(size: 11))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
+        GitDiffPanelView(
+            selectedFile: selectedFile,
+            oldText: oldText,
+            newText: newText,
+            isLoading: loadingDiff
+        )
     }
-
     // MARK: - State Views
 
     private var noFilesView: some View {
@@ -743,7 +660,7 @@ struct GitCommitDetailView: View {
             Image(systemName: "doc.text")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.4))
-            Text(String(localized: "No file changes in this commit", table: "GitCommitDetail"))
+            Text(String(localized: "No file changes in this commit", table: "GitPlugin"))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -754,7 +671,7 @@ struct GitCommitDetailView: View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.regular)
-            Text(String(localized: "Loading...", table: "GitCommitDetail"))
+            Text(String(localized: "Loading...", table: "GitPlugin"))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -766,7 +683,7 @@ struct GitCommitDetailView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 24))
                 .foregroundColor(.orange.opacity(0.6))
-            Text(String(localized: "Failed to load", table: "GitCommitDetail"))
+            Text(String(localized: "Failed to load", table: "GitPlugin"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             Text(error)
@@ -783,7 +700,7 @@ struct GitCommitDetailView: View {
             Image(systemName: "circle.circle")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "Please select a commit from the sidebar", table: "GitCommitDetail"))
+            Text(String(localized: "Please select a commit from the sidebar", table: "GitPlugin"))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -795,7 +712,7 @@ struct GitCommitDetailView: View {
             Image(systemName: "folder.badge.questionmark")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "Please select a project first", table: "GitCommitDetail"))
+            Text(String(localized: "Please select a project first", table: "GitPlugin"))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -821,7 +738,7 @@ struct GitCommitDetailView: View {
                 do {
                     return try await GitCommitDetailService.loadUncommittedFiles(path: path)
                 } catch {
-                    GitCommitHistoryPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+                    GitPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
                     return []
                 }
             }()
@@ -882,7 +799,7 @@ struct GitCommitDetailView: View {
                 self.loading = false
                 self.errorMessage = error.localizedDescription
 
-                GitCommitHistoryPlugin.logger.error("加载 commit 详情失败: \(error.localizedDescription)")
+                GitPlugin.logger.error("加载 commit 详情失败: \(error.localizedDescription)")
             }
         }
     }
@@ -928,7 +845,7 @@ struct GitCommitDetailView: View {
                     self.loadingDiff = false
                 }
 
-                GitCommitHistoryPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
+                GitPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
             }
         }
     }

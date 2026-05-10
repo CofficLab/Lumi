@@ -258,15 +258,15 @@ protocol SuperPlugin: Actor {
     /// 添加状态栏内容视图
     @MainActor func addStatusBarContentView() -> AnyView?
 
-    /// 添加状态栏左侧视图（用于 Agent 模式底部状态栏）
+    /// 添加状态栏左侧视图
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
     @MainActor func addStatusBarLeadingView(activeIcon: String?) -> AnyView?
 
-    /// 添加状态栏中间视图（用于 Agent 模式底部状态栏）
+    /// 添加状态栏中间视图
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
     @MainActor func addStatusBarCenterView(activeIcon: String?) -> AnyView?
 
-    /// 添加状态栏右侧视图（用于 Agent 模式底部状态栏）
+    /// 添加状态栏右侧视图
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
     @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView?
 

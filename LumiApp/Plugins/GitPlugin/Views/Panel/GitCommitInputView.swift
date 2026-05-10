@@ -63,7 +63,7 @@ struct GitCommitInputView: View {
         ZStack(alignment: .topLeading) {
             // 占位文本
             if commitMessage.isEmpty {
-                Text(String(localized: "Enter commit message...", table: "GitCommitHistory"))
+                Text(String(localized: "Enter commit message...", table: "GitPlugin"))
                     .font(.system(size: 12))
                     .foregroundColor(Color(hex: "98989E"))
                     .padding(.horizontal, 4)
@@ -100,7 +100,7 @@ struct GitCommitInputView: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 11))
                 }
-                Text(String(localized: "AI", table: "GitCommitHistory"))
+                Text(String(localized: "AI", table: "GitPlugin"))
                     .font(.system(size: 11, weight: .medium))
             }
             .frame(maxWidth: .infinity)
@@ -113,7 +113,7 @@ struct GitCommitInputView: View {
         }
         .buttonStyle(.plain)
         .disabled(isGenerating || isCommitting)
-        .help(String(localized: "AI generates commit message", table: "GitCommitHistory"))
+        .help(String(localized: "AI generates commit message", table: "GitPlugin"))
     }
 
     private var commitButton: some View {
@@ -129,7 +129,7 @@ struct GitCommitInputView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 11))
                 }
-                Text(String(localized: "Commit", table: "GitCommitHistory"))
+                Text(String(localized: "Commit", table: "GitPlugin"))
                     .font(.system(size: 11, weight: .medium))
             }
             .frame(maxWidth: .infinity)
@@ -146,7 +146,7 @@ struct GitCommitInputView: View {
         }
         .buttonStyle(.plain)
         .disabled(!canCommit || isCommitting || isGenerating)
-        .help(String(localized: "Commit changes", table: "GitCommitHistory"))
+        .help(String(localized: "Commit changes", table: "GitPlugin"))
     }
 
     private func resultMessageView(_ message: String) -> some View {
@@ -206,14 +206,14 @@ struct GitCommitInputView: View {
                 if let ce = error as? GitCommitError {
                     switch ce {
                     case .noChanges:
-                        resultMessage = String(localized: "No changes to commit", table: "GitCommitHistory")
+                        resultMessage = String(localized: "No changes to commit", table: "GitPlugin")
                     case .emptyResponse:
-                        resultMessage = String(localized: "AI returned empty response", table: "GitCommitHistory")
+                        resultMessage = String(localized: "AI returned empty response", table: "GitPlugin")
                     default:
                         resultMessage = error.localizedDescription
                     }
                 } else if error is LLMServiceError {
-                    resultMessage = String(localized: "AI request failed, please check API key", table: "GitCommitHistory")
+                    resultMessage = String(localized: "AI request failed, please check API key", table: "GitPlugin")
                 } else {
                     resultMessage = error.localizedDescription
                 }
@@ -237,7 +237,7 @@ struct GitCommitInputView: View {
             await MainActor.run {
                 isCommitting = false
                 resultType = .success
-                resultMessage = String(localized: "Committed: \(hash)", table: "GitCommitHistory")
+                resultMessage = String(localized: "Committed: \(hash)", table: "GitPlugin")
                 commitMessage = ""
 
                 // 通知父视图刷新

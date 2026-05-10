@@ -1,9 +1,8 @@
-import MagicDiffView
 import MagicKit
 import LibGit2Swift
 import SwiftUI
 
-/// Git 状态栏弹出面板（独立实现，不依赖 GitCommitHistoryPlugin）
+/// Git 状态栏弹出面板
 struct GitPluginPopoverView: View {
     @EnvironmentObject private var projectVM: ProjectVM
     @State private var branches: [GitBranch] = []
@@ -263,29 +262,11 @@ struct GitPluginPopoverView: View {
                 Button {
                     selectedCommitHash = commit.hash
                 } label: {
-                    HStack(alignment: .top, spacing: 8) {
-                        Circle()
-                            .fill(selectedCommitHash == commit.hash ? Color(hex: "7C6FFF") : Color.secondary.opacity(0.5))
-                            .frame(width: 7, height: 7)
-                            .padding(.top, 4)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(commit.message)
-                                .font(.system(size: 11, weight: selectedCommitHash == commit.hash ? .semibold : .regular))
-                                .foregroundColor(.primary)
-                                .lineLimit(2)
-                            Text("\(commit.author) · \(relativeTime(from: commit.date))")
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
-                            Text(String(commit.hash.prefix(7)))
-                                .font(.system(size: 9, design: .monospaced))
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                    }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 2)
-                    .background(selectedCommitHash == commit.hash ? Color.accentColor.opacity(0.08) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    GitCommitListRow(
+                        commit: commit,
+                        isSelected: selectedCommitHash == commit.hash,
+                        style: .compact
+                    )
                 }
                 .buttonStyle(.plain)
                 Divider()
@@ -296,15 +277,7 @@ struct GitPluginPopoverView: View {
     private var workingStateDetail: some View {
         HSplitView {
             List(uncommittedFiles, id: \.path, selection: $selectedFile) { file in
-                HStack {
-                    Text(file.path)
-                        .font(.system(size: 11, design: .monospaced))
-                        .lineLimit(1)
-                    Spacer()
-                    Text(file.changeType.displayLabel)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(file.changeType.color)
-                }
+                GitChangedFileRow(file: file)
             }
             .frame(minWidth: 200, idealWidth: 260, maxWidth: 320)
 
@@ -335,15 +308,7 @@ struct GitPluginPopoverView: View {
 
             HSplitView {
                 List(commitChangedFiles, id: \.path, selection: $selectedFile) { file in
-                    HStack {
-                        Text(file.path)
-                            .font(.system(size: 11, design: .monospaced))
-                            .lineLimit(1)
-                        Spacer()
-                        Text(file.changeType.displayLabel)
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(file.changeType.color)
-                    }
+                    GitChangedFileRow(file: file)
                 }
                 .frame(minWidth: 200, idealWidth: 260, maxWidth: 320)
                 diffPanel
@@ -352,38 +317,15 @@ struct GitPluginPopoverView: View {
     }
 
     private var diffPanel: some View {
-        VStack(spacing: 0) {
-            if let selectedFile {
-                HStack {
-                    Text(selectedFile)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                    Spacer()
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color(NSColor.controlBackgroundColor))
-                Divider()
-            }
-
-            if loadingDiff {
-                ProgressView("Loading diff...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if selectedFile == nil {
-                Text("Select a file to view diff")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if oldText.isEmpty && newText.isEmpty {
-                Text("Cannot display diff for this file")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                MagicDiffView(oldText: oldText, newText: newText, enableCollapsing: true, minUnchangedLines: 3)
-            }
-        }
+        GitDiffPanelView(
+            selectedFile: selectedFile,
+            oldText: oldText,
+            newText: newText,
+            isLoading: loadingDiff,
+            loadingText: "Loading diff...",
+            selectFileText: "Select a file to view diff",
+            cannotDisplayText: "Cannot display diff for this file"
+        )
     }
 
     private var filteredBranches: [GitBranch] {
@@ -545,16 +487,6 @@ struct GitPluginPopoverView: View {
         isCommitting = false
     }
 
-    private func relativeTime(from dateString: String) -> String {
-        guard let date = ISO8601DateFormatter().date(from: dateString) else {
-            return shortDate(dateString)
-        }
-        let interval = Date().timeIntervalSince(date)
-        if interval < 60 { return "just now" }
-        if interval < 3600 { return "\(Int(interval / 60))m ago" }
-        if interval < 86400 { return "\(Int(interval / 3600))h ago" }
-        return "\(Int(interval / 86400))d ago"
-    }
 
     private func shortDate(_ value: String) -> String {
         value.count >= 10 ? String(value.prefix(10)) : value

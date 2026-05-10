@@ -13,7 +13,7 @@ struct GitBranchDetailView: View {
                     .font(.system(size: 16))
                     .foregroundColor(Color(hex: "7C6FFF"))
 
-                Text(String(localized: "Git Information", table: "GitBranchStatusBar"))
+                Text(String(localized: "Git Information", table: "GitPlugin"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -23,11 +23,11 @@ struct GitBranchDetailView: View {
             Divider()
 
             if let branch = branchName {
-                GitInfoRow(label: String(localized: "Current Branch", table: "GitBranchStatusBar"), value: branch)
+                GitInfoRow(label: String(localized: "Current Branch", table: "GitPlugin"), value: branch)
 
                 if let dirty = isDirty {
                     HStack(spacing: 8) {
-                        Text(String(localized: "Status", table: "GitBranchStatusBar"))
+                        Text(String(localized: "Status", table: "GitPlugin"))
                             .font(.system(size: 12))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                             .frame(width: 70, alignment: .leading)
@@ -38,8 +38,8 @@ struct GitBranchDetailView: View {
                                 .frame(width: 6, height: 6)
 
                             Text(dirty
-                                ? String(localized: "Uncommitted Changes", table: "GitBranchStatusBar")
-                                : String(localized: "Clean Working Tree", table: "GitBranchStatusBar"))
+                                ? String(localized: "Uncommitted Changes", table: "GitPlugin")
+                                : String(localized: "Clean Working Tree", table: "GitPlugin"))
                                 .font(.system(size: 12))
                                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         }
@@ -53,7 +53,7 @@ struct GitBranchDetailView: View {
                         .font(.system(size: 32))
                         .foregroundColor(Color(hex: "FF9F0A"))
 
-                    Text(String(localized: "Unable to Get Git Information", table: "GitBranchStatusBar"))
+                    Text(String(localized: "Unable to Get Git Information", table: "GitPlugin"))
                         .font(.system(size: 13))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }

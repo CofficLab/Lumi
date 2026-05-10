@@ -80,7 +80,7 @@ struct GitCommitHistorySidebarView: View {
 
                 // Commit 列表
                 ForEach(Array(commits.enumerated()), id: \.element.hash) { index, commit in
-                    GitCommitRow(
+                    GitCommitListRow(
                         commit: commit,
                         isSelected: selectedCommitHash == commit.hash,
                         isUnpushed: gitVM.isCommitUnpushed(commit.hash)
@@ -142,19 +142,19 @@ struct GitCommitHistorySidebarView: View {
             // 文本
             VStack(alignment: .leading, spacing: 2) {
                 if uncommittedFileCount == 0 {
-                    Text(String(localized: "Clean working tree", table: "GitCommitHistory"))
+                    Text(String(localized: "Clean working tree", table: "GitPlugin"))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text(String(localized: "All changes committed", table: "GitCommitHistory"))
+                    Text(String(localized: "All changes committed", table: "GitPlugin"))
                         .font(.system(size: 10))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 } else {
-                    Text(String(localized: "Current status", table: "GitCommitHistory"))
+                    Text(String(localized: "Current status", table: "GitPlugin"))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text(String(localized: "Uncommitted files: \(uncommittedFileCount)", table: "GitCommitHistory"))
+                    Text(String(localized: "Uncommitted files: \(uncommittedFileCount)", table: "GitPlugin"))
                         .font(.system(size: 10))
                         .foregroundColor(.orange)
                 }
@@ -174,8 +174,8 @@ struct GitCommitHistorySidebarView: View {
             selectedCommitHash = nil
             gitVM.selectCommit(hash: nil)
             // 确保侧边栏也选中这个标签
-            if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
-                layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id, reason: "CommitHistory: working state tapped")
+            if layoutVM.selectedAgentSidebarTabId != GitPlugin.id {
+                layoutVM.selectAgentSidebarTab(GitPlugin.id, reason: "CommitHistory: working state tapped")
             }
         }
     }
@@ -186,7 +186,7 @@ struct GitCommitHistorySidebarView: View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.regular)
-            Text(String(localized: "Loading...", table: "GitCommitHistory"))
+            Text(String(localized: "Loading...", table: "GitPlugin"))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -200,7 +200,7 @@ struct GitCommitHistorySidebarView: View {
             Image(systemName: "folder.badge.questionmark")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text(String(localized: "Please select a project first", table: "GitCommitHistory"))
+            Text(String(localized: "Please select a project first", table: "GitPlugin"))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -275,7 +275,7 @@ struct GitCommitHistorySidebarView: View {
                     self.gitVM.updateUnpushedCommitHashes(unpushedHashes)
                 }
 
-                GitCommitHistoryPlugin.logger.error("刷新提交列表失败: \(error.localizedDescription)")
+                GitPlugin.logger.error("刷新提交列表失败: \(error.localizedDescription)")
             }
 
             // 加载未提交变更数量（不阻塞 commit 列表的显示）
@@ -349,131 +349,9 @@ struct GitCommitHistorySidebarView: View {
                 await MainActor.run {
                     self.loading = false
                 }
-                GitCommitHistoryPlugin.logger.error("加载更多提交失败: \(error.localizedDescription)")
+                GitPlugin.logger.error("加载更多提交失败: \(error.localizedDescription)")
             }
         }
-    }
-}
-
-// MARK: - GitCommitRow
-
-/// 提交记录行视图
-///
-/// 参考 GitOK 的 CommitRow 实现，显示单个 Git 提交的信息。
-/// 未推送到远程的 commit 会在右侧显示一个橙色向上箭头图标标记。
-struct GitCommitRow: View {
-    let commit: GitCommitLog
-    let isSelected: Bool
-
-    /// 是否未推送到远程
-    var isUnpushed: Bool = false
-
-    /// 鼠标悬停状态
-    @State private var isHovered = false
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 8) {
-                // 左侧竖线指示器
-                VStack(spacing: 0) {
-                    Circle()
-                        .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.4))
-                        .frame(width: 8, height: 8)
-                        .padding(.top, 6)
-
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.15))
-                        .frame(width: 1)
-                        .frame(maxHeight: .infinity)
-                }
-                .frame(width: 8)
-
-                // 主要内容
-                VStack(alignment: .leading, spacing: 3) {
-                    // 提交消息 + 未推送图标
-                    HStack(alignment: .top, spacing: 4) {
-                        Text(commit.message)
-                            .font(.system(size: 12, weight: isSelected ? .medium : .regular))
-                            .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "1C1C1E", dark: "FFFFFF").opacity(0.85))
-                            .lineLimit(2)
-
-                        Spacer()
-
-                        // 未推送到远程的图标标记
-                        if isUnpushed {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 11))
-                                .foregroundColor(.orange)
-                                .help(String(localized: "Not pushed to remote repository", table: "GitCommitHistory"))
-                        }
-                    }
-
-                    // 作者 + 时间
-                    HStack(spacing: 4) {
-                        Text(commit.author)
-                            .lineLimit(1)
-
-                        Text("·")
-                            .foregroundColor(.secondary.opacity(0.5))
-
-                        Text(relativeTimeString(from: commit.date))
-                            .lineLimit(1)
-                    }
-                    .font(.system(size: 10))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-
-                    // 提交哈希
-                    Text(commit.hash.prefix(7))
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundColor(.secondary.opacity(0.6))
-                }
-                .padding(.vertical, 6)
-                .padding(.trailing, 8)
-
-                Spacer()
-            }
-            .padding(.horizontal, 8)
-
-            Divider()
-                .padding(.leading, 24)
-        }
-        .contentShape(Rectangle())
-        .background(rowBackground)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-    }
-
-    /// 行背景：选中 > 悬停 > 默认
-    private var rowBackground: some View {
-        Group {
-            if isSelected {
-                Color.accentColor.opacity(0.08)
-            } else if isHovered {
-                Color.primary.opacity(0.04)
-            } else {
-                Color.clear
-            }
-        }
-    }
-
-    // MARK: - Date Helper
-
-    /// 将 ISO 格式日期字符串转为相对时间文本
-    private func relativeTimeString(from dateString: String) -> String {
-        let formatters = DateParseHelper.formatHandlers
-
-        for formatter in formatters {
-            if let date = formatter.date(from: dateString) {
-                return date.relativeTimeString
-            }
-        }
-
-        // 回退：截取日期部分
-        if dateString.count >= 10 {
-            return String(dateString.prefix(10))
-        }
-        return dateString
     }
 }
 
@@ -486,22 +364,22 @@ extension Date {
         let interval = now.timeIntervalSince(self)
 
         if interval < 60 {
-            return String(localized: "Just now", table: "GitCommitHistory")
+            return String(localized: "Just now", table: "GitPlugin")
         } else if interval < 3600 {
             let minutes = Int(interval / 60)
-            return String(localized: "\(minutes) minutes ago", table: "GitCommitHistory")
+            return String(localized: "\(minutes) minutes ago", table: "GitPlugin")
         } else if interval < 86400 {
             let hours = Int(interval / 3600)
-            return String(localized: "\(hours) hours ago", table: "GitCommitHistory")
+            return String(localized: "\(hours) hours ago", table: "GitPlugin")
         } else if interval < 2592000 {
             let days = Int(interval / 86400)
-            return String(localized: "\(days) days ago", table: "GitCommitHistory")
+            return String(localized: "\(days) days ago", table: "GitPlugin")
         } else if interval < 31536000 {
             let months = Int(interval / 2592000)
-            return String(localized: "\(months) months ago", table: "GitCommitHistory")
+            return String(localized: "\(months) months ago", table: "GitPlugin")
         } else {
             let years = Int(interval / 31536000)
-            return String(localized: "\(years) years ago", table: "GitCommitHistory")
+            return String(localized: "\(years) years ago", table: "GitPlugin")
         }
     }
 }

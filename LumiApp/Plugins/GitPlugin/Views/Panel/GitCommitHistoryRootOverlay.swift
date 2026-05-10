@@ -18,13 +18,13 @@ struct GitCommitHistoryRootOverlay<Content: View>: View {
         .onChange(of: gitVM.selectedCommitHash) { _, newHash in
             guard newHash != nil else { return }
 
-            if GitCommitHistoryPlugin.verbose {
-                GitCommitHistoryPlugin.logger.info("Commit selected: \(newHash?.prefix(7) ?? "nil"), activating panel")
+            if GitPlugin.verbose {
+                GitPlugin.logger.info("Commit selected: \(newHash?.prefix(7) ?? "nil"), activating panel")
             }
 
             // 有 commit 被选中时，自动激活当前面板
-            if layoutVM.selectedAgentSidebarTabId != GitCommitHistoryPlugin.id {
-                layoutVM.selectAgentSidebarTab(GitCommitHistoryPlugin.id, reason: "RootOverlay: commit selected")
+            if layoutVM.selectedAgentSidebarTabId != GitPlugin.id {
+                layoutVM.selectAgentSidebarTab(GitPlugin.id, reason: "RootOverlay: commit selected")
             }
         }
     }
