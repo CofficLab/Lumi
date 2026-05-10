@@ -897,9 +897,6 @@
         }
       }
     },
-    "AI" : {
-
-    },
     "All" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1623,9 +1620,6 @@
           }
         }
       }
-    },
-    "Commit" : {
-
     },
     "Commit History" : {
 

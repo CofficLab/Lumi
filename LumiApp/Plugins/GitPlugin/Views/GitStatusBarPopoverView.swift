@@ -20,10 +20,6 @@ struct GitPluginPopoverView: View {
     @State private var loadingDiff = false
     @State private var actionMessage: String?
     @State private var errorMessage: String?
-    @State private var commitMessage = ""
-    @State private var isGenerating = false
-    @State private var isCommitting = false
-    @State private var resultMessage: String?
     @State private var showCreateBranchAlert = false
     @State private var createBranchName = ""
 
@@ -119,59 +115,9 @@ struct GitPluginPopoverView: View {
     }
 
     private var commitInput: some View {
-        VStack(spacing: 6) {
-            HStack(alignment: .top, spacing: 8) {
-                TextEditor(text: $commitMessage)
-                    .font(.system(size: 12))
-                    .frame(minHeight: 42, maxHeight: 76)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-                    )
-                VStack(spacing: 6) {
-                    Button {
-                        Task { await generateAICommitMessage() }
-                    } label: {
-                        HStack(spacing: 4) {
-                            if isGenerating {
-                                ProgressView().controlSize(.small)
-                            } else {
-                                Image(systemName: "sparkles")
-                            }
-                            Text("AI")
-                        }
-                        .font(.system(size: 11, weight: .medium))
-                        .frame(maxWidth: .infinity)
-                    }
-                    .disabled(isGenerating || isCommitting)
-
-                    Button {
-                        Task { await commitNow() }
-                    } label: {
-                        HStack(spacing: 4) {
-                            if isCommitting {
-                                ProgressView().controlSize(.small)
-                            } else {
-                                Image(systemName: "checkmark.circle.fill")
-                            }
-                            Text("Commit")
-                        }
-                        .font(.system(size: 11, weight: .medium))
-                        .frame(maxWidth: .infinity)
-                    }
-                    .disabled(commitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isGenerating || isCommitting)
-                }
-                .frame(width: 100)
-            }
-            if let resultMessage {
-                Text(resultMessage)
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+        GitCommitInputView(style: .compact) {
+            Task { await refreshAll() }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
     }
 
     private var leftPanel: some View {
@@ -446,47 +392,6 @@ struct GitPluginPopoverView: View {
         }
         actionMessage = nil
     }
-
-    private func generateAICommitMessage() async {
-        let path = projectVM.currentProjectPath
-        guard !path.isEmpty else { return }
-        isGenerating = true
-        resultMessage = nil
-        do {
-            let changes = try await GitCommitService.gatherChanges(at: path)
-            let config = RootViewContainer.shared.agentSessionConfig.getCurrentConfig()
-            let message = try await GitCommitService.generateCommitMessage(
-                changes: changes,
-                language: .english,
-                llmService: RootViewContainer.shared.llmService,
-                config: config
-            )
-            commitMessage = message
-        } catch {
-            resultMessage = error.localizedDescription
-        }
-        isGenerating = false
-    }
-
-    private func commitNow() async {
-        let path = projectVM.currentProjectPath
-        guard !path.isEmpty else { return }
-        let message = commitMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !message.isEmpty else { return }
-
-        isCommitting = true
-        resultMessage = nil
-        do {
-            let hash = try await GitCommitService.executeCommit(message: message, at: path)
-            resultMessage = "Committed: \(hash)"
-            commitMessage = ""
-            await refreshAll()
-        } catch {
-            resultMessage = error.localizedDescription
-        }
-        isCommitting = false
-    }
-
 
     private func shortDate(_ value: String) -> String {
         value.count >= 10 ? String(value.prefix(10)) : value

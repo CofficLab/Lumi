@@ -24,9 +24,21 @@ struct GitCommitInputView: View {
     /// 提交成功后的回调
     var onCommitSuccess: (() -> Void)?
 
+    enum Style {
+        case panel
+        case compact
+    }
+
+    var style: Style = .panel
+
     enum ResultType {
         case success
         case error
+    }
+
+    init(style: Style = .panel, onCommitSuccess: (() -> Void)? = nil) {
+        self.style = style
+        self.onCommitSuccess = onCommitSuccess
     }
 
     var body: some View {
@@ -52,9 +64,9 @@ struct GitCommitInputView: View {
                 resultMessageView(message)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .padding(.horizontal, horizontalPadding)
+        .padding(.vertical, verticalPadding)
+        .background(backgroundView)
     }
 
     // MARK: - Subviews
@@ -77,7 +89,7 @@ struct GitCommitInputView: View {
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, 2)
                 .padding(.vertical, 4)
-                .frame(minHeight: 36, maxHeight: 80)
+                .frame(minHeight: textEditorMinHeight, maxHeight: textEditorMaxHeight)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.primary.opacity(0.12), lineWidth: 1)
@@ -169,6 +181,31 @@ struct GitCommitInputView: View {
     /// 是否可以提交
     private var canCommit: Bool {
         !commitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var horizontalPadding: CGFloat {
+        style == .panel ? 16 : 12
+    }
+
+    private var verticalPadding: CGFloat {
+        style == .panel ? 8 : 8
+    }
+
+    private var textEditorMinHeight: CGFloat {
+        style == .panel ? 36 : 42
+    }
+
+    private var textEditorMaxHeight: CGFloat {
+        style == .panel ? 80 : 76
+    }
+
+    @ViewBuilder
+    private var backgroundView: some View {
+        if style == .panel {
+            Color(NSColor.controlBackgroundColor).opacity(0.5)
+        } else {
+            Color.clear
+        }
     }
 
     // MARK: - Actions
