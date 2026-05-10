@@ -1,4 +1,5 @@
-import SwiftUI
+import Foundation
+import Combine
 import CodeEditTextView
 import LanguageServerProtocol
 
@@ -79,20 +80,5 @@ struct EditorDocumentLink: Identifiable, Equatable {
     var isFilePath: Bool {
         guard let target else { return false }
         return target.hasPrefix("file://")
-    }
-}
-
-struct DocumentLinkView: View {
-    let text: String
-    let link: EditorDocumentLink
-    let onTap: () -> Void
-    
-    var body: some View {
-        Text(text)
-            .font(.system(size: NSFont.systemFontSize, design: .monospaced))
-            .foregroundColor(.blue)
-            .underline()
-            .onTapGesture(perform: onTap)
-            .help(link.tooltip ?? link.target ?? "")
     }
 }

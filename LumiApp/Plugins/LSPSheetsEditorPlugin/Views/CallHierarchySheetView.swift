@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// 调用层级 Sheet 内容视图。
+///
+/// 用于承载 `LSPCallHierarchyEditorPlugin` 提供的调用层级数据，并将 incoming/outgoing calls
+/// 分栏展示出来。该视图自身不请求 LSP 数据，只读取 `EditorState.callHierarchyProvider` 中的状态；
+/// 打开、关闭和跳转行为通过 `EditorState` 的 panel/open item 命令回写给编辑器内核。
 struct CallHierarchySheetView: View {
     @ObservedObject var state: EditorState
 

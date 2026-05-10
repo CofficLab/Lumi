@@ -1,5 +1,5 @@
-import SwiftUI
 import Foundation
+import Combine
 import LanguageServerProtocol
 
 /// 工作区符号搜索提供者
@@ -106,95 +106,5 @@ final class WorkspaceSymbolProvider: ObservableObject, SuperEditorWorkspaceSymbo
             sym.name.lowercased().contains(lowercased)
                 || (sym.containerName?.lowercased().contains(lowercased) ?? false)
         }
-    }
-}
-
-struct WorkspaceSymbolItemSearchView: View {
-    @ObservedObject var provider: WorkspaceSymbolProvider
-    @State private var query: String = ""
-    @State private var selectedIndex: Int = 0
-    @State private var searchTask: Task<Void, Never>?
-    let onSelect: (WorkspaceSymbolItem) -> Void
-    
-    var filteredSymbols: [WorkspaceSymbolItem] {
-        provider.filterLocalResults(query: query)
-    }
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Image(systemName: "magnifyingglass").foregroundColor(.secondary)
-                TextField("搜索符号...", text: $query)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .onSubmit {
-                        guard !filteredSymbols.isEmpty else { return }
-                        let index = min(max(selectedIndex, 0), filteredSymbols.count - 1)
-                        onSelect(filteredSymbols[index])
-                    }
-                    .onChange(of: query) { _, newValue in
-                        selectedIndex = 0
-                        searchTask?.cancel()
-
-                        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !trimmed.isEmpty else {
-                            provider.clear()
-                            return
-                        }
-
-                        searchTask = Task {
-                            try? await Task.sleep(for: .milliseconds(220))
-                            guard !Task.isCancelled else { return }
-                            await provider.searchSymbols(query: trimmed)
-                        }
-                    }
-                if provider.isSearching { ProgressView().scaleEffect(0.7) }
-            }
-            .padding(8).background(Color(nsColor: .textBackgroundColor))
-            Divider()
-            if filteredSymbols.isEmpty && !provider.isSearching && !query.isEmpty {
-                VStack(spacing: 10) {
-                    Image(systemName: provider.searchError == nil ? "magnifyingglass" : "exclamationmark.triangle")
-                        .font(.system(size: 32))
-                        .foregroundColor(.secondary)
-                    Text(provider.searchError == nil ? "未找到匹配的符号" : "工作区符号当前不可用")
-                        .foregroundColor(.secondary)
-                    if let searchError = provider.searchError {
-                        Text(searchError)
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 16)
-                    }
-                }.frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List(filteredSymbols.indices, id: \.self) { index in
-                    WorkspaceSymbolRow(symbol: filteredSymbols[index])
-                        .onTapGesture { onSelect(filteredSymbols[index]) }
-                }
-                .listStyle(.plain)
-            }
-        }
-        .frame(minWidth: 400, minHeight: 300, idealHeight: 500)
-        .onDisappear {
-            searchTask?.cancel()
-        }
-    }
-}
-
-struct WorkspaceSymbolRow: View {
-    let symbol: WorkspaceSymbolItem
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: symbol.iconSymbol).font(.system(size: 12)).frame(width: 20).foregroundColor(.accentColor)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(symbol.name).font(.system(size: 13))
-                if let container = symbol.containerName {
-                    Text(container).font(.system(size: 11)).foregroundColor(.secondary)
-                }
-            }
-            Spacer()
-            Text(symbol.kindDisplayName).font(.system(size: 11)).foregroundColor(.secondary)
-        }
-        .padding(.vertical, 4).padding(.horizontal, 8).contentShape(Rectangle())
     }
 }

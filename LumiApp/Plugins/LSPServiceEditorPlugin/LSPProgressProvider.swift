@@ -1,5 +1,5 @@
 import Foundation
-import SwiftUI
+import Combine
 import LanguageServerProtocol
 
 /// LSP 进度通知提供者
@@ -98,34 +98,5 @@ struct ProgressTask: Identifiable, Equatable {
 
     enum TaskState: Equatable {
         case inProgress, completed, cancelled
-    }
-}
-
-// MARK: - UI View
-
-struct LSPProgressIndicatorView: View {
-    @ObservedObject var provider: LSPProgressProvider
-
-    var body: some View {
-        ForEach(provider.activeTasks.values.sorted(by: { $0.token < $1.token })) { task in
-            HStack(spacing: 8) {
-                if task.state == .inProgress {
-                    ProgressView().scaleEffect(0.6)
-                } else {
-                    Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(task.title).font(.system(size: 12))
-                    if let message = task.message {
-                        Text(message).font(.system(size: 10)).foregroundColor(.secondary)
-                    }
-                }
-                Spacer()
-                if let percentage = task.percentage {
-                    Text("\(Int(percentage))%").font(.system(size: 11)).monospacedDigit()
-                }
-            }
-            .padding(.horizontal, 8).padding(.vertical, 4)
-        }
     }
 }

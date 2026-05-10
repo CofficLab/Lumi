@@ -1,4 +1,5 @@
-import SwiftUI
+import Foundation
+import Combine
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
@@ -91,31 +92,5 @@ final class InlayHintProvider: ObservableObject, SuperEditorInlayHintProvider {
         case .optionA(let str): return str
         case .optionB(let markup): return markup.value
         }
-    }
-}
-
-// MARK: - UI View
-
-/// 内联提示标签视图（用于叠加在编辑器文本上）
-struct InlayHintLabel: View {
-    
-    let hint: InlayHintItem
-    @Environment(\.colorScheme) var colorScheme
-    
-    var body: some View {
-        Text(hint.text)
-            .font(.system(size: 11, design: .monospaced))
-            .foregroundColor(
-                hint.isTypeHint
-                    ? Color(nsColor: .secondaryLabelColor)
-                    : Color(nsColor: .tertiaryLabelColor)
-            )
-            .padding(.horizontal, hint.paddingLeft ? 6 : 0)
-            .padding(.horizontal, hint.paddingRight ? 6 : 0)
-            .background(
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
-            )
-            .help(hint.tooltip ?? "")
     }
 }
