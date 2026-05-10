@@ -67,6 +67,53 @@ struct MarkdownTableNormalizerTests {
         )
     }
 
+    @Test
+    func preservesShellPipelineTextAsParagraph() {
+        let input = """
+            cat README.md | grep Markdown | head
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(blocks == [.paragraph(text: "cat README.md | grep Markdown | head")])
+    }
+
+    @Test
+    func preservesTypeScriptUnionTextAsParagraph() {
+        let input = """
+            type Provider = "openai" | "anthropic" | "deepseek"
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(blocks == [.paragraph(text: "type Provider = “openai” | “anthropic” | “deepseek”")])
+    }
+
+    @Test
+    func preservesConsecutivePipeTextLinesAsParagraph() {
+        let input = """
+            stdout | stderr | status
+            alpha | beta | gamma
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(
+            blocks == [
+                .paragraph(text: """
+                    stdout | stderr | status
+                    alpha | beta | gamma
+                    """.trimmingCharacters(in: .whitespacesAndNewlines))
+            ]
+        )
+    }
+
     // MARK: - 单元格换行断裂
 
     @Test

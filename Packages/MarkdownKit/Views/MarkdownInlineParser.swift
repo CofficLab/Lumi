@@ -14,7 +14,7 @@ public enum MarkdownInlineParser {
             options: AttributedString.MarkdownParsingOptions(
                 interpretedSyntax: .inlineOnlyPreservingWhitespace
             )
-        ), containsInlinePresentationIntent(attributed) || !containsEmphasisDelimiter(text) {
+        ), shouldUseNativeParseResult(attributed, originalText: text) {
             return attributed
         }
 
@@ -56,6 +56,19 @@ public enum MarkdownInlineParser {
         }
 
         return result
+    }
+
+    private static func shouldUseNativeParseResult(
+        _ attributed: AttributedString,
+        originalText: String
+    ) -> Bool {
+        if !containsEmphasisDelimiter(originalText) {
+            return true
+        }
+        if String(attributed.characters).contains("**") {
+            return false
+        }
+        return containsInlinePresentationIntent(attributed)
     }
 
     private static func containsInlinePresentationIntent(_ attributed: AttributedString) -> Bool {

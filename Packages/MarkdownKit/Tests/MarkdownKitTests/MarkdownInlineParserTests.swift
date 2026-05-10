@@ -21,10 +21,81 @@ struct MarkdownInlineParserTests {
     }
 
     @Test
+    func parsesMultipleFallbackStrongSegments() {
+        let attributed = MarkdownInlineParser.parse("中文**“第一段”**以及**（第二段）**结束")
+
+        #expect(containsStrongRun(in: attributed, text: "“第一段”"))
+        #expect(containsStrongRun(in: attributed, text: "（第二段）"))
+        #expect(String(attributed.characters) == "中文“第一段”以及（第二段）结束")
+    }
+
+    @Test
+    func parsesPunctuationStartedStrongSegmentsAfterCJKText() {
+        let samples = [
+            ("一个**“加粗”**。", "“加粗”"),
+            ("一个**（加粗）**。", "（加粗）"),
+            ("一个**《加粗》**。", "《加粗》"),
+            ("一个**:加粗**。", ":加粗"),
+        ]
+
+        for sample in samples {
+            let attributed = MarkdownInlineParser.parse(sample.0)
+            #expect(containsStrongRun(in: attributed, text: sample.1))
+        }
+    }
+
+    @Test
+    func preservesUnclosedStrongDelimiterAsPlainText() {
+        let text = "中文**“未闭合”。"
+        let attributed = MarkdownInlineParser.parse(text)
+
+        #expect(String(attributed.characters) == text)
+        #expect(!containsStrongRun(in: attributed, text: "“未闭合”。"))
+    }
+
+    @Test
+    func preservesEmptyStrongDelimiterAsPlainText() {
+        let text = "中文****结束"
+        let attributed = MarkdownInlineParser.parse(text)
+
+        #expect(String(attributed.characters) == text)
+        #expect(!attributed.runs.contains { $0.inlinePresentationIntent == .stronglyEmphasized })
+    }
+
+    @Test
+    func preservesWhitespaceOnlyStrongDelimiterAsPlainText() {
+        let text = "中文**   **结束"
+        let attributed = MarkdownInlineParser.parse(text)
+
+        #expect(String(attributed.characters) == text)
+        #expect(!attributed.runs.contains { $0.inlinePresentationIntent == .stronglyEmphasized })
+    }
+
+    @Test
     func preservesNativeMarkdownParsingWhenItAlreadyWorks() throws {
         let attributed = MarkdownInlineParser.parse("这是一段 **加粗** 文本。")
 
         #expect(containsStrongRun(in: attributed, text: "加粗"))
+    }
+
+    @Test
+    func preservesNativeInlineCodeParsingWhenItAlreadyWorks() {
+        let attributed = MarkdownInlineParser.parse("使用 `code` 和 **加粗**。")
+
+        #expect(containsStrongRun(in: attributed, text: "加粗"))
+        #expect(attributed.runs.contains { run in
+            run.inlinePresentationIntent == .code && String(attributed.characters[run.range]) == "code"
+        })
+    }
+
+    @Test
+    func preservesNativeLinkParsingWhenItAlreadyWorks() {
+        let attributed = MarkdownInlineParser.parse("查看 [Lumi](https://example.com) 和 **加粗**。")
+
+        #expect(containsStrongRun(in: attributed, text: "加粗"))
+        #expect(attributed.runs.contains { run in
+            run.link?.absoluteString == "https://example.com" && String(attributed.characters[run.range]) == "Lumi"
+        })
     }
 
     @Test

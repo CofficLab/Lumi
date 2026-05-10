@@ -51,10 +51,10 @@ enum MarkdownTableNormalizer {
                     }
                 }
                 
-                // 单行中包含多个管道符并不一定是表格，常见于命令、路径、自然语言说明。
-                // Markdown 表格至少需要表头 + 分隔线/数据行，因此只有一行时保持原样，
+                // 包含多个管道符的文本不一定是表格，常见于命令、类型联合、自然语言说明。
+                // 只有具备明确表格结构（已有分隔线或每行都有边界管道符）时才归一化，
                 // 避免把普通段落误归一化成表格并破坏行内 Markdown（如 **加粗**）。
-                guard standardTableLineCount >= 2 else {
+                guard shouldNormalizeTableLines(tableLines) else {
                     result.append(contentsOf: tableLines)
                     continue
                 }
@@ -94,6 +94,17 @@ enum MarkdownTableNormalizer {
     /// 判断一行是否为表格相关行（至少 2 个管道符）
     private static func isTableLine(_ line: String) -> Bool {
         line.filter { $0 == "|" }.count >= 2
+    }
+    
+    private static func shouldNormalizeTableLines(_ lines: [String]) -> Bool {
+        guard lines.count >= 2 else { return false }
+        if lines.dropFirst().contains(where: { isSeparatorLine($0.trimmingCharacters(in: .whitespaces)) }) {
+            return true
+        }
+        return lines.allSatisfy { line in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            return trimmed.hasPrefix("|") && trimmed.hasSuffix("|")
+        }
     }
     
     /// 判断一个非表格行是否像表格数据的断裂续行
