@@ -16,6 +16,8 @@ final class FreeModelProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let displayName = String(localized: "FreeModel", table: "FreeModel")
     static let description = String(localized: "Free LLM Gateway by freemodel.dev", table: "FreeModel")
 
+    static let websiteURL: String? = "https://freemodel.dev"
+
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_FreeModel"

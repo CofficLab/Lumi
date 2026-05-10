@@ -17,6 +17,8 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
     static let displayName = String(localized: "DeepSeek", table: "DeepSeek")
     static let description = String(localized: "DeepSeek AI", table: "DeepSeek")
 
+    static let websiteURL: String? = "https://deepseek.com"
+
     // MARK: - Configuration
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_DeepSeek"

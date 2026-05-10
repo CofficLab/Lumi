@@ -18,6 +18,8 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
     static let displayName = String(localized: "OpenRouter", table: "OpenRouter")
     static let description = String(localized: "Multi-Provider LLM Router", table: "OpenRouter")
 
+    static let websiteURL: String? = "https://openrouter.ai"
+
     // MARK: - Configuration
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenRouter"

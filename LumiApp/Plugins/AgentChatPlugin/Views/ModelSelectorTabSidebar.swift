@@ -90,6 +90,19 @@ struct ModelSelectorTabSidebar: View {
                     .font(.system(size: 15, weight: .regular))
                     .lineLimit(1)
                 Spacer()
+
+                if let websiteURL = provider.websiteURL,
+                   let url = URL(string: websiteURL) {
+                    Button(action: {
+                        NSWorkspace.shared.open(url)
+                    }) {
+                        Image(systemName: "arrow.up.right.square")
+                            .font(.system(size: 10))
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.5))
+                    }
+                    .buttonStyle(.plain)
+                    .help(websiteURL)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 10)

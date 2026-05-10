@@ -18,6 +18,8 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
     static let displayName = String(localized: "Zhipu AI CodingPlan", table: "Zhipu")
     static let description = String(localized: "智谱 AI (GLM)", table: "Zhipu")
 
+    static let websiteURL: String? = "https://open.bigmodel.cn"
+
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Zhipu"

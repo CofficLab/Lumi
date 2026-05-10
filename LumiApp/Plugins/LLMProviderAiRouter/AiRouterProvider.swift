@@ -15,6 +15,8 @@ final class AiRouterProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let displayName = String(localized: "AiRouter", table: "AiRouter")
     static let description = String(localized: "LLM Router by airouter.org", table: "AiRouter")
 
+    static let websiteURL: String? = "https://airouter.org"
+
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_AiRouter"

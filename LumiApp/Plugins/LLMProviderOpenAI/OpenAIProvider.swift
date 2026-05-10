@@ -15,6 +15,8 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let displayName = String(localized: "OpenAI", table: "OpenAI")
     static let description = String(localized: "GPT by OpenAI", table: "OpenAI")
 
+    static let websiteURL: String? = "https://openai.com"
+
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_OpenAI"

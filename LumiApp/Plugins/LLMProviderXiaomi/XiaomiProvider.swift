@@ -16,6 +16,8 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     static let displayName = String(localized: "Xiaomi", table: "Xiaomi")
     static let description = String(localized: "Xiaomi AI Models", table: "Xiaomi")
 
+    static let websiteURL: String? = "https://xiaomi.com"
+
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Xiaomi"
