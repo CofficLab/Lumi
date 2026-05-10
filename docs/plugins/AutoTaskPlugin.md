@@ -3,17 +3,17 @@
 ## 1. 概述 (Overview)
 
 ### 1.1 背景
-在开发大型项目或复杂功能时，LLM 往往缺乏**全局状态记忆**和**进度意识**。随着对话轮次增加，上下文窗口可能丢失最初的宏观指令，导致 Agent“迷失方向”，不知道任务进行到哪一步，或者遗漏了关键步骤。这正是之前用户反馈“开发聊天 App 总是停下来”的核心痛点。
+在开发大型项目或复杂功能时，LLM 往往缺乏**全局状态记忆**和**进度意识**。随着对话轮次增加，上下文窗口可能丢失最初的宏观指令，导致 Agent"迷失方向"，不知道任务进行到哪一步，或者遗漏了关键步骤。这正是之前用户反馈"开发聊天 App 总是停下来"的核心痛点。
 
 ### 1.2 目标
 - **自动拆解**: 当用户提出复杂目标时，Agent 自动将其拆解为可执行的子任务列表。
 - **状态追踪**: 实时记录和更新每个任务的完成状态（To Do / In Progress / Done）。
 - **上下文增强**: 在每轮对话中，自动注入当前任务进度，保持 Agent 的全局视野。
-- **自我驱动**: Agent 完成任务后自动勾选并触发下一环节，实现“长程自动驾驶”。
+- **自我驱动**: Agent 完成任务后自动勾选并触发下一环节，实现"长程自动驾驶"。
 
 ### 1.3 设计原则
 - **零内核修改**: 纯插件实现，依赖 `SendMiddleware` + `AgentTool`。
-- **轻量存储**: 任务数据存储在项目级 `.agent/tasks.md` 文件中，易于人工编辑和 Git 追踪。
+- **规范存储**: 遵循插件数据存储规范，任务数据使用 SwiftData 存储在插件专属目录 `AppConfig.getDBFolderURL()/AutoTaskPlugin/` 下。
 - **无感运行**: 默认开启，对用户透明，不干扰正常对话流。
 
 ---
@@ -31,10 +31,10 @@
   └─────────┬───────────┘
             │
             ▼
-  ┌─────────────────────┐       ┌──────────────────┐
-  │  TaskStateManager    │──────►│  .agent/tasks.md  │
-  │  (本地文件读写)       │◄──────┤  (结构化存储)     │
-  └─────────┬───────────┘       └──────────────────┘
+  ┌─────────────────────┐       ┌─────────────────────────────────┐
+  │  TaskStateManager    │──────►│  AutoTaskPlugin/                 │
+  │  (SwiftData 读写)    │◄──────┤    tasks.sqlite  (任务数据)      │
+  └─────────┬───────────┘       └─────────────────────────────────┘
             │
       ┌─────┴──────┐
       ▼            ▼
@@ -52,18 +52,18 @@
 ```
 LumiApp/Plugins/AutoTaskPlugin/
 ├── AutoTaskPlugin.swift                     # 插件入口
+├── AutoTask.xcstrings                       # 本地化字符串
 ├── Services/
-│   ├── TaskOrchestrator.swift               # 任务拆解与生成逻辑
-│   └── TaskStateManager.swift               # 本地文件读写 (Actor)
+│   └── TaskStateManager.swift               # SwiftData 任务管理 (Actor)
 ├── Models/
-│   └── TaskItem.swift                       # 任务数据结构
+│   └── TaskItem.swift                       # 任务数据结构 (@Model)
 ├── Middleware/
-│   └── TaskContextMiddleware.swift          # 进度注入中间件 (Order: 70)
+│   └── TaskContextMiddleware.swift           # 进度注入中间件 (Order: 70)
 ├── Tools/
-│   ├── CreateTaskTool.swift                 # 创建任务
-│   ├── UpdateTaskTool.swift                 # 更新状态
+│   ├── CreateTaskTool.swift                  # 创建任务
+│   ├── UpdateTaskTool.swift                  # 更新状态
 │   └── CheckProgressTool.swift              # 查询进度
-└── Views/
+└── Views/                                    # (Phase 4)
     └── TaskStatusBarView.swift              # 状态栏入口
 ```
 
@@ -74,12 +74,19 @@ LumiApp/Plugins/AutoTaskPlugin/
 ### 3.1 任务数据模型 (`TaskItem`)
 
 ```swift
-struct TaskItem: Codable {
-    let id: String                  // 唯一标识 (如 UUID 或 Slug)
-    let title: String               // 任务标题
-    let description: String?        // 详细描述
-    var status: TaskStatus
-    var dependencies: [String]      // 前置任务 ID
+import Foundation
+import SwiftData
+
+@Model
+final class TaskItem: @unchecked Sendable {
+    var id: String                  // 唯一标识 (UUID)
+    var conversationId: String      // 所属会话 ID
+    var title: String               // 任务标题
+    var detail: String?             // 详细描述
+    var status: TaskStatus          // 任务状态
+    var order: Int                  // 排序序号
+    var createdAt: TimeInterval     // 创建时间
+    var updatedAt: TimeInterval     // 更新时间
 
     enum TaskStatus: String, Codable {
         case pending
@@ -90,60 +97,39 @@ struct TaskItem: Codable {
 }
 ```
 
-### 3.2 存储规范 (`.agent/tasks.md`)
+### 3.2 存储规范
 
-采用 Markdown Checklist 格式，方便人类阅读和工具解析：
+遵循插件数据存储规范，所有数据存放在插件专属目录：
 
-```markdown
-# Project Tasks
-
-- [x] **1. Environment Setup**
-  - [x] Initialize Swift Package
-  - [x] Configure Linting
-
-- [ ] **2. Core Architecture** (Current Focus)
-  - [x] Define MVVM Structure
-  - [ ] Setup Dependency Injection
-
-- [ ] **3. Feature Implementation**
-  - [ ] User Authentication
-  - [ ] Main Chat Interface
+```
+~/Library/Application Support/com.coffic.Lumi/db_{debug|production}/
+└── AutoTaskPlugin/
+    └── tasks.sqlite          # 任务数据 (SwiftData)
 ```
 
-### 3.3 核心服务
+### 3.3 核心服务 — `TaskStateManager`
 
-#### A. 任务编排器 (`TaskOrchestrator`)
-- **职责**: 当用户输入包含复杂意图（如“帮我做一个 xx”、“重构 yy”）时，调用 LLM 生成结构化任务列表。
-- **触发**: 首次对话检测到新目标，或用户明确要求规划 (`/plan`)。
+Actor 模式确保线程安全，封装 SwiftData `ModelContainer`/`ModelContext`，提供：
 
-#### B. 状态管理器 (`TaskStateManager`)
-- **职责**: 解析和更新 `.agent/tasks.md`。
-- **同步机制**: 每次更新后立即落盘，防止状态丢失。
+- `createTasks(conversationId:items:)` — 批量创建任务（先清空旧任务）
+- `fetchTasks(conversationId:)` — 按序获取所有任务
+- `updateTaskStatus(id:status:)` — 更新任务状态
+- `getProgressSummary(conversationId:)` — 返回 `TaskProgressSummary`
 
-### 3.4 中间件 (`TaskContextMiddleware`)
+### 3.4 中间件 — `TaskContextMiddleware`
 
-- **Order**: `70` (位于 GitHubInsight(60) 之后，RAG(100) 之前)。
-- **逻辑**:
-  1. 读取 `.agent/tasks.md`。
-  2. 提取 `Current Focus` (进行中) 和 `Pending` (待办) 任务。
-  3. 注入 Prompt：
-     ```markdown
-     ## Project Task Progress
-     Current Focus: Setup Dependency Injection
-     Remaining:
-     - Feature: User Auth
-     - Feature: Main Chat
-     
-     Your goal is to complete the current focus before moving on.
-     ```
+- **Order**: `70`
+- 每轮对话自动查询该会话的任务进度
+- 无任务时不注入，不干扰正常对话
+- 注入内容：当前焦点 + 待办列表 + 提醒指令
 
-### 3.5 状态栏 UI (`TaskStatusBarView`)
+### 3.5 Agent Tools
 
-- **显示内容**:
-  - **规划中**: `📋 Planning...`
-  - **执行中**: `📋 3/12 Tasks (25%)`
-  - **全部完成**: `✅ All Tasks Done`
-- **点击交互**: 弹出 `.agent/tasks.md` 预览，允许用户手动修改任务（如增加/删除/调整顺序）。
+| 工具 | 功能 | 风险等级 |
+|------|------|---------|
+| `create_task` | 批量创建任务（需要 `conversation_id` + `tasks` 数组） | Low |
+| `update_task` | 更新任务状态（`in_progress` / `completed` / `skipped`） | Low |
+| `check_progress` | 查询当前会话的任务列表和进度百分比 | Low |
 
 ---
 
@@ -158,13 +144,13 @@ struct TaskItem: Codable {
 Agent 分析意图: 这是一个复杂目标，需要规划
     │
     ▼
-Agent 调用 create_task 工具 (或由 Orchestrator 自动生成)
+Agent 调用 create_task 工具
     │
     ▼
-创建 .agent/tasks.md:
-  - [ ] 1. Project Setup
-  - [ ] 2. Data Model Design
-  - ...
+TaskStateManager 写入任务到 SQLite 数据库:
+    1. Project Setup
+    2. Data Model Design
+    ...
     │
     ▼
 中间件注入进度 -> Agent 回复:
@@ -180,7 +166,7 @@ Agent 完成 Setup 代码
 Agent 调用 update_task (id: "1", status: "completed")
     │
     ▼
-TaskStateManager 更新文件 -> 标记 [x] 1. Project Setup
+TaskStateManager 更新数据库 -> 标记 1. Project Setup 为 completed
     │
     ▼
 中间件在下一轮注入新的进度 (Focus: 2. Data Model Design)
@@ -193,22 +179,22 @@ Agent 自动开始写 Data Model 代码
 
 ## 5. 实施计划 (Implementation Plan)
 
-### Phase 1: 核心存储与模型
-- [ ] 定义 `TaskItem` 结构体
-- [ ] 实现 `TaskStateManager`: Markdown 解析与生成
+### Phase 1: 核心存储与模型 ✅
+- [x] 定义 `TaskItem` SwiftData 模型 (@Model)
+- [x] 实现 `TaskStateManager`: SwiftData ModelContainer/ModelContext 封装 (Actor)
 
-### Phase 2: 任务规划与工具
-- [ ] 实现 `CreateTaskTool` / `UpdateTaskTool`
-- [ ] 让 Agent 能够自动拆分任务
+### Phase 2: 任务规划与工具 ✅
+- [x] 实现 `CreateTaskTool` / `UpdateTaskTool` / `CheckProgressTool`
+- [x] 让 Agent 能够自动拆分任务
 
-### Phase 3: 中间件集成
-- [ ] 实现 `TaskContextMiddleware` (Order: 70)
-- [ ] 验证 Prompt 注入效果
+### Phase 3: 中间件集成 ✅
+- [x] 实现 `TaskContextMiddleware` (Order: 70)
+- [x] 验证 Prompt 注入效果
 
-### Phase 4: UI 与优化
+### Phase 4: UI 与优化（待实现）
 - [ ] 实现 `TaskStatusBarView`
-- [ ] 支持手动编辑任务文件
-- [ ] 增加“跳过任务”、“重新规划”功能
+- [ ] 支持手动编辑任务
+- [ ] 增加"跳过任务"、"重新规划"功能
 
 ---
 
@@ -216,9 +202,9 @@ Agent 自动开始写 Data Model 代码
 
 | 风险 | 应对策略 |
 |------|----------|
-| **任务文件冲突** | 采用追加写入或 Git 锁机制，避免多端同步覆盖 |
+| **数据膨胀** | 设置 `maxTasksPerConversation` (50) 限制，批量创建时先清旧任务 |
 | **Agent 忘记更新** | 中间件在 Prompt 中增加提醒指令 ("记得在完成任务后调用 update_task") |
-| **上下文过载** | 仅注入当前相关的 3-5 个任务，历史已完成任务折叠为摘要 |
+| **上下文过载** | 仅注入当前相关的 3-5 个待办任务，已完成任务不重复注入 |
 
 ---
 
