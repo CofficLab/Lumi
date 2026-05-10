@@ -34,6 +34,7 @@ enum MarkdownTableNormalizer {
             
             if isTableLine(trimmed) {
                 var tableLines: [String] = []
+                var standardTableLineCount = 0
                 
                 // 收集连续的表格行
                 while i < lines.count {
@@ -43,10 +44,19 @@ enum MarkdownTableNormalizer {
                     if currentTrimmed.isEmpty { break }
                     if isTableLine(currentTrimmed) {
                         tableLines.append(currentLine)
+                        standardTableLineCount += 1
                         i += 1
                     } else {
                         break
                     }
+                }
+                
+                // 单行中包含多个管道符并不一定是表格，常见于命令、路径、自然语言说明。
+                // Markdown 表格至少需要表头 + 分隔线/数据行，因此只有一行时保持原样，
+                // 避免把普通段落误归一化成表格并破坏行内 Markdown（如 **加粗**）。
+                guard standardTableLineCount >= 2 else {
+                    result.append(contentsOf: tableLines)
+                    continue
                 }
                 
                 // 向前探测：收集紧随其后的疑似断裂续行（管道符 < 2 的非空行）

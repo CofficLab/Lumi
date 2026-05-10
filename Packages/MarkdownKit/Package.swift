@@ -60,6 +60,11 @@ let package = Package(
             name: "MarkdownKitCoreTests",
             dependencies: ["MarkdownKitCore"],
             path: "Tests/MarkdownKitCoreTests"
+        ),
+        .testTarget(
+            name: "MarkdownKitTests",
+            dependencies: ["MarkdownKit"],
+            path: "Tests/MarkdownKitTests"
         )
     ]
 )

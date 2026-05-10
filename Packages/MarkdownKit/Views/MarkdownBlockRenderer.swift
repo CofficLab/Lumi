@@ -192,18 +192,8 @@ public struct MarkdownBlockRenderer: View {
 
     @ViewBuilder
     private func inlineText(_ text: String) -> some View {
-        if let attributed = try? AttributedString(
-            markdown: text,
-            options: AttributedString.MarkdownParsingOptions(
-                interpretedSyntax: .inlineOnlyPreservingWhitespace
-            )
-        ) {
-            Text(attributed)
-                .textSelection(.enabled)
-        } else {
-            Text(verbatim: text)
-                .textSelection(.enabled)
-        }
+        Text(MarkdownInlineParser.parse(text))
+            .textSelection(.enabled)
     }
 
     @ViewBuilder

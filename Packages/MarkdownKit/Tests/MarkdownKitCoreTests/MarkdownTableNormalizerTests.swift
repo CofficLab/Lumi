@@ -33,6 +33,40 @@ struct MarkdownTableNormalizerTests {
         #expect(blocks[0] == .table(headers: ["A", "B"], rows: [["1", "2"]]))
     }
 
+    @Test
+    func doesNotTreatSingleParagraphWithPipesAsTable() {
+        let input = """
+            请注意消息列表的 md 解析，你看图片最后一句话，md 解析器没有将 ** 语法解析成功，这是为什么 | 这里不是表格 | 只是普通段落，结尾应该 **加粗成功**
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(blocks == [.paragraph(text: input.trimmingCharacters(in: .whitespacesAndNewlines))])
+    }
+
+    @Test
+    func preservesParagraphAfterPipeText() {
+        let input = """
+            命令输出中经常包含管道：cat file | grep foo | head。
+            最后一句应该 **加粗成功**。
+            """
+
+        let result = MarkdownTableNormalizer.normalize(input)
+        let blocks = MarkdownParser.parse(result)
+
+        #expect(result == input)
+        #expect(
+            blocks == [
+                .paragraph(text: """
+                    命令输出中经常包含管道：cat file | grep foo | head。
+                    最后一句应该 **加粗成功**。
+                    """.trimmingCharacters(in: .whitespacesAndNewlines))
+            ]
+        )
+    }
+
     // MARK: - 单元格换行断裂
 
     @Test
