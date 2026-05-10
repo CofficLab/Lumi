@@ -76,7 +76,7 @@ struct EditorTabHeaderView: View {
     // MARK: - 子视图
 
     private var tabList: some View {
-        ScrollView(.horizontal, showsIndicators: true) {
+        ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 0) {
                 ForEach(visibleTabs) { tab in
                     EditorTabItemView(
