@@ -26,6 +26,7 @@ struct RegistryManagerView: View {
                 .padding()
             }
         }
+        .frame(maxWidth: .infinity)
         .overlay(alignment: .bottom) {
             if viewModel.showToast {
                 HStack {
