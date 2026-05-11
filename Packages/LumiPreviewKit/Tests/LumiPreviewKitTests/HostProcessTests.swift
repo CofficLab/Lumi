@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import Testing
 @testable import LumiPreviewKit
 
@@ -261,6 +262,60 @@ struct HostProcessTests {
         await connection.terminate()
     }
 
+    @Test("宿主进程在离屏窗口中渲染 NSView")
+    func loadPreviewNSViewRendersAfterWindowAttachment() async throws {
+        let executableURL = try buildHostExecutable()
+        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        defer {
+            Task {
+                await connection.terminate()
+            }
+        }
+
+        let dylibURL = try await buildSignedDylib(
+            source: #"""
+            import AppKit
+            import Darwin
+
+            final class WindowAwarePreviewView: NSView {
+                override var intrinsicContentSize: NSSize {
+                    NSSize(width: 640, height: 360)
+                }
+
+                override func draw(_ dirtyRect: NSRect) {
+                    (window == nil ? NSColor.white : NSColor.red).setFill()
+                    bounds.fill()
+                }
+            }
+
+            @_cdecl("lumi_preview_entry")
+            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
+                let json = #"{"title":"Window-Aware NSView","subtitle":"NSView"}"#
+                return strdup(json).map { UnsafePointer($0) }
+            }
+
+            @_cdecl("lumi_preview_make_nsview")
+            public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
+                let view = WindowAwarePreviewView(frame: NSRect(x: 0, y: 0, width: 320, height: 180))
+                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
+                return Unmanaged.passRetained(view).toOpaque()
+            }
+            """#
+        )
+
+        let response = try await connection.requestLoadPreviewEntry(
+            at: dylibURL,
+            symbolName: "lumi_preview_entry"
+        )
+        let bitmap = try decodedBitmap(from: response.previewImagePNGBase64)
+
+        #expect(response.message == "Loaded preview view entry Window-Aware NSView")
+        #expect(bitmap.pixelsWide >= 600)
+        #expect(bitmap.pixelsHigh >= 340)
+        #expect(containsRedPixel(in: bitmap))
+        await connection.terminate()
+    }
+
     @Test("增量编译失败后宿主进程仍可刷新")
     func compileFailureDoesNotAffectRunningHost() async throws {
         let executableURL = try buildHostExecutable()
@@ -413,6 +468,35 @@ struct HostProcessTests {
         }
 
         return nil
+    }
+
+    private func decodedBitmap(from base64: String?) throws -> NSBitmapImageRep {
+        guard let base64,
+              let data = Data(base64Encoded: base64),
+              let bitmap = NSBitmapImageRep(data: data) else {
+            throw PreviewError.runtimeCrashed(message: "Expected a valid PNG preview image.")
+        }
+
+        return bitmap
+    }
+
+    private func containsRedPixel(in bitmap: NSBitmapImageRep) -> Bool {
+        let samplePoints = [
+            (max(bitmap.pixelsWide / 8, 0), max(bitmap.pixelsHigh / 8, 0)),
+            (max(bitmap.pixelsWide / 2, 0), max(bitmap.pixelsHigh / 8, 0)),
+            (max(bitmap.pixelsWide * 7 / 8, 0), max(bitmap.pixelsHigh * 7 / 8, 0))
+        ]
+
+        return samplePoints.contains { x, y in
+            guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else {
+                return false
+            }
+
+            return color.redComponent > 0.7
+                && color.greenComponent < 0.25
+                && color.blueComponent < 0.25
+                && color.alphaComponent > 0.8
+        }
     }
 
     private func buildSignedDylib(source: String) async throws -> URL {
