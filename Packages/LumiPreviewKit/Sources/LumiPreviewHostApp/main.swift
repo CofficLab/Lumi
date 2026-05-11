@@ -51,6 +51,32 @@ private struct StdioPreviewHost {
                 return RenderResponse(success: false, message: "Dylib load request is missing dylibPath.")
             }
             return renderer.loadDylib(atPath: dylibPath, previewEntrySymbol: request.previewEntrySymbol)
+        case .startLivePreview:
+            return renderer.startLivePreview()
+        case .updateLiveFrame:
+            guard let liveFrame = request.liveFrame else {
+                return RenderResponse(success: false, message: "Update live frame request is missing liveFrame.")
+            }
+            return renderer.updateLiveFrame(
+                x: liveFrame.x,
+                y: liveFrame.y,
+                width: liveFrame.width,
+                height: liveFrame.height
+            )
+        case .showLivePreview:
+            return renderer.showLivePreview()
+        case .hideLivePreview:
+            return renderer.hideLivePreview()
+        case .reloadLivePreview:
+            guard let dylibPath = request.dylibPath else {
+                return RenderResponse(success: false, message: "Reload live preview request is missing dylibPath.")
+            }
+            return renderer.reloadLivePreview(
+                dylibPath: dylibPath,
+                previewEntrySymbol: request.previewEntrySymbol
+            )
+        case .stopLivePreview:
+            return renderer.stopLivePreview()
         }
     }
 
@@ -75,10 +101,12 @@ private final class PreviewRenderer {
 
     private var previewView: NSView?
     private var renderWindow: NSWindow?
+    private var liveWindow: NSWindow?
     private var currentDiscovery: PreviewDiscovery?
     private var currentConfiguration: PreviewRenderConfiguration = .empty
     private var loadedHandles: [UnsafeMutableRawPointer] = []
     private var currentDynamicPreviewTitle: String?
+    private var isLivePreviewEnabled = false
 
     init() {
         NSApplication.shared.setActivationPolicy(.accessory)
@@ -259,6 +287,7 @@ private final class PreviewRenderer {
         }
         previewView = view
         currentDiscovery = nil
+        isLivePreviewEnabled = true
 
         let title = descriptor?.title ?? symbolName
         currentDynamicPreviewTitle = title
@@ -267,7 +296,8 @@ private final class PreviewRenderer {
             success: true,
             previewID: symbolName,
             message: "Loaded preview view entry \(title)",
-            previewImagePNGBase64: snapshotPNGBase64()
+            previewImagePNGBase64: snapshotPNGBase64(),
+            livePreviewEnabled: true
         )
     }
 
@@ -305,6 +335,160 @@ private final class PreviewRenderer {
 
         return Self.previewEntryDescriptor(from: String(cString: payloadPointer))
     }
+
+    // MARK: - Live Preview
+
+    func startLivePreview() -> RenderResponse {
+        guard isLivePreviewEnabled, let previewView else {
+            return RenderResponse(
+                success: false,
+                message: "Live preview is not available: no real NSView entry loaded."
+            )
+        }
+
+        if liveWindow != nil {
+            return RenderResponse(
+                success: true,
+                message: "Live preview already running.",
+                livePreviewEnabled: true,
+                liveWindowNumber: liveWindow?.windowNumber
+            )
+        }
+
+        let frame = NSRect(x: 0, y: 0, width: 320, height: 180)
+        let window = NSWindow(
+            contentRect: frame,
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        window.isReleasedWhenClosed = false
+        window.backgroundColor = .clear
+        window.ignoresMouseEvents = false
+        window.hasShadow = false
+        window.level = .floating
+        window.contentView = previewView
+        window.setFrameOrigin(NSPoint(x: -100_000, y: -100_000))
+
+        liveWindow = window
+
+        return RenderResponse(
+            success: true,
+            message: "Live preview started.",
+            livePreviewEnabled: true,
+            liveWindowNumber: window.windowNumber
+        )
+    }
+
+    func updateLiveFrame(x: Double, y: Double, width: Double, height: Double) -> RenderResponse {
+        guard let liveWindow else {
+            return RenderResponse(success: false, message: "No live window to update.")
+        }
+
+        let frame = NSRect(x: x, y: y, width: width, height: height)
+        liveWindow.setFrame(frame, display: true)
+
+        return RenderResponse(
+            success: true,
+            message: "Live frame updated to (\(x), \(y), \(width)x\(height)).",
+            livePreviewEnabled: true,
+            liveWindowNumber: liveWindow.windowNumber
+        )
+    }
+
+    func showLivePreview() -> RenderResponse {
+        guard let liveWindow else {
+            return RenderResponse(success: false, message: "No live window to show.")
+        }
+
+        liveWindow.orderFrontRegardless()
+
+        return RenderResponse(
+            success: true,
+            message: "Live preview shown.",
+            livePreviewEnabled: true,
+            liveWindowNumber: liveWindow.windowNumber
+        )
+    }
+
+    func hideLivePreview() -> RenderResponse {
+        guard let liveWindow else {
+            return RenderResponse(success: false, message: "No live window to hide.")
+        }
+
+        liveWindow.orderOut(nil)
+
+        return RenderResponse(
+            success: true,
+            message: "Live preview hidden.",
+            livePreviewEnabled: true,
+            liveWindowNumber: liveWindow.windowNumber
+        )
+    }
+
+    func reloadLivePreview(dylibPath: String, previewEntrySymbol: String?) -> RenderResponse {
+        guard FileManager.default.fileExists(atPath: dylibPath) else {
+            return RenderResponse(success: false, message: "Dylib does not exist: \(dylibPath)")
+        }
+
+        guard let handle = dlopen(dylibPath, RTLD_NOW | RTLD_LOCAL) else {
+            let errorMessage = dlerror().map { String(cString: $0) } ?? "Unknown dlopen error."
+            return RenderResponse(success: false, message: errorMessage)
+        }
+
+        loadedHandles.append(handle)
+
+        guard let previewEntrySymbol else {
+            return RenderResponse(success: false, message: "Reload requires previewEntrySymbol.")
+        }
+
+        // Try loading NSView entry first
+        let descriptor = previewEntryDescriptor(symbolName: previewEntrySymbol, from: handle)
+        if let symbol = dlsym(handle, PreviewEntryBuilder.viewSymbolName) {
+            typealias PreviewNSViewFunction = @convention(c) () -> UnsafeMutableRawPointer?
+            let viewFunction = unsafeBitCast(symbol, to: PreviewNSViewFunction.self)
+            if let viewPointer = viewFunction() {
+                let view = Unmanaged<NSView>.fromOpaque(viewPointer).takeRetainedValue()
+                if view.frame.isEmpty {
+                    view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
+                }
+                previewView = view
+                isLivePreviewEnabled = true
+                let title = descriptor?.title ?? previewEntrySymbol
+                currentDynamicPreviewTitle = title
+
+                // Update live window content if it exists
+                liveWindow?.contentView = view
+
+                return RenderResponse(
+                    success: true,
+                    message: "Reloaded live preview view entry \(title)",
+                    previewImagePNGBase64: snapshotPNGBase64(),
+                    livePreviewEnabled: true,
+                    liveWindowNumber: liveWindow?.windowNumber
+                )
+            }
+        }
+
+        return RenderResponse(
+            success: false,
+            message: "Reload failed: could not create NSView from new dylib."
+        )
+    }
+
+    func stopLivePreview() -> RenderResponse {
+        liveWindow?.orderOut(nil)
+        liveWindow?.contentView = nil
+        liveWindow?.close()
+        liveWindow = nil
+
+        return RenderResponse(
+            success: true,
+            message: "Live preview stopped."
+        )
+    }
+
+    // MARK: - Snapshot
 
     private func snapshotPNGBase64() -> String? {
         guard let previewView else { return nil }

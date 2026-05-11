@@ -71,6 +71,30 @@ public protocol HostConnection: AnyObject, Sendable {
     @discardableResult
     func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> RenderResponse
 
+    /// 请求宿主进程启动 Live 预览窗口。
+    @discardableResult
+    func requestStartLivePreview() async throws -> RenderResponse
+
+    /// 请求宿主进程更新 Live 预览窗口的屏幕坐标和尺寸。
+    @discardableResult
+    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double) async throws -> RenderResponse
+
+    /// 请求宿主进程显示 Live 预览窗口。
+    @discardableResult
+    func requestShowLivePreview() async throws -> RenderResponse
+
+    /// 请求宿主进程隐藏 Live 预览窗口。
+    @discardableResult
+    func requestHideLivePreview() async throws -> RenderResponse
+
+    /// 请求宿主进程重新加载 Live 预览（加载新 dylib，替换 root view）。
+    @discardableResult
+    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> RenderResponse
+
+    /// 请求宿主进程停止 Live 预览并关闭 live window。
+    @discardableResult
+    func requestStopLivePreview() async throws -> RenderResponse
+
     /// 终止宿主进程。
     func terminate() async
 }
@@ -150,6 +174,73 @@ private final class ProcessHostConnection: HostConnection, @unchecked Sendable {
         let response: RenderResponse = try send(request)
         guard response.success else {
             throw PreviewError.runtimeCrashed(message: response.message ?? "Preview entry load request failed.")
+        }
+        return response
+    }
+
+    @discardableResult
+    func requestStartLivePreview() async throws -> RenderResponse {
+        let request = RenderRequest(command: .startLivePreview)
+        let response: RenderResponse = try send(request)
+        guard response.success else {
+            throw PreviewError.runtimeCrashed(message: response.message ?? "Start live preview failed.")
+        }
+        return response
+    }
+
+    @discardableResult
+    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double) async throws -> RenderResponse {
+        let request = RenderRequest(
+            command: .updateLiveFrame,
+            liveFrame: LiveFrameRequest(x: x, y: y, width: width, height: height)
+        )
+        let response: RenderResponse = try send(request)
+        guard response.success else {
+            throw PreviewError.runtimeCrashed(message: response.message ?? "Update live frame failed.")
+        }
+        return response
+    }
+
+    @discardableResult
+    func requestShowLivePreview() async throws -> RenderResponse {
+        let request = RenderRequest(command: .showLivePreview)
+        let response: RenderResponse = try send(request)
+        guard response.success else {
+            throw PreviewError.runtimeCrashed(message: response.message ?? "Show live preview failed.")
+        }
+        return response
+    }
+
+    @discardableResult
+    func requestHideLivePreview() async throws -> RenderResponse {
+        let request = RenderRequest(command: .hideLivePreview)
+        let response: RenderResponse = try send(request)
+        guard response.success else {
+            throw PreviewError.runtimeCrashed(message: response.message ?? "Hide live preview failed.")
+        }
+        return response
+    }
+
+    @discardableResult
+    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> RenderResponse {
+        let request = RenderRequest(
+            command: .reloadLivePreview,
+            dylibPath: dylibURL.path,
+            previewEntrySymbol: symbolName
+        )
+        let response: RenderResponse = try send(request)
+        guard response.success else {
+            throw PreviewError.runtimeCrashed(message: response.message ?? "Reload live preview failed.")
+        }
+        return response
+    }
+
+    @discardableResult
+    func requestStopLivePreview() async throws -> RenderResponse {
+        let request = RenderRequest(command: .stopLivePreview)
+        let response: RenderResponse = try send(request)
+        guard response.success else {
+            throw PreviewError.runtimeCrashed(message: response.message ?? "Stop live preview failed.")
         }
         return response
     }

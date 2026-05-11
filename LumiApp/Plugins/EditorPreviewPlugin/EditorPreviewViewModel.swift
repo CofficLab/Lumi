@@ -2,6 +2,7 @@
 import Foundation
 import LumiPreviewKit
 import AppKit
+import SwiftUI
 
 @MainActor
 final class EditorPreviewViewModel: ObservableObject {
@@ -31,6 +32,8 @@ final class EditorPreviewViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Published State
+
     @Published private(set) var previews: [PreviewDiscovery] = []
     @Published var selectedPreviewID: String?
     @Published private(set) var runState: RunState = .idle
@@ -38,10 +41,20 @@ final class EditorPreviewViewModel: ObservableObject {
     @Published private(set) var renderImage: NSImage?
     @Published private(set) var diagnostics: String?
     @Published private(set) var performanceSummary: String?
+    @Published private(set) var displayMode: PreviewDisplayMode = .image
+    @Published private(set) var livePreviewInfo: LivePreviewInfo = LivePreviewInfo()
+    @Published private(set) var liveCanvasRect: CGRect = .zero
+    @Published private(set) var isLiveLoading: Bool = false
+
+    // MARK: - Private State
 
     private let scanner = PreviewScanner()
     private var session: (any PreviewSession)?
     private var engine: LivePreviewEngine?
+    private var liveFrameSyncTask: Task<Void, Never>?
+    private var isStoppingLive: Bool = false
+
+    // MARK: - Computed Properties
 
     var selectedPreview: PreviewDiscovery? {
         if let selectedPreviewID,
@@ -62,6 +75,44 @@ final class EditorPreviewViewModel: ObservableObject {
     var canStop: Bool {
         session != nil
     }
+
+    /// Whether Live mode is available for the current session.
+    var isLiveAvailable: Bool {
+        guard let session else { return false }
+        return livePreviewInfo.state == .available
+            || livePreviewInfo.state == .running
+            || livePreviewInfo.state == .launching
+    }
+
+    /// Whether Live mode can be switched to (host supports it).
+    var canSwitchToLive: Bool {
+        guard runState == .running else { return false }
+        return livePreviewInfo.state == .available || livePreviewInfo.state == .running
+    }
+
+    /// Whether Image mode can be switched to.
+    var canSwitchToImage: Bool {
+        displayMode == .live
+    }
+
+    var liveUnavailableReason: String? {
+        guard runState == .running else {
+            return String(localized: "Start a preview first", table: "EditorPreview")
+        }
+        switch livePreviewInfo.state {
+        case .unavailable:
+            return String(localized: "Live requires a real SwiftUI view entry", table: "EditorPreview")
+        case .failed:
+            return livePreviewInfo.unavailableReason
+                ?? String(localized: "Live preview failed", table: "EditorPreview")
+        case .launching, .running, .available:
+            return nil
+        case .stopped:
+            return String(localized: "Live preview stopped", table: "EditorPreview")
+        }
+    }
+
+    // MARK: - Scan & Source Updates
 
     func update(sourceText: String?, fileURL: URL?) {
         guard let sourceText,
@@ -95,6 +146,8 @@ final class EditorPreviewViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Start / Refresh / Stop
+
     func startSelectedPreviewIfNeeded(allowsStopped: Bool = true) {
         switch runState {
         case .idle:
@@ -119,14 +172,15 @@ final class EditorPreviewViewModel: ObservableObject {
         renderImage = nil
         diagnostics = nil
         performanceSummary = nil
+        displayMode = .image
+        livePreviewInfo = LivePreviewInfo()
         runState = .starting
 
         Task {
             do {
                 let nextSession = try await engine.startPreview(selectedPreview)
                 session = nextSession
-
-                await updateRenderSurface(from: nextSession)
+                await syncSessionState(from: nextSession)
             } catch let error as PreviewError {
                 runState = .failed(Self.message(for: error))
             } catch {
@@ -137,12 +191,19 @@ final class EditorPreviewViewModel: ObservableObject {
 
     func refreshPreview() {
         guard let session, let engine else { return }
+
+        // If in live mode, do live reload
+        if displayMode == .live {
+            liveReload()
+            return
+        }
+
         runState = .starting
 
         Task {
             do {
                 try await engine.refreshPreview(session)
-                await updateRenderSurface(from: session)
+                await syncSessionState(from: session)
             } catch let error as PreviewError {
                 runState = .failed(Self.message(for: error))
             } catch {
@@ -152,6 +213,13 @@ final class EditorPreviewViewModel: ObservableObject {
     }
 
     func stopPreview() {
+        isStoppingLive = true
+
+        // Stop live first if running
+        if displayMode == .live {
+            stopLiveInternal()
+        }
+
         guard let session, let engine else {
             runState = .stopped
             renderMessage = nil
@@ -168,13 +236,194 @@ final class EditorPreviewViewModel: ObservableObject {
         renderImage = nil
         diagnostics = nil
         performanceSummary = nil
+        displayMode = .image
+        livePreviewInfo = LivePreviewInfo()
 
         Task {
             await engine.stopPreview(session)
+            isStoppingLive = false
         }
     }
 
-    private func updateRenderSurface(from session: any PreviewSession) async {
+    // MARK: - Display Mode Switching
+
+    func switchToLive() {
+        guard canSwitchToLive else { return }
+        displayMode = .live
+        isLiveLoading = true
+
+        Task {
+            await startLivePreview()
+        }
+    }
+
+    func switchToImage() {
+        guard canSwitchToImage else { return }
+        displayMode = .image
+
+        Task {
+            await hideLivePreviewInternal()
+        }
+    }
+
+    // MARK: - Live Preview Lifecycle
+
+    private func startLivePreview() async {
+        guard let session = self.session, let engine = self.engine else {
+            fallbackToImage(reason: String(localized: "No active session", table: "EditorPreview"))
+            return
+        }
+
+        do {
+            try await engine.startLivePreview(session)
+            livePreviewInfo = LivePreviewInfo(state: .running)
+            await syncLiveFrameFromEngine()
+            try? await engine.showLivePreview(session)
+            isLiveLoading = false
+        } catch {
+            fallbackToImage(reason: error.localizedDescription)
+        }
+    }
+
+    private func hideLivePreviewInternal() async {
+        guard let session = self.session, let engine = self.engine else { return }
+        try? await engine.hideLivePreview(session)
+        livePreviewInfo = LivePreviewInfo(
+            state: .available,
+            hostWindowNumber: livePreviewInfo.hostWindowNumber
+        )
+    }
+
+    private func showLivePreviewInternal() async {
+        guard let session = self.session, let engine = self.engine else { return }
+        try? await engine.showLivePreview(session)
+    }
+
+    private func stopLiveInternal() {
+        liveFrameSyncTask?.cancel()
+        liveFrameSyncTask = nil
+
+        guard let session = self.session, let engine = self.engine else {
+            return
+        }
+
+        Task {
+            try? await engine.stopLivePreview(session)
+        }
+
+        livePreviewInfo = LivePreviewInfo(
+            state: .available,
+            hostWindowNumber: nil
+        )
+    }
+
+    // MARK: - Live Reload
+
+    private func liveReload() {
+        guard let session, let engine else { return }
+        runState = .starting
+
+        Task {
+            do {
+                try await engine.refreshPreview(session)
+                await syncSessionState(from: session)
+            } catch let error as PreviewError {
+                runState = .failed(Self.message(for: error))
+            } catch {
+                runState = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    // MARK: - Live Canvas Frame Sync
+
+    /// Update the canvas rect that the live window should overlay.
+    func updateLiveCanvasRect(_ rect: CGRect) {
+        let newRect = rect.standardized
+        guard abs(newRect.origin.x - liveCanvasRect.origin.x) > 0.5
+            || abs(newRect.origin.y - liveCanvasRect.origin.y) > 0.5
+            || abs(newRect.size.width - liveCanvasRect.size.width) > 0.5
+            || abs(newRect.size.height - liveCanvasRect.size.height) > 0.5 else {
+            return
+        }
+
+        liveCanvasRect = newRect
+
+        // Debounce frame sync
+        liveFrameSyncTask?.cancel()
+        liveFrameSyncTask = Task {
+            try? await Task.sleep(nanoseconds: 16_000_000) // ~1 frame at 60fps
+            guard !Task.isCancelled else { return }
+            await syncLiveFrameFromEngine()
+        }
+    }
+
+    /// Called when the panel becomes hidden or the tab switches away.
+    func liveCanvasDidDisappear() {
+        guard displayMode == .live else { return }
+        Task {
+            await hideLivePreviewInternal()
+        }
+    }
+
+    /// Called when the panel becomes visible and live mode is active.
+    func liveCanvasDidAppear() {
+        guard displayMode == .live else { return }
+        Task {
+            await syncLiveFrameFromEngine()
+            await showLivePreviewInternal()
+        }
+    }
+
+    /// Called when Lumi main window loses focus.
+    func lumiWindowDidResignKey() {
+        guard displayMode == .live else { return }
+        Task {
+            await hideLivePreviewInternal()
+        }
+    }
+
+    /// Called when Lumi main window gains focus.
+    func lumiWindowDidBecomeKey() {
+        guard displayMode == .live else { return }
+        Task {
+            await syncLiveFrameFromEngine()
+            await showLivePreviewInternal()
+        }
+    }
+
+    private func syncLiveFrameFromEngine() async {
+        guard displayMode == .live,
+              !liveCanvasRect.isEmpty,
+              let session = self.session,
+              let engine = self.engine else {
+            return
+        }
+
+        let rect = liveCanvasRect
+        try? await engine.updateLiveFrame(
+            session,
+            x: Double(rect.origin.x),
+            y: Double(rect.origin.y),
+            width: Double(rect.width),
+            height: Double(rect.height)
+        )
+    }
+
+    // MARK: - Fallback & Error Handling
+
+    private func fallbackToImage(reason: String) {
+        displayMode = .image
+        livePreviewInfo = LivePreviewInfo(
+            state: .failed,
+            unavailableReason: reason
+        )
+        isLiveLoading = false
+    }
+
+    // MARK: - Session State Sync
+
+    private func syncSessionState(from session: any PreviewSession) async {
         if let response = await session.lastRenderResponse {
             renderMessage = response.message
             renderImage = Self.image(from: response)
@@ -183,6 +432,12 @@ final class EditorPreviewViewModel: ObservableObject {
 
         let metrics = await session.performanceMetrics
         performanceSummary = Self.performanceSummary(for: metrics)
+
+        // Sync live availability
+        let liveInfo = await session.livePreviewInfo
+        if liveInfo.state != .unavailable {
+            livePreviewInfo = liveInfo
+        }
 
         switch await session.state {
         case .running:
@@ -195,6 +450,8 @@ final class EditorPreviewViewModel: ObservableObject {
             runState = .starting
         }
     }
+
+    // MARK: - Error Formatting
 
     private static func message(for error: PreviewError) -> String {
         switch error {

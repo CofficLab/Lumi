@@ -10,6 +10,24 @@ public enum PreviewHostCommand: String, Codable, Sendable {
 
     /// 加载已编译并签名的预览 dylib。
     case loadDylib
+
+    /// 启动 Live 预览：加载当前 preview dylib，创建真实 NSHostingView/NSView。
+    case startLivePreview
+
+    /// 更新 Live 预览窗口的屏幕坐标和尺寸。
+    case updateLiveFrame
+
+    /// 显示 Live 预览窗口。
+    case showLivePreview
+
+    /// 隐藏 Live 预览窗口。
+    case hideLivePreview
+
+    /// 重新加载 Live 预览（加载新 dylib，替换 root view）。
+    case reloadLivePreview
+
+    /// 停止 Live 预览并关闭 live window。
+    case stopLivePreview
 }
 
 /// 发送给预览宿主进程的请求消息。
@@ -29,6 +47,10 @@ public struct RenderRequest: Codable, Sendable {
     /// 本次渲染使用的配置。
     public let configuration: PreviewRenderConfiguration
 
+    /// Live 预览窗口的屏幕坐标和尺寸（用于 updateLiveFrame）。
+    /// JSON 格式：{"x": 100, "y": 200, "width": 320, "height": 180, "screenHeight": 900}
+    public let liveFrame: LiveFrameRequest?
+
     /// 创建一个宿主请求消息。
     ///
     /// - Parameters:
@@ -37,18 +59,49 @@ public struct RenderRequest: Codable, Sendable {
     ///   - dylibPath: 需要动态加载的 dylib 路径。
     ///   - previewEntrySymbol: dylib 中的预览入口符号名。
     ///   - configuration: 本次渲染使用的配置。
+    ///   - liveFrame: Live 预览窗口的屏幕坐标和尺寸。
     public init(
         command: PreviewHostCommand,
         discovery: PreviewDiscovery? = nil,
         dylibPath: String? = nil,
         previewEntrySymbol: String? = nil,
-        configuration: PreviewRenderConfiguration = .empty
+        configuration: PreviewRenderConfiguration = .empty,
+        liveFrame: LiveFrameRequest? = nil
     ) {
         self.command = command
         self.discovery = discovery
         self.dylibPath = dylibPath
         self.previewEntrySymbol = previewEntrySymbol
         self.configuration = configuration
+        self.liveFrame = liveFrame
+    }
+}
+
+/// Live 预览窗口的屏幕坐标和尺寸请求。
+///
+/// 使用 AppKit 坐标系（y 轴原点在屏幕左下角）。
+public struct LiveFrameRequest: Codable, Sendable, Equatable {
+    /// 屏幕坐标 x（AppKit 坐标系，左下角原点）。
+    public let x: Double
+    /// 屏幕坐标 y（AppKit 坐标系，左下角原点）。
+    public let y: Double
+    /// 窗口宽度。
+    public let width: Double
+    /// 窗口高度。
+    public let height: Double
+
+    /// 创建一个 Live Frame 请求。
+    ///
+    /// - Parameters:
+    ///   - x: 屏幕坐标 x。
+    ///   - y: 屏幕坐标 y。
+    ///   - width: 窗口宽度。
+    ///   - height: 窗口高度。
+    public init(x: Double, y: Double, width: Double, height: Double) {
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
     }
 }
 
@@ -61,6 +114,8 @@ public struct RenderResponse: Codable, Sendable, Equatable {
         case previewImagePNGBase64
         case diagnostics
         case isFallback
+        case livePreviewEnabled
+        case liveWindowNumber
     }
 
     /// 请求是否成功。
@@ -81,6 +136,12 @@ public struct RenderResponse: Codable, Sendable, Equatable {
     /// 本次响应是否来自降级预览入口。
     public let isFallback: Bool
 
+    /// 宿主进程是否支持 Live 预览模式（成功加载了真实 NSView entry）。
+    public let livePreviewEnabled: Bool
+
+    /// Live 预览窗口在宿主进程中的窗口编号，用于跨进程窗口层级协调。
+    public let liveWindowNumber: Int?
+
     /// 创建一个宿主响应。
     ///
     /// - Parameters:
@@ -90,13 +151,17 @@ public struct RenderResponse: Codable, Sendable, Equatable {
     ///   - previewImagePNGBase64: 宿主进程当前预览画面的 PNG 数据，Base64 编码。
     ///   - diagnostics: 可展示给用户的结构化诊断信息。
     ///   - isFallback: 本次响应是否来自降级预览入口。
+    ///   - livePreviewEnabled: 宿主进程是否支持 Live 预览模式。
+    ///   - liveWindowNumber: Live 预览窗口编号。
     public init(
         success: Bool,
         previewID: String? = nil,
         message: String? = nil,
         previewImagePNGBase64: String? = nil,
         diagnostics: String? = nil,
-        isFallback: Bool = false
+        isFallback: Bool = false,
+        livePreviewEnabled: Bool = false,
+        liveWindowNumber: Int? = nil
     ) {
         self.success = success
         self.previewID = previewID
@@ -104,6 +169,8 @@ public struct RenderResponse: Codable, Sendable, Equatable {
         self.previewImagePNGBase64 = previewImagePNGBase64
         self.diagnostics = diagnostics
         self.isFallback = isFallback
+        self.livePreviewEnabled = livePreviewEnabled
+        self.liveWindowNumber = liveWindowNumber
     }
 
     public init(from decoder: Decoder) throws {
@@ -114,6 +181,8 @@ public struct RenderResponse: Codable, Sendable, Equatable {
         self.previewImagePNGBase64 = try container.decodeIfPresent(String.self, forKey: .previewImagePNGBase64)
         self.diagnostics = try container.decodeIfPresent(String.self, forKey: .diagnostics)
         self.isFallback = try container.decodeIfPresent(Bool.self, forKey: .isFallback) ?? false
+        self.livePreviewEnabled = try container.decodeIfPresent(Bool.self, forKey: .livePreviewEnabled) ?? false
+        self.liveWindowNumber = try container.decodeIfPresent(Int.self, forKey: .liveWindowNumber)
     }
 }
 

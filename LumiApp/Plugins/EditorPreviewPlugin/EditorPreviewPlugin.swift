@@ -40,7 +40,15 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
         guard tabId == "editor-bottom-editor-preview", activeIcon == EditorPlugin.iconName else {
             return nil
         }
-        return AnyView(EditorPreviewContentView())
+        return AnyView(
+            EditorPreviewContentView()
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                    // Window became active — live preview can show
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+                    // Window resigned active — live preview should hide
+                }
+        )
 #else
         return nil
 #endif

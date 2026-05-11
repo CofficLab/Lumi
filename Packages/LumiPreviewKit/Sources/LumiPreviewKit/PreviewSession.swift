@@ -20,6 +20,12 @@ public protocol PreviewSession: AnyObject, Sendable {
 
     /// 宿主进程最近一次渲染或刷新返回的响应。
     var lastRenderResponse: RenderResponse? { get async }
+
+    /// 当前显示模式：image 或 live。
+    var displayMode: PreviewDisplayMode { get async }
+
+    /// Live 预览的详细状态信息。
+    var livePreviewInfo: LivePreviewInfo { get async }
 }
 
 /// 预览性能指标。
@@ -79,6 +85,8 @@ public actor LivePreviewSession: PreviewSession {
     private var currentPerformanceMetrics = PreviewPerformanceMetrics()
     private var currentConfiguration: PreviewRenderConfiguration
     private var currentLastRenderResponse: RenderResponse?
+    private var currentDisplayMode: PreviewDisplayMode = .image
+    private var currentLivePreviewInfo = LivePreviewInfo()
 
     /// 当前状态。
     public var state: PreviewSessionState {
@@ -103,6 +111,16 @@ public actor LivePreviewSession: PreviewSession {
     /// 宿主进程最近一次渲染或刷新返回的响应。
     public var lastRenderResponse: RenderResponse? {
         currentLastRenderResponse
+    }
+
+    /// 当前显示模式：image 或 live。
+    public var displayMode: PreviewDisplayMode {
+        currentDisplayMode
+    }
+
+    /// Live 预览的详细状态信息。
+    public var livePreviewInfo: LivePreviewInfo {
+        currentLivePreviewInfo
     }
 
     /// 创建一个预览会话。
@@ -132,7 +150,7 @@ public actor LivePreviewSession: PreviewSession {
         currentBuildStrategy = strategy
     }
 
-    func buildStrategy() -> BuildStrategy? {
+    public func buildStrategy() -> BuildStrategy? {
         currentBuildStrategy
     }
 
@@ -140,7 +158,7 @@ public actor LivePreviewSession: PreviewSession {
         currentHostConnection = connection
     }
 
-    func hostConnection() -> HostConnection? {
+    public func hostConnection() -> HostConnection? {
         currentHostConnection
     }
 
@@ -159,6 +177,31 @@ public actor LivePreviewSession: PreviewSession {
 
     func setLastRenderResponse(_ response: RenderResponse) {
         currentLastRenderResponse = response
+    }
+
+    func setDisplayMode(_ mode: PreviewDisplayMode) {
+        currentDisplayMode = mode
+    }
+
+    func setLivePreviewInfo(_ info: LivePreviewInfo) {
+        currentLivePreviewInfo = info
+    }
+
+    /// 当宿主进程成功加载真实 NSView entry 后，标记 Live 模式可用。
+    func markLivePreviewAvailable(windowNumber: Int? = nil) {
+        currentLivePreviewInfo = LivePreviewInfo(
+            state: .available,
+            hostWindowNumber: windowNumber
+        )
+    }
+
+    /// 当 Live 模式启动失败时，降级到图片模式并记录原因。
+    func fallbackToImageMode(reason: String) {
+        currentDisplayMode = .image
+        currentLivePreviewInfo = LivePreviewInfo(
+            state: .failed,
+            unavailableReason: reason
+        )
     }
 
     func terminateHost() async {

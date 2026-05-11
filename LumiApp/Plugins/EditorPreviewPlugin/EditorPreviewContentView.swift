@@ -26,6 +26,9 @@ struct EditorPreviewContentView: View {
         .onAppear {
             refreshScanAndStartIfNeeded()
         }
+        .onDisappear {
+            viewModel.liveCanvasDidDisappear()
+        }
         .onChange(of: currentFileURL) { _, _ in
             viewModel.stopPreview()
             refreshScanAndStartIfNeeded()
@@ -33,7 +36,15 @@ struct EditorPreviewContentView: View {
         .onChange(of: sourceText ?? "") { _, _ in
             refreshScanAndStartIfNeeded(allowsStopped: false)
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+            viewModel.lumiWindowDidResignKey()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            viewModel.lumiWindowDidBecomeKey()
+        }
     }
+
+    // MARK: - Toolbar
 
     private var toolbar: some View {
         HStack(spacing: 8) {
@@ -112,6 +123,8 @@ struct EditorPreviewContentView: View {
         }
     }
 
+    // MARK: - Content
+
     @ViewBuilder
     private var content: some View {
         if viewModel.previews.isEmpty {
@@ -156,34 +169,154 @@ struct EditorPreviewContentView: View {
         .listStyle(.sidebar)
     }
 
-    private var previewDetail: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let preview = viewModel.selectedPreview {
-                previewHeader(preview)
+    // MARK: - Preview Detail
 
-                if case .failed(let message) = viewModel.runState {
-                    Text(message)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.red)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else if viewModel.runState == .hostMissing {
-                    Text(String(localized: "Set LUMI_PREVIEW_HOST_EXECUTABLE or embed LumiPreviewHostApp in Contents/Helpers.", table: "EditorPreview"))
-                        .font(.system(size: 11))
-                        .foregroundColor(.red)
-                        .textSelection(.enabled)
-                } else if let diagnostics = viewModel.diagnostics {
-                    diagnosticsView(diagnostics)
-                } else {
-                    previewSurface(preview)
+    private var previewDetail: some View {
+        ZStack(alignment: .bottomTrailing) {
+            // Main content
+            VStack(alignment: .leading, spacing: 12) {
+                if let preview = viewModel.selectedPreview {
+                    previewHeader(preview)
+
+                    if case .failed(let message) = viewModel.runState {
+                        errorMessageView(message)
+                    } else if viewModel.runState == .hostMissing {
+                        Text(String(localized: "Set LUMI_PREVIEW_HOST_EXECUTABLE or embed LumiPreviewHostApp in Contents/Helpers.", table: "EditorPreview"))
+                            .font(.system(size: 11))
+                            .foregroundColor(.red)
+                            .textSelection(.enabled)
+                    } else if let diagnostics = viewModel.diagnostics {
+                        diagnosticsView(diagnostics)
+                    } else {
+                        previewSurface(preview)
+                    }
                 }
+
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+            // Mode switch tab — bottom-right
+            if viewModel.runState == .running || viewModel.displayMode == .live {
+                displayModeTab
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 16)
+            }
+        }
+    }
+
+    // MARK: - Display Mode Tab
+
+    private var displayModeTab: some View {
+        HStack(spacing: 0) {
+            // Image tab
+            Button {
+                viewModel.switchToImage()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 10, weight: .medium))
+                    Text("Image")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    viewModel.displayMode == .image
+                        ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
+                        : Color.clear
+                )
+                .foregroundColor(
+                    viewModel.displayMode == .image
+                        ? themeVM.activeAppTheme.workspaceTextColor()
+                        : themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                )
+            }
+            .buttonStyle(.plain)
+            .clipShape(UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 6))
+
+            // Separator
+            Rectangle()
+                .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.2))
+                .frame(width: 1)
+
+            // Live tab
+            Button {
+                if viewModel.canSwitchToLive {
+                    viewModel.switchToLive()
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: viewModel.displayMode == .live ? "play.rectangle.fill" : "play.rectangle")
+                        .font(.system(size: 10, weight: .medium))
+                    Text("Live")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    viewModel.displayMode == .live
+                        ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
+                        : Color.clear
+                )
+                .foregroundColor(liveTabColor)
+            }
+            .buttonStyle(.plain)
+            .disabled(!viewModel.canSwitchToLive && viewModel.displayMode != .live)
+            .clipShape(UnevenRoundedRectangle(bottomTrailingRadius: 6, topTrailingRadius: 6))
+            .help(viewModel.liveUnavailableReason ?? String(localized: "Switch to Live mode", table: "EditorPreview"))
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.85))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.1), radius: 4, y: 2)
+    }
+
+    private var liveTabColor: Color {
+        if viewModel.displayMode == .live {
+            return .green
+        }
+        if viewModel.canSwitchToLive {
+            return themeVM.activeAppTheme.workspaceSecondaryTextColor()
+        }
+        return themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.5)
+    }
+
+    // MARK: - Preview Header
+
+    private func previewHeader(_ preview: PreviewDiscovery) -> some View {
+        HStack(spacing: 8) {
+            Text(preview.title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+
+            if let primaryTypeName = preview.primaryTypeName {
+                Label(primaryTypeName, systemImage: "swift")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
             }
 
             Spacer(minLength: 0)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
+
+    // MARK: - Error Message
+
+    private func errorMessageView(_ message: String) -> some View {
+        Text(message)
+            .font(.system(size: 11, design: .monospaced))
+            .foregroundColor(.red)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Diagnostics
 
     private func diagnosticsView(_ diagnostics: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -231,23 +364,24 @@ struct EditorPreviewContentView: View {
         pasteboard.setString(diagnostics, forType: .string)
     }
 
-    private func previewHeader(_ preview: PreviewDiscovery) -> some View {
-        HStack(spacing: 8) {
-            Text(preview.title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
-
-            if let primaryTypeName = preview.primaryTypeName {
-                Label(primaryTypeName, systemImage: "swift")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-            }
-
-            Spacer(minLength: 0)
-        }
-    }
+    // MARK: - Preview Surface
 
     private func previewSurface(_ preview: PreviewDiscovery) -> some View {
+        ZStack {
+            if viewModel.displayMode == .live {
+                liveCanvasSurface(preview)
+            } else {
+                imageCanvasSurface(preview)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    // MARK: - Image Canvas
+
+    private func imageCanvasSurface(_ preview: PreviewDiscovery) -> some View {
         VStack(spacing: 14) {
             Spacer(minLength: 0)
 
@@ -268,33 +402,100 @@ struct EditorPreviewContentView: View {
                     .foregroundColor(statusColor)
             }
 
-            VStack(spacing: 5) {
-                Text(surfaceTitle(for: preview))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
-                    .multilineTextAlignment(.center)
-
-                if let renderMessage = viewModel.renderMessage {
-                    Text(renderMessage)
-                        .font(.system(size: 11))
-                        .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                        .multilineTextAlignment(.center)
-                }
-
-                if let performanceSummary = viewModel.performanceSummary {
-                    Text(performanceSummary)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
-                        .multilineTextAlignment(.center)
-                }
-            }
-            .frame(maxWidth: 360)
+            surfaceInfo(preview)
 
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    // MARK: - Live Canvas
+
+    private func liveCanvasSurface(_ preview: PreviewDiscovery) -> some View {
+        GeometryReader { geometry in
+            ZStack {
+                // Live canvas background
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(themeVM.activeAppTheme.workspaceBackgroundColor())
+
+                if viewModel.isLiveLoading {
+                    // Loading overlay
+                    VStack(spacing: 10) {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text(String(localized: "Starting Live Preview…", table: "EditorPreview"))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+
+                // Live fallback info (when live window hasn't attached yet)
+                if !viewModel.isLiveLoading {
+                    VStack(spacing: 8) {
+                        Image(systemName: "play.rectangle.fill")
+                            .font(.system(size: 20, weight: .light))
+                            .foregroundColor(.green.opacity(0.6))
+
+                        Text(String(localized: "Live Preview Active", table: "EditorPreview"))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+
+                        if let performanceSummary = viewModel.performanceSummary {
+                            Text(performanceSummary)
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .onAppear {
+                // Sync the canvas frame
+                syncCanvasFrame(in: geometry)
+                viewModel.liveCanvasDidAppear()
+            }
+            .onDisappear {
+                viewModel.liveCanvasDidDisappear()
+            }
+            .onChange(of: geometry.frame(in: .global)) { _, newFrame in
+                syncCanvasFrame(in: geometry)
+            }
+            .onChange(of: geometry.size) { _, _ in
+                syncCanvasFrame(in: geometry)
+            }
+        }
+    }
+
+    private func syncCanvasFrame(in geometry: GeometryProxy) {
+        let globalFrame = geometry.frame(in: .global)
+        viewModel.updateLiveCanvasRect(globalFrame)
+    }
+
+    // MARK: - Surface Info
+
+    private func surfaceInfo(_ preview: PreviewDiscovery) -> some View {
+        VStack(spacing: 5) {
+            Text(surfaceTitle(for: preview))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+                .multilineTextAlignment(.center)
+
+            if let renderMessage = viewModel.renderMessage {
+                Text(renderMessage)
+                    .font(.system(size: 11))
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .multilineTextAlignment(.center)
+            }
+
+            if let performanceSummary = viewModel.performanceSummary {
+                Text(performanceSummary)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: 360)
     }
 
     private var surfaceIconName: String {
@@ -317,19 +518,24 @@ struct EditorPreviewContentView: View {
     private func surfaceTitle(for preview: PreviewDiscovery) -> String {
         switch viewModel.runState {
         case .running:
-            String(format: String(localized: "Preview host rendered %@", table: "EditorPreview"), preview.title)
+            if viewModel.displayMode == .live {
+                return String(format: String(localized: "Live preview of %@", table: "EditorPreview"), preview.title)
+            }
+            return String(format: String(localized: "Preview host rendered %@", table: "EditorPreview"), preview.title)
         case .starting:
-            String(localized: "Building preview", table: "EditorPreview")
+            return String(localized: "Building preview", table: "EditorPreview")
         case .stopped:
-            String(localized: "Preview stopped", table: "EditorPreview")
+            return String(localized: "Preview stopped", table: "EditorPreview")
         case .idle:
-            String(localized: "Ready to start preview", table: "EditorPreview")
+            return String(localized: "Ready to start preview", table: "EditorPreview")
         case .failed:
-            String(localized: "Preview failed", table: "EditorPreview")
+            return String(localized: "Preview failed", table: "EditorPreview")
         case .hostMissing:
-            String(localized: "Preview host missing", table: "EditorPreview")
+            return String(localized: "Preview host missing", table: "EditorPreview")
         }
     }
+
+    // MARK: - Helpers
 
     private func refreshScan() {
         viewModel.update(sourceText: sourceText, fileURL: currentFileURL)
