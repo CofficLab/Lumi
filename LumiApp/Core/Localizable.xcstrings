@@ -385,9 +385,6 @@
         }
       }
     },
-    "%lld pt" : {
-
-    },
     "%lld spaces" : {
 
     },
@@ -1562,9 +1559,6 @@
           }
         }
       }
-    },
-    "Close" : {
-
     },
     "Close Tab" : {
 
@@ -2787,9 +2781,6 @@
           }
         }
       }
-    },
-    "Insights" : {
-
     },
     "Interface" : {
       "localizations" : {
@@ -4167,12 +4158,6 @@
         }
       }
     },
-    "Sample Insights" : {
-
-    },
-    "Sample Insights Inline Tips" : {
-
-    },
     "Save" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4934,9 +4919,6 @@
         }
       }
     },
-    "This panel is contributed by `SuperEditorPanelContributor` and toggled from a `titleTrailing` status item." : {
-
-    },
     "this text" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4968,9 +4950,6 @@
           }
         }
       }
-    },
-    "Toggle sample insights panel" : {
-
     },
     "Tools" : {
       "extractionState" : "stale",
@@ -8476,9 +8455,6 @@
           }
         }
       }
-    },
-    "用于演示插件贡献设置如何统一显示在 editor settings 页面。" : {
-
     },
     "电脑内存 ≥ %lld GB" : {
       "localizations" : {
