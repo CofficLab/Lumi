@@ -63,13 +63,13 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
 
     // MARK: - Public Methods
 
-    /// 设置状态栏
+    /// 设置菜单栏
     ///
-    /// 初始化状态栏图标和所有必要的监听器。
+    /// 初始化菜单栏图标和所有必要的监听器。
     /// 此方法应在应用启动后调用。
     ///
     /// - Parameter pluginProvider: 插件 VM实例
-    func setupStatusBar(pluginProvider: PluginVM?) {
+    func setupMenuBar(pluginProvider: PluginVM?) {
         self.pluginProvider = pluginProvider
 
         // 创建状态栏项，使用 variableLength 以便根据内容动态调整宽度
@@ -99,7 +99,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
         ])
 
         // 4. 设置点击动作
-        button.action = #selector(statusBarButtonClicked)
+        button.action = #selector(menuBarButtonClicked)
         button.target = self
 
         // 5. 添加通知监听器
@@ -110,7 +110,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
             if Self.verbose {
                 AppLogger.core.info("\(self.t)插件已加载，立即更新状态栏内容视图")
             }
-            updateStatusBarContentViews()
+            updateMenuBarContentViews()
         }
 
         if Self.verbose {
@@ -133,8 +133,8 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
         // 监听状态栏外观更新请求
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleStatusBarAppearanceUpdate(_:)),
-            name: .requestStatusBarAppearanceUpdate,
+            selector: #selector(handleMenuBarAppearanceUpdate(_:)),
+            name: .requestMenuBarAppearanceUpdate,
             object: nil
         )
 
@@ -155,29 +155,29 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
         )
     }
 
-    /// 刷新状态栏弹窗
+    /// 刷新菜单栏弹窗
     ///
     /// 在插件加载完成后调用，用于：
     /// 1. 关闭当前显示的弹窗
     /// 2. 更新插件提供的内容视图
-    func refreshStatusBarMenu() {
+    func refreshMenuBar() {
         // 如果弹窗正在显示，关闭它以便重新加载
         closePopover()
 
-        // 更新状态栏内容视图
-        updateStatusBarContentViews()
+        // 更新菜单栏内容视图
+        updateMenuBarContentViews()
     }
 
-    /// 更新状态栏内容视图
+    /// 更新菜单栏内容视图
     ///
-    /// 从插件 VM获取所有插件提供的状态栏内容视图，
+    /// 从插件 VM获取所有插件提供的菜单栏内容视图，
     /// 并更新到图标视图模型中。
-    private func updateStatusBarContentViews() {
-        let views = pluginProvider?.getStatusBarContentViews() ?? []
+    private func updateMenuBarContentViews() {
+        let views = pluginProvider?.getMenuBarContentViews() ?? []
         iconViewModel.contentViews = views
 
         if Self.verbose {
-            AppLogger.core.info("\(self.t)更新状态栏内容视图: \(views.count) 个")
+            AppLogger.core.info("\(self.t)更新菜单栏内容视图: \(views.count) 个")
         }
     }
 
@@ -213,7 +213,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
         if Self.verbose {
             AppLogger.core.info("\(self.t)收到插件加载完成通知")
         }
-        refreshStatusBarMenu()
+        refreshMenuBar()
     }
 
     /// 处理状态栏外观更新请求
@@ -222,7 +222,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 例如：下载插件开始下载时请求显示活跃状态。
     ///
     /// - Parameter notification: 通知对象，包含 isActive 和 source 信息
-    @objc private func handleStatusBarAppearanceUpdate(_ notification: Notification) {
+    @objc private func handleMenuBarAppearanceUpdate(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
               let isActive = userInfo["isActive"] as? Bool,
               let source = userInfo["source"] as? String else {
@@ -272,7 +272,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 状态栏按钮点击事件
     ///
     /// 切换弹窗的显示/隐藏状态。
-    @objc private func statusBarButtonClicked() {
+    @objc private func menuBarButtonClicked() {
         if let popover = popover, popover.isShown {
             closePopover()
         } else {
@@ -390,10 +390,10 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 组合所有插件提供的弹窗视图和默认操作按钮。
     ///
     /// - Returns: 完整的弹窗视图
-    private func createPopupView() -> StatusBarPopupView {
-        let pluginViews = pluginProvider?.getStatusBarPopupViews() ?? []
+    private func createPopupView() -> MenuBarPopupView {
+        let pluginViews = pluginProvider?.getMenuBarPopupViews() ?? []
 
-        return StatusBarPopupView(
+        return MenuBarPopupView(
             pluginPopupViews: pluginViews,
             onShowMainWindow: { [weak self] in
                 self?.showMainWindow()
@@ -415,7 +415,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 根据 activeSources 集合更新图标显示状态。
     /// 有活跃源时显示特殊样式（如带颜色的点）。
-    private func updateStatusBarIconAppearance() {
+    private func updateMenuBarIconAppearance() {
         let isActive = !self.activeSources.isEmpty
 
         if Self.verbose {
@@ -454,7 +454,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
 
 // MARK: - Preview
 
-#Preview("StatusBar") {
+#Preview("MenuBar") {
     MenuBarIconView(viewModel: MenuBarIconVM())
         .frame(width: 20, height: 20)
 }

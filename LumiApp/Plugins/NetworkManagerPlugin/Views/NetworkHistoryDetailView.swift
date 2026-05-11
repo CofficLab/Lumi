@@ -49,7 +49,7 @@ struct NetworkHistoryDetailView: View {
 }
 
 #Preview("Network Status Bar Popup") {
-    NetworkStatusBarPopupView()
+    NetworkMenuBarPopupView()
         .frame(width: 400)
         .frame(height: 400)
 }

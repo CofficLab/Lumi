@@ -66,20 +66,20 @@ extension SuperPlugin {
     /// 默认实现：不提供设置视图
     @MainActor func addSettingsView() -> AnyView? { nil }
 
-    /// 默认实现：不提供弹窗视图列表（兼容旧版 `addStatusBarPopupView`）
-    @MainActor func addStatusBarPopupViews() -> [AnyView] {
-        if let view = addStatusBarPopupView() {
+    /// 默认实现：不提供菜单栏弹窗视图列表（兼容旧版 `addMenuBarPopupView`）
+    @MainActor func addMenuBarPopupViews() -> [AnyView] {
+        if let view = addMenuBarPopupView() {
             return [view]
         }
         return []
     }
 
-    /// 默认实现：不提供弹窗视图
-    @available(*, deprecated, message: "Use addStatusBarPopupViews() returning [AnyView] instead")
-    @MainActor func addStatusBarPopupView() -> AnyView? { nil }
+    /// 默认实现：不提供菜单栏弹窗视图
+    @available(*, deprecated, message: "Use addMenuBarPopupViews() returning [AnyView] instead")
+    @MainActor func addMenuBarPopupView() -> AnyView? { nil }
 
-    /// 默认实现：不提供状态栏内容视图
-    @MainActor func addStatusBarContentView() -> AnyView? { nil }
+    /// 默认实现：不提供菜单栏内容视图
+    @MainActor func addMenuBarContentView() -> AnyView? { nil }
 
     /// 默认实现：不提供主题贡献
     @MainActor func addThemeContributions() -> [LumiThemeContribution] { [] }

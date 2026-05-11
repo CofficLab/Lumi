@@ -1,9 +1,9 @@
 import SwiftUI
 import Combine
 
-/// Status bar content view for Network Manager plugin
+/// Menu bar content view for Network Manager plugin
 /// Displays real-time upload/download speeds
-struct NetworkStatusBarContentView: View {
+struct NetworkMenuBarContentView: View {
     // MARK: - Properties
 
     @StateObject private var viewModel = NetworkManagerViewModel()
@@ -40,7 +40,7 @@ struct NetworkStatusBarContentView: View {
             .frame(width: 16, height: 16)
 
         // Network Speed Content
-        NetworkStatusBarContentView()
+        NetworkMenuBarContentView()
     }
     .padding()
 }

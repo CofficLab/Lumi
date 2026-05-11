@@ -2,8 +2,8 @@ import MagicKit
 import SwiftUI
 import LumiUI
 
-/// 状态栏弹窗视图
-struct StatusBarPopupView: View {
+/// 菜单栏弹窗视图
+struct MenuBarPopupView: View {
     // MARK: - Properties
 
     /// 插件提供的弹窗视图
@@ -152,8 +152,8 @@ struct MenuItemRow: View {
 
 // MARK: - Preview
 
-#Preview("StatusBar Popup") {
-    StatusBarPopupView(
+#Preview("Menu Bar Popup") {
+    MenuBarPopupView(
         pluginPopupViews: [],
         onShowMainWindow: {},
         onCheckForUpdates: {},

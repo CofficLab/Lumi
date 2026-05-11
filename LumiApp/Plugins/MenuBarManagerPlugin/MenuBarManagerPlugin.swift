@@ -42,9 +42,9 @@ actor MenuBarManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated func addPanelIcon() -> String? { Self.iconName }
 
-    /// 添加状态栏弹窗视图
+    /// 添加菜单栏弹窗视图
     /// 我们可以在这里放一个开关，或者一个"Thaw"按钮来显示隐藏的项目
-    @MainActor func addStatusBarPopupView() -> AnyView? {
+    @MainActor func addMenuBarPopupView() -> AnyView? {
         // 暂时不添加专门的弹窗，主要通过设置页面管理
         nil
     }

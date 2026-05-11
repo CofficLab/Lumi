@@ -36,12 +36,12 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor
-    func addStatusBarContentView() -> AnyView? {
+    func addMenuBarContentView() -> AnyView? {
         AnyView(DeviceInfoMenuBarContentView())
     }
 
     @MainActor
-    func addStatusBarPopupViews() -> [AnyView] {
+    func addMenuBarPopupViews() -> [AnyView] {
         [
             AnyView(DeviceInfoMenuBarPopupView()),
             AnyView(MemoryMenuBarPopupView()),

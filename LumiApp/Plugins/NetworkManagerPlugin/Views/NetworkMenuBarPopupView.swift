@@ -1,8 +1,8 @@
 import MagicKit
 import SwiftUI
 
-/// Status bar popup view for Network Manager plugin
-struct NetworkStatusBarPopupView: View {
+/// Menu bar popup view for Network Manager plugin
+struct NetworkMenuBarPopupView: View {
     // MARK: - Properties
 
     @StateObject private var viewModel = NetworkManagerViewModel()
@@ -253,7 +253,7 @@ struct ProcessRowView: View {
 // MARK: - Preview
 
 #Preview("Network Status Bar Popup") {
-    NetworkStatusBarPopupView()
+    NetworkMenuBarPopupView()
         .frame(width: 400)
         .frame(height: 400)
 }

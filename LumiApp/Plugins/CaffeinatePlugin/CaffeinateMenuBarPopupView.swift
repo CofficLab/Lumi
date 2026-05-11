@@ -1,8 +1,8 @@
 import MagicKit
 import SwiftUI
 
-/// 防休眠插件的状态栏弹窗视图
-struct CaffeinateStatusBarPopupView: View {
+/// 防休眠插件的菜单栏弹窗视图
+struct CaffeinateMenuBarPopupView: View {
     @State private var manager = CaffeinateManager.shared
     @State private var selectedDuration: TimeInterval = 0
 
@@ -157,8 +157,8 @@ private struct DurationButton: View {
     }
 }
 
-#Preview("Caffeinate Status Bar Popup") {
-    CaffeinateStatusBarPopupView()
+#Preview("Caffeinate Menu Bar Popup") {
+    CaffeinateMenuBarPopupView()
         .frame(width: 280)
         .padding()
 }

@@ -15,9 +15,9 @@ extension Notification.Name {
     /// 应用变为非活跃状态的通知
     static let applicationDidResignActive = Notification.Name("applicationDidResignActive")
 
-    /// 请求更新状态栏外观的通知
+    /// 请求更新菜单栏外观的通知
     /// userInfo: ["isActive": Bool, "source": String]
-    static let requestStatusBarAppearanceUpdate = Notification.Name("requestStatusBarAppearanceUpdate")
+    static let requestMenuBarAppearanceUpdate = Notification.Name("requestMenuBarAppearanceUpdate")
 
     /// 请求更新状态栏网速显示的通知
     /// userInfo: ["uploadSpeed": Double, "downloadSpeed": Double, "source": String]
@@ -58,13 +58,13 @@ extension NotificationCenter {
         NotificationCenter.default.post(name: .applicationDidResignActive, object: object)
     }
 
-    /// 发送状态栏外观更新请求
+    /// 发送菜单栏外观更新请求
     /// - Parameters:
     ///   - isActive: 是否处于活跃/高亮状态
     ///   - source: 请求源标识符
-    static func postRequestStatusBarAppearanceUpdate(isActive: Bool, source: String) {
+    static func postRequestMenuBarAppearanceUpdate(isActive: Bool, source: String) {
         NotificationCenter.default.post(
-            name: .requestStatusBarAppearanceUpdate,
+            name: .requestMenuBarAppearanceUpdate,
             object: nil,
             userInfo: ["isActive": isActive, "source": source]
         )
