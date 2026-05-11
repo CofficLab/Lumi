@@ -64,6 +64,8 @@ struct EditorPreviewContentView: View {
 
             Spacer(minLength: 0)
 
+            displayModePicker
+
             statusBadge
 
             Button {
@@ -172,110 +174,97 @@ struct EditorPreviewContentView: View {
     // MARK: - Preview Detail
 
     private var previewDetail: some View {
-        ZStack(alignment: .bottomTrailing) {
-            // Main content
-            VStack(alignment: .leading, spacing: 12) {
-                if let preview = viewModel.selectedPreview {
-                    previewHeader(preview)
+        VStack(alignment: .leading, spacing: 12) {
+            if let preview = viewModel.selectedPreview {
+                previewHeader(preview)
 
-                    if case .failed(let message) = viewModel.runState {
-                        errorMessageView(message)
-                    } else if viewModel.runState == .hostMissing {
-                        Text(String(localized: "Set LUMI_PREVIEW_HOST_EXECUTABLE or embed LumiPreviewHostApp in Contents/Helpers.", table: "EditorPreview"))
-                            .font(.system(size: 11))
-                            .foregroundColor(.red)
-                            .textSelection(.enabled)
-                    } else if let diagnostics = viewModel.diagnostics {
-                        diagnosticsView(diagnostics)
-                    } else {
-                        previewSurface(preview)
-                    }
+                if case .failed(let message) = viewModel.runState {
+                    errorMessageView(message)
+                } else if viewModel.runState == .hostMissing {
+                    Text(String(localized: "Set LUMI_PREVIEW_HOST_EXECUTABLE or embed LumiPreviewHostApp in Contents/Helpers.", table: "EditorPreview"))
+                        .font(.system(size: 11))
+                        .foregroundColor(.red)
+                        .textSelection(.enabled)
+                } else if let diagnostics = viewModel.diagnostics {
+                    diagnosticsView(diagnostics)
+                } else {
+                    previewSurface(preview)
                 }
-
-                Spacer(minLength: 0)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
-            // Mode switch tab — bottom-right
-            if viewModel.runState == .running || viewModel.displayMode == .live {
-                displayModeTab
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 16)
-            }
+            Spacer(minLength: 0)
         }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    // MARK: - Display Mode Tab
+    // MARK: - Display Mode Picker (toolbar)
 
-    private var displayModeTab: some View {
-        HStack(spacing: 0) {
-            // Image tab
-            Button {
-                viewModel.switchToImage()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "photo")
-                        .font(.system(size: 10, weight: .medium))
-                    Text("Image")
-                        .font(.system(size: 11, weight: .medium))
+    @ViewBuilder
+    private var displayModePicker: some View {
+        if viewModel.runState == .running || viewModel.displayMode == .live {
+            HStack(spacing: 0) {
+                Button {
+                    viewModel.switchToImage()
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "photo")
+                            .font(.system(size: 9, weight: .medium))
+                        Text("Image")
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        viewModel.displayMode == .image
+                            ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
+                            : Color.clear
+                    )
+                    .foregroundColor(
+                        viewModel.displayMode == .image
+                            ? themeVM.activeAppTheme.workspaceTextColor()
+                            : themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                    )
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    viewModel.displayMode == .image
-                        ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
-                        : Color.clear
-                )
-                .foregroundColor(
-                    viewModel.displayMode == .image
-                        ? themeVM.activeAppTheme.workspaceTextColor()
-                        : themeVM.activeAppTheme.workspaceSecondaryTextColor()
-                )
+                .buttonStyle(.plain)
+
+                Rectangle()
+                    .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.2))
+                    .frame(width: 1, height: 14)
+
+                Button {
+                    if viewModel.canSwitchToLive {
+                        viewModel.switchToLive()
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: viewModel.displayMode == .live ? "play.rectangle.fill" : "play.rectangle")
+                            .font(.system(size: 9, weight: .medium))
+                        Text("Live")
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        viewModel.displayMode == .live
+                            ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
+                            : Color.clear
+                    )
+                    .foregroundColor(liveTabColor)
+                }
+                .buttonStyle(.plain)
+                .disabled(!viewModel.canSwitchToLive && viewModel.displayMode != .live)
+                .help(viewModel.liveUnavailableReason ?? String(localized: "Switch to Live mode", table: "EditorPreview"))
             }
-            .buttonStyle(.plain)
-            .clipShape(UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 6))
-
-            // Separator
-            Rectangle()
-                .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.2))
-                .frame(width: 1)
-
-            // Live tab
-            Button {
-                if viewModel.canSwitchToLive {
-                    viewModel.switchToLive()
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: viewModel.displayMode == .live ? "play.rectangle.fill" : "play.rectangle")
-                        .font(.system(size: 10, weight: .medium))
-                    Text("Live")
-                        .font(.system(size: 11, weight: .medium))
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    viewModel.displayMode == .live
-                        ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
-                        : Color.clear
-                )
-                .foregroundColor(liveTabColor)
-            }
-            .buttonStyle(.plain)
-            .disabled(!viewModel.canSwitchToLive && viewModel.displayMode != .live)
-            .clipShape(UnevenRoundedRectangle(bottomTrailingRadius: 6, topTrailingRadius: 6))
-            .help(viewModel.liveUnavailableReason ?? String(localized: "Switch to Live mode", table: "EditorPreview"))
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.06))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15), lineWidth: 0.5)
+            )
         }
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.85))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.1), radius: 4, y: 2)
     }
 
     private var liveTabColor: Color {
