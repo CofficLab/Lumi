@@ -19,10 +19,6 @@ struct DeviceInfoMenuBarContentView: View {
                 .interpolation(.none)
                 .help(cpuHelpText)
 
-            Divider()
-                .frame(height: 10)
-                .opacity(0.3)
-
             // 内存柱状图
             Image(nsImage: MemoryMenuBarChartRenderer.makeImage(usage: memoryViewModel.memoryUsagePercentage))
                 .interpolation(.none)

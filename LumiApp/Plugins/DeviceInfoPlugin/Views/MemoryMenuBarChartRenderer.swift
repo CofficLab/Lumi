@@ -6,10 +6,10 @@ struct MemoryMenuBarChartRenderer {
 
     // MARK: - Constants
 
-    private static let barWidth: CGFloat = 16
+    private static let barWidth: CGFloat = 4
     private static let trackCornerRadius: CGFloat = 2
     private static let barCornerRadius: CGFloat = 1.5
-    private static let imageWidth: CGFloat = 20
+    private static let imageWidth: CGFloat = 10
     private static let imageHeight: CGFloat = 14
 
     // MARK: - Colors
