@@ -106,6 +106,51 @@ struct IncrementalCompilerTests {
         }
     }
 
+    @Test("library 编译支持额外模块与链接参数")
+    func compileLibraryUsesCompilerArguments() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-IncrementalCompilerModule-\(UUID().uuidString)", isDirectory: true)
+        let moduleSource = directory.appendingPathComponent("PreviewDependency.swift")
+        let moduleURL = directory.appendingPathComponent("PreviewDependency.swiftmodule")
+        let moduleObjectURL = directory.appendingPathComponent("PreviewDependency.o")
+        let previewSource = directory.appendingPathComponent("PreviewEntry.swift")
+        let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
+
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        try """
+        public enum PreviewDependencyMarker {
+            public static func value() -> Int {
+                42
+            }
+        }
+        """.write(to: moduleSource, atomically: true, encoding: .utf8)
+        try """
+        import PreviewDependency
+
+        public func previewValue() -> Int {
+            PreviewDependencyMarker.value()
+        }
+        """.write(to: previewSource, atomically: true, encoding: .utf8)
+
+        try run(
+            "/usr/bin/env swiftc -parse-as-library -emit-module -emit-object -module-name PreviewDependency " +
+                "\(shellQuoted(moduleSource.path)) " +
+                "-emit-module-path \(shellQuoted(moduleURL.path)) " +
+                "-o \(shellQuoted(moduleObjectURL.path))"
+        )
+
+        let compiledDylibURL = try await IncrementalCompiler().compileLibrary(
+            sourceURLs: [previewSource],
+            dylibURL: dylibURL,
+            compilerArguments: ["-I", directory.path, moduleObjectURL.path]
+        )
+
+        #expect(compiledDylibURL == dylibURL)
+        #expect(FileManager.default.fileExists(atPath: dylibURL.path))
+    }
+
     private func makeTemporarySwiftFile(source: String) throws -> (directory: URL, file: URL) {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiPreviewKit-IncrementalCompiler-\(UUID().uuidString)", isDirectory: true)
@@ -119,6 +164,15 @@ struct IncrementalCompilerTests {
 
     private func shellQuoted(_ value: String) -> String {
         "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
+    }
+
+    private func run(_ command: String) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-lc", command]
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
     }
 
     private func verifyCodeSignature(at url: URL) throws -> Bool {

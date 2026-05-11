@@ -49,6 +49,29 @@ public final class XcodeCompiler: Sendable {
         }.value
     }
 
+    /// Returns compiler search arguments that allow a generated preview entry
+    /// to import modules built by the Xcode target and its package products.
+    public func previewCompilerArguments(
+        projectURL: URL,
+        scheme: String,
+        configuration: String = "Debug"
+    ) async throws -> [String] {
+        try await Task.detached {
+            let settingsResult = try Self.runXcodebuild(
+                projectURL: projectURL,
+                scheme: scheme,
+                configuration: configuration,
+                action: "-showBuildSettings"
+            )
+
+            guard settingsResult.terminationStatus == 0 else {
+                throw PreviewError.compilationFailed(message: Self.failureMessage(from: settingsResult))
+            }
+
+            return Self.previewCompilerArguments(from: Self.parseBuildSettings(settingsResult.stdout))
+        }.value
+    }
+
     /// 从 build log 中提取指定文件的 `swift-frontend` 编译命令。
     ///
     /// - Parameters:
@@ -194,6 +217,207 @@ public final class XcodeCompiler: Sendable {
         return nil
     }
 
+    private static func previewCompilerArguments(from settings: [String: String]) -> [String] {
+        let directoryKeys = [
+            "BUILT_PRODUCTS_DIR",
+            "TARGET_BUILD_DIR",
+            "CONFIGURATION_BUILD_DIR"
+        ]
+        let searchPathKeys = [
+            "FRAMEWORK_SEARCH_PATHS",
+            "LIBRARY_SEARCH_PATHS",
+            "SWIFT_INCLUDE_PATHS"
+        ]
+
+        var directories: [String] = []
+        for key in directoryKeys {
+            if let value = settings[key], !value.isEmpty {
+                directories.append(value)
+            }
+        }
+        for key in searchPathKeys {
+            directories.append(contentsOf: splitBuildSettingList(settings[key] ?? ""))
+        }
+
+        let existingDirectories = directories
+            .uniqued()
+            .filter { FileManager.default.fileExists(atPath: $0) }
+
+        var arguments: [String] = []
+        for directory in existingDirectories {
+            arguments.append(contentsOf: ["-I", directory, "-F", directory, "-L", directory])
+            arguments.append(contentsOf: ["-Xlinker", "-rpath", "-Xlinker", directory])
+
+            let includeDirectory = URL(fileURLWithPath: directory)
+                .appendingPathComponent("include", isDirectory: true)
+                .path
+            if FileManager.default.fileExists(atPath: includeDirectory) {
+                arguments.append(contentsOf: ["-Xcc", "-I", "-Xcc", includeDirectory])
+            }
+        }
+
+        if isEnabled(settings["ENABLE_CODE_COVERAGE"]) {
+            arguments.append("-profile-generate")
+        }
+
+        arguments.append(
+            contentsOf: linkInputArguments(
+                in: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
+                excludingProductNames: productNames(from: settings)
+            )
+        )
+        arguments.append(contentsOf: packageLinkedLibraryArguments(from: settings))
+
+        if let sdkRoot = settings["SDKROOT"], !sdkRoot.isEmpty {
+            arguments.append(contentsOf: ["-sdk", sdkRoot])
+        }
+
+        return arguments
+    }
+
+    private static func splitBuildSettingList(_ value: String) -> [String] {
+        value
+            .split(whereSeparator: { $0 == " " || $0 == "\n" || $0 == "\t" })
+            .map(String.init)
+            .map {
+                $0.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+            }
+            .filter { !$0.isEmpty && $0 != "$(inherited)" }
+    }
+
+    private static func isEnabled(_ value: String?) -> Bool {
+        switch value?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
+        case "YES", "TRUE", "1":
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func productNames(from settings: [String: String]) -> Set<String> {
+        let names = [
+            settings["TARGET_NAME"],
+            settings["PRODUCT_NAME"],
+            settings["EXECUTABLE_NAME"],
+            settings["FULL_PRODUCT_NAME"]?.replacingOccurrences(of: ".app", with: "")
+        ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+
+        return Set(names)
+    }
+
+    private static func linkInputArguments(
+        in directories: [URL],
+        excludingProductNames productNames: Set<String>
+    ) -> [String] {
+        let fileManager = FileManager.default
+        var inputs: [String] = []
+
+        for directory in directories {
+            guard let entries = try? fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                continue
+            }
+
+            for entry in entries {
+                guard isLinkInput(entry, excludingProductNames: productNames) else { continue }
+                inputs.append(entry.path)
+            }
+        }
+
+        return inputs.sorted().uniqued()
+    }
+
+    private static func isLinkInput(_ url: URL, excludingProductNames productNames: Set<String>) -> Bool {
+        let fileName = url.lastPathComponent
+        let baseName = url.deletingPathExtension().lastPathComponent
+        guard url.pathExtension == "o" || url.pathExtension == "a" else {
+            return false
+        }
+
+        for productName in productNames {
+            if fileName == "\(productName).o"
+                || fileName == "lib\(productName).a"
+                || baseName == productName {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private static func packageLinkedLibraryArguments(from settings: [String: String]) -> [String] {
+        sourcePackageCheckoutDirectories(from: settings)
+            .flatMap(packageLinkedLibraries(in:))
+            .uniqued()
+            .map { "-l\($0)" }
+    }
+
+    private static func sourcePackageCheckoutDirectories(from settings: [String: String]) -> [URL] {
+        let productDirectories = [
+            settings["BUILT_PRODUCTS_DIR"],
+            settings["TARGET_BUILD_DIR"],
+            settings["CONFIGURATION_BUILD_DIR"]
+        ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+
+        return productDirectories
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+            .compactMap { productDirectory -> URL? in
+                let derivedDataDirectory = productDirectory
+                    .deletingLastPathComponent()
+                    .deletingLastPathComponent()
+                    .deletingLastPathComponent()
+                let checkoutsDirectory = derivedDataDirectory
+                    .appendingPathComponent("SourcePackages", isDirectory: true)
+                    .appendingPathComponent("checkouts", isDirectory: true)
+                return FileManager.default.fileExists(atPath: checkoutsDirectory.path) ? checkoutsDirectory : nil
+            }
+            .map(\.path)
+            .uniqued()
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+    }
+
+    private static func packageLinkedLibraries(in checkoutsDirectory: URL) -> [String] {
+        let fileManager = FileManager.default
+        guard let packages = try? fileManager.contentsOfDirectory(
+            at: checkoutsDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        return packages.flatMap { packageDirectory -> [String] in
+            let packageManifest = packageDirectory.appendingPathComponent("Package.swift")
+            guard let source = try? String(contentsOf: packageManifest, encoding: .utf8) else {
+                return []
+            }
+            return linkedLibraries(in: source)
+        }
+    }
+
+    private static func linkedLibraries(in packageManifest: String) -> [String] {
+        let pattern = /\.linkedLibrary\(\s*"([^"]+)"/
+        return packageManifest
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .compactMap { line -> String? in
+                let sourceLine = String(line)
+                guard let match = sourceLine.firstMatch(of: pattern) else { return nil }
+                if sourceLine.contains(".when(platforms:")
+                    && !sourceLine.contains(".macOS")
+                    && !sourceLine.contains(".macos") {
+                    return nil
+                }
+                return String(match.1)
+            }
+    }
+
     private static func failureMessage(from result: BuildResult) -> String {
         let combinedOutput = [result.stderr, result.stdout]
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -220,5 +444,16 @@ public final class XcodeCompiler: Sendable {
         }
 
         return combinedOutput
+    }
+}
+
+private extension Array where Element == String {
+    func uniqued() -> [String] {
+        var seen: Set<String> = []
+        var result: [String] = []
+        for value in self where seen.insert(value).inserted {
+            result.append(value)
+        }
+        return result
     }
 }

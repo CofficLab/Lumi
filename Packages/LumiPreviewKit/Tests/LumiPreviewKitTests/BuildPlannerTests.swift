@@ -139,6 +139,72 @@ struct BuildPlannerTests {
         #expect(targetName == "NestedTarget")
     }
 
+    @Test("Xcode synchronized group → 收集文件系统 Swift 源码")
+    func xcodeSynchronizedGroupSources() throws {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-XcodeSyncedSources-\(UUID().uuidString)", isDirectory: true)
+        let projectURL = rootDirectory.appendingPathComponent("SyncedApp.xcodeproj", isDirectory: true)
+        let appDirectory = rootDirectory.appendingPathComponent("APP", isDirectory: true)
+        let nestedDirectory = appDirectory.appendingPathComponent("Nested", isDirectory: true)
+        let excludedDirectory = appDirectory.appendingPathComponent("Excluded", isDirectory: true)
+        let appFile = appDirectory.appendingPathComponent("AppView.swift")
+        let previewFile = nestedDirectory.appendingPathComponent("PreviewView.swift")
+        let ignoredFile = excludedDirectory.appendingPathComponent("Ignored.swift")
+
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: nestedDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: excludedDirectory, withIntermediateDirectories: true)
+        try "struct AppView {}\n".write(to: appFile, atomically: true, encoding: .utf8)
+        try "struct PreviewView {}\n".write(to: previewFile, atomically: true, encoding: .utf8)
+        try "struct Ignored {}\n".write(to: ignoredFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        try """
+        // !$*UTF8*$!
+        {
+        \tarchiveVersion = 1;
+        \tclasses = {};
+        \tobjectVersion = 77;
+        \tobjects = {
+        \t\t000000000000000000000001 = {
+        \t\t\tisa = PBXNativeTarget;
+        \t\t\tbuildPhases = ();
+        \t\t\tfileSystemSynchronizedGroups = (
+        \t\t\t\t000000000000000000000002,
+        \t\t\t);
+        \t\t\tname = SyncedApp;
+        \t\t};
+        \t\t000000000000000000000002 /* APP */ = {
+        \t\t\tisa = PBXFileSystemSynchronizedRootGroup;
+        \t\t\texceptions = (
+        \t\t\t\t000000000000000000000003,
+        \t\t\t);
+        \t\t\tpath = APP;
+        \t\t\tsourceTree = "<group>";
+        \t\t};
+        \t\t000000000000000000000003 = {
+        \t\t\tisa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+        \t\t\tmembershipExceptions = (
+        \t\t\t\tExcluded,
+        \t\t\t);
+        \t\t\ttarget = 000000000000000000000001;
+        \t\t};
+        \t};
+        \trootObject = 000000000000000000000001;
+        }
+        """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: .utf8)
+
+        let sources = BuildPlanner.swiftSourceFiles(
+            projectURL: projectURL,
+            scheme: "SyncedApp",
+            containing: previewFile
+        )
+
+        #expect(sources.contains(appFile.standardizedFileURL.resolvingSymlinksInPath()))
+        #expect(sources.contains(previewFile.standardizedFileURL.resolvingSymlinksInPath()))
+        #expect(!sources.contains(ignoredFile.standardizedFileURL.resolvingSymlinksInPath()))
+    }
+
     private func makeTemporaryXcodeContainer(
         extensionName: String,
         schemeName: String

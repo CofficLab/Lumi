@@ -9,11 +9,19 @@ public final class PreviewEntryBuilder: Sendable {
     public static let viewSymbolName = "lumi_preview_make_nsview"
 
     private let incrementalCompiler: IncrementalCompiler
+    private let spmCompiler: SPMCompiler
+    private let xcodeCompiler: XcodeCompiler
     private let encoder = JSONEncoder()
 
     /// Creates a preview entry builder.
-    public init(incrementalCompiler: IncrementalCompiler = IncrementalCompiler()) {
+    public init(
+        incrementalCompiler: IncrementalCompiler = IncrementalCompiler(),
+        spmCompiler: SPMCompiler = SPMCompiler(),
+        xcodeCompiler: XcodeCompiler = XcodeCompiler()
+    ) {
         self.incrementalCompiler = incrementalCompiler
+        self.spmCompiler = spmCompiler
+        self.xcodeCompiler = xcodeCompiler
     }
 
     /// Generates, compiles, links, and signs a preview entry dylib.
@@ -38,8 +46,13 @@ public final class PreviewEntryBuilder: Sendable {
                 buildStrategy: buildStrategy,
                 in: directory
             )
+            let compilerArguments = try await viewEntryCompilerArguments(for: buildStrategy)
             let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
-            let dylib = try await incrementalCompiler.compileLibrary(sourceURLs: viewSourceURLs, dylibURL: dylibURL)
+            let dylib = try await incrementalCompiler.compileLibrary(
+                sourceURLs: viewSourceURLs,
+                dylibURL: dylibURL,
+                compilerArguments: compilerArguments
+            )
             try await incrementalCompiler.codesign(dylibURL: dylib)
             return dylib
         } catch {
@@ -61,6 +74,21 @@ public final class PreviewEntryBuilder: Sendable {
         try await incrementalCompiler.codesign(dylibURL: dylibURL)
 
         return dylibURL
+    }
+
+    private func viewEntryCompilerArguments(for buildStrategy: BuildStrategy?) async throws -> [String] {
+        switch buildStrategy {
+        case .spm(let packageDirectory, let targetName):
+            return spmCompiler.previewCompilerArguments(packageDirectory: packageDirectory, targetName: targetName)
+        case .xcode(let projectURL, let scheme, let configuration):
+            return try await xcodeCompiler.previewCompilerArguments(
+                projectURL: projectURL,
+                scheme: scheme,
+                configuration: configuration
+            )
+        case .incremental, .none:
+            return []
+        }
     }
 
     private func viewEntrySourceURLs(
@@ -218,10 +246,6 @@ public final class PreviewEntryBuilder: Sendable {
             fileURL: sourceFileURL,
             sourceText: source
         )
-        guard !previews.isEmpty else {
-            return source
-        }
-
         var lines = source.components(separatedBy: .newlines)
         for preview in previews.sorted(by: { $0.lineNumber > $1.lineNumber }) {
             let start = max(preview.lineNumber - 1, 0)
@@ -230,7 +254,20 @@ public final class PreviewEntryBuilder: Sendable {
             lines.replaceSubrange(start...end, with: [])
         }
 
+        removeMainAttribute(from: &lines)
         return lines.joined(separator: "\n")
+    }
+
+    private func removeMainAttribute(from lines: inout [String]) {
+        for index in lines.indices.reversed() {
+            let trimmed = lines[index].trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed == "@main" {
+                lines.remove(at: index)
+            } else if trimmed.hasPrefix("@main "),
+                      let range = lines[index].range(of: "@main") {
+                lines[index].removeSubrange(range)
+            }
+        }
     }
 
     private static func indented(_ value: String, spaces: Int) -> String {

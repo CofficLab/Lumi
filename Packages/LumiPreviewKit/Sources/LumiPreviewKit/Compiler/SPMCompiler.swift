@@ -30,6 +30,47 @@ public final class SPMCompiler: Sendable {
         }.value
     }
 
+    /// Returns compiler search arguments for modules produced by `swift build`.
+    public func previewCompilerArguments(packageDirectory: URL, targetName: String? = nil) -> [String] {
+        let buildDirectory = packageDirectory.appendingPathComponent(".build", isDirectory: true)
+        let debugDirectories = Self.candidateDebugDirectories(in: buildDirectory)
+
+        let existingDirectories = debugDirectories
+            .map(\.path)
+            .uniqued()
+            .filter { FileManager.default.fileExists(atPath: $0) }
+
+        var arguments: [String] = []
+        for directory in existingDirectories {
+            arguments.append(contentsOf: ["-I", directory, "-F", directory, "-L", directory])
+            arguments.append(contentsOf: ["-Xlinker", "-rpath", "-Xlinker", directory])
+
+            let modulesDirectory = URL(fileURLWithPath: directory)
+                .appendingPathComponent("Modules", isDirectory: true)
+                .path
+            if FileManager.default.fileExists(atPath: modulesDirectory) {
+                arguments.append(contentsOf: ["-I", modulesDirectory])
+            }
+
+            let includeDirectory = URL(fileURLWithPath: directory)
+                .appendingPathComponent("include", isDirectory: true)
+                .path
+            if FileManager.default.fileExists(atPath: includeDirectory) {
+                arguments.append(contentsOf: ["-Xcc", "-I", "-Xcc", includeDirectory])
+            }
+        }
+
+        arguments.append(
+            contentsOf: Self.linkInputArguments(
+                in: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
+                excludingProductNames: targetName.map { [$0] } ?? []
+            )
+        )
+        arguments.append(contentsOf: Self.packageLinkedLibraryArguments(packageDirectory: packageDirectory))
+
+        return arguments
+    }
+
     private struct BuildResult: Sendable {
         let terminationStatus: Int32
         let stdout: String
@@ -140,6 +181,96 @@ public final class SPMCompiler: Sendable {
         ]
     }
 
+    private static func linkInputArguments(
+        in directories: [URL],
+        excludingProductNames productNames: [String]
+    ) -> [String] {
+        let fileManager = FileManager.default
+        var inputs: [String] = []
+
+        for directory in directories {
+            guard let entries = try? fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                continue
+            }
+
+            for entry in entries {
+                guard isLinkInput(entry, excludingProductNames: productNames) else { continue }
+                inputs.append(entry.path)
+            }
+        }
+
+        return inputs.sorted().uniqued()
+    }
+
+    private static func isLinkInput(_ url: URL, excludingProductNames productNames: [String]) -> Bool {
+        let fileName = url.lastPathComponent
+        let baseName = url.deletingPathExtension().lastPathComponent
+        guard url.pathExtension == "o" || url.pathExtension == "a" else {
+            return false
+        }
+
+        for productName in productNames where !productName.isEmpty {
+            if fileName == "\(productName).o"
+                || fileName == "lib\(productName).a"
+                || baseName == productName {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private static func packageLinkedLibraryArguments(packageDirectory: URL) -> [String] {
+        packageManifestURLs(packageDirectory: packageDirectory)
+            .flatMap(packageLinkedLibraries(in:))
+            .uniqued()
+            .map { "-l\($0)" }
+    }
+
+    private static func packageManifestURLs(packageDirectory: URL) -> [URL] {
+        var manifests = [packageDirectory.appendingPathComponent("Package.swift")]
+        let checkoutsDirectory = packageDirectory
+            .appendingPathComponent(".build", isDirectory: true)
+            .appendingPathComponent("checkouts", isDirectory: true)
+
+        if let checkouts = try? FileManager.default.contentsOfDirectory(
+            at: checkoutsDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) {
+            manifests.append(contentsOf: checkouts.map { $0.appendingPathComponent("Package.swift") })
+        }
+
+        return manifests
+    }
+
+    private static func packageLinkedLibraries(in packageManifest: URL) -> [String] {
+        guard let source = try? String(contentsOf: packageManifest, encoding: .utf8) else {
+            return []
+        }
+        return linkedLibraries(in: source)
+    }
+
+    private static func linkedLibraries(in packageManifest: String) -> [String] {
+        let pattern = /\.linkedLibrary\(\s*"([^"]+)"/
+        return packageManifest
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .compactMap { line -> String? in
+                let sourceLine = String(line)
+                guard let match = sourceLine.firstMatch(of: pattern) else { return nil }
+                if sourceLine.contains(".when(platforms:")
+                    && !sourceLine.contains(".macOS")
+                    && !sourceLine.contains(".macos") {
+                    return nil
+                }
+                return String(match.1)
+            }
+    }
+
     private static func failureMessage(from result: BuildResult) -> String {
         let combinedOutput = [result.stderr, result.stdout]
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -165,5 +296,16 @@ public final class SPMCompiler: Sendable {
         }
 
         return combinedOutput
+    }
+}
+
+private extension Array where Element == String {
+    func uniqued() -> [String] {
+        var seen: Set<String> = []
+        var result: [String] = []
+        for value in self where seen.insert(value).inserted {
+            result.append(value)
+        }
+        return result
     }
 }

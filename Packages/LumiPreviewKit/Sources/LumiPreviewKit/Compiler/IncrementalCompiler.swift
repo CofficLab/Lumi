@@ -61,12 +61,22 @@ public final class IncrementalCompiler: Sendable {
     ///
     /// 多文件 entry 用于保留 Swift 文件级别的访问控制语义，避免把 target
     /// 源码拼成单个临时文件后破坏 `private` 声明作用域。
-    func compileLibrary(sourceURLs: [URL], dylibURL: URL) async throws -> URL {
+    func compileLibrary(sourceURLs: [URL], dylibURL: URL, compilerArguments: [String] = []) async throws -> URL {
         try await Task.detached {
             let sourceArguments = sourceURLs
                 .map { Self.shellQuoted($0.path) }
                 .joined(separator: " ")
-            let command = "/usr/bin/env swiftc -emit-library \(sourceArguments) -o \(Self.shellQuoted(dylibURL.path))"
+            let extraArguments = compilerArguments
+                .map(Self.shellQuoted)
+                .joined(separator: " ")
+            let command = [
+                "/usr/bin/env swiftc -emit-library",
+                extraArguments,
+                sourceArguments,
+                "-o \(Self.shellQuoted(dylibURL.path))"
+            ]
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
             let result = try Self.run(command)
 
             guard result.terminationStatus == 0 else {

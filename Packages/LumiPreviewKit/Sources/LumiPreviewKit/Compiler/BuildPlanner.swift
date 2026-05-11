@@ -265,7 +265,7 @@ public final class BuildPlanner: Sendable {
 
             let targetName = schemeTargetName(scheme: scheme, projectURL: candidateProjectURL) ?? scheme
             let schemeSources = project.swiftSourceFiles(targetName: targetName)
-            if schemeSources.contains(currentSourceURL) {
+            if !schemeSources.isEmpty {
                 return augmentedXcodeSources(schemeSources, containing: currentSourceURL)
             }
 
@@ -457,11 +457,17 @@ public final class BuildPlanner: Sendable {
             .resolvingSymlinksInPath()
     }
 
-    private static func swiftSourceFiles(in roots: [URL]) -> [URL] {
+    fileprivate static func swiftSourceFiles(in roots: [URL], excluding excludedRoots: [URL] = []) -> [URL] {
         var files: Set<URL> = []
         let fileManager = FileManager.default
+        let excludedPaths = excludedRoots
+            .map { $0.standardizedFileURL.resolvingSymlinksInPath().path }
 
         for root in roots {
+            if isExcluded(root, by: excludedPaths) {
+                continue
+            }
+
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: root.path, isDirectory: &isDirectory) else {
                 continue
@@ -482,7 +488,16 @@ public final class BuildPlanner: Sendable {
                 continue
             }
 
-            for case let fileURL as URL in enumerator where fileURL.pathExtension == "swift" {
+            for case let fileURL as URL in enumerator {
+                if isExcluded(fileURL, by: excludedPaths) {
+                    enumerator.skipDescendants()
+                    continue
+                }
+
+                guard fileURL.pathExtension == "swift" else {
+                    continue
+                }
+
                 let values = try? fileURL.resourceValues(forKeys: [.isRegularFileKey])
                 if values?.isRegularFile == true {
                     files.insert(fileURL.standardizedFileURL.resolvingSymlinksInPath())
@@ -491,6 +506,13 @@ public final class BuildPlanner: Sendable {
         }
 
         return files.sorted { $0.path < $1.path }
+    }
+
+    fileprivate static func isExcluded(_ url: URL, by excludedPaths: [String]) -> Bool {
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        return excludedPaths.contains { excludedPath in
+            path == excludedPath || path.hasPrefix(excludedPath + "/")
+        }
     }
 
     private static func defaultPath(for target: TargetInfo) -> String {
@@ -542,6 +564,24 @@ private struct XcodeProjectSourceIndex {
             let pattern = /([A-Za-z0-9]{8,})/
             return listBody.matches(of: pattern).map { String($0.1) }
         }
+
+        func stringListField(_ name: String) -> [String] {
+            guard let range = body.range(of: "\(name) = (") else {
+                return []
+            }
+
+            let listStart = range.upperBound
+            guard let listEnd = body[listStart...].range(of: ");")?.lowerBound else {
+                return []
+            }
+
+            let listBody = String(body[listStart..<listEnd])
+            return listBody
+                .split(separator: ",")
+                .map(String.init)
+                .map { $0.removingPBXComment().removingPBXQuotes() }
+                .filter { !$0.isEmpty }
+        }
     }
 
     private let projectDirectory: URL
@@ -559,7 +599,9 @@ private struct XcodeProjectSourceIndex {
         self.objects = Dictionary(uniqueKeysWithValues: objects.map { ($0.id, $0) })
 
         var parentGroupByChildID: [String: String] = [:]
-        for object in objects where object.isa == "PBXGroup" || object.isa == "PBXVariantGroup" {
+        for object in objects where object.isa == "PBXGroup"
+            || object.isa == "PBXVariantGroup"
+            || object.isa == "PBXFileSystemSynchronizedRootGroup" {
             for childID in object.listField("children") {
                 parentGroupByChildID[childID] = object.id
             }
@@ -599,12 +641,48 @@ private struct XcodeProjectSourceIndex {
             .flatMap { $0.listField("files") }
             .compactMap { objects[$0]?.field("fileRef") }
 
-        return fileRefIDs
+        let explicitSources = fileRefIDs
             .compactMap { sourceURL(fileRefID: $0) }
             .filter { $0.pathExtension == "swift" }
             .map { $0.standardizedFileURL.resolvingSymlinksInPath() }
+
+        let synchronizedSources = target
+            .listField("fileSystemSynchronizedGroups")
+            .flatMap { synchronizedSourceFiles(rootGroupID: $0, targetID: target.id) }
+
+        return (explicitSources + synchronizedSources)
             .uniqued()
             .sorted { $0.path < $1.path }
+    }
+
+    private func synchronizedSourceFiles(rootGroupID: String, targetID: String) -> [URL] {
+        guard let rootGroup = objects[rootGroupID],
+              rootGroup.isa == "PBXFileSystemSynchronizedRootGroup" else {
+            return []
+        }
+
+        let rootURL = groupBaseURL(groupID: rootGroupID)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        let excludedURLs = rootGroup
+            .listField("exceptions")
+            .compactMap { objects[$0] }
+            .filter { exception in
+                guard let exceptionTargetID = exception.field("target") else {
+                    return true
+                }
+                return exceptionTargetID == targetID
+            }
+            .flatMap { exception in
+                exception.stringListField("membershipExceptions").map { relativePath in
+                    rootURL
+                        .appendingPathComponent(relativePath)
+                        .standardizedFileURL
+                        .resolvingSymlinksInPath()
+                }
+            }
+
+        return BuildPlanner.swiftSourceFiles(in: [rootURL], excluding: excludedURLs)
     }
 
     private func sourceURL(fileRefID: String) -> URL? {
@@ -639,8 +717,7 @@ private struct XcodeProjectSourceIndex {
         let parentBaseURL = parentGroupByChildID[groupID]
             .flatMap { self.groupBaseURL(groupID: $0) } ?? projectDirectory
 
-        guard group.field("sourceTree") != "SOURCE_ROOT",
-              let path = group.field("path"),
+        guard let path = group.field("path"),
               !path.isEmpty else {
             return parentBaseURL
         }
@@ -649,12 +726,16 @@ private struct XcodeProjectSourceIndex {
             return URL(fileURLWithPath: path)
         }
 
+        if group.field("sourceTree") == "SOURCE_ROOT" {
+            return projectDirectory.appendingPathComponent(path)
+        }
+
         return parentBaseURL.appendingPathComponent(path)
     }
 
     private static func parseObjects(from content: String) -> [Object] {
         var objects: [Object] = []
-        let startPattern = /^(\s*)([A-Za-z0-9]+)(?:\s*\/\*.*?\*\/)?\s*=\s*\{(.*)$/
+        let startPattern = /^\s*([A-Fa-f0-9]{8,})(?:\s*\/\*[^*]*\*\/)?\s*=\s*\{(.*)$/
         var activeID: String?
         var activeBody: [String] = []
         var depth = 0
@@ -676,10 +757,10 @@ private struct XcodeProjectSourceIndex {
                 continue
             }
 
-            let id = String(match.2)
+            let id = String(match.1)
             activeID = id
-            activeBody = [String(match.3)]
-            depth = 1 + braceDepthDelta(in: String(match.3))
+            activeBody = [String(match.2)]
+            depth = 1 + braceDepthDelta(in: String(match.2))
             if depth <= 0 {
                 objects.append(Object(id: id, body: activeBody.joined(separator: "\n")))
                 activeID = nil
