@@ -97,3 +97,29 @@ public struct AppImageThumbnail: View {
         .frame(width: size.width, height: size.height)
     }
 }
+
+// MARK: - 预览
+
+#Preview("AppAvatar") {
+    HStack(spacing: 16) {
+        AppAvatar(
+            systemImage: "person.fill",
+            tint: .white,
+            backgroundTint: .blue,
+            size: 24
+        )
+        AppAvatar(
+            systemImage: "star.fill",
+            tint: .white,
+            backgroundTint: .orange,
+            size: 36
+        )
+        AppAvatar(
+            systemImage: "heart.fill",
+            tint: .white,
+            backgroundTint: .red,
+            size: 48
+        )
+    }
+    .padding()
+}
