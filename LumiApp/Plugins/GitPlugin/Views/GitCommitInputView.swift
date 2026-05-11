@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import LumiUI
 
 /// Commit 输入视图
 ///
@@ -100,65 +101,46 @@ struct GitCommitInputView: View {
     }
 
     private var aiGenerateButton: some View {
-        Button(action: {
-            Task { await generateAICommitMessage() }
-        }) {
-            HStack(spacing: 4) {
-                if isGenerating {
-                    ProgressView()
-                        .controlSize(.small)
-                        .scaleEffect(0.7)
-                } else {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 11))
+        Group {
+            if isGenerating {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
+                            .fill(Color(hex: "7C6FFF").opacity(0.08))
+                    )
+            } else {
+                AppButton("AI", systemImage: "sparkles", style: .ghost, size: .small, fillsWidth: true) {
+                    Task { await generateAICommitMessage() }
                 }
-                Text(String(localized: "AI", table: "GitPlugin"))
-                    .font(.system(size: 11, weight: .medium))
+                .help(String(localized: "AI generates commit message", table: "GitPlugin"))
             }
-            .frame(maxWidth: .infinity)
-            .foregroundColor(Color(hex: "7C6FFF"))
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(hex: "7C6FFF").opacity(0.08))
-            )
         }
-        .buttonStyle(.plain)
         .disabled(isGenerating || isCommitting)
-        .help(String(localized: "AI generates commit message", table: "GitPlugin"))
     }
 
     private var commitButton: some View {
-        Button(action: {
-            Task { await performCommit() }
-        }) {
-            HStack(spacing: 4) {
-                if isCommitting {
-                    ProgressView()
-                        .controlSize(.small)
-                        .scaleEffect(0.7)
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 11))
-                }
-                Text(String(localized: "Commit", table: "GitPlugin"))
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .frame(maxWidth: .infinity)
-            .foregroundColor(.white)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(
-                        canCommit
-                            ? Color(hex: "7C6FFF")
-                            : Color(hex: "7C6FFF").opacity(0.3)
+        Group {
+            if isCommitting {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
+                            .fill(Color(hex: "7C6FFF"))
                     )
-            )
+                    .foregroundColor(.white)
+            } else {
+                AppButton("Commit", systemImage: "checkmark.circle.fill", style: .primary, size: .small, fillsWidth: true) {
+                    Task { await performCommit() }
+                }
+                .disabled(!canCommit || isGenerating)
+                .help(String(localized: "Commit changes", table: "GitPlugin"))
+            }
         }
-        .buttonStyle(.plain)
-        .disabled(!canCommit || isCommitting || isGenerating)
-        .help(String(localized: "Commit changes", table: "GitPlugin"))
     }
 
     private func resultMessageView(_ message: String) -> some View {
