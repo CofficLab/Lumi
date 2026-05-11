@@ -22,13 +22,13 @@ struct EditorPreviewContentView: View {
             content
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
-        .onAppear(perform: refreshScan)
+        .onAppear(perform: refreshScanAndStartIfNeeded)
         .onChange(of: currentFileURL) { _, _ in
             viewModel.stopPreview()
-            refreshScan()
+            refreshScanAndStartIfNeeded()
         }
         .onChange(of: sourceText ?? "") { _, _ in
-            refreshScan()
+            refreshScanAndStartIfNeeded(allowsStopped: false)
         }
     }
 
@@ -282,6 +282,11 @@ struct EditorPreviewContentView: View {
 
     private func refreshScan() {
         viewModel.update(sourceText: sourceText, fileURL: currentFileURL)
+    }
+
+    private func refreshScanAndStartIfNeeded(allowsStopped: Bool = true) {
+        refreshScan()
+        viewModel.startSelectedPreviewIfNeeded(allowsStopped: allowsStopped)
     }
 }
 #else

@@ -51,7 +51,7 @@ final class EditorPreviewViewModel: ObservableObject {
     }
 
     var canStart: Bool {
-        selectedPreview != nil && runState != .starting
+        selectedPreview != nil && runState != .starting && runState != .running
     }
 
     var canRefresh: Bool {
@@ -92,8 +92,19 @@ final class EditorPreviewViewModel: ObservableObject {
         }
     }
 
+    func startSelectedPreviewIfNeeded(allowsStopped: Bool = true) {
+        switch runState {
+        case .idle:
+            startSelectedPreview()
+        case .stopped where allowsStopped:
+            startSelectedPreview()
+        case .hostMissing, .starting, .running, .failed, .stopped:
+            return
+        }
+    }
+
     func startSelectedPreview() {
-        guard let selectedPreview else { return }
+        guard canStart, let selectedPreview else { return }
         guard let hostExecutableURL = EditorPreviewHostExecutableResolver.resolve() else {
             runState = .hostMissing
             return
@@ -101,6 +112,9 @@ final class EditorPreviewViewModel: ObservableObject {
 
         let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         self.engine = engine
+        renderMessage = nil
+        renderImage = nil
+        performanceSummary = nil
         runState = .starting
 
         Task {
@@ -136,17 +150,21 @@ final class EditorPreviewViewModel: ObservableObject {
     func stopPreview() {
         guard let session, let engine else {
             runState = .stopped
-            return
-        }
-
-        Task {
-            await engine.stopPreview(session)
-            self.session = nil
-            self.engine = nil
-            runState = .stopped
             renderMessage = nil
             renderImage = nil
             performanceSummary = nil
+            return
+        }
+
+        self.session = nil
+        self.engine = nil
+        runState = .stopped
+        renderMessage = nil
+        renderImage = nil
+        performanceSummary = nil
+
+        Task {
+            await engine.stopPreview(session)
         }
     }
 
