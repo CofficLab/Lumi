@@ -2,6 +2,7 @@ import Foundation
 import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView
+import os
 
 @MainActor
 final class EditorSessionController {
@@ -90,7 +91,11 @@ final class EditorSessionController {
             foldingState: foldingState
         )
 
-        guard requiresSync(activeSession, snapshot: snapshot) else {
+        let needsSync = requiresSync(activeSession, snapshot: snapshot)
+        Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.session-controller")
+            .info("🔍 [dirty-debug] syncActiveSessionState: needsSync=\(needsSync), activeSession.isDirty=\(activeSession.isDirty), snapshot.isDirty=\(snapshot.isDirty), hasOnChanged=\(onChanged != nil), activeSessionID=\(activeSession.id.uuidString.prefix(8))")
+
+        guard needsSync else {
             return
         }
 

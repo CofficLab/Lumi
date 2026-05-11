@@ -2294,9 +2294,7 @@ public final class EditorState: ObservableObject, SuperLog {
     private func refreshContentDerivedState(using contentString: String) {
         let changed = documentController.hasChangesComparedToPersistedSnapshot(contentString)
 
-        if Self.verbose {
-            logger.info("\(Self.t)内容变更检测: changed=\(changed), 内容长度=\(contentString.count), 快照长度=\(self.documentController.persistedTextSnapshot?.count ?? -1), 文件=\(self.currentFileURL?.lastPathComponent ?? "nil")")
-        }
+        logger.info("\(Self.t)🔍 [dirty-debug] 内容变更检测: changed=\(changed), hasUnsavedChanges=\(self.hasUnsavedChanges), 内容长度=\(contentString.count), 快照长度=\(self.documentController.persistedTextSnapshot?.count ?? -1), 文件=\(self.currentFileURL?.lastPathComponent ?? "nil")")
 
         if changed {
             hasUnsavedChanges = true
@@ -2307,6 +2305,9 @@ public final class EditorState: ObservableObject, SuperLog {
             saveState = .idle
         }
         refreshFindMatches()
+
+        logger.info("\(Self.t)🔍 [dirty-debug] syncActiveSessionState: hasUnsavedChanges=\(self.hasUnsavedChanges), onActiveSessionChanged=\(self.onActiveSessionChanged != nil), sessionSyncGate.isSuspended=\(self.sessionSyncGate.isSuspended)")
+
         syncActiveSessionState()
         updateBracketMatch()
     }
