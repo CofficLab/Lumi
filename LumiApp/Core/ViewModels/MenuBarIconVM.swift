@@ -1,8 +1,8 @@
 import Combine
 import SwiftUI
 
-/// 状态栏图标视图模型
-class StatusBarIconVM: ObservableObject {
+/// 菜单栏图标视图模型
+class MenuBarIconVM: ObservableObject {
     @Published var isActive: Bool = false
     @Published var activeSources: Set<String> = []
 

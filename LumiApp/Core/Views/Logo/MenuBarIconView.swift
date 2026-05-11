@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// 状态栏图标视图
+/// 菜单栏图标视图
 /// 显示 Logo 图标和插件提供的内容视图
-struct StatusBarIconView: View {
-    @ObservedObject var viewModel: StatusBarIconVM
+struct MenuBarIconView: View {
+    @ObservedObject var viewModel: MenuBarIconVM
 
     var body: some View {
         HStack(spacing: 4) {

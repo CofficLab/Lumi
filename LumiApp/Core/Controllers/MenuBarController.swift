@@ -2,7 +2,7 @@ import AppKit
 import MagicKit
 import SwiftUI
 
-/// 状态栏控制器
+/// 菜单栏控制器
 @MainActor
 class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 日志标识符
@@ -30,12 +30,12 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 管理图标的状态和内容视图。
     /// 使用 MVVM 模式管理 SwiftUI 视图的数据。
-    private var iconViewModel = StatusBarIconVM()
+    private var iconViewModel = MenuBarIconVM()
     
-    /// 状态栏图标的主机视图
+    /// 菜单栏图标的主机视图
     ///
     /// 将 SwiftUI 视图嵌入 AppKit 的 NSStatusItem。
-    private var iconHostingView: InteractiveHostingView<StatusBarIconView>?
+    private var iconHostingView: InteractiveHostingView<MenuBarIconView>?
 
     /// 弹出窗口
     ///
@@ -78,7 +78,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
         guard let button = statusItem?.button else { return }
 
         // 1. 初始化 SwiftUI 视图
-        let iconView = StatusBarIconView(viewModel: iconViewModel)
+        let iconView = MenuBarIconView(viewModel: iconViewModel)
         let hostingView = InteractiveHostingView(rootView: iconView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         self.iconHostingView = hostingView
@@ -239,7 +239,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
             activeSources.remove(source)
         }
 
-        updateStatusBarIconAppearance()
+        updateMenuBarIconAppearance()
     }
 
     /// 处理应用失去焦点
@@ -455,6 +455,6 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
 // MARK: - Preview
 
 #Preview("StatusBar") {
-    StatusBarIconView(viewModel: StatusBarIconVM())
+    MenuBarIconView(viewModel: MenuBarIconVM())
         .frame(width: 20, height: 20)
 }
