@@ -174,9 +174,15 @@ final class EditorPreviewViewModel: ObservableObject {
     private static func message(for error: PreviewError) -> String {
         switch error {
         case .targetNotFound(let file):
-            String(localized: "No build target found for %@", table: "EditorPreview", arguments: [URL(fileURLWithPath: file).lastPathComponent])
+            String(
+                format: String(localized: "No build target found for %@", table: "EditorPreview"),
+                URL(fileURLWithPath: file).lastPathComponent
+            )
         case .unsupportedProjectType(let path):
-            String(localized: "Unsupported project type: %@", table: "EditorPreview", arguments: [path])
+            String(
+                format: String(localized: "Unsupported project type: %@", table: "EditorPreview"),
+                path
+            )
         case .compilationFailed(let message):
             message
         case .buildProductNotFound:
@@ -186,7 +192,10 @@ final class EditorPreviewViewModel: ObservableObject {
         case .runtimeCrashed(let message):
             message
         case .timedOut(let seconds):
-            String(localized: "Timed out after %lld seconds.", table: "EditorPreview", arguments: [Int(seconds)])
+            String(
+                format: String(localized: "Timed out after %lld seconds.", table: "EditorPreview"),
+                Int64(seconds)
+            )
         case .missingDependency(let description):
             description
         }
@@ -196,10 +205,21 @@ final class EditorPreviewViewModel: ObservableObject {
         var parts: [String] = []
         if let compileDuration = metrics.lastCompileDuration {
             let cacheSuffix = metrics.lastCompileUsedCache ? String(localized: " cached", table: "EditorPreview") : ""
-            parts.append(String(localized: "Build %@%@", table: "EditorPreview", arguments: [format(seconds: compileDuration), cacheSuffix]))
+            parts.append(
+                String(
+                    format: String(localized: "Build %@%@", table: "EditorPreview"),
+                    format(seconds: compileDuration),
+                    cacheSuffix
+                )
+            )
         }
         if let refreshDuration = metrics.lastRefreshDuration {
-            parts.append(String(localized: "Refresh %@", table: "EditorPreview", arguments: [format(seconds: refreshDuration)]))
+            parts.append(
+                String(
+                    format: String(localized: "Refresh %@", table: "EditorPreview"),
+                    format(seconds: refreshDuration)
+                )
+            )
         }
         return parts.isEmpty ? nil : parts.joined(separator: " | ")
     }

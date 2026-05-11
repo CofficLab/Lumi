@@ -1,0 +1,289 @@
+import Foundation
+
+/// Builds a small dynamic preview entry dylib for a discovered `#Preview`.
+public final class PreviewEntryBuilder: Sendable {
+    /// The C symbol exported by generated preview entry dylibs.
+    public static let symbolName = "lumi_preview_entry"
+
+    /// The C symbol dynamic preview dylibs can export to return a retained `NSView`.
+    public static let viewSymbolName = "lumi_preview_make_nsview"
+
+    private let incrementalCompiler: IncrementalCompiler
+    private let encoder = JSONEncoder()
+
+    /// Creates a preview entry builder.
+    public init(incrementalCompiler: IncrementalCompiler = IncrementalCompiler()) {
+        self.incrementalCompiler = incrementalCompiler
+    }
+
+    /// Generates, compiles, links, and signs a preview entry dylib.
+    ///
+    /// When target context is available, the generated entry is compiled with
+    /// sanitized target sources so `#Preview` bodies can reference sibling files.
+    public func buildEntry(
+        for discovery: PreviewDiscovery,
+        configuration: PreviewRenderConfiguration,
+        buildStrategy: BuildStrategy? = nil
+    ) async throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-PreviewEntry-\(UUID().uuidString)", isDirectory: true)
+        let sourceURL = directory.appendingPathComponent("PreviewEntry.swift")
+        let objectURL = directory.appendingPathComponent("PreviewEntry.o")
+
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        do {
+            let viewSourceURLs = try viewEntrySourceURLs(
+                for: discovery,
+                configuration: configuration,
+                buildStrategy: buildStrategy,
+                in: directory
+            )
+            let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
+            let dylib = try await incrementalCompiler.compileLibrary(sourceURLs: viewSourceURLs, dylibURL: dylibURL)
+            try await incrementalCompiler.codesign(dylibURL: dylib)
+            return dylib
+        } catch {
+            try descriptorEntrySource(
+                for: discovery,
+                configuration: configuration,
+                viewEntryBuildError: Self.diagnosticMessage(from: error)
+            ).write(to: sourceURL, atomically: true, encoding: .utf8)
+            return try await compileEntry(sourceURL: sourceURL, objectURL: objectURL)
+        }
+    }
+
+    private func compileEntry(sourceURL: URL, objectURL: URL) async throws -> URL {
+        let objectFile = try await incrementalCompiler.compile(
+            fileURL: sourceURL,
+            compileCommand: "/usr/bin/env swiftc -c \(Self.shellQuoted(sourceURL.path)) -o \(Self.shellQuoted(objectURL.path))"
+        )
+        let dylibURL = try await incrementalCompiler.link(objectFileURL: objectFile)
+        try await incrementalCompiler.codesign(dylibURL: dylibURL)
+
+        return dylibURL
+    }
+
+    private func viewEntrySourceURLs(
+        for discovery: PreviewDiscovery,
+        configuration: PreviewRenderConfiguration,
+        buildStrategy: BuildStrategy?,
+        in directory: URL
+    ) throws -> [URL] {
+        let sourceDirectory = directory.appendingPathComponent("TargetSources", isDirectory: true)
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+
+        let targetSourceURLs = sourceFiles(for: discovery, buildStrategy: buildStrategy)
+        var generatedSourceURLs: [URL] = []
+        for (index, targetSourceURL) in targetSourceURLs.enumerated() {
+            let sanitizedSource = try sanitizedSourceFile(at: targetSourceURL)
+            let generatedSourceURL = sourceDirectory.appendingPathComponent(
+                "\(index)-\(targetSourceURL.lastPathComponent)"
+            )
+            try sanitizedSource.write(to: generatedSourceURL, atomically: true, encoding: .utf8)
+            generatedSourceURLs.append(generatedSourceURL)
+        }
+
+        let entrySourceURL = directory.appendingPathComponent("PreviewEntry.swift")
+        try viewEntrySource(
+            for: discovery,
+            configuration: configuration
+        ).write(to: entrySourceURL, atomically: true, encoding: .utf8)
+        generatedSourceURLs.append(entrySourceURL)
+
+        return generatedSourceURLs
+    }
+
+    private func viewEntrySource(
+        for discovery: PreviewDiscovery,
+        configuration: PreviewRenderConfiguration
+    ) throws -> String {
+        let descriptorSource = try descriptorFunctionSource(for: discovery, configuration: configuration)
+        let bodySource = discovery.bodySource?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let viewBody = (bodySource?.isEmpty == false) ? bodySource! : #"Text("Empty Preview")"#
+
+        return """
+        import AppKit
+        import Darwin
+        import SwiftUI
+
+        \(descriptorSource)
+
+        @_cdecl("\(Self.viewSymbolName)")
+        public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
+            let rootView = AnyView({
+        \(Self.indented(viewBody, spaces: 8))
+            }())
+            let view = NSHostingView(rootView: rootView)
+            view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
+            return Unmanaged.passRetained(view).toOpaque()
+        }
+        """
+    }
+
+    private func descriptorEntrySource(
+        for discovery: PreviewDiscovery,
+        configuration: PreviewRenderConfiguration,
+        viewEntryBuildError: String? = nil
+    ) throws -> String {
+        let descriptorSource = try descriptorFunctionSource(
+            for: discovery,
+            configuration: configuration,
+            viewEntryBuildError: viewEntryBuildError
+        )
+
+        return """
+        import Darwin
+
+        \(descriptorSource)
+        """
+    }
+
+    private func descriptorFunctionSource(
+        for discovery: PreviewDiscovery,
+        configuration: PreviewRenderConfiguration,
+        viewEntryBuildError: String? = nil
+    ) throws -> String {
+        let descriptor = PreviewEntryDescriptor(
+            title: discovery.title,
+            subtitle: discovery.primaryTypeName,
+            body: descriptorBody(
+                for: discovery,
+                configuration: configuration,
+                viewEntryBuildError: viewEntryBuildError
+            )
+        )
+        let data = try encoder.encode(descriptor)
+        let json = String(data: data, encoding: .utf8) ?? "{}"
+
+        return """
+        @_cdecl("\(Self.symbolName)")
+        public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
+            let json = "\(Self.swiftStringLiteralContents(json))"
+            return strdup(json).map { UnsafePointer($0) }
+        }
+        """
+    }
+
+    private func descriptorBody(
+        for discovery: PreviewDiscovery,
+        configuration: PreviewRenderConfiguration,
+        viewEntryBuildError: String? = nil
+    ) -> String? {
+        var parts: [String] = []
+
+        if let viewEntryBuildError, !viewEntryBuildError.isEmpty {
+            parts.append("Preview view entry failed:\n\(Self.truncated(viewEntryBuildError, limit: 2_000))")
+        }
+
+        if let bodySource = discovery.bodySource?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !bodySource.isEmpty {
+            parts.append(bodySource)
+        }
+
+        if configuration.hasEnvironmentInjections {
+            parts.append("\(configuration.environmentInjections.count) environment mock(s)")
+        }
+
+        return parts.isEmpty ? nil : parts.joined(separator: "\n")
+    }
+
+    private func sourceFiles(for discovery: PreviewDiscovery, buildStrategy: BuildStrategy?) -> [URL] {
+        let currentSourceURL = discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
+        var sourceURLs: [URL]
+
+        if case .spm(let packageDirectory, let targetName) = buildStrategy {
+            sourceURLs = BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: targetName)
+        } else if case .xcode(let projectURL, let scheme, _) = buildStrategy {
+            sourceURLs = BuildPlanner.swiftSourceFiles(
+                projectURL: projectURL,
+                scheme: scheme,
+                containing: currentSourceURL
+            )
+        } else {
+            sourceURLs = []
+        }
+
+        if !sourceURLs.contains(currentSourceURL) {
+            sourceURLs.append(currentSourceURL)
+        }
+
+        return sourceURLs
+            .map { $0.standardizedFileURL.resolvingSymlinksInPath() }
+            .uniqued()
+            .filter { $0 == currentSourceURL || $0.lastPathComponent != "main.swift" }
+            .sorted { $0.path < $1.path }
+    }
+
+    private func sanitizedSourceFile(at sourceFileURL: URL) throws -> String {
+        let source = try String(contentsOf: sourceFileURL, encoding: .utf8)
+        let previews = PreviewScanner().scan(
+            fileURL: sourceFileURL,
+            sourceText: source
+        )
+        guard !previews.isEmpty else {
+            return source
+        }
+
+        var lines = source.components(separatedBy: .newlines)
+        for preview in previews.sorted(by: { $0.lineNumber > $1.lineNumber }) {
+            let start = max(preview.lineNumber - 1, 0)
+            let end = min(preview.endLineNumber - 1, lines.count - 1)
+            guard start <= end else { continue }
+            lines.replaceSubrange(start...end, with: [])
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    private static func indented(_ value: String, spaces: Int) -> String {
+        let padding = String(repeating: " ", count: spaces)
+        return value
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { "\(padding)\($0)" }
+            .joined(separator: "\n")
+    }
+
+    private static func swiftStringLiteralContents(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\t", with: "\\t")
+    }
+
+    private static func shellQuoted(_ value: String) -> String {
+        "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
+    }
+
+    private static func diagnosticMessage(from error: Error) -> String {
+        if case PreviewError.compilationFailed(let message) = error {
+            return message
+        }
+
+        return String(describing: error)
+    }
+
+    private static func truncated(_ value: String, limit: Int) -> String {
+        guard value.count > limit else {
+            return value
+        }
+
+        return "\(value.prefix(limit))..."
+    }
+}
+
+private extension Array where Element == URL {
+    func uniqued() -> [URL] {
+        var seen: Set<String> = []
+        var result: [URL] = []
+        for url in self {
+            if seen.insert(url.path).inserted {
+                result.append(url)
+            }
+        }
+        return result
+    }
+}

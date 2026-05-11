@@ -41,6 +41,7 @@
 		A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4162F70000100AAA101 /* DeviceMonitorKit */; };
 		A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4182F70000100AAA102 /* DockerKit */; };
 		A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4212F70000100AAA103 /* DiskManagerKit */; };
+		A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4272F70000100AAA107 /* LumiPreviewKit */; };
 		A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4312F70000100AAA104 /* BrewKit */; };
 		A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4412F70000100AAA105 /* TerminalCoreKit */; };
 		A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4512F70000100AAA106 /* ShellKit */; };
@@ -300,6 +301,7 @@
 				A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */,
 				A1B2C4002F70000100AAA101 /* EditorService in Frameworks */,
 				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
+				A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */,
 				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
 				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
@@ -729,6 +731,8 @@
 				F5A640762F3ED1910039A761 /* Embed System Extensions */,
 				F5A9DB4A2F7635F600A47D9C /* Embed Libraries */,
 				F5A9DB4E2F763C8700A47D9C /* CopyFiles */,
+				C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */,
+				C0D3E0112FB1000000A11002 /* Embed Editor Preview Host */,
 			);
 			buildRules = (
 			);
@@ -774,6 +778,7 @@
 				A1B2C4012F70000100AAA101 /* EditorService */,
 				A1B2C3EF2F70000100AAA101 /* DatabaseKit */,
 				A1B2C4132F70000100AAA101 /* LumiUI */,
+				A1B2C4272F70000100AAA107 /* LumiPreviewKit */,
 				A1B2C3A12F70000200AAA101 /* SkillKit */,
 				A1B2C4162F70000100AAA101 /* DeviceMonitorKit */,
 				A1B2C4182F70000100AAA102 /* DockerKit */,
@@ -872,6 +877,7 @@
 				A1B2C4022F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
 				A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */,
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
+				A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */,
 				A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */,
 				A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */,
 				A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */,
@@ -1099,6 +1105,61 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Package.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostManifest.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostResponse.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostDylibInspector.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostSymbolResolver.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostRunner.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/main.swift",
+				"$(SRCROOT)/scripts/embed-swiftui-preview-host.sh",
+			);
+			name = "Embed SwiftUI Preview Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiSwiftUIPreviewHost",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/embed-swiftui-preview-host.sh\"\n";
+		};
+		C0D3E0112FB1000000A11002 /* Embed Editor Preview Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packages/LumiPreviewKit/Package.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/main.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewKit/Host/PreviewHostMessages.swift",
+				"$(SRCROOT)/scripts/embed-editor-preview-host.sh",
+			);
+			name = "Embed Editor Preview Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiPreviewHostApp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/embed-editor-preview-host.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		0B2F7D5D2F3A301C00AD7E94 /* Sources */ = {
@@ -1675,6 +1736,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/DiskManagerKit;
 		};
+		A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LumiPreviewKit;
+		};
 		A1B2C4322F70000100AAA104 /* XCLocalSwiftPackageReference "Packages/BrewKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/BrewKit;
@@ -2004,6 +2069,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4222F70000100AAA103 /* XCLocalSwiftPackageReference "Packages/DiskManagerKit" */;
 			productName = DiskManagerKit;
+		};
+		A1B2C4272F70000100AAA107 /* LumiPreviewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */;
+			productName = LumiPreviewKit;
 		};
 		A1B2C4312F70000100AAA104 /* BrewKit */ = {
 			isa = XCSwiftPackageProductDependency;
