@@ -108,17 +108,17 @@ struct GitCommitInputView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 4)
                     .background(
-                        RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
                             .fill(Color(hex: "7C6FFF").opacity(0.08))
                     )
             } else {
                 AppButton("AI", systemImage: "sparkles", style: .ghost, size: .small, fillsWidth: true) {
                     Task { await generateAICommitMessage() }
                 }
+                .disabled(isGenerating || isCommitting)
                 .help(String(localized: "AI generates commit message", table: "GitPlugin"))
             }
         }
-        .disabled(isGenerating || isCommitting)
     }
 
     private var commitButton: some View {
@@ -129,7 +129,7 @@ struct GitCommitInputView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 4)
                     .background(
-                        RoundedRectangle(cornerRadius: AppUI.Radius.sm, style: .continuous)
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
                             .fill(Color(hex: "7C6FFF"))
                     )
                     .foregroundColor(.white)

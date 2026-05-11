@@ -157,15 +157,13 @@ public struct AppButton: View {
             switch style {
             case .primary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? theme.primary.opacity(0.85) : theme.primary)
+                    .fill(isHovered ? theme.primary.opacity(0.85) : theme.primary.opacity(0.5))
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? Color.white.opacity(0.12) : DesignTokens.Material.glass)
+                    .fill(isHovered ? Color.white.opacity(0.12) : theme.primarySecondary)
             case .ghost:
-                isHovered
-                    ? RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                        .fill(theme.primary.opacity(0.08))
-                    : Color.clear
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(isHovered ? theme.primary : Color.clear)
             case .tonal:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .fill(isHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
