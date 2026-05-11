@@ -46,7 +46,28 @@
         }
       }
     },
-    "Are you sure you want to delete \"%@\"?": {},
+    "Are you sure you want to delete \"%@\"?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to delete \"%@\"?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要删除「%@」吗？"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定要刪除「%@」嗎？"
+          }
+        }
+      }
+    },
     "Cancel": {
       "localizations": {
         "en": {
@@ -113,8 +134,50 @@
         }
       }
     },
-    "Editor Rail File Tree": {},
-    "Editor sidebar explorer tab": {},
+    "Editor Rail File Tree": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor Rail File Tree"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器文件树侧栏"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器檔案樹側邊欄"
+          }
+        }
+      }
+    },
+    "Editor sidebar explorer tab": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor sidebar explorer tab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器侧边栏文件浏览器标签"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器側邊欄檔案瀏覽器標籤"
+          }
+        }
+      }
+    },
     "Empty folder": {
       "localizations": {
         "en": {

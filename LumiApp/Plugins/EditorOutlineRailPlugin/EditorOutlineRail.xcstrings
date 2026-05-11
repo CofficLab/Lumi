@@ -1,8 +1,50 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Editor Outline Rail": {},
-    "Editor sidebar outline tab": {},
+    "Editor Outline Rail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor Outline Rail"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器大纲侧栏"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器大綱側邊欄"
+          }
+        }
+      }
+    },
+    "Editor sidebar outline tab": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor sidebar outline tab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器侧边栏大纲标签"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器側邊欄大綱標籤"
+          }
+        }
+      }
+    },
     "Filter symbols": {
       "localizations": {
         "en": {

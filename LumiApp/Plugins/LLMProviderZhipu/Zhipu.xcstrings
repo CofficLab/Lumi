@@ -200,7 +200,28 @@
         }
       }
     },
-    "Remaining %lld%%": {},
+    "Remaining %lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remaining %lld%%"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剩余 %lld%%"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剩餘 %lld%%"
+          }
+        }
+      }
+    },
     "Reset": {
       "localizations": {
         "en": {

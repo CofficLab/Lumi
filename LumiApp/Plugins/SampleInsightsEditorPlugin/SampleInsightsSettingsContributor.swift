@@ -9,10 +9,10 @@ final class SampleInsightsSettingsContributor: SuperEditorSettingsContributor {
         [
             EditorSettingsItemSuggestion(
                 id: "sample.insights.inline-tips",
-                sectionTitle: "扩展设置",
-                sectionSummary: "来自 editor extensions 的设置项会自动汇总到这个分组。",
-                title: "Sample Insights Inline Tips",
-                subtitle: "控制样例插件是否显示额外说明文案。",
+                sectionTitle: String(localized: "Extension Settings", table: "SampleInsights"),
+                sectionSummary: String(localized: "Settings items from editor extensions are automatically grouped here.", table: "SampleInsights"),
+                title: String(localized: "Sample Insights Inline Tips", table: "SampleInsights"),
+                subtitle: String(localized: "Used to demonstrate how plugin settings are displayed in the editor settings page.", table: "SampleInsights"),
                 keywords: ["sample insights", "extension", "tips", "插件设置"],
                 order: 10,
                 metadata: .init(priority: 40, dedupeKey: "sample-insights-inline-tips"),
@@ -47,9 +47,9 @@ private struct SampleInsightsSettingsToggleRow: View {
         GlassRow {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Sample Insights Inline Tips")
+                    Text(String(localized: "Sample Insights Inline Tips", table: "SampleInsights"))
                         .font(.system(size: 15, weight: .medium))
-                    Text("用于演示插件贡献设置如何统一显示在 editor settings 页面。")
+                    Text(String(localized: "Used to demonstrate how plugin settings are displayed in the editor settings page.", table: "SampleInsights"))
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(Color(hex: "98989E"))
                 }

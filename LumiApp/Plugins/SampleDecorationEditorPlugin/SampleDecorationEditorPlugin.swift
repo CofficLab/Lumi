@@ -4,8 +4,8 @@ import Foundation
 actor SampleDecorationEditorPlugin: SuperPlugin {
     static let shared = SampleDecorationEditorPlugin()
     static let id = "SampleDecorationEditor"
-    static let displayName = "Sample Decoration"
-    static let description = "Demonstrates sample gutter decorations for the editor extension surface."
+    static let displayName = String(localized: "Sample Decoration", table: "SampleDecoration")
+    static let description = String(localized: "Demonstrates sample gutter decorations for the editor extension surface.", table: "SampleDecoration")
     static let iconName = "signpost.right.and.left"
     static let order = 90
     static let enable = true

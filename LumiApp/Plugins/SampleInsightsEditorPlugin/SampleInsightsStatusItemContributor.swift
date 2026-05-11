@@ -34,7 +34,7 @@ private struct SampleInsightsStatusItemView: View {
             store.isPresented.toggle()
             state.objectWillChange.send()
         } label: {
-            Label("Insights", systemImage: store.isPresented ? "lightbulb.max.fill" : "lightbulb.max")
+            Label(String(localized: "Insights", table: "SampleInsights"), systemImage: store.isPresented ? "lightbulb.max.fill" : "lightbulb.max")
                 .font(.system(size: 10, weight: .medium))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -44,6 +44,6 @@ private struct SampleInsightsStatusItemView: View {
                 )
         }
         .buttonStyle(.plain)
-        .help("Toggle sample insights panel")
+        .help(String(localized: "Toggle sample insights panel", table: "SampleInsights"))
     }
 }

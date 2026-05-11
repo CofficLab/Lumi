@@ -1,267 +1,332 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "{count} Call Hierarchy": {
-      "extractionState": "stale",
+    "Building preview": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "{count} Call Hierarchy"
+            "value": "Building preview"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "{count} 个调用层级"
+            "value": "正在构建预览"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "{count} 個調用層級"
+            "value": "正在建構預覽"
           }
         }
       }
     },
-    "%lld Call Hierarchy": {
+    "Editor Preview": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld Call Hierarchy"
+            "value": "Editor Preview"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 调用层级"
+            "value": "编辑器预览"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 呼叫層級"
+            "value": "編輯器預覽"
           }
         }
       }
     },
-    "Call Hierarchy": {
+    "Lines %lld-%lld": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Call Hierarchy"
+            "value": "Lines %lld-%lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "调用层级"
+            "value": "第 %lld-%lld 行"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "調用層級"
+            "value": "第 %lld-%lld 行"
           }
         }
       }
     },
-    "Calls": {
+    "No #Preview macros found": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Calls"
+            "value": "No #Preview macros found"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "调用"
+            "value": "未找到 #Preview 宏"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "調用"
+            "value": "未找到 #Preview 巨集"
           }
         }
       }
     },
-    "Editor Call Hierarchy Rail": {
+    "Preview": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Editor Call Hierarchy Rail"
+            "value": "Preview"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "编辑器调用层级侧栏"
+            "value": "预览"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "編輯器呼叫層級側邊欄"
+            "value": "預覽"
           }
         }
       }
     },
-    "Editor sidebar call hierarchy tab": {
+    "Preview failed": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Editor sidebar call hierarchy tab"
+            "value": "Preview failed"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "编辑器侧边栏调用层级标签"
+            "value": "预览失败"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "編輯器側邊欄呼叫層級標籤"
+            "value": "預覽失敗"
           }
         }
       }
     },
-    "Empty": {
+    "Preview host missing": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Empty"
+            "value": "Preview host missing"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "空"
+            "value": "预览宿主缺失"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "空"
+            "value": "預覽宿主缺失"
           }
         }
       }
     },
-    "Incoming": {
+    "Preview host rendered %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Incoming"
+            "value": "Preview host rendered %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "被调用"
+            "value": "预览宿主已渲染 %@"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "被調用"
+            "value": "預覽宿主已渲染 %@"
           }
         }
       }
     },
-    "Loading Call Hierarchy...": {
+    "Preview stopped": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Loading Call Hierarchy..."
+            "value": "Preview stopped"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "加载调用层级..."
+            "value": "预览已停止"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "載入調用層級..."
+            "value": "預覽已停止"
           }
         }
       }
     },
-    "No Call Hierarchy": {
+    "Ready to start preview": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No Call Hierarchy"
+            "value": "Ready to start preview"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无调用层级"
+            "value": "准备就绪，可以开始预览"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "無調用層級"
+            "value": "準備就緒，可以開始預覽"
           }
         }
       }
     },
-    "Outgoing": {
+    "Refresh preview": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Outgoing"
+            "value": "Refresh preview"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "调用"
+            "value": "刷新预览"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "調用"
+            "value": "重新整理預覽"
           }
         }
       }
     },
-    "Symbol": {
+    "Set LUMI_PREVIEW_HOST_EXECUTABLE or embed LumiPreviewHostApp in Contents/Helpers.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Symbol"
+            "value": "Set LUMI_PREVIEW_HOST_EXECUTABLE or embed LumiPreviewHostApp in Contents/Helpers."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "符号"
+            "value": "请设置 LUMI_PREVIEW_HOST_EXECUTABLE 或将 LumiPreviewHostApp 嵌入 Contents/Helpers。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "符號"
+            "value": "請設定 LUMI_PREVIEW_HOST_EXECUTABLE 或將 LumiPreviewHostApp 嵌入 Contents/Helpers。"
+          }
+        }
+      }
+    },
+    "Shows source-based SwiftUI previews for the active editor file": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows source-based SwiftUI previews for the active editor file"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为当前编辑器文件显示基于源码的 SwiftUI 预览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為當前編輯器檔案顯示基於原始碼的 SwiftUI 預覽"
+          }
+        }
+      }
+    },
+    "Start preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start preview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始预览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始預覽"
+          }
+        }
+      }
+    },
+    "Stop preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop preview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止预览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止預覽"
           }
         }
       }
