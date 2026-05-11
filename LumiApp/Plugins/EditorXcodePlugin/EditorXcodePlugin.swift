@@ -17,7 +17,7 @@ actor EditorXcodePlugin: SuperPlugin {
     static let description = String(localized: "Provides Xcode project identity, build context, and sourcekit-lsp integration for Swift projects.", table: "EditorXcodePlugin")
     static let iconName = "xmark.app"
     static let order = 4  // 在 LSP Service 之前加载，确保 build context 就绪
-    static let enable = false
+    static let enable = true
     static var isConfigurable: Bool { false }
 
     nonisolated var providesEditorExtensions: Bool { true }
