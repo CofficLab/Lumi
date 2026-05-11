@@ -25,3 +25,14 @@ public struct GlassDivider: View {
             .frame(height: thickness)
     }
 }
+
+#Preview {
+    VStack(spacing: 20) {
+        GlassDivider()
+        GlassDivider(thickness: 2, opacity: 0.2)
+        GlassDivider(thickness: 1, opacity: 0.05)
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

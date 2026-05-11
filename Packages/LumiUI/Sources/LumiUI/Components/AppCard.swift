@@ -47,3 +47,19 @@ public struct AppCard<Content: View>: View {
             .stroke(theme.textTertiary.opacity(style == .elevated ? 0.12 : 0.06), lineWidth: 1)
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        AppCard {
+            Text("Elevated Card")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        AppCard(style: .subtle) {
+            Text("Subtle Card")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

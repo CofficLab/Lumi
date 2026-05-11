@@ -105,3 +105,19 @@ private struct ShadowModifier: ViewModifier {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        GlassCard {
+            Text("Default GlassCard")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        GlassCard(showShadow: false, glowColor: .purple) {
+            Text("Glowing GlassCard")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

@@ -99,3 +99,20 @@ public struct AppIconButton: View {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        HStack(spacing: 8) {
+            AppIconButton(systemImage: "gearshape") {}
+            AppIconButton(systemImage: "plus", label: "Add") {}
+            AppIconButton(systemImage: "trash", tint: .red) {}
+        }
+        HStack(spacing: 8) {
+            AppIconButton(systemImage: "star.fill", size: .regular, isActive: true) {}
+            AppIconButton(systemImage: "heart", tint: .pink, size: .regular) {}
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

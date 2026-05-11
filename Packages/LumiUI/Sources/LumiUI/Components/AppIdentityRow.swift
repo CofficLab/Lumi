@@ -39,3 +39,23 @@ public struct AppIdentityRow: View {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        AppIdentityRow(
+            title: "GPT-4",
+            metadata: ["OpenAI", "2024"]
+        )
+        AppIdentityRow(
+            title: "Claude",
+            metadata: ["Anthropic"],
+            titleColor: .purple
+        )
+        AppIdentityRow(
+            title: "Standalone"
+        )
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

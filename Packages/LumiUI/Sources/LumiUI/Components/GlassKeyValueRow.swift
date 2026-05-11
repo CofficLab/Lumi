@@ -60,3 +60,14 @@ public extension GlassKeyValueRow {
         GlassKeyValueRow(label: label, value: value, isValueSelectable: true)
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        GlassKeyValueRow(label: "Status", value: "Active")
+        GlassKeyValueRow(label: "Model", value: "gpt-4o", valueColor: .blue)
+        GlassKeyValueRow(label: "Tokens", value: "1,234", isValueSelectable: false)
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

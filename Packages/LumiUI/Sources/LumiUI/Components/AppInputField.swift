@@ -42,3 +42,19 @@ public struct AppInputField: View {
         )
     }
 }
+
+#Preview {
+    struct PreviewWrapper: View {
+        @State private var text = ""
+        var body: some View {
+            VStack(spacing: 16) {
+                AppInputField("placeholder.plain", text: $text, fieldType: .plain)
+                AppInputField("placeholder.secure", text: $text, fieldType: .secure)
+            }
+            .padding()
+            .frame(width: 300)
+            .background(Color.gray.opacity(0.15))
+        }
+    }
+    return PreviewWrapper()
+}

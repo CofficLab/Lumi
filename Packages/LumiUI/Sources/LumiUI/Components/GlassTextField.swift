@@ -70,3 +70,19 @@ public struct GlassTextField: View {
             .stroke(borderColor, lineWidth: isFocused ? 2 : 1)
     }
 }
+
+#Preview {
+    struct PreviewWrapper: View {
+        @State private var text = ""
+        var body: some View {
+            VStack(spacing: 16) {
+                GlassTextField(title: "Username", text: $text, placeholder: "Enter name")
+                GlassTextField(title: "Password", text: $text, isSecure: true)
+            }
+            .padding()
+            .frame(width: 300)
+            .background(Color.gray.opacity(0.15))
+        }
+    }
+    return PreviewWrapper()
+}

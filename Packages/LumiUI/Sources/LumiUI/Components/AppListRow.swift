@@ -64,3 +64,23 @@ public struct AppListRow<Content: View>: View {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 4) {
+        AppListRow(isSelected: true) {
+            Text("Selected Item")
+        }
+        AppListRow {
+            Text("Normal Item")
+        }
+        AppListRow(isSelected: false, action: {}) {
+            HStack {
+                Image(systemName: "star")
+                Text("With Action")
+            }
+        }
+    }
+    .frame(width: 300)
+    .padding()
+    .background(Color.gray.opacity(0.15))
+}

@@ -63,3 +63,17 @@ public struct AppSearchBar: View {
             )
     }
 }
+
+#Preview {
+    struct PreviewWrapper: View {
+        @State private var text = ""
+        var body: some View {
+            AppSearchBar(text: $text, placeholder: "搜索…")
+                .padding(.horizontal)
+        }
+    }
+    return PreviewWrapper()
+        .frame(width: 300)
+        .padding()
+        .background(Color.gray.opacity(0.15))
+}

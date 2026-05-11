@@ -17,3 +17,14 @@ public struct ErrorIconView: View {
             .foregroundColor(theme.error)
     }
 }
+
+#Preview {
+    VStack(spacing: 24) {
+        ErrorIconView(size: 16)
+        ErrorIconView(size: 32, weight: .bold)
+        ErrorIconView(size: 48)
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

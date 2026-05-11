@@ -61,3 +61,28 @@ public struct AppEmptyState: View {
         .padding(AppUI.Spacing.xl)
     }
 }
+
+#Preview {
+    VStack(spacing: 16) {
+        AppEmptyState(
+            icon: "doc.text.magnifyingglass",
+            title: "No Results",
+            description: "Try adjusting your search terms"
+        )
+        .frame(height: 200)
+    }
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}
+
+#Preview("With Action") {
+    AppEmptyState(
+        icon: "tray",
+        title: "Nothing Here Yet",
+        description: "Create your first item to get started",
+        actionTitle: "Get Started",
+        action: {}
+    )
+    .frame(width: 300, height: 250)
+    .background(Color.gray.opacity(0.15))
+}

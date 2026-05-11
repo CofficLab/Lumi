@@ -44,3 +44,27 @@ public struct AppLoadingOverlay: View {
         }
     }
 }
+
+#Preview {
+    ZStack {
+        Color.gray.opacity(0.15)
+            .frame(width: 300, height: 200)
+        AppLoadingOverlay(size: .small)
+    }
+}
+
+#Preview("With Message") {
+    ZStack {
+        Color.gray.opacity(0.15)
+            .frame(width: 300, height: 200)
+        AppLoadingOverlay(message: "Loading data…", size: .medium)
+    }
+}
+
+#Preview("Large") {
+    ZStack {
+        Color.gray.opacity(0.15)
+            .frame(width: 300, height: 300)
+        AppLoadingOverlay(message: "Processing…", size: .large)
+    }
+}

@@ -47,3 +47,26 @@ public struct AppDualSegmentBar: View {
         .clipShape(RoundedRectangle(cornerRadius: height / 2, style: .continuous))
     }
 }
+
+#Preview {
+    VStack(spacing: 20) {
+        AppDualSegmentBar(
+            leadingRatio: 0.6,
+            leadingColor: .blue,
+            trailingColor: .green
+        )
+        AppDualSegmentBar(
+            leadingRatio: 0.3,
+            leadingColor: .purple,
+            trailingColor: .orange
+        )
+        AppDualSegmentBar(
+            leadingRatio: 1.0,
+            leadingColor: .green,
+            trailingColor: .blue
+        )
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

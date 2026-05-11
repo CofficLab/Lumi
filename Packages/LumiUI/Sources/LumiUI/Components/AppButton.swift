@@ -143,3 +143,23 @@ public struct AppButton: View {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        HStack(spacing: 8) {
+            AppButton("Primary", style: .primary) {}
+            AppButton("Secondary", style: .secondary) {}
+        }
+        HStack(spacing: 8) {
+            AppButton("Ghost", style: .ghost) {}
+            AppButton("Tonal", style: .tonal) {}
+        }
+        HStack(spacing: 8) {
+            AppButton("Small", systemImage: "star", style: .primary, size: .small) {}
+            AppButton("With Icon", systemImage: "gearshape", style: .secondary) {}
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

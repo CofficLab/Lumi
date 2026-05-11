@@ -72,3 +72,20 @@ public struct AppTag: View {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        HStack(spacing: 8) {
+            AppTag("Swift")
+            AppTag("SwiftUI", systemImage: "swift")
+            AppTag("v5.10", systemImage: "tag")
+        }
+        HStack(spacing: 8) {
+            AppTag("Featured", style: .accent)
+            AppTag("New", systemImage: "sparkles", style: .accent)
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

@@ -72,3 +72,18 @@ public struct CopyMessageButton: View {
         }
     }
 }
+
+#Preview {
+    struct PreviewWrapper: View {
+        @State private var showFeedback = false
+        var body: some View {
+            VStack(spacing: 12) {
+                CopyMessageButton(content: "Hello, this is a test message!", showFeedback: $showFeedback)
+            }
+            .padding()
+            .frame(width: 300)
+            .background(Color.gray.opacity(0.15))
+        }
+    }
+    return PreviewWrapper()
+}

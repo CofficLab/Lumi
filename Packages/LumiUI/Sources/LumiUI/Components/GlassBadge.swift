@@ -76,3 +76,21 @@ public struct GlassBadge: View {
             .stroke(borderColor.opacity(0.2), lineWidth: 1)
     }
 }
+
+#Preview {
+    VStack(spacing: 8) {
+        HStack(spacing: 8) {
+            GlassBadge(text: "Neutral", style: .neutral)
+            GlassBadge(text: "Success", style: .success)
+            GlassBadge(text: "Warning", style: .warning)
+        }
+        HStack(spacing: 8) {
+            GlassBadge(text: "Error", style: .error)
+            GlassBadge(text: "Info", style: .info)
+            GlassBadge(text: "Glow", style: .glow(.purple))
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

@@ -28,3 +28,14 @@ public extension ByteCountFormatter {
         string(fromByteCount: bytes, countStyle: style)
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        AppSizeLabel(bytes: 1_024)
+        AppSizeLabel(bytes: 15_728_640)
+        AppSizeLabel(bytes: 1_073_741_824, style: .decimal)
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}
