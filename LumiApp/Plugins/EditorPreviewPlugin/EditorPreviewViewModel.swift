@@ -400,11 +400,18 @@ final class EditorPreviewViewModel: ObservableObject {
             return
         }
 
+        guard let screen = NSScreen.main else { return }
+
+        // Convert SwiftUI global coordinates (top-left origin, y down)
+        // to AppKit screen coordinates (bottom-left origin, y up)
+        let screenHeight = screen.frame.height
         let rect = liveCanvasRect
+        let appKitY = screenHeight - rect.origin.y - rect.height
+
         try? await engine.updateLiveFrame(
             session,
             x: Double(rect.origin.x),
-            y: Double(rect.origin.y),
+            y: Double(appKitY),
             width: Double(rect.width),
             height: Double(rect.height)
         )

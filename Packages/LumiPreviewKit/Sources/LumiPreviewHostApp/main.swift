@@ -363,12 +363,15 @@ private final class PreviewRenderer {
             defer: false
         )
         window.isReleasedWhenClosed = false
-        window.backgroundColor = .clear
+        window.backgroundColor = .white
         window.ignoresMouseEvents = false
         window.hasShadow = false
         window.level = .floating
+        window.isOpaque = true
         window.contentView = previewView
-        window.setFrameOrigin(NSPoint(x: -100_000, y: -100_000))
+        // Position off-screen until updateLiveFrame positions it correctly
+        window.setFrameOrigin(NSPoint(x: -10_000, y: -10_000))
+        window.orderFrontRegardless()
 
         liveWindow = window
 
@@ -387,6 +390,7 @@ private final class PreviewRenderer {
 
         let frame = NSRect(x: x, y: y, width: width, height: height)
         liveWindow.setFrame(frame, display: true)
+        liveWindow.orderFrontRegardless()
 
         return RenderResponse(
             success: true,
