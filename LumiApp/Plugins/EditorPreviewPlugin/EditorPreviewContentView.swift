@@ -22,7 +22,9 @@ struct EditorPreviewContentView: View {
             content
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
-        .onAppear(perform: refreshScanAndStartIfNeeded)
+        .onAppear {
+            refreshScanAndStartIfNeeded()
+        }
         .onChange(of: currentFileURL) { _, _ in
             viewModel.stopPreview()
             refreshScanAndStartIfNeeded()
@@ -169,6 +171,8 @@ struct EditorPreviewContentView: View {
                         .font(.system(size: 11))
                         .foregroundColor(.red)
                         .textSelection(.enabled)
+                } else if let diagnostics = viewModel.diagnostics {
+                    diagnosticsView(diagnostics)
                 } else {
                     previewSurface(preview)
                 }
@@ -178,6 +182,31 @@ struct EditorPreviewContentView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func diagnosticsView(_ diagnostics: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(String(localized: "Preview build failed", table: "EditorPreview"), systemImage: "exclamationmark.triangle")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.red)
+
+            ScrollView {
+                Text(diagnostics)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.red.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.red.opacity(0.22), lineWidth: 1)
+        )
     }
 
     private func previewHeader(_ preview: PreviewDiscovery) -> some View {

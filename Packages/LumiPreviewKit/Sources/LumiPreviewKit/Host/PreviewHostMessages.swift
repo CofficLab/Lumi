@@ -54,6 +54,15 @@ public struct RenderRequest: Codable, Sendable {
 
 /// 预览宿主进程返回的成功或失败响应。
 public struct RenderResponse: Codable, Sendable, Equatable {
+    private enum CodingKeys: String, CodingKey {
+        case success
+        case previewID
+        case message
+        case previewImagePNGBase64
+        case diagnostics
+        case isFallback
+    }
+
     /// 请求是否成功。
     public let success: Bool
 
@@ -66,6 +75,12 @@ public struct RenderResponse: Codable, Sendable, Equatable {
     /// 宿主进程当前预览画面的 PNG 数据，Base64 编码。
     public let previewImagePNGBase64: String?
 
+    /// 可展示给用户的结构化诊断信息，例如真实 view entry 编译失败日志。
+    public let diagnostics: String?
+
+    /// 本次响应是否来自降级预览入口。
+    public let isFallback: Bool
+
     /// 创建一个宿主响应。
     ///
     /// - Parameters:
@@ -73,16 +88,32 @@ public struct RenderResponse: Codable, Sendable, Equatable {
     ///   - previewID: 相关预览标识符。
     ///   - message: 可展示或记录的响应消息。
     ///   - previewImagePNGBase64: 宿主进程当前预览画面的 PNG 数据，Base64 编码。
+    ///   - diagnostics: 可展示给用户的结构化诊断信息。
+    ///   - isFallback: 本次响应是否来自降级预览入口。
     public init(
         success: Bool,
         previewID: String? = nil,
         message: String? = nil,
-        previewImagePNGBase64: String? = nil
+        previewImagePNGBase64: String? = nil,
+        diagnostics: String? = nil,
+        isFallback: Bool = false
     ) {
         self.success = success
         self.previewID = previewID
         self.message = message
         self.previewImagePNGBase64 = previewImagePNGBase64
+        self.diagnostics = diagnostics
+        self.isFallback = isFallback
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.success = try container.decode(Bool.self, forKey: .success)
+        self.previewID = try container.decodeIfPresent(String.self, forKey: .previewID)
+        self.message = try container.decodeIfPresent(String.self, forKey: .message)
+        self.previewImagePNGBase64 = try container.decodeIfPresent(String.self, forKey: .previewImagePNGBase64)
+        self.diagnostics = try container.decodeIfPresent(String.self, forKey: .diagnostics)
+        self.isFallback = try container.decodeIfPresent(Bool.self, forKey: .isFallback) ?? false
     }
 }
 
@@ -91,6 +122,14 @@ public struct RenderResponse: Codable, Sendable, Equatable {
 /// 这是 `dlopen` 预览入口的稳定 ABI 载荷：入口函数返回 UTF-8 JSON 字符串，
 /// 宿主进程解码后用这些字段构建预览 surface。
 public struct PreviewEntryDescriptor: Codable, Sendable, Equatable {
+    private enum CodingKeys: String, CodingKey {
+        case title
+        case subtitle
+        case body
+        case diagnostics
+        case isFallback
+    }
+
     /// 预览标题。
     public let title: String
 
@@ -100,16 +139,41 @@ public struct PreviewEntryDescriptor: Codable, Sendable, Equatable {
     /// 可选正文，通常用于展示生成入口或诊断摘要。
     public let body: String?
 
+    /// 可选诊断信息，通常是真实 view entry 构建失败日志。
+    public let diagnostics: String?
+
+    /// 该描述是否来自真实 view entry 失败后的降级入口。
+    public let isFallback: Bool
+
     /// 创建动态预览入口描述。
     ///
     /// - Parameters:
     ///   - title: 预览标题。
     ///   - subtitle: 可选副标题。
     ///   - body: 可选正文。
-    public init(title: String, subtitle: String? = nil, body: String? = nil) {
+    ///   - diagnostics: 可选诊断信息。
+    ///   - isFallback: 该描述是否来自降级入口。
+    public init(
+        title: String,
+        subtitle: String? = nil,
+        body: String? = nil,
+        diagnostics: String? = nil,
+        isFallback: Bool = false
+    ) {
         self.title = title
         self.subtitle = subtitle
         self.body = body
+        self.diagnostics = diagnostics
+        self.isFallback = isFallback
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle)
+        self.body = try container.decodeIfPresent(String.self, forKey: .body)
+        self.diagnostics = try container.decodeIfPresent(String.self, forKey: .diagnostics)
+        self.isFallback = try container.decodeIfPresent(Bool.self, forKey: .isFallback) ?? false
     }
 }
 

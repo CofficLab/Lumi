@@ -223,7 +223,9 @@ private final class PreviewRenderer {
             success: true,
             previewID: symbolName,
             message: "Loaded preview entry \(descriptor.title)",
-            previewImagePNGBase64: snapshotPNGBase64()
+            previewImagePNGBase64: snapshotPNGBase64(),
+            diagnostics: descriptor.diagnostics,
+            isFallback: descriptor.isFallback
         )
     }
 

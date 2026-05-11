@@ -38,6 +38,40 @@ struct HostProcessTests {
         #expect(decoded.configuration.environmentInjections[0].displayName == "Mock App Model")
     }
 
+    @Test("RenderResponse 编码 fallback 诊断")
+    func renderResponseEncodesFallbackDiagnostics() throws {
+        let response = RenderResponse(
+            success: true,
+            previewID: "lumi_preview_entry",
+            message: "Loaded preview entry Broken",
+            diagnostics: "Preview view entry failed",
+            isFallback: true
+        )
+
+        let data = try JSONEncoder().encode(response)
+        let decoded = try JSONDecoder().decode(RenderResponse.self, from: data)
+
+        #expect(decoded.diagnostics == "Preview view entry failed")
+        #expect(decoded.isFallback == true)
+    }
+
+    @Test("PreviewEntryDescriptor 编码 fallback 诊断")
+    func previewEntryDescriptorEncodesFallbackDiagnostics() throws {
+        let descriptor = PreviewEntryDescriptor(
+            title: "Broken",
+            subtitle: "BrokenView",
+            body: "BrokenView()",
+            diagnostics: "cannot find 'BrokenView' in scope",
+            isFallback: true
+        )
+
+        let data = try JSONEncoder().encode(descriptor)
+        let decoded = try JSONDecoder().decode(PreviewEntryDescriptor.self, from: data)
+
+        #expect(decoded.diagnostics == "cannot find 'BrokenView' in scope")
+        #expect(decoded.isFallback == true)
+    }
+
     @Test("启动宿主进程 → 发送 RenderRequest → 收到 RenderResponse")
     func launchAndRender() async throws {
         let executableURL = try buildHostExecutable()
@@ -147,6 +181,40 @@ struct HostProcessTests {
 
         #expect(response.message == "Loaded preview entry Dynamic Card")
         #expect(response.previewID == "lumi_preview_entry")
+        #expect(response.previewImagePNGBase64 != nil)
+        await connection.terminate()
+    }
+
+    @Test("宿主进程透传 fallback 预览诊断")
+    func loadFallbackPreviewEntryDescriptorFromDylib() async throws {
+        let executableURL = try buildHostExecutable()
+        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        defer {
+            Task {
+                await connection.terminate()
+            }
+        }
+
+        let dylibURL = try await buildSignedDylib(
+            source: #"""
+            import Darwin
+
+            @_cdecl("lumi_preview_entry")
+            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
+                let json = #"{"title":"Broken Card","subtitle":"BrokenView","body":"BrokenView()","diagnostics":"cannot find 'BrokenView' in scope","isFallback":true}"#
+                return strdup(json).map { UnsafePointer($0) }
+            }
+            """#
+        )
+
+        let response = try await connection.requestLoadPreviewEntry(
+            at: dylibURL,
+            symbolName: "lumi_preview_entry"
+        )
+
+        #expect(response.message == "Loaded preview entry Broken Card")
+        #expect(response.diagnostics == "cannot find 'BrokenView' in scope")
+        #expect(response.isFallback == true)
         #expect(response.previewImagePNGBase64 != nil)
         await connection.terminate()
     }

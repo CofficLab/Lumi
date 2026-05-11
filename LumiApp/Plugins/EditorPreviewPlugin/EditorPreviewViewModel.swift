@@ -36,6 +36,7 @@ final class EditorPreviewViewModel: ObservableObject {
     @Published private(set) var runState: RunState = .idle
     @Published private(set) var renderMessage: String?
     @Published private(set) var renderImage: NSImage?
+    @Published private(set) var diagnostics: String?
     @Published private(set) var performanceSummary: String?
 
     private let scanner = PreviewScanner()
@@ -71,6 +72,7 @@ final class EditorPreviewViewModel: ObservableObject {
             runState = .idle
             renderMessage = nil
             renderImage = nil
+            diagnostics = nil
             performanceSummary = nil
             return
         }
@@ -88,6 +90,7 @@ final class EditorPreviewViewModel: ObservableObject {
             runState = .idle
             renderMessage = nil
             renderImage = nil
+            diagnostics = nil
             performanceSummary = nil
         }
     }
@@ -114,6 +117,7 @@ final class EditorPreviewViewModel: ObservableObject {
         self.engine = engine
         renderMessage = nil
         renderImage = nil
+        diagnostics = nil
         performanceSummary = nil
         runState = .starting
 
@@ -152,6 +156,7 @@ final class EditorPreviewViewModel: ObservableObject {
             runState = .stopped
             renderMessage = nil
             renderImage = nil
+            diagnostics = nil
             performanceSummary = nil
             return
         }
@@ -161,6 +166,7 @@ final class EditorPreviewViewModel: ObservableObject {
         runState = .stopped
         renderMessage = nil
         renderImage = nil
+        diagnostics = nil
         performanceSummary = nil
 
         Task {
@@ -172,6 +178,7 @@ final class EditorPreviewViewModel: ObservableObject {
         if let response = await session.lastRenderResponse {
             renderMessage = response.message
             renderImage = Self.image(from: response)
+            diagnostics = response.diagnostics
         }
 
         let metrics = await session.performanceMetrics

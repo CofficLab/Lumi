@@ -378,6 +378,52 @@ struct PreviewEngineTests {
         await engine.stopPreview(session)
     }
 
+    @Test("真实 view entry 构建失败 → 返回结构化诊断")
+    func previewViewEntryFailureReturnsStructuredDiagnostics() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewEntryDiagnostics-\(UUID().uuidString)", isDirectory: true)
+        let sourceFile = directory.appendingPathComponent("main.swift")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try """
+            import SwiftUI
+
+            print("top-level executable entry")
+
+            #Preview("Broken Entry") {
+                Text("Fallback")
+            }
+            """.write(to: sourceFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let hostExecutableURL = try buildHostExecutable()
+        let connection = try await PreviewHostProcess().launch(executableURL: hostExecutableURL)
+        defer {
+            Task {
+                await connection.terminate()
+            }
+        }
+
+        let source = try String(contentsOf: sourceFile, encoding: .utf8)
+        let discoveries = PreviewScanner().scan(fileURL: sourceFile, sourceText: source)
+        #expect(discoveries.count == 1)
+
+        let entryURL = try await PreviewEntryBuilder().buildEntry(
+            for: discoveries[0],
+            configuration: .empty,
+            buildStrategy: .incremental(fileURL: sourceFile, compileCommand: "")
+        )
+        let response = try await connection.requestLoadPreviewEntry(
+            at: entryURL,
+            symbolName: PreviewEntryBuilder.symbolName
+        )
+
+        #expect(response.message == "Loaded preview entry Broken Entry")
+        #expect(response.isFallback == true)
+        #expect(response.diagnostics?.contains("expressions are not allowed at the top level") == true)
+        #expect(response.previewImagePNGBase64 != nil)
+        await connection.terminate()
+    }
+
     private func makeTemporaryPackage(
         targetName: String,
         source: String,

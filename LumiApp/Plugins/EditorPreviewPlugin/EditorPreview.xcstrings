@@ -243,6 +243,28 @@
         }
       }
     },
+    "Preview build failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview build failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预览构建失败"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預覽建構失敗"
+          }
+        }
+      }
+    },
     "Preview failed": {
       "localizations": {
         "en": {

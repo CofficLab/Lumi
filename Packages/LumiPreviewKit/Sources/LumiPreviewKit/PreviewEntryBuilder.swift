@@ -149,9 +149,10 @@ public final class PreviewEntryBuilder: Sendable {
             subtitle: discovery.primaryTypeName,
             body: descriptorBody(
                 for: discovery,
-                configuration: configuration,
-                viewEntryBuildError: viewEntryBuildError
-            )
+                configuration: configuration
+            ),
+            diagnostics: viewEntryBuildError.map { Self.truncated($0, limit: 4_000) },
+            isFallback: viewEntryBuildError != nil
         )
         let data = try encoder.encode(descriptor)
         let json = String(data: data, encoding: .utf8) ?? "{}"
@@ -167,14 +168,9 @@ public final class PreviewEntryBuilder: Sendable {
 
     private func descriptorBody(
         for discovery: PreviewDiscovery,
-        configuration: PreviewRenderConfiguration,
-        viewEntryBuildError: String? = nil
+        configuration: PreviewRenderConfiguration
     ) -> String? {
         var parts: [String] = []
-
-        if let viewEntryBuildError, !viewEntryBuildError.isEmpty {
-            parts.append("Preview view entry failed:\n\(Self.truncated(viewEntryBuildError, limit: 2_000))")
-        }
 
         if let bodySource = discovery.bodySource?
             .trimmingCharacters(in: .whitespacesAndNewlines),
