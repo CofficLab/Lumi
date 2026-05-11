@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 状态栏控制器
 @MainActor
-class StatusBarController: NSObject, SuperLog, NSPopoverDelegate {
+class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 日志标识符
     nonisolated static let emoji = "📊"
     
