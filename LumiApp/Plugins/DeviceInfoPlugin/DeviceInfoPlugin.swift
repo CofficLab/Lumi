@@ -37,14 +37,14 @@ actor DeviceInfoPlugin: SuperPlugin, SuperLog {
 
     @MainActor
     func addStatusBarContentView() -> AnyView? {
-        AnyView(DeviceInfoStatusBarContentView())
+        AnyView(DeviceInfoMenuBarContentView())
     }
 
     @MainActor
     func addStatusBarPopupViews() -> [AnyView] {
         [
-            AnyView(DeviceInfoStatusBarPopupView()),
-            AnyView(MemoryStatusBarPopupView()),
+            AnyView(DeviceInfoMenuBarPopupView()),
+            AnyView(MemoryMenuBarPopupView()),
         ]
     }
 

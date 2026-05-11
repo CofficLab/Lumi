@@ -2,7 +2,7 @@ import MagicKit
 import SwiftUI
 import DeviceMonitorKit
 
-struct MemoryStatusBarPopupView: View {
+struct MemoryMenuBarPopupView: View {
     @StateObject private var viewModel = MemoryManagerViewModel()
     @ObservedObject private var historyService = MemoryHistoryService.shared
 
@@ -129,7 +129,7 @@ struct MemoryStatusBarPopupView: View {
 // MARK: - Preview
 
 #Preview("App") {
-    MemoryStatusBarPopupView()
+    MemoryMenuBarPopupView()
         .inRootView()
         .withDebugBar()
 }

@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// 菜单栏内存单柱渲染器
-struct MemoryStatusBarChartRenderer {
+struct MemoryMenuBarChartRenderer {
 
     // MARK: - Constants
 
@@ -96,15 +96,15 @@ extension NSColor {
 
 // MARK: - Preview
 
-#Preview("Memory Status Bar Chart Renderer - Normal") {
-    let image = MemoryStatusBarChartRenderer.makeImage(usage: 45)
+#Preview("Memory Menu Bar Chart Renderer - Normal") {
+    let image = MemoryMenuBarChartRenderer.makeImage(usage: 45)
     return Image(nsImage: image)
         .interpolation(.none)
         .padding()
 }
 
-#Preview("Memory Status Bar Chart Renderer - Warning") {
-    let image = MemoryStatusBarChartRenderer.makeImage(usage: 85)
+#Preview("Memory Menu Bar Chart Renderer - Warning") {
+    let image = MemoryMenuBarChartRenderer.makeImage(usage: 85)
     return Image(nsImage: image)
         .interpolation(.none)
         .padding()

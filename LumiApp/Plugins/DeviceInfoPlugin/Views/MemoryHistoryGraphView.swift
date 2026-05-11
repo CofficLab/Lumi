@@ -252,7 +252,7 @@ struct MemoryTooltipView: View {
 // MARK: - Preview
 
 #Preview("App") {
-    MemoryStatusBarPopupView()
+    MemoryMenuBarPopupView()
         .inRootView()
         .frame(width: 400)
         .frame(height: 400)

@@ -2,9 +2,9 @@ import SwiftUI
 import Combine
 import DeviceMonitorKit
 
-/// Status bar popup view for Device Info plugin
+/// Menu bar popup view for Device Info plugin
 /// Shows detailed CPU usage with progress bar and mini trend graph
-struct DeviceInfoStatusBarPopupView: View {
+struct DeviceInfoMenuBarPopupView: View {
     // MARK: - Properties
 
     @StateObject private var viewModel = CPUManagerViewModel()
@@ -169,7 +169,7 @@ struct DeviceInfoStatusBarPopupView: View {
 // MARK: - Preview
 
 #Preview("App") {
-    DeviceInfoStatusBarPopupView()
+    DeviceInfoMenuBarPopupView()
         .inRootView()
         .withDebugBar()
 }

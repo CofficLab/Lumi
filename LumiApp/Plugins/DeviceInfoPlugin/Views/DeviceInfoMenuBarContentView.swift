@@ -2,8 +2,8 @@ import SwiftUI
 import Combine
 import DeviceMonitorKit
 
-/// 状态栏内容视图（CPU 每核瞬时柱状图 + 内存单柱）
-struct DeviceInfoStatusBarContentView: View {
+/// 菜单栏内容视图（CPU 每核瞬时柱状图 + 内存单柱）
+struct DeviceInfoMenuBarContentView: View {
 
     // MARK: - Properties
 
@@ -15,7 +15,7 @@ struct DeviceInfoStatusBarContentView: View {
     var body: some View {
         HStack(spacing: 4) {
             // CPU 柱状图
-            Image(nsImage: CPUStatusBarChartRenderer.makeImage(from: cpuViewModel.perCoreUsage))
+            Image(nsImage: CPUMenuBarChartRenderer.makeImage(from: cpuViewModel.perCoreUsage))
                 .interpolation(.none)
                 .help(cpuHelpText)
 
@@ -24,7 +24,7 @@ struct DeviceInfoStatusBarContentView: View {
                 .opacity(0.3)
 
             // 内存柱状图
-            Image(nsImage: MemoryStatusBarChartRenderer.makeImage(usage: memoryViewModel.memoryUsagePercentage))
+            Image(nsImage: MemoryMenuBarChartRenderer.makeImage(usage: memoryViewModel.memoryUsagePercentage))
                 .interpolation(.none)
                 .help(memoryHelpText)
         }
@@ -48,13 +48,13 @@ struct DeviceInfoStatusBarContentView: View {
 
 // MARK: - Preview
 
-#Preview("Device Info Status Bar Content") {
+#Preview("Device Info Menu Bar Content") {
     HStack(spacing: 4) {
         Circle()
             .fill(Color(hex: "0A84FF"))
             .frame(width: 16, height: 16)
         
-        DeviceInfoStatusBarContentView()
+        DeviceInfoMenuBarContentView()
     }
     .padding()
 }

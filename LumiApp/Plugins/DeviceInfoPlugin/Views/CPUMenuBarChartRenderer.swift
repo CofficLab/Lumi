@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// 菜单栏 CPU 柱状图图片生成器
-struct CPUStatusBarChartRenderer {
+struct CPUMenuBarChartRenderer {
     
     // MARK: - Constants
     
@@ -57,8 +57,8 @@ struct CPUStatusBarChartRenderer {
 
 // MARK: - Preview
 
-#Preview("CPU Status Bar Chart Renderer") {
-    let image = CPUStatusBarChartRenderer.makeImage(from: [12, 28, 44, 76, 55, 18, 91, 63, 35, 47, 22, 68])
+#Preview("CPU Menu Bar Chart Renderer") {
+    let image = CPUMenuBarChartRenderer.makeImage(from: [12, 28, 44, 76, 55, 18, 91, 63, 35, 47, 22, 68])
     return Image(nsImage: image)
         .interpolation(.none)
         .padding()
