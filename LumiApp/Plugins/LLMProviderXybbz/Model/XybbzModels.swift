@@ -1,11 +1,11 @@
 import Foundation
 
-// MARK: - Sub2Api API 响应模型
+// MARK: - Xybbz API 响应模型
 
-/// Sub2Api API 响应结构
+/// Xybbz API 响应结构
 ///
 /// 用于解析非流式响应。
-struct Sub2ApiResponse: Decodable {
+struct XybbzResponse: Decodable {
     /// 响应选项列表
     let choices: [Choice]
 

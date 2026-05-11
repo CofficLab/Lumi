@@ -2,24 +2,24 @@ import Foundation
 import MagicKit
 import os
 
-/// Sub2Api API 供应商实现
+/// Xybbz API 供应商实现
 ///
-/// Sub2Api (sub2api.xybbz.xyz) 完全兼容 OpenAI 格式
-final class Sub2ApiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.sub2api")
+/// Xybbz (sub2api.xybbz.xyz) 完全兼容 OpenAI 格式
+final class XybbzProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.xybbz")
     nonisolated static let emoji = "🌐"
     nonisolated static let verbose: Bool = false
     // MARK: - 基础信息
 
-    static let id = "sub2api"
-    static let displayName = String(localized: "Sub2Api", table: "Sub2Api")
-    static let description = String(localized: "AI API Gateway by xybbz", table: "Sub2Api")
+    static let id = "xybbz"
+    static let displayName = String(localized: "Xybbz", table: "Xybbz")
+    static let description = String(localized: "AI API Gateway by xybbz", table: "Xybbz")
 
     static let websiteURL: String? = "https://sub2api.xybbz.xyz"
 
     // MARK: - 配置相关
 
-    static let apiKeyStorageKey = "DevAssistant_ApiKey_Sub2Api"
+    static let apiKeyStorageKey = "DevAssistant_ApiKey_Xybbz"
     static let defaultModel = "gpt-4o"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
@@ -37,12 +37,13 @@ final class Sub2ApiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         .init(id: "gemini-2.5-pro", spec: .init(contextWindowSize: 1_048_576, supportsVision: true, supportsTools: true)),
         .init(id: "gemini-2.5-flash", spec: .init(contextWindowSize: 1_048_576, supportsVision: true, supportsTools: true)),
         .init(id: "glm-4-plus", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
+        .init(id: "gpt-5.5", spec: .init(contextWindowSize: 272_000, supportsVision: true, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
 
     // 要禁用此供应商，请将此值设置为 false
-    static let isEnabled = false
+    static let isEnabled = true
 
     // MARK: - SuperLLMProvider
 
@@ -84,10 +85,10 @@ final class Sub2ApiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     }
 
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        let result = try JSONDecoder().decode(Sub2ApiResponse.self, from: data)
+        let result = try JSONDecoder().decode(XybbzResponse.self, from: data)
 
         guard let choiceMessage = result.choices.first?.message else {
-            throw NSError(domain: "Sub2ApiProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "No choices in response"])
+            throw NSError(domain: "XybbzProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "No choices in response"])
         }
 
         let content = choiceMessage.content ?? ""
@@ -121,7 +122,7 @@ final class Sub2ApiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     /// 解析流式响应数据块
     ///
-    /// Sub2Api 完全兼容 OpenAI SSE 格式
+    /// Xybbz 完全兼容 OpenAI SSE 格式
     func parseStreamChunk(data: Data) throws -> StreamChunk? {
         guard let text = String(data: data, encoding: .utf8) else {
             return nil
@@ -219,7 +220,7 @@ final class Sub2ApiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
 // MARK: - 消息转换
 
-extension Sub2ApiProvider {
+extension XybbzProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
         if let toolCallID = message.toolCallID {
             return [
@@ -250,7 +251,7 @@ extension Sub2ApiProvider {
 
 // MARK: - 工具格式
 
-extension Sub2ApiProvider {
+extension XybbzProvider {
     func formatTool(_ tool: SuperAgentTool) -> [String: Any] {
         [
             "type": "function",

@@ -1,24 +1,24 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Sub2Api": {
+    "Xybbz": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sub2Api"
+            "value": "Xybbz"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sub2Api"
+            "value": "Xybbz"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sub2Api"
+            "value": "Xybbz"
           }
         }
       }
