@@ -83,12 +83,12 @@ struct GitCommitHistorySidebarView: View {
                     GitCommitListRow(
                         commit: commit,
                         isSelected: selectedCommitHash == commit.hash,
-                        isUnpushed: gitVM.isCommitUnpushed(commit.hash)
+                        isUnpushed: gitVM.isCommitUnpushed(commit.hash),
+                        action: {
+                            selectedCommitHash = commit.hash
+                            gitVM.selectCommit(hash: commit.hash)
+                        }
                     )
-                    .onTapGesture {
-                        selectedCommitHash = commit.hash
-                        gitVM.selectCommit(hash: commit.hash)
-                    }
                     .onAppear {
                         // 在最后几个 commit 出现时触发加载更多
                         let threshold = max(commits.count - 8, Int(Double(commits.count) * 0.8))

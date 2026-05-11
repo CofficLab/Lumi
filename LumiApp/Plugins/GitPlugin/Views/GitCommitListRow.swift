@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import LumiUI
 
 /// Shared Git commit row used by the panel sidebar and compact status bar popover.
 struct GitCommitListRow: View {
@@ -12,11 +13,10 @@ struct GitCommitListRow: View {
     let isSelected: Bool
     var isUnpushed: Bool = false
     var style: Style = .panel
-
-    @State private var isHovered = false
+    var action: (() -> Void)? = nil
 
     var body: some View {
-        VStack(spacing: 0) {
+        AppListRow(isSelected: isSelected, action: { action?() }) {
             HStack(alignment: .top, spacing: 8) {
                 indicator
 
@@ -52,23 +52,11 @@ struct GitCommitListRow: View {
                         .font(.system(size: 9, design: .monospaced))
                         .foregroundColor(.secondary.opacity(0.6))
                 }
-                .padding(.vertical, style == .panel ? 6 : 6)
-                .padding(.trailing, style == .panel ? 8 : 2)
+                .padding(.vertical, style == .panel ? 2 : 2)
+                .padding(.trailing, 0)
 
                 Spacer()
             }
-            .padding(.horizontal, style == .panel ? 8 : 2)
-
-            if style == .panel {
-                Divider()
-                    .padding(.leading, 24)
-            }
-        }
-        .contentShape(Rectangle())
-        .background(rowBackground)
-        .clipShape(RoundedRectangle(cornerRadius: style == .panel ? 0 : 6))
-        .onHover { hovering in
-            isHovered = hovering
         }
     }
 
@@ -103,18 +91,6 @@ struct GitCommitListRow: View {
             return isSelected ? base : base.opacity(0.85)
         case .compact:
             return .primary
-        }
-    }
-
-    private var rowBackground: some View {
-        Group {
-            if isSelected {
-                Color.accentColor.opacity(0.08)
-            } else if isHovered {
-                Color.primary.opacity(0.04)
-            } else {
-                Color.clear
-            }
         }
     }
 

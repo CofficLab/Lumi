@@ -205,16 +205,14 @@ struct GitPluginPopoverView: View {
 
             Divider()
             ForEach(commits, id: \.hash) { commit in
-                Button {
-                    selectedCommitHash = commit.hash
-                } label: {
-                    GitCommitListRow(
-                        commit: commit,
-                        isSelected: selectedCommitHash == commit.hash,
-                        style: .compact
-                    )
-                }
-                .buttonStyle(.plain)
+                GitCommitListRow(
+                    commit: commit,
+                    isSelected: selectedCommitHash == commit.hash,
+                    style: .compact,
+                    action: {
+                        selectedCommitHash = commit.hash
+                    }
+                )
                 Divider()
             }
         }
