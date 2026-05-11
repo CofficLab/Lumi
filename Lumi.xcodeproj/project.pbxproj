@@ -24,6 +24,7 @@
 		0B45486E2F89F49C00C6B7C8 /* CodeEditLanguages in Frameworks */ = {isa = PBXBuildFile; productRef = 0B45486D2F89F49C00C6B7C8 /* CodeEditLanguages */; };
 		0B6DF8562F8E77E100FA0CAC /* LanguageServerProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8552F8E77E100FA0CAC /* LanguageServerProtocol */; };
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
+		0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */; };
 		0B8027C42F6C4E7F007FD39D /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8027C32F6C4E7F007FD39D /* MagicKit */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
 		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
@@ -294,6 +295,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0B45486B2F89F3C200C6B7C8 /* CodeEditTextView in Frameworks */,
+				0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */,
 				0B45486E2F89F49C00C6B7C8 /* CodeEditLanguages in Frameworks */,
 				0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */,
 				0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */,
@@ -852,6 +854,7 @@
 				A1B2C4512F70000100AAA106 /* ShellKit */,
 				B1C2D3512F80000200BBB201 /* XcodeKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
+				0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -950,6 +953,7 @@
 				A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */,
 				A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */,
 				B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */,
+				0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1792,6 +1796,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiCodeEditSourceEditor;
 		};
+		0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/EditorOverlayKit;
+		};
 		A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SkillKit;
@@ -2080,6 +2088,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */;
 			productName = LanguageClient;
+		};
+		0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = EditorOverlayKit;
 		};
 		0B8027C32F6C4E7F007FD39D /* MagicKit */ = {
 			isa = XCSwiftPackageProductDependency;
