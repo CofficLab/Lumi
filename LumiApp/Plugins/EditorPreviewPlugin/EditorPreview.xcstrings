@@ -67,6 +67,28 @@
         }
       }
     },
+    "Copy error details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy error details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制错误信息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製錯誤資訊"
+          }
+        }
+      }
+    },
     "Editor Preview": {
       "localizations": {
         "en": {

@@ -1,4 +1,5 @@
 #if canImport(LumiPreviewKit)
+import AppKit
 import LumiPreviewKit
 import SwiftUI
 
@@ -186,9 +187,24 @@ struct EditorPreviewContentView: View {
 
     private func diagnosticsView(_ diagnostics: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(String(localized: "Preview build failed", table: "EditorPreview"), systemImage: "exclamationmark.triangle")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.red)
+            HStack(spacing: 8) {
+                Label(String(localized: "Preview build failed", table: "EditorPreview"), systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.red)
+
+                Spacer(minLength: 0)
+
+                Button {
+                    copyDiagnostics(diagnostics)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .help(String(localized: "Copy error details", table: "EditorPreview"))
+                .accessibilityLabel(String(localized: "Copy error details", table: "EditorPreview"))
+            }
 
             ScrollView {
                 Text(diagnostics)
@@ -207,6 +223,12 @@ struct EditorPreviewContentView: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.red.opacity(0.22), lineWidth: 1)
         )
+    }
+
+    private func copyDiagnostics(_ diagnostics: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(diagnostics, forType: .string)
     }
 
     private func previewHeader(_ preview: PreviewDiscovery) -> some View {
