@@ -438,6 +438,20 @@ public final class EditorService: ObservableObject {
         state.refreshProjectContextSnapshot()
     }
 
+    /// 刷新指定项目的上下文能力。
+    public func refreshProjectContext(for projectPath: String?) async {
+        let trimmedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmedPath.isEmpty else {
+            state.projectRootPath = nil
+            state.refreshProjectContextSnapshot()
+            return
+        }
+
+        state.projectRootPath = trimmedPath
+        await state.projectContextCapability?.projectOpened(at: trimmedPath)
+        state.refreshProjectContextSnapshot()
+    }
+
     // ========================================================================
     // MARK: - 编辑器扩展（Extension Access）
     // ========================================================================

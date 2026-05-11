@@ -30,14 +30,16 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     func startObserving(
         sessionStore: EditorSessionStore,
         projectPathProvider: @MainActor @escaping () -> String,
-        openFile: @MainActor @escaping (URL) -> Void
+        openFile: @MainActor @escaping (URL) async -> Void
     ) {
         trackedProjectPath = projectPathProvider()
 
         // 首次启动且 tabs 为空 → 从磁盘恢复
         if !hasRestored && sessionStore.tabs.isEmpty {
             hasRestored = true
-            restoreTabs(forProject: trackedProjectPath, openFile: openFile)
+            Task { @MainActor in
+                await restoreTabs(forProject: trackedProjectPath, openFile: openFile)
+            }
         }
 
         Publishers.CombineLatest(sessionStore.$tabs, sessionStore.$activeSessionID)
@@ -84,7 +86,7 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
         oldPath: String,
         newPath: String,
         sessionStore: EditorSessionStore,
-        openFile: @MainActor (URL) -> Void
+        openFile: @MainActor @escaping (URL) async -> Void
     ) {
         // 保存旧项目的标签页
         if !oldPath.isEmpty {
@@ -103,7 +105,9 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
 
         // 恢复新项目的标签页
         guard !newPath.isEmpty else { return }
-        restoreTabs(forProject: newPath, openFile: openFile)
+        Task { @MainActor in
+            await restoreTabs(forProject: newPath, openFile: openFile)
+        }
     }
 
     // MARK: - 恢复
@@ -111,8 +115,8 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     /// 从持久化存储恢复指定项目的标签页
     func restoreTabs(
         forProject projectPath: String,
-        openFile: @MainActor (URL) -> Void
-    ) {
+        openFile: @MainActor (URL) async -> Void
+    ) async {
         let (persistedTabs, activeTabPath) = store.loadTabs(forProject: projectPath)
 
         // 过滤掉不存在的文件
@@ -128,13 +132,13 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
 
         // 打开所有标签页
         for url in validURLs {
-            openFile(url)
+            await openFile(url)
         }
 
         // 最后激活上次保存的活跃标签
         if let activePath = activeTabPath,
            let activateURL = validURLs.first(where: { $0.path == activePath }) {
-            openFile(activateURL)
+            await openFile(activateURL)
         }
     }
 

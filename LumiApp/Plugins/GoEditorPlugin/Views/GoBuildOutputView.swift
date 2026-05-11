@@ -179,6 +179,9 @@ struct GoBuildOutputView: View {
         } else {
             url = URL(fileURLWithPath: file)
         }
-        RootViewContainer.shared.editorVM.service.open(at: url)
+        Task { @MainActor in
+            await RootViewContainer.shared.editorVM.service.refreshProjectContext(for: projectRoot)
+            RootViewContainer.shared.editorVM.service.open(at: url)
+        }
     }
 }

@@ -38,7 +38,9 @@ struct EditorTabHeaderView: View {
                 projectPathProvider: { [weak projectVM] in
                     projectVM?.currentProjectPath ?? ""
                 },
-                openFile: { [weak editorVM] url in
+                openFile: { [weak editorVM, weak projectVM] url in
+                    let projectPath = projectVM?.currentProjectPath
+                    await editorVM?.service.refreshProjectContext(for: projectPath)
                     editorVM?.service.open(at: url)
                 }
             )
@@ -54,7 +56,9 @@ struct EditorTabHeaderView: View {
                 oldPath: oldPath,
                 newPath: newPath,
                 sessionStore: sessionStore
-            ) { [weak editorVM] url in
+            ) { [weak editorVM, weak projectVM] url in
+                let projectPath = projectVM?.currentProjectPath
+                await editorVM?.service.refreshProjectContext(for: projectPath)
                 editorVM?.service.open(at: url)
             }
         }
@@ -134,6 +138,9 @@ struct EditorTabHeaderView: View {
         }
 
         let url = URL(fileURLWithPath: path)
-        service.open(at: url)
+        Task { @MainActor in
+            await service.refreshProjectContext(for: projectVM.currentProjectPath)
+            service.open(at: url)
+        }
     }
 }

@@ -197,8 +197,7 @@ final class EditorPanelService: ObservableObject {
             return
         }
         Task { @MainActor in
-            await service.projectContextCapability?.projectOpened(at: trimmedPath)
-            service.refreshProjectContext()
+            await service.refreshProjectContext(for: trimmedPath)
         }
     }
 
