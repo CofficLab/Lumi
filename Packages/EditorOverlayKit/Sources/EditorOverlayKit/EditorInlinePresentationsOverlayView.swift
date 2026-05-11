@@ -1,14 +1,19 @@
 import SwiftUI
-import MagicKit
+import EditorService
+import LumiUI
 
 /// 编辑器内联展示层。
 ///
 /// 负责在源码内容表面绘制内联提示卡片，例如符号状态、辅助说明或轻量提示。
 /// 该视图只消费已经计算好的展示模型。
-struct EditorInlinePresentationsOverlayView: View {
-    let presentations: [EditorInlinePresentation]
+public struct EditorInlinePresentationsOverlayView: View {
+    public let presentations: [EditorInlinePresentation]
 
-    var body: some View {
+    public init(presentations: [EditorInlinePresentation]) {
+        self.presentations = presentations
+    }
+
+    public var body: some View {
         let style = EditorInlinePresentationStyle.standard
 
         if !presentations.isEmpty {

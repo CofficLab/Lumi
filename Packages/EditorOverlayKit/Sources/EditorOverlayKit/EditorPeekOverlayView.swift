@@ -1,16 +1,22 @@
 import SwiftUI
+import EditorService
+import LumiUI
 
 /// 编辑器 peek 预览悬浮层。
 ///
-/// 负责在当前编辑上下文中展示定义、引用等跳转结果的列表与内容预览，让
-/// 用户无需离开当前文件就能浏览目标位置。
-struct EditorPeekOverlayView: View {
+/// 负责在当前编辑上下文中展示定义、引用等跳转结果的列表与内容预览，让用户无需离开当前文件就能浏览目标位置。
+public struct EditorPeekOverlayView: View {
     @ObservedObject var state: EditorState
     let presentation: EditorPeekPresentation
 
     @State private var selectedItemID: String?
 
-    var body: some View {
+    public init(state: EditorState, presentation: EditorPeekPresentation) {
+        self.state = state
+        self.presentation = presentation
+    }
+
+    public var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
@@ -114,7 +120,7 @@ struct EditorPeekOverlayView: View {
                             )
                     }
                 } else {
-                    Text(String(localized: "No preview available", table: "LumiEditor"))
+                    Text(String(localized: "No preview available"))
                         .font(.system(size: 11))
                         .foregroundColor(Color(hex: "98989E"))
                 }
@@ -126,13 +132,13 @@ struct EditorPeekOverlayView: View {
 
     private var footer: some View {
         HStack {
-            Text(String(localized: "\(presentation.items.count) items", table: "LumiEditor"))
+            Text(String(localized: "\(presentation.items.count) items"))
                 .font(.system(size: 10))
                 .foregroundColor(Color(hex: "98989E"))
 
             Spacer(minLength: 0)
 
-            Button(String(localized: "Open", table: "LumiEditor")) {
+            Button(String(localized: "Open")) {
                 guard let selectedItem else { return }
                 state.openPeekItem(selectedItem)
             }
@@ -140,7 +146,7 @@ struct EditorPeekOverlayView: View {
             .controlSize(.small)
             .disabled(selectedItem == nil)
 
-            Button(String(localized: "Close", table: "LumiEditor")) {
+            Button(String(localized: "Close")) {
                 state.dismissPeek()
             }
             .buttonStyle(.borderless)

@@ -1,15 +1,22 @@
 import SwiftUI
 import MagicKit
+import EditorService
+import LumiUI
 
 /// 编辑器代码动作悬浮层。
 ///
-/// 负责在源码视图上方绘制 quick fix 指示器，并在用户展开时展示
-/// 代码动作面板。该视图只关心展示和交互转发，不负责计算动作来源。
-struct EditorCodeActionOverlayView: View {
+/// 负责在源码视图上方绘制 quick fix 指示器，并在用户展开时展示代码动作面板。
+/// 该视图只关心展示和交互转发，不负责计算动作来源。
+public struct EditorCodeActionOverlayView: View {
     @ObservedObject var state: EditorState
     let lineTable: LineOffsetTable?
 
-    var body: some View {
+    public init(state: EditorState, lineTable: LineOffsetTable?) {
+        self.state = state
+        self.lineTable = lineTable
+    }
+
+    public var body: some View {
         GeometryReader { proxy in
             if let textView = state.focusedTextView,
                let lineTable,
@@ -77,6 +84,6 @@ struct EditorCodeActionOverlayView: View {
             }
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Quick Fix", table: "LumiEditor"))
+        .help(String(localized: "Quick Fix"))
     }
 }

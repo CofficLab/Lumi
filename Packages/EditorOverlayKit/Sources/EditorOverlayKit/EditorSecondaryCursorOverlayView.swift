@@ -1,13 +1,18 @@
 import SwiftUI
+import EditorService
 
 /// 编辑器次光标高亮层。
 ///
 /// 负责在多光标编辑场景下绘制非主光标对应的高亮轮廓，帮助用户区分多个
 /// 同时激活的编辑位置。
-struct EditorSecondaryCursorOverlayView: View {
-    let highlights: [EditorMultiCursorHighlight]
+public struct EditorSecondaryCursorOverlayView: View {
+    public let highlights: [EditorMultiCursorHighlight]
 
-    var body: some View {
+    public init(highlights: [EditorMultiCursorHighlight]) {
+        self.highlights = highlights
+    }
+
+    public var body: some View {
         if !highlights.isEmpty {
             ZStack(alignment: .topLeading) {
                 ForEach(highlights) { highlight in

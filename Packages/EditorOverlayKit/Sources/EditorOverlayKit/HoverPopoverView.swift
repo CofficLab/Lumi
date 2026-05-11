@@ -1,16 +1,22 @@
 import SwiftUI
 import MarkdownKit
+import EditorService
+import LumiUI
 
 /// 悬浮提示气泡视图。
 ///
 /// 当用户将鼠标悬停在编辑器中的标识符（如变量名、函数名、类型名等）上时，
 /// 编辑器会通过 LSP 或内置插件（如 Swift 关键字悬浮插件）收集文档信息，
 /// 并以此视图展示 Markdown 格式的悬浮文档卡片。
-struct HoverPopoverView: View {
-    let markdownText: String
+public struct HoverPopoverView: View {
+    public let markdownText: String
     private let style = EditorHoverOverlayStyle.standard
 
-    var body: some View {
+    public init(markdownText: String) {
+        self.markdownText = markdownText
+    }
+
+    public var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             MarkdownBlockRenderer(
                 markdown: markdownText,

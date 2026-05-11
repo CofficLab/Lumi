@@ -1,23 +1,30 @@
 import SwiftUI
+import EditorService
+import LumiUI
 
 /// 编辑器内联重命名悬浮层。
 ///
 /// 负责承载符号重命名输入、预览状态和应用动作，是源码视图顶部的轻量级
 /// rename 交互容器。
-struct EditorInlineRenameOverlayView: View {
+public struct EditorInlineRenameOverlayView: View {
     @ObservedObject var state: EditorState
     @Binding var renameState: EditorInlineRenameState
 
     @FocusState private var isInputFocused: Bool
 
-    var body: some View {
+    public init(state: EditorState, renameState: Binding<EditorInlineRenameState>) {
+        self.state = state
+        self._renameState = renameState
+    }
+
+    public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "pencil.line")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(Color(hex: "7C6FFF"))
 
-                Text(String(localized: "Rename Symbol", table: "LumiEditor"))
+                Text(String(localized: "Rename Symbol"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -34,7 +41,7 @@ struct EditorInlineRenameOverlayView: View {
                 .buttonStyle(.plain)
             }
 
-            TextField(String(localized: "New name", table: "LumiEditor"), text: Binding(
+            TextField(String(localized: "New name"), text: Binding(
                 get: { renameState.draftName },
                 set: { state.updateInlineRenameDraft($0) }
             ))
@@ -51,7 +58,7 @@ struct EditorInlineRenameOverlayView: View {
             }
 
             HStack(spacing: 8) {
-                Text(String(localized: "Current: \(renameState.originalName)", table: "LumiEditor"))
+                Text(String(localized: "Current: \(renameState.originalName)"))
                     .font(.system(size: 10))
                     .foregroundColor(Color(hex: "98989E"))
 
@@ -72,7 +79,7 @@ struct EditorInlineRenameOverlayView: View {
                     .lineLimit(2)
             } else if let summary = renameState.previewSummary, !summary.fileLabels.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "Files", table: "LumiEditor"))
+                    Text(String(localized: "Files"))
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     ForEach(summary.fileLabels, id: \.self) { label in
@@ -85,7 +92,7 @@ struct EditorInlineRenameOverlayView: View {
             }
 
             HStack {
-                Button(renameState.canApply ? String(localized: "Apply Rename", table: "LumiEditor") : String(localized: "Preview Changes", table: "LumiEditor")) {
+                Button(renameState.canApply ? String(localized: "Apply Rename") : String(localized: "Preview Changes")) {
                     if renameState.canApply {
                         state.applyInlineRename()
                     } else {
@@ -98,7 +105,7 @@ struct EditorInlineRenameOverlayView: View {
                 .controlSize(.small)
                 .disabled(renameState.isLoadingPreview || (!renameState.canPreview && !renameState.canApply))
 
-                Button(String(localized: "Cancel", table: "LumiEditor")) {
+                Button(String(localized: "Cancel")) {
                     state.dismissInlineRename()
                 }
                 .buttonStyle(.borderless)
