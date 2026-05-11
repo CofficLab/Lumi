@@ -139,6 +139,14 @@
 		0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
 		A10000012F60000100AAA001 /* LumiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5050AA32FADA83D002AA7B5 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
+		F53707E52FB1E52400AF4705 /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
+		F5370B292FB1E52500AF4705 /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
+		F5370B602FB1E52800AF4705 /* MermaidPlayground.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MermaidPlayground.xcodeproj; sourceTree = "<group>"; };
+		F5370DF62FB1E52800AF4705 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
+		F5370F352FB1E52800AF4705 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
+		F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MagicApp.xcodeproj; sourceTree = "<group>"; };
+		F53714622FB1E52900AF4705 /* CodeLanguages-Container.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "CodeLanguages-Container.xcodeproj"; sourceTree = "<group>"; };
+		F53716442FB1E53600AF4705 /* CodeEditTextViewExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditTextViewExample.xcodeproj; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5679DC02FAF405D0054AB4B /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
@@ -395,6 +403,62 @@
 			sourceTree = "<group>";
 		};
 		F5050AA52FADA83D002AA7B5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53707E72FB1E52400AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5370B2F2FB1E52500AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53711332FB1E52800AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53711352FB1E52800AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53711372FB1E52800AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53711392FB1E52800AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53714692FB1E52900AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53716D12FB1E53600AF4705 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -932,8 +996,20 @@
 					ProjectRef = F5CA2D4E2FADB71500F67747 /* CodeEditSourceEditorExample.xcodeproj */;
 				},
 				{
+					ProductGroup = F53716D12FB1E53600AF4705 /* Products */;
+					ProjectRef = F53716442FB1E53600AF4705 /* CodeEditTextViewExample.xcodeproj */;
+				},
+				{
+					ProductGroup = F53714692FB1E52900AF4705 /* Products */;
+					ProjectRef = F53714622FB1E52900AF4705 /* CodeLanguages-Container.xcodeproj */;
+				},
+				{
 					ProductGroup = 0BC901712FAD5B54003651CA /* Products */;
 					ProjectRef = 0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */;
+				},
+				{
+					ProductGroup = F5370B2F2FB1E52500AF4705 /* Products */;
+					ProjectRef = F5370B292FB1E52500AF4705 /* Collections.xcodeproj */;
 				},
 				{
 					ProductGroup = F5679F892FAF405D0054AB4B /* Products */;
@@ -946,6 +1022,10 @@
 				{
 					ProductGroup = 0B1781EB2FAF5C0F00F8A599 /* Products */;
 					ProjectRef = 0B1780FC2FAF5C0F00F8A599 /* Demo.xcodeproj */;
+				},
+				{
+					ProductGroup = F53711372FB1E52800AF4705 /* Products */;
+					ProjectRef = F5370DF62FB1E52800AF4705 /* Demo.xcodeproj */;
 				},
 				{
 					ProductGroup = 0BC903202FAD5B56003651CA /* Products */;
@@ -964,6 +1044,10 @@
 					ProjectRef = 0B1781F22FAF5C0F00F8A599 /* ID3TagEditor.xcodeproj */;
 				},
 				{
+					ProductGroup = F53711352FB1E52800AF4705 /* Products */;
+					ProjectRef = F5370F352FB1E52800AF4705 /* ID3TagEditor.xcodeproj */;
+				},
+				{
 					ProductGroup = 0BC9031E2FAD5B56003651CA /* Products */;
 					ProjectRef = 0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */;
 				},
@@ -974,6 +1058,14 @@
 				{
 					ProductGroup = F5E2115B2FAEF3440005256B /* Products */;
 					ProjectRef = F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */;
+				},
+				{
+					ProductGroup = F53711392FB1E52800AF4705 /* Products */;
+					ProjectRef = F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */;
+				},
+				{
+					ProductGroup = F53711332FB1E52800AF4705 /* Products */;
+					ProjectRef = F5370B602FB1E52800AF4705 /* MermaidPlayground.xcodeproj */;
 				},
 				{
 					ProductGroup = F56701112FAF42620054AB4B /* Products */;
@@ -1062,6 +1154,10 @@
 				{
 					ProductGroup = 0B1780D32FAF5C0F00F8A599 /* Products */;
 					ProjectRef = 0B1780D12FAF5C0F00F8A599 /* ZIPFoundation.xcodeproj */;
+				},
+				{
+					ProductGroup = F53707E72FB1E52400AF4705 /* Products */;
+					ProjectRef = F53707E52FB1E52400AF4705 /* ZIPFoundation.xcodeproj */;
 				},
 			);
 			projectRoot = "";

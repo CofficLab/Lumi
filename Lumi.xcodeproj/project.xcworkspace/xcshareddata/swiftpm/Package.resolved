@@ -335,12 +335,12 @@
         }
       },
       {
-        "package": "swift-collections",
-        "repositoryURL": "https://github.com/apple/swift-collections.git",
+        "package": "swift-collections-benchmark",
+        "repositoryURL": "https://github.com/apple/swift-collections-benchmark",
         "state": {
           "branch": null,
-          "revision": "6675bc0ff86e61436e615df6fc5174e043e57924",
-          "version": "1.4.1"
+          "revision": "69cd5b456633671456884217688afe53f87efd13",
+          "version": "0.0.4"
         }
       },
       {
