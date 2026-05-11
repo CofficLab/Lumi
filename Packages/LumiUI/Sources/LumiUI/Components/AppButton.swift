@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct AppButton: View {
     @LumiTheme private var theme
+    @State private var isHovered = false
 
     public enum Style {
         case primary
@@ -25,6 +26,7 @@ public struct AppButton: View {
     let style: Style
     let size: Size
     let fillsWidth: Bool
+    let isDisabled: Bool
     let action: () -> Void
 
     public init(
@@ -40,6 +42,7 @@ public struct AppButton: View {
         self.style = style
         self.size = size
         self.fillsWidth = fillsWidth
+        self.isDisabled = false
         self.action = action
     }
 
@@ -56,6 +59,25 @@ public struct AppButton: View {
         self.style = style
         self.size = size
         self.fillsWidth = fillsWidth
+        self.isDisabled = false
+        self.action = action
+    }
+
+    private init(
+        title: Text,
+        systemImage: String?,
+        style: Style,
+        size: Size,
+        fillsWidth: Bool,
+        isDisabled: Bool,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.style = style
+        self.size = size
+        self.fillsWidth = fillsWidth
+        self.isDisabled = isDisabled
         self.action = action
     }
 
@@ -77,6 +99,26 @@ public struct AppButton: View {
             .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
         }
         .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.5 : 1.0)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
+                isHovered = hovering && !isDisabled
+            }
+        }
+    }
+
+    /// Returns a new button with the disabled state set.
+    public func disabled(_ isDisabled: Bool) -> AppButton {
+        AppButton(
+            title: title,
+            systemImage: systemImage,
+            style: style,
+            size: size,
+            fillsWidth: fillsWidth,
+            isDisabled: isDisabled,
+            action: action
+        )
     }
 
     var metrics: Metrics {
@@ -115,15 +157,18 @@ public struct AppButton: View {
             switch style {
             case .primary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(theme.primary)
+                    .fill(isHovered ? theme.primary.opacity(0.85) : theme.primary)
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(DesignTokens.Material.glass)
+                    .fill(isHovered ? Color.white.opacity(0.12) : DesignTokens.Material.glass)
             case .ghost:
-                Color.clear
+                isHovered
+                    ? RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                        .fill(theme.primary.opacity(0.08))
+                    : Color.clear
             case .tonal:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(theme.textSecondary.opacity(0.10))
+                    .fill(isHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
             }
         }
     }
@@ -133,10 +178,16 @@ public struct AppButton: View {
             switch style {
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    .stroke(
+                        isHovered ? Color.white.opacity(0.20) : Color.white.opacity(0.12),
+                        lineWidth: 1
+                    )
             case .ghost:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .stroke(theme.primary.opacity(0.25), lineWidth: 1)
+                    .stroke(
+                        isHovered ? theme.primary.opacity(0.45) : theme.primary.opacity(0.25),
+                        lineWidth: 1
+                    )
             default:
                 EmptyView()
             }
