@@ -137,6 +137,34 @@ private final class ResponseDataBox: @unchecked Sendable {
     var data = Data()
 }
 
+private final class LivePreviewWindow: NSPanel {
+    init(contentRect: NSRect) {
+        super.init(
+            contentRect: contentRect,
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+
+        isReleasedWhenClosed = false
+        backgroundColor = .white
+        ignoresMouseEvents = false
+        hasShadow = false
+        level = .normal
+        collectionBehavior = [.fullScreenAuxiliary]
+        isOpaque = true
+        becomesKeyOnlyIfNeeded = true
+    }
+
+    override var canBecomeMain: Bool {
+        false
+    }
+
+    override var canBecomeKey: Bool {
+        true
+    }
+}
+
 @MainActor
 private final class PreviewRenderer {
     private static let fallbackSnapshotSize = NSSize(width: 320, height: 180)
@@ -399,22 +427,10 @@ private final class PreviewRenderer {
         }
 
         let frame = NSRect(x: 0, y: 0, width: 320, height: 180)
-        let window = NSWindow(
-            contentRect: frame,
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false
-        )
-        window.isReleasedWhenClosed = false
-        window.backgroundColor = .white
-        window.ignoresMouseEvents = false
-        window.hasShadow = false
-        window.level = .floating
-        window.isOpaque = true
+        let window = LivePreviewWindow(contentRect: frame)
         window.contentView = previewView
         // Position off-screen until updateLiveFrame positions it correctly
         window.setFrameOrigin(NSPoint(x: -10_000, y: -10_000))
-        window.orderFrontRegardless()
 
         liveWindow = window
 
@@ -433,7 +449,6 @@ private final class PreviewRenderer {
 
         let frame = NSRect(x: x, y: y, width: width, height: height)
         liveWindow.setFrame(frame, display: true)
-        liveWindow.orderFrontRegardless()
 
         return RenderResponse(
             success: true,
@@ -451,7 +466,7 @@ private final class PreviewRenderer {
             return RenderResponse(success: false, message: "No live preview content to show.")
         }
 
-        liveWindow.orderFrontRegardless()
+        liveWindow.orderFront(nil)
 
         return RenderResponse(
             success: true,
@@ -502,15 +517,25 @@ private final class PreviewRenderer {
                 if view.frame.isEmpty {
                     view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
                 }
+                let title = descriptor?.title ?? previewEntrySymbol
+
+                let snapshot = snapshotPNGBase64(for: view)
+
                 previewView = view
                 isLivePreviewEnabled = true
-                let title = descriptor?.title ?? previewEntrySymbol
                 currentDynamicPreviewTitle = title
 
-                let snapshot = snapshotPNGBase64()
-                // `snapshotPNGBase64()` temporarily hosts the view in the off-screen render window.
-                // Reattach it to the visible live window afterwards so reload does not leave a blank overlay.
+                let wasVisible = liveWindow?.isVisible == true
+                let liveFrame = liveWindow?.frame
+                // `snapshotPNGBase64(for:)` temporarily hosts the new view off-screen.
+                // Only after that succeeds do we replace the visible live content.
                 liveWindow?.contentView = view
+                if let liveFrame {
+                    liveWindow?.setFrame(liveFrame, display: true)
+                }
+                if wasVisible {
+                    liveWindow?.orderFront(nil)
+                }
 
                 return RenderResponse(
                     success: true,
@@ -544,26 +569,29 @@ private final class PreviewRenderer {
 
     private func snapshotPNGBase64() -> String? {
         guard let previewView else { return nil }
+        return snapshotPNGBase64(for: previewView)
+    }
 
-        var bounds = prepareViewForSnapshot(previewView)
+    private func snapshotPNGBase64(for view: NSView) -> String? {
+        var bounds = prepareViewForSnapshot(view)
         flushPreviewRendering()
 
-        let measuredSize = Self.snapshotSize(for: previewView)
+        let measuredSize = Self.snapshotSize(for: view)
         if !Self.isSameSize(bounds.size, measuredSize) {
-            bounds = prepareViewForSnapshot(previewView, preferredSize: measuredSize)
+            bounds = prepareViewForSnapshot(view, preferredSize: measuredSize)
             flushPreviewRendering()
         }
 
-        previewView.layoutSubtreeIfNeeded()
-        previewView.displayIfNeeded()
+        view.layoutSubtreeIfNeeded()
+        view.displayIfNeeded()
 
         guard !bounds.isEmpty,
-              let bitmap = previewView.bitmapImageRepForCachingDisplay(in: bounds) else {
+              let bitmap = view.bitmapImageRepForCachingDisplay(in: bounds) else {
             return nil
         }
 
         bitmap.size = bounds.size
-        previewView.cacheDisplay(in: bounds, to: bitmap)
+        view.cacheDisplay(in: bounds, to: bitmap)
         return bitmap.representation(using: .png, properties: [:])?.base64EncodedString()
     }
 
