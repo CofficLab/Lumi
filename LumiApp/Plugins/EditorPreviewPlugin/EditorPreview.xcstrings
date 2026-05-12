@@ -227,6 +227,9 @@
     "Live preview failed" : {
 
     },
+    "Live preview is not available" : {
+
+    },
     "Live preview of %@" : {
 
     },
