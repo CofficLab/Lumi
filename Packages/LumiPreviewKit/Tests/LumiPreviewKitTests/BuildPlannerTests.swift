@@ -18,7 +18,11 @@ struct BuildPlannerTests {
     func planSPMFile() {
         let planner = BuildPlanner()
         // 使用 LumiPreviewKit 自身的源文件来测试
-        let fileURL = URL(fileURLWithPath: "/Users/colorfy/Code/CofficLab/Lumi/Packages/LumiPreviewKit/Sources/LumiPreviewKit/Scanner/PreviewScanner.swift")
+        let fileURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/LumiPreviewKit/Scanner/PreviewScanner.swift")
         let result = planner.plan(for: fileURL)
 
         guard case let .spm(packageDirectory, targetName) = result else {
@@ -32,8 +36,15 @@ struct BuildPlannerTests {
     @Test("Lumi 自身的 LumiUI Package 文件能被正确识别")
     func planLumiUIPackage() {
         let planner = BuildPlanner()
-        // 直接构造 LumiUI Package 中的一个已知文件路径
-        let fileURL = URL(fileURLWithPath: "/Users/colorfy/Code/CofficLab/Lumi/Packages/LumiUI/Sources/LumiUI/LumiUI.swift")
+        // 通过 #filePath 向上推导到 Lumi 根目录，再定位 LumiUI
+        let lumiRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // LumiPreviewKitTests
+            .deletingLastPathComponent()  // Tests
+            .deletingLastPathComponent()  // LumiPreviewKit
+            .deletingLastPathComponent()  // Packages
+            .deletingLastPathComponent()  // Lumi (root)
+        let fileURL = lumiRoot
+            .appendingPathComponent("Packages/LumiUI/Sources/LumiUI/DesignSystem/ColorTokens.swift")
         let result = planner.plan(for: fileURL)
 
         guard case let .spm(packageDirectory, targetName) = result else {
@@ -47,7 +58,11 @@ struct BuildPlannerTests {
     @Test("LumiPreviewHostApp 可执行 target 能被正确识别")
     func planHostAppTarget() {
         let planner = BuildPlanner()
-        let fileURL = URL(fileURLWithPath: "/Users/colorfy/Code/CofficLab/Lumi/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/main.swift")
+        let fileURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/LumiPreviewHostApp/main.swift")
         let result = planner.plan(for: fileURL)
 
         guard case let .spm(_, targetName) = result else {
