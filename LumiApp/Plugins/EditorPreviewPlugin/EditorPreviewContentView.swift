@@ -208,7 +208,7 @@ struct EditorPreviewContentView: View {
                 HStack(spacing: 3) {
                     Image(systemName: "photo")
                         .font(.system(size: 9, weight: .medium))
-                    Text("Image")
+                    Text(String(localized: "Image", table: "EditorPreview"))
                         .font(.system(size: 10, weight: .medium))
                 }
                 .padding(.horizontal, 8)
@@ -238,7 +238,7 @@ struct EditorPreviewContentView: View {
                 HStack(spacing: 3) {
                     Image(systemName: viewModel.displayMode == .live ? "play.rectangle.fill" : "play.rectangle")
                         .font(.system(size: 9, weight: .medium))
-                    Text("Live")
+                    Text(String(localized: "Live", table: "EditorPreview"))
                         .font(.system(size: 10, weight: .medium))
                 }
                 .padding(.horizontal, 8)
