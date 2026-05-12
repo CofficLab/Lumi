@@ -37,7 +37,7 @@ public final class CPUService: ObservableObject, SuperLog {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.info("\(self.t)开始 CPU 监控")
+            if Self.verbose { Self.logger.info("\(self.t)开始 CPU 监控") }
             updateCPUUsage()
 
             monitoringTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -51,7 +51,7 @@ public final class CPUService: ObservableObject, SuperLog {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.info("\(self.t)停止 CPU 监控")
+            if Self.verbose { Self.logger.info("\(self.t)停止 CPU 监控") }
             monitoringTimer?.invalidate()
             monitoringTimer = nil
 

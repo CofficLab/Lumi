@@ -147,7 +147,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             fallbackDestination: activeDestination ?? currentWorkspace?.activeDestination ?? Self.defaultDestination()
         )
 
-        Self.logger.info("\(Self.t)切换 Scheme: \(resolvedScheme.name, privacy: .public)")
+        if Self.verbose { Self.logger.info("\(Self.t)切换 Scheme: \(resolvedScheme.name, privacy: .public)") }
 
         activeScheme = resolvedScheme
         activeConfiguration = resolvedScheme.activeConfiguration
@@ -199,7 +199,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         let isProject = workspaceURL.pathExtension == "xcodeproj"
         let workspaceArg = isProject ? "-project" : "-workspace"
 
-        Self.logger.info("\(Self.t)生成 buildServer.json: \(serverPath) config \(workspaceArg) \(workspaceURL.path) -scheme \(scheme)")
+        if Self.verbose { Self.logger.info("\(Self.t)生成 buildServer.json: \(serverPath) config \(workspaceArg) \(workspaceURL.path) -scheme \(scheme)") }
 
         // 生成到该项目专属的插件存储目录
         let outputDirectory = store.ensureDirectory(forWorkspace: workspaceURL.path)
@@ -215,7 +215,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             if let config = store.load(forWorkspace: workspaceURL.path) {
                 buildServerJSONPath = config.buildServerJSONPath
                 buildContextStatus = .available(XcodeBuildServerConfig(from: config))
-                Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)")
+                if Self.verbose { Self.logger.info("\(Self.t)buildServer.json 已生成: \(config.buildServerJSONPath, privacy: .public)") }
             }
         } else {
             buildContextStatus = .unavailable("Failed to generate buildServer.json")
@@ -317,7 +317,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     public func invalidateAllContexts() {
         buildSettingsCache.removeAll()
         buildContextStatus = .needsResync
-        Self.logger.info("\(Self.t)所有 build context 已失效")
+        if Self.verbose { Self.logger.info("\(Self.t)所有 build context 已失效") }
     }
 
     /// 使特定 scheme 的缓存失效
@@ -326,7 +326,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             buildSettingsCache,
             removingScheme: schemeName
         )
-        Self.logger.info("\(Self.t)Scheme '\(schemeName, privacy: .public)' 的 build context 已失效")
+        if Self.verbose { Self.logger.info("\(Self.t)Scheme '\(schemeName, privacy: .public)' 的 build context 已失效") }
     }
 
     // MARK: - Scheme 智能选择
@@ -341,7 +341,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
         // 1. 优先：与项目同名的 scheme
         if let match = schemes.first(where: { $0.name == projectName }) {
-            logger.info("\(Self.t)自动选择 Scheme（与项目同名）: \(match.name, privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)自动选择 Scheme（与项目同名）: \(match.name, privacy: .public)") }
             return match
         }
 
@@ -349,7 +349,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         let nonPackageTargets = targets.filter { !$0.hasSuffix("-Package") }
         for target in nonPackageTargets {
             if let match = schemes.first(where: { $0.name == target }) {
-                logger.info("\(Self.t)自动选择 Scheme（与 target 同名）: \(match.name, privacy: .public)")
+                if Self.verbose { Self.logger.info("\(Self.t)自动选择 Scheme（与 target 同名）: \(match.name, privacy: .public)") }
                 return match
             }
         }
@@ -364,13 +364,13 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         }
 
         if let match = schemes.first(where: { !isKnownDependency($0.name) }) {
-            logger.info("\(Self.t)自动选择 Scheme（排除依赖包后）: \(match.name, privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)自动选择 Scheme（排除依赖包后）: \(match.name, privacy: .public)") }
             return match
         }
 
         // 4. 兜底
         let fallback = schemes[0]
-        logger.info("\(Self.t)自动选择 Scheme（兜底）: \(fallback.name, privacy: .public)")
+        if Self.verbose { Self.logger.info("\(Self.t)自动选择 Scheme（兜底）: \(fallback.name, privacy: .public)") }
         return fallback
     }
 
@@ -437,7 +437,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         for path in paths {
             if FileManager.default.fileExists(atPath: path) {
                 xcodeBuildServerPath = path
-                Self.logger.info("\(Self.t)找到 xcode-build-server: \(path, privacy: .public)")
+                if Self.verbose { Self.logger.info("\(Self.t)找到 xcode-build-server: \(path, privacy: .public)") }
                 return
             }
         }
