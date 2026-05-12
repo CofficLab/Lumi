@@ -12,6 +12,8 @@ public struct AppTag: View {
     let systemImage: String?
     let style: Style
 
+    @State private var isHovered = false
+
     public init(
         _ title: String,
         systemImage: String? = nil,
@@ -43,6 +45,12 @@ public struct AppTag: View {
             RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                 .stroke(borderColor, lineWidth: 1)
         )
+        .scaleEffect(isHovered ? 1.04 : 1)
+        .shadow(color: hoverShadowColor, radius: isHovered ? 8 : 0, y: isHovered ? 3 : 0)
+        .animation(.easeOut(duration: 0.16), value: isHovered)
+        .onHover { hovering in
+            isHovered = hovering
+        }
     }
 
     private var foregroundColor: Color {
@@ -57,18 +65,27 @@ public struct AppTag: View {
     private var backgroundColor: Color {
         switch style {
         case .subtle:
-            theme.textSecondary.opacity(0.10)
+            isHovered ? theme.textSecondary.opacity(0.16) : theme.textSecondary.opacity(0.10)
         case .accent:
-            theme.primary.opacity(0.14)
+            isHovered ? theme.primary.opacity(0.22) : theme.primary.opacity(0.14)
         }
     }
 
     private var borderColor: Color {
         switch style {
         case .subtle:
-            Color.white.opacity(0.06)
+            isHovered ? theme.textSecondary.opacity(0.20) : Color.white.opacity(0.06)
         case .accent:
-            theme.primary.opacity(0.25)
+            isHovered ? theme.primary.opacity(0.40) : theme.primary.opacity(0.25)
+        }
+    }
+
+    private var hoverShadowColor: Color {
+        switch style {
+        case .subtle:
+            theme.textSecondary.opacity(isHovered ? 0.16 : 0)
+        case .accent:
+            theme.primary.opacity(isHovered ? 0.20 : 0)
         }
     }
 }
