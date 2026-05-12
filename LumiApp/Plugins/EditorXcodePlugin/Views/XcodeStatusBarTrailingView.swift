@@ -1,8 +1,11 @@
 import SwiftUI
+import MagicKit
 import XcodeKit
 
 /// Xcode 项目状态栏尾部视图
-struct XcodeStatusBarTrailingView: View {
+struct XcodeStatusBarTrailingView: View, SuperLog {
+    nonisolated static let emoji = "🔨"
+
     @StateObject private var viewModel = XcodeProjectStatusBarViewModel()
 
     var body: some View {
@@ -32,6 +35,16 @@ struct XcodeStatusBarTrailingView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                 }
+            }
+        }
+        .onAppear {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)onAppear，isXcodeProject=\(viewModel.isXcodeProject)")
+            }
+        }
+        .onChange(of: viewModel.isXcodeProject) { _, newValue in
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)isXcodeProject 变化: \(newValue)")
             }
         }
     }

@@ -24,6 +24,7 @@ final class XybbzProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     static let modelCatalog: [LLMModelCatalogItem] = [
         .init(id: "gpt-5.5", spec: .init(contextWindowSize: 272_000, supportsVision: true, supportsTools: true)),
+        .init(id: "gpt-5.4", spec: .init(contextWindowSize: 272_000, supportsVision: true, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
