@@ -2302,8 +2302,6 @@ public final class EditorState: ObservableObject, SuperLog {
         contentRevision &+= 1
         let changed = documentController.hasChangesComparedToPersistedSnapshot(contentString)
 
-        logger.info("\(Self.t)🔍 [dirty-debug] 内容变更检测: changed=\(changed), hasUnsavedChanges=\(self.hasUnsavedChanges), 内容长度=\(contentString.count), 快照长度=\(self.documentController.persistedTextSnapshot?.count ?? -1), 文件=\(self.currentFileURL?.lastPathComponent ?? "nil")")
-
         if changed {
             hasUnsavedChanges = true
             saveState = .editing
@@ -2313,8 +2311,6 @@ public final class EditorState: ObservableObject, SuperLog {
             saveState = .idle
         }
         refreshFindMatches()
-
-        logger.info("\(Self.t)🔍 [dirty-debug] syncActiveSessionState: hasUnsavedChanges=\(self.hasUnsavedChanges), onActiveSessionChanged=\(self.onActiveSessionChanged != nil), sessionSyncGate.isSuspended=\(self.sessionSyncGate.isSuspended)")
 
         syncActiveSessionState()
         updateBracketMatch()

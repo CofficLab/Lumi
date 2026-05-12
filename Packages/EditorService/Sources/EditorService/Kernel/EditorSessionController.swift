@@ -92,8 +92,6 @@ final class EditorSessionController {
         )
 
         let needsSync = requiresSync(activeSession, snapshot: snapshot)
-        Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.session-controller")
-            .info("🔍 [dirty-debug] syncActiveSessionState: needsSync=\(needsSync), activeSession.isDirty=\(activeSession.isDirty), snapshot.isDirty=\(snapshot.isDirty), hasOnChanged=\(onChanged != nil), activeSessionID=\(activeSession.id.uuidString.prefix(8))")
 
         guard needsSync else {
             return

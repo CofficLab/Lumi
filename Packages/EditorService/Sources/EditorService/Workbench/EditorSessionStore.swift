@@ -54,7 +54,6 @@ public final class EditorSessionStore: ObservableObject {
         }
 
         let session = openOrActivate(fileURL: fileURL) ?? EditorSession(fileURL: fileURL)
-        Self.logger.info("🔍 [dirty-debug] syncActiveSession: fileURL=\(fileURL.lastPathComponent), snapshot.isDirty=\(snapshot.isDirty), session.id=\(session.id.uuidString.prefix(8)), snapshot.id=\(snapshot.id.uuidString.prefix(8))")
         session.applySnapshot(from: snapshot)
         updateTab(for: session)
         activeSessionID = session.id
@@ -181,14 +180,10 @@ public final class EditorSessionStore: ObservableObject {
 
     private func updateTab(for session: EditorSession) {
         if let index = tabs.firstIndex(where: { $0.sessionID == session.id }) {
-            let oldDirty = tabs[index].isDirty
-            let newDirty = session.isDirty
-            Self.logger.info("🔍 [dirty-debug] updateTab: found tab at index=\(index), old.isDirty=\(oldDirty), new.isDirty=\(newDirty), sessionID=\(session.id.uuidString.prefix(8))")
             tabs[index].fileURL = session.fileURL
             tabs[index].title = session.fileURL?.lastPathComponent ?? tabs[index].title
             tabs[index].isDirty = session.isDirty
         } else {
-            Self.logger.info("🔍 [dirty-debug] updateTab: tab NOT found, appending. isDirty=\(session.isDirty), sessionID=\(session.id.uuidString.prefix(8))")
             tabs.append(
                 EditorTab(
                     sessionID: session.id,
