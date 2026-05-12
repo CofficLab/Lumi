@@ -1,0 +1,178 @@
+#if canImport(LumiPreviewKit)
+import LumiPreviewKit
+import SwiftUI
+
+struct EditorPreviewSurfaceView: View {
+    @EnvironmentObject private var themeVM: ThemeVM
+    @ObservedObject var viewModel: EditorPreviewViewModel
+    let preview: PreviewDiscovery
+
+    var body: some View {
+        ZStack {
+            if viewModel.displayMode == .live {
+                liveCanvasSurface
+            } else {
+                imageCanvasSurface
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var imageCanvasSurface: some View {
+        VStack(spacing: 14) {
+            Spacer(minLength: 0)
+
+            if let renderImage = viewModel.renderImage {
+                Image(nsImage: renderImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: 420, maxHeight: 260)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
+                    )
+            } else {
+                Image(systemName: surfaceIconName)
+                    .font(.system(size: 28, weight: .light))
+                    .foregroundColor(statusColor)
+            }
+
+            surfaceInfo
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var liveCanvasSurface: some View {
+        GeometryReader { geometry in
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(themeVM.activeAppTheme.workspaceBackgroundColor())
+
+                if viewModel.isLiveLoading {
+                    VStack(spacing: 10) {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text(String(localized: "Starting Live Preview…", table: "EditorPreview"))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+
+                if !viewModel.isLiveLoading {
+                    VStack(spacing: 8) {
+                        Image(systemName: "play.rectangle.fill")
+                            .font(.system(size: 20, weight: .light))
+                            .foregroundColor(.green.opacity(0.6))
+
+                        Text(String(localized: "Live Preview Active", table: "EditorPreview"))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+
+                        if let performanceSummary = viewModel.performanceSummary {
+                            Text(performanceSummary)
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .background(
+                EditorPreviewLiveCanvasFrameReporter { screenFrame in
+                    viewModel.updateLiveCanvasRect(screenFrame)
+                }
+            )
+            .onAppear {
+                viewModel.liveCanvasDidAppear()
+            }
+            .onDisappear {
+                viewModel.liveCanvasDidDisappear()
+            }
+            .onChange(of: geometry.size) { _, _ in
+                EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
+            }
+        }
+    }
+
+    private var surfaceInfo: some View {
+        VStack(spacing: 5) {
+            Text(surfaceTitle)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+                .multilineTextAlignment(.center)
+
+            if let renderMessage = viewModel.renderMessage {
+                Text(renderMessage)
+                    .font(.system(size: 11))
+                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .multilineTextAlignment(.center)
+            }
+
+            if let performanceSummary = viewModel.performanceSummary {
+                Text(performanceSummary)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: 360)
+    }
+
+    private var statusColor: Color {
+        switch viewModel.runState {
+        case .running:
+            .green
+        case .failed, .hostMissing:
+            .red
+        case .starting:
+            .orange
+        case .idle, .stopped:
+            themeVM.activeAppTheme.workspaceSecondaryTextColor()
+        }
+    }
+
+    private var surfaceIconName: String {
+        switch viewModel.runState {
+        case .running:
+            "play.rectangle.fill"
+        case .starting:
+            "hourglass"
+        case .stopped:
+            "stop.circle"
+        case .idle:
+            "play.rectangle"
+        case .failed:
+            "exclamationmark.triangle"
+        case .hostMissing:
+            "xmark.octagon"
+        }
+    }
+
+    private var surfaceTitle: String {
+        switch viewModel.runState {
+        case .running:
+            if viewModel.displayMode == .live {
+                return String(format: String(localized: "Live preview of %@", table: "EditorPreview"), preview.title)
+            }
+            return String(format: String(localized: "Preview host rendered %@", table: "EditorPreview"), preview.title)
+        case .starting:
+            return String(localized: "Building preview", table: "EditorPreview")
+        case .stopped:
+            return String(localized: "Preview stopped", table: "EditorPreview")
+        case .idle:
+            return String(localized: "Ready to start preview", table: "EditorPreview")
+        case .failed:
+            return String(localized: "Preview failed", table: "EditorPreview")
+        case .hostMissing:
+            return String(localized: "Preview host missing", table: "EditorPreview")
+        }
+    }
+}
+#endif
