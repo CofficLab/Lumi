@@ -9,6 +9,8 @@ public struct AppEmptyState: View {
     let actionTitle: LocalizedStringKey?
     let action: (() -> Void)?
 
+    @State private var isHovering = false
+
     public init(
         icon: String,
         title: LocalizedStringKey,
@@ -40,6 +42,11 @@ public struct AppEmptyState: View {
             Image(systemName: icon)
                 .font(.system(size: 48))
                 .foregroundColor(theme.textSecondary.opacity(0.6))
+                .scaleEffect(isHovering ? 1.08 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+                .onHover { hovering in
+                    isHovering = hovering
+                }
 
             Text(title)
                 .font(AppUI.Typography.bodyEmphasized)
