@@ -447,6 +447,9 @@ private final class PreviewRenderer {
         guard let liveWindow else {
             return RenderResponse(success: false, message: "No live window to show.")
         }
+        guard liveWindow.contentView != nil else {
+            return RenderResponse(success: false, message: "No live preview content to show.")
+        }
 
         liveWindow.orderFrontRegardless()
 
@@ -504,13 +507,15 @@ private final class PreviewRenderer {
                 let title = descriptor?.title ?? previewEntrySymbol
                 currentDynamicPreviewTitle = title
 
-                // Update live window content if it exists
+                let snapshot = snapshotPNGBase64()
+                // `snapshotPNGBase64()` temporarily hosts the view in the off-screen render window.
+                // Reattach it to the visible live window afterwards so reload does not leave a blank overlay.
                 liveWindow?.contentView = view
 
                 return RenderResponse(
                     success: true,
                     message: "Reloaded live preview view entry \(title)",
-                    previewImagePNGBase64: snapshotPNGBase64(),
+                    previewImagePNGBase64: snapshot,
                     livePreviewEnabled: true,
                     liveWindowNumber: liveWindow?.windowNumber
                 )

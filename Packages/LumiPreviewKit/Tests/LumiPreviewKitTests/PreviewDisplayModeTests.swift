@@ -481,6 +481,10 @@ struct PreviewDisplayModeTests {
         #expect(reloadResponse.livePreviewEnabled == true)
         #expect(reloadResponse.message?.contains("Updated View") == true)
 
+        let showAfterReloadResponse = try await connection.requestShowLivePreview()
+        #expect(showAfterReloadResponse.success)
+        #expect(showAfterReloadResponse.livePreviewEnabled == true)
+
         await connection.terminate()
     }
 

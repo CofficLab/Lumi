@@ -41,8 +41,15 @@ struct EditorPreviewToolbarView: View {
             Button {
                 viewModel.refreshPreview()
             } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 11, weight: .medium))
+                if viewModel.isUpdatingPreview {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.55)
+                        .frame(width: 13, height: 13)
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11, weight: .medium))
+                }
             }
             .buttonStyle(.plain)
             .disabled(!viewModel.canRefresh)
@@ -69,24 +76,44 @@ struct EditorPreviewStatusBadgeView: View {
     @ObservedObject var viewModel: EditorPreviewViewModel
 
     var body: some View {
-        Text(viewModel.runState.title)
-            .font(.system(size: 11, weight: .medium))
-            .foregroundColor(statusColor)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(statusColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+        HStack(spacing: 5) {
+            if viewModel.isUpdatingPreview {
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.55)
+                    .frame(width: 12, height: 12)
+            }
+            Text(statusTitle)
+                .lineLimit(1)
+        }
+        .font(.system(size: 11, weight: .medium))
+        .foregroundColor(statusColor)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(statusColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+    }
+
+    private var statusTitle: String {
+        if viewModel.isUpdatingPreview {
+            viewModel.updatePhase.title
+        } else {
+            viewModel.runState.title
+        }
     }
 
     private var statusColor: Color {
+        if viewModel.isUpdatingPreview {
+            return .orange
+        }
         switch viewModel.runState {
         case .running:
-            .green
+            return .green
         case .failed, .hostMissing:
-            .red
+            return .red
         case .starting:
-            .orange
+            return .orange
         case .idle, .stopped:
-            themeVM.activeAppTheme.workspaceSecondaryTextColor()
+            return themeVM.activeAppTheme.workspaceSecondaryTextColor()
         }
     }
 }

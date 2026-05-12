@@ -32,6 +32,23 @@ final class EditorPreviewViewModel: ObservableObject {
         }
     }
 
+    enum UpdatePhase: Equatable {
+        case idle
+        case waitingToRefresh
+        case refreshing
+
+        var title: String {
+            switch self {
+            case .idle:
+                ""
+            case .waitingToRefresh:
+                String(localized: "Waiting to refresh", table: "EditorPreview")
+            case .refreshing:
+                String(localized: "Updating preview", table: "EditorPreview")
+            }
+        }
+    }
+
     // MARK: - Published State
 
     @Published private(set) var previews: [PreviewDiscovery] = []
@@ -45,6 +62,7 @@ final class EditorPreviewViewModel: ObservableObject {
     @Published private(set) var livePreviewInfo: LivePreviewInfo = LivePreviewInfo()
     @Published private(set) var liveCanvasRect: CGRect = .zero
     @Published private(set) var isLiveLoading: Bool = false
+    @Published private(set) var updatePhase: UpdatePhase = .idle
 
     // MARK: - Private State
 
@@ -60,6 +78,7 @@ final class EditorPreviewViewModel: ObservableObject {
         var displayMode: PreviewDisplayMode
         var livePreviewInfo: LivePreviewInfo
         var isLiveLoading: Bool
+        var updatePhase: UpdatePhase
         var session: (any PreviewSession)?
         var engine: LivePreviewEngine?
     }
@@ -92,11 +111,15 @@ final class EditorPreviewViewModel: ObservableObject {
     }
 
     var canRefresh: Bool {
-        session != nil && runState == .running
+        session != nil && runState == .running && updatePhase == .idle
     }
 
     var canStop: Bool {
         session != nil
+    }
+
+    var isUpdatingPreview: Bool {
+        updatePhase != .idle
     }
 
     /// Whether Live mode is available for the current session.
@@ -258,6 +281,7 @@ final class EditorPreviewViewModel: ObservableObject {
 
     func refreshPreview() {
         guard let session, let engine else { return }
+        updatePhase = .refreshing
 
         // If in live mode, do live reload
         if displayMode == .live {
@@ -275,10 +299,13 @@ final class EditorPreviewViewModel: ObservableObject {
                 }
                 try await engine.refreshPreview(session)
                 await syncSessionState(from: session)
+                updatePhase = .idle
             } catch let error as PreviewError {
                 runState = .failed(Self.message(for: error))
+                updatePhase = .idle
             } catch {
                 runState = .failed(error.localizedDescription)
+                updatePhase = .idle
             }
         }
     }
@@ -304,6 +331,7 @@ final class EditorPreviewViewModel: ObservableObject {
             performanceSummary = nil
             displayMode = Self.preferredDisplayMode
             isLiveLoading = false
+            updatePhase = .idle
             return
         }
 
@@ -317,6 +345,7 @@ final class EditorPreviewViewModel: ObservableObject {
         displayMode = Self.preferredDisplayMode
         isLiveLoading = false
         livePreviewInfo = LivePreviewInfo()
+        updatePhase = .idle
 
         Task {
             await engine.stopPreview(session)
@@ -348,6 +377,7 @@ final class EditorPreviewViewModel: ObservableObject {
             displayMode: displayMode,
             livePreviewInfo: livePreviewInfo,
             isLiveLoading: false,
+            updatePhase: .idle,
             session: session,
             engine: engine
         ), forKey: activeFileKey)
@@ -450,18 +480,21 @@ final class EditorPreviewViewModel: ObservableObject {
                 await syncSessionState(from: session)
                 await syncLiveFrameFromEngine()
                 try? await engine.showLivePreview(session)
+                updatePhase = .idle
             } catch let error as PreviewError {
                 guard activeFileKey == refreshFileKey,
                       selectedPreviewID == refreshPreviewID else {
                     return
                 }
                 runState = .failed(Self.message(for: error))
+                updatePhase = .idle
             } catch {
                 guard activeFileKey == refreshFileKey,
                       selectedPreviewID == refreshPreviewID else {
                     return
                 }
                 runState = .failed(error.localizedDescription)
+                updatePhase = .idle
             }
         }
     }
@@ -614,6 +647,7 @@ final class EditorPreviewViewModel: ObservableObject {
         displayMode = Self.preferredDisplayMode
         livePreviewInfo = LivePreviewInfo()
         isLiveLoading = false
+        updatePhase = .idle
         session = nil
         engine = nil
     }
@@ -629,6 +663,7 @@ final class EditorPreviewViewModel: ObservableObject {
         displayMode = context.displayMode
         livePreviewInfo = context.livePreviewInfo
         isLiveLoading = context.isLiveLoading
+        updatePhase = context.updatePhase
         session = context.session
         engine = context.engine
     }
@@ -649,6 +684,7 @@ final class EditorPreviewViewModel: ObservableObject {
         engine = nil
         livePreviewInfo = LivePreviewInfo()
         isLiveLoading = false
+        updatePhase = .idle
         renderMessage = nil
         renderImage = nil
         diagnostics = nil
@@ -661,6 +697,7 @@ final class EditorPreviewViewModel: ObservableObject {
         sourceRefreshTask?.cancel()
         let refreshFileKey = activeFileKey
         let refreshPreviewID = selectedPreviewID
+        updatePhase = .waitingToRefresh
 
         sourceRefreshTask = Task {
             try? await Task.sleep(nanoseconds: 350_000_000)
@@ -670,6 +707,10 @@ final class EditorPreviewViewModel: ObservableObject {
                       self.selectedPreviewID == refreshPreviewID,
                       self.runState == .running,
                       self.session != nil else {
+                    if self.activeFileKey == refreshFileKey,
+                       self.selectedPreviewID == refreshPreviewID {
+                        self.updatePhase = .idle
+                    }
                     return
                 }
                 self.refreshPreview()

@@ -18,6 +18,35 @@ struct EditorPreviewSurfaceView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(alignment: .topTrailing) {
+            if viewModel.isUpdatingPreview {
+                updatingBadge
+                    .padding(10)
+            }
+        }
+    }
+
+    private var updatingBadge: some View {
+        HStack(spacing: 6) {
+            ProgressView()
+                .controlSize(.small)
+                .scaleEffect(0.6)
+                .frame(width: 12, height: 12)
+            Text(viewModel.updatePhase.title)
+                .font(.system(size: 11, weight: .medium))
+                .lineLimit(1)
+        }
+        .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(
+            themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.92),
+            in: RoundedRectangle(cornerRadius: 6)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
+        )
     }
 
     private var imageCanvasSurface: some View {
