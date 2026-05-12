@@ -225,7 +225,7 @@ public final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Senda
 final class ContextMenuManager: SuperLog {
 
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose: Bool = false
 
     static let shared = ContextMenuManager()
 

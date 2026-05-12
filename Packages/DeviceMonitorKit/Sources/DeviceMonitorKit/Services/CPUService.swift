@@ -9,6 +9,7 @@ public final class CPUService: ObservableObject, SuperLog {
     public static let shared = CPUService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.cpu")
     public nonisolated static let emoji = "🔍"
+    public nonisolated static let verbose: Bool = false
 
     // MARK: - Published Properties
 

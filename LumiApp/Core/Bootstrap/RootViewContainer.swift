@@ -241,8 +241,6 @@ final class RootViewContainer: ObservableObject, SuperLog {
             )
         }
         editorExtensionRegistry.recordInstalledPlugins(pluginRecords)
-        
-        Self.logger.info("\(Self.t)插件自注册完成，installedPlugins=\(editorExtensionRegistry.installedPlugins.count)")
 
         EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
             for contribution in PluginVM.shared.getThemeContributions() {
