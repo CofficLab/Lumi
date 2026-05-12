@@ -84,3 +84,17 @@ public enum AvatarView {
         )
     }
 }
+
+#Preview {
+    HStack(spacing: 16) {
+        ChatAvatarView(kind: .assistant)
+        ChatAvatarView(kind: .user)
+        ChatAvatarView(kind: .tool)
+        ChatAvatarView(kind: .status)
+        ChatAvatarView(kind: .error)
+        ChatAvatarView(kind: .system)
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

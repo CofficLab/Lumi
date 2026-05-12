@@ -32,10 +32,22 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 添加状态栏弹窗视图
-    /// - Returns: 要添加到状态栏弹窗的视图，如果不需要则返回nil
-    @MainActor func addStatusBarPopupView() -> AnyView? {
-        AnyView(CaffeinateStatusBarPopupView())
+    /// 添加菜单栏弹窗视图
+    /// - Returns: 要添加到菜单栏弹窗的视图，如果不需要则返回nil
+    @MainActor func addMenuBarPopupView() -> AnyView? {
+        AnyView(CaffeinateMenuBarPopupView())
+    }
+
+    // MARK: - Agent Tools
+
+    @MainActor
+    func agentTools() -> [SuperAgentTool] {
+        [
+            CaffeinateActivateTool(),
+            CaffeinateDeactivateTool(),
+            CaffeinateStatusTool(),
+            CaffeinateTurnOffDisplayTool(),
+        ]
     }
 }
 

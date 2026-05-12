@@ -30,12 +30,12 @@ actor NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     
 
-    @MainActor func addStatusBarPopupView() -> AnyView? {
-        AnyView(NetworkStatusBarPopupView())
+    @MainActor func addMenuBarPopupView() -> AnyView? {
+        AnyView(NetworkMenuBarPopupView())
     }
 
-    @MainActor func addStatusBarContentView() -> AnyView? {
-        AnyView(NetworkStatusBarContentView())
+    @MainActor func addMenuBarContentView() -> AnyView? {
+        AnyView(NetworkMenuBarContentView())
     }
 
     @MainActor

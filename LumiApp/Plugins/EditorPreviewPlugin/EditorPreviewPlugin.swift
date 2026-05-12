@@ -1,0 +1,56 @@
+import Foundation
+import MagicKit
+import SwiftUI
+import os
+
+/// Editor bottom panel plugin backed by LumiPreviewKit.
+actor EditorPreviewPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi", category: "plugin.editor-preview")
+
+    nonisolated static let emoji = "PV"
+    nonisolated static let enable: Bool = true
+    nonisolated static let verbose: Bool = false
+    static let id: String = "EditorPreview"
+    static let displayName: String = String(localized: "Editor Preview", table: "EditorPreview")
+    static let description: String = String(localized: "Shows source-based SwiftUI previews for the active editor file", table: "EditorPreview")
+    static let iconName: String = "rectangle.on.rectangle"
+    static var isConfigurable: Bool { false }
+    static var order: Int { 81 }
+
+    nonisolated var instanceLabel: String { Self.id }
+    static let shared = EditorPreviewPlugin()
+
+    @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab] {
+#if canImport(LumiPreviewKit)
+        guard activeIcon == EditorPlugin.iconName else { return [] }
+        return [BottomPanelTab(
+            id: "editor-bottom-editor-preview",
+            title: String(localized: "Preview", table: "EditorPreview"),
+            systemImage: "rectangle.on.rectangle",
+            priority: 81
+        )]
+#else
+        return []
+#endif
+    }
+
+    @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView? {
+#if canImport(LumiPreviewKit)
+        guard tabId == "editor-bottom-editor-preview", activeIcon == EditorPlugin.iconName else {
+            return nil
+        }
+        return AnyView(
+            EditorPreviewContentView()
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                    // Window became active — live preview can show
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+                    // Window resigned active — live preview should hide
+                }
+        )
+#else
+        return nil
+#endif
+    }
+}

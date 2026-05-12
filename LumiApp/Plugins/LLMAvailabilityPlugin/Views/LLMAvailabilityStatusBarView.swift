@@ -63,7 +63,7 @@ struct LLMAvailabilityStatusBarView: View {
 
     private var iconName: String {
         if isChecking {
-            return "network.badge.plus"
+            return "arrow.triangle.2.circlepath"
         } else if hasAvailableModels {
             return "network"
         } else {

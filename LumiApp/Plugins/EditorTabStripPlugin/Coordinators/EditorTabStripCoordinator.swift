@@ -30,14 +30,22 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
     func startObserving(
         sessionStore: EditorSessionStore,
         projectPathProvider: @MainActor @escaping () -> String,
-        openFile: @MainActor @escaping (URL) -> Void
+        openFile: @MainActor @escaping (URL) async -> Void,
+        openFileSessionOnly: @MainActor @escaping (URL) -> Void
     ) {
         trackedProjectPath = projectPathProvider()
 
         // 首次启动且 tabs 为空 → 从磁盘恢复
         if !hasRestored && sessionStore.tabs.isEmpty {
             hasRestored = true
-            restoreTabs(forProject: trackedProjectPath, openFile: openFile)
+            let path = trackedProjectPath
+            Task { @MainActor [weak self] in
+                await self?.restoreTabs(
+                    forProject: path,
+                    openFile: openFile,
+                    openFileSessionOnly: openFileSessionOnly
+                )
+            }
         }
 
         Publishers.CombineLatest(sessionStore.$tabs, sessionStore.$activeSessionID)
@@ -84,7 +92,8 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
         oldPath: String,
         newPath: String,
         sessionStore: EditorSessionStore,
-        openFile: @MainActor (URL) -> Void
+        openFile: @MainActor @escaping (URL) async -> Void,
+        openFileSessionOnly: @MainActor @escaping (URL) -> Void
     ) {
         // 保存旧项目的标签页
         if !oldPath.isEmpty {
@@ -103,16 +112,27 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
 
         // 恢复新项目的标签页
         guard !newPath.isEmpty else { return }
-        restoreTabs(forProject: newPath, openFile: openFile)
+        Task { @MainActor [weak self] in
+            await self?.restoreTabs(
+                forProject: newPath,
+                openFile: openFile,
+                openFileSessionOnly: openFileSessionOnly
+            )
+        }
     }
 
     // MARK: - 恢复
 
     /// 从持久化存储恢复指定项目的标签页
+    ///
+    /// 使用两阶段恢复策略：
+    /// 1. 批量创建 session（不加载文件内容），快速恢复标签栏 UI
+    /// 2. 仅对上次活跃的标签页执行完整的 `openFile`（加载内容）
     func restoreTabs(
         forProject projectPath: String,
-        openFile: @MainActor (URL) -> Void
-    ) {
+        openFile: @MainActor (URL) async -> Void,
+        openFileSessionOnly: @MainActor (URL) -> Void
+    ) async {
         let (persistedTabs, activeTabPath) = store.loadTabs(forProject: projectPath)
 
         // 过滤掉不存在的文件
@@ -126,16 +146,20 @@ final class EditorTabStripCoordinator: ObservableObject, SuperLog {
 
         guard !validURLs.isEmpty else { return }
 
-        // 打开所有标签页
+        // 阶段 1：批量创建 session（不加载文件内容），快速恢复标签栏 UI
         for url in validURLs {
-            openFile(url)
+            openFileSessionOnly(url)
         }
 
-        // 最后激活上次保存的活跃标签
+        // 阶段 2：仅对上次活跃的标签页执行完整的 openFile（加载内容）
+        let targetURL: URL
         if let activePath = activeTabPath,
            let activateURL = validURLs.first(where: { $0.path == activePath }) {
-            openFile(activateURL)
+            targetURL = activateURL
+        } else {
+            targetURL = validURLs[0]
         }
+        await openFile(targetURL)
     }
 
     // MARK: - 私有方法

@@ -37,6 +37,7 @@ actor AgentLanguagePlugin: SuperPlugin {
     /// 工具栏右侧：语言选择器
     @MainActor
     func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(LanguageSelector())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(LanguageSelector())
     }
 }

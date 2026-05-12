@@ -11,6 +11,9 @@ struct LLMProviderInfo: Identifiable, Equatable, Sendable {
     /// 供应商描述
     let description: String
 
+    /// 供应商官网地址
+    let websiteURL: String?
+
     /// 可用模型列表
     let availableModels: [String]
 

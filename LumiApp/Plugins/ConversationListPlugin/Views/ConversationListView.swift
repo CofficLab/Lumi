@@ -183,8 +183,6 @@ extension ConversationListView {
 
     /// 视图首次出现时加载第一页
     private func performInitialLoadIfNeeded() {
-        restoreSelectionFromPluginStoreIfNeeded()
-
         guard !didInitialLoad else {
             syncSelectionFromViewModel()
             return
@@ -200,25 +198,6 @@ extension ConversationListView {
         nextOffset = 0
         hasMore = true
         loadNextPageIfNeeded()
-    }
-
-    private func restoreSelectionFromPluginStoreIfNeeded() {
-        guard !didRestoreSelection else { return }
-        didRestoreSelection = true
-
-        guard let storedId = selectionStore.loadSelectedConversationId(),
-              let conversation = conversationVM.fetchConversation(id: storedId) else {
-            return
-        }
-
-        conversationVM.setSelectedConversation(storedId)
-        
-        // 恢复会话选择时，也切换到关联的项目
-        switchToProjectIfNeeded(for: conversation)
-        
-        if Self.verbose {
-            ConversationListPlugin.logger.info("\(self.t)✅ [\(storedId)] 从插件存储恢复会话选择")
-        }
     }
 
     /// 滚动到末尾时触发续页

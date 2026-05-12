@@ -45,6 +45,45 @@ final class StyledRangeContainerTests: XCTestCase {
     }
 
     @MainActor
+    func test_applyHighlightResultClampsStaleRangeToDocumentLength() {
+        let providers = [0]
+        let store = StyledRangeContainer(documentLength: 10, providers: providers)
+
+        store.applyHighlightResult(
+            provider: providers[0],
+            highlights: [HighlightRange(range: NSRange(location: 8, length: 10), capture: .comment)],
+            rangeToHighlight: NSRange(location: 0, length: 20)
+        )
+
+        XCTAssertEqual(store._storage[providers[0]]?.store.length, 10)
+        XCTAssertEqual(
+            store.runsIn(range: NSRange(location: 0, length: 10)),
+            [
+                Run(length: 8, value: nil),
+                Run(length: 2, value: .init(capture: .comment, modifiers: []))
+            ]
+        )
+    }
+
+    @MainActor
+    func test_applyHighlightResultIgnoresRangeOutsideDocument() {
+        let providers = [0]
+        let store = StyledRangeContainer(documentLength: 10, providers: providers)
+
+        store.applyHighlightResult(
+            provider: providers[0],
+            highlights: [HighlightRange(range: NSRange(location: 20, length: 5), capture: .comment)],
+            rangeToHighlight: NSRange(location: 20, length: 5)
+        )
+
+        XCTAssertEqual(store._storage[providers[0]]?.store.length, 10)
+        XCTAssertEqual(
+            store.runsIn(range: NSRange(location: 0, length: 10)),
+            [Run(length: 10, value: nil)]
+        )
+    }
+
+    @MainActor
     func test_overlappingRuns() {
         let providers = [0, 1]
         let store = StyledRangeContainer(documentLength: 100, providers: providers)

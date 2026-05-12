@@ -3,6 +3,7 @@ import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
 import MagicKit
+import EditorOverlayKit
 
 /// 代码编辑器主视图。
 /// 基于 CodeEditSourceEditor 实现专业级编辑体验。

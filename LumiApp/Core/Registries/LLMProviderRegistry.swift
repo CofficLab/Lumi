@@ -69,7 +69,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         return nil
     }
 
-    /// 获取所有已注册供应商的信息（仅启用的）
+    /// 获取所有已注册供应商的信息（仅启用的，按名字排序）
     ///
     /// - Returns: 供应商信息数组，包含 ID、名称、描述、可用模型、是否本地等
     func allProviders() -> [LLMProviderInfo] {
@@ -83,6 +83,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                     id: type.id,
                     displayName: type.displayName,
                     description: type.description,
+                    websiteURL: type.websiteURL,
                     availableModels: type.availableModels,
                     defaultModel: type.defaultModel,
                     isLocal: isLocal,
@@ -91,6 +92,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                     modelCapabilities: capabilities
                 )
             }
+            .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
     }
 
     /// 获取所有供应商信息（包括已禁用的）
@@ -105,6 +107,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                 id: type.id,
                 displayName: type.displayName,
                 description: type.description,
+                websiteURL: type.websiteURL,
                 availableModels: type.availableModels,
                 defaultModel: type.defaultModel,
                 isLocal: isLocal,

@@ -66,6 +66,9 @@ struct EditorPanelView: View {
         .onDisappear {
             coordinator.handleDisappear()
         }
+        .onApplicationDidResignActive {
+            coordinator.handleApplicationDidResignActive()
+        }
         .onReceive(coordinator.subscribeEditorCommands(isCommandPalettePresented: $panelService.isCommandPalettePresented)) { event in
             coordinator.handleCommandEvent(event)
         }

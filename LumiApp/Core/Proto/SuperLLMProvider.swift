@@ -87,6 +87,12 @@ protocol SuperLLMProvider: Sendable {
     /// 可在供应商定义中配置为 false 来禁用该供应商。
     static var isEnabled: Bool { get }
 
+    /// 供应商官网地址
+    ///
+    /// 用于在 UI 中点击跳转到供应商官网。
+    /// 返回 nil 表示无官网链接（如本地供应商）。
+    static var websiteURL: String? { get }
+
     // MARK: - Configuration
 
     /// API Key 的安全存储键名
@@ -216,6 +222,11 @@ extension SuperLLMProvider {
     /// 默认实现：供应商默认启用
     static var isEnabled: Bool {
         true
+    }
+
+    /// 默认实现：无官网链接
+    static var websiteURL: String? {
+        nil
     }
 
     /// 默认实现：空模型目录

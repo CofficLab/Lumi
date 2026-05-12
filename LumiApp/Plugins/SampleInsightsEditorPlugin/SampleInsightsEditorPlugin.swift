@@ -4,8 +4,8 @@ import Foundation
 actor SampleInsightsEditorPlugin: SuperPlugin {
     static let shared = SampleInsightsEditorPlugin()
     static let id = "SampleInsightsEditor"
-    static let displayName = "Sample Insights"
-    static let description = "Demonstrates hover, panel, and title action contributions."
+    static let displayName = String(localized: "Sample Insights", table: "SampleInsights")
+    static let description = String(localized: "Demonstrates hover, panel, and title action contributions.", table: "SampleInsights")
     static let iconName = "lightbulb.max"
     static let order = 91
     static let enable = true

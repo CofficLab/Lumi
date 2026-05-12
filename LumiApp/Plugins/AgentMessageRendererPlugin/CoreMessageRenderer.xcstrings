@@ -47,8 +47,50 @@
         }
       }
     },
-    "提供内置消息类型的渲染支持": {},
-    "核心消息渲染器": {}
+    "提供内置消息类型的渲染支持": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in message type rendering support"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供内置消息类型的渲染支持"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供內建訊息類型的渲染支援"
+          }
+        }
+      }
+    },
+    "核心消息渲染器": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Core Message Renderer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核心消息渲染器"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核心訊息渲染器"
+          }
+        }
+      }
+    }
   },
   "version": "1.1"
 }

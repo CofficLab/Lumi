@@ -62,3 +62,22 @@ public struct GlassInfoCard<Content: View>: View {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        GlassInfoCard(title: "Model Info", icon: "cpu") {
+            Text("GPT-4o • OpenAI")
+        }
+        GlassInfoCard(
+            title: "Usage Stats",
+            icon: "chart.bar.fill",
+            iconColor: .green,
+            subtitle: "Last 24 hours"
+        ) {
+            Text("Tokens: 1,234\nRequests: 56")
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

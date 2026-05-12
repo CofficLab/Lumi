@@ -48,3 +48,17 @@ public struct AppErrorBanner: View {
         )
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        AppErrorBanner(message: "Failed to load data")
+        AppErrorBanner(
+            message: "Connection timeout",
+            retryTitle: "Retry",
+            onRetry: {}
+        )
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

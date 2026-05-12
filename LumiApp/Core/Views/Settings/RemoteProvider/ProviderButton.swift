@@ -14,7 +14,21 @@ struct ProviderButton: View {
             HStack(spacing: 6) {
                 Text(provider.displayName)
                     .font(.system(size: 12, weight: .regular))
+
                 Spacer(minLength: 0)
+
+                if let websiteURL = provider.websiteURL,
+                   let url = URL(string: websiteURL) {
+                    Button(action: {
+                        NSWorkspace.shared.open(url)
+                    }) {
+                        Image(systemName: "arrow.up.right.square")
+                            .font(.system(size: 10))
+                            .foregroundColor(linkIconColor)
+                    }
+                    .buttonStyle(.plain)
+                    .help(websiteURL)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
@@ -44,5 +58,10 @@ struct ProviderButton: View {
     private var foregroundColor: Color {
         if isSelected { return .white }
         return Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+    }
+
+    private var linkIconColor: Color {
+        if isSelected { return .white.opacity(0.7) }
+        return Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.5)
     }
 }

@@ -47,7 +47,28 @@
         }
       }
     },
-    "Native interactive terminal powered by SwiftTerm": {},
+    "Native interactive terminal powered by SwiftTerm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Native interactive terminal powered by SwiftTerm"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由 SwiftTerm 驱动的原生交互式终端"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由 SwiftTerm 驅動的原生互動式終端"
+          }
+        }
+      }
+    },
     "Terminal": {
       "localizations": {
         "en": {

@@ -53,3 +53,20 @@ public struct AppDisclosureCard<Content: View>: View {
         )
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        AppDisclosureCard(title: "Advanced Settings") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Setting 1")
+                Text("Setting 2")
+            }
+        }
+        AppDisclosureCard(title: "Account Info", icon: "person.circle") {
+            Text("User details go here")
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

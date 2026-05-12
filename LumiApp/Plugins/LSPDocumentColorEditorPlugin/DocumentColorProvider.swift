@@ -1,4 +1,6 @@
-import SwiftUI
+import Foundation
+import Combine
+import AppKit
 import LanguageServerProtocol
 
 /// 文档颜色提供者
@@ -123,16 +125,5 @@ struct EditorDocumentColor: Identifiable, Equatable {
             h /= 6.0
         }
         return (Int(round(h * 360)), s, l)
-    }
-}
-
-struct ColorPreview: View {
-    let color: EditorDocumentColor
-    var body: some View {
-        Circle()
-            .fill(Color(nsColor: color.nsColor))
-            .frame(width: 12, height: 12)
-            .overlay(Circle().stroke(Color(nsColor: .separatorColor), lineWidth: 0.5))
-            .help(color.hexString)
     }
 }

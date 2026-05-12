@@ -71,3 +71,20 @@ public extension View {
         clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        Text("Glass Surface")
+            .frame(width: 200, height: 60)
+            .appSurface(style: .glass)
+        Text("Glass Thick")
+            .frame(width: 200, height: 60)
+            .appSurface(style: .glassThick)
+        Text("Subtle")
+            .frame(width: 200, height: 60)
+            .appSurface(style: .subtle)
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

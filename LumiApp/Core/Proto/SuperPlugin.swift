@@ -56,7 +56,8 @@ struct BottomPanelTab: Identifiable, Equatable {
 /// Lumi 支持以下类型的插件扩展点：
 /// - 面板视图（活动栏入口，插件自行决定布局）
 /// - 右侧栏视图（窗口右侧独立区域，可多插件堆叠）
-/// - 状态栏视图
+/// - 菜单栏视图
+/// - 底部状态栏视图
 /// - 工具栏视图
 /// - 设置视图
 /// - Agent 工具与中间件
@@ -242,31 +243,31 @@ protocol SuperPlugin: Actor {
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?
 
-    /// 添加状态栏弹窗视图列表
+    /// 添加菜单栏弹窗视图列表
     ///
-    /// 返回该插件提供的所有状态栏弹窗视图。支持一个插件注册多个弹窗。
-    /// 多个弹窗会在状态栏弹窗中垂直堆叠显示。
-    @MainActor func addStatusBarPopupViews() -> [AnyView]
+    /// 返回该插件提供的所有菜单栏弹窗视图。支持一个插件注册多个弹窗。
+    /// 多个弹窗会在菜单栏弹窗中垂直堆叠显示。
+    @MainActor func addMenuBarPopupViews() -> [AnyView]
 
-    /// 添加状态栏弹窗视图（向后兼容，默认返回单个视图包装为数组）
+    /// 添加菜单栏弹窗视图（向后兼容，默认返回单个视图包装为数组）
     ///
-    /// - Returns: 状态栏弹窗视图，如果不需要则返回 nil
-    /// - Deprecated: 使用 `addStatusBarPopupViews()` 替代
-    @available(*, deprecated, message: "Use addStatusBarPopupViews() returning [AnyView] instead")
-    @MainActor func addStatusBarPopupView() -> AnyView?
+    /// - Returns: 菜单栏弹窗视图，如果不需要则返回 nil
+    /// - Deprecated: 使用 `addMenuBarPopupViews()` 替代
+    @available(*, deprecated, message: "Use addMenuBarPopupViews() returning [AnyView] instead")
+    @MainActor func addMenuBarPopupView() -> AnyView?
 
-    /// 添加状态栏内容视图
-    @MainActor func addStatusBarContentView() -> AnyView?
+    /// 添加菜单栏内容视图
+    @MainActor func addMenuBarContentView() -> AnyView?
 
-    /// 添加状态栏左侧视图（用于 Agent 模式底部状态栏）
+    /// 添加状态栏左侧视图
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
     @MainActor func addStatusBarLeadingView(activeIcon: String?) -> AnyView?
 
-    /// 添加状态栏中间视图（用于 Agent 模式底部状态栏）
+    /// 添加状态栏中间视图
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
     @MainActor func addStatusBarCenterView(activeIcon: String?) -> AnyView?
 
-    /// 添加状态栏右侧视图（用于 Agent 模式底部状态栏）
+    /// 添加状态栏右侧视图
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称
     @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView?
 

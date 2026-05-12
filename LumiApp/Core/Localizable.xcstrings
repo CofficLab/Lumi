@@ -163,6 +163,9 @@
         }
       }
     },
+    "\"\\(fileName)\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable." : {
+
+    },
     "(%@)" : {
 
     },
@@ -219,16 +222,6 @@
     },
     "%@" : {
 
-    },
-    "%@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@"
-          }
-        }
-      }
     },
     "%@ (%lld%%)" : {
       "localizations" : {
@@ -593,6 +586,15 @@
         }
       }
     },
+    "12" : {
+
+    },
+    "50 rows" : {
+
+    },
+    "50%" : {
+
+    },
     "60 次/小时" : {
       "localizations" : {
         "zh-Hans" : {
@@ -608,6 +610,12 @@
           }
         }
       }
+    },
+    "68%" : {
+
+    },
+    "75%" : {
+
     },
     "100" : {
       "localizations" : {
@@ -625,6 +633,9 @@
         }
       }
     },
+    "100%" : {
+
+    },
     "127.0.0.1" : {
       "localizations" : {
         "zh-Hans" : {
@@ -640,6 +651,9 @@
           }
         }
       }
+    },
+    "312 GB free" : {
+
     },
     "500" : {
       "localizations" : {
@@ -885,6 +899,9 @@
         }
       }
     },
+    "Agent Chat" : {
+
+    },
     "Agent 回合已结束" : {
 
     },
@@ -903,9 +920,6 @@
           }
         }
       }
-    },
-    "AI" : {
-
     },
     "All" : {
       "localizations" : {
@@ -976,6 +990,9 @@
       }
     },
     "Antigravity" : {
+
+    },
+    "API Key" : {
 
     },
     "API 密钥" : {
@@ -1247,6 +1264,9 @@
         }
       }
     },
+    "Ask Lumi to inspect, edit, or run tools" : {
+
+    },
     "Auto" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1263,6 +1283,9 @@
           }
         }
       }
+    },
+    "Available Models" : {
+
     },
     "Battery" : {
       "localizations" : {
@@ -1335,9 +1358,6 @@
         }
       }
     },
-    "Cannot display diff for this file" : {
-
-    },
     "Cask" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1355,6 +1375,9 @@
       }
     },
     "Checking..." : {
+
+    },
+    "Choose a cloud provider and set your default model." : {
 
     },
     "Clean" : {
@@ -1573,10 +1596,10 @@
         }
       }
     },
-    "Close" : {
+    "Close Tab" : {
 
     },
-    "Close Tab" : {
+    "Cloud LLM Providers" : {
 
     },
     "Code Actions" : {
@@ -1633,9 +1656,6 @@
           }
         }
       }
-    },
-    "Commit" : {
-
     },
     "Commit History" : {
 
@@ -1703,6 +1723,9 @@
           }
         }
       }
+    },
+    "Connected" : {
+
     },
     "Connection Name" : {
       "localizations" : {
@@ -2355,6 +2378,9 @@
         }
       }
     },
+    "Enabled Plugins" : {
+
+    },
     "Enter API Key for %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2405,6 +2431,9 @@
       }
     },
     "Esc" : {
+
+    },
+    "Explain the active selection and suggest tests" : {
 
     },
     "Export Backup..." : {
@@ -2604,6 +2633,9 @@
     "GitOK" : {
 
     },
+    "GPT-5.5" : {
+
+    },
     "Grant Permission" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2801,9 +2833,6 @@
         }
       }
     },
-    "Insights" : {
-
-    },
     "Interface" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2997,6 +3026,12 @@
         }
       }
     },
+    "Line 42, Col 18" : {
+
+    },
+    "Live sample" : {
+
+    },
     "Load" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3013,10 +3048,10 @@
         }
       }
     },
-    "Loading diff..." : {
+    "Loading..." : {
 
     },
-    "Loading..." : {
+    "Local App Store" : {
 
     },
     "Local IP" : {
@@ -3088,6 +3123,9 @@
         }
       }
     },
+    "LumiApp/Core/Views" : {
+
+    },
     "Macintosh HD" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3103,6 +3141,9 @@
           }
         }
       }
+    },
+    "main" : {
+
     },
     "Manage clipboard history and snippets" : {
       "extractionState" : "stale",
@@ -3987,6 +4028,9 @@
         }
       }
     },
+    "Query" : {
+
+    },
     "Quick File Search" : {
 
     },
@@ -4000,6 +4044,9 @@
 
     },
     "RAG 索引状态" : {
+
+    },
+    "Ready" : {
 
     },
     "Real-time Monitor" : {
@@ -4051,6 +4098,9 @@
         }
       }
     },
+    "Remote Providers" : {
+
+    },
     "Reset" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4082,6 +4132,9 @@
           }
         }
       }
+    },
+    "Results" : {
+
     },
     "Retry" : {
       "localizations" : {
@@ -4182,12 +4235,6 @@
           }
         }
       }
-    },
-    "Sample Insights" : {
-
-    },
-    "Sample Insights Inline Tips" : {
-
     },
     "Save" : {
       "localizations" : {
@@ -4354,9 +4401,6 @@
           }
         }
       }
-    },
-    "Select a file to view diff" : {
-
     },
     "Select an image to view details" : {
       "localizations" : {
@@ -4540,6 +4584,9 @@
         }
       }
     },
+    "sk-proj-••••••••••••••••••••••••" : {
+
+    },
     "Sort" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4669,6 +4716,9 @@
           }
         }
       }
+    },
+    "Swift" : {
+
     },
     "Swift/Xcode" : {
       "extractionState" : "stale",
@@ -4953,9 +5003,6 @@
         }
       }
     },
-    "This panel is contributed by `SuperEditorPanelContributor` and toggled from a `titleTrailing` status item." : {
-
-    },
     "this text" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4987,9 +5034,6 @@
           }
         }
       }
-    },
-    "Toggle sample insights panel" : {
-
     },
     "Tools" : {
       "extractionState" : "stale",
@@ -5240,6 +5284,9 @@
           }
         }
       }
+    },
+    "used" : {
+
     },
     "user" : {
       "localizations" : {
@@ -5607,6 +5654,9 @@
           }
         }
       }
+    },
+    "保存" : {
+
     },
     "偏好设置..." : {
       "localizations" : {
@@ -8495,9 +8545,6 @@
           }
         }
       }
-    },
-    "用于演示插件贡献设置如何统一显示在 editor settings 页面。" : {
-
     },
     "电脑内存 ≥ %lld GB" : {
       "localizations" : {

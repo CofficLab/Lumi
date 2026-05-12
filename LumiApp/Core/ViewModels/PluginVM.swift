@@ -571,29 +571,29 @@ final class PluginVM: ObservableObject, SuperLog {
             .contains { $0.addSidebarView(activeIcon: activeIcon) != nil }
     }
 
-    /// 获取所有插件提供的状态栏弹窗视图
+    /// 获取所有插件提供的菜单栏弹窗视图
     ///
-    /// 收集所有启用插件提供的状态栏弹窗视图。
+    /// 收集所有启用插件提供的菜单栏弹窗视图。
     /// 当用户点击菜单栏图标时显示。
     /// 每个插件可以提供多个弹窗视图，所有视图会被扁平化合并。
     ///
-    /// - Returns: 状态栏弹窗视图数组
-    func getStatusBarPopupViews() -> [AnyView] {
+    /// - Returns: 菜单栏弹窗视图数组
+    func getMenuBarPopupViews() -> [AnyView] {
         plugins
             .filter { isPluginEnabled($0) }
-            .flatMap { $0.addStatusBarPopupViews() }
+            .flatMap { $0.addMenuBarPopupViews() }
     }
 
-    /// 获取所有插件提供的状态栏内容视图
+    /// 获取所有插件提供的菜单栏内容视图
     ///
-    /// 收集所有启用插件提供的状态栏内容视图。
+    /// 收集所有启用插件提供的菜单栏内容视图。
     /// 这些视图直接显示在菜单栏图标位置。
     ///
-    /// - Returns: 状态栏内容视图数组
-    func getStatusBarContentViews() -> [AnyView] {
+    /// - Returns: 菜单栏内容视图数组
+    func getMenuBarContentViews() -> [AnyView] {
         plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addStatusBarContentView() }
+            .compactMap { $0.addMenuBarContentView() }
     }
 
     /// 获取所有插件提供的状态栏左侧视图（用于 Agent 模式底部状态栏）

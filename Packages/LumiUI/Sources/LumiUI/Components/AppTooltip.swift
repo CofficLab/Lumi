@@ -40,3 +40,15 @@ extension KeyboardShortcut {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 16) {
+        Text("Hover me")
+            .appTooltip("Simple tooltip")
+        Text("With shortcut")
+            .appTooltip("Save file", shortcut: .init("s", modifiers: .command))
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

@@ -73,13 +73,15 @@ struct ContentView: View, SuperLog {
                 }
             }
 
-            ToolbarItemGroup(placement: .principal) {
-                HStack(spacing: 8) {
-                    ForEach(Array(centerViews.enumerated()), id: \.offset) { _, view in
-                        view
+            if !centerViews.isEmpty {
+                ToolbarItemGroup(placement: .principal) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(centerViews.enumerated()), id: \.offset) { _, view in
+                            view
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
             }
 
             ToolbarItemGroup(placement: .cancellationAction) {

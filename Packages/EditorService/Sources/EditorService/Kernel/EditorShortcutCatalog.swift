@@ -29,7 +29,7 @@ public enum EditorShortcutCatalog {
         .init(id: "builtin.open-search-editor", title: String(localized: "Open Search Editor", table: EditorHostEnvironment.current.localizationTable), category: .find, defaultShortcut: nil),
         .init(id: "builtin.trigger-completion", title: String(localized: "Trigger Completion", table: EditorHostEnvironment.current.localizationTable), category: .lsp, defaultShortcut: nil),
         .init(id: "builtin.trigger-parameter-hints", title: String(localized: "Trigger Parameter Hints", table: EditorHostEnvironment.current.localizationTable), category: .lsp, defaultShortcut: nil),
-        .init(id: "builtin.save", title: String(localized: "Save", table: EditorHostEnvironment.current.localizationTable), category: .save, defaultShortcut: nil),
+        .init(id: "builtin.save", title: String(localized: "Save", table: EditorHostEnvironment.current.localizationTable), category: .save, defaultShortcut: EditorCommandBindings.save.defaultKernelShortcut),
         .init(id: "builtin.delete-line", title: String(localized: "Delete Line", table: EditorHostEnvironment.current.localizationTable), category: .edit, defaultShortcut: EditorCommandBindings.deleteLine.defaultKernelShortcut),
         .init(id: "builtin.copy-line-down", title: String(localized: "Copy Line Down", table: EditorHostEnvironment.current.localizationTable), category: .edit, defaultShortcut: EditorCommandBindings.copyLineDown.defaultKernelShortcut),
         .init(id: "builtin.copy-line-up", title: String(localized: "Copy Line Up", table: EditorHostEnvironment.current.localizationTable), category: .edit, defaultShortcut: EditorCommandBindings.copyLineUp.defaultKernelShortcut),

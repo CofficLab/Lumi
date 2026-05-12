@@ -58,30 +58,11 @@ struct BottomPanelBarView: View {
     private func tabBar(tabs: [BottomPanelTab]) -> some View {
         HStack(spacing: 8) {
             ForEach(tabs) { tab in
-                Button {
-                    activeTabId = tab.id
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: tab.systemImage)
-                            .font(.system(size: 10, weight: .semibold))
-                        Text(tab.title)
-                            .font(.system(size: 11, weight: activeTabId == tab.id ? .semibold : .medium))
-                    }
-                    .foregroundColor(activeTabId == tab.id
-                        ? themeVM.activeAppTheme.workspaceTextColor()
-                        : themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 7)
-                            .fill(activeTabId == tab.id
-                                ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.08)
-                                : Color.clear)
-                    )
-                }
-                .buttonStyle(.plain)
-                // Tab 选中状态变化时平滑过渡
-                .animation(.easeInOut(duration: 0.15), value: activeTabId == tab.id)
+                BottomPanelTabButton(
+                    tab: tab,
+                    isActive: activeTabId == tab.id,
+                    action: { activeTabId = tab.id }
+                )
             }
 
             Spacer(minLength: 0)
@@ -89,5 +70,69 @@ struct BottomPanelBarView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+    }
+}
+
+// MARK: - Tab Button with Hover
+
+/// 底部面板的单个标签按钮，支持 hover 高亮效果
+private struct BottomPanelTabButton: View {
+    @EnvironmentObject private var themeVM: ThemeVM
+
+    let tab: BottomPanelTab
+    let isActive: Bool
+    let action: () -> Void
+
+    /// 当前是否处于 hover 状态
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: tab.systemImage)
+                    .font(.system(size: 10, weight: .semibold))
+                Text(tab.title)
+                    .font(.system(size: 11, weight: isActive ? .semibold : .medium))
+            }
+            .foregroundColor(textColor)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(backgroundColor)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 7))
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        // hover / 选中状态变化时平滑过渡
+        .animation(.easeInOut(duration: 0.15), value: isActive)
+        .animation(.easeInOut(duration: 0.15), value: isHovering)
+    }
+
+    // MARK: - Computed Colors
+
+    /// 文字颜色：选中态 > hover 态 > 默认态
+    private var textColor: Color {
+        if isActive {
+            return themeVM.activeAppTheme.workspaceTextColor()
+        } else if isHovering {
+            return themeVM.activeAppTheme.workspaceTextColor().opacity(0.85)
+        } else {
+            return themeVM.activeAppTheme.workspaceSecondaryTextColor()
+        }
+    }
+
+    /// 背景颜色：选中态 > hover 态 > 默认透明
+    private var backgroundColor: Color {
+        if isActive {
+            return themeVM.activeAppTheme.workspaceTextColor().opacity(0.08)
+        } else if isHovering {
+            return themeVM.activeAppTheme.workspaceTextColor().opacity(0.05)
+        } else {
+            return Color.clear
+        }
     }
 }

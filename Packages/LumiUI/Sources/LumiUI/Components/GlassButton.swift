@@ -153,3 +153,20 @@ private struct GlassButtonStyle: ButtonStyle {
             }
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        GlassButton(title: "Primary", style: .primary) {}
+        GlassButton(title: "Secondary", style: .secondary) {}
+        GlassButton(title: "Ghost", style: .ghost) {}
+        GlassButton(title: "Danger", style: .danger) {}
+        HStack(spacing: 12) {
+            GlassButton(systemImage: "plus", style: .primary) {}
+            GlassButton(systemImage: "trash", style: .danger) {}
+            GlassButton(systemImage: "ellipsis", style: .ghost) {}
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

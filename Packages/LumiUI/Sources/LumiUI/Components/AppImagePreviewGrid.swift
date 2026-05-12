@@ -83,3 +83,10 @@ private struct AppImagePreviewSheet: View {
         .frame(minWidth: 640, minHeight: 480)
     }
 }
+
+#Preview {
+    AppImagePreviewGrid(imageDataList: [])
+        .padding()
+        .frame(width: 400, height: 300)
+        .background(Color.gray.opacity(0.15))
+}

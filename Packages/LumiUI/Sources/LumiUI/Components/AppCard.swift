@@ -10,6 +10,7 @@ public struct AppCard<Content: View>: View {
     let padding: EdgeInsets
     @LumiTheme private var theme
     @ViewBuilder let content: Content
+    @State private var isHovering = false
 
     public init(
         style: Style = .elevated,
@@ -27,6 +28,12 @@ public struct AppCard<Content: View>: View {
             .background(background)
             .overlay(border)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .scaleEffect(isHovering ? 1.02 : 1.0)
+            .shadow(color: Color.black.opacity(isHovering ? 0.08 : 0.02), radius: isHovering ? 12 : 4, y: isHovering ? 6 : 2)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
     }
 
     private var background: some View {
@@ -46,4 +53,20 @@ public struct AppCard<Content: View>: View {
         RoundedRectangle(cornerRadius: 16, style: .continuous)
             .stroke(theme.textTertiary.opacity(style == .elevated ? 0.12 : 0.06), lineWidth: 1)
     }
+}
+
+#Preview {
+    VStack(spacing: 12) {
+        AppCard {
+            Text("Elevated Card")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        AppCard(style: .subtle) {
+            Text("Subtle Card")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
 }

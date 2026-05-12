@@ -93,3 +93,20 @@ public extension GlassSelectionCard {
         return copy
     }
 }
+
+#Preview {
+    VStack(spacing: 12) {
+        GlassSelectionCard(isSelected: true) {
+            Label("Selected Option", systemImage: "star.fill")
+        }
+        GlassSelectionCard(isSelected: false) {
+            Label("Unselected Option", systemImage: "circle")
+        }
+        GlassSelectionCard(isSelected: true, checkmarkColor: .green, selectedBackgroundColor: .green.opacity(0.15), selectedBorderColor: .green) {
+            Label("Custom Theme", systemImage: "paintbrush.fill")
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

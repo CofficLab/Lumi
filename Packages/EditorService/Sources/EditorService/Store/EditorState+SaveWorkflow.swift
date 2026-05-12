@@ -46,6 +46,7 @@ extension EditorState {
             scheduleSuccessClear: { [weak self] in self?.scheduleSuccessClear() },
             notifyDidSave: { [weak self] content in
                 guard let self, let uri = self.currentFileURL?.absoluteString else { return }
+                self.recordSuccessfulSave()
                 self.lspClient.documentDidSave(uri: uri, text: content)
             },
             setHasUnsavedChanges: { [weak self] value in self?.hasUnsavedChanges = value }
@@ -91,8 +92,9 @@ extension EditorState {
             showStatusToast("已取消保存", level: .info, duration: 1.2)
             return
         }
+        let currentContent = synchronizedCurrentEditorTextForSave()
         await saveWorkflowController.prepareAndSaveNow(
-            currentContent: documentController.currentText ?? content?.string,
+            currentContent: currentContent,
             fileURL: currentFileURL,
             saveController: saveController,
             options: savePipelineOptions,
@@ -113,7 +115,7 @@ extension EditorState {
                 self?.applyPreparedSaveText(text)
             },
             currentText: { [weak self] in
-                self?.documentController.currentText ?? self?.content?.string
+                self?.synchronizedCurrentEditorTextForSave()
             },
             diagnostics: { [weak self] in
                 self?.panelState.problemDiagnostics ?? []
@@ -141,6 +143,24 @@ extension EditorState {
                 self?.performSave(content: content, to: url)
             }
         )
+    }
+
+    private func synchronizedCurrentEditorTextForSave() -> String? {
+        guard let viewText = focusedTextView?.string else {
+            return documentController.currentText ?? content?.string
+        }
+
+        guard documentController.currentText != viewText else {
+            return viewText
+        }
+
+        let result = documentController.replaceText(viewText)
+        content = documentController.textStorage
+        totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+        if viewportVisibleLineRange.isEmpty {
+            resetViewportObservation(totalLines: totalLines)
+        }
+        return result.snapshot.text
     }
 
     func scheduleSuccessClear() {

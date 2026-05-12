@@ -15,6 +15,8 @@ final class HyperAPIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let displayName = String(localized: "HyperAPI", table: "HyperAPI")
     static let description = String(localized: "LLM Router by hyperapi.cc", table: "HyperAPI")
 
+    static let websiteURL: String? = "https://hyperapi.cc"
+
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_HyperAPI"

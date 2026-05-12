@@ -46,7 +46,28 @@
         }
       }
     },
-    "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。": {}
+    "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web search capability support for models with Function Calling limitations"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供网页搜索功能支持，满足 Qwen 等模型的 Function Calling 限制。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供網頁搜尋功能支援，滿足 Qwen 等模型的 Function Calling 限制。"
+          }
+        }
+      }
+    }
   },
   "version": "1.1"
 }

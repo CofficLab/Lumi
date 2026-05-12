@@ -1,6 +1,16 @@
 import Foundation
-
-/// LSP 服务编辑器插件：提供核心 LSP 集成（补全、hover、诊断等）
+/// LSP 服务编辑器插件。
+///
+/// 这是 LSP 插件组的核心基础插件，负责把 `LSPCoordinator` 注册为编辑器的
+/// `SuperEditorLSPClient`，并把 `LSPService` 连接到当前编辑器扩展注册中心。
+/// 它提供文档打开/关闭/变更同步、补全、Hover、定义跳转、引用、重命名、格式化、诊断、
+/// 语义 Token 等基础 Language Server Protocol 能力。
+///
+/// 本插件还注册 `SemanticTokenHighlightProvider`，使编辑器可以消费 LSP semantic tokens 作为
+/// 语义高亮来源。目录中的 `Views` 仅包含状态栏、进度、Hover 等轻量展示组件；
+/// 主入口本身主要负责服务和 Provider 注册。
+///
+/// 其它 LSP 插件通常依赖本插件提供的 `LSPService.shared` 和注册后的 LSP client。
 actor LSPServiceEditorPlugin: SuperPlugin {
     static let shared = LSPServiceEditorPlugin()
     static let id = "LSPServiceEditor"

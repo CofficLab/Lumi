@@ -64,14 +64,7 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
                 savedAt: Date()
             )
 
-            // 🔍 诊断日志
-            Self.logger.info("[TabRestore-DIAG] 💾 saveTabs: projectPath=\(projectPath, privacy: .public), tabs=\(persisted.count), activeTabPath=\(activeTabPath ?? "nil", privacy: .public)")
-
             self.writeSnapshot(snapshot, forProject: projectPath)
-
-            if Self.verbose {
-                Self.logger.info("\(Self.t)保存项目标签：\(projectPath)，共 \(persisted.count) 个标签")
-            }
         }
     }
 
@@ -81,14 +74,10 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
             let fileURL = self.getFileURL(forProject: projectPath)
             let fileExists = self.fileManager.fileExists(atPath: fileURL.path)
 
-            // 🔍 诊断日志
-            Self.logger.info("[TabRestore-DIAG] 📂 loadTabs: projectPath=\(projectPath, privacy: .public), fileExists=\(fileExists), filePath=\(fileURL.path, privacy: .public)")
-
             guard let snapshot = self.readSnapshot(forProject: projectPath) else {
-                Self.logger.info("[TabRestore-DIAG] 📂 loadTabs: readSnapshot 返回 nil（文件不存在或解析失败）")
                 return ([], nil)
             }
-            Self.logger.info("[TabRestore-DIAG] 📂 loadTabs: 成功读取 \(snapshot.tabs.count) 个标签, activeTabPath=\(snapshot.activeTabPath ?? "nil", privacy: .public)")
+            
             return (snapshot.tabs, snapshot.activeTabPath)
         }
     }

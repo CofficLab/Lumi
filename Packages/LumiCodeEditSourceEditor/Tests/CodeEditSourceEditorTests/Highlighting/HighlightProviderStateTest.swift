@@ -21,6 +21,18 @@ class EmptyHighlightProviderStateDelegate: HighlightProviderStateDelegate {
     ) { }
 }
 
+final class RecordingHighlightProviderStateDelegate: HighlightProviderStateDelegate {
+    var appliedResults: [(provider: ProviderID, highlights: [HighlightRange], rangeToHighlight: NSRange)] = []
+
+    func applyHighlightResult(
+        provider: ProviderID,
+        highlights: [HighlightRange],
+        rangeToHighlight: NSRange
+    ) {
+        appliedResults.append((provider, highlights, rangeToHighlight))
+    }
+}
+
 final class HighlightProviderStateTest: XCTestCase {
     var textView: TextView!
     var rangeProvider: MockVisibleRangeProvider!
@@ -133,5 +145,43 @@ final class HighlightProviderStateTest: XCTestCase {
             XCTAssertEqual(range.0, expected.0)
             XCTAssertEqual(range.1, expected.1)
         }
+    }
+
+    @MainActor
+    func test_queryResultClampsToCurrentDocumentRange() throws {
+        let recordingDelegate = RecordingHighlightProviderStateDelegate()
+        textView.string = "0123456789"
+        rangeProvider.setVisibleSet(IndexSet(integersIn: NSRange(location: 0, length: textView.length)))
+
+        let mockProvider = Mock.highlightProvider(
+            onSetUp: { _ in },
+            onApplyEdit: { _, _, _ in .success(IndexSet()) },
+            onQueryHighlightsFor: { textView, _ in
+                textView.string = "012"
+                return .success([
+                    HighlightRange(range: NSRange(location: 1, length: 5), capture: .comment),
+                    HighlightRange(range: NSRange(location: 8, length: 2), capture: .string)
+                ])
+            }
+        )
+
+        let state = HighlightProviderState(
+            id: 0,
+            delegate: recordingDelegate,
+            highlightProvider: mockProvider,
+            textView: textView,
+            visibleRangeProvider: rangeProvider,
+            language: .swift
+        )
+
+        rangeProvider.setVisibleSet(IndexSet(integersIn: NSRange(location: 0, length: 10)))
+        state.highlightInvalidRanges()
+
+        XCTAssertEqual(recordingDelegate.appliedResults.count, 1)
+        let result = try XCTUnwrap(recordingDelegate.appliedResults.first)
+        XCTAssertEqual(result.rangeToHighlight, NSRange(location: 0, length: 3))
+        XCTAssertEqual(result.highlights, [
+            HighlightRange(range: NSRange(location: 1, length: 2), capture: .comment)
+        ])
     }
 }

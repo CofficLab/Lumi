@@ -101,6 +101,62 @@ struct MarkdownParserTests {
         )
     }
 
+
+    @Test
+    func preservesInlineMarkdownInListItems() {
+        let blocks = MarkdownParser.parse(
+            """
+            - 普通项 **加粗** 和 `code`
+            - 第二项 *斜体*
+            """
+        )
+
+        #expect(
+            blocks == [
+                .unorderedList(
+                    items: [
+                        .init(text: "普通项 **加粗** 和 `code`"),
+                        .init(text: "第二项 *斜体*"),
+                    ]
+                )
+            ]
+        )
+    }
+
+    @Test
+    func preservesInlineMarkdownInQuotes() {
+        let blocks = MarkdownParser.parse(
+            """
+            > 引用里包含 **加粗** 和 `code`
+            """
+        )
+
+        #expect(blocks == [.quote(text: "引用里包含 **加粗** 和 `code`")])
+    }
+
+    @Test
+    func parsesMixedChineseDocumentWithoutLosingInlineMarkdown() {
+        let blocks = MarkdownParser.parse(
+            """
+            说明段落包含**“加粗标题”**。
+
+            - 列表项保留 **加粗**
+
+            ```swift
+            let value = 1
+            ```
+            """
+        )
+
+        #expect(
+            blocks == [
+                .paragraph(text: "说明段落包含**“加粗标题”**。"),
+                .unorderedList(items: [.init(text: "列表项保留 **加粗**")]),
+                .codeBlock(language: "swift", code: "let value = 1\n"),
+            ]
+        )
+    }
+
     @Test
     func fallsBackToParagraphWhenTableSeparatorIsInvalid() {
         let blocks = MarkdownParser.parse(
@@ -111,9 +167,16 @@ struct MarkdownParserTests {
             """
         )
 
+        // normalize 会自动补充分隔线，使表格能被正确解析
         #expect(
             blocks == [
-                .paragraph(text: "| Name | Value |\n| nope | nope |\n| A    | 1    |")
+                .table(
+                    headers: ["Name", "Value"],
+                    rows: [
+                        ["nope", "nope"],
+                        ["A", "1"],
+                    ]
+                )
             ]
         )
     }

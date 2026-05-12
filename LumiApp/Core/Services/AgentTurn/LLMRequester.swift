@@ -153,7 +153,7 @@ final class LLMRequester: SuperLog {
                 }
 
                 let delay = retryPolicy.delay(for: attempt)
-                AppLogger.core.info("\(Self.t) ⚠️ 流式请求失败（第 \(attempt) 次），\(Int(delay)) 秒后重试：\(error.localizedDescription)")
+                AppLogger.core.info("\(Self.t)⚠️ 流式请求失败（第 \(attempt) 次），\(Int(delay)) 秒后重试：\(error.localizedDescription)")
                 statusVM.setStatus(conversationId: conversationId, content: "请求失败，\(Int(delay)) 秒后重试 (\(attempt + 1)/\(retryPolicy.maxRetries))…")
 
                 do {
@@ -167,7 +167,7 @@ final class LLMRequester: SuperLog {
         // ── 重试耗尽 ──
         guard let error = lastError else { return .cancelled }
 
-        AppLogger.core.error("\(Self.t) 请求模型最终失败：\(error.localizedDescription)")
+        AppLogger.core.error("\(Self.t)请求模型最终失败：\(error.localizedDescription)")
 
         await Self.runPostPipeline(
             metadataHolder: metadataHolder,

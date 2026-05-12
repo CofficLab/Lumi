@@ -92,3 +92,23 @@ private struct AppTabButton: View {
         }
     }
 }
+
+#Preview {
+    struct PreviewWrapper: View {
+        @State private var selected = "Chat"
+        var body: some View {
+            VStack(spacing: 16) {
+                AppTabBar(tabs: ["Chat", "Code", "Images"], selectedTab: $selected)
+                AppTabBar(tabs: [
+                    AppTabBar.Tab(title: "Home", icon: "house"),
+                    AppTabBar.Tab(title: "Search", icon: "magnifyingglass"),
+                    AppTabBar.Tab(title: "Settings", icon: "gearshape"),
+                ], selectedTab: $selected, showText: false)
+            }
+            .padding()
+            .frame(width: 300)
+            .background(Color.gray.opacity(0.15))
+        }
+    }
+    return PreviewWrapper()
+}

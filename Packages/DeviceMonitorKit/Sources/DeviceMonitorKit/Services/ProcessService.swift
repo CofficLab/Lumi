@@ -1,13 +1,15 @@
 import Foundation
 import Combine
+import MagicKit
 import os
 import AppKit
 
 /// Process monitoring service that reports top N CPU-consuming processes via libproc.
 @MainActor
-public final class ProcessService: ObservableObject {
+public final class ProcessService: ObservableObject, SuperLog {
     public static let shared = ProcessService()
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.devicemonitorkit", category: "process")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.process")
+    nonisolated public static let emoji = "⚙️"
 
     // MARK: - Constants
 
@@ -33,7 +35,7 @@ public final class ProcessService: ObservableObject {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.debug("Starting process monitoring")
+            Self.logger.info("\(self.t)开始进程监控")
             previousTimestamp = Date().timeIntervalSince1970
             sampleProcesses()
 
@@ -48,7 +50,7 @@ public final class ProcessService: ObservableObject {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.debug("Stopping process monitoring")
+            Self.logger.info("\(self.t)停止进程监控")
             monitoringTimer?.invalidate()
             monitoringTimer = nil
             previousSnapshot.removeAll()

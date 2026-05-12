@@ -30,3 +30,14 @@ public struct AppContextMenuRow: View {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 4) {
+        AppContextMenuRow("Rename", systemImage: "pencil") {}
+        AppContextMenuRow("Delete", systemImage: "trash", role: .destructive) {}
+        AppContextMenuRow("Share", systemImage: "square.and.arrow.up") {}
+    }
+    .frame(width: 200)
+    .padding()
+    .background(Color.gray.opacity(0.15))
+}

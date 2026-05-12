@@ -38,6 +38,8 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
     static let displayName = String(localized: "Anthropic", table: "Anthropic")
     static let description = String(localized: "Claude AI by Anthropic", table: "Anthropic")
 
+    static let websiteURL: String? = "https://anthropic.com"
+
     // MARK: - Configuration
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Anthropic"

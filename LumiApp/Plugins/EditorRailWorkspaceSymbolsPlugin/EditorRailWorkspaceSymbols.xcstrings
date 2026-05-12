@@ -24,9 +24,72 @@
         }
       }
     },
-    "%lld Workspace Symbols": {},
-    "Editor Rail Workspace Symbols": {},
-    "Editor sidebar workspace symbols tab": {},
+    "%lld Workspace Symbols": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Workspace Symbols"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个工作区符号"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個工作區符號"
+          }
+        }
+      }
+    },
+    "Editor Rail Workspace Symbols": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor Rail Workspace Symbols"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器工作区符号侧栏"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器工作區符號側邊欄"
+          }
+        }
+      }
+    },
+    "Editor sidebar workspace symbols tab": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor sidebar workspace symbols tab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器侧边栏工作区符号标签"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器側邊欄工作區符號標籤"
+          }
+        }
+      }
+    },
     "Symbols": {
       "localizations": {
         "en": {

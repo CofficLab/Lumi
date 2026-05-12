@@ -20,6 +20,10 @@ struct EditorTabItemView: View {
         service.activeSessionID == tab.sessionID
     }
 
+    private var isDirty: Bool {
+        tab.isDirty || (isActive && service.currentFileURL == tab.fileURL && service.hasUnsavedChanges)
+    }
+
     var body: some View {
         tabContent
         .contentShape(Rectangle())
@@ -56,7 +60,7 @@ struct EditorTabItemView: View {
         let borderOpacity = isActive ? 0.08 : (isHovered ? 0.05 : 0)
 
         return HStack(spacing: 6) {
-            if tab.isDirty {
+            if isDirty {
                 Circle()
                     .fill(Color(hex: "FF9F0A"))
                     .frame(width: 6, height: 6)

@@ -17,6 +17,8 @@ final class MegaLLMProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Se
     static let displayName = String(localized: "MegaLLM", table: "MegaLLM")
     static let description = String(localized: "MegaLLM AI", table: "MegaLLM")
 
+    static let websiteURL: String? = "https://megallm.com"
+
     // MARK: - Configuration
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_MegaLLM"

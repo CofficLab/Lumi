@@ -39,3 +39,22 @@ public struct GlassRow<Content: View>: View {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 8) {
+        GlassRow {
+            Text("Hover over me")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        GlassRow {
+            HStack {
+                Image(systemName: "gearshape")
+                Text("Settings Row")
+                Spacer()
+            }
+        }
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

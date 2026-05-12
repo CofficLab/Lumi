@@ -32,7 +32,7 @@ actor RecentProjectsPlugin: SuperPlugin, SuperLog {
 
     /// 在工具栏中间位置显示当前项目选择器
     @MainActor func addToolBarCenterView(activeIcon: String?) -> AnyView? {
-        let icons = [EditorPlugin.iconName, GitCommitHistoryPlugin.iconName]
+        let icons = [EditorPlugin.iconName, GitPlugin.iconName]
         guard icons.contains(activeIcon ?? "") else { return nil }
         
         return AnyView(ProjectControlView())

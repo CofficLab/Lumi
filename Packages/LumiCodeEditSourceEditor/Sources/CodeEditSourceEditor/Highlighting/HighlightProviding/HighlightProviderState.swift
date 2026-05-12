@@ -180,28 +180,48 @@ private extension HighlightProviderState {
         guard let textView else { return }
         for range in rangesToHighlight {
             highlightProvider?.queryHighlightsFor(textView: textView, range: range) { [weak self] result in
-                guard let providerId = self?.id else { return }
+                guard let self else { return }
+                let providerId = self.id
                 assert(Thread.isMainThread, "Highlighted ranges called on non-main thread.")
 
-                self?.pendingSet.remove(integersIn: range)
-                self?.validSet.insert(range: range)
+                self.pendingSet.remove(integersIn: range)
+                guard let rangeToHighlight = self.currentDocumentRange(for: range), !rangeToHighlight.isEmpty else {
+                    return
+                }
+                self.validSet.insert(range: rangeToHighlight)
 
                 switch result {
                 case .success(let highlights):
-                    self?.delegate?.applyHighlightResult(
+                    self.delegate?.applyHighlightResult(
                         provider: providerId,
-                        highlights: highlights,
-                        rangeToHighlight: range
+                        highlights: self.clampedHighlights(highlights, to: rangeToHighlight),
+                        rangeToHighlight: rangeToHighlight
                     )
                 case .failure(let error):
                     // Only invalidate if it was cancelled.
                     if let error = error as? HighlightProvidingError, error == .operationCancelled {
-                        self?.invalidate(IndexSet(integersIn: range))
+                        self.invalidate(IndexSet(integersIn: rangeToHighlight))
                     } else {
-                        self?.logger.debug("Highlighter Error: \(error.localizedDescription)")
+                        self.logger.debug("Highlighter Error: \(error.localizedDescription)")
                     }
                 }
             }
+        }
+    }
+
+    func currentDocumentRange(for requestedRange: NSRange) -> NSRange? {
+        guard requestedRange != .notFound, let textView else {
+            return nil
+        }
+        return requestedRange.intersection(NSRange(location: 0, length: textView.length))
+    }
+
+    func clampedHighlights(_ highlights: [HighlightRange], to rangeToHighlight: NSRange) -> [HighlightRange] {
+        highlights.compactMap { highlight in
+            guard let range = highlight.range.intersection(rangeToHighlight), !range.isEmpty else {
+                return nil
+            }
+            return HighlightRange(range: range, capture: highlight.capture, modifiers: highlight.modifiers)
         }
     }
 }

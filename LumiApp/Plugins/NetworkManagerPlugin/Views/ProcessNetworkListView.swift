@@ -97,7 +97,7 @@ struct ProcessNetworkListView: View {
 // MARK: - Preview
 
 #Preview("Network Status Bar Popup") {
-    NetworkStatusBarPopupView()
+    NetworkMenuBarPopupView()
         .frame(width: 300)
         .frame(height: 400)
 }

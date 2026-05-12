@@ -21,3 +21,14 @@ public struct AppRoleBadge: View {
         )
     }
 }
+
+#Preview {
+    HStack(spacing: 8) {
+        AppRoleBadge("Admin")
+        AppRoleBadge("Editor", style: .accent)
+        AppRoleBadge("Viewer")
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

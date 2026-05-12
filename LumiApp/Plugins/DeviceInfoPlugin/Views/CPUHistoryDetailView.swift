@@ -45,7 +45,7 @@ struct CPUHistoryDetailView: View {
 // MARK: - Preview
 
 #Preview("App") {
-    DeviceInfoStatusBarPopupView()
+    DeviceInfoMenuBarPopupView()
         .inRootView()
         .frame(width: 300)
         .frame(height: 300)

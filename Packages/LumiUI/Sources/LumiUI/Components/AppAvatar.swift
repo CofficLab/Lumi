@@ -6,6 +6,8 @@ public struct AppAvatar: View {
     let backgroundTint: Color
     let size: CGFloat
 
+    @State private var isHovering = false
+
     public init(
         systemImage: String,
         tint: Color,
@@ -25,6 +27,13 @@ public struct AppAvatar: View {
             .frame(width: size, height: size)
             .background(backgroundTint)
             .clipShape(Circle())
+            .scaleEffect(isHovering ? 1.1 : 1.0)
+            .brightness(isHovering ? 0.08 : 0)
+            .shadow(color: tint.opacity(isHovering ? 0.3 : 0), radius: isHovering ? 6 : 0, y: 2)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
     }
 }
 
@@ -96,4 +105,30 @@ public struct AppImageThumbnail: View {
         }
         .frame(width: size.width, height: size.height)
     }
+}
+
+// MARK: - 预览
+
+#Preview("AppAvatar") {
+    HStack(spacing: 16) {
+        AppAvatar(
+            systemImage: "person.fill",
+            tint: .white,
+            backgroundTint: .blue,
+            size: 24
+        )
+        AppAvatar(
+            systemImage: "star.fill",
+            tint: .white,
+            backgroundTint: .orange,
+            size: 36
+        )
+        AppAvatar(
+            systemImage: "heart.fill",
+            tint: .white,
+            backgroundTint: .blue,
+            size: 48
+        )
+    }
+    .padding()
 }

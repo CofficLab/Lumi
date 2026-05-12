@@ -48,3 +48,24 @@ public struct GlassSectionHeader: View {
         }
     }
 }
+
+#Preview {
+    VStack(spacing: 20) {
+        GlassSectionHeader(icon: "gearshape", title: "设置")
+        GlassSectionHeader(
+            icon: "person.circle",
+            title: "账户",
+            subtitle: "管理你的个人资料",
+            iconColor: .blue
+        )
+        GlassSectionHeader(
+            icon: "bell.fill",
+            title: "通知",
+            subtitle: "推送、邮件和短信",
+            iconColor: .orange
+        )
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

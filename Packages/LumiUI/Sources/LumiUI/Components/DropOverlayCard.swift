@@ -53,3 +53,14 @@ public struct DropOverlayCard: View {
         .allowsHitTesting(false)
     }
 }
+
+#Preview {
+    DropOverlayCard(
+        icon: "folder.badge.plus",
+        title: "拖放文件到这里",
+        subtitle: "支持图片、文档、代码文件等"
+    )
+    .frame(width: 400, height: 300)
+    .padding()
+    .background(Color.gray.opacity(0.15))
+}

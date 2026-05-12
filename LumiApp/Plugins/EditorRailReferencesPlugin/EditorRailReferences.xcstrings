@@ -24,9 +24,72 @@
         }
       }
     },
-    "%lld References": {},
-    "Editor Rail References": {},
-    "Editor sidebar references tab": {},
+    "%lld References": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld References"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个引用"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個引用"
+          }
+        }
+      }
+    },
+    "Editor Rail References": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor Rail References"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器引用侧栏"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器引用側邊欄"
+          }
+        }
+      }
+    },
+    "Editor sidebar references tab": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor sidebar references tab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器侧边栏引用标签"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器側邊欄引用標籤"
+          }
+        }
+      }
+    },
     "No References": {
       "localizations": {
         "en": {

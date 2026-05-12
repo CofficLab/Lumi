@@ -36,3 +36,13 @@ public struct AppLabeledDivider: View {
         .padding(.vertical, 8)
     }
 }
+
+#Preview {
+    VStack(spacing: 8) {
+        AppLabeledDivider(title: "Section")
+        AppLabeledDivider(title: "Advanced", detail: "v2.0")
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

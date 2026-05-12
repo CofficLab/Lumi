@@ -1,35 +1,76 @@
 import Foundation
+import XcodeKit
+import MagicKit
+import os
 
 @MainActor
-final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapability {
+final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapability, SuperLog {
+    nonisolated static let emoji = "📁"
+
     let id = "XcodeProjectContextCapability"
     private let bridge: XcodeProjectContextBridge
 
     init(bridge: XcodeProjectContextBridge = .shared) {
         self.bridge = bridge
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)初始化完成")
+        }
     }
 
     func canHandleProject(at path: String?) -> Bool {
         guard let path, !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)canHandleProject: 路径为空 -> false")
+            }
             return false
         }
-        return XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: path))
+        let canHandle = XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: path))
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)canHandleProject: \(path) -> \(canHandle)")
+        }
+        return canHandle
     }
 
     func projectOpened(at path: String) async {
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)projectOpened 开始: \(path)")
+        }
         await bridge.projectOpened(at: path)
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)projectOpened 完成: \(path)")
+        }
     }
 
     func projectClosed() {
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)projectClosed")
+        }
         bridge.projectClosed()
     }
 
     func resyncProjectContext() async {
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)resyncProjectContext 开始")
+        }
         await bridge.resyncBuildContext()
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)resyncProjectContext 完成")
+        }
     }
 
     func makeEditorContextSnapshot(currentFileURL: URL?) -> EditorProjectContextSnapshot? {
-        guard let snapshot = bridge.makeEditorContextSnapshot(currentFileURL: currentFileURL) else { return nil }
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)makeEditorContextSnapshot，currentFile: \(currentFileURL?.path ?? "nil")")
+        }
+        guard let snapshot = bridge.makeEditorContextSnapshot(currentFileURL: currentFileURL) else {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)snapshot 为空")
+            }
+            return nil
+        }
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)snapshot 创建成功，workspace: \(snapshot.workspaceName), scheme: \(snapshot.activeScheme ?? "nil")")
+        }
         return EditorProjectContextSnapshot(
             projectPath: snapshot.projectPath,
             workspaceName: snapshot.workspaceName,
@@ -51,8 +92,14 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
 
     func updateLatestEditorSnapshot(_ snapshot: EditorProjectContextSnapshot?) {
         guard let snapshot else {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)updateLatestEditorSnapshot: nil")
+            }
             bridge.updateLatestEditorSnapshot(nil)
             return
+        }
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)updateLatestEditorSnapshot: workspace=\(snapshot.workspaceName), file=\(snapshot.currentFilePath ?? "nil")")
         }
         bridge.updateLatestEditorSnapshot(
             XcodeEditorContextSnapshot(
@@ -76,25 +123,27 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
     }
 
     private func status(from description: String) -> EditorProjectContextStatus {
-        if description.contains(String(localized: "Needs resync", table: "EditorXcodePlugin")) {
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)状态映射: \(description)")
+        }
+        if description.contains("Needs resync") {
             return .needsResync
         }
-        if description.contains(String(localized: "Resolving build context...", table: "EditorXcodePlugin")) {
+        if description.contains("Resolving build context...") {
             return .resolving
         }
-        if description.contains(": ") && !description.contains(String(localized: "Available", table: "EditorXcodePlugin")) {
-            // Unavailable: <reason> format
-            let prefix = String(localized: "Unavailable", table: "EditorXcodePlugin") + ": "
+        if description.contains(": ") && !description.contains("Available") {
+            let prefix = "Unavailable" + ": "
             if description.hasPrefix(prefix) {
                 return .unavailable(String(description.dropFirst(prefix.count)))
             }
             return .unavailable(description)
         }
-        if description.contains(String(localized: "Available", table: "EditorXcodePlugin")) {
+        if description.contains("Available") {
             return .available(description)
         }
-        if description == String(localized: "Not Initialized", table: "EditorXcodePlugin")
-            || description == String(localized: "Unknown", table: "EditorXcodePlugin") {
+        if description == "Not Initialized"
+            || description == "Unknown" {
             return .unknown
         }
         return .available(description)
@@ -102,55 +151,110 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
 }
 
 @MainActor
-final class XcodeLanguageIntegrationCapabilityAdapter: SuperEditorLanguageIntegrationCapability {
+final class XcodeLanguageIntegrationCapabilityAdapter: SuperEditorLanguageIntegrationCapability, SuperLog {
+    nonisolated static let emoji = "🧩"
+
     let id = "XcodeLanguageIntegrationCapability"
     private let bridge: XcodeProjectContextBridge
 
     init(bridge: XcodeProjectContextBridge = .shared) {
         self.bridge = bridge
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)初始化完成")
+        }
     }
 
     func supports(languageId: String, projectPath: String?) -> Bool {
-        guard languageId == "swift" || languageId == "sourcekit" else { return false }
-        guard let projectPath, !projectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
-        return XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: projectPath))
+        guard languageId == "swift" || languageId == "sourcekit" else {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)supports: languageId=\(languageId) 不支持")
+            }
+            return false
+        }
+        guard let projectPath, !projectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)supports: projectPath 为空")
+            }
+            return false
+        }
+        let supported = XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: projectPath))
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)supports: language=\(languageId), project=\(projectPath) -> \(supported)")
+        }
+        return supported
     }
 
     func workspaceFolders(for languageId: String, projectPath: String) -> [EditorWorkspaceFolder]? {
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)workspaceFolders 请求，language=\(languageId), project=\(projectPath)")
+        }
         guard supports(languageId: languageId, projectPath: projectPath),
               let folders = bridge.makeWorkspaceFolders(),
               !folders.isEmpty else {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)workspaceFolders 为空")
+            }
             return nil
         }
-        return folders.compactMap { item in
+        let result: [EditorWorkspaceFolder] = folders.compactMap { (item: [String: String]) -> EditorWorkspaceFolder? in
             guard let uri = item["uri"], let name = item["name"] else { return nil }
             return EditorWorkspaceFolder(uri: uri, name: name)
         }
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)workspaceFolders 返回 \(result.count) 项")
+        }
+        return result
     }
 
     func initializationOptions(for languageId: String, projectPath: String) -> [String: String]? {
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)initializationOptions 请求，language=\(languageId), project=\(projectPath)")
+        }
         guard supports(languageId: languageId, projectPath: projectPath),
               let options = bridge.makeInitializationOptions(),
               !options.isEmpty else {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)initializationOptions 为空")
+            }
             return nil
         }
-        return options.reduce(into: [String: String]()) { partial, entry in
+        let result = options.reduce(into: [String: String]()) { partial, entry in
             partial[entry.key] = String(describing: entry.value)
         }
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)initializationOptions 返回 key 数: \(result.count)")
+        }
+        return result
     }
 }
 
 @MainActor
-final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability {
+final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, SuperLog {
+    nonisolated static let emoji = "🧠"
+
     let id = "XcodeSemanticCapability"
 
     func canHandle(uri: String?) -> Bool {
-        guard let uri, !uri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        guard let uri, !uri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)canHandle: uri 为空 -> false")
+            }
+            return false
+        }
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)canHandle: \(uri) -> true")
+        }
         return true
     }
 
     func inspectCurrentFileContext(uri: String?) -> EditorSemanticAvailabilityReport {
-        let report = XcodeSemanticAvailability.inspectCurrentFileContext(uri: uri)
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)inspectCurrentFileContext: \(uri ?? "nil")")
+        }
+        let report = XcodeSemanticAvailability.inspectCurrentFileContext(uri: uri, contextProvider: XcodeProjectContextBridge.shared)
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)inspectCurrentFileContext 完成，reasons: \(report.reasons.count)")
+        }
         return EditorSemanticAvailabilityReport(
             reasons: report.reasons.map { reason in
                 EditorSemanticAvailabilityReason(
@@ -169,12 +273,20 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability {
         symbolName: String?,
         strength: EditorSemanticPreflightStrength
     ) -> String? {
-        XcodeSemanticAvailability.preflightMessage(
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)preflightMessage operation=\(operation), symbol=\(symbolName ?? "nil"), strength=\(String(describing: strength))")
+        }
+        let message = XcodeSemanticAvailability.preflightMessage(
             uri: uri,
             operation: operation,
             symbolName: symbolName,
-            strength: strength == .hard ? .hard : .soft
+            strength: strength == .hard ? .hard : .soft,
+            contextProvider: XcodeProjectContextBridge.shared
         )
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)preflightMessage 结果: \(message ?? "nil")")
+        }
+        return message
     }
 
     func preflightError(
@@ -183,15 +295,25 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability {
         symbolName: String?,
         strength: EditorSemanticPreflightStrength
     ) -> EditorLanguageFeatureError? {
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)preflightError operation=\(operation), symbol=\(symbolName ?? "nil"), strength=\(String(describing: strength))")
+        }
         guard let error = XcodeSemanticAvailability.preflightError(
             uri: uri,
             operation: operation,
             symbolName: symbolName,
-            strength: strength == .hard ? .hard : .soft
+            strength: strength == .hard ? .hard : .soft,
+            contextProvider: XcodeProjectContextBridge.shared
         ) else {
+            if XcodePluginLog.verbose {
+                XcodePluginLog.logger.info("\(self.t)preflightError 结果为空")
+            }
             return nil
         }
 
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.warning("\(self.t)preflightError: \(error.localizedDescription)")
+        }
         return EditorLanguageFeatureError(
             domain: "xcode.semantic",
             code: error.category,
@@ -205,11 +327,19 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability {
         operation: String,
         symbolName: String?
     ) -> String? {
-        XcodeSemanticAvailability.missingResultMessage(
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)missingResultMessage operation=\(operation), symbol=\(symbolName ?? "nil")")
+        }
+        let message = XcodeSemanticAvailability.missingResultMessage(
             uri: uri,
             operation: operation,
-            symbolName: symbolName
+            symbolName: symbolName,
+            contextProvider: XcodeProjectContextBridge.shared
         )
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(self.t)missingResultMessage 结果: \(message ?? "nil")")
+        }
+        return message
     }
 
     private func mapSeverity(

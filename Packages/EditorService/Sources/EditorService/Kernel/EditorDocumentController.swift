@@ -1,10 +1,12 @@
 import AppKit
 import Foundation
 import LanguageServerProtocol
+import MagicKit
 import UniformTypeIdentifiers
 import os
 
-final class EditorDocumentController {
+final class EditorDocumentController: SuperLog {
+    nonisolated static let emoji = "📄"
     private static let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.doc-controller")
     private static let truncationFileSizeThreshold: Int64 = 2 * 1024 * 1024
 
@@ -137,10 +139,10 @@ final class EditorDocumentController {
         let fileName = url.lastPathComponent
 
         let isLikelyText = try isLikelyTextFile(url: url)
-        Self.logger.info("📝[loadDocument] url=\(url.path, privacy: .public), fileSize=\(fileSize), ext=\(fileExtension, privacy: .public), isLikelyText=\(isLikelyText), largeFileMode=\(String(describing: largeFileMode)), forceFullLoad=\(forceFullLoad)")
+        Self.logger.info("\(self.t)loadDocument: url=\(url.path), fileSize=\(fileSize), ext=\(fileExtension), isLikelyText=\(isLikelyText), largeFileMode=\(String(describing: largeFileMode)), forceFullLoad=\(forceFullLoad)")
 
         guard isLikelyText else {
-            Self.logger.info("📝[loadDocument] → 二进制文件, url=\(url.path, privacy: .public)")
+            Self.logger.info("\(self.t)loadDocument: → 二进制文件, url=\(url.path)")
             return .binary(
                 .init(
                     fileSize: fileSize,
@@ -160,7 +162,6 @@ final class EditorDocumentController {
             content = try String(contentsOf: url, usedEncoding: &detectedEncoding)
         }
 
-        Self.logger.info("📝[loadDocument] → 文本文件, url=\(url.path, privacy: .public), contentLength=\(content.count), isTruncated=\(shouldTruncate)")
         return .text(
             .init(
                 content: content,

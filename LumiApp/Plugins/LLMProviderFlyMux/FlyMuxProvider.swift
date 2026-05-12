@@ -15,6 +15,8 @@ final class FlyMuxProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     static let displayName = String(localized: "FlyMux", table: "FlyMux")
     static let description = String(localized: "AI API Gateway by flymux.com", table: "FlyMux")
 
+    static let websiteURL: String? = "https://flymux.com"
+
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_FlyMux"

@@ -38,8 +38,13 @@ struct EditorTabHeaderView: View {
                 projectPathProvider: { [weak projectVM] in
                     projectVM?.currentProjectPath ?? ""
                 },
-                openFile: { [weak editorVM] url in
+                openFile: { [weak editorVM, weak projectVM] url in
+                    let projectPath = projectVM?.currentProjectPath
+                    await editorVM?.service.refreshProjectContext(for: projectPath)
                     editorVM?.service.open(at: url)
+                },
+                openFileSessionOnly: { [weak editorVM] url in
+                    editorVM?.service.openFile(at: url)
                 }
             )
         }
@@ -53,10 +58,16 @@ struct EditorTabHeaderView: View {
             coordinator.handleProjectPathChange(
                 oldPath: oldPath,
                 newPath: newPath,
-                sessionStore: sessionStore
-            ) { [weak editorVM] url in
-                editorVM?.service.open(at: url)
-            }
+                sessionStore: sessionStore,
+                openFile: { [weak editorVM, weak projectVM] url in
+                    let projectPath = projectVM?.currentProjectPath
+                    await editorVM?.service.refreshProjectContext(for: projectPath)
+                    editorVM?.service.open(at: url)
+                },
+                openFileSessionOnly: { [weak editorVM] url in
+                    editorVM?.service.openFile(at: url)
+                }
+            )
         }
         .onCurrentFileDidChange { path in
             handleCurrentFileDidChange(path: path)
@@ -76,7 +87,7 @@ struct EditorTabHeaderView: View {
     // MARK: - 子视图
 
     private var tabList: some View {
-        ScrollView(.horizontal, showsIndicators: true) {
+        ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 0) {
                 ForEach(visibleTabs) { tab in
                     EditorTabItemView(
@@ -134,6 +145,9 @@ struct EditorTabHeaderView: View {
         }
 
         let url = URL(fileURLWithPath: path)
-        service.open(at: url)
+        Task { @MainActor in
+            await service.refreshProjectContext(for: projectVM.currentProjectPath)
+            service.open(at: url)
+        }
     }
 }

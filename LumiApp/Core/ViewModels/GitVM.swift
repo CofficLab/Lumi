@@ -14,8 +14,8 @@ final class GitVM: ObservableObject, SuperLog {
 
     /// 当前选中的 commit hash
     ///
-    /// 由 GitCommitHistoryPlugin 的侧边栏在用户点击某个 commit 时设置，
-    /// GitCommitDetailPlugin 会监听此属性变化来显示对应的 commit 详情。
+    /// 由 Git 面板侧边栏在用户点击某个 commit 时设置，
+    /// GitCommitDetailView 会监听此属性变化来显示对应的 commit 详情。
     @Published private(set) var selectedCommitHash: String?
 
     // MARK: - File Selection

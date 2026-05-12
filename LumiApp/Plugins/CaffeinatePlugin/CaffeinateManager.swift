@@ -116,7 +116,7 @@ class CaffeinateManager: SuperLog {
             }
 
             // Notify system to update status bar appearance
-            NotificationCenter.postRequestStatusBarAppearanceUpdate(isActive: true, source: "CaffeinatePlugin")
+            NotificationCenter.postRequestMenuBarAppearanceUpdate(isActive: true, source: "CaffeinatePlugin")
         } else {
             if systemResult != kIOReturnSuccess {
                 CaffeinatePlugin.logger.error("\(self.t)Failed to create system sleep assertion: \(systemResult)")
@@ -163,7 +163,7 @@ class CaffeinateManager: SuperLog {
             }
 
             // Notify system to restore status bar appearance
-            NotificationCenter.postRequestStatusBarAppearanceUpdate(isActive: false, source: "CaffeinatePlugin")
+            NotificationCenter.postRequestMenuBarAppearanceUpdate(isActive: false, source: "CaffeinatePlugin")
         } else {
             if systemResult != kIOReturnSuccess {
                 CaffeinatePlugin.logger.error("\(self.t)Failed to release system sleep assertion: \(systemResult)")

@@ -300,7 +300,28 @@
         }
       }
     },
-    "List Hidden Files": {},
+    "List Hidden Files": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List Hidden Files"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列出隐藏文件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列出隱藏檔案"
+          }
+        }
+      }
+    },
     "Name (e.g. Python Script)": {
       "extractionState": "manual",
       "localizations": {

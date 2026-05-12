@@ -12,7 +12,7 @@ import SwiftUI
 /// - 应用激活/失活
 ///
 /// 同时管理以下控制器：
-/// - StatusBarController: 菜单栏状态图标和弹窗
+/// - MenuBarController: 菜单栏状态图标和弹窗
 ///
 /// ## 生命周期顺序
 ///
@@ -38,7 +38,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     ///
     /// 负责管理菜单栏图标、弹窗和状态显示。
     /// 在应用启动时初始化，应用终止时清理。
-    private var statusBarController: StatusBarController?
+    private var statusBarController: MenuBarController?
 
     // MARK: - Application Lifecycle
 
@@ -130,11 +130,11 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     ///
     /// 初始化所有应用级别的控制器。
     /// 当前包括：
-    /// - StatusBarController: 状态栏管理
+    /// - MenuBarController: 菜单栏管理
     private func setupControllers() {
-        // 初始化状态栏控制器
-        statusBarController = StatusBarController()
-        statusBarController?.setupStatusBar(pluginProvider: PluginVM.shared)
+        // 初始化菜单栏控制器
+        statusBarController = MenuBarController()
+        statusBarController?.setupMenuBar(pluginProvider: PluginVM.shared)
     }
 
     // MARK: - Cleanup

@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import MagicKit
 import os
 
 private final class MonitorState: @unchecked Sendable {
@@ -27,9 +28,10 @@ private final class MonitorState: @unchecked Sendable {
 
 /// Comprehensive system monitor service that tracks CPU, memory, network, and disk metrics.
 @MainActor
-public final class SystemMonitorService: ObservableObject {
+public final class SystemMonitorService: ObservableObject, SuperLog {
     public static let shared = SystemMonitorService()
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.devicemonitorkit", category: "system-monitor")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.system")
+    nonisolated public static let emoji = "📊"
 
     @Published public var currentMetrics: SystemMetrics = .empty
 

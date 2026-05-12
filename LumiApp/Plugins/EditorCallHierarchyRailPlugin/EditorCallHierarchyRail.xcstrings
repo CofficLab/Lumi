@@ -24,7 +24,28 @@
         }
       }
     },
-    "%lld Call Hierarchy": {},
+    "%lld Call Hierarchy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Call Hierarchy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 调用层级"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 呼叫層級"
+          }
+        }
+      }
+    },
     "Call Hierarchy": {
       "localizations": {
         "en": {
@@ -69,8 +90,50 @@
         }
       }
     },
-    "Editor Call Hierarchy Rail": {},
-    "Editor sidebar call hierarchy tab": {},
+    "Editor Call Hierarchy Rail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor Call Hierarchy Rail"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器调用层级侧栏"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器呼叫層級側邊欄"
+          }
+        }
+      }
+    },
+    "Editor sidebar call hierarchy tab": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor sidebar call hierarchy tab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器侧边栏调用层级标签"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯器側邊欄呼叫層級標籤"
+          }
+        }
+      }
+    },
     "Empty": {
       "localizations": {
         "en": {

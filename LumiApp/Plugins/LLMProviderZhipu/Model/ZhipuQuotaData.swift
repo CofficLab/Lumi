@@ -70,6 +70,6 @@ struct ZhipuQuotaData {
 
     /// 状态栏显示文本
     var statusText: String {
-        "\(levelDisplay) | 剩余 \(leftPercent)% | 重置 \(resetTime)"
+        "\(levelDisplay) | \(leftPercent)%"
     }
 }

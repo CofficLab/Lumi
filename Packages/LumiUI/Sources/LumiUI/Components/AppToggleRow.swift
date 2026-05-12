@@ -52,3 +52,24 @@ public struct AppToggleRow: View {
         .contentShape(Rectangle())
     }
 }
+
+#Preview {
+    struct PreviewWrapper: View {
+        @State private var toggle1 = true
+        @State private var toggle2 = false
+        var body: some View {
+            VStack(spacing: 0) {
+                AppToggleRow(title: "Notifications", systemImage: "bell", isOn: $toggle1)
+                AppToggleRow(
+                    title: "Dark Mode",
+                    description: "Use dark appearance",
+                    isOn: $toggle2
+                )
+            }
+            .padding()
+            .frame(width: 300)
+            .background(Color.gray.opacity(0.15))
+        }
+    }
+    return PreviewWrapper()
+}

@@ -24,6 +24,7 @@
 		0B45486E2F89F49C00C6B7C8 /* CodeEditLanguages in Frameworks */ = {isa = PBXBuildFile; productRef = 0B45486D2F89F49C00C6B7C8 /* CodeEditLanguages */; };
 		0B6DF8562F8E77E100FA0CAC /* LanguageServerProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8552F8E77E100FA0CAC /* LanguageServerProtocol */; };
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
+		0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */; };
 		0B8027C42F6C4E7F007FD39D /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8027C32F6C4E7F007FD39D /* MagicKit */; };
 		0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBB11DF2F85467D00F53902 /* SwiftTerm */; };
 		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
@@ -41,9 +42,11 @@
 		A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4162F70000100AAA101 /* DeviceMonitorKit */; };
 		A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4182F70000100AAA102 /* DockerKit */; };
 		A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4212F70000100AAA103 /* DiskManagerKit */; };
+		A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4272F70000100AAA107 /* LumiPreviewKit */; };
 		A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4312F70000100AAA104 /* BrewKit */; };
 		A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4412F70000100AAA105 /* TerminalCoreKit */; };
 		A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4512F70000100AAA106 /* ShellKit */; };
+		B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */ = {isa = PBXBuildFile; productRef = B1C2D3512F80000200BBB201 /* XcodeKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -127,6 +130,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0B1780D12FAF5C0F00F8A599 /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
+		0B1780FC2FAF5C0F00F8A599 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
+		0B1781F22FAF5C0F00F8A599 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
 		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
 		0BC901B12FAD5B56003651CA /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
@@ -134,6 +140,14 @@
 		0BC9FDD02FAD5B49003651CA /* SwiftTreeSitterExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftTreeSitterExample.xcodeproj; sourceTree = "<group>"; };
 		A10000012F60000100AAA001 /* LumiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5050AA32FADA83D002AA7B5 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
+		F53707E52FB1E52400AF4705 /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
+		F5370B292FB1E52500AF4705 /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
+		F5370B602FB1E52800AF4705 /* MermaidPlayground.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MermaidPlayground.xcodeproj; sourceTree = "<group>"; };
+		F5370DF62FB1E52800AF4705 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
+		F5370F352FB1E52800AF4705 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
+		F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MagicApp.xcodeproj; sourceTree = "<group>"; };
+		F53714622FB1E52900AF4705 /* CodeLanguages-Container.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "CodeLanguages-Container.xcodeproj"; sourceTree = "<group>"; };
+		F53716442FB1E53600AF4705 /* CodeEditTextViewExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditTextViewExample.xcodeproj; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5679DC02FAF405D0054AB4B /* AEXMLDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = AEXMLDemo.xcodeproj; sourceTree = "<group>"; };
@@ -281,6 +295,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0B45486B2F89F3C200C6B7C8 /* CodeEditTextView in Frameworks */,
+				0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */,
 				0B45486E2F89F49C00C6B7C8 /* CodeEditLanguages in Frameworks */,
 				0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */,
 				0BBB11E02F85467D00F53902 /* SwiftTerm in Frameworks */,
@@ -296,6 +311,7 @@
 				A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */,
 				A1B2C4002F70000100AAA101 /* EditorService in Frameworks */,
 				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
+				A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */,
 				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
 				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
 				F5BE65D12F6BB1130091C1FD /* Markdown in Frameworks */,
@@ -324,6 +340,7 @@
 				A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */,
 				A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */,
 				A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */,
+				B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -338,6 +355,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0B1780D32FAF5C0F00F8A599 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B1781EB2FAF5C0F00F8A599 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B1781FB2FAF5C0F00F8A599 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		0BC901712FAD5B54003651CA /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -367,6 +405,62 @@
 			sourceTree = "<group>";
 		};
 		F5050AA52FADA83D002AA7B5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53707E72FB1E52400AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5370B2F2FB1E52500AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53711332FB1E52800AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53711352FB1E52800AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53711372FB1E52800AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53711392FB1E52800AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53714692FB1E52900AF4705 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F53716D12FB1E53600AF4705 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -703,6 +797,8 @@
 				F5A640762F3ED1910039A761 /* Embed System Extensions */,
 				F5A9DB4A2F7635F600A47D9C /* Embed Libraries */,
 				F5A9DB4E2F763C8700A47D9C /* CopyFiles */,
+				C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */,
+				C0D3E0112FB1000000A11002 /* Embed Editor Preview Host */,
 			);
 			buildRules = (
 			);
@@ -748,6 +844,7 @@
 				A1B2C4012F70000100AAA101 /* EditorService */,
 				A1B2C3EF2F70000100AAA101 /* DatabaseKit */,
 				A1B2C4132F70000100AAA101 /* LumiUI */,
+				A1B2C4272F70000100AAA107 /* LumiPreviewKit */,
 				A1B2C3A12F70000200AAA101 /* SkillKit */,
 				A1B2C4162F70000100AAA101 /* DeviceMonitorKit */,
 				A1B2C4182F70000100AAA102 /* DockerKit */,
@@ -755,7 +852,9 @@
 				A1B2C4312F70000100AAA104 /* BrewKit */,
 				A1B2C4412F70000100AAA105 /* TerminalCoreKit */,
 				A1B2C4512F70000100AAA106 /* ShellKit */,
+				B1C2D3512F80000200BBB201 /* XcodeKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
+				0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */,
 			);
 			productName = "SwiftUI-Template";
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -845,6 +944,7 @@
 				A1B2C4022F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
 				A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */,
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
+				A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */,
 				A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */,
 				A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */,
 				A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */,
@@ -852,6 +952,8 @@
 				A1B2C4322F70000100AAA104 /* XCLocalSwiftPackageReference "Packages/BrewKit" */,
 				A1B2C4422F70000100AAA105 /* XCLocalSwiftPackageReference "Packages/TerminalCoreKit" */,
 				A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */,
+				B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */,
+				0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -898,8 +1000,20 @@
 					ProjectRef = F5CA2D4E2FADB71500F67747 /* CodeEditSourceEditorExample.xcodeproj */;
 				},
 				{
+					ProductGroup = F53716D12FB1E53600AF4705 /* Products */;
+					ProjectRef = F53716442FB1E53600AF4705 /* CodeEditTextViewExample.xcodeproj */;
+				},
+				{
+					ProductGroup = F53714692FB1E52900AF4705 /* Products */;
+					ProjectRef = F53714622FB1E52900AF4705 /* CodeLanguages-Container.xcodeproj */;
+				},
+				{
 					ProductGroup = 0BC901712FAD5B54003651CA /* Products */;
 					ProjectRef = 0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */;
+				},
+				{
+					ProductGroup = F5370B2F2FB1E52500AF4705 /* Products */;
+					ProjectRef = F5370B292FB1E52500AF4705 /* Collections.xcodeproj */;
 				},
 				{
 					ProductGroup = F5679F892FAF405D0054AB4B /* Products */;
@@ -908,6 +1022,14 @@
 				{
 					ProductGroup = F567011F2FAF42620054AB4B /* Products */;
 					ProjectRef = F567FE902FAF42620054AB4B /* copy.xcodeproj */;
+				},
+				{
+					ProductGroup = 0B1781EB2FAF5C0F00F8A599 /* Products */;
+					ProjectRef = 0B1780FC2FAF5C0F00F8A599 /* Demo.xcodeproj */;
+				},
+				{
+					ProductGroup = F53711372FB1E52800AF4705 /* Products */;
+					ProjectRef = F5370DF62FB1E52800AF4705 /* Demo.xcodeproj */;
 				},
 				{
 					ProductGroup = 0BC903202FAD5B56003651CA /* Products */;
@@ -922,6 +1044,14 @@
 					ProjectRef = F5679E1B2FAF405D0054AB4B /* FileSharedAcrossTargets.xcodeproj */;
 				},
 				{
+					ProductGroup = 0B1781FB2FAF5C0F00F8A599 /* Products */;
+					ProjectRef = 0B1781F22FAF5C0F00F8A599 /* ID3TagEditor.xcodeproj */;
+				},
+				{
+					ProductGroup = F53711352FB1E52800AF4705 /* Products */;
+					ProjectRef = F5370F352FB1E52800AF4705 /* ID3TagEditor.xcodeproj */;
+				},
+				{
 					ProductGroup = 0BC9031E2FAD5B56003651CA /* Products */;
 					ProjectRef = 0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */;
 				},
@@ -932,6 +1062,14 @@
 				{
 					ProductGroup = F5E2115B2FAEF3440005256B /* Products */;
 					ProjectRef = F5E211282FAEF3440005256B /* MacTerminal.xcodeproj */;
+				},
+				{
+					ProductGroup = F53711392FB1E52800AF4705 /* Products */;
+					ProjectRef = F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */;
+				},
+				{
+					ProductGroup = F53711332FB1E52800AF4705 /* Products */;
+					ProjectRef = F5370B602FB1E52800AF4705 /* MermaidPlayground.xcodeproj */;
 				},
 				{
 					ProductGroup = F56701112FAF42620054AB4B /* Products */;
@@ -1017,6 +1155,14 @@
 					ProductGroup = F5679F852FAF405D0054AB4B /* Products */;
 					ProjectRef = F5679E862FAF405D0054AB4B /* Test.xcodeproj */;
 				},
+				{
+					ProductGroup = 0B1780D32FAF5C0F00F8A599 /* Products */;
+					ProjectRef = 0B1780D12FAF5C0F00F8A599 /* ZIPFoundation.xcodeproj */;
+				},
+				{
+					ProductGroup = F53707E72FB1E52400AF4705 /* Products */;
+					ProjectRef = F53707E52FB1E52400AF4705 /* ZIPFoundation.xcodeproj */;
+				},
 			);
 			projectRoot = "";
 			targets = (
@@ -1059,6 +1205,61 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Package.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostManifest.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostResponse.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostDylibInspector.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostSymbolResolver.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/PreviewHostRunner.swift",
+				"$(SRCROOT)/Tools/LumiSwiftUIPreviewHost/Sources/LumiSwiftUIPreviewHost/main.swift",
+				"$(SRCROOT)/scripts/embed-swiftui-preview-host.sh",
+			);
+			name = "Embed SwiftUI Preview Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiSwiftUIPreviewHost",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/embed-swiftui-preview-host.sh\"\n";
+		};
+		C0D3E0112FB1000000A11002 /* Embed Editor Preview Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packages/LumiPreviewKit/Package.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/main.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewKit/Host/PreviewHostMessages.swift",
+				"$(SRCROOT)/scripts/embed-editor-preview-host.sh",
+			);
+			name = "Embed Editor Preview Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiPreviewHostApp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/embed-editor-preview-host.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		0B2F7D5D2F3A301C00AD7E94 /* Sources */ = {
@@ -1595,6 +1796,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiCodeEditSourceEditor;
 		};
+		0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/EditorOverlayKit;
+		};
 		A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SkillKit;
@@ -1635,6 +1840,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/DiskManagerKit;
 		};
+		A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LumiPreviewKit;
+		};
 		A1B2C4322F70000100AAA104 /* XCLocalSwiftPackageReference "Packages/BrewKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/BrewKit;
@@ -1646,6 +1855,10 @@
 		A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ShellKit;
+		};
+		B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/XcodeKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -1876,6 +2089,10 @@
 			package = 0B6DF8572F8E780800FA0CAC /* XCRemoteSwiftPackageReference "LanguageClient" */;
 			productName = LanguageClient;
 		};
+		0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = EditorOverlayKit;
+		};
 		0B8027C32F6C4E7F007FD39D /* MagicKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F5826C842F35731C0079B285 /* XCRemoteSwiftPackageReference "MagicKit" */;
@@ -1961,6 +2178,11 @@
 			package = A1B2C4222F70000100AAA103 /* XCLocalSwiftPackageReference "Packages/DiskManagerKit" */;
 			productName = DiskManagerKit;
 		};
+		A1B2C4272F70000100AAA107 /* LumiPreviewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */;
+			productName = LumiPreviewKit;
+		};
 		A1B2C4312F70000100AAA104 /* BrewKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4322F70000100AAA104 /* XCLocalSwiftPackageReference "Packages/BrewKit" */;
@@ -1975,6 +2197,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */;
 			productName = ShellKit;
+		};
+		B1C2D3512F80000200BBB201 /* XcodeKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */;
+			productName = XcodeKit;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

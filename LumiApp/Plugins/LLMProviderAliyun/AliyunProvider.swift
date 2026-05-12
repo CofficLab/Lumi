@@ -19,6 +19,8 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
     static let displayName = String(localized: "阿里云 CodingPlan", table: "Aliyun")
     static let description = String(localized: "阿里云 DashScope Coding Plan（兼容 Anthropic API）", table: "Aliyun")
 
+    static let websiteURL: String? = "https://dashscope.console.aliyun.com"
+
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Aliyun"

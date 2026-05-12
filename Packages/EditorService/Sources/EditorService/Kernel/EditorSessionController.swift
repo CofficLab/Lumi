@@ -2,6 +2,7 @@ import Foundation
 import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView
+import os
 
 @MainActor
 final class EditorSessionController {
@@ -90,7 +91,9 @@ final class EditorSessionController {
             foldingState: foldingState
         )
 
-        guard requiresSync(activeSession, snapshot: snapshot) else {
+        let needsSync = requiresSync(activeSession, snapshot: snapshot)
+
+        guard needsSync else {
             return
         }
 

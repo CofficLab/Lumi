@@ -58,6 +58,8 @@ public final class EditorService: ObservableObject {
     /// 编辑器扩展注册中心（由 RootViewContainer 创建并注入）
     let editorExtensionRegistry: EditorExtensionRegistry
 
+    private var activeSessionChangedObserver: ((EditorSession) -> Void)?
+
     init(
         editorExtensionRegistry: EditorExtensionRegistry,
         state: EditorState,
@@ -66,6 +68,7 @@ public final class EditorService: ObservableObject {
         self.editorExtensionRegistry = editorExtensionRegistry
         self.state = state
         self.sessionStore = sessionStore
+        installActiveSessionSyncBridge()
     }
 
     /// 便捷构造：使用默认实例创建完整编辑器服务
@@ -98,6 +101,12 @@ public final class EditorService: ObservableObject {
 
     /// 当前文件内容（NSTextStorage）
     public var content: NSTextStorage? { state.content }
+
+    /// 当前文档文本变更版本号。
+    public var contentRevision: UInt64 { state.contentRevision }
+
+    /// 当前文档成功保存版本号。
+    public var saveRevision: UInt64 { state.saveRevision }
 
     /// 当前文件相对于项目根目录的路径
     public var relativeFilePath: String { state.relativeFilePath }
@@ -435,6 +444,20 @@ public final class EditorService: ObservableObject {
 
     /// 刷新项目上下文
     public func refreshProjectContext() {
+        state.refreshProjectContextSnapshot()
+    }
+
+    /// 刷新指定项目的上下文能力。
+    public func refreshProjectContext(for projectPath: String?) async {
+        let trimmedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmedPath.isEmpty else {
+            state.projectRootPath = nil
+            state.refreshProjectContextSnapshot()
+            return
+        }
+
+        state.projectRootPath = trimmedPath
+        await state.projectContextCapability?.projectOpened(at: trimmedPath)
         state.refreshProjectContextSnapshot()
     }
 
@@ -776,9 +799,21 @@ public final class EditorService: ObservableObject {
     // MARK: - 通知桥接（Notification Bridge）
     // ========================================================================
 
-    /// 活跃会话变化回调（由 EditorPanelView 注册）
+    /// 活跃会话变化回调（可由宿主注册附加观察者）。
     public var onActiveSessionChanged: ((EditorSession) -> Void)? {
-        get { state.onActiveSessionChanged }
-        set { state.onActiveSessionChanged = newValue }
+        get { activeSessionChangedObserver }
+        set {
+            activeSessionChangedObserver = newValue
+            installActiveSessionSyncBridge()
+        }
+    }
+
+    private func installActiveSessionSyncBridge() {
+        state.onActiveSessionChanged = { [weak self] snapshot in
+            guard let self else { return }
+            self.sessionStore.syncActiveSession(from: snapshot)
+            self.activeSessionChangedObserver?(snapshot)
+        }
+        sessionStore.syncActiveSession(from: state.activeSession)
     }
 }

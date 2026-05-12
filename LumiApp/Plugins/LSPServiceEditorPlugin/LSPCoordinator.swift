@@ -1,4 +1,5 @@
-import SwiftUI
+import Foundation
+import AppKit
 @preconcurrency import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
@@ -589,57 +590,6 @@ final class CompletionProvider: ObservableObject {
         case .struct: return "rectangle.stack"
         default: return "text.bubble"
         }
-    }
-}
-
-// MARK: - Status Bar Item
-
-struct LSPDiagnosticStatusBarItem: View {
-    
-    @StateObject private var diagnosticsManager = DiagnosticsManager()
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            if diagnosticsManager.errorCount > 0 {
-                HStack(spacing: 4) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.red)
-                    Text("\(diagnosticsManager.errorCount)")
-                        .font(.system(size: 11, weight: .medium))
-                }
-            }
-            
-            if diagnosticsManager.warningCount > 0 {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
-                    Text("\(diagnosticsManager.warningCount)")
-                        .font(.system(size: 11, weight: .medium))
-                }
-            }
-        }
-        .opacity(diagnosticsManager.errorCount > 0 || diagnosticsManager.warningCount > 0 ? 1 : 0)
-    }
-}
-
-// MARK: - Hover Tooltip View
-
-/// 悬停提示浮层
-struct LSPHoverTooltip: View {
-    
-    let content: String
-    @Environment(\.colorScheme) var colorScheme
-    
-    var body: some View {
-        Text(content)
-            .font(.system(size: 12, design: .monospaced))
-            .padding(8)
-            .frame(maxWidth: 400, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(colorScheme == .dark ? Color(nsColor: .controlBackgroundColor) : Color.white)
-                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 2)
-            )
     }
 }
 

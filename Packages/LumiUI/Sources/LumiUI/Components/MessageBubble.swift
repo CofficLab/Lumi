@@ -118,3 +118,20 @@ public extension View {
         modifier(AppMessageBubbleModifier(role: role, isError: isError, style: style))
     }
 }
+
+#Preview {
+    VStack(alignment: .leading, spacing: 12) {
+        Text("Hello, how can I help you today?")
+            .appMessageBubble(role: .user, isError: false)
+            .frame(maxWidth: 250, alignment: .trailing)
+        Text("I can assist with coding, writing, and more!")
+            .appMessageBubble(role: .assistant, isError: false)
+            .frame(maxWidth: 250, alignment: .leading)
+        Text("An unexpected error occurred.")
+            .appMessageBubble(role: .error, isError: true)
+            .frame(maxWidth: 250, alignment: .leading)
+    }
+    .padding()
+    .frame(width: 300)
+    .background(Color.gray.opacity(0.15))
+}

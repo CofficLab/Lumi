@@ -30,6 +30,8 @@ public struct AppListRow<Content: View>: View {
                 .background(rowBackground)
                 .overlay(rowBorder)
                 .cornerRadius(AppUI.Radius.sm)
+                .scaleEffect(isHovered ? 1.01 : 1.0)
+                .shadow(color: Color.black.opacity(isHovered ? 0.06 : 0), radius: isHovered ? 8 : 0, y: isHovered ? 3 : 0)
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
@@ -63,4 +65,24 @@ public struct AppListRow<Content: View>: View {
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         }
     }
+}
+
+#Preview {
+    VStack(spacing: 4) {
+        AppListRow(isSelected: true) {
+            Text("Selected Item")
+        }
+        AppListRow {
+            Text("Normal Item")
+        }
+        AppListRow(isSelected: false, action: {}) {
+            HStack {
+                Image(systemName: "star")
+                Text("With Action")
+            }
+        }
+    }
+    .frame(width: 300)
+    .padding()
+    .background(Color.gray.opacity(0.15))
 }

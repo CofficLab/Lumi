@@ -53,19 +53,11 @@ actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
 ///
 /// 使用独立的 ViewModel 实例，不与侧边栏 Terminal 共享会话。
 struct EditorBottomTerminalContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
     @EnvironmentObject private var projectVM: ProjectVM
     @EnvironmentObject private var themeVM: ThemeVM
 
-    /// 独立的 ViewModel 实例，不使用 .shared
-    @StateObject private var viewModel: TerminalTabsViewModel
-
-    init() {
-        // 初始化时注入主题 ID 提供者
-        _viewModel = StateObject(wrappedValue: TerminalTabsViewModel(
-            themeIdProvider: { ThemeVM.currentEditorThemeId() }
-        ))
-    }
+    /// 底部面板专用共享实例，避免 bottom tab 内容视图重建时丢失终端会话。
+    @ObservedObject private var viewModel = TerminalTabsViewModel.editorBottomShared
 
     /// 工作目录（使用当前项目根路径）
     private var workingDirectory: String? {
@@ -87,6 +79,9 @@ struct EditorBottomTerminalContentView: View {
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .onAppear {
             viewModel.ensureInitialSession(workingDirectory: workingDirectory)
+        }
+        .onChange(of: projectVM.currentProjectPath) { _, _ in
+            viewModel.updateDefaultWorkingDirectory(workingDirectory)
         }
         .onReceive(NotificationCenter.default.publisher(for: .lumiThemeDidChange)) { notification in
             // 监听主题变化，更新所有会话的主题
@@ -173,6 +168,13 @@ struct EditorBottomTerminalContentView: View {
         let path = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         return path.isEmpty ? nil : path
     }
+}
+
+private extension TerminalTabsViewModel {
+    /// Editor bottom terminal 使用自己的共享实例，与侧边栏 Terminal 保持会话隔离。
+    static let editorBottomShared = TerminalTabsViewModel(
+        themeIdProvider: { ThemeVM.currentEditorThemeId() }
+    )
 }
 
 /// 底部终端 Tab 项 - 紧凑样式

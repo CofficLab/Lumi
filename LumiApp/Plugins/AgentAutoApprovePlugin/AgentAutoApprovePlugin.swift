@@ -30,7 +30,8 @@ actor AgentAutoApprovePlugin: SuperPlugin, SuperLog {
     /// 工具栏：自动批准开关
     @MainActor
     func addToolBarTrailingView(activeIcon: String?) -> AnyView? {
-        AnyView(AutoApproveToggle())
+        guard activeIcon == EditorPlugin.iconName else { return nil }
+        return AnyView(AutoApproveToggle())
     }
 }
 
