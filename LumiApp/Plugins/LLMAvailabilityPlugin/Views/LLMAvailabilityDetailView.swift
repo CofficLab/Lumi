@@ -6,10 +6,12 @@ import MagicKit
 /// 显示所有供应商和模型的可用性状态，支持刷新和搜索
 struct LLMAvailabilityDetailView: View {
     @ObservedObject private var store = LLMAvailabilityStore.shared
+    @EnvironmentObject private var llmVM: LLMVM
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var searchText = ""
     @State private var isRefreshing = false
+    @State private var checkingProviderIds: Set<String> = []
     @State private var errorMessage: String?
 
     // MARK: - Computed
@@ -213,6 +215,15 @@ struct LLMAvailabilityDetailView: View {
 
                 Spacer()
 
+                Button(action: { recheckProvider(provider) }) {
+                    Image(systemName: checkingProviderIds.contains(provider.providerId) ? "arrow.triangle.2.circlepath" : "arrow.clockwise")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "Recheck this provider", table: "LLMAvailability"))
+                .disabled(checkingProviderIds.contains(provider.providerId) || isRefreshing)
+
                 Text("\(provider.availableModels.count)/\(provider.models.count)")
                     .font(.system(size: 11))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
@@ -381,14 +392,24 @@ struct LLMAvailabilityDetailView: View {
         isRefreshing = true
         errorMessage = nil
 
-        // 触发重新检测
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5秒延迟
+            let checker = LLMAvailabilityChecker(llmService: llmVM.llmService)
+            await checker.checkAll()
             isRefreshing = false
+        }
+    }
 
-            // 通过发送通知或调用接口触发检测
-            // 这里需要在 LLMAvailabilityOverlay 中实现检测触发逻辑
-            // 暂时先不实现，待 overlay 逻辑完善后再集成
+    private func recheckProvider(_ provider: LLMProviderAvailability) {
+        guard !checkingProviderIds.contains(provider.providerId) else { return }
+
+        checkingProviderIds.insert(provider.providerId)
+
+        Task { @MainActor in
+            let checker = LLMAvailabilityChecker(llmService: llmVM.llmService)
+            for model in provider.models {
+                await checker.checkModel(providerId: provider.providerId, modelId: model.modelId)
+            }
+            checkingProviderIds.remove(provider.providerId)
         }
     }
 }
