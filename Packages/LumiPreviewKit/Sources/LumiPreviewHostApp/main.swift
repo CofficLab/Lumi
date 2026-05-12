@@ -6,34 +6,48 @@ import Darwin
 
 /// 独立预览宿主程序入口。
 ///
-/// 当前阶段实现 stdin/stdout JSON 通信；真实 SwiftUI 视图装载会在后续引擎集成中接入。
+/// 使用后台线程处理 stdin/stdout JSON 通信，让主线程保留给 AppKit run loop。
 @main
 struct LumiPreviewHostApp {
     @MainActor
     static func main() {
-        StdioPreviewHost().run()
+        let host = StdioPreviewHost()
+        host.run()
     }
 }
 
 @MainActor
-private struct StdioPreviewHost {
+private final class StdioPreviewHost {
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
     private let renderer = PreviewRenderer()
+    private var requestReader: HostRequestReader?
 
     func run() {
-        while let line = readLine() {
-            guard let data = line.data(using: .utf8) else {
-                write(ErrorResponse(message: "Request is not valid UTF-8."))
-                continue
-            }
+        let requestReader = HostRequestReader(host: self)
+        self.requestReader = requestReader
+        requestReader.start()
+        NSApplication.shared.run()
+    }
 
-            do {
-                let request = try decoder.decode(RenderRequest.self, from: data)
-                write(handle(request))
-            } catch {
-                write(ErrorResponse(message: "Invalid request: \(error.localizedDescription)"))
-            }
+    fileprivate func handleLine(_ line: String) -> Data {
+        guard let data = line.data(using: .utf8) else {
+            return encoded(ErrorResponse(message: "Request is not valid UTF-8."))
+        }
+
+        do {
+            let request = try decoder.decode(RenderRequest.self, from: data)
+            return encoded(handle(request))
+        } catch {
+            return encoded(ErrorResponse(message: "Invalid request: \(error.localizedDescription)"))
+        }
+    }
+
+    private func encoded<Response: Encodable>(_ response: Response) -> Data {
+        do {
+            return try encoder.encode(response)
+        } catch {
+            return Data(#"{"message":"Failed to encode response."}"#.utf8)
         }
     }
 
@@ -79,19 +93,48 @@ private struct StdioPreviewHost {
             return renderer.stopLivePreview()
         }
     }
+}
 
-    private func write<Response: Encodable>(_ response: Response) {
-        do {
-            let data = try encoder.encode(response)
-            if let string = String(data: data, encoding: .utf8) {
-                print(string)
-                fflush(stdout)
-            }
-        } catch {
-            print(#"{"message":"Failed to encode response."}"#)
-            fflush(stdout)
+private final class HostRequestReader: @unchecked Sendable {
+    private weak var host: StdioPreviewHost?
+
+    init(host: StdioPreviewHost) {
+        self.host = host
+    }
+
+    func start() {
+        Thread.detachNewThread { [weak self] in
+            self?.readLoop()
         }
     }
+
+    private func readLoop() {
+        while let line = readLine() {
+            let result = ResponseDataBox()
+            let semaphore = DispatchSemaphore(value: 0)
+
+            Task { @MainActor [weak self] in
+                if let host = self?.host {
+                    result.data = host.handleLine(line)
+                } else {
+                    result.data = Data(#"{"message":"Preview host is no longer available."}"#.utf8)
+                }
+                semaphore.signal()
+            }
+
+            semaphore.wait()
+            FileHandle.standardOutput.write(result.data)
+            FileHandle.standardOutput.write(Data([0x0A]))
+        }
+
+        Task { @MainActor in
+            NSApplication.shared.terminate(nil)
+        }
+    }
+}
+
+private final class ResponseDataBox: @unchecked Sendable {
+    var data = Data()
 }
 
 @MainActor

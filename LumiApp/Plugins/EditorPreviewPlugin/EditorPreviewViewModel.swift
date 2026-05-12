@@ -41,18 +41,24 @@ final class EditorPreviewViewModel: ObservableObject {
     @Published private(set) var renderImage: NSImage?
     @Published private(set) var diagnostics: String?
     @Published private(set) var performanceSummary: String?
-    @Published private(set) var displayMode: PreviewDisplayMode = .image
+    @Published private(set) var displayMode: PreviewDisplayMode = .live
     @Published private(set) var livePreviewInfo: LivePreviewInfo = LivePreviewInfo()
     @Published private(set) var liveCanvasRect: CGRect = .zero
     @Published private(set) var isLiveLoading: Bool = false
 
     // MARK: - Private State
 
+    private static let preferredDisplayModeKey = "EditorPreviewPlugin.preferredDisplayMode"
+
     private let scanner = PreviewScanner()
     private var session: (any PreviewSession)?
     private var engine: LivePreviewEngine?
     private var liveFrameSyncTask: Task<Void, Never>?
     private var isStoppingLive: Bool = false
+
+    init() {
+        displayMode = Self.preferredDisplayMode
+    }
 
     // MARK: - Computed Properties
 
@@ -78,7 +84,7 @@ final class EditorPreviewViewModel: ObservableObject {
 
     /// Whether Live mode is available for the current session.
     var isLiveAvailable: Bool {
-        guard let session else { return false }
+        guard session != nil else { return false }
         return livePreviewInfo.state == .available
             || livePreviewInfo.state == .running
             || livePreviewInfo.state == .launching
@@ -125,6 +131,8 @@ final class EditorPreviewViewModel: ObservableObject {
             renderImage = nil
             diagnostics = nil
             performanceSummary = nil
+            displayMode = Self.preferredDisplayMode
+            isLiveLoading = false
             return
         }
 
@@ -172,7 +180,8 @@ final class EditorPreviewViewModel: ObservableObject {
         renderImage = nil
         diagnostics = nil
         performanceSummary = nil
-        displayMode = .image
+        displayMode = Self.preferredDisplayMode
+        isLiveLoading = displayMode == .live
         livePreviewInfo = LivePreviewInfo()
         runState = .starting
 
@@ -181,6 +190,7 @@ final class EditorPreviewViewModel: ObservableObject {
                 let nextSession = try await engine.startPreview(selectedPreview)
                 session = nextSession
                 await syncSessionState(from: nextSession)
+                await applyPreferredDisplayModeIfNeeded()
             } catch let error as PreviewError {
                 runState = .failed(Self.message(for: error))
             } catch {
@@ -226,6 +236,8 @@ final class EditorPreviewViewModel: ObservableObject {
             renderImage = nil
             diagnostics = nil
             performanceSummary = nil
+            displayMode = Self.preferredDisplayMode
+            isLiveLoading = false
             return
         }
 
@@ -236,7 +248,8 @@ final class EditorPreviewViewModel: ObservableObject {
         renderImage = nil
         diagnostics = nil
         performanceSummary = nil
-        displayMode = .image
+        displayMode = Self.preferredDisplayMode
+        isLiveLoading = false
         livePreviewInfo = LivePreviewInfo()
 
         Task {
@@ -249,6 +262,7 @@ final class EditorPreviewViewModel: ObservableObject {
 
     func switchToLive() {
         guard canSwitchToLive else { return }
+        Self.preferredDisplayMode = .live
         displayMode = .live
         isLiveLoading = true
 
@@ -258,6 +272,7 @@ final class EditorPreviewViewModel: ObservableObject {
     }
 
     func switchToImage() {
+        Self.preferredDisplayMode = .image
         guard canSwitchToImage else { return }
         displayMode = .image
 
@@ -400,18 +415,13 @@ final class EditorPreviewViewModel: ObservableObject {
             return
         }
 
-        guard let screen = NSScreen.main else { return }
-
-        // Convert SwiftUI global coordinates (top-left origin, y down)
-        // to AppKit screen coordinates (bottom-left origin, y up)
-        let screenHeight = screen.frame.height
+        // liveCanvasRect is already in AppKit screen coordinates, reported by the canvas NSView.
         let rect = liveCanvasRect
-        let appKitY = screenHeight - rect.origin.y - rect.height
 
         try? await engine.updateLiveFrame(
             session,
             x: Double(rect.origin.x),
-            y: Double(appKitY),
+            y: Double(rect.origin.y),
             width: Double(rect.width),
             height: Double(rect.height)
         )
@@ -455,6 +465,38 @@ final class EditorPreviewViewModel: ObservableObject {
             runState = .stopped
         case .planning, .compiling, .launching:
             runState = .starting
+        }
+    }
+
+    private func applyPreferredDisplayModeIfNeeded() async {
+        guard Self.preferredDisplayMode == .live,
+              runState == .running else {
+            return
+        }
+
+        guard livePreviewInfo.state == .available || livePreviewInfo.state == .running else {
+            fallbackToImage(
+                reason: liveUnavailableReason
+                    ?? String(localized: "Live preview is not available", table: "EditorPreview")
+            )
+            return
+        }
+
+        displayMode = .live
+        isLiveLoading = true
+        await startLivePreview()
+    }
+
+    private static var preferredDisplayMode: PreviewDisplayMode {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: preferredDisplayModeKey),
+                  let mode = PreviewDisplayMode(rawValue: rawValue) else {
+                return .live
+            }
+            return mode
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: preferredDisplayModeKey)
         }
     }
 

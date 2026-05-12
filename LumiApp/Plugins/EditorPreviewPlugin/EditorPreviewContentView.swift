@@ -200,71 +200,68 @@ struct EditorPreviewContentView: View {
 
     // MARK: - Display Mode Picker (toolbar)
 
-    @ViewBuilder
     private var displayModePicker: some View {
-        if viewModel.runState == .running || viewModel.displayMode == .live {
-            HStack(spacing: 0) {
-                Button {
-                    viewModel.switchToImage()
-                } label: {
-                    HStack(spacing: 3) {
-                        Image(systemName: "photo")
-                            .font(.system(size: 9, weight: .medium))
-                        Text("Image")
-                            .font(.system(size: 10, weight: .medium))
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        viewModel.displayMode == .image
-                            ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
-                            : Color.clear
-                    )
-                    .foregroundColor(
-                        viewModel.displayMode == .image
-                            ? themeVM.activeAppTheme.workspaceTextColor()
-                            : themeVM.activeAppTheme.workspaceSecondaryTextColor()
-                    )
+        HStack(spacing: 0) {
+            Button {
+                viewModel.switchToImage()
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 9, weight: .medium))
+                    Text("Image")
+                        .font(.system(size: 10, weight: .medium))
                 }
-                .buttonStyle(.plain)
-
-                Rectangle()
-                    .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.2))
-                    .frame(width: 1, height: 14)
-
-                Button {
-                    if viewModel.canSwitchToLive {
-                        viewModel.switchToLive()
-                    }
-                } label: {
-                    HStack(spacing: 3) {
-                        Image(systemName: viewModel.displayMode == .live ? "play.rectangle.fill" : "play.rectangle")
-                            .font(.system(size: 9, weight: .medium))
-                        Text("Live")
-                            .font(.system(size: 10, weight: .medium))
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        viewModel.displayMode == .live
-                            ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
-                            : Color.clear
-                    )
-                    .foregroundColor(liveTabColor)
-                }
-                .buttonStyle(.plain)
-                .disabled(!viewModel.canSwitchToLive && viewModel.displayMode != .live)
-                .help(viewModel.liveUnavailableReason ?? String(localized: "Switch to Live mode", table: "EditorPreview"))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(
+                    viewModel.displayMode == .image
+                        ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
+                        : Color.clear
+                )
+                .foregroundColor(
+                    viewModel.displayMode == .image
+                        ? themeVM.activeAppTheme.workspaceTextColor()
+                        : themeVM.activeAppTheme.workspaceSecondaryTextColor()
+                )
             }
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.06))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15), lineWidth: 0.5)
-            )
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.2))
+                .frame(width: 1, height: 14)
+
+            Button {
+                if viewModel.canSwitchToLive {
+                    viewModel.switchToLive()
+                }
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: viewModel.displayMode == .live ? "play.rectangle.fill" : "play.rectangle")
+                        .font(.system(size: 9, weight: .medium))
+                    Text("Live")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(
+                    viewModel.displayMode == .live
+                        ? themeVM.activeAppTheme.workspaceTextColor().opacity(0.12)
+                        : Color.clear
+                )
+                .foregroundColor(liveTabColor)
+            }
+            .buttonStyle(.plain)
+            .disabled(!viewModel.canSwitchToLive && viewModel.displayMode != .live)
+            .help(viewModel.liveUnavailableReason ?? String(localized: "Switch to Live mode", table: "EditorPreview"))
         }
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.15), lineWidth: 0.5)
+        )
     }
 
     private var liveTabColor: Color {
@@ -439,26 +436,21 @@ struct EditorPreviewContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
+            .background(
+                LiveCanvasFrameReporter { screenFrame in
+                    viewModel.updateLiveCanvasRect(screenFrame)
+                }
+            )
             .onAppear {
-                // Sync the canvas frame
-                syncCanvasFrame(in: geometry)
                 viewModel.liveCanvasDidAppear()
             }
             .onDisappear {
                 viewModel.liveCanvasDidDisappear()
             }
-            .onChange(of: geometry.frame(in: .global)) { _, newFrame in
-                syncCanvasFrame(in: geometry)
-            }
             .onChange(of: geometry.size) { _, _ in
-                syncCanvasFrame(in: geometry)
+                LiveCanvasFrameReporter.scheduleFrameUpdate()
             }
         }
-    }
-
-    private func syncCanvasFrame(in geometry: GeometryProxy) {
-        let globalFrame = geometry.frame(in: .global)
-        viewModel.updateLiveCanvasRect(globalFrame)
     }
 
     // MARK: - Surface Info
@@ -533,6 +525,103 @@ struct EditorPreviewContentView: View {
     private func refreshScanAndStartIfNeeded(allowsStopped: Bool = true) {
         refreshScan()
         viewModel.startSelectedPreviewIfNeeded(allowsStopped: allowsStopped)
+    }
+}
+
+private let liveCanvasFrameReporterFrameUpdateNotification = Notification.Name("LiveCanvasFrameReporterFrameUpdate")
+
+private struct LiveCanvasFrameReporter: NSViewRepresentable {
+    let onFrameChange: (CGRect) -> Void
+
+    static func scheduleFrameUpdate() {
+        NotificationCenter.default.post(name: liveCanvasFrameReporterFrameUpdateNotification, object: nil)
+    }
+
+    func makeNSView(context: Context) -> ReportingView {
+        let view = ReportingView()
+        view.onFrameChange = onFrameChange
+        context.coordinator.attach(to: view)
+        return view
+    }
+
+    func updateNSView(_ nsView: ReportingView, context: Context) {
+        nsView.onFrameChange = onFrameChange
+        nsView.reportFrameSoon()
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    final class Coordinator {
+        private var observers: [NSObjectProtocol] = []
+
+        func attach(to view: ReportingView) {
+            observers.forEach(NotificationCenter.default.removeObserver)
+            observers = [
+                NotificationCenter.default.addObserver(
+                    forName: NSWindow.didMoveNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak view] _ in
+                    Task { @MainActor in
+                        view?.reportFrameSoon()
+                    }
+                },
+                NotificationCenter.default.addObserver(
+                    forName: NSWindow.didResizeNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak view] _ in
+                    Task { @MainActor in
+                        view?.reportFrameSoon()
+                    }
+                },
+                NotificationCenter.default.addObserver(
+                    forName: liveCanvasFrameReporterFrameUpdateNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak view] _ in
+                    Task { @MainActor in
+                        view?.reportFrameSoon()
+                    }
+                }
+            ]
+        }
+
+        deinit {
+            observers.forEach(NotificationCenter.default.removeObserver)
+        }
+    }
+
+    final class ReportingView: NSView {
+        var onFrameChange: ((CGRect) -> Void)?
+        private var lastReportedFrame: CGRect = .null
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            reportFrameSoon()
+        }
+
+        override func setFrameSize(_ newSize: NSSize) {
+            super.setFrameSize(newSize)
+            reportFrameSoon()
+        }
+
+        func reportFrameSoon() {
+            DispatchQueue.main.async { [weak self] in
+                self?.reportFrame()
+            }
+        }
+
+        private func reportFrame() {
+            guard let window, !bounds.isEmpty else { return }
+            let windowRect = convert(bounds, to: nil)
+            let screenRect = window.convertToScreen(windowRect).standardized
+            guard screenRect != lastReportedFrame else { return }
+            lastReportedFrame = screenRect
+            onFrameChange?(screenRect)
+        }
     }
 }
 #else
