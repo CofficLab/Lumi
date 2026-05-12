@@ -105,6 +105,9 @@ public final class EditorService: ObservableObject {
     /// 当前文档文本变更版本号。
     public var contentRevision: UInt64 { state.contentRevision }
 
+    /// 当前文档成功保存版本号。
+    public var saveRevision: UInt64 { state.saveRevision }
+
     /// 当前文件相对于项目根目录的路径
     public var relativeFilePath: String { state.relativeFilePath }
 

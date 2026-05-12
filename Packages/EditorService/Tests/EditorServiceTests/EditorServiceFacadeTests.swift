@@ -75,5 +75,57 @@ final class EditorServiceFacadeTests: XCTestCase {
         XCTAssertNil(service.activeSessionID)
         XCTAssertNil(service.activeSession)
     }
+
+    func testBuiltinSavePersistsDirtyBufferAndClearsDirtyState() async throws {
+        let service = makeService()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorServiceFacadeTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("Save.swift")
+        try "struct SaveView {}\n".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        service.open(at: fileURL)
+        try await waitUntil("file loaded") {
+            service.currentFileURL == fileURL && service.content?.string == "struct SaveView {}\n"
+        }
+
+        let updated = "struct SaveView { let value = 1 }\n"
+        let result = service.state.documentController.replaceText(updated)
+        service.state.content = service.state.documentController.textStorage
+        service.state.totalLines = result.snapshot.text.filter { $0 == "\n" }.count + 1
+        service.state.notifyContentChangedAfterSynchronizedEdit(using: updated)
+        let previousSaveRevision = service.saveRevision
+
+        XCTAssertTrue(service.hasUnsavedChanges)
+
+        service.performCommand(id: "builtin.save")
+
+        try await waitUntil("save finished") {
+            !service.hasUnsavedChanges
+        }
+
+        let onDisk = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertEqual(onDisk, updated)
+        XCTAssertEqual(service.content?.string, updated)
+        XCTAssertFalse(service.hasUnsavedChanges)
+        XCTAssertEqual(service.saveRevision, previousSaveRevision + 1)
+    }
+
+    private func waitUntil(
+        _ description: String,
+        timeout: TimeInterval = 2,
+        condition: @escaping @MainActor () -> Bool
+    ) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() {
+                return
+            }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        XCTFail("Timed out waiting for \(description)")
+    }
 }
 #endif

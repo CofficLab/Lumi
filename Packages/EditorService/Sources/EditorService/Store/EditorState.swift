@@ -270,6 +270,16 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 需要一个显式版本号让 SwiftUI/插件可靠观察每次编辑。
     @Published public private(set) var contentRevision: UInt64 = 0
 
+    /// 当前文档成功保存版本号。
+    ///
+    /// 保存成功并不会总是引起 `contentRevision` 变化，因此需要独立信号
+    /// 让依赖“已保存”语义的视图可靠收到事件。
+    @Published public private(set) var saveRevision: UInt64 = 0
+
+    func recordSuccessfulSave() {
+        saveRevision &+= 1
+    }
+
     @Published public private(set) var isFileLoadInProgress: Bool = false
     @Published public private(set) var fileLoadErrorMessage: String?
 

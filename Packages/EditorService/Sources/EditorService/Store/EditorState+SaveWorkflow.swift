@@ -46,6 +46,7 @@ extension EditorState {
             scheduleSuccessClear: { [weak self] in self?.scheduleSuccessClear() },
             notifyDidSave: { [weak self] content in
                 guard let self, let uri = self.currentFileURL?.absoluteString else { return }
+                self.recordSuccessfulSave()
                 self.lspClient.documentDidSave(uri: uri, text: content)
             },
             setHasUnsavedChanges: { [weak self] value in self?.hasUnsavedChanges = value }
