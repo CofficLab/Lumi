@@ -1,6 +1,7 @@
 #if canImport(XCTest)
 import XCTest
 import LanguageServerProtocol
+import EditorKernelCore
 @testable import Lumi
 
 @MainActor
@@ -47,7 +48,7 @@ final class DocumentSymbolProviderTests: XCTestCase {
     }
 
     func testProviderExposesActivePathAndAncestorIDs() {
-        let provider = DocumentSymbolProvider {
+        let provider = EditorDocumentSymbolProviderCore {
             []
         }
 
@@ -90,7 +91,7 @@ final class DocumentSymbolProviderTests: XCTestCase {
     }
 
     func testProviderReturnsEmptyActivePathWhenLineIsOutsideSymbols() {
-        let provider = DocumentSymbolProvider {
+        let provider = EditorDocumentSymbolProviderCore {
             []
         }
 
@@ -118,7 +119,7 @@ final class DocumentSymbolProviderTests: XCTestCase {
     }
 
     func testClearResetsSymbolsAndLoadingState() {
-        let provider = DocumentSymbolProvider {
+        let provider = EditorDocumentSymbolProviderCore {
             []
         }
 
@@ -147,7 +148,7 @@ final class DocumentSymbolProviderTests: XCTestCase {
     }
 
     func testRefreshLoadsSymbolsAndResetsLoadingState() async {
-        let provider = DocumentSymbolProvider {
+        let provider = EditorDocumentSymbolProviderCore {
             [
                 DocumentSymbol(
                     name: "Container",

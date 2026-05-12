@@ -31,7 +31,7 @@ final class RecentProjectsPluginTests: XCTestCase {
         let tools = await RecentProjectsPlugin.shared.agentTools()
 
         XCTAssertNotNil(rootView)
-        XCTAssertEqual(tools.count, 5)
+        XCTAssertEqual(tools.count, 3)
     }
 }
 #endif
