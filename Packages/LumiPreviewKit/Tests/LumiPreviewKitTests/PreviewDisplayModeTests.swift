@@ -167,6 +167,53 @@ struct PreviewDisplayModeTests {
         #expect(await session.livePreviewInfo.hostWindowNumber == 456)
     }
 
+    @Test("markLivePreviewAvailable 不会把 running 降级为 available")
+    func markLivePreviewAvailablePreservesRunningState() async {
+        let session = LivePreviewSession(
+            discovery: PreviewDiscovery(
+                id: "test-running",
+                title: "Test",
+                sourceFileURL: URL(fileURLWithPath: "/tmp/Test.swift"),
+                lineNumber: 1,
+                endLineNumber: 3
+            )
+        )
+
+        await session.setLivePreviewInfo(LivePreviewInfo(state: .running, hostWindowNumber: 10))
+        await session.markLivePreviewAvailable(windowNumber: 11)
+
+        #expect(await session.livePreviewInfo.state == .running)
+        #expect(await session.livePreviewInfo.hostWindowNumber == 11)
+    }
+
+    @Test("updateDiscovery 替换会话中的预览发现结果")
+    func updateDiscoveryReplacesSessionDiscovery() async {
+        let original = PreviewDiscovery(
+            id: "original",
+            title: "Original",
+            sourceFileURL: URL(fileURLWithPath: "/tmp/Original.swift"),
+            lineNumber: 1,
+            endLineNumber: 3
+        )
+        let updated = PreviewDiscovery(
+            id: "updated",
+            title: "Updated",
+            sourceFileURL: URL(fileURLWithPath: "/tmp/Updated.swift"),
+            lineNumber: 4,
+            endLineNumber: 6
+        )
+        let session = LivePreviewSession(discovery: original)
+
+        await session.updateDiscovery(updated)
+        let discovery = await session.discovery
+
+        #expect(discovery.id == updated.id)
+        #expect(discovery.title == updated.title)
+        #expect(discovery.sourceFileURL == updated.sourceFileURL)
+        #expect(discovery.lineNumber == updated.lineNumber)
+        #expect(discovery.endLineNumber == updated.endLineNumber)
+    }
+
     // MARK: - RenderResponse Live Fields
 
     @Test("RenderResponse 新增 livePreviewEnabled 和 liveWindowNumber 字段")

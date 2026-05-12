@@ -139,6 +139,117 @@ struct BuildPlannerTests {
         #expect(targetName == "NestedTarget")
     }
 
+    @Test("SPM target 支持自定义 path 和 sources")
+    func spmTargetWithCustomPathAndSources() throws {
+        let packageDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-CustomSources-\(UUID().uuidString)", isDirectory: true)
+        let targetDirectory = packageDirectory.appendingPathComponent("Feature", isDirectory: true)
+        let includedDirectory = targetDirectory.appendingPathComponent("PreviewSources", isDirectory: true)
+        let ignoredDirectory = targetDirectory.appendingPathComponent("IgnoredSources", isDirectory: true)
+        let includedFile = includedDirectory.appendingPathComponent("Included.swift")
+        let ignoredFile = ignoredDirectory.appendingPathComponent("Ignored.swift")
+
+        try FileManager.default.createDirectory(at: includedDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: ignoredDirectory, withIntermediateDirectories: true)
+        try "struct Included {}\n".write(to: includedFile, atomically: true, encoding: .utf8)
+        try "struct Ignored {}\n".write(to: ignoredFile, atomically: true, encoding: .utf8)
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "CustomSources",
+            targets: [
+                .target(
+                    name: "FeatureTarget",
+                    path: "Feature",
+                    sources: ["PreviewSources"]
+                )
+            ]
+        )
+        """.write(to: packageDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let result = BuildPlanner().plan(for: includedFile)
+        guard case let .spm(_, targetName) = result else {
+            Issue.record("Expected .spm strategy, got \(String(describing: result))")
+            return
+        }
+
+        let sources = BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: "FeatureTarget")
+        #expect(targetName == "FeatureTarget")
+        #expect(sources == [includedFile.standardizedFileURL.resolvingSymlinksInPath()])
+        #expect(BuildPlanner().plan(for: ignoredFile) == nil)
+    }
+
+    @Test("SPM test target 使用 Tests 默认目录")
+    func spmTestTargetUsesDefaultTestsDirectory() throws {
+        let packageDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-TestTarget-\(UUID().uuidString)", isDirectory: true)
+        let testDirectory = packageDirectory
+            .appendingPathComponent("Tests", isDirectory: true)
+            .appendingPathComponent("FeatureTests", isDirectory: true)
+        let testFile = testDirectory.appendingPathComponent("FeatureTests.swift")
+
+        try FileManager.default.createDirectory(at: testDirectory, withIntermediateDirectories: true)
+        try "import Testing\n".write(to: testFile, atomically: true, encoding: .utf8)
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "Feature",
+            targets: [
+                .testTarget(name: "FeatureTests")
+            ]
+        )
+        """.write(to: packageDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let result = BuildPlanner().plan(for: testFile)
+        guard case let .spm(_, targetName) = result else {
+            Issue.record("Expected .spm strategy, got \(String(describing: result))")
+            return
+        }
+
+        #expect(targetName == "FeatureTests")
+        #expect(BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: "FeatureTests") == [
+            testFile.standardizedFileURL.resolvingSymlinksInPath()
+        ])
+    }
+
+    @Test("SPM target 支持绝对 path")
+    func spmTargetWithAbsolutePath() throws {
+        let packageDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-AbsolutePackage-\(UUID().uuidString)", isDirectory: true)
+        let sourceDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-AbsoluteSources-\(UUID().uuidString)", isDirectory: true)
+        let sourceFile = sourceDirectory.appendingPathComponent("External.swift")
+
+        try FileManager.default.createDirectory(at: packageDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        try "struct External {}\n".write(to: sourceFile, atomically: true, encoding: .utf8)
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "AbsolutePackage",
+            targets: [
+                .target(name: "ExternalTarget", path: "\(sourceDirectory.path)")
+            ]
+        )
+        """.write(to: packageDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
+        defer {
+            try? FileManager.default.removeItem(at: packageDirectory)
+            try? FileManager.default.removeItem(at: sourceDirectory)
+        }
+
+        #expect(BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: "ExternalTarget") == [
+            sourceFile.standardizedFileURL.resolvingSymlinksInPath()
+        ])
+    }
+
     @Test("Xcode synchronized group → 收集文件系统 Swift 源码")
     func xcodeSynchronizedGroupSources() throws {
         let rootDirectory = FileManager.default.temporaryDirectory
@@ -205,6 +316,84 @@ struct BuildPlannerTests {
         #expect(!sources.contains(ignoredFile.standardizedFileURL.resolvingSymlinksInPath()))
     }
 
+    @Test("Xcode workspace 根据 contents.xcworkspacedata 解析 project 源码")
+    func xcodeWorkspaceUsesReferencedProjects() throws {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-WorkspaceSources-\(UUID().uuidString)", isDirectory: true)
+        let workspaceURL = rootDirectory.appendingPathComponent("App.xcworkspace", isDirectory: true)
+        let nestedDirectory = rootDirectory.appendingPathComponent("Nested", isDirectory: true)
+        let projectURL = nestedDirectory.appendingPathComponent("WorkspaceApp.xcodeproj", isDirectory: true)
+        let sourceFile = nestedDirectory.appendingPathComponent("Sources/AppView.swift")
+        let siblingFile = sourceFile.deletingLastPathComponent().appendingPathComponent("PreviewSibling.swift")
+
+        try FileManager.default.createDirectory(at: workspaceURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: nestedDirectory, withIntermediateDirectories: true)
+        try writeXcodeProject(
+            at: projectURL,
+            targetName: "AppTarget",
+            sourceFiles: [sourceFile],
+            sourceTree: "SOURCE_ROOT"
+        )
+        try "struct PreviewSibling {}\n".write(to: siblingFile, atomically: true, encoding: .utf8)
+        try """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Workspace version = "1.0">
+           <FileRef location = "group:Nested/WorkspaceApp.xcodeproj"></FileRef>
+        </Workspace>
+        """.write(to: workspaceURL.appendingPathComponent("contents.xcworkspacedata"), atomically: true, encoding: .utf8)
+        try writeScheme(named: "SharedScheme", targetName: "AppTarget", in: projectURL)
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        let sources = BuildPlanner.swiftSourceFiles(
+            projectURL: workspaceURL,
+            scheme: "SharedScheme",
+            containing: siblingFile
+        )
+
+        #expect(sources.contains(sourceFile.standardizedFileURL.resolvingSymlinksInPath()))
+        #expect(sources.contains(siblingFile.standardizedFileURL.resolvingSymlinksInPath()))
+    }
+
+    @Test("Xcode workspace 缺少 contents 时回退到同级 project")
+    func xcodeWorkspaceFallsBackToSiblingProjects() throws {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-WorkspaceFallback-\(UUID().uuidString)", isDirectory: true)
+        let workspaceURL = rootDirectory.appendingPathComponent("App.xcworkspace", isDirectory: true)
+        let projectURL = rootDirectory.appendingPathComponent("FallbackApp.xcodeproj", isDirectory: true)
+        let sourceFile = rootDirectory.appendingPathComponent("Sources/AppView.swift")
+
+        try FileManager.default.createDirectory(at: workspaceURL, withIntermediateDirectories: true)
+        try writeXcodeProject(at: projectURL, targetName: "FallbackApp", sourceFiles: [sourceFile])
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        let sources = BuildPlanner.swiftSourceFiles(
+            projectURL: workspaceURL,
+            scheme: "FallbackApp",
+            containing: sourceFile
+        )
+
+        #expect(sources == [sourceFile.standardizedFileURL.resolvingSymlinksInPath()])
+    }
+
+    @Test("Xcode scheme 缺失时根据当前文件所属 target 回退")
+    func xcodeSourcesFallbackToContainingTarget() throws {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-ContainingTarget-\(UUID().uuidString)", isDirectory: true)
+        let projectURL = rootDirectory.appendingPathComponent("ContainingApp.xcodeproj", isDirectory: true)
+        let sourceFile = rootDirectory.appendingPathComponent("Sources/AppView.swift")
+
+        try writeXcodeProject(at: projectURL, targetName: "ActualTarget", sourceFiles: [sourceFile])
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        let sources = BuildPlanner.swiftSourceFiles(
+            projectURL: projectURL,
+            scheme: "MissingScheme",
+            containing: sourceFile
+        )
+
+        #expect(sources == [sourceFile.standardizedFileURL.resolvingSymlinksInPath()])
+    }
+
     private func makeTemporaryXcodeContainer(
         extensionName: String,
         schemeName: String
@@ -228,5 +417,113 @@ struct BuildPlannerTests {
         )
 
         return (rootDirectory, sourceFile)
+    }
+
+    private func writeScheme(named schemeName: String, targetName: String, in projectURL: URL) throws {
+        let schemesDirectory = projectURL
+            .appendingPathComponent("xcshareddata", isDirectory: true)
+            .appendingPathComponent("xcschemes", isDirectory: true)
+        try FileManager.default.createDirectory(at: schemesDirectory, withIntermediateDirectories: true)
+        try """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Scheme LastUpgradeVersion = "1600" version = "1.7">
+           <BuildAction>
+              <BuildActionEntries>
+                 <BuildActionEntry buildForRunning = "YES">
+                    <BuildableReference
+                       BlueprintName = "\(targetName)">
+                    </BuildableReference>
+                 </BuildActionEntry>
+              </BuildActionEntries>
+           </BuildAction>
+        </Scheme>
+        """.write(
+            to: schemesDirectory.appendingPathComponent("\(schemeName).xcscheme"),
+            atomically: true,
+            encoding: .utf8
+        )
+    }
+
+    private func writeXcodeProject(
+        at projectURL: URL,
+        targetName: String,
+        sourceFiles: [URL],
+        sourceTree: String = "<group>"
+    ) throws {
+        let sourceDirectory = sourceFiles[0].deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        for sourceFile in sourceFiles {
+            try "struct \(sourceFile.deletingPathExtension().lastPathComponent) {}\n"
+                .write(to: sourceFile, atomically: true, encoding: .utf8)
+        }
+
+        let groupPath = sourceTree == "SOURCE_ROOT"
+            ? sourceDirectory.path.replacingOccurrences(of: projectURL.deletingLastPathComponent().path + "/", with: "")
+            : sourceDirectory.lastPathComponent
+        let sourceEntries = sourceFiles.enumerated().map { index, file in
+            let fileID = "AAAAAAA\(index + 1)"
+            let buildFileID = "BBBBBBB\(index + 1)"
+            let path = sourceTree == "SOURCE_ROOT"
+                ? sourceDirectory.appendingPathComponent(file.lastPathComponent).path
+                    .replacingOccurrences(of: projectURL.deletingLastPathComponent().path + "/", with: "")
+                : file.lastPathComponent
+            return (fileID, buildFileID, path)
+        }
+        let fileObjects = sourceEntries.map { fileID, _, path in
+            """
+            \t\t\(fileID) /* \(path) */ = {
+            \t\t\tisa = PBXFileReference;
+            \t\t\tlastKnownFileType = sourcecode.swift;
+            \t\t\tpath = \(path);
+            \t\t\tsourceTree = "\(sourceTree)";
+            \t\t};
+            """
+        }.joined(separator: "\n")
+        let buildFileObjects = sourceEntries.map { fileID, buildFileID, path in
+            """
+            \t\t\(buildFileID) /* \(path) in Sources */ = {
+            \t\t\tisa = PBXBuildFile;
+            \t\t\tfileRef = \(fileID) /* \(path) */;
+            \t\t};
+            """
+        }.joined(separator: "\n")
+        let fileIDs = sourceEntries.map(\.0).joined(separator: ",\n\t\t\t\t")
+        let buildFileIDs = sourceEntries.map(\.1).joined(separator: ",\n\t\t\t\t")
+
+        try """
+        // !$*UTF8*$!
+        {
+        \tarchiveVersion = 1;
+        \tclasses = {};
+        \tobjectVersion = 77;
+        \tobjects = {
+        \(buildFileObjects)
+        \(fileObjects)
+        \t\tCCCCCCCC /* Sources */ = {
+        \t\t\tisa = PBXGroup;
+        \t\t\tchildren = (
+        \t\t\t\t\(fileIDs),
+        \t\t\t);
+        \t\t\tpath = \(groupPath);
+        \t\t\tsourceTree = "\(sourceTree)";
+        \t\t};
+        \t\tDDDDDDDD /* Sources */ = {
+        \t\t\tisa = PBXSourcesBuildPhase;
+        \t\t\tfiles = (
+        \t\t\t\t\(buildFileIDs),
+        \t\t\t);
+        \t\t};
+        \t\tEEEEEEEE /* \(targetName) */ = {
+        \t\t\tisa = PBXNativeTarget;
+        \t\t\tbuildPhases = (
+        \t\t\t\tDDDDDDDD,
+        \t\t\t);
+        \t\t\tname = \(targetName);
+        \t\t};
+        \t};
+        \trootObject = EEEEEEEE;
+        }
+        """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: .utf8)
     }
 }

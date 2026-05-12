@@ -89,6 +89,112 @@ struct SPMCompilerTests {
         }
     }
 
+    @Test("previewCompilerArguments 包含模块、include、链接输入和 linkedLibrary")
+    func previewCompilerArgumentsIncludeBuildProductsAndLinkedLibraries() throws {
+        let packageDirectory = try makeTemporaryPackage(
+            targetName: "PreviewTarget",
+            sourceFileName: "main.swift",
+            source: """
+            @main
+            struct PreviewTarget {
+                static func main() {}
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let debugDirectory = packageDirectory
+            .appendingPathComponent(".build", isDirectory: true)
+            .appendingPathComponent("debug", isDirectory: true)
+        let modulesDirectory = debugDirectory.appendingPathComponent("Modules", isDirectory: true)
+        let includeDirectory = debugDirectory.appendingPathComponent("include", isDirectory: true)
+        try FileManager.default.createDirectory(at: modulesDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: includeDirectory, withIntermediateDirectories: true)
+        FileManager.default.createFile(atPath: debugDirectory.appendingPathComponent("Helper.o").path, contents: Data())
+        FileManager.default.createFile(atPath: debugDirectory.appendingPathComponent("PreviewTarget.o").path, contents: Data())
+        FileManager.default.createFile(atPath: debugDirectory.appendingPathComponent("libSupport.a").path, contents: Data())
+        FileManager.default.createFile(atPath: debugDirectory.appendingPathComponent("libPreviewTarget.a").path, contents: Data())
+
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "PreviewTargetPackage",
+            targets: [
+                .executableTarget(
+                    name: "PreviewTarget",
+                    linkerSettings: [
+                        .linkedLibrary("sqlite3"),
+                        .linkedLibrary("UIKit", .when(platforms: [.iOS])),
+                        .linkedLibrary("AppKitSupport", .when(platforms: [.macOS]))
+                    ]
+                )
+            ]
+        )
+        """.write(
+            to: packageDirectory.appendingPathComponent("Package.swift"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let arguments = SPMCompiler().previewCompilerArguments(
+            packageDirectory: packageDirectory,
+            targetName: "PreviewTarget"
+        )
+
+        #expect(arguments.contains(debugDirectory.path))
+        #expect(arguments.contains(modulesDirectory.path))
+        #expect(arguments.contains(includeDirectory.path))
+        let normalizedArguments = arguments.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
+        #expect(normalizedArguments.contains(debugDirectory.appendingPathComponent("Helper.o").standardizedFileURL.path))
+        #expect(normalizedArguments.contains(debugDirectory.appendingPathComponent("libSupport.a").standardizedFileURL.path))
+        #expect(!normalizedArguments.contains(debugDirectory.appendingPathComponent("PreviewTarget.o").standardizedFileURL.path))
+        #expect(!normalizedArguments.contains(debugDirectory.appendingPathComponent("libPreviewTarget.a").standardizedFileURL.path))
+        #expect(arguments.contains("-lsqlite3"))
+        #expect(arguments.contains("-lAppKitSupport"))
+        #expect(!arguments.contains("-lUIKit"))
+    }
+
+    @Test("previewCompilerArguments 读取 checkout package 的 linkedLibrary")
+    func previewCompilerArgumentsIncludeCheckoutLinkedLibraries() throws {
+        let packageDirectory = try makeTemporaryPackage(
+            targetName: "PreviewTarget",
+            sourceFileName: "main.swift",
+            source: """
+            @main
+            struct PreviewTarget {
+                static func main() {}
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let checkoutDirectory = packageDirectory
+            .appendingPathComponent(".build", isDirectory: true)
+            .appendingPathComponent("checkouts", isDirectory: true)
+            .appendingPathComponent("NativeDependency", isDirectory: true)
+        try FileManager.default.createDirectory(at: checkoutDirectory, withIntermediateDirectories: true)
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "NativeDependency",
+            targets: [
+                .target(
+                    name: "NativeDependency",
+                    linkerSettings: [.linkedLibrary("z")]
+                )
+            ]
+        )
+        """.write(to: checkoutDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
+
+        let arguments = SPMCompiler().previewCompilerArguments(packageDirectory: packageDirectory)
+
+        #expect(arguments.contains("-lz"))
+    }
+
     private func makeTemporaryPackage(
         targetName: String,
         sourceFileName: String,

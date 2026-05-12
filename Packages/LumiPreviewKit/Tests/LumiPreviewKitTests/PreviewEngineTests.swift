@@ -424,6 +424,106 @@ struct PreviewEngineTests {
         await connection.terminate()
     }
 
+    @Test("扫描不存在的文件返回空预览")
+    func discoverMissingFileReturnsEmptyList() async {
+        let engine = LivePreviewEngine(
+            hostExecutableURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("missing-host-\(UUID().uuidString)")
+        )
+
+        let previews = await engine.discoverPreviews(
+            in: FileManager.default.temporaryDirectory
+                .appendingPathComponent("missing-preview-\(UUID().uuidString).swift")
+        )
+
+        #expect(previews.isEmpty)
+    }
+
+    @Test("Live 控制 API 通过活动连接转发请求")
+    func liveControlRequestsUseActiveHostConnection() async throws {
+        let engine = LivePreviewEngine(
+            hostExecutableURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("unused-host-\(UUID().uuidString)")
+        )
+        let session = LivePreviewSession(discovery: sampleDiscovery())
+        let connection = RecordingHostConnection()
+        await session.setHostConnection(connection)
+
+        try await engine.startLivePreview(session)
+        #expect(connection.commands == [.startLivePreview])
+        #expect(await session.livePreviewInfo.state == .running)
+        #expect(await session.livePreviewInfo.hostWindowNumber == 42)
+
+        try await engine.updateLiveFrame(session, x: 10, y: 20, width: 300, height: 200)
+        try await engine.showLivePreview(session)
+        try await engine.hideLivePreview(session)
+        try await engine.reloadLivePreview(
+            session,
+            dylibURL: URL(fileURLWithPath: "/tmp/PreviewEntry.dylib")
+        )
+        try await engine.stopLivePreview(session)
+
+        #expect(connection.commands == [
+            .startLivePreview,
+            .updateLiveFrame,
+            .showLivePreview,
+            .hideLivePreview,
+            .reloadLivePreview,
+            .stopLivePreview
+        ])
+        #expect(connection.lastFrame == LiveFrameRequest(x: 10, y: 20, width: 300, height: 200))
+        #expect(connection.lastReloadPath == "/tmp/PreviewEntry.dylib")
+        #expect(await session.livePreviewInfo.state == .available)
+        #expect(await session.livePreviewInfo.hostWindowNumber == nil)
+    }
+
+    @Test("Live 控制 API 在无活动连接时安全返回或抛错")
+    func liveControlWithoutConnectionIsSafe() async throws {
+        let engine = LivePreviewEngine(
+            hostExecutableURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("unused-host-\(UUID().uuidString)")
+        )
+        let session = LivePreviewSession(discovery: sampleDiscovery())
+
+        await #expect(throws: PreviewError.self) {
+            try await engine.startLivePreview(session)
+        }
+
+        try await engine.updateLiveFrame(session, x: 0, y: 0, width: 1, height: 1)
+        try await engine.showLivePreview(session)
+        try await engine.hideLivePreview(session)
+        try await engine.reloadLivePreview(
+            session,
+            dylibURL: URL(fileURLWithPath: "/tmp/missing.dylib")
+        )
+        try await engine.stopLivePreview(session)
+    }
+
+    @Test("Live 启动和 reload 失败会抛出运行时错误")
+    func liveControlFailuresThrowRuntimeErrors() async throws {
+        let engine = LivePreviewEngine(
+            hostExecutableURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("unused-host-\(UUID().uuidString)")
+        )
+        let session = LivePreviewSession(discovery: sampleDiscovery())
+        let connection = RecordingHostConnection()
+        connection.startLiveResponse = RenderResponse(success: false, message: "start failed")
+        await session.setHostConnection(connection)
+
+        await #expect(throws: PreviewError.self) {
+            try await engine.startLivePreview(session)
+        }
+
+        connection.startLiveResponse = RenderResponse(success: true, livePreviewEnabled: true)
+        connection.reloadResponse = RenderResponse(success: false, message: "reload failed")
+        await #expect(throws: PreviewError.self) {
+            try await engine.reloadLivePreview(
+                session,
+                dylibURL: URL(fileURLWithPath: "/tmp/PreviewEntry.dylib")
+            )
+        }
+    }
+
     private func makeTemporaryPackage(
         targetName: String,
         source: String,
@@ -464,6 +564,18 @@ struct PreviewEngineTests {
         }
 
         return (packageDirectory, sourceFile)
+    }
+
+    private func sampleDiscovery() -> PreviewDiscovery {
+        PreviewDiscovery(
+            id: "sample:1:0",
+            title: "Sample",
+            sourceFileURL: URL(fileURLWithPath: "/tmp/Sample.swift"),
+            lineNumber: 1,
+            endLineNumber: 3,
+            bodySource: "Text(\"Sample\")",
+            sourceText: "#Preview { Text(\"Sample\") }"
+        )
     }
 
     private func makeTemporaryXcodeProject(
@@ -735,5 +847,98 @@ struct PreviewEngineTests {
         }
 
         return nil
+    }
+}
+
+private final class RecordingHostConnection: HostConnection, @unchecked Sendable {
+    enum Command: Equatable {
+        case render
+        case refresh
+        case loadDylib
+        case loadPreviewEntry
+        case startLivePreview
+        case updateLiveFrame
+        case showLivePreview
+        case hideLivePreview
+        case reloadLivePreview
+        case stopLivePreview
+        case terminate
+    }
+
+    var commands: [Command] = []
+    var running = true
+    var lastFrame: LiveFrameRequest?
+    var lastReloadPath: String?
+    var startLiveResponse = RenderResponse(
+        success: true,
+        livePreviewEnabled: true,
+        liveWindowNumber: 42
+    )
+    var reloadResponse = RenderResponse(success: true, livePreviewEnabled: true)
+
+    var isRunning: Bool {
+        get async {
+            running
+        }
+    }
+
+    func requestRender(
+        discovery: PreviewDiscovery,
+        configuration: PreviewRenderConfiguration
+    ) async throws -> RenderResponse {
+        commands.append(.render)
+        return RenderResponse(success: true)
+    }
+
+    func requestRefresh() async throws -> RenderResponse {
+        commands.append(.refresh)
+        return RenderResponse(success: true)
+    }
+
+    func requestLoadDylib(at dylibURL: URL) async throws -> RenderResponse {
+        commands.append(.loadDylib)
+        return RenderResponse(success: true)
+    }
+
+    func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> RenderResponse {
+        commands.append(.loadPreviewEntry)
+        return RenderResponse(success: true, livePreviewEnabled: true)
+    }
+
+    func requestStartLivePreview() async throws -> RenderResponse {
+        commands.append(.startLivePreview)
+        return startLiveResponse
+    }
+
+    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double) async throws -> RenderResponse {
+        commands.append(.updateLiveFrame)
+        lastFrame = LiveFrameRequest(x: x, y: y, width: width, height: height)
+        return RenderResponse(success: true, livePreviewEnabled: true)
+    }
+
+    func requestShowLivePreview() async throws -> RenderResponse {
+        commands.append(.showLivePreview)
+        return RenderResponse(success: true, livePreviewEnabled: true)
+    }
+
+    func requestHideLivePreview() async throws -> RenderResponse {
+        commands.append(.hideLivePreview)
+        return RenderResponse(success: true, livePreviewEnabled: true)
+    }
+
+    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> RenderResponse {
+        commands.append(.reloadLivePreview)
+        lastReloadPath = dylibURL.path
+        return reloadResponse
+    }
+
+    func requestStopLivePreview() async throws -> RenderResponse {
+        commands.append(.stopLivePreview)
+        return RenderResponse(success: true)
+    }
+
+    func terminate() async {
+        commands.append(.terminate)
+        running = false
     }
 }

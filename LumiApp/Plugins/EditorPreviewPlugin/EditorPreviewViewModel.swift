@@ -49,8 +49,6 @@ final class EditorPreviewViewModel: ObservableObject {
     // MARK: - Private State
 
     private static let preferredDisplayModeKey = "EditorPreviewPlugin.preferredDisplayMode"
-    private static let maxCachedContextCount = 4
-
     private struct PreviewContext {
         var previews: [PreviewDiscovery]
         var selectedPreviewID: String?
@@ -73,8 +71,7 @@ final class EditorPreviewViewModel: ObservableObject {
     private var sourceRefreshTask: Task<Void, Never>?
     private var isStoppingLive: Bool = false
     private var activeFileKey: String?
-    private var cachedContexts: [String: PreviewContext] = [:]
-    private var contextRecency: [String] = []
+    private var cachedContexts = PreviewFileContextCache<PreviewContext>(maximumCount: 4)
 
     init() {
         displayMode = Self.preferredDisplayMode
@@ -150,12 +147,11 @@ final class EditorPreviewViewModel: ObservableObject {
             return
         }
 
-        let nextFileKey = Self.fileKey(for: fileURL)
+        let nextFileKey = PreviewFileContextCache<PreviewContext>.key(for: fileURL)
         if activeFileKey != nextFileKey {
             cacheActiveContextForFileSwitch()
             activeFileKey = nextFileKey
             if let cachedContext = cachedContexts.removeValue(forKey: nextFileKey) {
-                removeContextRecency(nextFileKey)
                 apply(cachedContext)
                 if displayMode == .live {
                     liveCanvasDidAppear()
@@ -215,7 +211,7 @@ final class EditorPreviewViewModel: ObservableObject {
 
     func startSelectedPreview() {
         guard canStart, let selectedPreview else { return }
-        guard let hostExecutableURL = EditorPreviewHostExecutableResolver.resolve() else {
+        guard let hostExecutableURL = PreviewHostExecutableResolver.resolve() else {
             runState = .hostMissing
             return
         }
@@ -292,8 +288,7 @@ final class EditorPreviewViewModel: ObservableObject {
         sourceRefreshTask?.cancel()
         sourceRefreshTask = nil
         if let activeFileKey {
-            cachedContexts[activeFileKey] = nil
-            removeContextRecency(activeFileKey)
+            cachedContexts.removeValue(forKey: activeFileKey)
         }
 
         // Stop live first if running
@@ -342,7 +337,7 @@ final class EditorPreviewViewModel: ObservableObject {
             }
         }
 
-        cachedContexts[activeFileKey] = PreviewContext(
+        let evictedContexts = cachedContexts.store(PreviewContext(
             previews: previews,
             selectedPreviewID: selectedPreviewID,
             runState: runState,
@@ -355,9 +350,8 @@ final class EditorPreviewViewModel: ObservableObject {
             isLiveLoading: false,
             session: session,
             engine: engine
-        )
-        markContextRecentlyUsed(activeFileKey)
-        pruneCachedContexts()
+        ), forKey: activeFileKey)
+        stopEvictedContexts(evictedContexts.map(\.value))
     }
 
     // MARK: - Display Mode Switching
@@ -454,6 +448,8 @@ final class EditorPreviewViewModel: ObservableObject {
                     return
                 }
                 await syncSessionState(from: session)
+                await syncLiveFrameFromEngine()
+                try? await engine.showLivePreview(session)
             } catch let error as PreviewError {
                 guard activeFileKey == refreshFileKey,
                       selectedPreviewID == refreshPreviewID else {
@@ -681,31 +677,14 @@ final class EditorPreviewViewModel: ObservableObject {
         }
     }
 
-    private func markContextRecentlyUsed(_ key: String) {
-        removeContextRecency(key)
-        contextRecency.append(key)
-    }
-
-    private func removeContextRecency(_ key: String) {
-        contextRecency.removeAll { $0 == key }
-    }
-
-    private func pruneCachedContexts() {
-        while contextRecency.count > Self.maxCachedContextCount {
-            let removedKey = contextRecency.removeFirst()
-            guard let context = cachedContexts.removeValue(forKey: removedKey),
-                  let session = context.session,
-                  let engine = context.engine else {
-                continue
-            }
+    private func stopEvictedContexts(_ contexts: [PreviewContext]) {
+        for context in contexts {
+            guard let session = context.session,
+                  let engine = context.engine else { continue }
             Task {
                 await engine.stopPreview(session)
             }
         }
-    }
-
-    private static func fileKey(for fileURL: URL) -> String {
-        fileURL.standardizedFileURL.resolvingSymlinksInPath().path
     }
 
     private static var preferredDisplayMode: PreviewDisplayMode {

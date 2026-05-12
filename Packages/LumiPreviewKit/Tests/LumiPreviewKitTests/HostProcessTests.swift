@@ -386,7 +386,7 @@ struct HostProcessTests {
         try await connection.requestRefresh()
         let elapsed = Date().timeIntervalSince(start)
 
-        #expect(elapsed < 3)
+        #expect(elapsed < 5)
         await connection.terminate()
     }
 

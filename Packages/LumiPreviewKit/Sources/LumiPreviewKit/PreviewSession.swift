@@ -197,8 +197,13 @@ public actor LivePreviewSession: PreviewSession {
 
     /// 当宿主进程成功加载真实 NSView entry 后，标记 Live 模式可用。
     func markLivePreviewAvailable(windowNumber: Int? = nil) {
+        let state: LivePreviewState = if currentLivePreviewInfo.state == .running {
+            .running
+        } else {
+            .available
+        }
         currentLivePreviewInfo = LivePreviewInfo(
-            state: .available,
+            state: state,
             hostWindowNumber: windowNumber
         )
     }
