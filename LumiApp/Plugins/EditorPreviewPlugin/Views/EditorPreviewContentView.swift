@@ -3,6 +3,13 @@ import AppKit
 import LumiPreviewKit
 import SwiftUI
 
+/// 编辑器预览内容主视图。
+///
+/// 预览面板的核心入口，负责：
+/// - 监听编辑器内容变更，触发源码扫描和预览刷新
+/// - 管理窗口生命周期事件（活跃/非活跃/最小化）
+/// - 展示工具栏、预览列表和详情区域
+/// - 根据运行状态显示空状态、诊断错误或渲染表面
 struct EditorPreviewContentView: View {
     @EnvironmentObject private var editorVM: EditorVM
     @EnvironmentObject private var themeVM: ThemeVM
@@ -30,6 +37,19 @@ struct EditorPreviewContentView: View {
             content
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(
+            EditorPreviewWindowLifecycleReporter(
+                onWindowBecameActive: {
+                    viewModel.previewWindowDidBecomeActive()
+                },
+                onWindowBecameInactive: {
+                    viewModel.previewWindowDidBecomeInactive()
+                },
+                onWindowFrameChanged: {
+                    EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
+                }
+            )
+        )
         .onAppear {
             refreshScanAndStartIfNeeded()
         }
@@ -47,6 +67,9 @@ struct EditorPreviewContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             viewModel.lumiWindowDidBecomeKey()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didHideNotification)) { _ in
+            viewModel.lumiWindowDidMiniaturizeOrClose()
         }
     }
 

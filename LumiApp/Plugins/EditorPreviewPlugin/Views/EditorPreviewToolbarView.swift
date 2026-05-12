@@ -1,6 +1,10 @@
 #if canImport(LumiPreviewKit)
 import SwiftUI
 
+/// 编辑器预览工具栏。
+///
+/// 展示预览标题、当前文件名、显示模式切换（Image/Live）
+/// 以及播放/刷新/停止按钮。
 struct EditorPreviewToolbarView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var viewModel: EditorPreviewViewModel
@@ -71,6 +75,10 @@ struct EditorPreviewToolbarView: View {
     }
 }
 
+/// 编辑器预览运行状态徽标。
+///
+/// 根据预览运行状态显示不同颜色和文本标签（运行中/失败/停止等），
+/// 更新阶段时显示加载指示器。
 struct EditorPreviewStatusBadgeView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var viewModel: EditorPreviewViewModel

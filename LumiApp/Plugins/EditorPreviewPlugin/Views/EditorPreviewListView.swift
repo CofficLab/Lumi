@@ -2,6 +2,9 @@
 import LumiPreviewKit
 import SwiftUI
 
+/// 编辑器预览列表侧边栏。
+///
+/// 展示当前文件中所有 #Preview 宏的列表，支持选择切换。
 struct EditorPreviewListView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     let previews: [PreviewDiscovery]

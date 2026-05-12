@@ -2,6 +2,9 @@
 import AppKit
 import SwiftUI
 
+/// 编辑器预览诊断信息面板。
+///
+/// 在预览构建失败时展示错误日志，支持复制内容到粘贴板和文本选择。
 struct EditorPreviewDiagnosticsView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     let diagnostics: String

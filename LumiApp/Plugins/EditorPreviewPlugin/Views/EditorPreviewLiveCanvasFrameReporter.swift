@@ -6,6 +6,7 @@ private let editorPreviewLiveCanvasFrameReporterFrameUpdateNotification = Notifi
 
 struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
     let onFrameChange: (CGRect) -> Void
+    let onFrameUnavailable: () -> Void
 
     static func scheduleFrameUpdate() {
         NotificationCenter.default.post(name: editorPreviewLiveCanvasFrameReporterFrameUpdateNotification, object: nil)
@@ -14,12 +15,14 @@ struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
     func makeNSView(context: Context) -> ReportingView {
         let view = ReportingView()
         view.onFrameChange = onFrameChange
+        view.onFrameUnavailable = onFrameUnavailable
         context.coordinator.attach(to: view)
         return view
     }
 
     func updateNSView(_ nsView: ReportingView, context: Context) {
         nsView.onFrameChange = onFrameChange
+        nsView.onFrameUnavailable = onFrameUnavailable
         nsView.reportFrameSoon()
     }
 
@@ -37,7 +40,9 @@ struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
                     forName: NSWindow.didMoveNotification,
                     object: nil,
                     queue: .main
-                ) { [weak view] _ in
+                ) { [weak view] notification in
+                    guard let window = notification.object as? NSWindow,
+                          window === view?.window else { return }
                     Task { @MainActor in
                         view?.reportFrameSoon()
                     }
@@ -46,7 +51,9 @@ struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
                     forName: NSWindow.didResizeNotification,
                     object: nil,
                     queue: .main
-                ) { [weak view] _ in
+                ) { [weak view] notification in
+                    guard let window = notification.object as? NSWindow,
+                          window === view?.window else { return }
                     Task { @MainActor in
                         view?.reportFrameSoon()
                     }
@@ -70,6 +77,7 @@ struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
 
     final class ReportingView: NSView {
         var onFrameChange: ((CGRect) -> Void)?
+        var onFrameUnavailable: (() -> Void)?
         private var lastReportedFrame: CGRect = .null
 
         override func viewDidMoveToWindow() {
@@ -89,12 +97,120 @@ struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
         }
 
         private func reportFrame() {
-            guard let window, !bounds.isEmpty else { return }
+            guard let window, !bounds.isEmpty, !hasHiddenAncestor else {
+                guard lastReportedFrame != .null else { return }
+                lastReportedFrame = .null
+                onFrameUnavailable?()
+                return
+            }
             let windowRect = convert(bounds, to: nil)
             let screenRect = window.convertToScreen(windowRect).standardized
             guard screenRect != lastReportedFrame else { return }
             lastReportedFrame = screenRect
             onFrameChange?(screenRect)
+        }
+
+        private var hasHiddenAncestor: Bool {
+            var view: NSView? = self
+            while let current = view {
+                if current.isHidden {
+                    return true
+                }
+                view = current.superview
+            }
+            return false
+        }
+    }
+}
+
+struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
+    let onWindowBecameActive: () -> Void
+    let onWindowBecameInactive: () -> Void
+    let onWindowFrameChanged: () -> Void
+
+    func makeNSView(context: Context) -> ReportingView {
+        let view = ReportingView()
+        view.onWindowBecameActive = onWindowBecameActive
+        view.onWindowBecameInactive = onWindowBecameInactive
+        view.onWindowFrameChanged = onWindowFrameChanged
+        return view
+    }
+
+    func updateNSView(_ nsView: ReportingView, context: Context) {
+        nsView.onWindowBecameActive = onWindowBecameActive
+        nsView.onWindowBecameInactive = onWindowBecameInactive
+        nsView.onWindowFrameChanged = onWindowFrameChanged
+        nsView.attachToCurrentWindow()
+    }
+
+    final class ReportingView: NSView {
+        var onWindowBecameActive: (() -> Void)?
+        var onWindowBecameInactive: (() -> Void)?
+        var onWindowFrameChanged: (() -> Void)?
+
+        private weak var observedWindow: NSWindow?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            attachToCurrentWindow()
+        }
+
+        func attachToCurrentWindow() {
+            guard observedWindow !== window else { return }
+            NotificationCenter.default.removeObserver(self)
+            observedWindow = window
+
+            guard let window else {
+                onWindowBecameInactive?()
+                return
+            }
+
+            if window.isKeyWindow {
+                onWindowBecameActive?()
+            } else {
+                onWindowBecameInactive?()
+            }
+
+            let center = NotificationCenter.default
+            center.addObserver(self, selector: #selector(windowDidBecomeKey), name: NSWindow.didBecomeKeyNotification, object: window)
+            center.addObserver(self, selector: #selector(windowDidResignKey), name: NSWindow.didResignKeyNotification, object: window)
+            center.addObserver(self, selector: #selector(windowDidMiniaturize), name: NSWindow.didMiniaturizeNotification, object: window)
+            center.addObserver(self, selector: #selector(windowWillClose), name: NSWindow.willCloseNotification, object: window)
+            center.addObserver(self, selector: #selector(windowDidDeminiaturize), name: NSWindow.didDeminiaturizeNotification, object: window)
+            center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didMoveNotification, object: window)
+            center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didResizeNotification, object: window)
+        }
+
+        @objc private func windowDidBecomeKey() {
+            onWindowBecameActive?()
+            onWindowFrameChanged?()
+        }
+
+        @objc private func windowDidResignKey() {
+            onWindowBecameInactive?()
+        }
+
+        @objc private func windowDidMiniaturize() {
+            onWindowBecameInactive?()
+        }
+
+        @objc private func windowWillClose() {
+            onWindowBecameInactive?()
+        }
+
+        @objc private func windowDidDeminiaturize() {
+            if observedWindow?.isKeyWindow == true {
+                onWindowBecameActive?()
+            }
+            onWindowFrameChanged?()
+        }
+
+        @objc private func windowFrameChanged() {
+            onWindowFrameChanged?()
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self)
         }
     }
 }

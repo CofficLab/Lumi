@@ -2,6 +2,12 @@
 import LumiPreviewKit
 import SwiftUI
 
+/// 编辑器预览渲染表面。
+///
+/// 核心展示区域，根据 displayMode 切换 Image / Live 渲染方式：
+/// - Image 模式：显示预览渲染结果图片，附带状态图标和性能信息
+/// - Live 模式：通过独立宿主进程实时渲染 SwiftUI 视图
+/// 包含更新中的加载徽章、状态颜色、图标等视觉反馈
 struct EditorPreviewSurfaceView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var viewModel: EditorPreviewViewModel
@@ -96,13 +102,22 @@ struct EditorPreviewSurfaceView: View {
 
                 if !viewModel.isLiveLoading {
                     VStack(spacing: 8) {
-                        Image(systemName: "play.rectangle.fill")
+                        Image(systemName: viewModel.isShowingStaleLivePreview ? "clock.arrow.circlepath" : "play.rectangle.fill")
                             .font(.system(size: 20, weight: .light))
-                            .foregroundColor(.green.opacity(0.6))
+                            .foregroundColor((viewModel.isShowingStaleLivePreview ? Color.orange : Color.green).opacity(0.6))
 
-                        Text(String(localized: "Live Preview Active", table: "EditorPreview"))
+                        Text(viewModel.staleLivePreviewMessage ?? String(localized: "Live Preview Active", table: "EditorPreview"))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+
+                        if viewModel.isShowingStaleLivePreview, let renderMessage = viewModel.renderMessage {
+                            Text(renderMessage)
+                                .font(.system(size: 11))
+                                .foregroundColor(themeVM.activeAppTheme.workspaceTertiaryTextColor())
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: 360)
+                        }
 
                         if let performanceSummary = viewModel.performanceSummary {
                             Text(performanceSummary)
@@ -116,6 +131,8 @@ struct EditorPreviewSurfaceView: View {
             .background(
                 EditorPreviewLiveCanvasFrameReporter { screenFrame in
                     viewModel.updateLiveCanvasRect(screenFrame)
+                } onFrameUnavailable: {
+                    viewModel.liveCanvasFrameUnavailable()
                 }
             )
             .onAppear {

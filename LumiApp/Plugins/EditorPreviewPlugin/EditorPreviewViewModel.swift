@@ -3,9 +3,12 @@ import Foundation
 import LumiPreviewKit
 import AppKit
 import SwiftUI
+import os
 
 @MainActor
 final class EditorPreviewViewModel: ObservableObject {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "EditorPreview")
+
     enum RunState: Equatable {
         case idle
         case hostMissing
@@ -63,6 +66,7 @@ final class EditorPreviewViewModel: ObservableObject {
     @Published private(set) var liveCanvasRect: CGRect = .zero
     @Published private(set) var isLiveLoading: Bool = false
     @Published private(set) var updatePhase: UpdatePhase = .idle
+    @Published private(set) var staleLivePreviewMessage: String?
 
     // MARK: - Private State
 
@@ -79,6 +83,7 @@ final class EditorPreviewViewModel: ObservableObject {
         var livePreviewInfo: LivePreviewInfo
         var isLiveLoading: Bool
         var updatePhase: UpdatePhase
+        var staleLivePreviewMessage: String?
         var session: (any PreviewSession)?
         var engine: LivePreviewEngine?
     }
@@ -86,14 +91,19 @@ final class EditorPreviewViewModel: ObservableObject {
     private let scanner = PreviewScanner()
     private var session: (any PreviewSession)?
     private var engine: LivePreviewEngine?
-    private var liveFrameSyncTask: Task<Void, Never>?
     private var sourceRefreshTask: Task<Void, Never>?
+    private var refreshTask: Task<Void, Never>?
+    private var hasPendingRefreshAfterCurrent: Bool = false
     private var isStoppingLive: Bool = false
     private var activeFileKey: String?
     private var cachedContexts = PreviewFileContextCache<PreviewContext>(maximumCount: 4)
+    private let liveCanvasService: EditorPreviewLiveCanvasService
 
     init() {
-        displayMode = Self.preferredDisplayMode
+        let preferredDisplayMode = Self.preferredDisplayMode
+        displayMode = preferredDisplayMode
+        liveCanvasService = EditorPreviewLiveCanvasService(displayMode: preferredDisplayMode)
+        bindLiveCanvasService()
     }
 
     // MARK: - Computed Properties
@@ -111,7 +121,7 @@ final class EditorPreviewViewModel: ObservableObject {
     }
 
     var canRefresh: Bool {
-        session != nil && runState == .running && updatePhase == .idle
+        session != nil && (runState == .running || staleLivePreviewMessage != nil) && updatePhase == .idle
     }
 
     var canStop: Bool {
@@ -120,6 +130,10 @@ final class EditorPreviewViewModel: ObservableObject {
 
     var isUpdatingPreview: Bool {
         updatePhase != .idle
+    }
+
+    var isShowingStaleLivePreview: Bool {
+        displayMode == .live && staleLivePreviewMessage != nil
     }
 
     /// Whether Live mode is available for the current session.
@@ -177,7 +191,7 @@ final class EditorPreviewViewModel: ObservableObject {
             if let cachedContext = cachedContexts.removeValue(forKey: nextFileKey) {
                 apply(cachedContext)
                 if displayMode == .live {
-                    liveCanvasDidAppear()
+                    liveCanvasService.liveCanvasDidAppear()
                 }
             } else {
                 resetPreviewState()
@@ -205,7 +219,7 @@ final class EditorPreviewViewModel: ObservableObject {
 
     func sourceDidChange(sourceText: String?, fileURL: URL?) {
         let previousPreviewID = selectedPreviewID
-        let shouldRefreshRunningPreview = runState == .running && session != nil
+        let shouldRefreshRunningPreview = (runState == .running || staleLivePreviewMessage != nil) && session != nil
 
         update(sourceText: sourceText, fileURL: fileURL)
 
@@ -246,8 +260,10 @@ final class EditorPreviewViewModel: ObservableObject {
         diagnostics = nil
         performanceSummary = nil
         displayMode = Self.preferredDisplayMode
+        liveCanvasService.updateDisplayMode(displayMode)
         isLiveLoading = displayMode == .live
         livePreviewInfo = LivePreviewInfo()
+        staleLivePreviewMessage = nil
         runState = .starting
 
         let startedFileKey = activeFileKey
@@ -268,7 +284,7 @@ final class EditorPreviewViewModel: ObservableObject {
                       selectedPreviewID == startedPreviewID else {
                     return
                 }
-                runState = .failed(Self.message(for: error))
+                runState = .failed(EditorPreviewFormatter.message(for: error))
             } catch {
                 guard activeFileKey == startedFileKey,
                       selectedPreviewID == startedPreviewID else {
@@ -281,31 +297,52 @@ final class EditorPreviewViewModel: ObservableObject {
 
     func refreshPreview() {
         guard let session, let engine else { return }
+        sourceRefreshTask?.cancel()
+        sourceRefreshTask = nil
+        guard updatePhase != .refreshing else {
+            hasPendingRefreshAfterCurrent = true
+            return
+        }
         updatePhase = .refreshing
 
         // If in live mode, do live reload
         if displayMode == .live {
-            liveReload()
+            liveReload(session: session, engine: engine)
             return
         }
 
         runState = .starting
 
-        Task {
+        let refreshFileKey = activeFileKey
+        let refreshPreviewID = selectedPreviewID
+        refreshTask = Task {
             do {
                 if let selectedPreview,
                    let liveSession = session as? LivePreviewSession {
                     await liveSession.updateDiscovery(selectedPreview)
                 }
                 try await engine.refreshPreview(session)
+                guard activeFileKey == refreshFileKey,
+                      selectedPreviewID == refreshPreviewID else {
+                    return
+                }
                 await syncSessionState(from: session)
-                updatePhase = .idle
+                staleLivePreviewMessage = nil
+                finishRefresh()
             } catch let error as PreviewError {
-                runState = .failed(Self.message(for: error))
-                updatePhase = .idle
+                guard activeFileKey == refreshFileKey,
+                      selectedPreviewID == refreshPreviewID else {
+                    return
+                }
+                runState = .failed(EditorPreviewFormatter.message(for: error))
+                finishRefresh()
             } catch {
+                guard activeFileKey == refreshFileKey,
+                      selectedPreviewID == refreshPreviewID else {
+                    return
+                }
                 runState = .failed(error.localizedDescription)
-                updatePhase = .idle
+                finishRefresh()
             }
         }
     }
@@ -314,6 +351,10 @@ final class EditorPreviewViewModel: ObservableObject {
         isStoppingLive = true
         sourceRefreshTask?.cancel()
         sourceRefreshTask = nil
+        refreshTask?.cancel()
+        refreshTask = nil
+        hasPendingRefreshAfterCurrent = false
+        liveCanvasService.cancelPendingFrameSync()
         if let activeFileKey {
             cachedContexts.removeValue(forKey: activeFileKey)
         }
@@ -330,7 +371,9 @@ final class EditorPreviewViewModel: ObservableObject {
             diagnostics = nil
             performanceSummary = nil
             displayMode = Self.preferredDisplayMode
+            liveCanvasService.updateDisplayMode(displayMode)
             isLiveLoading = false
+            staleLivePreviewMessage = nil
             updatePhase = .idle
             return
         }
@@ -343,8 +386,10 @@ final class EditorPreviewViewModel: ObservableObject {
         diagnostics = nil
         performanceSummary = nil
         displayMode = Self.preferredDisplayMode
+        liveCanvasService.updateDisplayMode(displayMode)
         isLiveLoading = false
         livePreviewInfo = LivePreviewInfo()
+        staleLivePreviewMessage = nil
         updatePhase = .idle
 
         Task {
@@ -378,6 +423,7 @@ final class EditorPreviewViewModel: ObservableObject {
             livePreviewInfo: livePreviewInfo,
             isLiveLoading: false,
             updatePhase: .idle,
+            staleLivePreviewMessage: staleLivePreviewMessage,
             session: session,
             engine: engine
         ), forKey: activeFileKey)
@@ -390,7 +436,9 @@ final class EditorPreviewViewModel: ObservableObject {
         guard canSwitchToLive else { return }
         Self.preferredDisplayMode = .live
         displayMode = .live
+        liveCanvasService.updateDisplayMode(.live)
         isLiveLoading = true
+        staleLivePreviewMessage = nil
 
         Task {
             await startLivePreview()
@@ -401,6 +449,8 @@ final class EditorPreviewViewModel: ObservableObject {
         Self.preferredDisplayMode = .image
         guard canSwitchToImage else { return }
         displayMode = .image
+        liveCanvasService.updateDisplayMode(.image)
+        staleLivePreviewMessage = nil
 
         Task {
             await hideLivePreviewInternal()
@@ -419,8 +469,9 @@ final class EditorPreviewViewModel: ObservableObject {
             try await engine.startLivePreview(session)
             livePreviewInfo = LivePreviewInfo(state: .running)
             await syncLiveFrameFromEngine()
-            try? await engine.showLivePreview(session)
+            await syncLiveVisibility()
             isLiveLoading = false
+            staleLivePreviewMessage = nil
         } catch {
             fallbackToImage(reason: error.localizedDescription)
         }
@@ -437,12 +488,12 @@ final class EditorPreviewViewModel: ObservableObject {
 
     private func showLivePreviewInternal() async {
         guard let session = self.session, let engine = self.engine else { return }
+        guard liveCanvasService.shouldShowLiveWindow else { return }
         try? await engine.showLivePreview(session)
     }
 
     private func stopLiveInternal() {
-        liveFrameSyncTask?.cancel()
-        liveFrameSyncTask = nil
+        liveCanvasService.cancelPendingFrameSync()
 
         guard let session = self.session, let engine = self.engine else {
             return
@@ -460,13 +511,10 @@ final class EditorPreviewViewModel: ObservableObject {
 
     // MARK: - Live Reload
 
-    private func liveReload() {
-        guard let session, let engine else { return }
-        runState = .starting
-
+    private func liveReload(session: any PreviewSession, engine: LivePreviewEngine) {
         let refreshFileKey = activeFileKey
         let refreshPreviewID = selectedPreviewID
-        Task {
+        refreshTask = Task {
             do {
                 if let selectedPreview,
                    let liveSession = session as? LivePreviewSession {
@@ -479,24 +527,44 @@ final class EditorPreviewViewModel: ObservableObject {
                 }
                 await syncSessionState(from: session)
                 await syncLiveFrameFromEngine()
-                try? await engine.showLivePreview(session)
-                updatePhase = .idle
+                await syncLiveVisibility()
+                staleLivePreviewMessage = nil
+                finishRefresh()
             } catch let error as PreviewError {
                 guard activeFileKey == refreshFileKey,
                       selectedPreviewID == refreshPreviewID else {
                     return
                 }
-                runState = .failed(Self.message(for: error))
-                updatePhase = .idle
+                markStaleLivePreview(errorMessage: EditorPreviewFormatter.message(for: error))
+                finishRefresh()
             } catch {
                 guard activeFileKey == refreshFileKey,
                       selectedPreviewID == refreshPreviewID else {
                     return
                 }
-                runState = .failed(error.localizedDescription)
-                updatePhase = .idle
+                markStaleLivePreview(errorMessage: error.localizedDescription)
+                finishRefresh()
             }
         }
+    }
+
+    private func finishRefresh() {
+        refreshTask = nil
+        if hasPendingRefreshAfterCurrent {
+            hasPendingRefreshAfterCurrent = false
+            scheduleSourceRefresh()
+        } else {
+            updatePhase = .idle
+        }
+    }
+
+    private func markStaleLivePreview(errorMessage: String) {
+        runState = .failed(errorMessage)
+        renderMessage = errorMessage
+        staleLivePreviewMessage = String(
+            localized: "Showing previous successful Live preview",
+            table: "EditorPreview"
+        )
     }
 
     // MARK: - Live Canvas Frame Sync
@@ -504,68 +572,72 @@ final class EditorPreviewViewModel: ObservableObject {
     /// Update the canvas rect that the live window should overlay.
     func updateLiveCanvasRect(_ rect: CGRect) {
         let newRect = rect.standardized
-        guard abs(newRect.origin.x - liveCanvasRect.origin.x) > 0.5
-            || abs(newRect.origin.y - liveCanvasRect.origin.y) > 0.5
-            || abs(newRect.size.width - liveCanvasRect.size.width) > 0.5
-            || abs(newRect.size.height - liveCanvasRect.size.height) > 0.5 else {
-            return
-        }
-
+        liveCanvasService.updateLiveCanvasRect(rect)
+        // Mirror the rect back for View binding
         liveCanvasRect = newRect
+    }
 
-        // Debounce frame sync
-        liveFrameSyncTask?.cancel()
-        liveFrameSyncTask = Task {
-            try? await Task.sleep(nanoseconds: 16_000_000) // ~1 frame at 60fps
-            guard !Task.isCancelled else { return }
-            await syncLiveFrameFromEngine()
-        }
+    func liveCanvasFrameUnavailable() {
+        liveCanvasService.liveCanvasFrameUnavailable()
+        liveCanvasRect = .zero
     }
 
     /// Called when the panel becomes hidden or the tab switches away.
     func liveCanvasDidDisappear() {
-        guard displayMode == .live else { return }
-        Task {
-            await hideLivePreviewInternal()
-        }
+        liveCanvasService.liveCanvasDidDisappear()
     }
 
     /// Called when the panel becomes visible and live mode is active.
     func liveCanvasDidAppear() {
-        guard displayMode == .live else { return }
-        Task {
-            await syncLiveFrameFromEngine()
-            await showLivePreviewInternal()
-        }
+        liveCanvasService.liveCanvasDidAppear()
     }
 
     /// Called when Lumi main window loses focus.
     func lumiWindowDidResignKey() {
-        guard displayMode == .live else { return }
-        Task {
-            await hideLivePreviewInternal()
-        }
+        liveCanvasService.lumiWindowDidResignKey()
     }
 
     /// Called when Lumi main window gains focus.
     func lumiWindowDidBecomeKey() {
-        guard displayMode == .live else { return }
-        Task {
-            await syncLiveFrameFromEngine()
-            await showLivePreviewInternal()
+        liveCanvasService.lumiWindowDidBecomeKey()
+    }
+
+    func lumiWindowDidMiniaturizeOrClose() {
+        liveCanvasService.lumiWindowDidMiniaturizeOrClose()
+    }
+
+    func previewWindowDidBecomeActive() {
+        liveCanvasService.previewWindowDidBecomeActive()
+    }
+
+    func previewWindowDidBecomeInactive() {
+        liveCanvasService.previewWindowDidBecomeInactive()
+    }
+
+    // MARK: - Live Canvas Service Binding
+
+    private func bindLiveCanvasService() {
+        liveCanvasService.onSyncLiveFrameFromEngine = { [weak self] in
+            await self?.syncLiveFrameFromEngine()
+        }
+        liveCanvasService.onShowLivePreview = { [weak self] in
+            await self?.showLivePreviewInternal()
+        }
+        liveCanvasService.onHideLivePreview = { [weak self] in
+            await self?.hideLivePreviewInternal()
         }
     }
 
     private func syncLiveFrameFromEngine() async {
         guard displayMode == .live,
-              !liveCanvasRect.isEmpty,
+              !liveCanvasService.liveCanvasRect.isEmpty,
               let session = self.session,
               let engine = self.engine else {
             return
         }
 
         // liveCanvasRect is already in AppKit screen coordinates, reported by the canvas NSView.
-        let rect = liveCanvasRect
+        let rect = liveCanvasService.liveCanvasRect
 
         try? await engine.updateLiveFrame(
             session,
@@ -576,10 +648,19 @@ final class EditorPreviewViewModel: ObservableObject {
         )
     }
 
+    private func syncLiveVisibility() async {
+        if liveCanvasService.shouldShowLiveWindow {
+            await showLivePreviewInternal()
+        } else {
+            await hideLivePreviewInternal()
+        }
+    }
+
     // MARK: - Fallback & Error Handling
 
     private func fallbackToImage(reason: String) {
         displayMode = .image
+        liveCanvasService.updateDisplayMode(.image)
         livePreviewInfo = LivePreviewInfo(
             state: .failed,
             unavailableReason: reason
@@ -592,12 +673,12 @@ final class EditorPreviewViewModel: ObservableObject {
     private func syncSessionState(from session: any PreviewSession) async {
         if let response = await session.lastRenderResponse {
             renderMessage = response.message
-            renderImage = Self.image(from: response)
+            renderImage = EditorPreviewFormatter.image(from: response)
             diagnostics = response.diagnostics
         }
 
         let metrics = await session.performanceMetrics
-        performanceSummary = Self.performanceSummary(for: metrics)
+        performanceSummary = EditorPreviewFormatter.performanceSummary(for: metrics)
 
         // Sync live availability
         let liveInfo = await session.livePreviewInfo
@@ -609,7 +690,7 @@ final class EditorPreviewViewModel: ObservableObject {
         case .running:
             runState = .running
         case .failed(let error):
-            runState = .failed(Self.message(for: error))
+            runState = .failed(EditorPreviewFormatter.message(for: error))
         case .stopped:
             runState = .stopped
         case .planning, .compiling, .launching:
@@ -632,6 +713,7 @@ final class EditorPreviewViewModel: ObservableObject {
         }
 
         displayMode = .live
+        liveCanvasService.updateDisplayMode(.live)
         isLiveLoading = true
         await startLivePreview()
     }
@@ -645,8 +727,10 @@ final class EditorPreviewViewModel: ObservableObject {
         diagnostics = nil
         performanceSummary = nil
         displayMode = Self.preferredDisplayMode
+        liveCanvasService.updateDisplayMode(displayMode)
         livePreviewInfo = LivePreviewInfo()
         isLiveLoading = false
+        staleLivePreviewMessage = nil
         updatePhase = .idle
         session = nil
         engine = nil
@@ -661,9 +745,11 @@ final class EditorPreviewViewModel: ObservableObject {
         diagnostics = context.diagnostics
         performanceSummary = context.performanceSummary
         displayMode = context.displayMode
+        liveCanvasService.updateDisplayMode(displayMode)
         livePreviewInfo = context.livePreviewInfo
         isLiveLoading = context.isLiveLoading
         updatePhase = context.updatePhase
+        staleLivePreviewMessage = context.staleLivePreviewMessage
         session = context.session
         engine = context.engine
     }
@@ -671,8 +757,10 @@ final class EditorPreviewViewModel: ObservableObject {
     private func stopActiveSessionForReplacement() {
         sourceRefreshTask?.cancel()
         sourceRefreshTask = nil
-        liveFrameSyncTask?.cancel()
-        liveFrameSyncTask = nil
+        refreshTask?.cancel()
+        refreshTask = nil
+        hasPendingRefreshAfterCurrent = false
+        liveCanvasService.cancelPendingFrameSync()
 
         if let session, let engine {
             Task {
@@ -684,16 +772,22 @@ final class EditorPreviewViewModel: ObservableObject {
         engine = nil
         livePreviewInfo = LivePreviewInfo()
         isLiveLoading = false
+        staleLivePreviewMessage = nil
         updatePhase = .idle
         renderMessage = nil
         renderImage = nil
         diagnostics = nil
         performanceSummary = nil
         displayMode = Self.preferredDisplayMode
+        liveCanvasService.updateDisplayMode(displayMode)
         runState = .stopped
     }
 
     private func scheduleSourceRefresh() {
+        guard updatePhase != .refreshing else {
+            hasPendingRefreshAfterCurrent = true
+            return
+        }
         sourceRefreshTask?.cancel()
         let refreshFileKey = activeFileKey
         let refreshPreviewID = selectedPreviewID
@@ -705,7 +799,7 @@ final class EditorPreviewViewModel: ObservableObject {
             await MainActor.run {
                 guard self.activeFileKey == refreshFileKey,
                       self.selectedPreviewID == refreshPreviewID,
-                      self.runState == .running,
+                      (self.runState == .running || self.staleLivePreviewMessage != nil),
                       self.session != nil else {
                     if self.activeFileKey == refreshFileKey,
                        self.selectedPreviewID == refreshPreviewID {
@@ -739,74 +833,6 @@ final class EditorPreviewViewModel: ObservableObject {
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: preferredDisplayModeKey)
         }
-    }
-
-    // MARK: - Error Formatting
-
-    private static func message(for error: PreviewError) -> String {
-        switch error {
-        case .targetNotFound(let file):
-            String(
-                format: String(localized: "No build target found for %@", table: "EditorPreview"),
-                URL(fileURLWithPath: file).lastPathComponent
-            )
-        case .unsupportedProjectType(let path):
-            String(
-                format: String(localized: "Unsupported project type: %@", table: "EditorPreview"),
-                path
-            )
-        case .compilationFailed(let message):
-            message
-        case .buildProductNotFound:
-            String(localized: "Build product was not found.", table: "EditorPreview")
-        case .hostLaunchFailed(let message):
-            message
-        case .runtimeCrashed(let message):
-            message
-        case .timedOut(let seconds):
-            String(
-                format: String(localized: "Timed out after %lld seconds.", table: "EditorPreview"),
-                Int64(seconds)
-            )
-        case .missingDependency(let description):
-            description
-        }
-    }
-
-    private static func performanceSummary(for metrics: PreviewPerformanceMetrics) -> String? {
-        var parts: [String] = []
-        if let compileDuration = metrics.lastCompileDuration {
-            let cacheSuffix = metrics.lastCompileUsedCache ? String(localized: " cached", table: "EditorPreview") : ""
-            parts.append(
-                String(
-                    format: String(localized: "Build %@%@", table: "EditorPreview"),
-                    format(seconds: compileDuration),
-                    cacheSuffix
-                )
-            )
-        }
-        if let refreshDuration = metrics.lastRefreshDuration {
-            parts.append(
-                String(
-                    format: String(localized: "Refresh %@", table: "EditorPreview"),
-                    format(seconds: refreshDuration)
-                )
-            )
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: " | ")
-    }
-
-    private static func format(seconds: TimeInterval) -> String {
-        String(format: "%.2fs", seconds)
-    }
-
-    private static func image(from response: RenderResponse) -> NSImage? {
-        guard let previewImagePNGBase64 = response.previewImagePNGBase64,
-              let data = Data(base64Encoded: previewImagePNGBase64) else {
-            return nil
-        }
-
-        return NSImage(data: data)
     }
 }
 #endif

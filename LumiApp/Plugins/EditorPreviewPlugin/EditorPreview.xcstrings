@@ -199,6 +199,28 @@
         }
       }
     },
+    "Image" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图像"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "影像"
+          }
+        }
+      }
+    },
     "Lines %lld-%lld" : {
       "localizations" : {
         "en" : {
@@ -217,6 +239,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "第 %lld-%lld 行"
+          }
+        }
+      }
+    },
+    "Live" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時"
           }
         }
       }
@@ -661,6 +705,9 @@
         }
       }
     },
+    "Showing previous successful Live preview" : {
+
+    },
     "Shows source-based SwiftUI previews for the active editor file" : {
       "localizations" : {
         "en" : {
@@ -921,50 +968,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "等待重新整理"
-          }
-        }
-      }
-    },
-    "Image" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Image"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图像"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "影像"
-          }
-        }
-      }
-    },
-    "Live" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時"
           }
         }
       }

@@ -1,6 +1,10 @@
 #if canImport(LumiPreviewKit)
 import SwiftUI
 
+/// 编辑器预览显示模式切换器。
+///
+/// 提供 Image / Live 两个标签页，用户可切换预览渲染方式。
+/// Live 模式在不可用时显示禁用状态和原因。
 struct EditorPreviewDisplayModePickerView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var viewModel: EditorPreviewViewModel
