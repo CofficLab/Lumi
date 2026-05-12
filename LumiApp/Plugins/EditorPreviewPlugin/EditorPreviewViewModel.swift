@@ -70,6 +70,7 @@ final class EditorPreviewViewModel: ObservableObject {
     private var session: (any PreviewSession)?
     private var engine: LivePreviewEngine?
     private var liveFrameSyncTask: Task<Void, Never>?
+    private var sourceRefreshTask: Task<Void, Never>?
     private var isStoppingLive: Bool = false
     private var activeFileKey: String?
     private var cachedContexts: [String: PreviewContext] = [:]
@@ -183,6 +184,22 @@ final class EditorPreviewViewModel: ObservableObject {
         }
     }
 
+    func sourceDidChange(sourceText: String?, fileURL: URL?) {
+        let previousPreviewID = selectedPreviewID
+        let shouldRefreshRunningPreview = runState == .running && session != nil
+
+        update(sourceText: sourceText, fileURL: fileURL)
+
+        guard shouldRefreshRunningPreview,
+              runState == .running,
+              session != nil,
+              selectedPreviewID == previousPreviewID else {
+            return
+        }
+
+        scheduleSourceRefresh()
+    }
+
     // MARK: - Start / Refresh / Stop
 
     func startSelectedPreviewIfNeeded(allowsStopped: Bool = true) {
@@ -256,6 +273,10 @@ final class EditorPreviewViewModel: ObservableObject {
 
         Task {
             do {
+                if let selectedPreview,
+                   let liveSession = session as? LivePreviewSession {
+                    await liveSession.updateDiscovery(selectedPreview)
+                }
                 try await engine.refreshPreview(session)
                 await syncSessionState(from: session)
             } catch let error as PreviewError {
@@ -268,6 +289,8 @@ final class EditorPreviewViewModel: ObservableObject {
 
     func stopPreview() {
         isStoppingLive = true
+        sourceRefreshTask?.cancel()
+        sourceRefreshTask = nil
         if let activeFileKey {
             cachedContexts[activeFileKey] = nil
             removeContextRecency(activeFileKey)
@@ -417,13 +440,31 @@ final class EditorPreviewViewModel: ObservableObject {
         guard let session, let engine else { return }
         runState = .starting
 
+        let refreshFileKey = activeFileKey
+        let refreshPreviewID = selectedPreviewID
         Task {
             do {
+                if let selectedPreview,
+                   let liveSession = session as? LivePreviewSession {
+                    await liveSession.updateDiscovery(selectedPreview)
+                }
                 try await engine.refreshPreview(session)
+                guard activeFileKey == refreshFileKey,
+                      selectedPreviewID == refreshPreviewID else {
+                    return
+                }
                 await syncSessionState(from: session)
             } catch let error as PreviewError {
+                guard activeFileKey == refreshFileKey,
+                      selectedPreviewID == refreshPreviewID else {
+                    return
+                }
                 runState = .failed(Self.message(for: error))
             } catch {
+                guard activeFileKey == refreshFileKey,
+                      selectedPreviewID == refreshPreviewID else {
+                    return
+                }
                 runState = .failed(error.localizedDescription)
             }
         }
@@ -597,6 +638,8 @@ final class EditorPreviewViewModel: ObservableObject {
     }
 
     private func stopActiveSessionForReplacement() {
+        sourceRefreshTask?.cancel()
+        sourceRefreshTask = nil
         liveFrameSyncTask?.cancel()
         liveFrameSyncTask = nil
 
@@ -616,6 +659,26 @@ final class EditorPreviewViewModel: ObservableObject {
         performanceSummary = nil
         displayMode = Self.preferredDisplayMode
         runState = .stopped
+    }
+
+    private func scheduleSourceRefresh() {
+        sourceRefreshTask?.cancel()
+        let refreshFileKey = activeFileKey
+        let refreshPreviewID = selectedPreviewID
+
+        sourceRefreshTask = Task {
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard self.activeFileKey == refreshFileKey,
+                      self.selectedPreviewID == refreshPreviewID,
+                      self.runState == .running,
+                      self.session != nil else {
+                    return
+                }
+                self.refreshPreview()
+            }
+        }
     }
 
     private func markContextRecentlyUsed(_ key: String) {

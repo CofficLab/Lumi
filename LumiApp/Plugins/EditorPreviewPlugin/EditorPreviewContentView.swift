@@ -16,6 +16,10 @@ struct EditorPreviewContentView: View {
         editorVM.service.currentFileURL
     }
 
+    private var contentRevision: UInt64 {
+        editorVM.service.contentRevision
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             toolbar
@@ -32,8 +36,8 @@ struct EditorPreviewContentView: View {
         .onChange(of: currentFileURL) { _, _ in
             refreshScanAndStartIfNeeded()
         }
-        .onChange(of: sourceText ?? "") { _, _ in
-            refreshScanAndStartIfNeeded(allowsStopped: false)
+        .onChange(of: contentRevision) { _, _ in
+            viewModel.sourceDidChange(sourceText: sourceText, fileURL: currentFileURL)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
             viewModel.lumiWindowDidResignKey()

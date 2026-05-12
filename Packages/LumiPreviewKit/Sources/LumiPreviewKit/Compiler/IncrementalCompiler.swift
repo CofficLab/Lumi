@@ -61,12 +61,20 @@ public final class IncrementalCompiler: Sendable {
     ///
     /// 多文件 entry 用于保留 Swift 文件级别的访问控制语义，避免把 target
     /// 源码拼成单个临时文件后破坏 `private` 声明作用域。
-    func compileLibrary(sourceURLs: [URL], dylibURL: URL, compilerArguments: [String] = []) async throws -> URL {
+    func compileLibrary(
+        sourceURLs: [URL],
+        dylibURL: URL,
+        compilerArguments: [String] = [],
+        moduleName: String? = nil
+    ) async throws -> URL {
         try await Task.detached {
             let sourceArguments = sourceURLs
                 .map { Self.shellQuoted($0.path) }
                 .joined(separator: " ")
-            let extraArguments = compilerArguments
+            let extraArguments = Self.compilerArguments(
+                compilerArguments,
+                replacingModuleNameWith: moduleName
+            )
                 .map(Self.shellQuoted)
                 .joined(separator: " ")
             let command = [
@@ -89,6 +97,31 @@ public final class IncrementalCompiler: Sendable {
 
             return dylibURL
         }.value
+    }
+
+    private static func compilerArguments(
+        _ arguments: [String],
+        replacingModuleNameWith moduleName: String?
+    ) -> [String] {
+        guard let moduleName else {
+            return arguments
+        }
+
+        var filtered: [String] = []
+        var iterator = arguments.makeIterator()
+        while let argument = iterator.next() {
+            if argument == "-module-name" {
+                _ = iterator.next()
+                continue
+            }
+            if argument.hasPrefix("-module-name=") {
+                continue
+            }
+            filtered.append(argument)
+        }
+
+        filtered.append(contentsOf: ["-module-name", moduleName])
+        return filtered
     }
 
     /// 对 dylib 执行 ad-hoc codesign，满足 macOS 动态加载的签名要求。

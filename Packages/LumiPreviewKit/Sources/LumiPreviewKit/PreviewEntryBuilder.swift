@@ -59,7 +59,8 @@ public final class PreviewEntryBuilder: Sendable {
             let dylib = try await incrementalCompiler.compileLibrary(
                 sourceURLs: viewSourceURLs,
                 dylibURL: dylibURL,
-                compilerArguments: compilerArguments
+                compilerArguments: compilerArguments,
+                moduleName: Self.moduleName(for: fingerprint)
             )
             try await incrementalCompiler.codesign(dylibURL: dylib)
             return dylib
@@ -103,6 +104,10 @@ public final class PreviewEntryBuilder: Sendable {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiPreviewKit-PreviewEntryCache", isDirectory: true)
             .appendingPathComponent(fingerprint, isDirectory: true)
+    }
+
+    private static func moduleName(for fingerprint: String) -> String {
+        "LumiPreviewEntry_\(fingerprint.prefix(16))"
     }
 
     private static func fingerprint(
@@ -189,7 +194,10 @@ public final class PreviewEntryBuilder: Sendable {
         let targetSourceURLs = sourceFiles(for: discovery, buildStrategy: buildStrategy)
         var generatedSources: [GeneratedSource] = []
         for (index, targetSourceURL) in targetSourceURLs.enumerated() {
-            let sanitizedSource = try sanitizedSourceFile(at: targetSourceURL)
+            let sanitizedSource = try sanitizedSourceFile(
+                at: targetSourceURL,
+                currentDiscovery: discovery
+            )
             generatedSources.append(
                 GeneratedSource(
                     fileName: "TargetSources/\(index)-\(targetSourceURL.lastPathComponent)",
@@ -341,8 +349,19 @@ public final class PreviewEntryBuilder: Sendable {
             .sorted { $0.path < $1.path }
     }
 
-    private func sanitizedSourceFile(at sourceFileURL: URL) throws -> String {
-        let source = try String(contentsOf: sourceFileURL, encoding: .utf8)
+    private func sanitizedSourceFile(
+        at sourceFileURL: URL,
+        currentDiscovery: PreviewDiscovery
+    ) throws -> String {
+        let normalizedSourceURL = sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
+        let currentSourceURL = currentDiscovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
+        let source: String
+        if normalizedSourceURL == currentSourceURL,
+           let sourceText = currentDiscovery.sourceText {
+            source = sourceText
+        } else {
+            source = try String(contentsOf: sourceFileURL, encoding: .utf8)
+        }
         let previews = PreviewScanner().scan(
             fileURL: sourceFileURL,
             sourceText: source

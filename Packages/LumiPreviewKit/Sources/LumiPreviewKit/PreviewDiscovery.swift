@@ -23,6 +23,12 @@ public struct PreviewDiscovery: Identifiable, Codable, Sendable {
     /// `#Preview` 闭包内的源码文本。
     public let bodySource: String?
 
+    /// 发现该预览时的完整源码文本。
+    ///
+    /// 编辑器内实时预览会传入未保存的 buffer 内容，构建预览 entry 时优先使用它，
+    /// 避免刷新时读到磁盘上的旧文件。
+    public let sourceText: String?
+
     /// 创建一个预览发现结果。
     ///
     /// - Parameters:
@@ -40,7 +46,8 @@ public struct PreviewDiscovery: Identifiable, Codable, Sendable {
         lineNumber: Int,
         endLineNumber: Int,
         primaryTypeName: String? = nil,
-        bodySource: String? = nil
+        bodySource: String? = nil,
+        sourceText: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -49,5 +56,6 @@ public struct PreviewDiscovery: Identifiable, Codable, Sendable {
         self.endLineNumber = endLineNumber
         self.primaryTypeName = primaryTypeName
         self.bodySource = bodySource
+        self.sourceText = sourceText
     }
 }

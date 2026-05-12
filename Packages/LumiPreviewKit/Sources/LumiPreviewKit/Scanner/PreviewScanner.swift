@@ -44,7 +44,8 @@ public final class PreviewScanner: Sendable {
                     lineNumber: lineNumber,
                     endLineNumber: source.lineNumber(at: body.closingBraceOffset),
                     primaryTypeName: Self.primaryTypeName(in: body.source),
-                    bodySource: body.source
+                    bodySource: body.source,
+                    sourceText: sourceText
                 )
             )
         }

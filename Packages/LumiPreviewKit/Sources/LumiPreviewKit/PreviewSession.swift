@@ -76,7 +76,7 @@ public actor LivePreviewSession: PreviewSession {
     public nonisolated let id: String
 
     /// 该会话对应的源码预览发现结果。
-    public nonisolated let discovery: PreviewDiscovery
+    private var currentDiscovery: PreviewDiscovery
 
     private var currentState: PreviewSessionState
     private var currentHostingView: (any Sendable)?
@@ -137,9 +137,17 @@ public actor LivePreviewSession: PreviewSession {
         configuration: PreviewRenderConfiguration = .empty
     ) {
         self.id = id
-        self.discovery = discovery
+        self.currentDiscovery = discovery
         self.currentState = state
         self.currentConfiguration = configuration
+    }
+
+    public var discovery: PreviewDiscovery {
+        currentDiscovery
+    }
+
+    public func updateDiscovery(_ discovery: PreviewDiscovery) {
+        currentDiscovery = discovery
     }
 
     func setState(_ state: PreviewSessionState) {

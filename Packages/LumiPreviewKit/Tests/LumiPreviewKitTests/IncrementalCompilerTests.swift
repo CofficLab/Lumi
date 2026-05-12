@@ -151,6 +151,29 @@ struct IncrementalCompilerTests {
         #expect(FileManager.default.fileExists(atPath: dylibURL.path))
     }
 
+    @Test("library 编译支持指定唯一 module name")
+    func compileLibraryUsesProvidedModuleName() async throws {
+        let fixture = try makeTemporarySwiftFile(
+            source: """
+            public func previewValue() -> Int {
+                42
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+
+        let dylibURL = fixture.directory.appendingPathComponent("PreviewEntry.dylib")
+        let compiledDylibURL = try await IncrementalCompiler().compileLibrary(
+            sourceURLs: [fixture.file],
+            dylibURL: dylibURL,
+            compilerArguments: ["-module-name", "OldPreviewEntry"],
+            moduleName: "UniquePreviewEntry"
+        )
+
+        #expect(compiledDylibURL == dylibURL)
+        #expect(FileManager.default.fileExists(atPath: dylibURL.path))
+    }
+
     private func makeTemporarySwiftFile(source: String) throws -> (directory: URL, file: URL) {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiPreviewKit-IncrementalCompiler-\(UUID().uuidString)", isDirectory: true)

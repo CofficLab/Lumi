@@ -195,9 +195,10 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
 
     private func start(_ session: LivePreviewSession) async throws {
         await session.setState(.planning)
+        let discovery = await session.discovery
 
-        guard let strategy = buildPlanner.plan(for: session.discovery.sourceFileURL) else {
-            throw PreviewError.targetNotFound(file: session.discovery.sourceFileURL.path)
+        guard let strategy = buildPlanner.plan(for: discovery.sourceFileURL) else {
+            throw PreviewError.targetNotFound(file: discovery.sourceFileURL.path)
         }
 
         await session.setBuildStrategy(strategy)
@@ -221,14 +222,15 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
     }
 
     private func rebuild(_ session: LivePreviewSession) async throws {
+        let discovery = await session.discovery
         let strategy: BuildStrategy
         if let existingStrategy = await session.buildStrategy() {
             strategy = existingStrategy
-        } else if let plannedStrategy = buildPlanner.plan(for: session.discovery.sourceFileURL) {
+        } else if let plannedStrategy = buildPlanner.plan(for: discovery.sourceFileURL) {
             strategy = plannedStrategy
             await session.setBuildStrategy(plannedStrategy)
         } else {
-            throw PreviewError.targetNotFound(file: session.discovery.sourceFileURL.path)
+            throw PreviewError.targetNotFound(file: discovery.sourceFileURL.path)
         }
 
         try await build(strategy, session: session)
@@ -260,10 +262,11 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
 
     private func build(_ strategy: BuildStrategy, session: LivePreviewSession) async throws {
         await session.setState(.compiling(progress: 0))
+        let discovery = await session.discovery
         let startedAt = Date()
         let fingerprint = BuildFingerprint.make(
             strategy: strategy,
-            previewFileURL: session.discovery.sourceFileURL
+            previewFileURL: discovery.sourceFileURL
         )
         let result = try await buildCoordinator.buildIfNeeded(
             strategy: strategy,
@@ -293,11 +296,19 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
         for session: LivePreviewSession,
         using connection: HostConnection
     ) async throws -> RenderResponse {
+        let discovery = await session.discovery
         let entryURL = try await previewEntryBuilder.buildEntry(
-            for: session.discovery,
+            for: discovery,
             configuration: await session.configuration,
             buildStrategy: await session.buildStrategy()
         )
+
+        if await session.livePreviewInfo.state == .running {
+            return try await connection.requestReloadLivePreview(
+                at: entryURL,
+                symbolName: PreviewEntryBuilder.symbolName
+            )
+        }
 
         return try await connection.requestLoadPreviewEntry(
             at: entryURL,
