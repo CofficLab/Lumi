@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// Builds a small dynamic preview entry dylib for a discovered `#Preview`.
@@ -33,21 +34,28 @@ public final class PreviewEntryBuilder: Sendable {
         configuration: PreviewRenderConfiguration,
         buildStrategy: BuildStrategy? = nil
     ) async throws -> URL {
-        let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-PreviewEntry-\(UUID().uuidString)", isDirectory: true)
-        let sourceURL = directory.appendingPathComponent("PreviewEntry.swift")
-        let objectURL = directory.appendingPathComponent("PreviewEntry.o")
-
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         do {
-            let viewSourceURLs = try viewEntrySourceURLs(
+            let generatedSources = try viewEntrySources(
                 for: discovery,
                 configuration: configuration,
-                buildStrategy: buildStrategy,
-                in: directory
+                buildStrategy: buildStrategy
             )
             let compilerArguments = try await viewEntryCompilerArguments(for: buildStrategy)
+            let fingerprint = Self.fingerprint(
+                discovery: discovery,
+                configuration: configuration,
+                buildStrategy: buildStrategy,
+                generatedSources: generatedSources,
+                compilerArguments: compilerArguments
+            )
+            let directory = Self.cacheDirectory(for: fingerprint)
             let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
+            if FileManager.default.fileExists(atPath: dylibURL.path) {
+                return dylibURL
+            }
+
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let viewSourceURLs = try write(generatedSources, to: directory)
             let dylib = try await incrementalCompiler.compileLibrary(
                 sourceURLs: viewSourceURLs,
                 dylibURL: dylibURL,
@@ -56,6 +64,21 @@ public final class PreviewEntryBuilder: Sendable {
             try await incrementalCompiler.codesign(dylibURL: dylib)
             return dylib
         } catch {
+            let fingerprint = Self.fallbackFingerprint(
+                discovery: discovery,
+                configuration: configuration,
+                buildStrategy: buildStrategy,
+                error: error
+            )
+            let directory = Self.cacheDirectory(for: fingerprint)
+            let sourceURL = directory.appendingPathComponent("PreviewEntry.swift")
+            let objectURL = directory.appendingPathComponent("PreviewEntry.o")
+            let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
+            if FileManager.default.fileExists(atPath: dylibURL.path) {
+                return dylibURL
+            }
+
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try descriptorEntrySource(
                 for: discovery,
                 configuration: configuration,
@@ -76,6 +99,68 @@ public final class PreviewEntryBuilder: Sendable {
         return dylibURL
     }
 
+    private static func cacheDirectory(for fingerprint: String) -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-PreviewEntryCache", isDirectory: true)
+            .appendingPathComponent(fingerprint, isDirectory: true)
+    }
+
+    private static func fingerprint(
+        discovery: PreviewDiscovery,
+        configuration: PreviewRenderConfiguration,
+        buildStrategy: BuildStrategy?,
+        generatedSources: [GeneratedSource],
+        compilerArguments: [String]
+    ) -> String {
+        var parts: [String] = [
+            "v2",
+            discovery.id,
+            discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath().path,
+            "\(discovery.lineNumber)-\(discovery.endLineNumber)",
+            discovery.primaryTypeName ?? "",
+            String(describing: buildStrategy),
+            configurationFingerprint(configuration),
+            compilerArguments.joined(separator: "\u{1f}")
+        ]
+        for source in generatedSources.sorted(by: { $0.fileName < $1.fileName }) {
+            parts.append(source.fileName)
+            parts.append(source.content)
+        }
+        return sha256(parts.joined(separator: "\u{1e}"))
+    }
+
+    private static func fallbackFingerprint(
+        discovery: PreviewDiscovery,
+        configuration: PreviewRenderConfiguration,
+        buildStrategy: BuildStrategy?,
+        error: Error
+    ) -> String {
+        sha256([
+            "fallback-v2",
+            discovery.id,
+            discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath().path,
+            "\(discovery.lineNumber)-\(discovery.endLineNumber)",
+            discovery.bodySource ?? "",
+            String(describing: buildStrategy),
+            configurationFingerprint(configuration),
+            diagnosticMessage(from: error)
+        ].joined(separator: "\u{1e}"))
+    }
+
+    private static func configurationFingerprint(_ configuration: PreviewRenderConfiguration) -> String {
+        guard let data = try? JSONEncoder().encode(configuration),
+              let text = String(data: data, encoding: .utf8) else {
+            return String(describing: configuration)
+        }
+        return text
+    }
+
+    private static func sha256(_ text: String) -> String {
+        SHA256.hash(data: Data(text.utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
+
     private func viewEntryCompilerArguments(for buildStrategy: BuildStrategy?) async throws -> [String] {
         switch buildStrategy {
         case .spm(let packageDirectory, let targetName):
@@ -91,34 +176,50 @@ public final class PreviewEntryBuilder: Sendable {
         }
     }
 
-    private func viewEntrySourceURLs(
+    private struct GeneratedSource {
+        let fileName: String
+        let content: String
+    }
+
+    private func viewEntrySources(
         for discovery: PreviewDiscovery,
         configuration: PreviewRenderConfiguration,
-        buildStrategy: BuildStrategy?,
-        in directory: URL
-    ) throws -> [URL] {
-        let sourceDirectory = directory.appendingPathComponent("TargetSources", isDirectory: true)
-        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
-
+        buildStrategy: BuildStrategy?
+    ) throws -> [GeneratedSource] {
         let targetSourceURLs = sourceFiles(for: discovery, buildStrategy: buildStrategy)
-        var generatedSourceURLs: [URL] = []
+        var generatedSources: [GeneratedSource] = []
         for (index, targetSourceURL) in targetSourceURLs.enumerated() {
             let sanitizedSource = try sanitizedSourceFile(at: targetSourceURL)
-            let generatedSourceURL = sourceDirectory.appendingPathComponent(
-                "\(index)-\(targetSourceURL.lastPathComponent)"
+            generatedSources.append(
+                GeneratedSource(
+                    fileName: "TargetSources/\(index)-\(targetSourceURL.lastPathComponent)",
+                    content: sanitizedSource
+                )
             )
-            try sanitizedSource.write(to: generatedSourceURL, atomically: true, encoding: .utf8)
-            generatedSourceURLs.append(generatedSourceURL)
         }
 
-        let entrySourceURL = directory.appendingPathComponent("PreviewEntry.swift")
-        try viewEntrySource(
-            for: discovery,
-            configuration: configuration
-        ).write(to: entrySourceURL, atomically: true, encoding: .utf8)
-        generatedSourceURLs.append(entrySourceURL)
+        generatedSources.append(
+            GeneratedSource(
+                fileName: "PreviewEntry.swift",
+                content: try viewEntrySource(
+                    for: discovery,
+                    configuration: configuration
+                )
+            )
+        )
+        return generatedSources
+    }
 
-        return generatedSourceURLs
+    private func write(_ sources: [GeneratedSource], to directory: URL) throws -> [URL] {
+        try sources.map { source in
+            let sourceURL = directory.appendingPathComponent(source.fileName, isDirectory: false)
+            try FileManager.default.createDirectory(
+                at: sourceURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try source.content.write(to: sourceURL, atomically: true, encoding: .utf8)
+            return sourceURL
+        }
     }
 
     private func viewEntrySource(

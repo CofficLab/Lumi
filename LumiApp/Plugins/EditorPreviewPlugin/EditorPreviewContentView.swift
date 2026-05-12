@@ -30,7 +30,6 @@ struct EditorPreviewContentView: View {
             viewModel.liveCanvasDidDisappear()
         }
         .onChange(of: currentFileURL) { _, _ in
-            viewModel.stopPreview()
             refreshScanAndStartIfNeeded()
         }
         .onChange(of: sourceText ?? "") { _, _ in

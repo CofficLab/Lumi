@@ -49,12 +49,31 @@ final class EditorPreviewViewModel: ObservableObject {
     // MARK: - Private State
 
     private static let preferredDisplayModeKey = "EditorPreviewPlugin.preferredDisplayMode"
+    private static let maxCachedContextCount = 4
+
+    private struct PreviewContext {
+        var previews: [PreviewDiscovery]
+        var selectedPreviewID: String?
+        var runState: RunState
+        var renderMessage: String?
+        var renderImage: NSImage?
+        var diagnostics: String?
+        var performanceSummary: String?
+        var displayMode: PreviewDisplayMode
+        var livePreviewInfo: LivePreviewInfo
+        var isLiveLoading: Bool
+        var session: (any PreviewSession)?
+        var engine: LivePreviewEngine?
+    }
 
     private let scanner = PreviewScanner()
     private var session: (any PreviewSession)?
     private var engine: LivePreviewEngine?
     private var liveFrameSyncTask: Task<Void, Never>?
     private var isStoppingLive: Bool = false
+    private var activeFileKey: String?
+    private var cachedContexts: [String: PreviewContext] = [:]
+    private var contextRecency: [String] = []
 
     init() {
         displayMode = Self.preferredDisplayMode
@@ -124,16 +143,25 @@ final class EditorPreviewViewModel: ObservableObject {
         guard let sourceText,
               let fileURL,
               fileURL.pathExtension == "swift" else {
-            previews = []
-            selectedPreviewID = nil
-            runState = .idle
-            renderMessage = nil
-            renderImage = nil
-            diagnostics = nil
-            performanceSummary = nil
-            displayMode = Self.preferredDisplayMode
-            isLiveLoading = false
+            cacheActiveContextForFileSwitch()
+            activeFileKey = nil
+            resetPreviewState()
             return
+        }
+
+        let nextFileKey = Self.fileKey(for: fileURL)
+        if activeFileKey != nextFileKey {
+            cacheActiveContextForFileSwitch()
+            activeFileKey = nextFileKey
+            if let cachedContext = cachedContexts.removeValue(forKey: nextFileKey) {
+                removeContextRecency(nextFileKey)
+                apply(cachedContext)
+                if displayMode == .live {
+                    liveCanvasDidAppear()
+                }
+            } else {
+                resetPreviewState()
+            }
         }
 
         let nextPreviews = scanner.scan(fileURL: fileURL, sourceText: sourceText)
@@ -144,6 +172,7 @@ final class EditorPreviewViewModel: ObservableObject {
             return
         }
 
+        stopActiveSessionForReplacement()
         selectedPreviewID = nextPreviews.first?.id
         if nextPreviews.isEmpty {
             runState = .idle
@@ -185,15 +214,30 @@ final class EditorPreviewViewModel: ObservableObject {
         livePreviewInfo = LivePreviewInfo()
         runState = .starting
 
+        let startedFileKey = activeFileKey
+        let startedPreviewID = selectedPreview.id
         Task {
             do {
                 let nextSession = try await engine.startPreview(selectedPreview)
+                guard activeFileKey == startedFileKey,
+                      selectedPreviewID == startedPreviewID else {
+                    await engine.stopPreview(nextSession)
+                    return
+                }
                 session = nextSession
                 await syncSessionState(from: nextSession)
                 await applyPreferredDisplayModeIfNeeded()
             } catch let error as PreviewError {
+                guard activeFileKey == startedFileKey,
+                      selectedPreviewID == startedPreviewID else {
+                    return
+                }
                 runState = .failed(Self.message(for: error))
             } catch {
+                guard activeFileKey == startedFileKey,
+                      selectedPreviewID == startedPreviewID else {
+                    return
+                }
                 runState = .failed(error.localizedDescription)
             }
         }
@@ -224,6 +268,10 @@ final class EditorPreviewViewModel: ObservableObject {
 
     func stopPreview() {
         isStoppingLive = true
+        if let activeFileKey {
+            cachedContexts[activeFileKey] = nil
+            removeContextRecency(activeFileKey)
+        }
 
         // Stop live first if running
         if displayMode == .live {
@@ -256,6 +304,37 @@ final class EditorPreviewViewModel: ObservableObject {
             await engine.stopPreview(session)
             isStoppingLive = false
         }
+    }
+
+    func cacheActiveContextForFileSwitch() {
+        guard let activeFileKey else { return }
+
+        let cachedSession = session
+        let cachedEngine = engine
+        if displayMode == .live,
+           let cachedSession,
+           let cachedEngine {
+            Task {
+                try? await cachedEngine.hideLivePreview(cachedSession)
+            }
+        }
+
+        cachedContexts[activeFileKey] = PreviewContext(
+            previews: previews,
+            selectedPreviewID: selectedPreviewID,
+            runState: runState,
+            renderMessage: renderMessage,
+            renderImage: renderImage,
+            diagnostics: diagnostics,
+            performanceSummary: performanceSummary,
+            displayMode: displayMode,
+            livePreviewInfo: livePreviewInfo,
+            isLiveLoading: false,
+            session: session,
+            engine: engine
+        )
+        markContextRecentlyUsed(activeFileKey)
+        pruneCachedContexts()
     }
 
     // MARK: - Display Mode Switching
@@ -485,6 +564,85 @@ final class EditorPreviewViewModel: ObservableObject {
         displayMode = .live
         isLiveLoading = true
         await startLivePreview()
+    }
+
+    private func resetPreviewState() {
+        previews = []
+        selectedPreviewID = nil
+        runState = .idle
+        renderMessage = nil
+        renderImage = nil
+        diagnostics = nil
+        performanceSummary = nil
+        displayMode = Self.preferredDisplayMode
+        livePreviewInfo = LivePreviewInfo()
+        isLiveLoading = false
+        session = nil
+        engine = nil
+    }
+
+    private func apply(_ context: PreviewContext) {
+        previews = context.previews
+        selectedPreviewID = context.selectedPreviewID
+        runState = context.runState
+        renderMessage = context.renderMessage
+        renderImage = context.renderImage
+        diagnostics = context.diagnostics
+        performanceSummary = context.performanceSummary
+        displayMode = context.displayMode
+        livePreviewInfo = context.livePreviewInfo
+        isLiveLoading = context.isLiveLoading
+        session = context.session
+        engine = context.engine
+    }
+
+    private func stopActiveSessionForReplacement() {
+        liveFrameSyncTask?.cancel()
+        liveFrameSyncTask = nil
+
+        if let session, let engine {
+            Task {
+                await engine.stopPreview(session)
+            }
+        }
+
+        session = nil
+        engine = nil
+        livePreviewInfo = LivePreviewInfo()
+        isLiveLoading = false
+        renderMessage = nil
+        renderImage = nil
+        diagnostics = nil
+        performanceSummary = nil
+        displayMode = Self.preferredDisplayMode
+        runState = .stopped
+    }
+
+    private func markContextRecentlyUsed(_ key: String) {
+        removeContextRecency(key)
+        contextRecency.append(key)
+    }
+
+    private func removeContextRecency(_ key: String) {
+        contextRecency.removeAll { $0 == key }
+    }
+
+    private func pruneCachedContexts() {
+        while contextRecency.count > Self.maxCachedContextCount {
+            let removedKey = contextRecency.removeFirst()
+            guard let context = cachedContexts.removeValue(forKey: removedKey),
+                  let session = context.session,
+                  let engine = context.engine else {
+                continue
+            }
+            Task {
+                await engine.stopPreview(session)
+            }
+        }
+    }
+
+    private static func fileKey(for fileURL: URL) -> String {
+        fileURL.standardizedFileURL.resolvingSymlinksInPath().path
     }
 
     private static var preferredDisplayMode: PreviewDisplayMode {
