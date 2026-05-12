@@ -124,9 +124,9 @@ public struct AppImageThumbnail: View {
             size: 36
         )
         AppAvatar(
-            systemImage: "heart.fill",
+            systemImage: "person.fill",
             tint: .white,
-            backgroundTint: .red,
+            backgroundTint: .blue,
             size: 48
         )
     }
