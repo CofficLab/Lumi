@@ -263,6 +263,13 @@ public final class EditorState: ObservableObject, SuperLog {
             )
         }
     }
+
+    /// 当前文档文本变更版本号。
+    ///
+    /// `content` 是可变的 `NSTextStorage`，文本变化不一定会替换对象本身。
+    /// 需要一个显式版本号让 SwiftUI/插件可靠观察每次编辑。
+    @Published public private(set) var contentRevision: UInt64 = 0
+
     @Published public private(set) var isFileLoadInProgress: Bool = false
     @Published public private(set) var fileLoadErrorMessage: String?
 
@@ -2292,6 +2299,7 @@ public final class EditorState: ObservableObject, SuperLog {
     // MARK: - Content Change Detection
     
     private func refreshContentDerivedState(using contentString: String) {
+        contentRevision &+= 1
         let changed = documentController.hasChangesComparedToPersistedSnapshot(contentString)
 
         logger.info("\(Self.t)🔍 [dirty-debug] 内容变更检测: changed=\(changed), hasUnsavedChanges=\(self.hasUnsavedChanges), 内容长度=\(contentString.count), 快照长度=\(self.documentController.persistedTextSnapshot?.count ?? -1), 文件=\(self.currentFileURL?.lastPathComponent ?? "nil")")
