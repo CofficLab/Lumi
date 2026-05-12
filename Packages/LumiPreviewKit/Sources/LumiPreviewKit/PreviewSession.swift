@@ -32,6 +32,8 @@ public protocol PreviewSession: AnyObject, Sendable {
 public struct PreviewPerformanceMetrics: Sendable, Equatable {
     /// 最近一次编译耗时，单位秒。
     public var lastCompileDuration: TimeInterval?
+    /// 最近一次宿主加载预览入口耗时，单位秒。
+    public var lastLoadDuration: TimeInterval?
     /// 最近一次刷新耗时，单位秒。
     public var lastRefreshDuration: TimeInterval?
     /// 最近一次编译是否命中缓存。
@@ -41,14 +43,17 @@ public struct PreviewPerformanceMetrics: Sendable, Equatable {
     ///
     /// - Parameters:
     ///   - lastCompileDuration: 最近一次编译耗时，单位秒。
+    ///   - lastLoadDuration: 最近一次宿主加载预览入口耗时，单位秒。
     ///   - lastRefreshDuration: 最近一次刷新耗时，单位秒。
     ///   - lastCompileUsedCache: 最近一次编译是否命中缓存。
     public init(
         lastCompileDuration: TimeInterval? = nil,
+        lastLoadDuration: TimeInterval? = nil,
         lastRefreshDuration: TimeInterval? = nil,
         lastCompileUsedCache: Bool = false
     ) {
         self.lastCompileDuration = lastCompileDuration
+        self.lastLoadDuration = lastLoadDuration
         self.lastRefreshDuration = lastRefreshDuration
         self.lastCompileUsedCache = lastCompileUsedCache
     }
@@ -175,6 +180,10 @@ public actor LivePreviewSession: PreviewSession {
         currentPerformanceMetrics.lastCompileUsedCache = usedCache
     }
 
+    func recordLoad(duration: TimeInterval) {
+        currentPerformanceMetrics.lastLoadDuration = duration
+    }
+
     func recordRefresh(duration: TimeInterval) {
         currentPerformanceMetrics.lastRefreshDuration = duration
     }
@@ -196,7 +205,7 @@ public actor LivePreviewSession: PreviewSession {
     }
 
     /// 当宿主进程成功加载真实 NSView entry 后，标记 Live 模式可用。
-    func markLivePreviewAvailable(windowNumber: Int? = nil) {
+    func markLivePreviewAvailable(windowNumber: Int? = nil, hostProcessID: Int32? = nil) {
         let state: LivePreviewState = if currentLivePreviewInfo.state == .running {
             .running
         } else {
@@ -204,7 +213,8 @@ public actor LivePreviewSession: PreviewSession {
         }
         currentLivePreviewInfo = LivePreviewInfo(
             state: state,
-            hostWindowNumber: windowNumber
+            hostWindowNumber: windowNumber,
+            hostProcessID: hostProcessID ?? currentLivePreviewInfo.hostProcessID
         )
     }
 

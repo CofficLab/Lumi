@@ -87,6 +87,33 @@ struct PreviewFileContextCacheTests {
         #expect(cache.keysInLeastRecentOrder == ["a", "c"])
     }
 
+    @Test("removeAll 清空缓存并按最久未使用顺序返回 context")
+    func removeAllClearsCacheInLeastRecentOrder() {
+        var cache = PreviewFileContextCache<Int>(maximumCount: 3)
+
+        cache.store(1, forKey: "a")
+        cache.store(2, forKey: "b")
+        cache.store(3, forKey: "c")
+        cache.markRecentlyUsed("a")
+
+        let removed = cache.removeAll()
+
+        #expect(removed.map(\.key) == ["b", "c", "a"])
+        #expect(removed.map(\.value) == [2, 3, 1])
+        #expect(cache.count == 0)
+        #expect(cache.keysInLeastRecentOrder.isEmpty)
+    }
+
+    @Test("removeAll 在禁用缓存时返回空")
+    func removeAllReturnsEmptyWhenCachingDisabled() {
+        var cache = PreviewFileContextCache<Int>(maximumCount: 0)
+
+        cache.store(1, forKey: "a")
+
+        #expect(cache.removeAll().isEmpty)
+        #expect(cache.count == 0)
+    }
+
     @Test("maximumCount 为 0 时不缓存并返回被移除 context")
     func zeroMaximumCountDisablesCaching() {
         var cache = PreviewFileContextCache<Int>(maximumCount: 0)

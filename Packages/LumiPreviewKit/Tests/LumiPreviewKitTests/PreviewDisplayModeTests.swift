@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import Testing
 @testable import LumiPreviewKit
 
@@ -34,6 +35,7 @@ struct PreviewDisplayModeTests {
         #expect(info.state == .unavailable)
         #expect(info.unavailableReason == nil)
         #expect(info.hostWindowNumber == nil)
+        #expect(info.hostProcessID == nil)
     }
 
     @Test("LivePreviewInfo 可编码和解码")
@@ -41,7 +43,8 @@ struct PreviewDisplayModeTests {
         let info = LivePreviewInfo(
             state: .running,
             unavailableReason: nil,
-            hostWindowNumber: 42
+            hostWindowNumber: 42,
+            hostProcessID: 12345
         )
         let data = try JSONEncoder().encode(info)
         let decoded = try JSONDecoder().decode(LivePreviewInfo.self, from: data)
@@ -49,6 +52,7 @@ struct PreviewDisplayModeTests {
         #expect(decoded.state == .running)
         #expect(decoded.unavailableReason == nil)
         #expect(decoded.hostWindowNumber == 42)
+        #expect(decoded.hostProcessID == 12345)
     }
 
     @Test("PreviewDisplayMode 可编码和解码")
@@ -58,6 +62,29 @@ struct PreviewDisplayModeTests {
             let decoded = try JSONDecoder().decode(PreviewDisplayMode.self, from: data)
             #expect(decoded == mode)
         }
+    }
+
+    @Test("PreviewPerformanceMetrics 记录 build、load 和 refresh 指标")
+    func performanceMetricsRecordsBuildLoadAndRefresh() async {
+        let session = LivePreviewSession(
+            discovery: PreviewDiscovery(
+                id: "test-performance",
+                title: "Test",
+                sourceFileURL: URL(fileURLWithPath: "/tmp/Test.swift"),
+                lineNumber: 1,
+                endLineNumber: 3
+            )
+        )
+
+        await session.recordCompile(duration: 1.2, usedCache: true)
+        await session.recordLoad(duration: 0.3)
+        await session.recordRefresh(duration: 1.6)
+
+        let metrics = await session.performanceMetrics
+        #expect(metrics.lastCompileDuration == 1.2)
+        #expect(metrics.lastLoadDuration == 0.3)
+        #expect(metrics.lastRefreshDuration == 1.6)
+        #expect(metrics.lastCompileUsedCache == true)
     }
 
     // MARK: - Session Display Mode
@@ -160,11 +187,13 @@ struct PreviewDisplayModeTests {
         let info = LivePreviewInfo(
             state: .running,
             unavailableReason: nil,
-            hostWindowNumber: 456
+            hostWindowNumber: 456,
+            hostProcessID: 789
         )
         await session.setLivePreviewInfo(info)
         #expect(await session.livePreviewInfo.state == .running)
         #expect(await session.livePreviewInfo.hostWindowNumber == 456)
+        #expect(await session.livePreviewInfo.hostProcessID == 789)
     }
 
     @Test("markLivePreviewAvailable 不会把 running 降级为 available")
@@ -179,11 +208,44 @@ struct PreviewDisplayModeTests {
             )
         )
 
-        await session.setLivePreviewInfo(LivePreviewInfo(state: .running, hostWindowNumber: 10))
+        await session.setLivePreviewInfo(LivePreviewInfo(state: .running, hostWindowNumber: 10, hostProcessID: 20))
         await session.markLivePreviewAvailable(windowNumber: 11)
 
         #expect(await session.livePreviewInfo.state == .running)
         #expect(await session.livePreviewInfo.hostWindowNumber == 11)
+        #expect(await session.livePreviewInfo.hostProcessID == 20)
+    }
+
+    @Test("PreviewEntryBuilder 清理过期缓存并保留新缓存")
+    func previewEntryBuilderRemovesExpiredCacheEntries() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKitTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let oldEntry = root.appendingPathComponent("old", isDirectory: true)
+        let newEntry = root.appendingPathComponent("new", isDirectory: true)
+        try FileManager.default.createDirectory(at: oldEntry, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: newEntry, withIntermediateDirectories: true)
+
+        let now = Date()
+        try FileManager.default.setAttributes(
+            [.modificationDate: now.addingTimeInterval(-8 * 24 * 60 * 60)],
+            ofItemAtPath: oldEntry.path
+        )
+        try FileManager.default.setAttributes(
+            [.modificationDate: now],
+            ofItemAtPath: newEntry.path
+        )
+
+        PreviewEntryBuilder.removeExpiredCacheEntries(
+            olderThan: 7 * 24 * 60 * 60,
+            keepingNewest: 64,
+            rootDirectory: root,
+            now: now
+        )
+
+        #expect(!FileManager.default.fileExists(atPath: oldEntry.path))
+        #expect(FileManager.default.fileExists(atPath: newEntry.path))
     }
 
     @Test("updateDiscovery 替换会话中的预览发现结果")
@@ -260,7 +322,7 @@ struct PreviewDisplayModeTests {
 
     @Test("LiveFrameRequest 可编码和解码")
     func liveFrameRequestCoding() throws {
-        let frame = LiveFrameRequest(x: 100.0, y: 200.0, width: 320.0, height: 180.0)
+        let frame = LiveFrameRequest(x: 100.0, y: 200.0, width: 320.0, height: 180.0, scale: 2)
         let data = try JSONEncoder().encode(frame)
         let decoded = try JSONDecoder().decode(LiveFrameRequest.self, from: data)
 
@@ -268,6 +330,15 @@ struct PreviewDisplayModeTests {
         #expect(decoded.y == 200.0)
         #expect(decoded.width == 320.0)
         #expect(decoded.height == 180.0)
+        #expect(decoded.scale == 2)
+    }
+
+    @Test("旧格式 LiveFrameRequest 解码时 scale 默认为 1")
+    func liveFrameRequestLegacyCodingDefaultsScale() throws {
+        let data = #"{"x":100,"y":200,"width":320,"height":180}"#.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(LiveFrameRequest.self, from: data)
+
+        #expect(decoded.scale == 1)
     }
 
     @Test("RenderRequest 携带 liveFrame")
@@ -306,6 +377,97 @@ struct PreviewDisplayModeTests {
             let reconstructed = PreviewHostCommand(rawValue: rawValue)
             #expect(reconstructed == command)
         }
+    }
+
+    @MainActor
+    @Test("LivePreviewWindow 不吞掉 Command 快捷键")
+    func livePreviewWindowDoesNotConsumeCommandShortcut() {
+        let window = LivePreviewWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 180))
+        let event = NSEvent.keyEvent(
+            with: .keyDown,
+            location: .zero,
+            modifierFlags: [.command],
+            timestamp: 0,
+            windowNumber: window.windowNumber,
+            context: nil,
+            characters: "s",
+            charactersIgnoringModifiers: "s",
+            isARepeat: false,
+            keyCode: 1
+        )
+
+        #expect(event != nil)
+        #expect(window.performKeyEquivalent(with: event!) == false)
+    }
+
+    @MainActor
+    @Test("LivePreviewWindow 在失焦后自动隐藏且不提升层级")
+    func livePreviewWindowHidesOnDeactivateAtNormalLevel() {
+        let window = LivePreviewWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 180))
+
+        #expect(window.hidesOnDeactivate)
+        #expect(window.level == .normal)
+        #expect(window.styleMask.contains(.nonactivatingPanel))
+        #expect(window.collectionBehavior == [.fullScreenAuxiliary])
+    }
+
+    @MainActor
+    @Test("LivePreviewWindow 内按钮可点击并改变状态")
+    func livePreviewWindowSupportsButtonInteraction() {
+        let window = LivePreviewWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 180))
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 180))
+        let button = NSButton(checkboxWithTitle: "Toggle", target: nil, action: nil)
+        button.frame = NSRect(x: 20, y: 20, width: 120, height: 24)
+        container.addSubview(button)
+        window.contentView = container
+
+        #expect(button.state == .off)
+
+        window.orderFront(nil)
+        button.performClick(nil)
+
+        #expect(button.state == .on)
+    }
+
+    @MainActor
+    @Test("LivePreviewWindow 内滚动视图可滚动")
+    func livePreviewWindowSupportsScrollingContent() {
+        let window = LivePreviewWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 180))
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 320, height: 180))
+        let documentView = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 720))
+
+        scrollView.hasVerticalScroller = true
+        scrollView.documentView = documentView
+        window.contentView = scrollView
+        window.orderFront(nil)
+        scrollView.layoutSubtreeIfNeeded()
+
+        let initialOrigin = scrollView.contentView.bounds.origin.y
+        scrollView.contentView.scroll(to: NSPoint(x: 0, y: 180))
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+
+        #expect(scrollView.contentView.bounds.origin.y > initialOrigin)
+    }
+
+    @MainActor
+    @Test("LivePreviewWindow 规范化并隐藏 child window")
+    func livePreviewWindowNormalizesAndHidesChildWindows() {
+        let parent = LivePreviewWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 180))
+        let child = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 120, height: 80),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+
+        parent.addChildWindow(child, ordered: .above)
+        #expect(child.level == parent.level)
+        #expect(child.collectionBehavior.contains(.fullScreenAuxiliary))
+
+        parent.orderFront(nil)
+        parent.orderOut(nil)
+
+        #expect(!child.isVisible)
     }
 
     // MARK: - Integration: Live preview lifecycle through host process
@@ -355,7 +517,7 @@ struct PreviewDisplayModeTests {
 
         // updateLiveFrame
         let frameResponse = try await connection.requestUpdateLiveFrame(
-            x: 100, y: 200, width: 400, height: 300
+            x: 100, y: 200, width: 400, height: 300, scale: 2
         )
         #expect(frameResponse.success)
 
@@ -480,12 +642,121 @@ struct PreviewDisplayModeTests {
         #expect(reloadResponse.success)
         #expect(reloadResponse.livePreviewEnabled == true)
         #expect(reloadResponse.message?.contains("Updated View") == true)
+        #expect(reloadResponse.liveWindowNumber == startResponse.liveWindowNumber)
 
         let showAfterReloadResponse = try await connection.requestShowLivePreview()
         #expect(showAfterReloadResponse.success)
         #expect(showAfterReloadResponse.livePreviewEnabled == true)
+        #expect(showAfterReloadResponse.liveWindowNumber == startResponse.liveWindowNumber)
 
         await connection.terminate()
+    }
+
+    @Test("hide 后再次 show 复用同一 live window 且仍可刷新")
+    func hideAndShowLivePreviewReusesWindow() async throws {
+        let executableURL = try buildHostExecutable()
+        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        defer {
+            Task { await connection.terminate() }
+        }
+
+        let dylibURL = try await buildSignedDylib(
+            source: #"""
+            import AppKit
+            import Darwin
+            import SwiftUI
+
+            @_cdecl("lumi_preview_entry")
+            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
+                let json = #"{"title":"Hide Show Reuse"}"#
+                return strdup(json).map { UnsafePointer($0) }
+            }
+
+            @_cdecl("lumi_preview_make_nsview")
+            public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
+                let view = NSHostingView(rootView: AnyView(Text("Reusable Live").padding()))
+                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
+                return Unmanaged.passRetained(view).toOpaque()
+            }
+            """#
+        )
+
+        let loadResponse = try await connection.requestLoadPreviewEntry(
+            at: dylibURL,
+            symbolName: PreviewEntryBuilder.symbolName
+        )
+        #expect(loadResponse.success)
+        #expect(loadResponse.livePreviewEnabled == true)
+
+        let startResponse = try await connection.requestStartLivePreview()
+        #expect(startResponse.success)
+        #expect(startResponse.liveWindowNumber != nil)
+
+        let firstShowResponse = try await connection.requestShowLivePreview()
+        #expect(firstShowResponse.success)
+        #expect(firstShowResponse.liveWindowNumber == startResponse.liveWindowNumber)
+
+        let hideResponse = try await connection.requestHideLivePreview()
+        #expect(hideResponse.success)
+        #expect(hideResponse.liveWindowNumber == startResponse.liveWindowNumber)
+
+        let secondShowResponse = try await connection.requestShowLivePreview()
+        #expect(secondShowResponse.success)
+        #expect(secondShowResponse.liveWindowNumber == startResponse.liveWindowNumber)
+
+        let refreshResponse = try await connection.requestRefresh()
+        #expect(refreshResponse.success)
+        #expect(refreshResponse.message == "Refreshed Hide Show Reuse")
+        #expect(refreshResponse.previewImagePNGBase64 != nil)
+    }
+
+    @Test("stopLivePreview 后旧 live window 不能再被 show 回来")
+    func stoppedLivePreviewCannotBeShownAgain() async throws {
+        let executableURL = try buildHostExecutable()
+        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        defer {
+            Task { await connection.terminate() }
+        }
+
+        let dylibURL = try await buildSignedDylib(
+            source: #"""
+            import AppKit
+            import Darwin
+            import SwiftUI
+
+            @_cdecl("lumi_preview_entry")
+            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
+                let json = #"{"title":"Stop Removes Window"}"#
+                return strdup(json).map { UnsafePointer($0) }
+            }
+
+            @_cdecl("lumi_preview_make_nsview")
+            public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
+                let view = NSHostingView(rootView: AnyView(Text("Stop").padding()))
+                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
+                return Unmanaged.passRetained(view).toOpaque()
+            }
+            """#
+        )
+
+        _ = try await connection.requestLoadPreviewEntry(
+            at: dylibURL,
+            symbolName: PreviewEntryBuilder.symbolName
+        )
+        _ = try await connection.requestStartLivePreview()
+        _ = try await connection.requestShowLivePreview()
+
+        let stopResponse = try await connection.requestStopLivePreview()
+        #expect(stopResponse.success)
+
+        do {
+            _ = try await connection.requestShowLivePreview()
+            Issue.record("Expected showLivePreview to fail after stopLivePreview")
+        } catch PreviewError.runtimeCrashed(let message) {
+            #expect(message.contains("No live window to show"))
+        } catch {
+            Issue.record("Expected runtimeCrashed after stopLivePreview, got \(error)")
+        }
     }
 
     // MARK: - Helpers

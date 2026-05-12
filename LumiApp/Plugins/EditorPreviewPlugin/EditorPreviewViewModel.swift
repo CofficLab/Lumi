@@ -52,6 +52,41 @@ final class EditorPreviewViewModel: ObservableObject {
         }
     }
 
+    enum CanvasSizePreset: String, CaseIterable, Identifiable {
+        case automatic
+        case compact
+        case regular
+        case phone
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .automatic:
+                String(localized: "Auto", table: "EditorPreview")
+            case .compact:
+                String(localized: "Compact", table: "EditorPreview")
+            case .regular:
+                String(localized: "Regular", table: "EditorPreview")
+            case .phone:
+                String(localized: "Phone", table: "EditorPreview")
+            }
+        }
+
+        var fixedSize: CGSize? {
+            switch self {
+            case .automatic:
+                nil
+            case .compact:
+                CGSize(width: 320, height: 240)
+            case .regular:
+                CGSize(width: 768, height: 480)
+            case .phone:
+                CGSize(width: 393, height: 852)
+            }
+        }
+    }
+
     // MARK: - Published State
 
     @Published private(set) var previews: [PreviewDiscovery] = []
@@ -67,10 +102,14 @@ final class EditorPreviewViewModel: ObservableObject {
     @Published private(set) var isLiveLoading: Bool = false
     @Published private(set) var updatePhase: UpdatePhase = .idle
     @Published private(set) var staleLivePreviewMessage: String?
+    @Published var canvasScale: CGFloat = 1
+    @Published var isCanvasScaleToFit: Bool = true
+    @Published private(set) var canvasSizePreset: CanvasSizePreset = .automatic
 
     // MARK: - Private State
 
     private static let preferredDisplayModeKey = "EditorPreviewPlugin.preferredDisplayMode"
+    private static let preferredCanvasSizePresetKey = "EditorPreviewPlugin.preferredCanvasSizePreset"
     private struct PreviewContext {
         var previews: [PreviewDiscovery]
         var selectedPreviewID: String?
@@ -102,6 +141,7 @@ final class EditorPreviewViewModel: ObservableObject {
     init() {
         let preferredDisplayMode = Self.preferredDisplayMode
         displayMode = preferredDisplayMode
+        canvasSizePreset = Self.preferredCanvasSizePreset
         liveCanvasService = EditorPreviewLiveCanvasService(displayMode: preferredDisplayMode)
         bindLiveCanvasService()
     }
@@ -134,6 +174,51 @@ final class EditorPreviewViewModel: ObservableObject {
 
     var isShowingStaleLivePreview: Bool {
         displayMode == .live && staleLivePreviewMessage != nil
+    }
+
+    var diagnosticSummary: String {
+        var lines: [String] = [
+            "mode: \(displayMode.rawValue)",
+            "runState: \(runState.title)",
+            "updatePhase: \(updatePhase.title.isEmpty ? "idle" : updatePhase.title)",
+            "liveState: \(livePreviewInfo.state.rawValue)",
+            "canvasPreset: \(canvasSizePreset.rawValue)",
+            "canvasScale: \(isCanvasScaleToFit ? "fit" : String(format: "%.0f%%", canvasScale * 100))",
+            "hostPID: \(livePreviewInfo.hostProcessID.map(String.init) ?? "-")",
+            "window: \(livePreviewInfo.hostWindowNumber.map(String.init) ?? "-")",
+            String(
+                format: "frame: %.1f, %.1f, %.1f x %.1f",
+                liveCanvasRect.origin.x,
+                liveCanvasRect.origin.y,
+                liveCanvasRect.width,
+                liveCanvasRect.height
+            )
+        ]
+        if let selectedPreviewID {
+            lines.append("previewID: \(selectedPreviewID)")
+        }
+        if let renderMessage {
+            lines.append("message: \(renderMessage)")
+        }
+        if let diagnostics {
+            lines.append("diagnostics: \(diagnostics.prefix(500))")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    func setCanvasScaleToFit() {
+        isCanvasScaleToFit = true
+    }
+
+    func setCanvasScale(_ scale: CGFloat) {
+        isCanvasScaleToFit = false
+        canvasScale = min(max(scale, 0.25), 2)
+    }
+
+    func setCanvasSizePreset(_ preset: CanvasSizePreset) {
+        canvasSizePreset = preset
+        Self.preferredCanvasSizePreset = preset
+        EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
     }
 
     /// Whether Live mode is available for the current session.
@@ -206,7 +291,7 @@ final class EditorPreviewViewModel: ObservableObject {
             return
         }
 
-        stopActiveSessionForReplacement()
+        stopActiveSessionForReplacement(hideFirst: true)
         selectedPreviewID = nextPreviews.first?.id
         if nextPreviews.isEmpty {
             runState = .idle
@@ -219,18 +304,29 @@ final class EditorPreviewViewModel: ObservableObject {
 
     func sourceDidChange(sourceText: String?, fileURL: URL?) {
         let previousPreviewID = selectedPreviewID
-        let shouldRefreshRunningPreview = (runState == .running || staleLivePreviewMessage != nil) && session != nil
+        let hadRefreshableSessionBeforeUpdate = (runState == .running || staleLivePreviewMessage != nil) && session != nil
 
         update(sourceText: sourceText, fileURL: fileURL)
 
-        guard shouldRefreshRunningPreview,
-              runState == .running,
-              session != nil,
-              selectedPreviewID == previousPreviewID else {
+        guard EditorPreviewRefreshPolicy.shouldScheduleRefresh(
+            previousPreviewID: previousPreviewID,
+            currentPreviewID: selectedPreviewID,
+            hadRefreshableSessionBeforeUpdate: hadRefreshableSessionBeforeUpdate,
+            isRunningAfterUpdate: runState == .running,
+            hasSessionAfterUpdate: session != nil
+        ) else {
             return
         }
 
         scheduleSourceRefresh()
+    }
+
+    func selectPreview(id: String?) {
+        guard selectedPreviewID != id else { return }
+        stopActiveSessionForReplacement(hideFirst: true)
+        selectedPreviewID = id
+        guard id != nil else { return }
+        startSelectedPreviewIfNeeded()
     }
 
     // MARK: - Start / Refresh / Stop
@@ -260,6 +356,7 @@ final class EditorPreviewViewModel: ObservableObject {
         diagnostics = nil
         performanceSummary = nil
         displayMode = Self.preferredDisplayMode
+        canvasSizePreset = Self.preferredCanvasSizePreset
         liveCanvasService.updateDisplayMode(displayMode)
         isLiveLoading = displayMode == .live
         livePreviewInfo = LivePreviewInfo()
@@ -355,9 +452,11 @@ final class EditorPreviewViewModel: ObservableObject {
         refreshTask = nil
         hasPendingRefreshAfterCurrent = false
         liveCanvasService.cancelPendingFrameSync()
-        if let activeFileKey {
-            cachedContexts.removeValue(forKey: activeFileKey)
+        if let activeFileKey,
+           let cachedActiveContext = cachedContexts.removeValue(forKey: activeFileKey) {
+            stopEvictedContexts([cachedActiveContext])
         }
+        stopCachedContexts()
 
         // Stop live first if running
         if displayMode == .live {
@@ -371,10 +470,12 @@ final class EditorPreviewViewModel: ObservableObject {
             diagnostics = nil
             performanceSummary = nil
             displayMode = Self.preferredDisplayMode
+            canvasSizePreset = Self.preferredCanvasSizePreset
             liveCanvasService.updateDisplayMode(displayMode)
             isLiveLoading = false
             staleLivePreviewMessage = nil
             updatePhase = .idle
+            isStoppingLive = false
             return
         }
 
@@ -386,6 +487,7 @@ final class EditorPreviewViewModel: ObservableObject {
         diagnostics = nil
         performanceSummary = nil
         displayMode = Self.preferredDisplayMode
+        canvasSizePreset = Self.preferredCanvasSizePreset
         liveCanvasService.updateDisplayMode(displayMode)
         isLiveLoading = false
         livePreviewInfo = LivePreviewInfo()
@@ -396,6 +498,19 @@ final class EditorPreviewViewModel: ObservableObject {
             await engine.stopPreview(session)
             isStoppingLive = false
         }
+    }
+
+    func previewPanelDidDisappear() {
+        liveCanvasDidDisappear()
+        stopCachedContexts()
+        guard session != nil else { return }
+        stopPreview()
+    }
+
+    func applicationWillTerminate() {
+        stopCachedContexts()
+        guard session != nil else { return }
+        stopPreview()
     }
 
     func cacheActiveContextForFileSwitch() {
@@ -468,6 +583,7 @@ final class EditorPreviewViewModel: ObservableObject {
         do {
             try await engine.startLivePreview(session)
             livePreviewInfo = LivePreviewInfo(state: .running)
+            await syncSessionState(from: session)
             await syncLiveFrameFromEngine()
             await syncLiveVisibility()
             isLiveLoading = false
@@ -482,7 +598,8 @@ final class EditorPreviewViewModel: ObservableObject {
         try? await engine.hideLivePreview(session)
         livePreviewInfo = LivePreviewInfo(
             state: .available,
-            hostWindowNumber: livePreviewInfo.hostWindowNumber
+            hostWindowNumber: livePreviewInfo.hostWindowNumber,
+            hostProcessID: livePreviewInfo.hostProcessID
         )
     }
 
@@ -505,7 +622,8 @@ final class EditorPreviewViewModel: ObservableObject {
 
         livePreviewInfo = LivePreviewInfo(
             state: .available,
-            hostWindowNumber: nil
+            hostWindowNumber: nil,
+            hostProcessID: livePreviewInfo.hostProcessID
         )
     }
 
@@ -570,9 +688,9 @@ final class EditorPreviewViewModel: ObservableObject {
     // MARK: - Live Canvas Frame Sync
 
     /// Update the canvas rect that the live window should overlay.
-    func updateLiveCanvasRect(_ rect: CGRect) {
+    func updateLiveCanvasRect(_ rect: CGRect, scale: CGFloat = 1) {
         let newRect = rect.standardized
-        liveCanvasService.updateLiveCanvasRect(rect)
+        liveCanvasService.updateLiveCanvasRect(rect, scale: scale)
         // Mirror the rect back for View binding
         liveCanvasRect = newRect
     }
@@ -644,7 +762,8 @@ final class EditorPreviewViewModel: ObservableObject {
             x: Double(rect.origin.x),
             y: Double(rect.origin.y),
             width: Double(rect.width),
-            height: Double(rect.height)
+            height: Double(rect.height),
+            scale: Double(liveCanvasService.liveCanvasScale)
         )
     }
 
@@ -727,6 +846,7 @@ final class EditorPreviewViewModel: ObservableObject {
         diagnostics = nil
         performanceSummary = nil
         displayMode = Self.preferredDisplayMode
+        canvasSizePreset = Self.preferredCanvasSizePreset
         liveCanvasService.updateDisplayMode(displayMode)
         livePreviewInfo = LivePreviewInfo()
         isLiveLoading = false
@@ -754,7 +874,7 @@ final class EditorPreviewViewModel: ObservableObject {
         engine = context.engine
     }
 
-    private func stopActiveSessionForReplacement() {
+    private func stopActiveSessionForReplacement(hideFirst: Bool = false) {
         sourceRefreshTask?.cancel()
         sourceRefreshTask = nil
         refreshTask?.cancel()
@@ -764,6 +884,9 @@ final class EditorPreviewViewModel: ObservableObject {
 
         if let session, let engine {
             Task {
+                if hideFirst {
+                    try? await engine.hideLivePreview(session)
+                }
                 await engine.stopPreview(session)
             }
         }
@@ -779,6 +902,7 @@ final class EditorPreviewViewModel: ObservableObject {
         diagnostics = nil
         performanceSummary = nil
         displayMode = Self.preferredDisplayMode
+        canvasSizePreset = Self.preferredCanvasSizePreset
         liveCanvasService.updateDisplayMode(displayMode)
         runState = .stopped
     }
@@ -797,10 +921,14 @@ final class EditorPreviewViewModel: ObservableObject {
             try? await Task.sleep(nanoseconds: 350_000_000)
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                guard self.activeFileKey == refreshFileKey,
-                      self.selectedPreviewID == refreshPreviewID,
-                      (self.runState == .running || self.staleLivePreviewMessage != nil),
-                      self.session != nil else {
+                guard EditorPreviewRefreshPolicy.shouldExecuteScheduledRefresh(
+                    activeFileKey: self.activeFileKey,
+                    expectedFileKey: refreshFileKey,
+                    currentPreviewID: self.selectedPreviewID,
+                    expectedPreviewID: refreshPreviewID,
+                    isRunningOrShowingStalePreview: self.runState == .running || self.staleLivePreviewMessage != nil,
+                    hasSession: self.session != nil
+                ) else {
                     if self.activeFileKey == refreshFileKey,
                        self.selectedPreviewID == refreshPreviewID {
                         self.updatePhase = .idle
@@ -822,6 +950,10 @@ final class EditorPreviewViewModel: ObservableObject {
         }
     }
 
+    private func stopCachedContexts() {
+        stopEvictedContexts(cachedContexts.removeAll().map(\.value))
+    }
+
     private static var preferredDisplayMode: PreviewDisplayMode {
         get {
             guard let rawValue = UserDefaults.standard.string(forKey: preferredDisplayModeKey),
@@ -832,6 +964,19 @@ final class EditorPreviewViewModel: ObservableObject {
         }
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: preferredDisplayModeKey)
+        }
+    }
+
+    private static var preferredCanvasSizePreset: CanvasSizePreset {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: preferredCanvasSizePresetKey),
+                  let preset = CanvasSizePreset(rawValue: rawValue) else {
+                return .automatic
+            }
+            return preset
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: preferredCanvasSizePresetKey)
         }
     }
 }

@@ -25,6 +25,45 @@ public final class PreviewEntryBuilder: Sendable {
         self.xcodeCompiler = xcodeCompiler
     }
 
+    /// Removes stale generated preview entry cache directories.
+    ///
+    /// The host process may keep dylibs mapped while a session is alive, so cleanup only
+    /// removes old entries and leaves recent cache hits intact.
+    public static func removeExpiredCacheEntries(
+        olderThan age: TimeInterval = 7 * 24 * 60 * 60,
+        keepingNewest maximumEntryCount: Int = 64,
+        fileManager: FileManager = .default,
+        rootDirectory: URL? = nil,
+        now: Date = Date()
+    ) {
+        let root = rootDirectory ?? cacheRootDirectory
+        guard let entries = try? fileManager.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: [.contentModificationDateKey, .isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return
+        }
+
+        let cacheEntries = entries.compactMap { url -> (url: URL, modifiedAt: Date)? in
+            let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .isDirectoryKey])
+            guard values?.isDirectory == true else {
+                try? fileManager.removeItem(at: url)
+                return nil
+            }
+            return (url, values?.contentModificationDate ?? .distantPast)
+        }
+        .sorted { $0.modifiedAt > $1.modifiedAt }
+
+        for (index, entry) in cacheEntries.enumerated() {
+            let isExpired = now.timeIntervalSince(entry.modifiedAt) > age
+            let exceedsCount = index >= maximumEntryCount
+            if isExpired || exceedsCount {
+                try? fileManager.removeItem(at: entry.url)
+            }
+        }
+    }
+
     /// Generates, compiles, links, and signs a preview entry dylib.
     ///
     /// When target context is available, the generated entry is compiled with
@@ -101,9 +140,13 @@ public final class PreviewEntryBuilder: Sendable {
     }
 
     private static func cacheDirectory(for fingerprint: String) -> URL {
+        cacheRootDirectory
+            .appendingPathComponent(fingerprint, isDirectory: true)
+    }
+
+    private static var cacheRootDirectory: URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiPreviewKit-PreviewEntryCache", isDirectory: true)
-            .appendingPathComponent(fingerprint, isDirectory: true)
     }
 
     private static func moduleName(for fingerprint: String) -> String {

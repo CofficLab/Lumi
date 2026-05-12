@@ -56,35 +56,29 @@ struct EditorPreviewSurfaceView: View {
     }
 
     private var imageCanvasSurface: some View {
-        VStack(spacing: 14) {
-            Spacer(minLength: 0)
+        GeometryReader { geometry in
+            VStack(spacing: 14) {
+                Spacer(minLength: 0)
 
-            if let renderImage = viewModel.renderImage {
-                Image(nsImage: renderImage)
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: 420, maxHeight: 260)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
-                    )
-            } else {
-                Image(systemName: surfaceIconName)
-                    .font(.system(size: 28, weight: .light))
-                    .foregroundColor(statusColor)
+                if let renderImage = viewModel.renderImage {
+                    imagePreview(renderImage, availableSize: geometry.size)
+                } else {
+                    Image(systemName: surfaceIconName)
+                        .font(.system(size: 28, weight: .light))
+                        .foregroundColor(statusColor)
+                }
+
+                surfaceInfo
+
+                Spacer(minLength: 0)
             }
-
-            surfaceInfo
-
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var liveCanvasSurface: some View {
         GeometryReader { geometry in
+            let canvasSize = scaledCanvasSize(for: geometry.size)
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
                     .fill(themeVM.activeAppTheme.workspaceBackgroundColor())
@@ -128,9 +122,11 @@ struct EditorPreviewSurfaceView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
+            .frame(width: canvasSize.width, height: canvasSize.height)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                EditorPreviewLiveCanvasFrameReporter { screenFrame in
-                    viewModel.updateLiveCanvasRect(screenFrame)
+                EditorPreviewLiveCanvasFrameReporter { screenFrame, scale in
+                    viewModel.updateLiveCanvasRect(screenFrame, scale: scale)
                 } onFrameUnavailable: {
                     viewModel.liveCanvasFrameUnavailable()
                 }
@@ -145,6 +141,51 @@ struct EditorPreviewSurfaceView: View {
                 EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
             }
         }
+    }
+
+    private func imagePreview(_ image: NSImage, availableSize: CGSize) -> some View {
+        let canvasSize = scaledCanvasSize(for: availableSize)
+        return Image(nsImage: image)
+            .resizable()
+            .interpolation(.high)
+            .aspectRatio(contentMode: .fit)
+            .frame(width: canvasSize.width, height: canvasSize.height)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
+            )
+    }
+
+    private func scaledCanvasSize(for availableSize: CGSize) -> CGSize {
+        let availableCanvasSize = CGSize(
+            width: max(availableSize.width - 48, 120),
+            height: max(availableSize.height - 120, 120)
+        )
+        let baseSize = baseCanvasSize(for: availableCanvasSize)
+        guard !viewModel.isCanvasScaleToFit else {
+            return fittedSize(baseSize, inside: availableCanvasSize)
+        }
+        return CGSize(
+            width: baseSize.width * viewModel.canvasScale,
+            height: baseSize.height * viewModel.canvasScale
+        )
+    }
+
+    private func baseCanvasSize(for availableCanvasSize: CGSize) -> CGSize {
+        if let fixedSize = viewModel.canvasSizePreset.fixedSize {
+            return fixedSize
+        }
+        return CGSize(
+            width: min(max(availableCanvasSize.width, 180), 420),
+            height: min(max(availableCanvasSize.height, 120), 260)
+        )
+    }
+
+    private func fittedSize(_ size: CGSize, inside availableSize: CGSize) -> CGSize {
+        guard size.width > 0, size.height > 0 else { return size }
+        let scale = min(availableSize.width / size.width, availableSize.height / size.height, 1)
+        return CGSize(width: size.width * scale, height: size.height * scale)
     }
 
     private var surfaceInfo: some View {

@@ -23,6 +23,9 @@
         }
       }
     },
+    "Auto" : {
+
+    },
     "Build %@%@" : {
       "localizations" : {
         "en" : {
@@ -89,6 +92,15 @@
         }
       }
     },
+    "Canvas scale" : {
+
+    },
+    "Canvas size" : {
+
+    },
+    "Compact" : {
+
+    },
     "Copy error details" : {
       "localizations" : {
         "en" : {
@@ -154,6 +166,9 @@
           }
         }
       }
+    },
+    "Fit" : {
+
     },
     "Host missing" : {
       "localizations" : {
@@ -397,6 +412,9 @@
         }
       }
     },
+    "Load %@" : {
+
+    },
     "No #Preview macros found" : {
       "localizations" : {
         "en" : {
@@ -463,6 +481,9 @@
         }
       }
     },
+    "Phone" : {
+
+    },
     "Preview" : {
       "localizations" : {
         "en" : {
@@ -506,6 +527,12 @@
           }
         }
       }
+    },
+    "Preview diagnostics" : {
+
+    },
+    "Preview Diagnostics" : {
+
     },
     "Preview failed" : {
       "localizations" : {
@@ -660,6 +687,9 @@
           }
         }
       }
+    },
+    "Regular" : {
+
     },
     "Running" : {
       "localizations" : {

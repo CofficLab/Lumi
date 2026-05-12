@@ -5,7 +5,7 @@ import SwiftUI
 private let editorPreviewLiveCanvasFrameReporterFrameUpdateNotification = Notification.Name("EditorPreviewLiveCanvasFrameReporterFrameUpdate")
 
 struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
-    let onFrameChange: (CGRect) -> Void
+    let onFrameChange: (CGRect, CGFloat) -> Void
     let onFrameUnavailable: () -> Void
 
     static func scheduleFrameUpdate() {
@@ -59,6 +59,37 @@ struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
                     }
                 },
                 NotificationCenter.default.addObserver(
+                    forName: NSWindow.didChangeScreenNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak view] notification in
+                    guard let window = notification.object as? NSWindow,
+                          window === view?.window else { return }
+                    Task { @MainActor in
+                        view?.reportFrameSoon()
+                    }
+                },
+                NotificationCenter.default.addObserver(
+                    forName: NSWindow.didChangeBackingPropertiesNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak view] notification in
+                    guard let window = notification.object as? NSWindow,
+                          window === view?.window else { return }
+                    Task { @MainActor in
+                        view?.reportFrameSoon()
+                    }
+                },
+                NotificationCenter.default.addObserver(
+                    forName: NSApplication.didChangeScreenParametersNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak view] _ in
+                    Task { @MainActor in
+                        view?.reportFrameSoon()
+                    }
+                },
+                NotificationCenter.default.addObserver(
                     forName: editorPreviewLiveCanvasFrameReporterFrameUpdateNotification,
                     object: nil,
                     queue: .main
@@ -76,7 +107,7 @@ struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
     }
 
     final class ReportingView: NSView {
-        var onFrameChange: ((CGRect) -> Void)?
+        var onFrameChange: ((CGRect, CGFloat) -> Void)?
         var onFrameUnavailable: (() -> Void)?
         private var lastReportedFrame: CGRect = .null
 
@@ -97,17 +128,18 @@ struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
         }
 
         private func reportFrame() {
-            guard let window, !bounds.isEmpty, !hasHiddenAncestor else {
+            let visibleBounds = bounds.intersection(visibleRect)
+            guard let window, !visibleBounds.isEmpty, !hasHiddenAncestor else {
                 guard lastReportedFrame != .null else { return }
                 lastReportedFrame = .null
                 onFrameUnavailable?()
                 return
             }
-            let windowRect = convert(bounds, to: nil)
+            let windowRect = convert(visibleBounds, to: nil)
             let screenRect = window.convertToScreen(windowRect).standardized
             guard screenRect != lastReportedFrame else { return }
             lastReportedFrame = screenRect
-            onFrameChange?(screenRect)
+            onFrameChange?(screenRect, window.backingScaleFactor)
         }
 
         private var hasHiddenAncestor: Bool {
@@ -165,7 +197,9 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
                 return
             }
 
-            if window.isKeyWindow {
+            if window.isMiniaturized {
+                onWindowBecameInactive?()
+            } else if window.isVisible {
                 onWindowBecameActive?()
             } else {
                 onWindowBecameInactive?()
@@ -179,6 +213,11 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
             center.addObserver(self, selector: #selector(windowDidDeminiaturize), name: NSWindow.didDeminiaturizeNotification, object: window)
             center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didMoveNotification, object: window)
             center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didResizeNotification, object: window)
+            center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didChangeScreenNotification, object: window)
+            center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didChangeBackingPropertiesNotification, object: window)
+            center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didEnterFullScreenNotification, object: window)
+            center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didExitFullScreenNotification, object: window)
+            center.addObserver(self, selector: #selector(screenParametersChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
         }
 
         @objc private func windowDidBecomeKey() {
@@ -187,7 +226,7 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         }
 
         @objc private func windowDidResignKey() {
-            onWindowBecameInactive?()
+            onWindowFrameChanged?()
         }
 
         @objc private func windowDidMiniaturize() {
@@ -199,13 +238,17 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         }
 
         @objc private func windowDidDeminiaturize() {
-            if observedWindow?.isKeyWindow == true {
+            if observedWindow?.isVisible == true {
                 onWindowBecameActive?()
             }
             onWindowFrameChanged?()
         }
 
         @objc private func windowFrameChanged() {
+            onWindowFrameChanged?()
+        }
+
+        @objc private func screenParametersChanged() {
             onWindowFrameChanged?()
         }
 

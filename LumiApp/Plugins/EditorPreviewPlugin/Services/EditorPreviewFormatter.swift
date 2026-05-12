@@ -59,6 +59,14 @@ enum EditorPreviewFormatter {
                 )
             )
         }
+        if let loadDuration = metrics.lastLoadDuration {
+            parts.append(
+                String(
+                    format: String(localized: "Load %@", table: "EditorPreview"),
+                    format(seconds: loadDuration)
+                )
+            )
+        }
         if let refreshDuration = metrics.lastRefreshDuration {
             parts.append(
                 String(

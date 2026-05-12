@@ -47,8 +47,8 @@ public struct RenderRequest: Codable, Sendable {
     /// 本次渲染使用的配置。
     public let configuration: PreviewRenderConfiguration
 
-    /// Live 预览窗口的屏幕坐标和尺寸（用于 updateLiveFrame）。
-    /// JSON 格式：{"x": 100, "y": 200, "width": 320, "height": 180, "screenHeight": 900}
+    /// Live 预览窗口的屏幕坐标、尺寸和 scale（用于 updateLiveFrame）。
+    /// JSON 格式：{"x": 100, "y": 200, "width": 320, "height": 180, "scale": 2}
     public let liveFrame: LiveFrameRequest?
 
     /// 创建一个宿主请求消息。
@@ -89,6 +89,8 @@ public struct LiveFrameRequest: Codable, Sendable, Equatable {
     public let width: Double
     /// 窗口高度。
     public let height: Double
+    /// 当前屏幕 scale factor，用于像素对齐。
+    public let scale: Double
 
     /// 创建一个 Live Frame 请求。
     ///
@@ -97,11 +99,30 @@ public struct LiveFrameRequest: Codable, Sendable, Equatable {
     ///   - y: 屏幕坐标 y。
     ///   - width: 窗口宽度。
     ///   - height: 窗口高度。
-    public init(x: Double, y: Double, width: Double, height: Double) {
+    ///   - scale: 当前屏幕 scale factor。
+    public init(x: Double, y: Double, width: Double, height: Double, scale: Double = 1) {
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.scale = scale
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case x
+        case y
+        case width
+        case height
+        case scale
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.x = try container.decode(Double.self, forKey: .x)
+        self.y = try container.decode(Double.self, forKey: .y)
+        self.width = try container.decode(Double.self, forKey: .width)
+        self.height = try container.decode(Double.self, forKey: .height)
+        self.scale = try container.decodeIfPresent(Double.self, forKey: .scale) ?? 1
     }
 }
 

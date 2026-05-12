@@ -27,6 +27,18 @@ struct EditorPreviewContentView: View {
         editorVM.service.contentRevision
     }
 
+    private var saveRevision: UInt64 {
+        editorVM.service.saveRevision
+    }
+
+    private var refreshSignal: EditorPreviewRefreshSignal {
+        EditorPreviewRefreshSignal(
+            fileURL: currentFileURL,
+            contentRevision: contentRevision,
+            saveRevision: saveRevision
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             EditorPreviewToolbarView(
@@ -54,12 +66,12 @@ struct EditorPreviewContentView: View {
             refreshScanAndStartIfNeeded()
         }
         .onDisappear {
-            viewModel.liveCanvasDidDisappear()
+            viewModel.previewPanelDidDisappear()
         }
         .onChange(of: currentFileURL) { _, _ in
             refreshScanAndStartIfNeeded()
         }
-        .onChange(of: contentRevision) { _, _ in
+        .onChange(of: refreshSignal) { _, _ in
             viewModel.sourceDidChange(sourceText: sourceText, fileURL: currentFileURL)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
@@ -71,6 +83,9 @@ struct EditorPreviewContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didHideNotification)) { _ in
             viewModel.lumiWindowDidMiniaturizeOrClose()
         }
+        .onApplicationWillTerminate {
+            viewModel.applicationWillTerminate()
+        }
     }
 
     @ViewBuilder
@@ -81,7 +96,10 @@ struct EditorPreviewContentView: View {
             HStack(spacing: 0) {
                 EditorPreviewListView(
                     previews: viewModel.previews,
-                    selectedPreviewID: $viewModel.selectedPreviewID
+                    selectedPreviewID: viewModel.selectedPreviewID,
+                    onSelectPreview: { previewID in
+                        viewModel.selectPreview(id: previewID)
+                    }
                 )
                 .frame(width: 240)
                 Divider()
@@ -95,7 +113,9 @@ struct EditorPreviewContentView: View {
             if let preview = viewModel.selectedPreview {
                 previewHeader(preview)
 
-                if case .failed(let message) = viewModel.runState {
+                if viewModel.isShowingStaleLivePreview {
+                    staleLivePreviewDetail(preview)
+                } else if case .failed(let message) = viewModel.runState {
                     errorMessageView(message)
                 } else if viewModel.runState == .hostMissing {
                     Text(String(localized: "Set LUMI_PREVIEW_HOST_EXECUTABLE or embed LumiPreviewHostApp in Contents/Helpers.", table: "EditorPreview"))
@@ -113,6 +133,17 @@ struct EditorPreviewContentView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    @ViewBuilder
+    private func staleLivePreviewDetail(_ preview: PreviewDiscovery) -> some View {
+        if case .failed(let message) = viewModel.runState {
+            errorMessageView(message)
+        } else if let renderMessage = viewModel.renderMessage {
+            errorMessageView(renderMessage)
+        }
+
+        EditorPreviewSurfaceView(viewModel: viewModel, preview: preview)
     }
 
     private func previewHeader(_ preview: PreviewDiscovery) -> some View {

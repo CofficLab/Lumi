@@ -75,7 +75,8 @@ private final class StdioPreviewHost {
                 x: liveFrame.x,
                 y: liveFrame.y,
                 width: liveFrame.width,
-                height: liveFrame.height
+                height: liveFrame.height,
+                scale: liveFrame.scale
             )
         case .showLivePreview:
             return renderer.showLivePreview()
@@ -137,34 +138,6 @@ private final class ResponseDataBox: @unchecked Sendable {
     var data = Data()
 }
 
-private final class LivePreviewWindow: NSPanel {
-    init(contentRect: NSRect) {
-        super.init(
-            contentRect: contentRect,
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-
-        isReleasedWhenClosed = false
-        backgroundColor = .white
-        ignoresMouseEvents = false
-        hasShadow = false
-        level = .normal
-        collectionBehavior = [.fullScreenAuxiliary]
-        isOpaque = true
-        becomesKeyOnlyIfNeeded = true
-    }
-
-    override var canBecomeMain: Bool {
-        false
-    }
-
-    override var canBecomeKey: Bool {
-        true
-    }
-}
-
 @MainActor
 private final class PreviewRenderer {
     private static let fallbackSnapshotSize = NSSize(width: 320, height: 180)
@@ -172,7 +145,7 @@ private final class PreviewRenderer {
 
     private var previewView: NSView?
     private var renderWindow: NSWindow?
-    private var liveWindow: NSWindow?
+    private var liveWindow: LivePreviewWindow?
     private var currentDiscovery: PreviewDiscovery?
     private var currentConfiguration: PreviewRenderConfiguration = .empty
     private var loadedHandles: [UnsafeMutableRawPointer] = []
@@ -442,12 +415,15 @@ private final class PreviewRenderer {
         )
     }
 
-    func updateLiveFrame(x: Double, y: Double, width: Double, height: Double) -> RenderResponse {
+    func updateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) -> RenderResponse {
         guard let liveWindow else {
             return RenderResponse(success: false, message: "No live window to update.")
         }
 
-        let frame = NSRect(x: x, y: y, width: width, height: height)
+        let frame = LivePreviewFrameAlignment.pixelAlignedFrame(
+            NSRect(x: x, y: y, width: width, height: height),
+            scale: scale
+        )
         liveWindow.setFrame(frame, display: true)
 
         return RenderResponse(

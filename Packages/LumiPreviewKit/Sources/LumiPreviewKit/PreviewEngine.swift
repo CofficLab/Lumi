@@ -53,6 +53,7 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
         self.xcodeCompiler = xcodeCompiler
         self.previewHostProcess = previewHostProcess
         self.previewEntryBuilder = previewEntryBuilder
+        PreviewEntryBuilder.removeExpiredCacheEntries()
     }
 
     public func discoverPreviews(in fileURL: URL) async -> [PreviewDiscovery] {
@@ -110,7 +111,10 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
             let response = try await loadPreviewEntry(for: liveSession, using: connection)
             await liveSession.setLastRenderResponse(response)
             if response.livePreviewEnabled {
-                await liveSession.markLivePreviewAvailable(windowNumber: response.liveWindowNumber)
+                await liveSession.markLivePreviewAvailable(
+                    windowNumber: response.liveWindowNumber,
+                    hostProcessID: await connection.processID
+                )
             }
             await liveSession.recordRefresh(duration: Date().timeIntervalSince(refreshStart))
             await liveSession.setState(.running)
@@ -144,15 +148,23 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
         }
         await liveSession.setLivePreviewInfo(LivePreviewInfo(
             state: .running,
-            hostWindowNumber: response.liveWindowNumber
+            hostWindowNumber: response.liveWindowNumber,
+            hostProcessID: await connection.processID
         ))
     }
 
     /// 更新 Live 预览窗口的屏幕坐标和尺寸。
-    public func updateLiveFrame(_ session: any PreviewSession, x: Double, y: Double, width: Double, height: Double) async throws {
+    public func updateLiveFrame(
+        _ session: any PreviewSession,
+        x: Double,
+        y: Double,
+        width: Double,
+        height: Double,
+        scale: Double = 1
+    ) async throws {
         guard let liveSession = session as? LivePreviewSession,
               let connection = await liveSession.hostConnection() else { return }
-        _ = try? await connection.requestUpdateLiveFrame(x: x, y: y, width: width, height: height)
+        _ = try? await connection.requestUpdateLiveFrame(x: x, y: y, width: width, height: height, scale: scale)
     }
 
     /// 显示 Live 预览窗口。
@@ -173,6 +185,7 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
     public func reloadLivePreview(_ session: any PreviewSession, dylibURL: URL) async throws {
         guard let liveSession = session as? LivePreviewSession,
               let connection = await liveSession.hostConnection() else { return }
+        let loadStart = Date()
         let response = try await connection.requestReloadLivePreview(
             at: dylibURL,
             symbolName: PreviewEntryBuilder.symbolName
@@ -180,6 +193,7 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
         guard response.success else {
             throw PreviewError.runtimeCrashed(message: response.message ?? "Failed to reload live preview.")
         }
+        await liveSession.recordLoad(duration: Date().timeIntervalSince(loadStart))
     }
 
     /// 停止 Live 预览窗口。
@@ -189,7 +203,8 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
         _ = try? await connection.requestStopLivePreview()
         await liveSession.setLivePreviewInfo(LivePreviewInfo(
             state: .available,
-            hostWindowNumber: nil
+            hostWindowNumber: nil,
+            hostProcessID: await connection.processID
         ))
     }
 
@@ -212,7 +227,10 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
             let response = try await loadPreviewEntry(for: session, using: connection)
             await session.setLastRenderResponse(response)
             if response.livePreviewEnabled {
-                await session.markLivePreviewAvailable(windowNumber: response.liveWindowNumber)
+                await session.markLivePreviewAvailable(
+                    windowNumber: response.liveWindowNumber,
+                    hostProcessID: await connection.processID
+                )
             }
             await session.setState(.running)
         } catch {
@@ -251,7 +269,10 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
             let response = try await loadPreviewEntry(for: session, using: connection)
             await session.setLastRenderResponse(response)
             if response.livePreviewEnabled {
-                await session.markLivePreviewAvailable(windowNumber: response.liveWindowNumber)
+                await session.markLivePreviewAvailable(
+                    windowNumber: response.liveWindowNumber,
+                    hostProcessID: await connection.processID
+                )
             }
             return connection
         } catch {
@@ -304,16 +325,22 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
         )
 
         if await session.livePreviewInfo.state == .running {
-            return try await connection.requestReloadLivePreview(
+            let loadStart = Date()
+            let response = try await connection.requestReloadLivePreview(
                 at: entryURL,
                 symbolName: PreviewEntryBuilder.symbolName
             )
+            await session.recordLoad(duration: Date().timeIntervalSince(loadStart))
+            return response
         }
 
-        return try await connection.requestLoadPreviewEntry(
+        let loadStart = Date()
+        let response = try await connection.requestLoadPreviewEntry(
             at: entryURL,
             symbolName: PreviewEntryBuilder.symbolName
         )
+        await session.recordLoad(duration: Date().timeIntervalSince(loadStart))
+        return response
     }
 }
 

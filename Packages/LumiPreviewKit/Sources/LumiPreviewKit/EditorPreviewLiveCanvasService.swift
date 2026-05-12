@@ -1,7 +1,5 @@
-#if canImport(LumiPreviewKit)
 import AppKit
 import Foundation
-import LumiPreviewKit
 
 /// 编辑器预览 Live Canvas 可见性与帧同步服务。
 ///
@@ -11,47 +9,49 @@ import LumiPreviewKit
 /// - Canvas 可见性和帧矩形跟踪
 /// - 根据综合条件决定是否显示/隐藏 Live 窗口
 @MainActor
-final class EditorPreviewLiveCanvasService {
-
-    // MARK: - 属性
+public final class EditorPreviewLiveCanvasService {
 
     /// 应用是否处于活跃状态（前台）。
-    private(set) var isApplicationActive: Bool = NSApp.isActive
+    public private(set) var isApplicationActive: Bool
 
-    /// 预览窗口是否活跃。
-    private(set) var isPreviewWindowActive: Bool = true
+    /// 预览所属编辑器窗口是否仍可显示 Live overlay。
+    ///
+    /// 这里不能直接等同于 key window。Live overlay 自己可能短暂成为 key window
+    /// 以支持 TextField、List 等真实控件交互，此时所属编辑器窗口会 resign key，
+    /// 但 overlay 仍然应该保留。
+    public private(set) var isPreviewWindowActive: Bool = true
 
     /// Canvas 是否可见。
-    private(set) var isLiveCanvasVisible: Bool = false
+    public private(set) var isLiveCanvasVisible: Bool = false
 
     /// Canvas 在屏幕坐标系中的矩形。
-    private(set) var liveCanvasRect: CGRect = .zero
+    public private(set) var liveCanvasRect: CGRect = .zero
+
+    /// Canvas 所在屏幕 scale factor。
+    public private(set) var liveCanvasScale: CGFloat = 1
 
     /// 当前显示模式。
-    private(set) var displayMode: PreviewDisplayMode
+    public private(set) var displayMode: PreviewDisplayMode
 
     /// 帧同步防抖 Task。
     private var liveFrameSyncTask: Task<Void, Never>?
 
     /// 触发 Live 预览帧同步的回调。
-    var onSyncLiveFrameFromEngine: (@MainActor () async -> Void)?
+    public var onSyncLiveFrameFromEngine: (@MainActor () async -> Void)?
 
     /// 触发 Live 窗口显示的回调。
-    var onShowLivePreview: (@MainActor () async -> Void)?
+    public var onShowLivePreview: (@MainActor () async -> Void)?
 
     /// 触发 Live 窗口隐藏的回调。
-    var onHideLivePreview: (@MainActor () async -> Void)?
+    public var onHideLivePreview: (@MainActor () async -> Void)?
 
-    // MARK: - 初始化
-
-    init(displayMode: PreviewDisplayMode) {
+    public init(displayMode: PreviewDisplayMode) {
         self.displayMode = displayMode
+        self.isApplicationActive = Self.sharedApplicationIfAvailable?.isActive ?? true
     }
 
-    // MARK: - 计算属性
-
     /// 是否具备显示 Live 窗口的全部条件。
-    var shouldShowLiveWindow: Bool {
+    public var shouldShowLiveWindow: Bool {
         displayMode == .live
             && isApplicationActive
             && isPreviewWindowActive
@@ -59,39 +59,39 @@ final class EditorPreviewLiveCanvasService {
             && !liveCanvasRect.isEmpty
     }
 
-    // MARK: - 公开方法
-
     /// 更新显示模式。
-    func updateDisplayMode(_ mode: PreviewDisplayMode) {
+    public func updateDisplayMode(_ mode: PreviewDisplayMode) {
         displayMode = mode
     }
 
     /// 更新 Canvas 矩形位置。
     ///
     /// 当矩形发生显著变化时，触发防抖帧同步。
-    func updateLiveCanvasRect(_ rect: CGRect) {
+    public func updateLiveCanvasRect(_ rect: CGRect, scale: CGFloat) {
         let newRect = rect.standardized
+        let newScale = max(scale, 1)
         isLiveCanvasVisible = true
         guard abs(newRect.origin.x - liveCanvasRect.origin.x) > 0.5
             || abs(newRect.origin.y - liveCanvasRect.origin.y) > 0.5
             || abs(newRect.size.width - liveCanvasRect.size.width) > 0.5
-            || abs(newRect.size.height - liveCanvasRect.size.height) > 0.5 else {
+            || abs(newRect.size.height - liveCanvasRect.size.height) > 0.5
+            || abs(newScale - liveCanvasScale) > 0.01 else {
             return
         }
 
         liveCanvasRect = newRect
+        liveCanvasScale = newScale
 
-        // 防抖帧同步
         liveFrameSyncTask?.cancel()
         liveFrameSyncTask = Task {
-            try? await Task.sleep(nanoseconds: 16_000_000) // ~1 frame at 60fps
+            try? await Task.sleep(nanoseconds: 16_000_000)
             guard !Task.isCancelled else { return }
             await onSyncLiveFrameFromEngine?()
         }
     }
 
     /// Canvas 帧不可用时调用。
-    func liveCanvasFrameUnavailable() {
+    public func liveCanvasFrameUnavailable() {
         liveCanvasRect = .zero
         isLiveCanvasVisible = false
         guard displayMode == .live else { return }
@@ -101,7 +101,7 @@ final class EditorPreviewLiveCanvasService {
     }
 
     /// Canvas 消失时调用。
-    func liveCanvasDidDisappear() {
+    public func liveCanvasDidDisappear() {
         isLiveCanvasVisible = false
         guard displayMode == .live else { return }
         Task {
@@ -110,7 +110,7 @@ final class EditorPreviewLiveCanvasService {
     }
 
     /// Canvas 出现时调用。
-    func liveCanvasDidAppear() {
+    public func liveCanvasDidAppear() {
         isLiveCanvasVisible = true
         guard displayMode == .live else { return }
         Task {
@@ -120,7 +120,7 @@ final class EditorPreviewLiveCanvasService {
     }
 
     /// 应用失去焦点时调用。
-    func lumiWindowDidResignKey() {
+    public func lumiWindowDidResignKey() {
         isApplicationActive = false
         guard displayMode == .live else { return }
         Task {
@@ -129,7 +129,7 @@ final class EditorPreviewLiveCanvasService {
     }
 
     /// 应用获得焦点时调用。
-    func lumiWindowDidBecomeKey() {
+    public func lumiWindowDidBecomeKey() {
         isApplicationActive = true
         guard displayMode == .live else { return }
         Task {
@@ -139,7 +139,7 @@ final class EditorPreviewLiveCanvasService {
     }
 
     /// 窗口最小化或关闭时调用。
-    func lumiWindowDidMiniaturizeOrClose() {
+    public func lumiWindowDidMiniaturizeOrClose() {
         isLiveCanvasVisible = false
         guard displayMode == .live else { return }
         Task {
@@ -147,8 +147,8 @@ final class EditorPreviewLiveCanvasService {
         }
     }
 
-    /// 预览窗口变为活跃时调用。
-    func previewWindowDidBecomeActive() {
+    /// 预览所属编辑器窗口可见或恢复时调用。
+    public func previewWindowDidBecomeActive() {
         isPreviewWindowActive = true
         guard displayMode == .live else { return }
         Task {
@@ -157,8 +157,8 @@ final class EditorPreviewLiveCanvasService {
         }
     }
 
-    /// 预览窗口变为非活跃时调用。
-    func previewWindowDidBecomeInactive() {
+    /// 预览所属编辑器窗口关闭、最小化或脱离窗口层级时调用。
+    public func previewWindowDidBecomeInactive() {
         isPreviewWindowActive = false
         guard displayMode == .live else { return }
         Task {
@@ -167,12 +167,10 @@ final class EditorPreviewLiveCanvasService {
     }
 
     /// 取消所有挂起的帧同步任务。
-    func cancelPendingFrameSync() {
+    public func cancelPendingFrameSync() {
         liveFrameSyncTask?.cancel()
         liveFrameSyncTask = nil
     }
-
-    // MARK: - 私有方法
 
     private func syncLiveVisibility() async {
         if shouldShowLiveWindow {
@@ -181,5 +179,8 @@ final class EditorPreviewLiveCanvasService {
             await onHideLivePreview?()
         }
     }
+
+    private static var sharedApplicationIfAvailable: NSApplication? {
+        NSClassFromString("NSApplication").flatMap { _ in NSApp }
+    }
 }
-#endif

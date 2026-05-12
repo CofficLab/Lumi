@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 
 /// 预览宿主进程管理器：负责启动和管理独立的预览进程。
 public final class PreviewHostProcess: Sendable {
@@ -52,6 +53,9 @@ public protocol HostConnection: AnyObject, Sendable {
     /// 宿主进程是否仍在运行。
     var isRunning: Bool { get async }
 
+    /// 宿主进程 PID。
+    var processID: Int32 { get async }
+
     /// 发送渲染请求。
     @discardableResult
     func requestRender(
@@ -77,7 +81,7 @@ public protocol HostConnection: AnyObject, Sendable {
 
     /// 请求宿主进程更新 Live 预览窗口的屏幕坐标和尺寸。
     @discardableResult
-    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double) async throws -> RenderResponse
+    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) async throws -> RenderResponse
 
     /// 请求宿主进程显示 Live 预览窗口。
     @discardableResult
@@ -124,6 +128,12 @@ private final class ProcessHostConnection: HostConnection, @unchecked Sendable {
     var isRunning: Bool {
         get async {
             process.isRunning
+        }
+    }
+
+    var processID: Int32 {
+        get async {
+            process.processIdentifier
         }
     }
 
@@ -189,10 +199,10 @@ private final class ProcessHostConnection: HostConnection, @unchecked Sendable {
     }
 
     @discardableResult
-    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double) async throws -> RenderResponse {
+    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double = 1) async throws -> RenderResponse {
         let request = RenderRequest(
             command: .updateLiveFrame,
-            liveFrame: LiveFrameRequest(x: x, y: y, width: width, height: height)
+            liveFrame: LiveFrameRequest(x: x, y: y, width: width, height: height, scale: scale)
         )
         let response: RenderResponse = try send(request)
         guard response.success else {
@@ -256,6 +266,18 @@ private final class ProcessHostConnection: HostConnection, @unchecked Sendable {
         try? stdin.close()
         if process.isRunning {
             process.terminate()
+            waitForExit(timeout: 1)
+        }
+        if process.isRunning {
+            kill(process.processIdentifier, SIGKILL)
+            waitForExit(timeout: 1)
+        }
+    }
+
+    private func waitForExit(timeout: TimeInterval) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.05)
         }
     }
 

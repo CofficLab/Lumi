@@ -41,6 +41,18 @@ public struct PreviewFileContextCache<Context> {
         removeValue(forKey: Self.key(for: fileURL))
     }
 
+    /// Removes every cached context and returns them in least-recently-used order.
+    @discardableResult
+    public mutating func removeAll() -> [(key: String, value: Context)] {
+        let removed = recency.compactMap { key -> (key: String, value: Context)? in
+            guard let value = contexts[key] else { return nil }
+            return (key, value)
+        }
+        contexts.removeAll()
+        recency.removeAll()
+        return removed
+    }
+
     /// Stores a context and returns contexts evicted because of the maximum size.
     @discardableResult
     public mutating func store(_ context: Context, forKey key: String) -> [(key: String, value: Context)] {

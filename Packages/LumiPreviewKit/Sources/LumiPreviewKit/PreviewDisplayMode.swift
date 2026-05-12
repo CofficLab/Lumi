@@ -46,19 +46,25 @@ public struct LivePreviewInfo: Codable, Sendable, Equatable {
     /// 宿主进程中 live window 的编号（用于跨进程窗口层级协调）。
     public var hostWindowNumber: Int?
 
+    /// 宿主进程 PID，用于诊断和清理残留进程。
+    public var hostProcessID: Int32?
+
     /// 创建一个 Live 预览信息。
     ///
     /// - Parameters:
     ///   - state: Live 预览状态。
     ///   - unavailableReason: 不可用原因。
     ///   - hostWindowNumber: 宿主进程窗口编号。
+    ///   - hostProcessID: 宿主进程 PID。
     public init(
         state: LivePreviewState = .unavailable,
         unavailableReason: String? = nil,
-        hostWindowNumber: Int? = nil
+        hostWindowNumber: Int? = nil,
+        hostProcessID: Int32? = nil
     ) {
         self.state = state
         self.unavailableReason = unavailableReason
         self.hostWindowNumber = hostWindowNumber
+        self.hostProcessID = hostProcessID
     }
 }

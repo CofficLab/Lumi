@@ -390,6 +390,76 @@ struct HostProcessTests {
         await connection.terminate()
     }
 
+    @Test("reloadLivePreview 失败后仍保留上一份成功预览")
+    func failedReloadKeepsPreviousPreview() async throws {
+        let executableURL = try buildHostExecutable()
+        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        defer {
+            Task {
+                await connection.terminate()
+            }
+        }
+
+        let initialDylibURL = try await buildSignedDylib(
+            source: #"""
+            import AppKit
+            import Darwin
+            import SwiftUI
+
+            @_cdecl("lumi_preview_entry")
+            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
+                let json = #"{"title":"Stable Live View"}"#
+                return strdup(json).map { UnsafePointer($0) }
+            }
+
+            @_cdecl("lumi_preview_make_nsview")
+            public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
+                let view = NSHostingView(rootView: AnyView(Text("Stable").padding()))
+                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
+                return Unmanaged.passRetained(view).toOpaque()
+            }
+            """#
+        )
+
+        let initialResponse = try await connection.requestLoadPreviewEntry(
+            at: initialDylibURL,
+            symbolName: "lumi_preview_entry"
+        )
+        #expect(initialResponse.message == "Loaded preview view entry Stable Live View")
+        #expect(initialResponse.previewImagePNGBase64 != nil)
+
+        let startResponse = try await connection.requestStartLivePreview()
+        #expect(startResponse.success)
+
+        let brokenReloadDylibURL = try await buildSignedDylib(
+            source: #"""
+            import Darwin
+
+            @_cdecl("lumi_preview_entry")
+            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
+                let json = #"{"title":"Broken Live View"}"#
+                return strdup(json).map { UnsafePointer($0) }
+            }
+            """#
+        )
+
+        do {
+            _ = try await connection.requestReloadLivePreview(
+                at: brokenReloadDylibURL,
+                symbolName: "lumi_preview_entry"
+            )
+            Issue.record("Expected reloadLivePreview to fail without NSView entry")
+        } catch PreviewError.runtimeCrashed(let message) {
+            #expect(message.contains("Reload failed"))
+        } catch {
+            Issue.record("Expected runtimeCrashed, got \(error)")
+        }
+
+        let refreshResponse = try await connection.requestRefresh()
+        #expect(refreshResponse.message == "Refreshed Stable Live View")
+        #expect(refreshResponse.previewImagePNGBase64 != nil)
+    }
+
 
     @Test("宿主进程无法启动 → 抛出 hostLaunchFailed")
     func launchFailureThrowsHostLaunchFailed() async {
@@ -403,6 +473,50 @@ struct HostProcessTests {
             #expect(message.contains(missingExecutable.path))
         } catch {
             Issue.record("Expected hostLaunchFailed, got \(error)")
+        }
+    }
+
+    @Test("terminate 后宿主进程退出，后续请求失败")
+    func terminateStopsHostProcess() async throws {
+        let executableURL = try buildHostExecutable()
+        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let processID = await connection.processID
+
+        #expect(await connection.isRunning)
+        #expect(processID > 0)
+
+        await connection.terminate()
+
+        try await waitForProcessExit(processID)
+        #expect(!(await connection.isRunning))
+
+        do {
+            _ = try await connection.requestRefresh()
+            Issue.record("Expected hostLaunchFailed after termination")
+        } catch PreviewError.hostLaunchFailed(let message) {
+            #expect(message.contains("not running") || message.contains("closed stdout"))
+        } catch {
+            Issue.record("Expected hostLaunchFailed after termination, got \(error)")
+        }
+    }
+
+    @Test("反复启动和关闭宿主进程不会残留旧 PID")
+    func repeatedLaunchAndTerminateLeavesNoResidualProcesses() async throws {
+        let executableURL = try buildHostExecutable()
+        var previousPIDs = Set<Int32>()
+
+        for _ in 0..<3 {
+            let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+            let processID = await connection.processID
+
+            #expect(processID > 0)
+            #expect(!previousPIDs.contains(processID))
+            #expect(await connection.isRunning)
+
+            previousPIDs.insert(processID)
+            await connection.terminate()
+            try await waitForProcessExit(processID)
+            #expect(!(await connection.isRunning))
         }
     }
 
@@ -468,6 +582,24 @@ struct HostProcessTests {
         }
 
         return nil
+    }
+
+    private func waitForProcessExit(_ processID: Int32, timeout: TimeInterval = 2) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if !processExists(processID) {
+                return
+            }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        Issue.record("Process \(processID) still exists after timeout")
+    }
+
+    private func processExists(_ processID: Int32) -> Bool {
+        if kill(processID, 0) == 0 {
+            return true
+        }
+        return errno != ESRCH
     }
 
     private func decodedBitmap(from base64: String?) throws -> NSBitmapImageRep {

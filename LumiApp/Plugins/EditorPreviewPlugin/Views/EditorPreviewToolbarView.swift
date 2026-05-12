@@ -9,6 +9,7 @@ struct EditorPreviewToolbarView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var viewModel: EditorPreviewViewModel
     let currentFileURL: URL?
+    @State private var isShowingDiagnostics = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -30,7 +31,23 @@ struct EditorPreviewToolbarView: View {
 
             EditorPreviewDisplayModePickerView(viewModel: viewModel)
 
+            EditorPreviewCanvasPresetPickerView(viewModel: viewModel)
+
+            EditorPreviewCanvasScalePickerView(viewModel: viewModel)
+
             EditorPreviewStatusBadgeView(viewModel: viewModel)
+
+            Button {
+                isShowingDiagnostics.toggle()
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .buttonStyle(.plain)
+            .help(String(localized: "Preview diagnostics", table: "EditorPreview"))
+            .popover(isPresented: $isShowingDiagnostics, arrowEdge: .bottom) {
+                EditorPreviewDiagnosticPopoverView(viewModel: viewModel)
+            }
 
             Button {
                 viewModel.startSelectedPreview()
@@ -72,6 +89,95 @@ struct EditorPreviewToolbarView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
+    }
+}
+
+private struct EditorPreviewCanvasPresetPickerView: View {
+    @ObservedObject var viewModel: EditorPreviewViewModel
+
+    var body: some View {
+        Menu {
+            ForEach(EditorPreviewViewModel.CanvasSizePreset.allCases) { preset in
+                Button {
+                    viewModel.setCanvasSizePreset(preset)
+                } label: {
+                    HStack {
+                        Text(preset.title)
+                        if viewModel.canvasSizePreset == preset {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "rectangle.resize")
+                    .font(.system(size: 11, weight: .medium))
+                Text(viewModel.canvasSizePreset.title)
+                    .font(.system(size: 11, weight: .medium))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 5))
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help(String(localized: "Canvas size", table: "EditorPreview"))
+    }
+}
+
+private struct EditorPreviewCanvasScalePickerView: View {
+    @ObservedObject var viewModel: EditorPreviewViewModel
+
+    var body: some View {
+        Picker(String(localized: "Canvas scale", table: "EditorPreview"), selection: selection) {
+            Text(String(localized: "Fit", table: "EditorPreview")).tag("fit")
+            Text("100%").tag("1.0")
+            Text("75%").tag("0.75")
+            Text("50%").tag("0.5")
+        }
+        .pickerStyle(.segmented)
+        .frame(width: 168)
+        .help(String(localized: "Canvas scale", table: "EditorPreview"))
+    }
+
+    private var selection: Binding<String> {
+        Binding(
+            get: {
+                if viewModel.isCanvasScaleToFit { return "fit" }
+                return String(format: "%.2g", viewModel.canvasScale)
+            },
+            set: { value in
+                if value == "fit" {
+                    viewModel.setCanvasScaleToFit()
+                } else if let scale = Double(value) {
+                    viewModel.setCanvasScale(CGFloat(scale))
+                }
+            }
+        )
+    }
+}
+
+private struct EditorPreviewDiagnosticPopoverView: View {
+    @EnvironmentObject private var themeVM: ThemeVM
+    @ObservedObject var viewModel: EditorPreviewViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(String(localized: "Preview Diagnostics", table: "EditorPreview"))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
+
+            Text(viewModel.diagnosticSummary)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .frame(width: 360, alignment: .leading)
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor())
     }
 }
 

@@ -8,10 +8,14 @@ import SwiftUI
 struct EditorPreviewListView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     let previews: [PreviewDiscovery]
-    @Binding var selectedPreviewID: String?
+    let selectedPreviewID: String?
+    let onSelectPreview: (String?) -> Void
 
     var body: some View {
-        List(selection: $selectedPreviewID) {
+        List(selection: Binding(
+            get: { selectedPreviewID },
+            set: { onSelectPreview($0) }
+        )) {
             ForEach(previews, id: \.id) { preview in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(preview.title)

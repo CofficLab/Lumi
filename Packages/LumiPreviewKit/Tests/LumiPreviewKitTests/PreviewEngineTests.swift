@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import Testing
 @testable import LumiPreviewKit
 
@@ -39,6 +40,7 @@ struct PreviewEngineTests {
         #expect(startResponse?.previewImagePNGBase64 != nil)
         let startMetrics = await session.performanceMetrics
         #expect(startMetrics.lastCompileDuration != nil)
+        #expect(startMetrics.lastLoadDuration != nil)
         #expect(startMetrics.lastCompileUsedCache == false)
 
         try await engine.refreshPreview(session)
@@ -48,6 +50,7 @@ struct PreviewEngineTests {
         #expect(refreshResponse?.previewImagePNGBase64 != nil)
         let refreshMetrics = await session.performanceMetrics
         #expect(refreshMetrics.lastCompileDuration != nil)
+        #expect(refreshMetrics.lastLoadDuration != nil)
         #expect(refreshMetrics.lastRefreshDuration != nil)
         #expect(refreshMetrics.lastCompileUsedCache == true)
 
@@ -169,9 +172,63 @@ struct PreviewEngineTests {
         try await engine.refreshPreview(session)
         #expect(await session.state == .running)
         #expect(await session.performanceMetrics.lastRefreshDuration != nil)
+        #expect(await session.performanceMetrics.lastLoadDuration != nil)
         #expect(await session.lastRenderResponse?.message == "Loaded preview view entry Restart")
 
         await engine.stopPreview(session)
+    }
+
+    @Test("宿主进程崩溃后恢复的会话仍可重新进入 Live 并停止")
+    func recoveredSessionCanReenterLiveAfterHostCrash() async throws {
+        let package = try makeTemporaryPackage(
+            targetName: "RecoveredLivePreviewTarget",
+            source: """
+            import SwiftUI
+
+            struct RecoveredLivePreviewView: View {
+                var body: some View {
+                    Text("Recovered Live")
+                }
+            }
+
+            #Preview("Recovered Live") {
+                RecoveredLivePreviewView()
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: package.directory) }
+
+        let hostExecutableURL = try buildHostExecutable()
+        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let discoveries = await engine.discoverPreviews(in: package.sourceFile)
+        #expect(discoveries.count == 1)
+
+        let session = try await engine.startPreview(discoveries[0])
+        #expect(await session.state == .running)
+
+        try await engine.startLivePreview(session)
+        #expect(await session.livePreviewInfo.state == .running)
+
+        guard let liveSession = session as? LivePreviewSession else {
+            Issue.record("Expected LivePreviewSession")
+            return
+        }
+
+        await liveSession.terminateHost()
+        let crashedConnection = await liveSession.hostConnection()
+        if let crashedConnection {
+            #expect(!(await crashedConnection.isRunning))
+        }
+
+        try await engine.refreshPreview(session)
+        #expect(await session.state == .running)
+        #expect(await session.lastRenderResponse?.message?.contains("Recovered Live") == true)
+
+        try await engine.startLivePreview(session)
+        #expect(await session.livePreviewInfo.state == .running)
+
+        await engine.stopPreview(session)
+        #expect(await session.state == .stopped)
     }
 
     @Test("环境注入配置随预览会话启动、刷新和宿主重启保留")
@@ -243,6 +300,69 @@ struct PreviewEngineTests {
         await engine.stopPreview(session)
     }
 
+    @Test("Live 预览刷新遇到编译失败时保留上一份成功响应")
+    func liveRefreshCompileFailureKeepsPreviousSuccessfulResponse() async throws {
+        let package = try makeTemporaryPackage(
+            targetName: "FailingLivePreviewTarget",
+            source: """
+            import SwiftUI
+
+            struct FailingLivePreviewView: View {
+                var body: some View {
+                    Text("Stable")
+                }
+            }
+
+            #Preview("Failing Live") {
+                FailingLivePreviewView()
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: package.directory) }
+
+        let hostExecutableURL = try buildHostExecutable()
+        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let discoveries = await engine.discoverPreviews(in: package.sourceFile)
+        #expect(discoveries.count == 1)
+
+        let session = try await engine.startPreview(discoveries[0])
+        #expect(await session.state == .running)
+        try await engine.startLivePreview(session)
+        let successfulResponse = await session.lastRenderResponse
+        #expect(successfulResponse?.message == "Loaded preview view entry Failing Live")
+
+        try """
+        import SwiftUI
+
+        struct FailingLivePreviewView: View {
+            var body: some View {
+                Text("Broken")
+            }
+        }
+
+        #Preview("Failing Live") {
+            FailingLivePreviewView()
+        }
+
+        let broken =
+        """.write(to: package.sourceFile, atomically: true, encoding: .utf8)
+
+        await #expect(throws: PreviewError.self) {
+            try await engine.refreshPreview(session)
+        }
+
+        guard case .failed = await session.state else {
+            Issue.record("Expected failed state after broken refresh")
+            return
+        }
+
+        let failedResponse = await session.lastRenderResponse
+        #expect(failedResponse == successfulResponse)
+        #expect(failedResponse?.message == "Loaded preview view entry Failing Live")
+
+        await engine.stopPreview(session)
+    }
+
     @Test("并发启动多个预览 → 共享构建并分别运行")
     func startsMultiplePreviewsConcurrently() async throws {
         let package = try makeTemporaryPackage(
@@ -299,6 +419,204 @@ struct PreviewEngineTests {
         #expect(await sessions[1].state == .stopped)
     }
 
+    @Test("停止旧 session 不影响新 session 的 Live 预览")
+    func stoppingOldSessionDoesNotAffectNewLiveSession() async throws {
+        let package = try makeTemporaryPackage(
+            targetName: "SwitchPreviewTarget",
+            source: """
+            import SwiftUI
+
+            struct FirstSwitchPreviewView: View {
+                var body: some View {
+                    Text("First Live")
+                }
+            }
+
+            struct SecondSwitchPreviewView: View {
+                var body: some View {
+                    Text("Second Live")
+                }
+            }
+
+            #Preview("First Live") {
+                FirstSwitchPreviewView()
+            }
+
+            #Preview("Second Live") {
+                SecondSwitchPreviewView()
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: package.directory) }
+
+        let hostExecutableURL = try buildHostExecutable()
+        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let discoveries = await engine.discoverPreviews(in: package.sourceFile)
+            .sorted { $0.title < $1.title }
+        #expect(discoveries.map(\.title) == ["First Live", "Second Live"])
+
+        let firstSession = try await engine.startPreview(discoveries[0])
+        try await engine.startLivePreview(firstSession)
+        let firstLiveInfo = await firstSession.livePreviewInfo
+        #expect(firstLiveInfo.state == .running)
+        #expect(firstLiveInfo.hostProcessID != nil)
+
+        let secondSession = try await engine.startPreview(discoveries[1])
+        try await engine.startLivePreview(secondSession)
+        let secondLiveInfo = await secondSession.livePreviewInfo
+        #expect(secondLiveInfo.state == .running)
+        #expect(secondLiveInfo.hostProcessID != nil)
+        #expect(secondLiveInfo.hostProcessID != firstLiveInfo.hostProcessID)
+
+        await engine.stopPreview(firstSession)
+        #expect(await firstSession.state == .stopped)
+
+        #expect(await secondSession.state == .running)
+        #expect(await secondSession.livePreviewInfo.state == .running)
+
+        try await engine.refreshPreview(secondSession)
+        #expect(await secondSession.state == .running)
+        #expect(await secondSession.lastRenderResponse?.message?.contains("Second Live") == true)
+
+        await engine.stopPreview(secondSession)
+        #expect(await secondSession.state == .stopped)
+    }
+
+    @Test("停止旧 session 时仅回收旧 host，新 host 保持运行")
+    func stoppingOldSessionOnlyTerminatesOldHost() async throws {
+        let package = try makeTemporaryPackage(
+            targetName: "SwitchPreviewHostTarget",
+            source: """
+            import SwiftUI
+
+            struct FirstSwitchHostView: View {
+                var body: some View {
+                    Text("First Host")
+                }
+            }
+
+            struct SecondSwitchHostView: View {
+                var body: some View {
+                    Text("Second Host")
+                }
+            }
+
+            #Preview("First Host") {
+                FirstSwitchHostView()
+            }
+
+            #Preview("Second Host") {
+                SecondSwitchHostView()
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: package.directory) }
+
+        let hostExecutableURL = try buildHostExecutable()
+        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let discoveries = await engine.discoverPreviews(in: package.sourceFile)
+            .sorted { $0.title < $1.title }
+        #expect(discoveries.map(\.title) == ["First Host", "Second Host"])
+
+        let firstSession = try await engine.startPreview(discoveries[0])
+        try await engine.startLivePreview(firstSession)
+        let firstConnection = await (firstSession as? LivePreviewSession)?.hostConnection()
+        let firstPID = await firstConnection?.processID
+
+        let secondSession = try await engine.startPreview(discoveries[1])
+        try await engine.startLivePreview(secondSession)
+        let secondConnection = await (secondSession as? LivePreviewSession)?.hostConnection()
+        let secondPID = await secondConnection?.processID
+
+        #expect(firstPID != nil)
+        #expect(secondPID != nil)
+        #expect(firstPID != secondPID)
+        #expect(await firstConnection?.isRunning == true)
+        #expect(await secondConnection?.isRunning == true)
+
+        await engine.stopPreview(firstSession)
+        #expect(await firstSession.state == .stopped)
+
+        if let firstPID {
+            try await waitForProcessExit(firstPID)
+            #expect(!processExists(firstPID))
+        }
+
+        #expect(await secondConnection?.isRunning == true)
+        if let secondPID {
+            #expect(processExists(secondPID))
+        }
+        #expect(await secondSession.state == .running)
+
+        await engine.stopPreview(secondSession)
+        #expect(await secondSession.state == .stopped)
+        if let secondPID {
+            try await waitForProcessExit(secondPID)
+        }
+    }
+
+    @Test("切换文件后旧 live window 不能残留，新 live window 仍可显示")
+    func switchingFilesStopsOldLiveWindowWithoutBreakingNewOne() async throws {
+        let package = try makeTemporaryPackage(
+            targetName: "SwitchPreviewWindowTarget",
+            source: """
+            import SwiftUI
+
+            struct FirstSwitchWindowView: View {
+                var body: some View {
+                    Text("First Window")
+                }
+            }
+
+            struct SecondSwitchWindowView: View {
+                var body: some View {
+                    Text("Second Window")
+                }
+            }
+
+            #Preview("First Window") {
+                FirstSwitchWindowView()
+            }
+
+            #Preview("Second Window") {
+                SecondSwitchWindowView()
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: package.directory) }
+
+        let hostExecutableURL = try buildHostExecutable()
+        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let discoveries = await engine.discoverPreviews(in: package.sourceFile)
+            .sorted { $0.title < $1.title }
+        #expect(discoveries.map(\.title) == ["First Window", "Second Window"])
+
+        let firstSession = try await engine.startPreview(discoveries[0])
+        try await engine.startLivePreview(firstSession)
+        let firstConnection = await (firstSession as? LivePreviewSession)?.hostConnection()
+
+        let secondSession = try await engine.startPreview(discoveries[1])
+        try await engine.startLivePreview(secondSession)
+        let secondConnection = await (secondSession as? LivePreviewSession)?.hostConnection()
+
+        #expect(firstConnection != nil)
+        #expect(secondConnection != nil)
+
+        await engine.stopPreview(firstSession)
+        #expect(await firstSession.state == .stopped)
+
+        await #expect(throws: Error.self) {
+            _ = try await firstConnection?.requestShowLivePreview()
+        }
+
+        let secondShowResponse = try await secondConnection?.requestShowLivePreview()
+        #expect(secondShowResponse?.success == true)
+        #expect(await secondSession.livePreviewInfo.state == .running)
+
+        await engine.stopPreview(secondSession)
+        #expect(await secondSession.state == .stopped)
+    }
+
     @Test("Xcode 项目 scan → build → launch → render → stop 管线")
     func fullXcodePreviewPipeline() async throws {
         let project = try makeTemporaryXcodeProject(
@@ -332,6 +650,7 @@ struct PreviewEngineTests {
         #expect(await session.lastRenderResponse?.previewImagePNGBase64 != nil)
         let metrics = await session.performanceMetrics
         #expect(metrics.lastCompileDuration != nil)
+        #expect(metrics.lastLoadDuration != nil)
         #expect(metrics.lastCompileUsedCache == false)
 
         await engine.stopPreview(session)
@@ -454,7 +773,7 @@ struct PreviewEngineTests {
         #expect(await session.livePreviewInfo.state == .running)
         #expect(await session.livePreviewInfo.hostWindowNumber == 42)
 
-        try await engine.updateLiveFrame(session, x: 10, y: 20, width: 300, height: 200)
+        try await engine.updateLiveFrame(session, x: 10, y: 20, width: 300, height: 200, scale: 2)
         try await engine.showLivePreview(session)
         try await engine.hideLivePreview(session)
         try await engine.reloadLivePreview(
@@ -471,7 +790,7 @@ struct PreviewEngineTests {
             .reloadLivePreview,
             .stopLivePreview
         ])
-        #expect(connection.lastFrame == LiveFrameRequest(x: 10, y: 20, width: 300, height: 200))
+        #expect(connection.lastFrame == LiveFrameRequest(x: 10, y: 20, width: 300, height: 200, scale: 2))
         #expect(connection.lastReloadPath == "/tmp/PreviewEntry.dylib")
         #expect(await session.livePreviewInfo.state == .available)
         #expect(await session.livePreviewInfo.hostWindowNumber == nil)
@@ -848,6 +1167,24 @@ struct PreviewEngineTests {
 
         return nil
     }
+
+    private func waitForProcessExit(_ processID: Int32, timeout: TimeInterval = 2) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if !processExists(processID) {
+                return
+            }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        Issue.record("Process \(processID) still exists after timeout")
+    }
+
+    private func processExists(_ processID: Int32) -> Bool {
+        if kill(processID, 0) == 0 {
+            return true
+        }
+        return errno != ESRCH
+    }
 }
 
 private final class RecordingHostConnection: HostConnection, @unchecked Sendable {
@@ -882,6 +1219,12 @@ private final class RecordingHostConnection: HostConnection, @unchecked Sendable
         }
     }
 
+    var processID: Int32 {
+        get async {
+            1234
+        }
+    }
+
     func requestRender(
         discovery: PreviewDiscovery,
         configuration: PreviewRenderConfiguration
@@ -910,9 +1253,9 @@ private final class RecordingHostConnection: HostConnection, @unchecked Sendable
         return startLiveResponse
     }
 
-    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double) async throws -> RenderResponse {
+    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) async throws -> RenderResponse {
         commands.append(.updateLiveFrame)
-        lastFrame = LiveFrameRequest(x: x, y: y, width: width, height: height)
+        lastFrame = LiveFrameRequest(x: x, y: y, width: width, height: height, scale: scale)
         return RenderResponse(success: true, livePreviewEnabled: true)
     }
 
