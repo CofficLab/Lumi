@@ -20,23 +20,9 @@ final class XybbzProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     // MARK: - 配置相关
 
     static let apiKeyStorageKey = "DevAssistant_ApiKey_Xybbz"
-    static let defaultModel = "gpt-4o"
+    static let defaultModel = "gpt-5.5"
 
     static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "gpt-4o", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4o-mini", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4.1", spec: .init(contextWindowSize: 1_047_576, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4.1-mini", spec: .init(contextWindowSize: 1_047_576, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4.1-nano", spec: .init(contextWindowSize: 1_047_576, supportsVision: true, supportsTools: true)),
-        .init(id: "o3", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "o4-mini", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "claude-sonnet-4-20250514", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "claude-opus-4-20250514", spec: .init(contextWindowSize: 200_000, supportsVision: true, supportsTools: true)),
-        .init(id: "deepseek-chat", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "deepseek-reasoner", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gemini-2.5-pro", spec: .init(contextWindowSize: 1_048_576, supportsVision: true, supportsTools: true)),
-        .init(id: "gemini-2.5-flash", spec: .init(contextWindowSize: 1_048_576, supportsVision: true, supportsTools: true)),
-        .init(id: "glm-4-plus", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
         .init(id: "gpt-5.5", spec: .init(contextWindowSize: 272_000, supportsVision: true, supportsTools: true)),
     ]
 

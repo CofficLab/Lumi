@@ -24,9 +24,6 @@ final class FeifeimiaoProvider: NSObject, SuperLLMProvider, @unchecked Sendable 
 
     static let modelCatalog: [LLMModelCatalogItem] = [
         .init(id: "gpt-5.5", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
-        .init(id: "gpt-4o", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-4o-mini", spec: .init(contextWindowSize: 128_000, supportsVision: true, supportsTools: true)),
-        .init(id: "gpt-3.5-turbo", spec: .init(contextWindowSize: 16_385, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置
