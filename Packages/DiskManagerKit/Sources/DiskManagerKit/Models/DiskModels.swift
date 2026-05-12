@@ -35,6 +35,14 @@ public struct DirectoryEntry: Identifiable, Hashable, Codable, Sendable {
     public var isScanned: Bool { children != nil }
     public var depth: Int { path.components(separatedBy: "/").count }
 
+    public static func == (lhs: DirectoryEntry, rhs: DirectoryEntry) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
     public init(id: String, name: String, path: String, size: Int64, isDirectory: Bool, lastAccessed: Date, modificationDate: Date, children: [DirectoryEntry]?) {
         self.id = id
         self.name = name
