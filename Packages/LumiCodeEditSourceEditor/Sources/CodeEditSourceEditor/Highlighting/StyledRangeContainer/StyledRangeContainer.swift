@@ -143,6 +143,16 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
             assertionFailure("No storage found for the given provider: \(provider)")
             return
         }
+        guard let rangeToHighlight = rangeToHighlight.intersection(NSRange(location: 0, length: storage.length)),
+              !rangeToHighlight.isEmpty else {
+            return
+        }
+        let highlights = highlights.compactMap { highlight -> HighlightRange? in
+            guard let range = highlight.range.intersection(rangeToHighlight), !range.isEmpty else {
+                return nil
+            }
+            return HighlightRange(range: range, capture: highlight.capture, modifiers: highlight.modifiers)
+        }
         var runs: [RangeStoreRun<StyleElement>] = []
         var lastIndex = rangeToHighlight.lowerBound
 
