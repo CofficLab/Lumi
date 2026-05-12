@@ -106,6 +106,7 @@ public enum EditorCommandBindings {
     public static let findNext = EditorCommandBinding(key: "g", modifiers: [.command])
     public static let findPrevious = EditorCommandBinding(key: "g", modifiers: [.command, .shift])
     public static let openEditors = EditorCommandBinding(key: "e", modifiers: [.command, .shift])
+    public static let save = EditorCommandBinding(key: "s", modifiers: [.command])
 
     public static let formatDocument = EditorCommandBinding(key: "f", modifiers: [.command, .shift, .option])
     public static let findReferences = EditorCommandBinding(key: "r", modifiers: [.command, .option])

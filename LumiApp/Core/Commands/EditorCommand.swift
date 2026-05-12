@@ -34,6 +34,14 @@ struct EditorCommand: Commands, SuperLog {
                 modifiers: resolvedShortcut(EditorCommandBindings.redo, commandID: "builtin.redo").eventModifiers
             )
 
+            Button("保存") {
+                NotificationCenter.postLumiEditorSave()
+            }
+            .keyboardShortcut(
+                resolvedShortcut(EditorCommandBindings.save, commandID: "builtin.save").keyEquivalent,
+                modifiers: resolvedShortcut(EditorCommandBindings.save, commandID: "builtin.save").eventModifiers
+            )
+
             Divider()
 
             Button("命令面板") {

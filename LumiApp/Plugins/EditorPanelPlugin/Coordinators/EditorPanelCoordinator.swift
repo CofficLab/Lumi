@@ -64,10 +64,6 @@ final class EditorPanelCoordinator: ObservableObject {
         service.projectRootPath = projectVM.currentProject?.path
         panelService.refreshProjectContext(for: projectVM.currentProjectPath, service: service)
 
-        service.onActiveSessionChanged = { snapshot in
-            service.syncActiveSession(from: snapshot)
-        }
-
         if service.activeSessionID != nil || service.currentFileURL != nil {
             panelService.openOrActivateSession(
                 for: service.currentFileURL ?? service.activeSession?.fileURL,
@@ -86,8 +82,13 @@ final class EditorPanelCoordinator: ObservableObject {
         guard let panelService, let service else { return }
 
         if service.hasUnsavedChanges { service.saveNow() }
-        service.onActiveSessionChanged = nil
         panelService.clearBreadcrumbBridge()
+    }
+
+    /// App 切到后台时保存当前脏文件，匹配 VS Code 的 focus-change auto save 行为。
+    func handleApplicationDidResignActive() {
+        guard let service, service.hasUnsavedChanges else { return }
+        service.saveNow()
     }
 
     // MARK: - 项目路径变化
@@ -135,6 +136,7 @@ final class EditorPanelCoordinator: ObservableObject {
         let notificationMap: [(Notification.Name, String)] = [
             (.lumiEditorUndo, "builtin.undo"),
             (.lumiEditorRedo, "builtin.redo"),
+            (.lumiEditorSave, "builtin.save"),
             (.lumiEditorFormatDocument, "builtin.format-document"),
             (.lumiEditorFindReferences, "builtin.find-references"),
             (.lumiEditorQuickFix, "builtin.quick-fix"),

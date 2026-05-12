@@ -443,6 +443,7 @@ enum CoreCommandRegistrations {
             id: "builtin.save",
             title: String(localized: "Save", table: EditorHostEnvironment.current.localizationTable),
             icon: "square.and.arrow.down",
+            shortcut: resolveShortcut(EditorCommandBindings.save, for: "builtin.save"),
             category: EditorCommandCategory.save.rawValue,
             order: 800,
             enablement: .custom { _ in state.hasUnsavedChanges }

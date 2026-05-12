@@ -58,6 +58,8 @@ public final class EditorService: ObservableObject {
     /// 编辑器扩展注册中心（由 RootViewContainer 创建并注入）
     let editorExtensionRegistry: EditorExtensionRegistry
 
+    private var activeSessionChangedObserver: ((EditorSession) -> Void)?
+
     init(
         editorExtensionRegistry: EditorExtensionRegistry,
         state: EditorState,
@@ -66,6 +68,7 @@ public final class EditorService: ObservableObject {
         self.editorExtensionRegistry = editorExtensionRegistry
         self.state = state
         self.sessionStore = sessionStore
+        installActiveSessionSyncBridge()
     }
 
     /// 便捷构造：使用默认实例创建完整编辑器服务
@@ -790,9 +793,21 @@ public final class EditorService: ObservableObject {
     // MARK: - 通知桥接（Notification Bridge）
     // ========================================================================
 
-    /// 活跃会话变化回调（由 EditorPanelView 注册）
+    /// 活跃会话变化回调（可由宿主注册附加观察者）。
     public var onActiveSessionChanged: ((EditorSession) -> Void)? {
-        get { state.onActiveSessionChanged }
-        set { state.onActiveSessionChanged = newValue }
+        get { activeSessionChangedObserver }
+        set {
+            activeSessionChangedObserver = newValue
+            installActiveSessionSyncBridge()
+        }
+    }
+
+    private func installActiveSessionSyncBridge() {
+        state.onActiveSessionChanged = { [weak self] snapshot in
+            guard let self else { return }
+            self.sessionStore.syncActiveSession(from: snapshot)
+            self.activeSessionChangedObserver?(snapshot)
+        }
+        sessionStore.syncActiveSession(from: state.activeSession)
     }
 }
