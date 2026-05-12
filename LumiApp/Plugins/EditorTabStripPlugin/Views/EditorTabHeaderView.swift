@@ -42,6 +42,9 @@ struct EditorTabHeaderView: View {
                     let projectPath = projectVM?.currentProjectPath
                     await editorVM?.service.refreshProjectContext(for: projectPath)
                     editorVM?.service.open(at: url)
+                },
+                openFileSessionOnly: { [weak editorVM] url in
+                    editorVM?.service.openFile(at: url)
                 }
             )
         }
@@ -55,12 +58,16 @@ struct EditorTabHeaderView: View {
             coordinator.handleProjectPathChange(
                 oldPath: oldPath,
                 newPath: newPath,
-                sessionStore: sessionStore
-            ) { [weak editorVM, weak projectVM] url in
-                let projectPath = projectVM?.currentProjectPath
-                await editorVM?.service.refreshProjectContext(for: projectPath)
-                editorVM?.service.open(at: url)
-            }
+                sessionStore: sessionStore,
+                openFile: { [weak editorVM, weak projectVM] url in
+                    let projectPath = projectVM?.currentProjectPath
+                    await editorVM?.service.refreshProjectContext(for: projectPath)
+                    editorVM?.service.open(at: url)
+                },
+                openFileSessionOnly: { [weak editorVM] url in
+                    editorVM?.service.openFile(at: url)
+                }
+            )
         }
         .onCurrentFileDidChange { path in
             handleCurrentFileDidChange(path: path)
