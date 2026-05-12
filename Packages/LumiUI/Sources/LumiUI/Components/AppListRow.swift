@@ -30,6 +30,8 @@ public struct AppListRow<Content: View>: View {
                 .background(rowBackground)
                 .overlay(rowBorder)
                 .cornerRadius(AppUI.Radius.sm)
+                .scaleEffect(isHovered ? 1.01 : 1.0)
+                .shadow(color: Color.black.opacity(isHovered ? 0.06 : 0), radius: isHovered ? 8 : 0, y: isHovered ? 3 : 0)
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
