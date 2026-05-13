@@ -1,5 +1,7 @@
 import AppKit
+import CoreGraphics
 import Foundation
+import IOSurface
 import LumiPreviewKit
 
 /// 编辑器预览格式化工具。
@@ -79,8 +81,12 @@ enum EditorPreviewFormatter {
 
     /// 从渲染响应中解码预览图片。
     ///
-    /// 尝试从 Base64 编码的 PNG 数据解码为 NSImage，失败时返回 nil。
+    /// 优先从跨进程 IOSurface 读取，失败时回退到 Base64 编码 PNG。
     static func image(from response: LumiPreviewPackage.RenderResponse) -> NSImage? {
+        if let image = image(from: response.surfaceFrame) {
+            return image
+        }
+
         guard let previewImagePNGBase64 = response.previewImagePNGBase64,
               let data = Data(base64Encoded: previewImagePNGBase64) else {
             return nil
@@ -92,5 +98,46 @@ enum EditorPreviewFormatter {
 
     private static func format(seconds: TimeInterval) -> String {
         String(format: "%.2fs", seconds)
+    }
+
+    private static func image(from surfaceFrame: LumiPreviewPackage.PreviewSurfaceFrame?) -> NSImage? {
+        guard let surfaceFrame,
+              let surface = surface(from: surfaceFrame) else {
+            return nil
+        }
+
+        var seed: UInt32 = 0
+        let baseAddress = IOSurfaceGetBaseAddress(surface)
+        guard IOSurfaceLock(surface, .readOnly, &seed) == KERN_SUCCESS,
+              let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(
+                data: baseAddress,
+                width: surfaceFrame.width,
+                height: surfaceFrame.height,
+                bitsPerComponent: 8,
+                bytesPerRow: surfaceFrame.bytesPerRow,
+                space: colorSpace,
+                bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
+              ),
+              let cgImage = context.makeImage() else {
+            _ = IOSurfaceUnlock(surface, .readOnly, &seed)
+            return nil
+        }
+
+        _ = IOSurfaceUnlock(surface, .readOnly, &seed)
+        let scale = surfaceFrame.scale > 0 ? surfaceFrame.scale : 1
+        let size = NSSize(
+            width: Double(surfaceFrame.width) / scale,
+            height: Double(surfaceFrame.height) / scale
+        )
+        return NSImage(cgImage: cgImage, size: size)
+    }
+
+    private static func surface(from surfaceFrame: LumiPreviewPackage.PreviewSurfaceFrame) -> IOSurfaceRef? {
+        guard surfaceFrame.pixelFormat == "BGRA",
+              let surfaceID = surfaceFrame.globalIOSurfaceID else {
+            return nil
+        }
+        return IOSurfaceLookup(IOSurfaceID(surfaceID))
     }
 }

@@ -39,6 +39,20 @@ struct HostProcessTests {
         #expect(decoded.configuration.environmentInjections[0].displayName == "Mock App Model")
     }
 
+    @Test("RenderRequest 编码 capture frame fallback 选项")
+    func renderRequestEncodesCaptureFrameOptions() throws {
+        let request = LumiPreviewPackage.RenderRequest(
+            command: .captureFrame,
+            captureFrame: LumiPreviewPackage.CaptureFrameRequest(includeImageFallback: false)
+        )
+
+        let data = try JSONEncoder().encode(request)
+        let decoded = try JSONDecoder().decode(LumiPreviewPackage.RenderRequest.self, from: data)
+
+        #expect(decoded.command == .captureFrame)
+        #expect(decoded.captureFrame?.includeImageFallback == false)
+    }
+
     @Test("RenderResponse 编码 fallback 诊断")
     func renderResponseEncodesFallbackDiagnostics() throws {
         let response = LumiPreviewPackage.RenderResponse(
@@ -54,6 +68,87 @@ struct HostProcessTests {
 
         #expect(decoded.diagnostics == "Preview view entry failed")
         #expect(decoded.isFallback == true)
+    }
+
+    @Test("RenderResponse 编码 surface transport")
+    func renderResponseEncodesSurfaceTransport() throws {
+        let response = LumiPreviewPackage.RenderResponse(
+            success: true,
+            previewID: "lumi_preview_entry",
+            surfaceFrame: LumiPreviewPackage.PreviewSurfaceFrame(
+                surfaceID: 42,
+                width: 320,
+                height: 180,
+                scale: 2,
+                pixelFormat: "BGRA",
+                bytesPerRow: 1280
+            ),
+            livePreviewEnabled: true,
+            liveWindowNumber: 7
+        )
+
+        let data = try JSONEncoder().encode(response)
+        let decoded = try JSONDecoder().decode(LumiPreviewPackage.RenderResponse.self, from: data)
+
+        #expect(decoded.surfaceFrame?.globalIOSurfaceID == 42)
+        #expect(decoded.surfaceFrame?.transportKind == "globalIOSurfaceID")
+        #expect(decoded.surfaceFrame?.transport.isSecureCrossProcessTransport == false)
+        #expect(decoded.surfaceFrame?.width == 320)
+        #expect(decoded.surfaceFrame?.height == 180)
+        #expect(decoded.surfaceFrame?.scale == 2)
+        #expect(decoded.livePreviewEnabled == true)
+        #expect(decoded.liveWindowNumber == 7)
+    }
+
+    @Test("PreviewSurfaceFrame 解码 legacy surfaceID")
+    func previewSurfaceFrameDecodesLegacySurfaceID() throws {
+        let json = """
+        {
+            "surfaceID": 99,
+            "width": 900,
+            "height": 560,
+            "scale": 2,
+            "pixelFormat": "BGRA",
+            "bytesPerRow": 3600
+        }
+        """
+
+        let data = try #require(json.data(using: .utf8))
+        let decoded = try JSONDecoder().decode(LumiPreviewPackage.PreviewSurfaceFrame.self, from: data)
+
+        #expect(decoded.globalIOSurfaceID == 99)
+        #expect(decoded.transportKind == "globalIOSurfaceID")
+        #expect(decoded.width == 900)
+        #expect(decoded.height == 560)
+        #expect(decoded.bytesPerRow == 3600)
+    }
+
+    @Test("RenderResponse 解码未知 surface transport 并保留 PNG 兜底")
+    func renderResponseDecodesUnknownSurfaceTransportWithImageFallback() throws {
+        let json = """
+        {
+            "success": true,
+            "previewID": "lumi_preview_entry",
+            "previewImagePNGBase64": "png-fallback",
+            "surfaceFrame": {
+                "transport": {
+                    "kind": "machIOSurfacePort"
+                },
+                "width": 900,
+                "height": 560,
+                "scale": 2,
+                "pixelFormat": "BGRA",
+                "bytesPerRow": 3600
+            }
+        }
+        """
+
+        let data = try #require(json.data(using: .utf8))
+        let decoded = try JSONDecoder().decode(LumiPreviewPackage.RenderResponse.self, from: data)
+
+        #expect(decoded.previewImagePNGBase64 == "png-fallback")
+        #expect(decoded.surfaceFrame?.globalIOSurfaceID == nil)
+        #expect(decoded.surfaceFrame?.transportKind == "machIOSurfacePort")
     }
 
     @Test("PreviewEntryDescriptor 编码 fallback 诊断")
@@ -95,10 +190,45 @@ struct HostProcessTests {
 
         let renderResponse = try await connection.requestRender(discovery: discovery)
         #expect(renderResponse.previewImagePNGBase64 != nil)
+        #expect(renderResponse.surfaceFrame != nil)
 
         let refreshResponse = try await connection.requestRefresh()
         #expect(refreshResponse.previewImagePNGBase64 != nil)
+        #expect(refreshResponse.surfaceFrame != nil)
         await connection.terminate()
+    }
+
+    @Test("captureFrame 根据 includeImageFallback 控制 PNG 兜底")
+    func captureFrameRespectsImageFallbackOption() async throws {
+        let executableURL = try buildHostExecutable()
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
+        defer {
+            Task {
+                await connection.terminate()
+            }
+        }
+
+        let discovery = LumiPreviewPackage.PreviewDiscovery(
+            id: "preview-capture",
+            title: "Capture Preview",
+            sourceFileURL: URL(fileURLWithPath: "/tmp/CaptureView.swift"),
+            lineNumber: 1,
+            endLineNumber: 3,
+            primaryTypeName: "CaptureView",
+            bodySource: "CaptureView()"
+        )
+
+        _ = try await connection.requestRender(discovery: discovery)
+
+        let withFallback = try await connection.requestCaptureFrame()
+        #expect(withFallback.success)
+        #expect(withFallback.previewImagePNGBase64 != nil)
+        #expect(withFallback.surfaceFrame != nil)
+
+        let withoutFallback = try await connection.requestCaptureFrame(includeImageFallback: false)
+        #expect(withoutFallback.success)
+        #expect(withoutFallback.previewImagePNGBase64 == nil)
+        #expect(withoutFallback.surfaceFrame != nil)
     }
 
     @Test("宿主进程通过 dlopen 加载 dylib")

@@ -9,6 +9,9 @@ enum PreviewHostCommand: String, Codable, Sendable {
     /// 刷新当前预览。
     case refresh
 
+    /// 捕获当前预览画面，不重新编译或重载预览入口。
+    case captureFrame
+
     /// 加载已编译并签名的预览 dylib。
     case loadDylib
 
@@ -52,6 +55,9 @@ struct RenderRequest: Codable, Sendable {
     /// JSON 格式：{"x": 100, "y": 200, "width": 320, "height": 180, "scale": 2}
     public let liveFrame: LiveFrameRequest?
 
+    /// 捕获当前帧时使用的选项。
+    public let captureFrame: CaptureFrameRequest?
+
     /// 创建一个宿主请求消息。
     ///
     /// - Parameters:
@@ -61,13 +67,15 @@ struct RenderRequest: Codable, Sendable {
     ///   - previewEntrySymbol: dylib 中的预览入口符号名。
     ///   - configuration: 本次渲染使用的配置。
     ///   - liveFrame: Live 预览窗口的屏幕坐标和尺寸。
+    ///   - captureFrame: 捕获当前帧时使用的选项。
     public init(
         command: PreviewHostCommand,
         discovery: PreviewDiscovery? = nil,
         dylibPath: String? = nil,
         previewEntrySymbol: String? = nil,
         configuration: PreviewRenderConfiguration = .empty,
-        liveFrame: LiveFrameRequest? = nil
+        liveFrame: LiveFrameRequest? = nil,
+        captureFrame: CaptureFrameRequest? = nil
     ) {
         self.command = command
         self.discovery = discovery
@@ -75,6 +83,7 @@ struct RenderRequest: Codable, Sendable {
         self.previewEntrySymbol = previewEntrySymbol
         self.configuration = configuration
         self.liveFrame = liveFrame
+        self.captureFrame = captureFrame
     }
 }
 
@@ -127,6 +136,28 @@ struct LiveFrameRequest: Codable, Sendable, Equatable {
     }
 }
 
+/// 捕获预览帧时的请求选项。
+struct CaptureFrameRequest: Codable, Sendable, Equatable {
+    /// 是否随 surface 元数据一起返回 PNG 兜底图。
+    public let includeImageFallback: Bool
+
+    /// 创建一个捕获请求。
+    ///
+    /// - Parameter includeImageFallback: 是否返回 PNG 兜底图。
+    public init(includeImageFallback: Bool = true) {
+        self.includeImageFallback = includeImageFallback
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case includeImageFallback
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.includeImageFallback = try container.decodeIfPresent(Bool.self, forKey: .includeImageFallback) ?? true
+    }
+}
+
 /// 预览宿主进程返回的成功或失败响应。
 struct RenderResponse: Codable, Sendable, Equatable {
     private enum CodingKeys: String, CodingKey {
@@ -134,6 +165,7 @@ struct RenderResponse: Codable, Sendable, Equatable {
         case previewID
         case message
         case previewImagePNGBase64
+        case surfaceFrame
         case diagnostics
         case isFallback
         case livePreviewEnabled
@@ -151,6 +183,9 @@ struct RenderResponse: Codable, Sendable, Equatable {
 
     /// 宿主进程当前预览画面的 PNG 数据，Base64 编码。
     public let previewImagePNGBase64: String?
+
+    /// 宿主进程当前预览画面的跨进程 IOSurface 元数据。
+    public let surfaceFrame: PreviewSurfaceFrame?
 
     /// 可展示给用户的结构化诊断信息，例如真实 view entry 编译失败日志。
     public let diagnostics: String?
@@ -171,6 +206,7 @@ struct RenderResponse: Codable, Sendable, Equatable {
     ///   - previewID: 相关预览标识符。
     ///   - message: 可展示或记录的响应消息。
     ///   - previewImagePNGBase64: 宿主进程当前预览画面的 PNG 数据，Base64 编码。
+    ///   - surfaceFrame: 宿主进程当前预览画面的跨进程 IOSurface 元数据。
     ///   - diagnostics: 可展示给用户的结构化诊断信息。
     ///   - isFallback: 本次响应是否来自降级预览入口。
     ///   - livePreviewEnabled: 宿主进程是否支持 Live 预览模式。
@@ -180,6 +216,7 @@ struct RenderResponse: Codable, Sendable, Equatable {
         previewID: String? = nil,
         message: String? = nil,
         previewImagePNGBase64: String? = nil,
+        surfaceFrame: PreviewSurfaceFrame? = nil,
         diagnostics: String? = nil,
         isFallback: Bool = false,
         livePreviewEnabled: Bool = false,
@@ -189,6 +226,7 @@ struct RenderResponse: Codable, Sendable, Equatable {
         self.previewID = previewID
         self.message = message
         self.previewImagePNGBase64 = previewImagePNGBase64
+        self.surfaceFrame = surfaceFrame
         self.diagnostics = diagnostics
         self.isFallback = isFallback
         self.livePreviewEnabled = livePreviewEnabled
@@ -201,10 +239,152 @@ struct RenderResponse: Codable, Sendable, Equatable {
         self.previewID = try container.decodeIfPresent(String.self, forKey: .previewID)
         self.message = try container.decodeIfPresent(String.self, forKey: .message)
         self.previewImagePNGBase64 = try container.decodeIfPresent(String.self, forKey: .previewImagePNGBase64)
+        self.surfaceFrame = try container.decodeIfPresent(PreviewSurfaceFrame.self, forKey: .surfaceFrame)
         self.diagnostics = try container.decodeIfPresent(String.self, forKey: .diagnostics)
         self.isFallback = try container.decodeIfPresent(Bool.self, forKey: .isFallback) ?? false
         self.livePreviewEnabled = try container.decodeIfPresent(Bool.self, forKey: .livePreviewEnabled) ?? false
         self.liveWindowNumber = try container.decodeIfPresent(Int.self, forKey: .liveWindowNumber)
+    }
+}
+
+/// 跨进程预览帧的 IOSurface 描述。
+struct PreviewSurfaceFrame: Codable, Sendable, Equatable {
+    private enum CodingKeys: String, CodingKey {
+        case transport
+        case surfaceID
+        case width
+        case height
+        case scale
+        case pixelFormat
+        case bytesPerRow
+    }
+
+    public let transport: PreviewSurfaceTransport
+    public let width: Int
+    public let height: Int
+    public let scale: Double
+    public let pixelFormat: String
+    public let bytesPerRow: Int
+
+    public var globalIOSurfaceID: UInt32? {
+        if case let .globalIOSurfaceID(surfaceID) = transport {
+            return surfaceID
+        }
+        return nil
+    }
+
+    public var transportKind: String {
+        transport.kind
+    }
+
+    public init(
+        surfaceID: UInt32,
+        width: Int,
+        height: Int,
+        scale: Double,
+        pixelFormat: String,
+        bytesPerRow: Int
+    ) {
+        self.init(
+            transport: .globalIOSurfaceID(surfaceID),
+            width: width,
+            height: height,
+            scale: scale,
+            pixelFormat: pixelFormat,
+            bytesPerRow: bytesPerRow
+        )
+    }
+
+    public init(
+        transport: PreviewSurfaceTransport,
+        width: Int,
+        height: Int,
+        scale: Double,
+        pixelFormat: String,
+        bytesPerRow: Int
+    ) {
+        self.transport = transport
+        self.width = width
+        self.height = height
+        self.scale = scale
+        self.pixelFormat = pixelFormat
+        self.bytesPerRow = bytesPerRow
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let transport = try container.decodeIfPresent(PreviewSurfaceTransport.self, forKey: .transport) {
+            self.transport = transport
+        } else {
+            self.transport = .globalIOSurfaceID(try container.decode(UInt32.self, forKey: .surfaceID))
+        }
+        self.width = try container.decode(Int.self, forKey: .width)
+        self.height = try container.decode(Int.self, forKey: .height)
+        self.scale = try container.decode(Double.self, forKey: .scale)
+        self.pixelFormat = try container.decode(String.self, forKey: .pixelFormat)
+        self.bytesPerRow = try container.decode(Int.self, forKey: .bytesPerRow)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(transport, forKey: .transport)
+        try container.encodeIfPresent(globalIOSurfaceID, forKey: .surfaceID)
+        try container.encode(width, forKey: .width)
+        try container.encode(height, forKey: .height)
+        try container.encode(scale, forKey: .scale)
+        try container.encode(pixelFormat, forKey: .pixelFormat)
+        try container.encode(bytesPerRow, forKey: .bytesPerRow)
+    }
+}
+
+/// 跨进程预览帧的像素传输方式。
+enum PreviewSurfaceTransport: Codable, Sendable, Equatable {
+    private enum CodingKeys: String, CodingKey {
+        case kind
+        case surfaceID
+    }
+
+    case globalIOSurfaceID(UInt32)
+    case unsupported(kind: String)
+
+    public var kind: String {
+        switch self {
+        case .globalIOSurfaceID:
+            "globalIOSurfaceID"
+        case let .unsupported(kind):
+            kind
+        }
+    }
+
+    public var isSecureCrossProcessTransport: Bool {
+        switch self {
+        case .globalIOSurfaceID:
+            false
+        case .unsupported:
+            false
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let kind = try container.decode(String.self, forKey: .kind)
+        switch kind {
+        case "globalIOSurfaceID":
+            self = .globalIOSurfaceID(try container.decode(UInt32.self, forKey: .surfaceID))
+        default:
+            self = .unsupported(kind: kind)
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case let .globalIOSurfaceID(surfaceID):
+            try container.encode(kind, forKey: .kind)
+            try container.encode(surfaceID, forKey: .surfaceID)
+        case .unsupported:
+            try container.encode(kind, forKey: .kind)
+        }
     }
 }
 

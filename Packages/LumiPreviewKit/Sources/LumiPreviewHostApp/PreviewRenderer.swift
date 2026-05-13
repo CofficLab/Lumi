@@ -1,6 +1,7 @@
 import AppKit
 import Darwin
 import Foundation
+import IOSurface
 import LumiPreviewKit
 import SwiftUI
 
@@ -17,6 +18,8 @@ final class PreviewRenderer {
     var loadedHandles: [UnsafeMutableRawPointer] = []
     var currentDynamicPreviewTitle: String?
     var isLivePreviewEnabled = false
+    var recentSurfaces: [IOSurfaceRef] = []
+    let recentSurfaceLimit = 4
 
     init() {
         NSApplication.shared.setActivationPolicy(.accessory)
@@ -51,23 +54,27 @@ final class PreviewRenderer {
         self.previewView = hostingView
         self.currentDiscovery = discovery
         self.currentConfiguration = configuration
+        let snapshot = snapshotFrame(includePNG: true, includeSurface: true)
 
         return LumiPreviewPackage.RenderResponse(
             success: true,
             previewID: discovery.id,
             message: Self.renderedMessage(discovery: discovery, configuration: configuration),
-            previewImagePNGBase64: snapshotPNGBase64()
+            previewImagePNGBase64: snapshot.pngBase64,
+            surfaceFrame: snapshot.surfaceFrame
         )
     }
 
     func refresh() -> LumiPreviewPackage.RenderResponse {
         previewView?.needsLayout = true
+        let snapshot = snapshotFrame(includePNG: true, includeSurface: true)
         if let currentDiscovery {
             return LumiPreviewPackage.RenderResponse(
                 success: true,
                 previewID: currentDiscovery.id,
                 message: "Refreshed \(currentDiscovery.title)",
-                previewImagePNGBase64: snapshotPNGBase64()
+                previewImagePNGBase64: snapshot.pngBase64,
+                surfaceFrame: snapshot.surfaceFrame
             )
         }
 
@@ -76,13 +83,35 @@ final class PreviewRenderer {
                 success: true,
                 previewID: currentDynamicPreviewTitle,
                 message: "Refreshed \(currentDynamicPreviewTitle)",
-                previewImagePNGBase64: snapshotPNGBase64()
+                previewImagePNGBase64: snapshot.pngBase64,
+                surfaceFrame: snapshot.surfaceFrame
             )
         }
 
         return LumiPreviewPackage.RenderResponse(
             success: false,
             message: "No preview has been rendered."
+        )
+    }
+
+    func captureFrame(includeImageFallback: Bool = true) -> LumiPreviewPackage.RenderResponse {
+        guard previewView != nil else {
+            return LumiPreviewPackage.RenderResponse(
+                success: false,
+                message: "No preview has been rendered."
+            )
+        }
+
+        let snapshot = snapshotFrame(includePNG: includeImageFallback, includeSurface: true)
+
+        return LumiPreviewPackage.RenderResponse(
+            success: true,
+            previewID: currentDiscovery?.id ?? currentDynamicPreviewTitle,
+            message: "Captured current preview frame.",
+            previewImagePNGBase64: snapshot.pngBase64,
+            surfaceFrame: snapshot.surfaceFrame,
+            livePreviewEnabled: isLivePreviewEnabled,
+            liveWindowNumber: liveWindow?.windowNumber
         )
     }
 

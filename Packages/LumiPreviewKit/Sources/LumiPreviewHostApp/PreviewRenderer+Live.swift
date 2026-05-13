@@ -119,7 +119,7 @@ extension PreviewRenderer {
                 }
                 let title = descriptor?.title ?? previewEntrySymbol
 
-                let snapshot = snapshotPNGBase64(for: view)
+                let snapshot = snapshotFrame(for: view, includePNG: true, includeSurface: true)
 
                 previewView = view
                 isLivePreviewEnabled = true
@@ -140,7 +140,8 @@ extension PreviewRenderer {
                 return LumiPreviewPackage.RenderResponse(
                     success: true,
                     message: "Reloaded live preview view entry \(title)",
-                    previewImagePNGBase64: snapshot,
+                    previewImagePNGBase64: snapshot.pngBase64,
+                    surfaceFrame: snapshot.surfaceFrame,
                     livePreviewEnabled: true,
                     liveWindowNumber: liveWindow?.windowNumber
                 )

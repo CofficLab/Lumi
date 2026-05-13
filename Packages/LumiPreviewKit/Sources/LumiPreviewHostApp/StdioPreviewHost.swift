@@ -46,6 +46,10 @@ final class StdioPreviewHost {
             return renderer.render(discovery: discovery, configuration: request.configuration)
         case .refresh:
             return renderer.refresh()
+        case .captureFrame:
+            return renderer.captureFrame(
+                includeImageFallback: request.captureFrame?.includeImageFallback ?? true
+            )
         case .loadDylib:
             guard let dylibPath = request.dylibPath else {
                 return LumiPreviewPackage.RenderResponse(success: false, message: "Dylib load request is missing dylibPath.")

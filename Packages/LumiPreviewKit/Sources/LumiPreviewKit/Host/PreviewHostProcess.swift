@@ -69,6 +69,10 @@ protocol HostConnection: AnyObject, Sendable {
     @discardableResult
     func requestRefresh() async throws -> RenderResponse
 
+    /// 请求捕获当前预览画面，不触发 rebuild。
+    @discardableResult
+    func requestCaptureFrame(includeImageFallback: Bool) async throws -> RenderResponse
+
     /// 请求宿主进程加载一个已签名 dylib。
     @discardableResult
     func requestLoadDylib(at dylibURL: URL) async throws -> RenderResponse
@@ -112,6 +116,12 @@ public extension LumiPreviewPackage.HostConnection {
     @discardableResult
     func requestRender(discovery: LumiPreviewPackage.PreviewDiscovery) async throws -> LumiPreviewPackage.RenderResponse {
         try await requestRender(discovery: discovery, configuration: .empty)
+    }
+
+    /// 请求捕获当前预览画面，并默认返回 PNG 兜底图。
+    @discardableResult
+    func requestCaptureFrame() async throws -> LumiPreviewPackage.RenderResponse {
+        try await requestCaptureFrame(includeImageFallback: true)
     }
 }
 
@@ -164,6 +174,19 @@ private final class ProcessHostConnection: HostConnection, @unchecked Sendable {
         let response: RenderResponse = try send(request)
         guard response.success else {
             throw PreviewError.runtimeCrashed(message: response.message ?? "Refresh request failed.")
+        }
+        return response
+    }
+
+    @discardableResult
+    func requestCaptureFrame(includeImageFallback: Bool) async throws -> RenderResponse {
+        let request = RenderRequest(
+            command: .captureFrame,
+            captureFrame: LumiPreviewPackage.CaptureFrameRequest(includeImageFallback: includeImageFallback)
+        )
+        let response: RenderResponse = try send(request)
+        guard response.success else {
+            throw PreviewError.runtimeCrashed(message: response.message ?? "Capture frame request failed.")
         }
         return response
     }

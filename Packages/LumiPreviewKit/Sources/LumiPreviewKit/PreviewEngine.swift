@@ -136,6 +136,26 @@ final class LivePreviewEngine: PreviewEngine, Sendable {
         await liveSession.setState(.stopped)
     }
 
+    /// 捕获当前宿主中的预览画面，不触发源码重编译。
+    public func capturePreviewFrame(
+        _ session: any PreviewSession,
+        includeImageFallback: Bool = true
+    ) async throws -> RenderResponse {
+        guard let liveSession = session as? LivePreviewSession,
+              let connection = await liveSession.hostConnection() else {
+            throw PreviewError.runtimeCrashed(message: "No active session for frame capture.")
+        }
+        let response = try await connection.requestCaptureFrame(includeImageFallback: includeImageFallback)
+        await liveSession.setLastRenderResponse(response)
+        if response.livePreviewEnabled {
+            await liveSession.markLivePreviewAvailable(
+                windowNumber: response.liveWindowNumber,
+                hostProcessID: await connection.processID
+            )
+        }
+        return response
+    }
+
     // MARK: - Live Preview Control
 
     /// 请求宿主进程启动 Live 预览窗口。

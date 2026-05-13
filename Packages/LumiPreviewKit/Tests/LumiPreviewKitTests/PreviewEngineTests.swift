@@ -828,6 +828,24 @@ struct PreviewEngineTests {
         #expect(await session.livePreviewInfo.state == .running)
         #expect(await session.livePreviewInfo.hostWindowNumber == 42)
 
+        connection.captureResponse = LumiPreviewPackage.RenderResponse(
+            success: true,
+            previewID: "captured-preview",
+            message: "Captured frame",
+            previewImagePNGBase64: "png",
+            livePreviewEnabled: true,
+            liveWindowNumber: 43
+        )
+        let captureResponse = try await engine.capturePreviewFrame(session)
+        #expect(captureResponse.message == "Captured frame")
+        #expect(connection.lastCaptureIncludeImageFallback == true)
+        #expect(await session.lastRenderResponse?.previewID == "captured-preview")
+        #expect(await session.livePreviewInfo.state == .running)
+        #expect(await session.livePreviewInfo.hostWindowNumber == 43)
+
+        _ = try await engine.capturePreviewFrame(session, includeImageFallback: false)
+        #expect(connection.lastCaptureIncludeImageFallback == false)
+
         try await engine.updateLiveFrame(session, x: 10, y: 20, width: 300, height: 200, scale: 2)
         try await engine.showLivePreview(session)
         try await engine.hideLivePreview(session)
@@ -839,6 +857,8 @@ struct PreviewEngineTests {
 
         #expect(connection.commands == [
             .startLivePreview,
+            .captureFrame,
+            .captureFrame,
             .updateLiveFrame,
             .showLivePreview,
             .hideLivePreview,
@@ -861,6 +881,9 @@ struct PreviewEngineTests {
 
         await #expect(throws: LumiPreviewPackage.PreviewError.self) {
             try await engine.startLivePreview(session)
+        }
+        await #expect(throws: LumiPreviewPackage.PreviewError.self) {
+            try await engine.capturePreviewFrame(session)
         }
 
         try await engine.updateLiveFrame(session, x: 0, y: 0, width: 1, height: 1)
@@ -1281,6 +1304,7 @@ private final class RecordingHostConnection: LumiPreviewPackage.HostConnection, 
     enum Command: Equatable {
         case render
         case refresh
+        case captureFrame
         case loadDylib
         case loadPreviewEntry
         case startLivePreview
@@ -1296,11 +1320,13 @@ private final class RecordingHostConnection: LumiPreviewPackage.HostConnection, 
     var running = true
     var lastFrame: LumiPreviewPackage.LiveFrameRequest?
     var lastReloadPath: String?
+    var lastCaptureIncludeImageFallback: Bool?
     var startLiveResponse = LumiPreviewPackage.RenderResponse(
         success: true,
         livePreviewEnabled: true,
         liveWindowNumber: 42
     )
+    var captureResponse = LumiPreviewPackage.RenderResponse(success: true)
     var reloadResponse = LumiPreviewPackage.RenderResponse(success: true, livePreviewEnabled: true)
 
     var isRunning: Bool {
@@ -1326,6 +1352,12 @@ private final class RecordingHostConnection: LumiPreviewPackage.HostConnection, 
     func requestRefresh() async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.refresh)
         return LumiPreviewPackage.RenderResponse(success: true)
+    }
+
+    func requestCaptureFrame(includeImageFallback: Bool) async throws -> LumiPreviewPackage.RenderResponse {
+        commands.append(.captureFrame)
+        lastCaptureIncludeImageFallback = includeImageFallback
+        return captureResponse
     }
 
     func requestLoadDylib(at dylibURL: URL) async throws -> LumiPreviewPackage.RenderResponse {

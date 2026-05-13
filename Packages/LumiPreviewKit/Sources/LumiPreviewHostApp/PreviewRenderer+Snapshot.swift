@@ -1,13 +1,61 @@
 import AppKit
+import CoreGraphics
 import Foundation
+import IOSurface
+import LumiPreviewKit
 
 extension PreviewRenderer {
+    struct SnapshotFrame {
+        let pngBase64: String?
+        let surfaceFrame: LumiPreviewPackage.PreviewSurfaceFrame?
+    }
+
+    private static let bgraPixelFormat: UInt32 =
+        UInt32(UInt8(ascii: "B")) << 24 |
+        UInt32(UInt8(ascii: "G")) << 16 |
+        UInt32(UInt8(ascii: "R")) << 8 |
+        UInt32(UInt8(ascii: "A"))
+
+    func snapshotFrame(includePNG: Bool = true, includeSurface: Bool = true) -> SnapshotFrame {
+        guard let previewView else {
+            return SnapshotFrame(pngBase64: nil, surfaceFrame: nil)
+        }
+        return snapshotFrame(for: previewView, includePNG: includePNG, includeSurface: includeSurface)
+    }
+
+    func snapshotFrame(for view: NSView, includePNG: Bool = true, includeSurface: Bool = true) -> SnapshotFrame {
+        guard let snapshot = snapshotBitmap(for: view) else {
+            return SnapshotFrame(pngBase64: nil, surfaceFrame: nil)
+        }
+
+        let pngBase64 = includePNG
+            ? snapshot.bitmap.representation(using: .png, properties: [:])?.base64EncodedString()
+            : nil
+        let surfaceFrame = includeSurface
+            ? snapshotSurfaceFrame(for: snapshot.image, pointsSize: snapshot.pointsSize)
+            : nil
+        return SnapshotFrame(pngBase64: pngBase64, surfaceFrame: surfaceFrame)
+    }
+
     func snapshotPNGBase64() -> String? {
         guard let previewView else { return nil }
         return snapshotPNGBase64(for: previewView)
     }
 
     func snapshotPNGBase64(for view: NSView) -> String? {
+        snapshotFrame(for: view, includePNG: true, includeSurface: false).pngBase64
+    }
+
+    func snapshotSurfaceFrame() -> LumiPreviewPackage.PreviewSurfaceFrame? {
+        guard let previewView else { return nil }
+        return snapshotSurfaceFrame(for: previewView)
+    }
+
+    func snapshotSurfaceFrame(for view: NSView) -> LumiPreviewPackage.PreviewSurfaceFrame? {
+        snapshotFrame(for: view, includePNG: false, includeSurface: true).surfaceFrame
+    }
+
+    private func snapshotBitmap(for view: NSView) -> (bitmap: NSBitmapImageRep, image: CGImage, pointsSize: CGSize)? {
         var bounds = prepareViewForSnapshot(view)
         flushPreviewRendering()
 
@@ -27,7 +75,67 @@ extension PreviewRenderer {
 
         bitmap.size = bounds.size
         view.cacheDisplay(in: bounds, to: bitmap)
-        return bitmap.representation(using: .png, properties: [:])?.base64EncodedString()
+        guard let image = bitmap.cgImage else { return nil }
+        return (bitmap, image, bounds.size)
+    }
+
+    private func snapshotSurfaceFrame(for image: CGImage, pointsSize: CGSize) -> LumiPreviewPackage.PreviewSurfaceFrame? {
+        let width = image.width
+        let height = image.height
+        guard width > 0, height > 0 else { return nil }
+
+        let bytesPerRow = width * 4
+        let properties: [CFString: Any] = [
+            kIOSurfaceWidth: width,
+            kIOSurfaceHeight: height,
+            kIOSurfaceBytesPerElement: 4,
+            kIOSurfaceBytesPerRow: bytesPerRow,
+            kIOSurfacePixelFormat: Self.bgraPixelFormat,
+            kIOSurfaceIsGlobal: true
+        ]
+
+        guard let surface = IOSurfaceCreate(properties as CFDictionary) else {
+            return nil
+        }
+
+        var seed: UInt32 = 0
+        let baseAddress = IOSurfaceGetBaseAddress(surface)
+        guard IOSurfaceLock(surface, [], &seed) == KERN_SUCCESS,
+              let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(
+                data: baseAddress,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: bytesPerRow,
+                space: colorSpace,
+                bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
+              ) else {
+            _ = IOSurfaceUnlock(surface, [], &seed)
+            return nil
+        }
+
+        context.clear(CGRect(x: 0, y: 0, width: width, height: height))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        _ = IOSurfaceUnlock(surface, [], &seed)
+
+        retainRecentSurface(surface)
+        let scale = pointsSize.width > 0 ? Double(width) / Double(pointsSize.width) : 1
+        return LumiPreviewPackage.PreviewSurfaceFrame(
+            surfaceID: UInt32(IOSurfaceGetID(surface)),
+            width: width,
+            height: height,
+            scale: scale,
+            pixelFormat: "BGRA",
+            bytesPerRow: bytesPerRow
+        )
+    }
+
+    private func retainRecentSurface(_ surface: IOSurfaceRef) {
+        recentSurfaces.append(surface)
+        if recentSurfaces.count > recentSurfaceLimit {
+            recentSurfaces.removeFirst(recentSurfaces.count - recentSurfaceLimit)
+        }
     }
 
     private func prepareViewForSnapshot(_ view: NSView, preferredSize: NSSize? = nil) -> NSRect {
