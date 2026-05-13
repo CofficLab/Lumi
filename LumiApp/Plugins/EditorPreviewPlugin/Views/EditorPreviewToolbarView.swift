@@ -25,6 +25,7 @@ struct EditorPreviewToolbarView: View {
                 Text(currentFileURL.lastPathComponent)
                     .font(.system(size: 11))
                     .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .lineLimit(1)
             }
 
             Spacer(minLength: 0)
@@ -86,8 +87,8 @@ struct EditorPreviewToolbarView: View {
             .disabled(!viewModel.canStop)
             .help(String(localized: "Stop preview", table: "EditorPreview"))
         }
+        .frame(maxWidth: .infinity, minHeight: 38, maxHeight: 38, alignment: .leading)
         .padding(.horizontal, 12)
-        .padding(.vertical, 7)
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
     }
 }
