@@ -23,6 +23,16 @@
         }
       }
     },
+    "%g × %g pt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$g × %2$g pt"
+          }
+        }
+      }
+    },
     "Auto" : {
 
     },
@@ -167,6 +177,12 @@
         }
       }
     },
+    "Failed to load image: %@" : {
+
+    },
+    "File not found: %@" : {
+
+    },
     "Fit" : {
 
     },
@@ -235,6 +251,9 @@
           }
         }
       }
+    },
+    "Image Preview" : {
+
     },
     "Lines %lld-%lld" : {
       "localizations" : {
@@ -413,6 +432,12 @@
       }
     },
     "Load %@" : {
+
+    },
+    "Loading image…" : {
+
+    },
+    "Markdown Preview" : {
 
     },
     "No #Preview macros found" : {

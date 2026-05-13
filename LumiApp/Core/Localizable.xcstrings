@@ -803,6 +803,9 @@
         }
       }
     },
+    "Active: %@" : {
+
+    },
     "Add" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2281,6 +2284,9 @@
         }
       }
     },
+    "Embedded remote SwiftUI preview canvas" : {
+
+    },
     "Empty files in the trash" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2487,6 +2493,9 @@
     "Extensions" : {
 
     },
+    "Failed" : {
+
+    },
     "Failed to kill process: \\(error.localizedDescription)" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2544,6 +2553,9 @@
 
     },
     "Finder" : {
+
+    },
+    "Frame Pending" : {
 
     },
     "General" : {
@@ -2749,7 +2761,13 @@
         }
       }
     },
+    "Hot Preview" : {
+
+    },
     "How to Use" : {
+
+    },
+    "Idle" : {
 
     },
     "Image" : {
@@ -3026,10 +3044,32 @@
         }
       }
     },
+    "Launching" : {
+
+    },
+    "Line %lld-%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Line %1$lld-%2$lld"
+          }
+        }
+      }
+    },
     "Line 42, Col 18" : {
 
     },
+    "Live" : {
+
+    },
+    "Live Preview Active" : {
+
+    },
     "Live sample" : {
+
+    },
+    "Live: %@" : {
 
     },
     "Load" : {
@@ -3440,6 +3480,9 @@
         }
       }
     },
+    "No #Preview in the current Swift file" : {
+
+    },
     "No active processes" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3488,6 +3531,9 @@
           }
         }
       }
+    },
+    "No Frame" : {
+
     },
     "No Listening Ports" : {
       "localizations" : {
@@ -3539,6 +3585,9 @@
           }
         }
       }
+    },
+    "No Preview" : {
+
     },
     "No project selected" : {
       "localizations" : {
@@ -3878,6 +3927,9 @@
         }
       }
     },
+    "Preview host executable was not found." : {
+
+    },
     "Preview Size" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4098,7 +4150,22 @@
         }
       }
     },
+    "Refresh hot preview" : {
+
+    },
+    "Refreshing Preview" : {
+
+    },
+    "Remote Preview" : {
+
+    },
     "Remote Providers" : {
+
+    },
+    "Render frame" : {
+
+    },
+    "Rendering" : {
 
     },
     "Reset" : {
@@ -4518,6 +4585,9 @@
         }
       }
     },
+    "Showing previous successful Live preview" : {
+
+    },
     "Signal" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4635,6 +4705,15 @@
         }
       }
     },
+    "Start hot preview" : {
+
+    },
+    "Start preview host" : {
+
+    },
+    "Starting Live Preview" : {
+
+    },
     "Starting scan..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4684,6 +4763,12 @@
           }
         }
       }
+    },
+    "Stop hot preview" : {
+
+    },
+    "Stop preview host" : {
+
     },
     "Successfully freed %@ space." : {
       "localizations" : {
@@ -5068,6 +5153,9 @@
         }
       }
     },
+    "Transport: %@" : {
+
+    },
     "Trash" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5371,6 +5459,12 @@
           }
         }
       }
+    },
+    "Waiting for Host" : {
+
+    },
+    "Waiting to Refresh" : {
+
     },
     "watchOS Device Support" : {
       "extractionState" : "stale",

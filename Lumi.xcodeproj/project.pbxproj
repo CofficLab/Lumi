@@ -48,6 +48,7 @@
 		A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4512F70000100AAA106 /* ShellKit */; };
 		B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */ = {isa = PBXBuildFile; productRef = B1C2D3512F80000200BBB201 /* XcodeKit */; };
 		C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C022FB3000000000001 /* WebFetchKit */; };
+		D1A0B00130B1000100AAA201 /* LumiHotPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = D1A0B00230B1000100AAA201 /* LumiHotPreviewKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -313,6 +314,7 @@
 				A1B2C4002F70000100AAA101 /* EditorService in Frameworks */,
 				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
 				A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */,
+				D1A0B00130B1000100AAA201 /* LumiHotPreviewKit in Frameworks */,
 				C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */,
 				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
 				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
@@ -801,6 +803,7 @@
 				F5A9DB4E2F763C8700A47D9C /* CopyFiles */,
 				C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */,
 				C0D3E0112FB1000000A11002 /* Embed Editor Preview Host */,
+				D1A0B00330B1000100AAA201 /* Embed Editor Hot Preview Host */,
 			);
 			buildRules = (
 			);
@@ -847,6 +850,7 @@
 				A1B2C3EF2F70000100AAA101 /* DatabaseKit */,
 				A1B2C4132F70000100AAA101 /* LumiUI */,
 				A1B2C4272F70000100AAA107 /* LumiPreviewKit */,
+				D1A0B00230B1000100AAA201 /* LumiHotPreviewKit */,
 				C0FF1C022FB3000000000001 /* WebFetchKit */,
 				A1B2C3A12F70000200AAA101 /* SkillKit */,
 				A1B2C4162F70000100AAA101 /* DeviceMonitorKit */,
@@ -948,6 +952,7 @@
 				A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */,
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
 				A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */,
+				D1A0B00430B1000100AAA201 /* XCLocalSwiftPackageReference "Packages/LumiHotPreviewKit" */,
 				C0FF1C032FB3000000000001 /* XCLocalSwiftPackageReference "Packages/WebFetchKit" */,
 				A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */,
 				A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */,
@@ -1262,6 +1267,30 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
 			shellScript = "\"$SRCROOT/scripts/embed-editor-preview-host.sh\"\n";
+		};
+		D1A0B00330B1000100AAA201 /* Embed Editor Hot Preview Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packages/LumiHotPreviewKit/Package.swift",
+				"$(SRCROOT)/Packages/LumiHotPreviewKit/Sources/LumiHotPreviewHostApp/main.swift",
+				"$(SRCROOT)/Packages/LumiHotPreviewKit/Sources/LumiHotPreviewKit/HotRenderResponse.swift",
+				"$(SRCROOT)/scripts/embed-editor-hot-preview-host.sh",
+			);
+			name = "Embed Editor Hot Preview Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiHotPreviewHostApp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/embed-editor-hot-preview-host.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1868,6 +1897,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/WebFetchKit;
 		};
+		D1A0B00430B1000100AAA201 /* XCLocalSwiftPackageReference "Packages/LumiHotPreviewKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LumiHotPreviewKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -2215,6 +2248,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C0FF1C032FB3000000000001 /* XCLocalSwiftPackageReference "Packages/WebFetchKit" */;
 			productName = WebFetchKit;
+		};
+		D1A0B00230B1000100AAA201 /* LumiHotPreviewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1A0B00430B1000100AAA201 /* XCLocalSwiftPackageReference "Packages/LumiHotPreviewKit" */;
+			productName = LumiHotPreviewKit;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

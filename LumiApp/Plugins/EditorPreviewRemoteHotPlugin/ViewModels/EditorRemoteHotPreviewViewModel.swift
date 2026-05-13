@@ -20,8 +20,12 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
     var transportSummary: String { service.transportSummary }
     var failureMessage: String? { service.failureMessage }
     var updatePhase: EditorRemoteHotPreviewUpdatePhase { service.updatePhase }
+    var diagnosticSummary: String { service.diagnosticSummary }
     var livePreviewInfo: LumiPreviewPackage.LivePreviewInfo { service.livePreviewInfo }
     var isLiveLoading: Bool { service.isLiveLoading }
+    var effectiveDisplayMode: LumiPreviewPackage.PreviewDisplayMode { service.effectiveDisplayMode }
+    var modeStatusMessage: String? { service.modeStatusMessage }
+    var isShowingStaleFrame: Bool { service.isShowingStaleFrame }
 
     var selectedPreviewID: String? {
         get { service.selectedPreviewID }
@@ -36,14 +40,6 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
         hostState != .idle
     }
 
-    var canStartLive: Bool {
-        hostState == .connected && !isLiveLoading && livePreviewInfo.state != .running
-    }
-
-    var canStopLive: Bool {
-        !isLiveLoading && (livePreviewInfo.state == .running || livePreviewInfo.state == .launching)
-    }
-
     init(service: EditorRemoteHotPreviewService = EditorRemoteHotPreviewViewModel.sharedService) {
         self.service = service
         service.objectWillChange
@@ -55,6 +51,10 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
 
     func update(sourceText: String?, fileURL: URL?) {
         service.update(sourceText: sourceText, fileURL: fileURL)
+    }
+
+    func viewDidAppear() {
+        service.detailViewDidAppear()
     }
 
     func startHost() {
@@ -73,11 +73,23 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
         service.stop(reason: "toolbar stop button")
     }
 
-    func startLivePreview() {
-        service.startLivePreview(reason: "toolbar live preview button")
+    func viewDidDisappear() {
+        service.detailViewDidDisappear()
     }
 
-    func stopLivePreview() {
-        service.stopLivePreview(reason: "toolbar stop live preview button")
+    func liveCanvasDidAppear() {
+        service.liveCanvasDidAppear()
+    }
+
+    func liveCanvasDidDisappear() {
+        service.liveCanvasDidDisappear()
+    }
+
+    func liveCanvasFrameUnavailable() {
+        service.liveCanvasFrameUnavailable()
+    }
+
+    func updateLiveCanvasRect(_ rect: CGRect, scale: CGFloat) {
+        service.updateLiveCanvasRect(rect, scale: scale)
     }
 }

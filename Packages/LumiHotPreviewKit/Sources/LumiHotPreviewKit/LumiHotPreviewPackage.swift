@@ -1,0 +1,31 @@
+import LumiPreviewKit
+
+/// Unified public namespace for LumiHotPreviewKit.
+public enum LumiHotPreviewPackage {}
+
+public typealias HotPreviewEngine = LumiHotPreviewPackage.HotPreviewEngine
+public typealias HotPreviewSession = LumiHotPreviewPackage.HotPreviewSession
+public typealias HotPreviewHostExecutableResolver = LumiHotPreviewPackage.HotPreviewHostExecutableResolver
+public typealias HotPreviewHostProcess = LumiHotPreviewPackage.HotPreviewHostProcess
+public typealias HotHostConnection = LumiHotPreviewPackage.HotHostConnection
+public typealias HotHostCommand = LumiHotPreviewPackage.HotHostCommand
+public typealias HotHostRequest = LumiHotPreviewPackage.HotHostRequest
+public typealias HostProcessManager = LumiHotPreviewPackage.HostProcessManager
+public typealias HotRenderResponse = LumiHotPreviewPackage.HotRenderResponse
+public typealias HotFrameSize = LumiHotPreviewPackage.HotFrameSize
+public typealias HotFrameTransport = LumiHotPreviewPackage.HotFrameTransport
+public typealias ImageFileLoader = LumiHotPreviewPackage.ImageFileLoader
+public typealias FrameFileStore = LumiHotPreviewPackage.FrameFileStore
+public typealias SyntaxChecker = LumiHotPreviewPackage.SyntaxChecker
+public typealias SyntaxCheckResult = LumiHotPreviewPackage.SyntaxCheckResult
+public typealias SyntaxCheckIssue = LumiHotPreviewPackage.SyntaxCheckIssue
+public typealias EntryCacheManager = LumiHotPreviewPackage.EntryCacheManager
+public typealias CompileCommandCache = LumiHotPreviewPackage.CompileCommandCache
+public typealias IncrementalBuildPipeline = LumiHotPreviewPackage.IncrementalBuildPipeline
+public typealias IncrementalBuildResult = LumiHotPreviewPackage.IncrementalBuildResult
+public typealias ImportEntryFallbackCache = LumiHotPreviewPackage.ImportEntryFallbackCache
+public typealias ModuleImportPlanCache = LumiHotPreviewPackage.ModuleImportPlanCache
+public typealias ModuleImportEligibilityChecker = LumiHotPreviewPackage.ModuleImportEligibilityChecker
+public typealias ModuleImportEligibilityCache = LumiHotPreviewPackage.ModuleImportEligibilityCache
+public typealias InterposingDylibLoader = LumiHotPreviewPackage.InterposingDylibLoader
+public typealias SharedMemoryFrameChannel = LumiHotPreviewPackage.SharedMemoryFrameChannel
