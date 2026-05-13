@@ -63,8 +63,8 @@ struct EditorPreviewLiveCanvasServiceTests {
         #expect(service.shouldShowLiveWindow)
     }
 
-    @Test("预览窗口 inactive 时隐藏，恢复 active 后重新显示")
-    func previewWindowActiveStateControlsVisibility() async throws {
+    @Test("预览窗口 active 状态变化不隐藏 Live 预览")
+    func previewWindowActiveStateChangesKeepVisibility() async throws {
         let service = EditorPreviewLiveCanvasService(displayMode: .live)
         var events: [String] = []
 
@@ -86,7 +86,7 @@ struct EditorPreviewLiveCanvasServiceTests {
         service.previewWindowDidBecomeActive()
         try await waitForAsyncCallbacks()
 
-        #expect(events == ["show", "hide", "show"])
+        #expect(!events.contains("hide"))
         #expect(service.shouldShowLiveWindow)
     }
 
@@ -167,8 +167,8 @@ struct EditorPreviewLiveCanvasServiceTests {
         #expect(!service.shouldShowLiveWindow)
     }
 
-    @Test("切换 panel tab 后保持隐藏，恢复可见后再显示")
-    func panelTabSwitchKeepsWindowHiddenUntilVisibleAgain() async throws {
+    @Test("切换 panel tab 后隐藏，画布恢复可见后再显示")
+    func panelTabSwitchHidesUntilCanvasVisibleAgain() async throws {
         let service = EditorPreviewLiveCanvasService(displayMode: .live)
         var events: [String] = []
 
@@ -184,23 +184,25 @@ struct EditorPreviewLiveCanvasServiceTests {
         service.liveCanvasDidAppear()
         try await waitForAsyncCallbacks()
 
-        service.previewWindowDidBecomeInactive()
+        service.liveCanvasDidDisappear()
         try await waitForAsyncCallbacks()
+
+        #expect(events.last == "hide")
+        #expect(!service.shouldShowLiveWindow)
 
         service.liveCanvasDidAppear()
         try await waitForAsyncCallbacks()
 
-        #expect(events.first == "show")
-        #expect(events.last == "hide")
-        #expect(events.filter { $0 == "show" }.count == 1)
+        #expect(events.last == "show")
+        #expect(events.filter { $0 == "show" }.count == 2)
         #expect(events.filter { $0 == "hide" }.count >= 1)
-        #expect(!service.shouldShowLiveWindow)
+        #expect(service.shouldShowLiveWindow)
 
         service.previewWindowDidBecomeActive()
         try await waitForAsyncCallbacks()
 
         #expect(events.last == "show")
-        #expect(events.filter { $0 == "show" }.count == 2)
+        #expect(events.filter { $0 == "show" }.count == 3)
         #expect(service.shouldShowLiveWindow)
     }
 

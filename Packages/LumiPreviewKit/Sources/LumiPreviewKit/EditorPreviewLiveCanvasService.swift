@@ -4,18 +4,10 @@ import Foundation
 /// 编辑器预览 Live Canvas 可见性与帧同步服务。
 ///
 /// 管理 Live 预览窗口的显示/隐藏状态逻辑，包括：
-/// - 预览窗口活跃状态跟踪
 /// - Canvas 可见性和帧矩形跟踪
 /// - 根据综合条件决定是否显示/隐藏 Live 窗口
 @MainActor
 public final class EditorPreviewLiveCanvasService {
-
-    /// 预览所属编辑器窗口是否仍可显示 Live overlay。
-    ///
-    /// 这里不能直接等同于 key window。Live overlay 自己可能短暂成为 key window
-    /// 以支持 TextField、List 等真实控件交互，此时所属编辑器窗口会 resign key，
-    /// 但 overlay 仍然应该保留。
-    public private(set) var isPreviewWindowActive: Bool = true
 
     /// Canvas 是否可见。
     public private(set) var isLiveCanvasVisible: Bool = false
@@ -48,7 +40,6 @@ public final class EditorPreviewLiveCanvasService {
     /// 是否具备显示 Live 窗口的全部条件。
     public var shouldShowLiveWindow: Bool {
         displayMode == .live
-            && isPreviewWindowActive
             && isLiveCanvasVisible
             && !liveCanvasRect.isEmpty
     }
@@ -139,7 +130,6 @@ public final class EditorPreviewLiveCanvasService {
 
     /// 预览所属编辑器窗口可见或恢复时调用。
     public func previewWindowDidBecomeActive() {
-        isPreviewWindowActive = true
         guard displayMode == .live else { return }
         Task {
             await onSyncLiveFrameFromEngine?()
@@ -149,11 +139,8 @@ public final class EditorPreviewLiveCanvasService {
 
     /// 预览所属编辑器窗口关闭、最小化或脱离窗口层级时调用。
     public func previewWindowDidBecomeInactive() {
-        isPreviewWindowActive = false
-        guard displayMode == .live else { return }
-        Task {
-            await syncLiveVisibility()
-        }
+        // Window focus/activity changes do not imply the preview canvas disappeared.
+        // Visibility is driven by the canvas frame and explicit close/minimize hooks.
     }
 
     /// 取消所有挂起的帧同步任务。
