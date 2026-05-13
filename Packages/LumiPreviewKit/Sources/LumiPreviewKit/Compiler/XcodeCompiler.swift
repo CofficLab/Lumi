@@ -352,10 +352,99 @@ final class XcodeCompiler: Sendable {
     }
 
     private static func packageLinkedLibraryArguments(from settings: [String: String]) -> [String] {
-        sourcePackageCheckoutDirectories(from: settings)
-            .flatMap(packageLinkedLibraries(in:))
-            .uniqued()
-            .map { "-l\($0)" }
+        let productDirectories = [
+            settings["BUILT_PRODUCTS_DIR"],
+            settings["TARGET_BUILD_DIR"],
+            settings["CONFIGURATION_BUILD_DIR"]
+        ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+
+        var arguments: [String] = []
+
+        // First, try to find SPM package object files from Xcode's DerivedData
+        let spmObjectFiles = productDirectories.flatMap { productDirectory -> [String] in
+            let derivedDataDirectory = productDirectory
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+            return collectSPMPackageObjectFiles(from: derivedDataDirectory)
+        }
+        .uniqued()
+
+        if !spmObjectFiles.isEmpty {
+            arguments.append(contentsOf: spmObjectFiles)
+        } else {
+            // Fallback to -l arguments from Package.swift linkedLibrary declarations
+            let libraryNames = sourcePackageCheckoutDirectories(from: settings)
+                .flatMap(packageLinkedLibraries(in:))
+                .uniqued()
+            arguments.append(contentsOf: libraryNames.map { "-l\($0)" })
+        }
+
+        return arguments
+    }
+
+    /// Collects .o files from SPM packages built by Xcode in DerivedData.
+    ///
+    /// Xcode compiles SPM dependencies to:
+    /// {DerivedData}/SourcePackages/artifacts/{arch}-apple-macosx/{TargetName}.build/*.o
+    private static func collectSPMPackageObjectFiles(from derivedDataDir: URL) -> [String] {
+        let fileManager = FileManager.default
+        let artifactsBaseDir = derivedDataDir
+            .appendingPathComponent("SourcePackages", isDirectory: true)
+            .appendingPathComponent("artifacts", isDirectory: true)
+
+        guard fileManager.fileExists(atPath: artifactsBaseDir.path) else {
+            return []
+        }
+
+        var objectFiles: [String] = []
+
+        // Search for architecture-specific build directories
+        let archDirs = ["arm64-apple-macosx", "x86_64-apple-macosx"]
+        for archDir in archDirs {
+            let archPath = artifactsBaseDir.appendingPathComponent(archDir, isDirectory: true)
+            guard let targetDirs = try? fileManager.contentsOfDirectory(
+                at: archPath,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+
+            for targetDir in targetDirs {
+                let buildDir = targetDir.appendingPathComponent("\(targetDir.lastPathComponent).build", isDirectory: true)
+                if !fileManager.fileExists(atPath: buildDir.path) {
+                    // Try direct child as build dir
+                    if let entries = try? fileManager.contentsOfDirectory(
+                        at: targetDir,
+                        includingPropertiesForKeys: [.isDirectoryKey],
+                        options: [.skipsHiddenFiles]
+                    ) {
+                        for entry in entries where entry.pathExtension == "build" {
+                            collectObjectFiles(from: entry, into: &objectFiles)
+                        }
+                    }
+                } else {
+                    collectObjectFiles(from: buildDir, into: &objectFiles)
+                }
+            }
+        }
+
+        return objectFiles
+    }
+
+    private static func collectObjectFiles(from directory: URL, into files: inout [String]) {
+        let fileManager = FileManager.default
+        guard let entries = try? fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else { return }
+
+        for entry in entries where entry.pathExtension == "o" {
+            files.append(entry.path)
+        }
     }
 
     private static func sourcePackageCheckoutDirectories(from settings: [String: String]) -> [URL] {
