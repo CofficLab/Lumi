@@ -284,6 +284,38 @@ public enum XcodeSemanticAvailability {
         return inspectCurrentFileContext(input: input)
     }
 
+    public static func inspectCurrentFileContext(
+        snapshot: XcodeEditorContextSnapshot?,
+        cachedState: BridgeCachedState?,
+        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus
+    ) -> Report {
+        let workspace = WorkspaceInspectionInput(
+            isXcodeProject: cachedState?.isXcodeProject ?? snapshot?.isXcodeProject ?? false,
+            isInitialized: cachedState?.isInitialized ?? false,
+            buildContextStatus: buildContextStatus
+        )
+
+        guard let snapshot else {
+            return inspectWorkspaceContext(input: workspace)
+        }
+
+        let matchedTargets = snapshot.currentFileMatchedTargets.sorted()
+        let compatibleTargets = matchedTargets.filter { snapshot.activeSchemeBuildableTargets.contains($0) }.sorted()
+        let fileName = snapshot.currentFilePath.map { URL(filePath: $0).lastPathComponent }
+
+        return inspectCurrentFileContext(
+            input: FileInspectionInput(
+                workspace: workspace,
+                fileName: fileName,
+                activeScheme: snapshot.activeScheme,
+                activeDestinationName: snapshot.activeDestination,
+                matchedTargets: matchedTargets,
+                compatibleTargets: compatibleTargets,
+                preferredTarget: snapshot.currentFileTarget
+            )
+        )
+    }
+
     public static func workspacePreflightError(operation: String, strength: Strength, contextProvider: any XcodeContextProviding) -> XcodeLSPError? {
         workspacePreflightError(report: inspectWorkspaceContext(contextProvider: contextProvider), strength: strength)
     }

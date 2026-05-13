@@ -21,9 +21,14 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     @Published var isResyncingBuildContext = false
     @Published var indexingTask: ProgressTask?
     private var notificationCancellable: AnyCancellable?
+    private var semanticRefreshTask: Task<Void, Never>?
 
     private var provider: XcodeBuildContextProvider?
     private var cancellables = Set<AnyCancellable>()
+
+    deinit {
+        semanticRefreshTask?.cancel()
+    }
 
     init() {
         if XcodePluginLog.verbose {
@@ -44,7 +49,11 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         activeDestination = bridge.activeDestination
         buildContextStatusDescription = bridge.buildContextStatusDescription
         latestEditorSnapshot = bridge.latestEditorSnapshot
-        semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString }, contextProvider: bridge)
+        semanticReport = Self.makeSemanticReport(
+            snapshot: bridge.latestEditorSnapshot,
+            cachedState: bridge.cachedState,
+            buildContextStatus: bridge.buildContextProvider?.buildContextStatus ?? .unknown
+        )
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
 
         if XcodePluginLog.verbose {
@@ -139,10 +148,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 if XcodePluginLog.verbose {
                     XcodePluginLog.logger.info("\(Self.t) 收到 projectContextDidChange 通知")
                 }
-                let bridge = XcodeProjectContextBridge.shared
-                self?.activeDestination = bridge.activeDestination
-                self?.latestEditorSnapshot = bridge.latestEditorSnapshot
-                self?.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString }, contextProvider: bridge)
+                self?.scheduleSemanticRefresh()
             }
 
         NotificationCenter.default
@@ -152,9 +158,7 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
                 if XcodePluginLog.verbose {
                         XcodePluginLog.logger.info("\(Self.t) 收到 projectSnapshotDidChange 通知")
                 }
-                let bridge = XcodeProjectContextBridge.shared
-                self?.latestEditorSnapshot = bridge.latestEditorSnapshot
-                self?.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString }, contextProvider: bridge)
+                self?.scheduleSemanticRefresh()
             }
             .store(in: &cancellables)
         
@@ -204,23 +208,50 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         if XcodePluginLog.verbose {
             XcodePluginLog.logger.info("\(Self.t) 开始 resyncBuildContext")
         }
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            defer { 
-                self.isResyncingBuildContext = false
-                if XcodePluginLog.verbose {
-                    XcodePluginLog.logger.info("\(Self.t) resyncBuildContext 完成")
-                }
-            }
+        Task.detached { [weak self] in
             await XcodeProjectContextBridge.shared.resyncBuildContext()
-            let bridge = XcodeProjectContextBridge.shared
-            self.activeDestination = bridge.activeDestination
-            self.latestEditorSnapshot = bridge.latestEditorSnapshot
-            self.semanticReport = XcodeSemanticAvailability.inspectCurrentFileContext(
-                uri: bridge.latestEditorSnapshot?.currentFilePath.flatMap { URL(filePath: $0).absoluteString },
-                contextProvider: bridge
-            )
+            await self?.finishResyncBuildContext()
         }
+    }
+
+    private func scheduleSemanticRefresh() {
+        semanticRefreshTask?.cancel()
+        semanticRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            guard !Task.isCancelled else { return }
+            self?.refreshSemanticStateFromBridge()
+        }
+    }
+
+    private func refreshSemanticStateFromBridge() {
+        let bridge = XcodeProjectContextBridge.shared
+        activeDestination = bridge.activeDestination
+        latestEditorSnapshot = bridge.latestEditorSnapshot
+        semanticReport = Self.makeSemanticReport(
+            snapshot: bridge.latestEditorSnapshot,
+            cachedState: bridge.cachedState,
+            buildContextStatus: bridge.buildContextProvider?.buildContextStatus ?? .unknown
+        )
+    }
+
+    private func finishResyncBuildContext() {
+        refreshSemanticStateFromBridge()
+        isResyncingBuildContext = false
+        if XcodePluginLog.verbose {
+            XcodePluginLog.logger.info("\(Self.t) resyncBuildContext 完成")
+        }
+    }
+
+    private static func makeSemanticReport(
+        snapshot: XcodeEditorContextSnapshot?,
+        cachedState: BridgeCachedState?,
+        buildContextStatus: XcodeBuildContextProvider.BuildContextStatus
+    ) -> XcodeSemanticAvailability.Report {
+        XcodeSemanticAvailability.inspectCurrentFileContext(
+            snapshot: snapshot,
+            cachedState: cachedState,
+            buildContextStatus: buildContextStatus
+        )
     }
 
     var isIndexing: Bool {
