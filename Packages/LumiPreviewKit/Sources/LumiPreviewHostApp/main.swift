@@ -442,7 +442,10 @@ private final class PreviewRenderer {
             return RenderResponse(success: false, message: "No live preview content to show.")
         }
 
-        liveWindow.orderFront(nil)
+        // The host app stays in accessory/background mode, so a normal orderFront
+        // is not always enough to surface the overlay above Lumi's active window.
+        // Keep the panel at normal level, but force this specific show operation.
+        liveWindow.orderFrontRegardless()
 
         return RenderResponse(
             success: true,
@@ -510,7 +513,7 @@ private final class PreviewRenderer {
                     liveWindow?.setFrame(liveFrame, display: true)
                 }
                 if wasVisible {
-                    liveWindow?.orderFront(nil)
+                    liveWindow?.orderFrontRegardless()
                 }
 
                 return RenderResponse(

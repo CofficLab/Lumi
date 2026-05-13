@@ -401,11 +401,11 @@ struct PreviewDisplayModeTests {
     }
 
     @MainActor
-    @Test("LivePreviewWindow 在失焦后自动隐藏且不提升层级")
-    func livePreviewWindowHidesOnDeactivateAtNormalLevel() {
+    @Test("LivePreviewWindow 由主 app 显隐控制且不提升层级")
+    func livePreviewWindowUsesMainAppVisibilityControlAtNormalLevel() {
         let window = LivePreviewWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 180))
 
-        #expect(window.hidesOnDeactivate)
+        #expect(!window.hidesOnDeactivate)
         #expect(window.level == .normal)
         #expect(window.styleMask.contains(.nonactivatingPanel))
         #expect(window.collectionBehavior == [.fullScreenAuxiliary])

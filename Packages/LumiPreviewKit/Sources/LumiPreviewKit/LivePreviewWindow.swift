@@ -17,7 +17,7 @@ package final class LivePreviewWindow: NSPanel {
         ignoresMouseEvents = false
         hasShadow = false
         level = .normal
-        hidesOnDeactivate = true
+        hidesOnDeactivate = false
         collectionBehavior = [.fullScreenAuxiliary]
         isOpaque = false
         becomesKeyOnlyIfNeeded = true
