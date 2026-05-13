@@ -11,11 +11,11 @@ enum EditorRemoteHotPreviewHostState: String {
 
     var title: String {
         switch self {
-        case .idle: "Idle"
-        case .launching: "Launching"
-        case .connected: "Connected"
-        case .rendering: "Rendering"
-        case .failed: "Failed"
+        case .idle: String(localized: "Idle", table: "EditorPreviewRemoteHotPlugin")
+        case .launching: String(localized: "Launching", table: "EditorPreviewRemoteHotPlugin")
+        case .connected: String(localized: "Connected", table: "EditorPreviewRemoteHotPlugin")
+        case .rendering: String(localized: "Rendering", table: "EditorPreviewRemoteHotPlugin")
+        case .failed: String(localized: "Failed", table: "EditorPreviewRemoteHotPlugin")
         }
     }
 }
@@ -28,8 +28,8 @@ enum EditorRemoteHotPreviewUpdatePhase: String, Equatable {
     var title: String? {
         switch self {
         case .idle: nil
-        case .waitingToRefresh: "Waiting to Refresh"
-        case .refreshing: "Refreshing Preview"
+        case .waitingToRefresh: String(localized: "Waiting to Refresh", table: "EditorPreviewRemoteHotPlugin")
+        case .refreshing: String(localized: "Refreshing Preview", table: "EditorPreviewRemoteHotPlugin")
         }
     }
 }

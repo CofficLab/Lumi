@@ -13,8 +13,8 @@ actor EditorRemoteHotPreviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
     static let id: String = "EditorRemoteHotPreview"
-    static let displayName: String = "Hot Preview"
-    static let description: String = "Experimental hot preview powered by LumiHotPreviewKit"
+    static let displayName: String = String(localized: "Hot Preview", table: "EditorPreviewRemoteHotPlugin")
+    static let description: String = String(localized: "Experimental hot preview powered by LumiHotPreviewKit", table: "EditorPreviewRemoteHotPlugin")
     static let iconName: String = "bolt.horizontal"
     static var isConfigurable: Bool { false }
     static var order: Int { 83 }
@@ -26,7 +26,7 @@ actor EditorRemoteHotPreviewPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-hot-preview",
-            title: "Hot Preview",
+            title: String(localized: "Hot Preview", table: "EditorPreviewRemoteHotPlugin"),
             systemImage: "bolt.horizontal",
             priority: 83
         )]

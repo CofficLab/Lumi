@@ -28,13 +28,13 @@ struct HotPreviewCanvas: View {
         if viewModel.previews.isEmpty {
             HotPreviewMessageView(
                 systemImage: "bolt.slash",
-                message: "No #Preview in the current Swift file",
+                message: String(localized: "No #Preview in the current Swift file", table: "EditorPreviewRemoteHotPlugin"),
                 color: .secondary
             )
         } else if viewModel.hostState == .idle && viewModel.renderImage == nil && viewModel.failureMessage == nil {
             HotPreviewMessageView(
                 systemImage: "play.rectangle",
-                message: "Start hot preview to render a frame",
+                message: String(localized: "Start hot preview to render a frame", table: "EditorPreviewRemoteHotPlugin"),
                 color: .secondary
             )
         } else if let failureMessage = viewModel.failureMessage, viewModel.renderImage == nil {
@@ -61,15 +61,15 @@ struct HotPreviewCanvas: View {
                     .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
             }
 
-            Text("Live: \(viewModel.livePreviewInfo.state.rawValue)")
+            Text(String(localized: "Live: \(viewModel.livePreviewInfo.state.rawValue)", table: "EditorPreviewRemoteHotPlugin"))
                 .font(.system(size: 11))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 
-            Text("Active: \(viewModel.effectiveDisplayMode.rawValue)")
+            Text(String(localized: "Active: \(viewModel.effectiveDisplayMode.rawValue)", table: "EditorPreviewRemoteHotPlugin"))
                 .font(.system(size: 11))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 
-            Text("Transport: \(viewModel.transportSummary)")
+            Text(String(localized: "Transport: \(viewModel.transportSummary)", table: "EditorPreviewRemoteHotPlugin"))
                 .font(.system(size: 11))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 
@@ -137,13 +137,13 @@ struct HotPreviewCanvas: View {
                 } else if viewModel.isLiveLoading {
                     HotPreviewMessageView(
                         systemImage: "bolt.fill",
-                        message: "Starting hot live preview",
+                        message: String(localized: "Starting hot live preview", table: "EditorPreviewRemoteHotPlugin"),
                         color: .orange
                     )
                 } else {
                     HotPreviewMessageView(
                         systemImage: "play.rectangle.fill",
-                        message: "Hot live preview active",
+                        message: String(localized: "Hot live preview active", table: "EditorPreviewRemoteHotPlugin"),
                         color: .green
                     )
                 }

@@ -10,7 +10,7 @@ struct HotPreviewToolbar: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 
-            Text("Hot Preview")
+            Text(String(localized: "Hot Preview", table: "EditorPreviewRemoteHotPlugin"))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
 
@@ -30,7 +30,7 @@ struct HotPreviewToolbar: View {
             }
             .buttonStyle(.plain)
             .disabled(!viewModel.canStart)
-            .help("Start hot preview")
+            .help(String(localized: "Start hot preview", table: "EditorPreviewRemoteHotPlugin"))
 
             Button {
                 viewModel.renderFrame()
@@ -40,7 +40,7 @@ struct HotPreviewToolbar: View {
             }
             .buttonStyle(.plain)
             .disabled(viewModel.hostState == .idle)
-            .help("Refresh hot preview")
+            .help(String(localized: "Refresh hot preview", table: "EditorPreviewRemoteHotPlugin"))
 
             Button {
                 viewModel.stopHost()
@@ -50,7 +50,7 @@ struct HotPreviewToolbar: View {
             }
             .buttonStyle(.plain)
             .disabled(!viewModel.canStop)
-            .help("Stop hot preview")
+            .help(String(localized: "Stop hot preview", table: "EditorPreviewRemoteHotPlugin"))
         }
         .frame(maxWidth: .infinity, minHeight: 38, maxHeight: 38, alignment: .leading)
         .padding(.horizontal, 12)

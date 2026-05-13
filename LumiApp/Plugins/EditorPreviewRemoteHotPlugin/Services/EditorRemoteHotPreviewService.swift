@@ -18,7 +18,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     @Published private(set) var transportSummary = "-"
     @Published private(set) var failureMessage: String?
     @Published private(set) var updatePhase: EditorRemoteHotPreviewUpdatePhase = .idle
-    @Published private(set) var lastFrameSummary = "No Frame"
+    @Published private(set) var lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
     @Published private(set) var diagnosticSummary = "host: idle | live: available | frame: 0, 0, 0 x 0"
     @Published private(set) var livePreviewInfo = LumiPreviewPackage.LivePreviewInfo()
     @Published private(set) var isLiveLoading = false
@@ -246,12 +246,12 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
         guard let selectedPreview else {
             resetRenderState()
-            lastFrameSummary = "No Preview"
+            lastFrameSummary = String(localized: "No Preview", table: "EditorPreviewRemoteHotPlugin")
             return
         }
 
         guard let hostExecutableURL = LumiHotPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
-            handle(.failed(message: "Hot preview host executable was not found."))
+            handle(.failed(message: String(localized: "Hot preview host executable was not found.", table: "EditorPreviewRemoteHotPlugin")))
             return
         }
         if let previousSession = previewSession, let previousEngine = previewEngine {
@@ -259,7 +259,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             await previousEngine.stopPreview(previousSession)
         }
 
-        preserveCurrentFrameForRestart(message: "Rebuilding hot preview. Showing the previous frame.")
+        preserveCurrentFrameForRestart(message: String(localized: "Rebuilding hot preview. Showing the previous frame.", table: "EditorPreviewRemoteHotPlugin"))
         hostState = .launching
         updatePhase = .refreshing
         failureMessage = nil
@@ -268,7 +268,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         performanceSummary = nil
         transportSummary = "-"
         lastFrame = nil
-        lastFrameSummary = "Waiting for Host"
+        lastFrameSummary = "Waiting for Host"  // non-user-facing diagnostic label
 
         let engine = previewEngine ?? LumiHotPreviewPackage.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
         previewEngine = engine
@@ -309,7 +309,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         hostState = .rendering
         updatePhase = .refreshing
         failureMessage = nil
-        lastFrameSummary = "Frame Pending"
+        lastFrameSummary = "Frame Pending"  // non-user-facing diagnostic label
 
         do {
             if let selectedPreview {
@@ -396,7 +396,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             failureMessage = message
             hostState = .failed
             isShowingStaleFrame = true
-            modeStatusMessage = "Refresh failed. Showing the previous frame."
+            modeStatusMessage = String(localized: "Refresh failed. Showing the previous frame.", table: "EditorPreviewRemoteHotPlugin")
             lastFrameSummary = message
             updatePhase = .idle
         } else {
@@ -501,7 +501,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         hostState = .idle
         isShowingStaleFrame = false
         modeStatusMessage = nil
-        lastFrameSummary = "No Frame"
+        lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
         refreshDiagnosticSummary()
     }
 
@@ -551,7 +551,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         effectiveDisplayMode = .live
         isLiveLoading = true
         livePreviewInfo = LumiPreviewPackage.LivePreviewInfo(state: .launching)
-        modeStatusMessage = "Starting live preview."
+        modeStatusMessage = String(localized: "Starting live preview.", table: "EditorPreviewRemoteHotPlugin")
         refreshDiagnosticSummary()
 
         do {
@@ -761,7 +761,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
            let reason = livePreviewInfo.unavailableReason,
            !reason.isEmpty {
             if preferredDisplayMode == .live && effectiveDisplayMode == .image {
-                modeStatusMessage = "Live preview is unavailable. Showing image preview. \(reason)"
+                modeStatusMessage = String(localized: "Live preview is unavailable. Showing image preview. \(reason)", table: "EditorPreviewRemoteHotPlugin")
             } else {
                 modeStatusMessage = reason
             }
@@ -769,17 +769,17 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         }
 
         if isLiveLoading {
-            modeStatusMessage = "Starting live preview."
+            modeStatusMessage = String(localized: "Starting live preview.", table: "EditorPreviewRemoteHotPlugin")
             return
         }
 
         if preferredDisplayMode == .live && effectiveDisplayMode == .image {
-            modeStatusMessage = "Live mode is preferred, but the host is currently showing image preview."
+            modeStatusMessage = String(localized: "Live mode is preferred, but the host is currently showing image preview.", table: "EditorPreviewRemoteHotPlugin")
             return
         }
 
         if isShowingStaleFrame {
-            modeStatusMessage = "Showing the previous frame because no fresh frame is available yet."
+            modeStatusMessage = String(localized: "Showing the previous frame because no fresh frame is available yet.", table: "EditorPreviewRemoteHotPlugin")
             return
         }
 
