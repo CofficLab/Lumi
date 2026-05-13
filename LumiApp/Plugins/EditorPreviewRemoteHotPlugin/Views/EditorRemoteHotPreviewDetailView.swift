@@ -1,10 +1,8 @@
-import AppKit
 import LumiPreviewKit
 import SwiftUI
 
 struct EditorRemoteHotPreviewDetailView: View {
     @EnvironmentObject private var editorVM: EditorVM
-    @EnvironmentObject private var themeVM: ThemeVM
     @StateObject private var viewModel = EditorRemoteHotPreviewViewModel()
 
     private var sourceText: String? {
@@ -25,8 +23,13 @@ struct EditorRemoteHotPreviewDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            toolbar
-            content
+            HotPreviewToolbar(viewModel: viewModel)
+            HStack(spacing: 0) {
+                HotPreviewList(viewModel: viewModel)
+                    .frame(width: 230)
+                Divider()
+                HotPreviewCanvas(viewModel: viewModel)
+            }
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .onAppear {
@@ -44,246 +47,7 @@ struct EditorRemoteHotPreviewDetailView: View {
         }
     }
 
-    private var toolbar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "bolt.horizontal")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-
-            Text("Hot Preview")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
-
-            Spacer(minLength: 0)
-
-            if let updateTitle = viewModel.updatePhase.title {
-                updateBadge(updateTitle)
-            }
-
-            statusBadge
-
-            Button {
-                viewModel.startHost()
-            } label: {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .buttonStyle(.plain)
-            .disabled(!viewModel.canStart)
-            .help("Start hot preview")
-
-            Button {
-                viewModel.renderFrame()
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.hostState == .idle)
-            .help("Refresh hot preview")
-
-            Button {
-                viewModel.stopHost()
-            } label: {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .buttonStyle(.plain)
-            .disabled(!viewModel.canStop)
-            .help("Stop hot preview")
-        }
-        .frame(maxWidth: .infinity, minHeight: 38, maxHeight: 38, alignment: .leading)
-        .padding(.horizontal, 12)
-        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
-    }
-
-    private var statusBadge: some View {
-        HStack(spacing: 5) {
-            Circle()
-                .fill(statusColor)
-                .frame(width: 7, height: 7)
-            Text(viewModel.hostState.title)
-                .lineLimit(1)
-        }
-        .font(.system(size: 11, weight: .medium))
-        .foregroundColor(statusColor)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(statusColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
-    }
-
-    private func updateBadge(_ title: String) -> some View {
-        HStack(spacing: 5) {
-            ProgressView()
-                .controlSize(.small)
-                .scaleEffect(0.55)
-                .frame(width: 10, height: 10)
-            Text(title)
-                .lineLimit(1)
-        }
-        .font(.system(size: 11, weight: .medium))
-        .foregroundColor(.orange)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(Color.orange.opacity(0.14), in: RoundedRectangle(cornerRadius: 5))
-    }
-
-    private var content: some View {
-        HStack(spacing: 0) {
-            previewList
-                .frame(width: 230)
-
-            Divider()
-
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(themeVM.activeAppTheme.workspaceBackgroundColor())
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
-                    )
-
-                if viewModel.previews.isEmpty {
-                    messageView(systemImage: "bolt.slash", message: "No #Preview in the current Swift file", color: .secondary)
-                } else if viewModel.hostState == .idle && viewModel.renderImage == nil && visibleFailureMessage == nil {
-                    messageView(systemImage: "play.rectangle", message: "Start hot preview to render a frame", color: .secondary)
-                } else if let failureMessage = visibleFailureMessage, viewModel.renderImage == nil {
-                    messageView(systemImage: "exclamationmark.triangle", message: failureMessage, color: .orange)
-                } else {
-                    liveCanvasSurface
-                        .padding(18)
-                }
-            }
-            .overlay(alignment: .topLeading) {
-                canvasStatus
-                    .padding(12)
-            }
-            .padding(18)
-        }
-    }
-
-    private var previewList: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if viewModel.previews.isEmpty {
-                Text("No Preview")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                    .padding(14)
-            } else {
-                ForEach(viewModel.previews) { preview in
-                    Button {
-                        viewModel.selectedPreviewID = preview.id
-                    } label: {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(preview.title)
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
-                                .lineLimit(1)
-                            Text("Line \(preview.lineNumber)-\(preview.endLineNumber)")
-                                .font(.system(size: 11))
-                                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                                .lineLimit(1)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(
-                            preview.id == viewModel.selectedPreviewID
-                                ? themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.16)
-                                : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 6)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.04))
-    }
-
-    private var canvasStatus: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(viewModel.lastFrameSummary)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
-
-            if let performanceSummary = viewModel.performanceSummary {
-                Text(performanceSummary)
-                    .font(.system(size: 11))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-            }
-
-            Text("Live: \(viewModel.livePreviewInfo.state.rawValue)")
-                .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-
-            Text("Active: \(viewModel.effectiveDisplayMode.rawValue)")
-                .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-
-            Text("Transport: \(viewModel.transportSummary)")
-                .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-
-            if let modeStatusMessage = viewModel.modeStatusMessage {
-                Text(modeStatusMessage)
-                    .font(.system(size: 11))
-                    .foregroundColor(.orange)
-                    .lineLimit(4)
-            }
-
-            if let renderMessage = viewModel.renderMessage {
-                Text(renderMessage)
-                    .font(.system(size: 11))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-            }
-
-            if let liveReason = viewModel.livePreviewInfo.unavailableReason, !liveReason.isEmpty {
-                Text(liveReason)
-                    .font(.system(size: 11))
-                    .foregroundColor(.orange)
-                    .lineLimit(4)
-            }
-
-            if let diagnostics = viewModel.diagnostics, !diagnostics.isEmpty {
-                Text(diagnostics)
-                    .font(.system(size: 11))
-                    .foregroundColor(.orange)
-                    .lineLimit(6)
-            }
-
-            Text(viewModel.diagnosticSummary)
-                .font(.system(size: 10, design: .monospaced))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                .lineLimit(3)
-        }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var visibleFailureMessage: String? {
-        if let failureMessage = viewModel.failureMessage {
-            return failureMessage
-        }
-        return nil
-    }
-
-    private var statusColor: Color {
-        switch viewModel.hostState {
-        case .idle:
-            return themeVM.activeAppTheme.workspaceSecondaryTextColor().opacity(0.7)
-        case .launching, .rendering:
-            return .orange
-        case .connected:
-            return .green
-        case .failed:
-            return .red
-        }
-    }
+    @EnvironmentObject private var themeVM: ThemeVM
 
     private func refreshScanAndStartIfNeeded() {
         viewModel.update(sourceText: sourceText, fileURL: currentFileURL)
@@ -297,79 +61,5 @@ struct EditorRemoteHotPreviewDetailView: View {
         if viewModel.hostState == .connected || viewModel.hostState == .rendering {
             viewModel.scheduleRenderFrame(reason: "editor refresh signal changed")
         }
-    }
-
-    private var liveCanvasSurface: some View {
-        GeometryReader { geometry in
-            let preferredSize = viewModel.renderImage?.size ?? CGSize(width: 900, height: 560)
-            let canvasSize = scaledCanvasSize(for: geometry.size, preferredSize: preferredSize)
-
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(themeVM.activeAppTheme.workspaceBackgroundColor())
-
-                if let renderImage = viewModel.renderImage {
-                    Image(nsImage: renderImage)
-                        .resizable()
-                        .interpolation(.high)
-                        .frame(width: canvasSize.width, height: canvasSize.height)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
-                        )
-                } else if let failureMessage = visibleFailureMessage {
-                    messageView(systemImage: "exclamationmark.triangle", message: failureMessage, color: .orange)
-                } else if viewModel.isLiveLoading {
-                    messageView(systemImage: "bolt.fill", message: "Starting hot live preview", color: .orange)
-                } else {
-                    messageView(systemImage: "play.rectangle.fill", message: "Hot live preview active", color: .green)
-                }
-            }
-            .frame(width: canvasSize.width, height: canvasSize.height)
-            .background(
-                EditorPreviewLiveCanvasFrameReporter { screenFrame, scale in
-                    viewModel.updateLiveCanvasRect(screenFrame, scale: scale)
-                } onFrameUnavailable: {
-                    viewModel.liveCanvasFrameUnavailable()
-                }
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onAppear {
-                viewModel.liveCanvasDidAppear()
-            }
-            .onDisappear {
-                viewModel.liveCanvasDidDisappear()
-            }
-            .onChange(of: geometry.size) { _, _ in
-                EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
-            }
-        }
-    }
-
-    private func messageView(systemImage: String, message: String, color: Color) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.system(size: 22, weight: .light))
-                .foregroundColor(color)
-            Text(message)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-        }
-    }
-
-    private func scaledCanvasSize(for availableSize: CGSize, preferredSize: CGSize) -> CGSize {
-        guard availableSize.width > 0, availableSize.height > 0 else {
-            return .zero
-        }
-
-        let widthScale = availableSize.width / max(preferredSize.width, 1)
-        let heightScale = availableSize.height / max(preferredSize.height, 1)
-        let scale = min(widthScale, heightScale, 1)
-
-        return CGSize(
-            width: preferredSize.width * scale,
-            height: preferredSize.height * scale
-        )
     }
 }
