@@ -221,11 +221,27 @@ public struct MarkdownBlockRenderer: View {
 /// 仅支持水平滚动的 NSScrollView 包装。
 /// 垂直方向的滚轮事件会被转发给视图层级中的外层 NSScrollView（即聊天列表），
 /// 从而实现：代码块水平可滚动、垂直滚动由外层列表接管。
+///
+/// 关键设计：使用 `sizeThatFits` 让 SwiftUI 布局系统感知到内容的真实高度，
+/// 避免 NSScrollView 作为 documentView 时高度被外层 List 行高估算截断。
 struct HorizontalScrollView<Content: View>: NSViewRepresentable {
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
+    }
+
+    func sizeThatFits(
+        _ proposal: ProposedViewSize,
+        nsView: HorizontalOnlyScrollView,
+        context: Context
+    ) -> CGSize? {
+        guard let hostingView = nsView.documentView as? NSHostingView<Content> else {
+            return nil
+        }
+        // 让 NSHostingView 根据内容计算自身所需尺寸
+        let size = hostingView.fittingSize
+        return CGSize(width: proposal.width ?? size.width, height: size.height)
     }
 
     func makeNSView(context: Context) -> HorizontalOnlyScrollView {
@@ -244,12 +260,12 @@ struct HorizontalScrollView<Content: View>: NSViewRepresentable {
         hostingView.setContentCompressionResistancePriority(.required, for: .horizontal)
         scrollView.documentView = hostingView
 
-        // hostingView 顶部和高度紧贴 clip view；
-        // 左侧锚定防止初始偏移；最小宽度保证不窄于可见区域（内容更宽时自然撑开滚动）
+        // hostingView 顶部和左侧锚定 clip view；
+        // 宽度至少等于可见区域（更宽时自然撑开触发水平滚动）；
+        // 高度由内容自适应（不锁定），确保多行代码完整显示。
         NSLayoutConstraint.activate([
             hostingView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
             hostingView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
-            hostingView.heightAnchor.constraint(equalTo: scrollView.contentView.heightAnchor),
             hostingView.widthAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.widthAnchor),
         ])
 
