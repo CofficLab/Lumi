@@ -803,9 +803,6 @@
         }
       }
     },
-    "Active: %@" : {
-
-    },
     "Add" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2761,9 +2758,6 @@
         }
       }
     },
-    "Hot Preview" : {
-
-    },
     "How to Use" : {
 
     },
@@ -3067,9 +3061,6 @@
 
     },
     "Live sample" : {
-
-    },
-    "Live: %@" : {
 
     },
     "Load" : {
@@ -4150,9 +4141,6 @@
         }
       }
     },
-    "Refresh hot preview" : {
-
-    },
     "Refreshing Preview" : {
 
     },
@@ -4705,9 +4693,6 @@
         }
       }
     },
-    "Start hot preview" : {
-
-    },
     "Start preview host" : {
 
     },
@@ -4763,9 +4748,6 @@
           }
         }
       }
-    },
-    "Stop hot preview" : {
-
     },
     "Stop preview host" : {
 
@@ -5152,9 +5134,6 @@
           }
         }
       }
-    },
-    "Transport: %@" : {
-
     },
     "Trash" : {
       "extractionState" : "stale",

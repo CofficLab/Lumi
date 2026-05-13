@@ -3,6 +3,7 @@ import SwiftUI
 struct HotPreviewToolbar: View {
     @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var viewModel: EditorRemoteHotPreviewViewModel
+    @State private var showDiagnostics = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -21,6 +22,21 @@ struct HotPreviewToolbar: View {
             }
 
             statusBadge
+
+            Button {
+                showDiagnostics.toggle()
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(showDiagnostics
+                        ? themeVM.activeAppTheme.workspaceTextColor()
+                        : themeVM.activeAppTheme.workspaceSecondaryTextColor())
+            }
+            .buttonStyle(.plain)
+            .help(String(localized: "Toggle diagnostics info", table: "EditorPreviewRemoteHotPlugin"))
+            .popover(isPresented: $showDiagnostics, arrowEdge: .bottom) {
+                HotPreviewDiagnosticsPanel(viewModel: viewModel)
+            }
 
             Button {
                 viewModel.startHost()

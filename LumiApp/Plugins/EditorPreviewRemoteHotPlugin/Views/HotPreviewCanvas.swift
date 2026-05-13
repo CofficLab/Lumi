@@ -16,10 +16,6 @@ struct HotPreviewCanvas: View {
 
             canvasContent
         }
-        .overlay(alignment: .topLeading) {
-            canvasStatus
-                .padding(12)
-        }
         .padding(18)
     }
 
@@ -47,66 +43,6 @@ struct HotPreviewCanvas: View {
             liveCanvasSurface
                 .padding(18)
         }
-    }
-
-    private var canvasStatus: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(viewModel.lastFrameSummary)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
-
-            if let performanceSummary = viewModel.performanceSummary {
-                Text(performanceSummary)
-                    .font(.system(size: 11))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-            }
-
-            Text(String(localized: "Live: \(viewModel.livePreviewInfo.state.rawValue)", table: "EditorPreviewRemoteHotPlugin"))
-                .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-
-            Text(String(localized: "Active: \(viewModel.effectiveDisplayMode.rawValue)", table: "EditorPreviewRemoteHotPlugin"))
-                .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-
-            Text(String(localized: "Transport: \(viewModel.transportSummary)", table: "EditorPreviewRemoteHotPlugin"))
-                .font(.system(size: 11))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-
-            if let modeStatusMessage = viewModel.modeStatusMessage {
-                Text(modeStatusMessage)
-                    .font(.system(size: 11))
-                    .foregroundColor(.orange)
-                    .lineLimit(4)
-            }
-
-            if let renderMessage = viewModel.renderMessage {
-                Text(renderMessage)
-                    .font(.system(size: 11))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-            }
-
-            if let liveReason = viewModel.livePreviewInfo.unavailableReason, !liveReason.isEmpty {
-                Text(liveReason)
-                    .font(.system(size: 11))
-                    .foregroundColor(.orange)
-                    .lineLimit(4)
-            }
-
-            if let diagnostics = viewModel.diagnostics, !diagnostics.isEmpty {
-                Text(diagnostics)
-                    .font(.system(size: 11))
-                    .foregroundColor(.orange)
-                    .lineLimit(6)
-            }
-
-            Text(viewModel.diagnosticSummary)
-                .font(.system(size: 10, design: .monospaced))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                .lineLimit(3)
-        }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
     private var liveCanvasSurface: some View {

@@ -61,13 +61,18 @@ final class SPMCompiler: Sendable {
             }
         }
 
-        arguments.append(
-            contentsOf: Self.linkInputArguments(
-                in: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
-                excludingProductNames: targetName.map { [$0] } ?? []
-            )
+        let linkInputs = Self.linkInputArguments(
+            in: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
+            excludingProductNames: targetName.map { [$0] } ?? []
         )
+        arguments.append(contentsOf: linkInputs)
         arguments.append(contentsOf: Self.packageLinkedLibraryArguments(packageDirectory: packageDirectory))
+
+        if !linkInputs.isEmpty {
+            fputs("[SPMCompiler] previewCompilerArguments found \(linkInputs.count) .o link inputs for \(packageDirectory.lastPathComponent)\n", stderr)
+        } else {
+            fputs("[SPMCompiler] previewCompilerArguments found NO .o link inputs for \(packageDirectory.lastPathComponent), directories: \(existingDirectories)\n", stderr)
+        }
 
         return arguments
     }
@@ -190,7 +195,9 @@ final class SPMCompiler: Sendable {
         var inputs: [String] = []
 
         for directory in directories {
-            guard let entries = try? fileManager.contentsOfDirectory(
+            // .o files in SPM builds are inside TargetName.build/ subdirectories,
+            // so we need to search recursively.
+            guard let enumerator = fileManager.enumerator(
                 at: directory,
                 includingPropertiesForKeys: [.isRegularFileKey],
                 options: [.skipsHiddenFiles]
@@ -198,7 +205,7 @@ final class SPMCompiler: Sendable {
                 continue
             }
 
-            for entry in entries {
+            for case let entry as URL in enumerator where entry.pathExtension == "o" {
                 guard isLinkInput(entry, excludingProductNames: productNames) else { continue }
                 inputs.append(entry.path)
             }

@@ -261,6 +261,15 @@ final class XcodeCompiler: Sendable {
             arguments.append("-profile-generate")
         }
 
+        // For SPM packages embedded in Xcode projects, collect .o files from
+        // DerivedData's Build/Products directory and Intermediates.
+        // Xcode produces a merged .o per package target (e.g. LumiUI.o) which
+        // contains all symbols — these MUST be linked even if the name matches
+        // a product name, because they're the actual implementations.
+        arguments.append(contentsOf: spmPackageObjectFileArguments(from: settings))
+
+        // Also collect dependency .o files from the build products directory,
+        // but exclude the main app's own .o file.
         arguments.append(
             contentsOf: linkInputArguments(
                 in: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
@@ -274,6 +283,81 @@ final class XcodeCompiler: Sendable {
         }
 
         return arguments
+    }
+
+    /// Collects .o files for SPM package targets built by Xcode.
+    ///
+    /// Xcode compiles each SPM package target into a single merged .o file
+    /// (e.g. `LumiUI.o`) in `Build/Products/`. These contain all symbols
+    /// including types used by previews and must be linked into the preview dylib.
+    private static func spmPackageObjectFileArguments(from settings: [String: String]) -> [String] {
+        let productDirectories = [
+            settings["BUILT_PRODUCTS_DIR"],
+            settings["TARGET_BUILD_DIR"],
+            settings["CONFIGURATION_BUILD_DIR"]
+        ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+
+        var objectFiles: [String] = []
+        let mainTargetName = settings["TARGET_NAME"] ?? ""
+        let productName = settings["PRODUCT_NAME"] ?? ""
+
+        for directory in productDirectories {
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+
+            for entry in entries where entry.pathExtension == "o" {
+                let baseName = entry.deletingPathExtension().lastPathComponent
+                // Only include .o files that are NOT the main app's own object file.
+                // SPM package targets produce separate .o files (e.g. LumiUI.o).
+                guard baseName != mainTargetName && baseName != productName else { continue }
+                objectFiles.append(entry.path)
+            }
+        }
+
+        // Also search for individual .o files in the Intermediates build directory.
+        // These are produced for the main target and its dependencies.
+        let intermediatesDirectories = productDirectories
+            .map { dir -> URL in
+                dir.deletingLastPathComponent()
+                    .deletingLastPathComponent()
+                    .appendingPathComponent("Intermediates.noindex", isDirectory: true)
+            }
+            .first { FileManager.default.fileExists(atPath: $0.path) }
+
+        if let intermediatesDir = intermediatesDirectories {
+            collectObjectFilesRecursively(
+                from: intermediatesDir,
+                excludingProductNames: Set([mainTargetName, productName].filter { !$0.isEmpty }),
+                into: &objectFiles
+            )
+        }
+
+        return objectFiles.sorted().uniqued()
+    }
+
+    /// Recursively collects .o files from a directory tree, excluding specific product names.
+    private static func collectObjectFilesRecursively(
+        from directory: URL,
+        excludingProductNames: Set<String>,
+        into files: inout [String]
+    ) {
+        guard let enumerator = FileManager.default.enumerator(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else { return }
+
+        for case let entry as URL in enumerator where entry.pathExtension == "o" {
+            let baseName = entry.deletingPathExtension().lastPathComponent
+            guard !excludingProductNames.contains(baseName) else { continue }
+            files.append(entry.path)
+        }
     }
 
     private static func splitBuildSettingList(_ value: String) -> [String] {
