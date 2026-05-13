@@ -1,8 +1,10 @@
 import Foundation
 import Darwin
 
+public extension LumiPreviewPackage {
+
 /// 预览宿主进程管理器：负责启动和管理独立的预览进程。
-public final class PreviewHostProcess: Sendable {
+final class PreviewHostProcess: Sendable {
     /// 创建预览宿主进程管理器。
     public init() {}
 
@@ -49,7 +51,7 @@ public final class PreviewHostProcess: Sendable {
 }
 
 /// 宿主进程连接。
-public protocol HostConnection: AnyObject, Sendable {
+protocol HostConnection: AnyObject, Sendable {
     /// 宿主进程是否仍在运行。
     var isRunning: Bool { get async }
 
@@ -103,10 +105,12 @@ public protocol HostConnection: AnyObject, Sendable {
     func terminate() async
 }
 
-public extension HostConnection {
+}
+
+public extension LumiPreviewPackage.HostConnection {
     /// 使用空配置发送渲染请求。
     @discardableResult
-    func requestRender(discovery: PreviewDiscovery) async throws -> RenderResponse {
+    func requestRender(discovery: LumiPreviewPackage.PreviewDiscovery) async throws -> LumiPreviewPackage.RenderResponse {
         try await requestRender(discovery: discovery, configuration: .empty)
     }
 }

@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// Resolves the `LumiPreviewHostApp` executable used by live and image previews.
-public enum PreviewHostExecutableResolver {
+enum PreviewHostExecutableResolver {
     /// Environment variable that can override bundled host discovery.
     public static let environmentOverrideKey = "LUMI_PREVIEW_HOST_EXECUTABLE"
 
@@ -39,4 +40,6 @@ public enum PreviewHostExecutableResolver {
                 .appendingPathComponent("LumiPreviewHostApp")
         ].compactMap { $0 }
     }
+}
+
 }

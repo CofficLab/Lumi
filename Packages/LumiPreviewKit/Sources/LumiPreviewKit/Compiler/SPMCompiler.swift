@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// SPM 编译器：使用 swift build 编译 SPM Package 中的预览。
-public final class SPMCompiler: Sendable {
+final class SPMCompiler: Sendable {
     /// 创建 SPM 编译器。
     public init() {}
 
@@ -299,6 +300,8 @@ public final class SPMCompiler: Sendable {
     }
 }
 
+}
+
 private extension Array where Element == String {
     func uniqued() -> [String] {
         var seen: Set<String> = []
@@ -309,3 +312,4 @@ private extension Array where Element == String {
         return result
     }
 }
+

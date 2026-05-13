@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 预览会话：代表一个正在运行或已完成的预览实例。
-public protocol PreviewSession: AnyObject, Sendable {
+protocol PreviewSession: AnyObject, Sendable {
     /// 唯一标识。
     var id: String { get }
 
@@ -29,7 +30,7 @@ public protocol PreviewSession: AnyObject, Sendable {
 }
 
 /// 预览性能指标。
-public struct PreviewPerformanceMetrics: Sendable, Equatable {
+struct PreviewPerformanceMetrics: Sendable, Equatable {
     /// 最近一次编译耗时，单位秒。
     public var lastCompileDuration: TimeInterval?
     /// 最近一次宿主加载预览入口耗时，单位秒。
@@ -60,7 +61,7 @@ public struct PreviewPerformanceMetrics: Sendable, Equatable {
 }
 
 /// 预览会话状态。
-public enum PreviewSessionState: Sendable, Equatable {
+enum PreviewSessionState: Sendable, Equatable {
     /// 正在规划编译。
     case planning
     /// 正在编译。
@@ -76,7 +77,7 @@ public enum PreviewSessionState: Sendable, Equatable {
 }
 
 /// `PreviewEngine` 默认使用的预览会话实现。
-public actor LivePreviewSession: PreviewSession {
+actor LivePreviewSession: PreviewSession {
     /// 唯一标识。
     public nonisolated let id: String
 
@@ -231,4 +232,6 @@ public actor LivePreviewSession: PreviewSession {
         await currentHostConnection?.terminate()
         currentHostConnection = nil
     }
+}
+
 }

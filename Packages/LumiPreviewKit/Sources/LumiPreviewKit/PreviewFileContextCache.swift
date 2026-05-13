@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// Small LRU cache keyed by standardized source file paths.
-public struct PreviewFileContextCache<Context> {
+struct PreviewFileContextCache<Context> {
     private var contexts: [String: Context] = [:]
     private var recency: [String] = []
     private let maximumCount: Int
@@ -91,4 +92,6 @@ public struct PreviewFileContextCache<Context> {
         }
         return removed
     }
+}
+
 }

@@ -1,6 +1,7 @@
 import AppKit
 
-public enum LivePreviewFrameAlignment {
+public extension LumiPreviewPackage {
+enum LivePreviewFrameAlignment {
     public static func pixelAlignedFrame(_ frame: NSRect, scale: Double) -> NSRect {
         let scale = max(scale, 1)
         let minX = floor(frame.minX * scale) / scale
@@ -9,4 +10,6 @@ public enum LivePreviewFrameAlignment {
         let maxY = ceil(frame.maxY * scale) / scale
         return NSRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     }
+}
+
 }

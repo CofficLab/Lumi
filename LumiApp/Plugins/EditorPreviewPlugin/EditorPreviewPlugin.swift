@@ -22,7 +22,6 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     static let shared = EditorPreviewPlugin()
 
     @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab] {
-#if canImport(LumiPreviewKit)
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-editor-preview",
@@ -30,13 +29,9 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
             systemImage: "rectangle.on.rectangle",
             priority: 81
         )]
-#else
-        return []
-#endif
     }
 
     @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView? {
-#if canImport(LumiPreviewKit)
         guard tabId == "editor-bottom-editor-preview", activeIcon == EditorPlugin.iconName else {
             return nil
         }
@@ -49,8 +44,5 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
                     // Window resigned active — live preview should hide
                 }
         )
-#else
-        return nil
-#endif
     }
 }

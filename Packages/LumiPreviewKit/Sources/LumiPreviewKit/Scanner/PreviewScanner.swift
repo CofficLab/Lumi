@@ -1,12 +1,13 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 源码扫描器：从 Swift 源码中检测 `#Preview` 宏并提取信息。
 ///
 /// 核心能力：
 /// - 建立 code mask，跳过注释和字符串中的误匹配
 /// - 花括号平衡匹配，准确提取闭包范围
 /// - 提取标题、行号范围、主视图类型名、闭包 body 源码
-public final class PreviewScanner: Sendable {
+final class PreviewScanner: Sendable {
 
     /// 创建源码扫描器。
     public init() {}
@@ -317,9 +318,12 @@ private struct _Source {
 
 // MARK: - 安全下标
 
+}
+
 private extension Array {
     subscript(safe index: Int) -> Element? {
         guard indices.contains(index) else { return nil }
         return self[index]
     }
 }
+

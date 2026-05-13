@@ -1,4 +1,3 @@
-#if canImport(LumiPreviewKit)
 import SwiftUI
 
 /// 编辑器预览空状态视图。
@@ -20,4 +19,3 @@ struct EditorPreviewEmptyStateView: View {
         .padding(.vertical, 24)
     }
 }
-#endif

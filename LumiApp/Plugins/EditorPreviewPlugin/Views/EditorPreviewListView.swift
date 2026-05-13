@@ -1,4 +1,3 @@
-#if canImport(LumiPreviewKit)
 import LumiPreviewKit
 import SwiftUI
 
@@ -7,7 +6,7 @@ import SwiftUI
 /// 展示当前文件中所有 #Preview 宏的列表，支持选择切换。
 struct EditorPreviewListView: View {
     @EnvironmentObject private var themeVM: ThemeVM
-    let previews: [PreviewDiscovery]
+    let previews: [LumiPreviewPackage.PreviewDiscovery]
     let selectedPreviewID: String?
     let onSelectPreview: (String?) -> Void
 
@@ -31,4 +30,3 @@ struct EditorPreviewListView: View {
         .listStyle(.sidebar)
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if canImport(LumiPreviewKit)
 import SwiftUI
 
 /// 编辑器预览工具栏。
@@ -112,7 +111,7 @@ private struct EditorPreviewCanvasPresetPickerView: View {
             }
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: "rectangle.resize")
+                Image(systemName: "rectangle.split.3x1")
                     .font(.system(size: 11, weight: .medium))
                 Text(viewModel.canvasSizePreset.title)
                     .font(.system(size: 11, weight: .medium))
@@ -232,4 +231,3 @@ struct EditorPreviewStatusBadgeView: View {
         }
     }
 }
-#endif

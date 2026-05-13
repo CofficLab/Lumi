@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 预览宿主支持的命令类型。
-public enum PreviewHostCommand: String, Codable, Sendable {
+enum PreviewHostCommand: String, Codable, Sendable {
     /// 根据源码发现结果渲染一个预览。
     case render
 
@@ -31,7 +32,7 @@ public enum PreviewHostCommand: String, Codable, Sendable {
 }
 
 /// 发送给预览宿主进程的请求消息。
-public struct RenderRequest: Codable, Sendable {
+struct RenderRequest: Codable, Sendable {
     /// 请求命令。
     public let command: PreviewHostCommand
 
@@ -80,7 +81,7 @@ public struct RenderRequest: Codable, Sendable {
 /// Live 预览窗口的屏幕坐标和尺寸请求。
 ///
 /// 使用 AppKit 坐标系（y 轴原点在屏幕左下角）。
-public struct LiveFrameRequest: Codable, Sendable, Equatable {
+struct LiveFrameRequest: Codable, Sendable, Equatable {
     /// 屏幕坐标 x（AppKit 坐标系，左下角原点）。
     public let x: Double
     /// 屏幕坐标 y（AppKit 坐标系，左下角原点）。
@@ -127,7 +128,7 @@ public struct LiveFrameRequest: Codable, Sendable, Equatable {
 }
 
 /// 预览宿主进程返回的成功或失败响应。
-public struct RenderResponse: Codable, Sendable, Equatable {
+struct RenderResponse: Codable, Sendable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case success
         case previewID
@@ -211,7 +212,7 @@ public struct RenderResponse: Codable, Sendable, Equatable {
 ///
 /// 这是 `dlopen` 预览入口的稳定 ABI 载荷：入口函数返回 UTF-8 JSON 字符串，
 /// 宿主进程解码后用这些字段构建预览 surface。
-public struct PreviewEntryDescriptor: Codable, Sendable, Equatable {
+struct PreviewEntryDescriptor: Codable, Sendable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case title
         case subtitle
@@ -268,7 +269,7 @@ public struct PreviewEntryDescriptor: Codable, Sendable, Equatable {
 }
 
 /// 预览宿主进程返回的错误响应。
-public struct ErrorResponse: Codable, Sendable, Equatable {
+struct ErrorResponse: Codable, Sendable, Equatable {
     /// 错误描述。
     public let message: String
 
@@ -278,4 +279,6 @@ public struct ErrorResponse: Codable, Sendable, Equatable {
     public init(message: String) {
         self.message = message
     }
+}
+
 }

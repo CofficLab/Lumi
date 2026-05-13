@@ -1,4 +1,3 @@
-#if canImport(LumiPreviewKit)
 import SwiftUI
 
 /// 编辑器预览显示模式切换器。
@@ -83,4 +82,3 @@ struct EditorPreviewDisplayModePickerView: View {
         return themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.5)
     }
 }
-#endif

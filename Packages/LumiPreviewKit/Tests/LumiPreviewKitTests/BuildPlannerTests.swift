@@ -9,20 +9,20 @@ struct BuildPlannerTests {
 
     @Test("无项目上下文的文件 → 返回 nil")
     func planUnknownPath() {
-        let planner = BuildPlanner()
+        let planner = LumiPreviewPackage.BuildPlanner()
         let result = planner.plan(for: URL(fileURLWithPath: "/tmp/Nonexistent.swift"))
         #expect(result == nil)
     }
 
     @Test("SPM Package 中的文件 → 返回 .spm 策略")
     func planSPMFile() {
-        let planner = BuildPlanner()
+        let planner = LumiPreviewPackage.BuildPlanner()
         // 使用 LumiPreviewKit 自身的源文件来测试
         let fileURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .appendingPathComponent("Sources/LumiPreviewKit/Scanner/PreviewScanner.swift")
+            .appendingPathComponent("Sources/LumiPreviewKit/Scanner/LumiPreviewPackage.PreviewScanner.swift")
         let result = planner.plan(for: fileURL)
 
         guard case let .spm(packageDirectory, targetName) = result else {
@@ -35,7 +35,7 @@ struct BuildPlannerTests {
 
     @Test("Lumi 自身的 LumiUI Package 文件能被正确识别")
     func planLumiUIPackage() {
-        let planner = BuildPlanner()
+        let planner = LumiPreviewPackage.BuildPlanner()
         // 通过 #filePath 向上推导到 Lumi 根目录，再定位 LumiUI
         let lumiRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()  // LumiPreviewKitTests
@@ -57,7 +57,7 @@ struct BuildPlannerTests {
 
     @Test("LumiPreviewHostApp 可执行 target 能被正确识别")
     func planHostAppTarget() {
-        let planner = BuildPlanner()
+        let planner = LumiPreviewPackage.BuildPlanner()
         let fileURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
@@ -80,7 +80,7 @@ struct BuildPlannerTests {
         )
         defer { try? FileManager.default.removeItem(at: project.rootDirectory) }
 
-        let result = BuildPlanner().plan(for: project.sourceFile)
+        let result = LumiPreviewPackage.BuildPlanner().plan(for: project.sourceFile)
 
         guard case let .xcode(projectURL, scheme, configuration) = result else {
             Issue.record("Expected .xcode strategy, got \(String(describing: result))")
@@ -107,7 +107,7 @@ struct BuildPlannerTests {
         try "import SwiftUI\n".write(to: sourceFile, atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: rootDirectory) }
 
-        let result = BuildPlanner().plan(for: sourceFile)
+        let result = LumiPreviewPackage.BuildPlanner().plan(for: sourceFile)
 
         guard case let .xcode(containerURL, scheme, _) = result else {
             Issue.record("Expected .xcode strategy, got \(String(describing: result))")
@@ -143,7 +143,7 @@ struct BuildPlannerTests {
         try "import SwiftUI\n".write(to: sourceFile, atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: rootDirectory) }
 
-        let result = BuildPlanner().plan(for: sourceFile)
+        let result = LumiPreviewPackage.BuildPlanner().plan(for: sourceFile)
 
         guard case let .spm(packageURL, targetName) = result else {
             Issue.record("Expected .spm strategy, got \(String(describing: result))")
@@ -185,16 +185,16 @@ struct BuildPlannerTests {
         """.write(to: packageDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: packageDirectory) }
 
-        let result = BuildPlanner().plan(for: includedFile)
+        let result = LumiPreviewPackage.BuildPlanner().plan(for: includedFile)
         guard case let .spm(_, targetName) = result else {
             Issue.record("Expected .spm strategy, got \(String(describing: result))")
             return
         }
 
-        let sources = BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: "FeatureTarget")
+        let sources = LumiPreviewPackage.BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: "FeatureTarget")
         #expect(targetName == "FeatureTarget")
         #expect(sources == [includedFile.standardizedFileURL.resolvingSymlinksInPath()])
-        #expect(BuildPlanner().plan(for: ignoredFile) == nil)
+        #expect(LumiPreviewPackage.BuildPlanner().plan(for: ignoredFile) == nil)
     }
 
     @Test("SPM test target 使用 Tests 默认目录")
@@ -221,14 +221,14 @@ struct BuildPlannerTests {
         """.write(to: packageDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: packageDirectory) }
 
-        let result = BuildPlanner().plan(for: testFile)
+        let result = LumiPreviewPackage.BuildPlanner().plan(for: testFile)
         guard case let .spm(_, targetName) = result else {
             Issue.record("Expected .spm strategy, got \(String(describing: result))")
             return
         }
 
         #expect(targetName == "FeatureTests")
-        #expect(BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: "FeatureTests") == [
+        #expect(LumiPreviewPackage.BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: "FeatureTests") == [
             testFile.standardizedFileURL.resolvingSymlinksInPath()
         ])
     }
@@ -260,7 +260,7 @@ struct BuildPlannerTests {
             try? FileManager.default.removeItem(at: sourceDirectory)
         }
 
-        #expect(BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: "ExternalTarget") == [
+        #expect(LumiPreviewPackage.BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: "ExternalTarget") == [
             sourceFile.standardizedFileURL.resolvingSymlinksInPath()
         ])
     }
@@ -320,7 +320,7 @@ struct BuildPlannerTests {
         }
         """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: .utf8)
 
-        let sources = BuildPlanner.swiftSourceFiles(
+        let sources = LumiPreviewPackage.BuildPlanner.swiftSourceFiles(
             projectURL: projectURL,
             scheme: "SyncedApp",
             containing: previewFile
@@ -359,7 +359,7 @@ struct BuildPlannerTests {
         try writeScheme(named: "SharedScheme", targetName: "AppTarget", in: projectURL)
         defer { try? FileManager.default.removeItem(at: rootDirectory) }
 
-        let sources = BuildPlanner.swiftSourceFiles(
+        let sources = LumiPreviewPackage.BuildPlanner.swiftSourceFiles(
             projectURL: workspaceURL,
             scheme: "SharedScheme",
             containing: siblingFile
@@ -381,7 +381,7 @@ struct BuildPlannerTests {
         try writeXcodeProject(at: projectURL, targetName: "FallbackApp", sourceFiles: [sourceFile])
         defer { try? FileManager.default.removeItem(at: rootDirectory) }
 
-        let sources = BuildPlanner.swiftSourceFiles(
+        let sources = LumiPreviewPackage.BuildPlanner.swiftSourceFiles(
             projectURL: workspaceURL,
             scheme: "FallbackApp",
             containing: sourceFile
@@ -400,7 +400,7 @@ struct BuildPlannerTests {
         try writeXcodeProject(at: projectURL, targetName: "ActualTarget", sourceFiles: [sourceFile])
         defer { try? FileManager.default.removeItem(at: rootDirectory) }
 
-        let sources = BuildPlanner.swiftSourceFiles(
+        let sources = LumiPreviewPackage.BuildPlanner.swiftSourceFiles(
             projectURL: projectURL,
             scheme: "MissingScheme",
             containing: sourceFile

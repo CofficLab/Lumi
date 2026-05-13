@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 编译策略：根据项目类型选择不同的编译路径。
-public enum BuildStrategy: Sendable, Equatable, Hashable {
+enum BuildStrategy: Sendable, Equatable, Hashable {
     /// SPM Package：调用 `swift build --target`。
     case spm(packageDirectory: URL, targetName: String)
 
@@ -16,7 +17,7 @@ public enum BuildStrategy: Sendable, Equatable, Hashable {
 ///
 /// SPM 优先：向上遍历文件系统查找 `Package.swift` 并解析 target。
 /// 未找到 SPM 上下文时，再向上查找 `.xcworkspace` / `.xcodeproj`。
-public final class BuildPlanner: Sendable {
+final class BuildPlanner: Sendable {
 
     /// 创建编译规划器。
     public init() {}
@@ -785,6 +786,8 @@ private struct XcodeProjectSourceIndex {
     }
 }
 
+}
+
 private extension String {
     func removingPBXComment() -> String {
         let pattern = /\/\*.*?\*\//
@@ -813,3 +816,4 @@ private extension Array where Element == URL {
         return result
     }
 }
+

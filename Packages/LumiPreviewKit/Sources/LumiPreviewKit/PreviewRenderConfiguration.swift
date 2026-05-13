@@ -1,11 +1,12 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 单个预览环境注入项。
 ///
 /// 当前阶段它作为宿主通信协议中的稳定描述，用于记录调用方希望注入的
 /// `@EnvironmentObject` 或其他 mock。真实 SwiftUI 视图装载接入后，宿主可按
 /// `typeName` 和 `mockIdentifier` 解析具体对象。
-public struct PreviewEnvironmentInjection: Codable, Sendable, Equatable, Hashable {
+struct PreviewEnvironmentInjection: Codable, Sendable, Equatable, Hashable {
     /// 被注入对象的 Swift 类型名。
     public let typeName: String
 
@@ -33,7 +34,7 @@ public struct PreviewEnvironmentInjection: Codable, Sendable, Equatable, Hashabl
 }
 
 /// 单次预览渲染配置。
-public struct PreviewRenderConfiguration: Codable, Sendable, Equatable, Hashable {
+struct PreviewRenderConfiguration: Codable, Sendable, Equatable, Hashable {
     /// 空配置。
     public static let empty = PreviewRenderConfiguration()
 
@@ -51,4 +52,6 @@ public struct PreviewRenderConfiguration: Codable, Sendable, Equatable, Hashable
     public var hasEnvironmentInjections: Bool {
         !environmentInjections.isEmpty
     }
+}
+
 }

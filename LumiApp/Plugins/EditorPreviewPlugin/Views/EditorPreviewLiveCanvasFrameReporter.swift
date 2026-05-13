@@ -1,4 +1,3 @@
-#if canImport(LumiPreviewKit)
 import AppKit
 import SwiftUI
 
@@ -159,12 +158,14 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
     let onWindowBecameActive: () -> Void
     let onWindowBecameInactive: () -> Void
     let onWindowFrameChanged: () -> Void
+    let onWindowInteraction: () -> Void
 
     func makeNSView(context: Context) -> ReportingView {
         let view = ReportingView()
         view.onWindowBecameActive = onWindowBecameActive
         view.onWindowBecameInactive = onWindowBecameInactive
         view.onWindowFrameChanged = onWindowFrameChanged
+        view.onWindowInteraction = onWindowInteraction
         return view
     }
 
@@ -172,6 +173,7 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         nsView.onWindowBecameActive = onWindowBecameActive
         nsView.onWindowBecameInactive = onWindowBecameInactive
         nsView.onWindowFrameChanged = onWindowFrameChanged
+        nsView.onWindowInteraction = onWindowInteraction
         nsView.attachToCurrentWindow()
     }
 
@@ -179,8 +181,10 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         var onWindowBecameActive: (() -> Void)?
         var onWindowBecameInactive: (() -> Void)?
         var onWindowFrameChanged: (() -> Void)?
+        var onWindowInteraction: (() -> Void)?
 
         private weak var observedWindow: NSWindow?
+        nonisolated(unsafe) private var localMouseMonitor: Any?
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
@@ -190,6 +194,7 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         func attachToCurrentWindow() {
             guard observedWindow !== window else { return }
             NotificationCenter.default.removeObserver(self)
+            removeLocalMouseMonitor()
             observedWindow = window
 
             guard let window else {
@@ -218,6 +223,16 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
             center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didEnterFullScreenNotification, object: window)
             center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didExitFullScreenNotification, object: window)
             center.addObserver(self, selector: #selector(screenParametersChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+
+            localMouseMonitor = NSEvent.addLocalMonitorForEvents(
+                matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+            ) { [weak self] event in
+                guard let self, event.window === self.observedWindow else { return event }
+                DispatchQueue.main.async { [weak self] in
+                    self?.onWindowInteraction?()
+                }
+                return event
+            }
         }
 
         @objc private func windowDidBecomeKey() {
@@ -254,7 +269,16 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
 
         deinit {
             NotificationCenter.default.removeObserver(self)
+            if let localMouseMonitor {
+                NSEvent.removeMonitor(localMouseMonitor)
+            }
+        }
+
+        private func removeLocalMouseMonitor() {
+            if let localMouseMonitor {
+                NSEvent.removeMonitor(localMouseMonitor)
+                self.localMouseMonitor = nil
+            }
         }
     }
 }
-#endif

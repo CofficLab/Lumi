@@ -1,4 +1,3 @@
-#if canImport(LumiPreviewKit)
 import AppKit
 import SwiftUI
 
@@ -55,4 +54,3 @@ struct EditorPreviewDiagnosticsView: View {
         pasteboard.setString(diagnostics, forType: .string)
     }
 }
-#endif

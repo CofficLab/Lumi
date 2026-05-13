@@ -8,9 +8,9 @@ struct HostProcessTests {
 
     @Test("RenderRequest 编码环境注入配置")
     func renderRequestEncodesEnvironmentInjections() throws {
-        let request = RenderRequest(
+        let request = LumiPreviewPackage.RenderRequest(
             command: .render,
-            discovery: PreviewDiscovery(
+            discovery: LumiPreviewPackage.PreviewDiscovery(
                 id: "preview-env",
                 title: "Env Preview",
                 sourceFileURL: URL(fileURLWithPath: "/tmp/EnvView.swift"),
@@ -19,9 +19,9 @@ struct HostProcessTests {
                 primaryTypeName: "EnvView",
                 bodySource: "EnvView()"
             ),
-            configuration: PreviewRenderConfiguration(
+            configuration: LumiPreviewPackage.PreviewRenderConfiguration(
                 environmentInjections: [
-                    PreviewEnvironmentInjection(
+                    LumiPreviewPackage.PreviewEnvironmentInjection(
                         typeName: "AppModel",
                         mockIdentifier: "mock.appModel",
                         displayName: "Mock App Model"
@@ -31,7 +31,7 @@ struct HostProcessTests {
         )
 
         let data = try JSONEncoder().encode(request)
-        let decoded = try JSONDecoder().decode(RenderRequest.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewPackage.RenderRequest.self, from: data)
 
         #expect(decoded.configuration.environmentInjections.count == 1)
         #expect(decoded.configuration.environmentInjections[0].typeName == "AppModel")
@@ -41,7 +41,7 @@ struct HostProcessTests {
 
     @Test("RenderResponse 编码 fallback 诊断")
     func renderResponseEncodesFallbackDiagnostics() throws {
-        let response = RenderResponse(
+        let response = LumiPreviewPackage.RenderResponse(
             success: true,
             previewID: "lumi_preview_entry",
             message: "Loaded preview entry Broken",
@@ -50,7 +50,7 @@ struct HostProcessTests {
         )
 
         let data = try JSONEncoder().encode(response)
-        let decoded = try JSONDecoder().decode(RenderResponse.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewPackage.RenderResponse.self, from: data)
 
         #expect(decoded.diagnostics == "Preview view entry failed")
         #expect(decoded.isFallback == true)
@@ -58,7 +58,7 @@ struct HostProcessTests {
 
     @Test("PreviewEntryDescriptor 编码 fallback 诊断")
     func previewEntryDescriptorEncodesFallbackDiagnostics() throws {
-        let descriptor = PreviewEntryDescriptor(
+        let descriptor = LumiPreviewPackage.PreviewEntryDescriptor(
             title: "Broken",
             subtitle: "BrokenView",
             body: "BrokenView()",
@@ -67,23 +67,23 @@ struct HostProcessTests {
         )
 
         let data = try JSONEncoder().encode(descriptor)
-        let decoded = try JSONDecoder().decode(PreviewEntryDescriptor.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewPackage.PreviewEntryDescriptor.self, from: data)
 
         #expect(decoded.diagnostics == "cannot find 'BrokenView' in scope")
         #expect(decoded.isFallback == true)
     }
 
-    @Test("启动宿主进程 → 发送 RenderRequest → 收到 RenderResponse")
+    @Test("启动宿主进程 → 发送 LumiPreviewPackage.RenderRequest → 收到 LumiPreviewPackage.RenderResponse")
     func launchAndRender() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
             }
         }
 
-        let discovery = PreviewDiscovery(
+        let discovery = LumiPreviewPackage.PreviewDiscovery(
             id: "preview-1",
             title: "Test Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/TestView.swift"),
@@ -104,7 +104,7 @@ struct HostProcessTests {
     @Test("宿主进程通过 dlopen 加载 dylib")
     func loadDylib() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -126,7 +126,7 @@ struct HostProcessTests {
     @Test("宿主进程解析 dylib 预览入口并替换视图")
     func loadPreviewEntryFromDylib() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -156,7 +156,7 @@ struct HostProcessTests {
     @Test("宿主进程解析 dylib 预览入口描述并渲染 surface")
     func loadPreviewEntryDescriptorFromDylib() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -189,7 +189,7 @@ struct HostProcessTests {
     @Test("宿主进程透传 fallback 预览诊断")
     func loadFallbackPreviewEntryDescriptorFromDylib() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -223,7 +223,7 @@ struct HostProcessTests {
     @Test("宿主进程优先加载 dylib 返回的 NSView")
     func loadPreviewNSViewFromDylib() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -265,7 +265,7 @@ struct HostProcessTests {
     @Test("宿主进程在离屏窗口中渲染 NSView")
     func loadPreviewNSViewRendersAfterWindowAttachment() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -319,14 +319,14 @@ struct HostProcessTests {
     @Test("增量编译失败后宿主进程仍可刷新")
     func compileFailureDoesNotAffectRunningHost() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
             }
         }
 
-        let discovery = PreviewDiscovery(
+        let discovery = LumiPreviewPackage.PreviewDiscovery(
             id: "stable-preview",
             title: "Stable Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/StableView.swift"),
@@ -340,7 +340,7 @@ struct HostProcessTests {
         do {
             _ = try await buildBrokenObjectFile()
             Issue.record("Expected compilationFailed")
-        } catch PreviewError.compilationFailed {
+        } catch LumiPreviewPackage.PreviewError.compilationFailed {
         } catch {
             Issue.record("Expected compilationFailed, got \(error)")
         }
@@ -352,7 +352,7 @@ struct HostProcessTests {
     @Test("单文件修改 → 增量编译 → 宿主进程刷新耗时小于 3 秒")
     func incrementalRefreshCompletesUnderThreeSeconds() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -393,7 +393,7 @@ struct HostProcessTests {
     @Test("reloadLivePreview 失败后仍保留上一份成功预览")
     func failedReloadKeepsPreviousPreview() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -449,7 +449,7 @@ struct HostProcessTests {
                 symbolName: "lumi_preview_entry"
             )
             Issue.record("Expected reloadLivePreview to fail without NSView entry")
-        } catch PreviewError.runtimeCrashed(let message) {
+        } catch LumiPreviewPackage.PreviewError.runtimeCrashed(let message) {
             #expect(message.contains("Reload failed"))
         } catch {
             Issue.record("Expected runtimeCrashed, got \(error)")
@@ -467,9 +467,9 @@ struct HostProcessTests {
             .appendingPathComponent("missing-\(UUID().uuidString)")
 
         do {
-            _ = try await PreviewHostProcess().launch(executableURL: missingExecutable)
+            _ = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: missingExecutable)
             Issue.record("Expected hostLaunchFailed")
-        } catch PreviewError.hostLaunchFailed(let message) {
+        } catch LumiPreviewPackage.PreviewError.hostLaunchFailed(let message) {
             #expect(message.contains(missingExecutable.path))
         } catch {
             Issue.record("Expected hostLaunchFailed, got \(error)")
@@ -479,7 +479,7 @@ struct HostProcessTests {
     @Test("terminate 后宿主进程退出，后续请求失败")
     func terminateStopsHostProcess() async throws {
         let executableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
         let processID = await connection.processID
 
         #expect(await connection.isRunning)
@@ -493,7 +493,7 @@ struct HostProcessTests {
         do {
             _ = try await connection.requestRefresh()
             Issue.record("Expected hostLaunchFailed after termination")
-        } catch PreviewError.hostLaunchFailed(let message) {
+        } catch LumiPreviewPackage.PreviewError.hostLaunchFailed(let message) {
             #expect(message.contains("not running") || message.contains("closed stdout"))
         } catch {
             Issue.record("Expected hostLaunchFailed after termination, got \(error)")
@@ -506,7 +506,7 @@ struct HostProcessTests {
         var previousPIDs = Set<Int32>()
 
         for _ in 0..<3 {
-            let connection = try await PreviewHostProcess().launch(executableURL: executableURL)
+            let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
             let processID = await connection.processID
 
             #expect(processID > 0)
@@ -528,11 +528,11 @@ struct HostProcessTests {
             .appendingPathComponent("LumiPreviewHostApp-build-\(UUID().uuidString)", isDirectory: true)
         let result = try runSwiftBuild(packageDirectory: packageDirectory, scratchPath: scratchPath)
         guard result.status == 0 else {
-            throw PreviewError.compilationFailed(message: result.output)
+            throw LumiPreviewPackage.PreviewError.compilationFailed(message: result.output)
         }
 
         guard let executableURL = findHostExecutable(in: scratchPath) else {
-            throw PreviewError.buildProductNotFound
+            throw LumiPreviewPackage.PreviewError.buildProductNotFound
         }
 
         return executableURL
@@ -606,7 +606,7 @@ struct HostProcessTests {
         guard let base64,
               let data = Data(base64Encoded: base64),
               let bitmap = NSBitmapImageRep(data: data) else {
-            throw PreviewError.runtimeCrashed(message: "Expected a valid PNG preview image.")
+            throw LumiPreviewPackage.PreviewError.runtimeCrashed(message: "Expected a valid PNG preview image.")
         }
 
         return bitmap
@@ -644,7 +644,7 @@ struct HostProcessTests {
     }
 
     private func buildSignedDylib(sourceFile: URL, objectFile: URL) async throws -> URL {
-        let compiler = IncrementalCompiler()
+        let compiler = LumiPreviewPackage.IncrementalCompiler()
         let compiledObject = try await compiler.compile(
             fileURL: sourceFile,
             compileCommand: "/usr/bin/env swiftc -c \(shellQuoted(sourceFile.path)) -o \(shellQuoted(objectFile.path))"
@@ -695,7 +695,7 @@ struct HostProcessTests {
         }
         """.write(to: sourceFile, atomically: true, encoding: .utf8)
 
-        return try await IncrementalCompiler().compile(
+        return try await LumiPreviewPackage.IncrementalCompiler().compile(
             fileURL: sourceFile,
             compileCommand: "/usr/bin/env swiftc -c \(shellQuoted(sourceFile.path)) -o \(shellQuoted(objectFile.path))"
         )

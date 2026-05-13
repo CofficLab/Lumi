@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 预览发现结果：从源码中检测到的单个 #Preview 宏信息。
-public struct PreviewDiscovery: Identifiable, Codable, Sendable {
+struct PreviewDiscovery: Identifiable, Codable, Sendable {
     /// 稳定标识符，用于在 UI 和宿主请求之间关联同一个预览。
     public let id: String
 
@@ -58,4 +59,6 @@ public struct PreviewDiscovery: Identifiable, Codable, Sendable {
         self.bodySource = bodySource
         self.sourceText = sourceText
     }
+}
+
 }

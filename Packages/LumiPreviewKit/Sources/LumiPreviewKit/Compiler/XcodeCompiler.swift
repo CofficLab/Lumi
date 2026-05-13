@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// Xcode 编译器：使用 xcodebuild 编译 Xcode 项目中的预览。
-public final class XcodeCompiler: Sendable {
+final class XcodeCompiler: Sendable {
     /// 创建 Xcode 编译器。
     public init() {}
 
@@ -447,6 +448,8 @@ public final class XcodeCompiler: Sendable {
     }
 }
 
+}
+
 private extension Array where Element == String {
     func uniqued() -> [String] {
         var seen: Set<String> = []
@@ -457,3 +460,4 @@ private extension Array where Element == String {
         return result
     }
 }
+

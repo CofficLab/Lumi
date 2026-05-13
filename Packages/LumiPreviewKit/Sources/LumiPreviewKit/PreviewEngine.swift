@@ -1,9 +1,10 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 预览引擎：LumiPreviewKit 的核心协议。
 ///
 /// 职责：发现源码中的 #Preview → 规划编译 → 启动预览 → 响应文件变化刷新。
-public protocol PreviewEngine: AnyObject, Sendable {
+protocol PreviewEngine: AnyObject, Sendable {
     /// 扫描指定文件中的 #Preview 宏，返回可用的预览列表。
     func discoverPreviews(in fileURL: URL) async -> [PreviewDiscovery]
 
@@ -17,7 +18,7 @@ public protocol PreviewEngine: AnyObject, Sendable {
     func stopPreview(_ session: any PreviewSession) async
 }
 
-public final class LivePreviewEngine: PreviewEngine, Sendable {
+final class LivePreviewEngine: PreviewEngine, Sendable {
     private let scanner: PreviewScanner
     private let buildPlanner: BuildPlanner
     private let spmCompiler: SPMCompiler
@@ -463,4 +464,6 @@ private enum BuildFingerprint {
 
         return parts.sorted().joined(separator: "\n")
     }
+}
+
 }

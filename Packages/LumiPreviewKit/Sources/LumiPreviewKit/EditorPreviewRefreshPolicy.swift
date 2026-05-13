@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 编辑器预览刷新判定策略。
-public enum EditorPreviewRefreshPolicy {
+enum EditorPreviewRefreshPolicy {
     /// 判断收到一次源码/保存信号后，是否应该安排预览刷新。
     public static func shouldScheduleRefresh(
         previousPreviewID: String?,
@@ -30,4 +31,6 @@ public enum EditorPreviewRefreshPolicy {
             && isRunningOrShowingStalePreview
             && hasSession
     }
+}
+
 }

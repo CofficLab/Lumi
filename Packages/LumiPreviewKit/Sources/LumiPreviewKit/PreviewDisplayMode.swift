@@ -1,10 +1,11 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 预览显示模式。
 ///
 /// `image` 模式使用宿主进程返回的 PNG 截图在 Lumi 中渲染预览。
 /// `live` 模式通过独立宿主进程的真实 `NSHostingView/NSView` 窗口提供可交互的 Live Canvas。
-public enum PreviewDisplayMode: String, Codable, Sendable, Equatable, CaseIterable {
+enum PreviewDisplayMode: String, Codable, Sendable, Equatable, CaseIterable {
     /// 图片模式：显示宿主进程离屏渲染的 PNG 截图。
     case image
 
@@ -15,7 +16,7 @@ public enum PreviewDisplayMode: String, Codable, Sendable, Equatable, CaseIterab
 /// Live 预览状态。
 ///
 /// 描述 Live 模式在当前会话中的可用性和运行状态。
-public enum LivePreviewState: String, Codable, Sendable, Equatable {
+enum LivePreviewState: String, Codable, Sendable, Equatable {
     /// Live 模式尚未启动或不可用。
     case unavailable
 
@@ -36,7 +37,7 @@ public enum LivePreviewState: String, Codable, Sendable, Equatable {
 }
 
 /// 会话的 Live 模式详细信息。
-public struct LivePreviewInfo: Codable, Sendable, Equatable {
+struct LivePreviewInfo: Codable, Sendable, Equatable {
     /// Live 预览当前状态。
     public var state: LivePreviewState
 
@@ -67,4 +68,6 @@ public struct LivePreviewInfo: Codable, Sendable, Equatable {
         self.hostWindowNumber = hostWindowNumber
         self.hostProcessID = hostProcessID
     }
+}
+
 }

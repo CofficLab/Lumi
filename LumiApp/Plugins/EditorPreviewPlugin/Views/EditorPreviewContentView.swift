@@ -1,4 +1,3 @@
-#if canImport(LumiPreviewKit)
 import AppKit
 import LumiPreviewKit
 import SwiftUI
@@ -31,8 +30,8 @@ struct EditorPreviewContentView: View {
         editorVM.service.saveRevision
     }
 
-    private var refreshSignal: EditorPreviewRefreshSignal {
-        EditorPreviewRefreshSignal(
+    private var refreshSignal: LumiPreviewPackage.EditorPreviewRefreshSignal {
+        LumiPreviewPackage.EditorPreviewRefreshSignal(
             fileURL: currentFileURL,
             contentRevision: contentRevision,
             saveRevision: saveRevision
@@ -59,6 +58,9 @@ struct EditorPreviewContentView: View {
                 },
                 onWindowFrameChanged: {
                     EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
+                },
+                onWindowInteraction: {
+                    viewModel.previewWindowDidBecomeActive()
                 }
             )
         )
@@ -113,7 +115,7 @@ struct EditorPreviewContentView: View {
             if let preview = viewModel.selectedPreview {
                 if viewModel.isShowingStaleLivePreview {
                     staleLivePreviewDetail(preview)
-                } else if case .failed(let message) = viewModel.runState {
+                } else if case let .failed(message) = viewModel.runState {
                     errorMessageView(message)
                 } else if viewModel.runState == .hostMissing {
                     Text(String(localized: "Set LUMI_PREVIEW_HOST_EXECUTABLE or embed LumiPreviewHostApp in Contents/Helpers.", table: "EditorPreview"))
@@ -134,8 +136,8 @@ struct EditorPreviewContentView: View {
     }
 
     @ViewBuilder
-    private func staleLivePreviewDetail(_ preview: PreviewDiscovery) -> some View {
-        if case .failed(let message) = viewModel.runState {
+    private func staleLivePreviewDetail(_ preview: LumiPreviewPackage.PreviewDiscovery) -> some View {
+        if case let .failed(message) = viewModel.runState {
             errorMessageView(message)
         } else if let renderMessage = viewModel.renderMessage {
             errorMessageView(renderMessage)
@@ -161,12 +163,3 @@ struct EditorPreviewContentView: View {
         viewModel.startSelectedPreviewIfNeeded(allowsStopped: allowsStopped)
     }
 }
-#else
-import SwiftUI
-
-struct EditorPreviewContentView: View {
-    var body: some View {
-        EmptyView()
-    }
-}
-#endif

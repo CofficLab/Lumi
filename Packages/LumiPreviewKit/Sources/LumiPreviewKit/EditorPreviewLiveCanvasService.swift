@@ -1,13 +1,14 @@
 import AppKit
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 编辑器预览 Live Canvas 可见性与帧同步服务。
 ///
 /// 管理 Live 预览窗口的显示/隐藏状态逻辑，包括：
 /// - Canvas 可见性和帧矩形跟踪
 /// - 根据综合条件决定是否显示/隐藏 Live 窗口
 @MainActor
-public final class EditorPreviewLiveCanvasService {
+final class EditorPreviewLiveCanvasService {
 
     /// Canvas 是否可见。
     public private(set) var isLiveCanvasVisible: Bool = false
@@ -25,13 +26,13 @@ public final class EditorPreviewLiveCanvasService {
     private var liveFrameSyncTask: Task<Void, Never>?
 
     /// 触发 Live 预览帧同步的回调。
-    public var onSyncLiveFrameFromEngine: (@MainActor () async -> Void)?
+    public var onSyncLiveFrameFromEngine: (@MainActor (_ reason: String) async -> Void)?
 
     /// 触发 Live 窗口显示的回调。
-    public var onShowLivePreview: (@MainActor () async -> Void)?
+    public var onShowLivePreview: (@MainActor (_ reason: String) async -> Void)?
 
     /// 触发 Live 窗口隐藏的回调。
-    public var onHideLivePreview: (@MainActor () async -> Void)?
+    public var onHideLivePreview: (@MainActor (_ reason: String) async -> Void)?
 
     public init(displayMode: PreviewDisplayMode) {
         self.displayMode = displayMode
@@ -47,6 +48,11 @@ public final class EditorPreviewLiveCanvasService {
     /// 更新显示模式。
     public func updateDisplayMode(_ mode: PreviewDisplayMode) {
         displayMode = mode
+    }
+
+    /// 更新 Canvas 可见性，不立即触发显隐同步。
+    public func updateLiveCanvasVisibility(_ isVisible: Bool) {
+        isLiveCanvasVisible = isVisible
     }
 
     /// 更新 Canvas 矩形位置。
@@ -71,18 +77,15 @@ public final class EditorPreviewLiveCanvasService {
         liveFrameSyncTask = Task {
             try? await Task.sleep(nanoseconds: 16_000_000)
             guard !Task.isCancelled else { return }
-            await onSyncLiveFrameFromEngine?()
+            await onSyncLiveFrameFromEngine?("live canvas frame changed")
         }
     }
 
     /// Canvas 帧不可用时调用。
     public func liveCanvasFrameUnavailable() {
-        liveCanvasRect = .zero
-        isLiveCanvasVisible = false
-        guard displayMode == .live else { return }
-        Task {
-            await syncLiveVisibility()
-        }
+        // A transient missing frame does not mean the canvas disappeared. Keep the
+        // last valid frame so the live preview remains anchored until an explicit
+        // lifecycle event hides it.
     }
 
     /// Canvas 消失时调用。
@@ -90,7 +93,10 @@ public final class EditorPreviewLiveCanvasService {
         isLiveCanvasVisible = false
         guard displayMode == .live else { return }
         Task {
-            await syncLiveVisibility()
+            await syncLiveVisibility(
+                showReason: "live canvas disappeared but display conditions still allow showing",
+                hideReason: "live canvas disappeared"
+            )
         }
     }
 
@@ -99,8 +105,11 @@ public final class EditorPreviewLiveCanvasService {
         isLiveCanvasVisible = true
         guard displayMode == .live else { return }
         Task {
-            await onSyncLiveFrameFromEngine?()
-            await syncLiveVisibility()
+            await onSyncLiveFrameFromEngine?("live canvas appeared")
+            await syncLiveVisibility(
+                showReason: "live canvas appeared",
+                hideReason: "live canvas appeared but display conditions are not satisfied"
+            )
         }
     }
 
@@ -114,8 +123,11 @@ public final class EditorPreviewLiveCanvasService {
     public func lumiWindowDidBecomeKey() {
         guard displayMode == .live else { return }
         Task {
-            await onSyncLiveFrameFromEngine?()
-            await syncLiveVisibility()
+            await onSyncLiveFrameFromEngine?("Lumi window became key")
+            await syncLiveVisibility(
+                showReason: "Lumi window became key",
+                hideReason: "Lumi window became key but display conditions are not satisfied"
+            )
         }
     }
 
@@ -124,7 +136,10 @@ public final class EditorPreviewLiveCanvasService {
         isLiveCanvasVisible = false
         guard displayMode == .live else { return }
         Task {
-            await syncLiveVisibility()
+            await syncLiveVisibility(
+                showReason: "Lumi window minimized or closed but display conditions still allow showing",
+                hideReason: "Lumi window minimized or closed"
+            )
         }
     }
 
@@ -132,8 +147,11 @@ public final class EditorPreviewLiveCanvasService {
     public func previewWindowDidBecomeActive() {
         guard displayMode == .live else { return }
         Task {
-            await onSyncLiveFrameFromEngine?()
-            await syncLiveVisibility()
+            await onSyncLiveFrameFromEngine?("preview window became active")
+            await syncLiveVisibility(
+                showReason: "preview window became active",
+                hideReason: "preview window became active but display conditions are not satisfied"
+            )
         }
     }
 
@@ -149,11 +167,14 @@ public final class EditorPreviewLiveCanvasService {
         liveFrameSyncTask = nil
     }
 
-    private func syncLiveVisibility() async {
+    /// 根据当前状态同步 Live 窗口显隐。
+    public func syncLiveVisibility(showReason: String, hideReason: String) async {
         if shouldShowLiveWindow {
-            await onShowLivePreview?()
+            await onShowLivePreview?(showReason)
         } else {
-            await onHideLivePreview?()
+            await onHideLivePreview?(hideReason)
         }
     }
+}
+
 }

@@ -1,8 +1,9 @@
 import CryptoKit
 import Foundation
 
+public extension LumiPreviewPackage {
 /// Builds a small dynamic preview entry dylib for a discovered `#Preview`.
-public final class PreviewEntryBuilder: Sendable {
+final class PreviewEntryBuilder: Sendable {
     /// The C symbol exported by generated preview entry dylibs.
     public static let symbolName = "lumi_preview_entry"
 
@@ -471,6 +472,8 @@ public final class PreviewEntryBuilder: Sendable {
     }
 }
 
+}
+
 private extension Array where Element == URL {
     func uniqued() -> [URL] {
         var seen: Set<String> = []
@@ -483,3 +486,4 @@ private extension Array where Element == URL {
         return result
     }
 }
+

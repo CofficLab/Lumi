@@ -18,8 +18,8 @@ struct PreviewHostExecutableResolverTests {
         }
         try makeExecutable(at: helpersHost)
 
-        let resolved = PreviewHostExecutableResolver.resolve(
-            environment: [PreviewHostExecutableResolver.environmentOverrideKey: overrideHost.path],
+        let resolved = LumiPreviewPackage.PreviewHostExecutableResolver.resolve(
+            environment: [LumiPreviewPackage.PreviewHostExecutableResolver.environmentOverrideKey: overrideHost.path],
             bundle: bundle
         )
 
@@ -36,8 +36,8 @@ struct PreviewHostExecutableResolverTests {
             .appendingPathComponent("LumiPreviewHostApp")
         try makeExecutable(at: host)
 
-        let resolved = PreviewHostExecutableResolver.resolve(
-            environment: [PreviewHostExecutableResolver.environmentOverrideKey: ""],
+        let resolved = LumiPreviewPackage.PreviewHostExecutableResolver.resolve(
+            environment: [LumiPreviewPackage.PreviewHostExecutableResolver.environmentOverrideKey: ""],
             bundle: bundle
         )
 
@@ -61,10 +61,10 @@ struct PreviewHostExecutableResolverTests {
 
         try makeExecutable(at: resourcesHost)
         try makeExecutable(at: macOSHost)
-        #expect(PreviewHostExecutableResolver.resolve(environment: [:], bundle: bundle) == macOSHost)
+        #expect(LumiPreviewPackage.PreviewHostExecutableResolver.resolve(environment: [:], bundle: bundle) == macOSHost)
 
         try makeExecutable(at: helpersHost)
-        #expect(PreviewHostExecutableResolver.resolve(environment: [:], bundle: bundle) == helpersHost)
+        #expect(LumiPreviewPackage.PreviewHostExecutableResolver.resolve(environment: [:], bundle: bundle) == helpersHost)
     }
 
     @Test("不可执行文件不会被选中")
@@ -78,8 +78,8 @@ struct PreviewHostExecutableResolverTests {
         try FileManager.default.createDirectory(at: host.deletingLastPathComponent(), withIntermediateDirectories: true)
         FileManager.default.createFile(atPath: host.path, contents: Data())
 
-        let resolved = PreviewHostExecutableResolver.resolve(
-            environment: [PreviewHostExecutableResolver.environmentOverrideKey: host.path],
+        let resolved = LumiPreviewPackage.PreviewHostExecutableResolver.resolve(
+            environment: [LumiPreviewPackage.PreviewHostExecutableResolver.environmentOverrideKey: host.path],
             bundle: bundle
         )
 
@@ -91,7 +91,7 @@ struct PreviewHostExecutableResolverTests {
         let bundle = try makeBundle()
         defer { try? FileManager.default.removeItem(at: bundle.bundleURL) }
 
-        let candidates = PreviewHostExecutableResolver.candidates(in: bundle)
+        let candidates = LumiPreviewPackage.PreviewHostExecutableResolver.candidates(in: bundle)
 
         #expect(candidates.count == 3)
         #expect(candidates[0].path.hasSuffix("Contents/Helpers/LumiPreviewHostApp"))

@@ -27,7 +27,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
 
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
         #expect(discoveries.count == 1)
@@ -84,7 +84,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
 
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
         #expect(discoveries.count == 1)
@@ -120,7 +120,7 @@ struct PreviewEngineTests {
         )
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
-        let engine = LivePreviewEngine(
+        let engine = LumiPreviewPackage.LivePreviewEngine(
             hostExecutableURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("missing-host-\(UUID().uuidString)")
         )
@@ -156,15 +156,15 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
         #expect(discoveries.count == 1)
 
         let session = try await engine.startPreview(discoveries[0])
         #expect(await session.state == .running)
 
-        guard let liveSession = session as? LivePreviewSession else {
-            Issue.record("Expected LivePreviewSession")
+        guard let liveSession = session as? LumiPreviewPackage.LivePreviewSession else {
+            Issue.record("Expected LumiPreviewPackage.LivePreviewSession")
             return
         }
         await liveSession.terminateHost()
@@ -199,7 +199,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
         #expect(discoveries.count == 1)
 
@@ -209,8 +209,8 @@ struct PreviewEngineTests {
         try await engine.startLivePreview(session)
         #expect(await session.livePreviewInfo.state == .running)
 
-        guard let liveSession = session as? LivePreviewSession else {
-            Issue.record("Expected LivePreviewSession")
+        guard let liveSession = session as? LumiPreviewPackage.LivePreviewSession else {
+            Issue.record("Expected LumiPreviewPackage.LivePreviewSession")
             return
         }
 
@@ -256,13 +256,13 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
         #expect(discoveries.count == 1)
 
-        let configuration = PreviewRenderConfiguration(
+        let configuration = LumiPreviewPackage.PreviewRenderConfiguration(
             environmentInjections: [
-                PreviewEnvironmentInjection(
+                LumiPreviewPackage.PreviewEnvironmentInjection(
                     typeName: "MockAppModel",
                     mockIdentifier: "preview.mockAppModel",
                     displayName: "Preview Mock App Model"
@@ -274,9 +274,9 @@ struct PreviewEngineTests {
         #expect(await session.configuration == configuration)
         #expect(await session.lastRenderResponse?.message == "Loaded preview view entry Environment")
 
-        let updatedConfiguration = PreviewRenderConfiguration(
+        let updatedConfiguration = LumiPreviewPackage.PreviewRenderConfiguration(
             environmentInjections: [
-                PreviewEnvironmentInjection(
+                LumiPreviewPackage.PreviewEnvironmentInjection(
                     typeName: "MockAppModel",
                     mockIdentifier: "preview.updatedMockAppModel",
                     displayName: "Updated Mock App Model"
@@ -287,8 +287,8 @@ struct PreviewEngineTests {
         #expect(await session.state == .running)
         #expect(await session.configuration == updatedConfiguration)
 
-        guard let liveSession = session as? LivePreviewSession else {
-            Issue.record("Expected LivePreviewSession")
+        guard let liveSession = session as? LumiPreviewPackage.LivePreviewSession else {
+            Issue.record("Expected LumiPreviewPackage.LivePreviewSession")
             return
         }
         await liveSession.terminateHost()
@@ -321,7 +321,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
         #expect(discoveries.count == 1)
 
@@ -347,7 +347,7 @@ struct PreviewEngineTests {
         let broken =
         """.write(to: package.sourceFile, atomically: true, encoding: .utf8)
 
-        await #expect(throws: PreviewError.self) {
+        await #expect(throws: LumiPreviewPackage.PreviewError.self) {
             try await engine.refreshPreview(session)
         }
 
@@ -394,7 +394,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
             .sorted { $0.title < $1.title }
         #expect(discoveries.map(\.title) == ["First", "Second"])
@@ -450,7 +450,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
             .sorted { $0.title < $1.title }
         #expect(discoveries.map(\.title) == ["First Live", "Second Live"])
@@ -513,19 +513,19 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
             .sorted { $0.title < $1.title }
         #expect(discoveries.map(\.title) == ["First Host", "Second Host"])
 
         let firstSession = try await engine.startPreview(discoveries[0])
         try await engine.startLivePreview(firstSession)
-        let firstConnection = await (firstSession as? LivePreviewSession)?.hostConnection()
+        let firstConnection = await (firstSession as? LumiPreviewPackage.LivePreviewSession)?.hostConnection()
         let firstPID = await firstConnection?.processID
 
         let secondSession = try await engine.startPreview(discoveries[1])
         try await engine.startLivePreview(secondSession)
-        let secondConnection = await (secondSession as? LivePreviewSession)?.hostConnection()
+        let secondConnection = await (secondSession as? LumiPreviewPackage.LivePreviewSession)?.hostConnection()
         let secondPID = await secondConnection?.processID
 
         #expect(firstPID != nil)
@@ -586,18 +586,18 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         let discoveries = await engine.discoverPreviews(in: package.sourceFile)
             .sorted { $0.title < $1.title }
         #expect(discoveries.map(\.title) == ["First Window", "Second Window"])
 
         let firstSession = try await engine.startPreview(discoveries[0])
         try await engine.startLivePreview(firstSession)
-        let firstConnection = await (firstSession as? LivePreviewSession)?.hostConnection()
+        let firstConnection = await (firstSession as? LumiPreviewPackage.LivePreviewSession)?.hostConnection()
 
         let secondSession = try await engine.startPreview(discoveries[1])
         try await engine.startLivePreview(secondSession)
-        let secondConnection = await (secondSession as? LivePreviewSession)?.hostConnection()
+        let secondConnection = await (secondSession as? LumiPreviewPackage.LivePreviewSession)?.hostConnection()
 
         #expect(firstConnection != nil)
         #expect(secondConnection != nil)
@@ -626,7 +626,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: package.directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
         let baselineCacheEntries = previewEntryCacheDirectoryNames()
         let variants = ["Cycle A", "Cycle B", "Cycle A", "Cycle B"]
         var observedPIDs = Set<Int32>()
@@ -644,7 +644,7 @@ struct PreviewEngineTests {
             try await engine.startLivePreview(session)
             #expect(await session.livePreviewInfo.state == .running)
 
-            let connection = await (session as? LivePreviewSession)?.hostConnection()
+            let connection = await (session as? LumiPreviewPackage.LivePreviewSession)?.hostConnection()
             let processID = await connection?.processID
             #expect(processID != nil)
             if let processID {
@@ -693,7 +693,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: project.rootDirectory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
 
         let discoveries = await engine.discoverPreviews(in: project.previewFile)
         #expect(discoveries.count == 1)
@@ -738,7 +738,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: project.rootDirectory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = LumiPreviewPackage.LivePreviewEngine(hostExecutableURL: hostExecutableURL)
 
         let discoveries = await engine.discoverPreviews(in: project.previewFile)
         #expect(discoveries.count == 1)
@@ -770,7 +770,7 @@ struct PreviewEngineTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let hostExecutableURL = try buildHostExecutable()
-        let connection = try await PreviewHostProcess().launch(executableURL: hostExecutableURL)
+        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: hostExecutableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -778,17 +778,17 @@ struct PreviewEngineTests {
         }
 
         let source = try String(contentsOf: sourceFile, encoding: .utf8)
-        let discoveries = PreviewScanner().scan(fileURL: sourceFile, sourceText: source)
+        let discoveries = LumiPreviewPackage.PreviewScanner().scan(fileURL: sourceFile, sourceText: source)
         #expect(discoveries.count == 1)
 
-        let entryURL = try await PreviewEntryBuilder().buildEntry(
+        let entryURL = try await LumiPreviewPackage.PreviewEntryBuilder().buildEntry(
             for: discoveries[0],
             configuration: .empty,
             buildStrategy: .incremental(fileURL: sourceFile, compileCommand: "")
         )
         let response = try await connection.requestLoadPreviewEntry(
             at: entryURL,
-            symbolName: PreviewEntryBuilder.symbolName
+            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
         )
 
         #expect(response.message == "Loaded preview entry Broken Entry")
@@ -800,7 +800,7 @@ struct PreviewEngineTests {
 
     @Test("扫描不存在的文件返回空预览")
     func discoverMissingFileReturnsEmptyList() async {
-        let engine = LivePreviewEngine(
+        let engine = LumiPreviewPackage.LivePreviewEngine(
             hostExecutableURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("missing-host-\(UUID().uuidString)")
         )
@@ -815,11 +815,11 @@ struct PreviewEngineTests {
 
     @Test("Live 控制 API 通过活动连接转发请求")
     func liveControlRequestsUseActiveHostConnection() async throws {
-        let engine = LivePreviewEngine(
+        let engine = LumiPreviewPackage.LivePreviewEngine(
             hostExecutableURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("unused-host-\(UUID().uuidString)")
         )
-        let session = LivePreviewSession(discovery: sampleDiscovery())
+        let session = LumiPreviewPackage.LivePreviewSession(discovery: sampleDiscovery())
         let connection = RecordingHostConnection()
         await session.setHostConnection(connection)
 
@@ -845,7 +845,7 @@ struct PreviewEngineTests {
             .reloadLivePreview,
             .stopLivePreview
         ])
-        #expect(connection.lastFrame == LiveFrameRequest(x: 10, y: 20, width: 300, height: 200, scale: 2))
+        #expect(connection.lastFrame == LumiPreviewPackage.LiveFrameRequest(x: 10, y: 20, width: 300, height: 200, scale: 2))
         #expect(connection.lastReloadPath == "/tmp/PreviewEntry.dylib")
         #expect(await session.livePreviewInfo.state == .available)
         #expect(await session.livePreviewInfo.hostWindowNumber == nil)
@@ -853,13 +853,13 @@ struct PreviewEngineTests {
 
     @Test("Live 控制 API 在无活动连接时安全返回或抛错")
     func liveControlWithoutConnectionIsSafe() async throws {
-        let engine = LivePreviewEngine(
+        let engine = LumiPreviewPackage.LivePreviewEngine(
             hostExecutableURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("unused-host-\(UUID().uuidString)")
         )
-        let session = LivePreviewSession(discovery: sampleDiscovery())
+        let session = LumiPreviewPackage.LivePreviewSession(discovery: sampleDiscovery())
 
-        await #expect(throws: PreviewError.self) {
+        await #expect(throws: LumiPreviewPackage.PreviewError.self) {
             try await engine.startLivePreview(session)
         }
 
@@ -875,22 +875,22 @@ struct PreviewEngineTests {
 
     @Test("Live 启动和 reload 失败会抛出运行时错误")
     func liveControlFailuresThrowRuntimeErrors() async throws {
-        let engine = LivePreviewEngine(
+        let engine = LumiPreviewPackage.LivePreviewEngine(
             hostExecutableURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("unused-host-\(UUID().uuidString)")
         )
-        let session = LivePreviewSession(discovery: sampleDiscovery())
+        let session = LumiPreviewPackage.LivePreviewSession(discovery: sampleDiscovery())
         let connection = RecordingHostConnection()
-        connection.startLiveResponse = RenderResponse(success: false, message: "start failed")
+        connection.startLiveResponse = LumiPreviewPackage.RenderResponse(success: false, message: "start failed")
         await session.setHostConnection(connection)
 
-        await #expect(throws: PreviewError.self) {
+        await #expect(throws: LumiPreviewPackage.PreviewError.self) {
             try await engine.startLivePreview(session)
         }
 
-        connection.startLiveResponse = RenderResponse(success: true, livePreviewEnabled: true)
-        connection.reloadResponse = RenderResponse(success: false, message: "reload failed")
-        await #expect(throws: PreviewError.self) {
+        connection.startLiveResponse = LumiPreviewPackage.RenderResponse(success: true, livePreviewEnabled: true)
+        connection.reloadResponse = LumiPreviewPackage.RenderResponse(success: false, message: "reload failed")
+        await #expect(throws: LumiPreviewPackage.PreviewError.self) {
             try await engine.reloadLivePreview(
                 session,
                 dylibURL: URL(fileURLWithPath: "/tmp/PreviewEntry.dylib")
@@ -940,8 +940,8 @@ struct PreviewEngineTests {
         return (packageDirectory, sourceFile)
     }
 
-    private func sampleDiscovery() -> PreviewDiscovery {
-        PreviewDiscovery(
+    private func sampleDiscovery() -> LumiPreviewPackage.PreviewDiscovery {
+        LumiPreviewPackage.PreviewDiscovery(
             id: "sample:1:0",
             title: "Sample",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Sample.swift"),
@@ -1211,11 +1211,11 @@ struct PreviewEngineTests {
 
         guard process.terminationStatus == 0 else {
             let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            throw PreviewError.compilationFailed(message: output)
+            throw LumiPreviewPackage.PreviewError.compilationFailed(message: output)
         }
 
         guard let executableURL = findHostExecutable(in: scratchPath) else {
-            throw PreviewError.buildProductNotFound
+            throw LumiPreviewPackage.PreviewError.buildProductNotFound
         }
 
         return executableURL
@@ -1277,7 +1277,7 @@ struct PreviewEngineTests {
     }
 }
 
-private final class RecordingHostConnection: HostConnection, @unchecked Sendable {
+private final class RecordingHostConnection: LumiPreviewPackage.HostConnection, @unchecked Sendable {
     enum Command: Equatable {
         case render
         case refresh
@@ -1294,14 +1294,14 @@ private final class RecordingHostConnection: HostConnection, @unchecked Sendable
 
     var commands: [Command] = []
     var running = true
-    var lastFrame: LiveFrameRequest?
+    var lastFrame: LumiPreviewPackage.LiveFrameRequest?
     var lastReloadPath: String?
-    var startLiveResponse = RenderResponse(
+    var startLiveResponse = LumiPreviewPackage.RenderResponse(
         success: true,
         livePreviewEnabled: true,
         liveWindowNumber: 42
     )
-    var reloadResponse = RenderResponse(success: true, livePreviewEnabled: true)
+    var reloadResponse = LumiPreviewPackage.RenderResponse(success: true, livePreviewEnabled: true)
 
     var isRunning: Bool {
         get async {
@@ -1316,58 +1316,58 @@ private final class RecordingHostConnection: HostConnection, @unchecked Sendable
     }
 
     func requestRender(
-        discovery: PreviewDiscovery,
-        configuration: PreviewRenderConfiguration
-    ) async throws -> RenderResponse {
+        discovery: LumiPreviewPackage.PreviewDiscovery,
+        configuration: LumiPreviewPackage.PreviewRenderConfiguration
+    ) async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.render)
-        return RenderResponse(success: true)
+        return LumiPreviewPackage.RenderResponse(success: true)
     }
 
-    func requestRefresh() async throws -> RenderResponse {
+    func requestRefresh() async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.refresh)
-        return RenderResponse(success: true)
+        return LumiPreviewPackage.RenderResponse(success: true)
     }
 
-    func requestLoadDylib(at dylibURL: URL) async throws -> RenderResponse {
+    func requestLoadDylib(at dylibURL: URL) async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.loadDylib)
-        return RenderResponse(success: true)
+        return LumiPreviewPackage.RenderResponse(success: true)
     }
 
-    func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> RenderResponse {
+    func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.loadPreviewEntry)
-        return RenderResponse(success: true, livePreviewEnabled: true)
+        return LumiPreviewPackage.RenderResponse(success: true, livePreviewEnabled: true)
     }
 
-    func requestStartLivePreview() async throws -> RenderResponse {
+    func requestStartLivePreview() async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.startLivePreview)
         return startLiveResponse
     }
 
-    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) async throws -> RenderResponse {
+    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.updateLiveFrame)
-        lastFrame = LiveFrameRequest(x: x, y: y, width: width, height: height, scale: scale)
-        return RenderResponse(success: true, livePreviewEnabled: true)
+        lastFrame = LumiPreviewPackage.LiveFrameRequest(x: x, y: y, width: width, height: height, scale: scale)
+        return LumiPreviewPackage.RenderResponse(success: true, livePreviewEnabled: true)
     }
 
-    func requestShowLivePreview() async throws -> RenderResponse {
+    func requestShowLivePreview() async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.showLivePreview)
-        return RenderResponse(success: true, livePreviewEnabled: true)
+        return LumiPreviewPackage.RenderResponse(success: true, livePreviewEnabled: true)
     }
 
-    func requestHideLivePreview() async throws -> RenderResponse {
+    func requestHideLivePreview() async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.hideLivePreview)
-        return RenderResponse(success: true, livePreviewEnabled: true)
+        return LumiPreviewPackage.RenderResponse(success: true, livePreviewEnabled: true)
     }
 
-    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> RenderResponse {
+    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.reloadLivePreview)
         lastReloadPath = dylibURL.path
         return reloadResponse
     }
 
-    func requestStopLivePreview() async throws -> RenderResponse {
+    func requestStopLivePreview() async throws -> LumiPreviewPackage.RenderResponse {
         commands.append(.stopLivePreview)
-        return RenderResponse(success: true)
+        return LumiPreviewPackage.RenderResponse(success: true)
     }
 
     func terminate() async {

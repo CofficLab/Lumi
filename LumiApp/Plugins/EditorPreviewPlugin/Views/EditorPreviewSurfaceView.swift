@@ -1,4 +1,3 @@
-#if canImport(LumiPreviewKit)
 import LumiPreviewKit
 import SwiftUI
 
@@ -7,11 +6,11 @@ import SwiftUI
 /// 核心展示区域，根据 displayMode 切换 Image / Live 渲染方式：
 /// - Image 模式：显示预览渲染结果图片，附带状态图标和性能信息
 /// - Live 模式：通过独立宿主进程实时渲染 SwiftUI 视图
-/// 包含更新中的加载徽章、状态颜色、图标等视觉反馈
+/// 包含状态颜色、图标等视觉反馈
 struct EditorPreviewSurfaceView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var viewModel: EditorPreviewViewModel
-    let preview: PreviewDiscovery
+    let preview: LumiPreviewPackage.PreviewDiscovery
 
     var body: some View {
         ZStack {
@@ -24,35 +23,6 @@ struct EditorPreviewSurfaceView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(alignment: .topTrailing) {
-            if viewModel.isUpdatingPreview {
-                updatingBadge
-                    .padding(10)
-            }
-        }
-    }
-
-    private var updatingBadge: some View {
-        HStack(spacing: 6) {
-            ProgressView()
-                .controlSize(.small)
-                .scaleEffect(0.6)
-                .frame(width: 12, height: 12)
-            Text(viewModel.updatePhase.title)
-                .font(.system(size: 11, weight: .medium))
-                .lineLimit(1)
-        }
-        .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(
-            themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.92),
-            in: RoundedRectangle(cornerRadius: 6)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
-        )
     }
 
     private var imageCanvasSurface: some View {
@@ -123,7 +93,6 @@ struct EditorPreviewSurfaceView: View {
                 }
             }
             .frame(width: canvasSize.width, height: canvasSize.height)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
                 EditorPreviewLiveCanvasFrameReporter { screenFrame, scale in
                     viewModel.updateLiveCanvasRect(screenFrame, scale: scale)
@@ -131,6 +100,7 @@ struct EditorPreviewSurfaceView: View {
                     viewModel.liveCanvasFrameUnavailable()
                 }
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
                 viewModel.liveCanvasDidAppear()
             }
@@ -166,10 +136,11 @@ struct EditorPreviewSurfaceView: View {
         guard !viewModel.isCanvasScaleToFit else {
             return fittedSize(baseSize, inside: availableCanvasSize)
         }
-        return CGSize(
+        let scaledSize = CGSize(
             width: baseSize.width * viewModel.canvasScale,
             height: baseSize.height * viewModel.canvasScale
         )
+        return fittedSize(scaledSize, inside: availableCanvasSize)
     }
 
     private func baseCanvasSize(for availableCanvasSize: CGSize) -> CGSize {
@@ -262,4 +233,3 @@ struct EditorPreviewSurfaceView: View {
         }
     }
 }
-#endif

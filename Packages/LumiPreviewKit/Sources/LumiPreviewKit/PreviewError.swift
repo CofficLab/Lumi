@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewPackage {
 /// 预览相关错误。
-public enum PreviewError: Error, Sendable, Equatable {
+enum PreviewError: Error, Sendable, Equatable {
     /// 找不到文件所属的 target。
     case targetNotFound(file: String)
 
@@ -25,4 +26,6 @@ public enum PreviewError: Error, Sendable, Equatable {
 
     /// 视图依赖缺失，例如 `@EnvironmentObject` 未注入。
     case missingDependency(description: String)
+}
+
 }
