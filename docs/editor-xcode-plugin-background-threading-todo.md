@@ -21,8 +21,11 @@
 - 已完成：最近项目预加载扫描后台化。
 - 已完成：capability 同步接口增加项目类型缓存，优先读取 Bridge 的已解析状态。
 - 已完成：`filePath -> matchedTargets` 缓存，减少状态栏/语义检查的重复 target 遍历。
-- 待完成：状态栏语义检查进一步基于快照做 debounce，避免通知风暴。
-- 待完成：评估是否拆出完整 `XcodeProjectBackgroundResolver`，进一步减少 `XcodeProjectResolver @MainActor` 的职责。
+- 已完成：状态栏语义检查基于 `XcodeEditorContextSnapshot` 做 debounce，避免通知风暴和主线程 target 重查询。
+- 已完成：移除 `XcodeProjectResolver` 整体 `@MainActor` 隔离，让无状态解析器可从后台调用。
+- 已完成：capability 判断使用共享项目类型缓存；同步协议暂不改 async，避免扩散修改 EditorService 注册链路。
+- 已完成：生产默认关闭 Xcode 插件、build context、resolver verbose 日志。
+- 已完成：评估是否拆出完整 `XcodeProjectBackgroundResolver`；当前 resolver 已无状态、无 MainActor 隔离，暂不新增一层类型。
 
 ## P0：高优先级任务
 
@@ -98,10 +101,10 @@ FileManager.default.enumerator(...)
 
 **TODO：**
 
-- [ ] 移除 `XcodeProjectResolver` 整体 `@MainActor` 标记，或拆出后台 resolver。
+- [x] 移除 `XcodeProjectResolver` 整体 `@MainActor` 标记，或拆出后台 resolver。
 - [x] 将 `resolve(workspaceURL:)` 中的 pbxproj 解析、目录枚举放到后台 actor / detached task。
 - [x] 将 `findWorkspace`、`isXcodeProjectRoot` 设计为可后台调用的纯 I/O helper。
-- [ ] 检查调用方是否依赖 MainActor 隔离。
+- [x] 检查调用方是否依赖 MainActor 隔离。
 
 **建议方案：**
 
@@ -177,10 +180,10 @@ Task { @MainActor [weak self] in
 
 **TODO：**
 
-- [ ] 不要用 `Task { @MainActor ... }` 包住整个 resync 流程。
-- [ ] 只在修改 `@Published` 属性时回到 MainActor。
-- [ ] 语义检查尽量使用快照数据或后台 inspector。
-- [ ] 对 project context / snapshot 通知增加 debounce，减少重复计算。
+- [x] 不要用 `Task { @MainActor ... }` 包住整个 resync 流程。
+- [x] 只在修改 `@Published` 属性时回到 MainActor。
+- [x] 语义检查尽量使用快照数据或后台 inspector。
+- [x] 对 project context / snapshot 通知增加 debounce，减少重复计算。
 
 **建议：**
 
@@ -217,7 +220,7 @@ let xcodeProjects = recentProjects.filter { project in
 
 **TODO：**
 
-- [ ] `projectVM.getRecentProjects()` 可保留 MainActor。
+- [x] `projectVM.getRecentProjects()` 可保留 MainActor。
 - [x] 对最近项目执行 Xcode 项目判断时，放到后台线程。
 - [x] `preloadProject` 中的 `findWorkspace`、`store.validate` 也应后台化。
 - [x] 将 `preloadProject`、`generateBuildServer`、`fetchAvailableSchemes` 标记为 `nonisolated static` 或迁移到专门后台工具类型。
@@ -247,8 +250,8 @@ XcodeProjectResolver.isXcodeProjectRoot(...)
 
 **TODO：**
 
-- [ ] 优先考虑将接口改为 async。
-- [ ] 如果协议限制必须同步，增加缓存，避免频繁 FileManager I/O。
+- [x] 优先考虑将接口改为 async。
+- [x] 如果协议限制必须同步，增加缓存，避免频繁 FileManager I/O。
 - [x] 在项目打开阶段预计算 `isXcodeProject`，后续能力判断直接读缓存。
 
 ---
@@ -278,7 +281,7 @@ targetsCompatibleWithActiveScheme(for:)
 - [x] 为 `filePath -> matchedTargets` 增加缓存。
 - [x] scheme/configuration 切换或项目重解析时清空缓存。
 - [x] snapshot 创建尽量使用缓存结果。
-- [ ] 语义检查尽量基于快照，不直接访问 provider 的重查询。
+- [x] 语义检查尽量基于快照，不直接访问 provider 的重查询。
 
 ---
 
@@ -299,10 +302,10 @@ targetsCompatibleWithActiveScheme(for:)
 
 **TODO：**
 
-- [ ] 确认 `SuperEditorRuntimeContext.shared.currentContent` 是否为纯内存读取。
-- [ ] 如果 `currentContent` 可能同步访问文件或编辑器，应改为异步快照读取。
-- [ ] 对 `provideHover` / `provideSuggestions` 前置逻辑做轻量化。
-- [ ] 保留 UI suggestion 构造和 action 闭包在 MainActor。
+- [x] 确认 `SuperEditorRuntimeContext.shared.currentContent` 是否为纯内存读取。
+- [x] 如果 `currentContent` 可能同步访问文件或编辑器，应改为异步快照读取。
+- [x] 对 `provideHover` / `provideSuggestions` 前置逻辑做轻量化。
+- [x] 保留 UI suggestion 构造和 action 闭包在 MainActor。
 
 ---
 
@@ -319,20 +322,20 @@ targetsCompatibleWithActiveScheme(for:)
 
 **TODO：**
 
-- [ ] 高频路径日志改为 debug 级别或增加采样。
-- [ ] 避免在日志字符串中做重计算。
-- [ ] 生产环境默认关闭 `XcodePluginLog.verbose` / `XcodeBuildContextProvider.verbose` / `XcodeProjectResolver.verbose`。
+- [x] 高频路径日志改为 debug 级别或增加采样。
+- [x] 避免在日志字符串中做重计算。
+- [x] 生产环境默认关闭 `XcodePluginLog.verbose` / `XcodeBuildContextProvider.verbose` / `XcodeProjectResolver.verbose`。
 
 ---
 
 ## 验收标准
 
 - [ ] 打开大型 Xcode 项目时 UI 不明显卡顿。
-- [ ] 插件注册阶段不会阻塞主线程等待 `which` 或其他外部进程。
-- [ ] 最近项目预加载不会造成启动后 UI 卡顿。
-- [ ] 状态栏更新、snapshot 变更不会频繁触发主线程 target 遍历。
-- [ ] `xcodebuild -list`、`xcodebuild -showBuildSettings`、`xcode-build-server config` 都通过异步后台流程执行。
-- [ ] MainActor 主要只负责：`@Published` 状态更新、SwiftUI 视图构造、UI action。
+- [x] 插件注册阶段不会阻塞主线程等待 `which` 或其他外部进程。
+- [x] 最近项目预加载不会造成启动后 UI 卡顿。
+- [x] 状态栏更新、snapshot 变更不会频繁触发主线程 target 遍历。
+- [x] `xcodebuild -list`、`xcodebuild -showBuildSettings`、`xcode-build-server config` 都通过异步后台流程执行。
+- [x] MainActor 主要只负责：`@Published` 状态更新、SwiftUI 视图构造、UI action。
 
 ---
 
