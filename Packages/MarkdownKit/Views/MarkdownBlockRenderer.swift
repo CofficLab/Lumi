@@ -239,14 +239,18 @@ struct HorizontalScrollView<Content: View>: NSViewRepresentable {
 
         let hostingView = NSHostingView(rootView: content)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
-        // 宽度不跟随 clip view，让内容自然撑开以触发水平滚动
-        hostingView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // 让内容按 intrinsic content size 自然撑开，以触发水平滚动
+        hostingView.setContentHuggingPriority(.required, for: .horizontal)
+        hostingView.setContentCompressionResistancePriority(.required, for: .horizontal)
         scrollView.documentView = hostingView
 
-        // hostingView 宽度自由拉伸，高度紧贴 clip view
+        // hostingView 顶部和高度紧贴 clip view；
+        // 左侧锚定防止初始偏移；最小宽度保证不窄于可见区域（内容更宽时自然撑开滚动）
         NSLayoutConstraint.activate([
             hostingView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
             hostingView.heightAnchor.constraint(equalTo: scrollView.contentView.heightAnchor),
+            hostingView.widthAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.widthAnchor),
         ])
 
         return scrollView
