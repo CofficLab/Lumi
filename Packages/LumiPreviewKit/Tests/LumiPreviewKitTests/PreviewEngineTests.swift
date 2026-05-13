@@ -3,7 +3,7 @@ import Darwin
 import Testing
 @testable import LumiPreviewKit
 
-@Suite("LivePreviewEngine")
+@Suite("LivePreviewEngine", .serialized)
 struct PreviewEngineTests {
 
     @Test("完整的 scan → build → launch → render → refresh → stop 管线")
@@ -617,6 +617,61 @@ struct PreviewEngineTests {
         #expect(await secondSession.state == .stopped)
     }
 
+    @Test("反复编辑刷新后不泄漏 host 进程且缓存目录不会无界增长")
+    func repeatedPreviewCyclesDoNotLeakHostsOrUnboundedCaches() async throws {
+        let package = try makeTemporaryPackage(
+            targetName: "RepeatedCyclePreviewTarget",
+            source: sourceForCycledText("Cycle A")
+        )
+        defer { try? FileManager.default.removeItem(at: package.directory) }
+
+        let hostExecutableURL = try buildHostExecutable()
+        let engine = LivePreviewEngine(hostExecutableURL: hostExecutableURL)
+        let baselineCacheEntries = previewEntryCacheDirectoryNames()
+        let variants = ["Cycle A", "Cycle B", "Cycle A", "Cycle B"]
+        var observedPIDs = Set<Int32>()
+
+        for text in variants {
+            try sourceForCycledText(text).write(to: package.sourceFile, atomically: true, encoding: .utf8)
+
+            let discoveries = await engine.discoverPreviews(in: package.sourceFile)
+            #expect(discoveries.count == 1)
+            #expect(discoveries[0].title == "Repeated Cycle")
+
+            let session = try await engine.startPreview(discoveries[0])
+            #expect(await session.state == .running)
+
+            try await engine.startLivePreview(session)
+            #expect(await session.livePreviewInfo.state == .running)
+
+            let connection = await (session as? LivePreviewSession)?.hostConnection()
+            let processID = await connection?.processID
+            #expect(processID != nil)
+            if let processID {
+                observedPIDs.insert(processID)
+                #expect(processExists(processID))
+            }
+
+            try await engine.refreshPreview(session)
+            #expect(await session.state == .running)
+            #expect(await session.lastRenderResponse?.previewImagePNGBase64 != nil)
+            #expect(await session.lastRenderResponse?.message?.contains("Repeated Cycle") == true)
+
+            await engine.stopPreview(session)
+            #expect(await session.state == .stopped)
+
+            if let processID {
+                try await waitForProcessExit(processID, timeout: 4)
+                #expect(!processExists(processID))
+            }
+        }
+
+        let finalCacheEntries = previewEntryCacheDirectoryNames()
+        let newCacheEntries = finalCacheEntries.subtracting(baselineCacheEntries)
+        #expect(observedPIDs.count == variants.count)
+        #expect(newCacheEntries.count <= 8)
+    }
+
     @Test("Xcode 项目 scan → build → launch → render → stop 管线")
     func fullXcodePreviewPipeline() async throws {
         let project = try makeTemporaryXcodeProject(
@@ -895,6 +950,22 @@ struct PreviewEngineTests {
             bodySource: "Text(\"Sample\")",
             sourceText: "#Preview { Text(\"Sample\") }"
         )
+    }
+
+    private func sourceForCycledText(_ text: String) -> String {
+        """
+        import SwiftUI
+
+        struct RepeatedCyclePreviewView: View {
+            var body: some View {
+                Text("\(text)")
+            }
+        }
+
+        #Preview("Repeated Cycle") {
+            RepeatedCyclePreviewView()
+        }
+        """
     }
 
     private func makeTemporaryXcodeProject(
@@ -1184,6 +1255,25 @@ struct PreviewEngineTests {
             return true
         }
         return errno != ESRCH
+    }
+
+    private func previewEntryCacheDirectoryNames() -> Set<String> {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-PreviewEntryCache", isDirectory: true)
+        guard let entries = try? FileManager.default.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        return Set(
+            entries.compactMap { url in
+                let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
+                return values?.isDirectory == true ? url.lastPathComponent : nil
+            }
+        )
     }
 }
 

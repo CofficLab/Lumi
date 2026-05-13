@@ -26,6 +26,7 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
     private let previewEntryBuilder: PreviewEntryBuilder
     private let hostExecutableURL: URL
     private let buildCoordinator = PreviewBuildCoordinator()
+    private static let previewEntryCacheLimit = 8
 
     /// 创建默认预览引擎。
     ///
@@ -323,6 +324,7 @@ public final class LivePreviewEngine: PreviewEngine, Sendable {
             configuration: await session.configuration,
             buildStrategy: await session.buildStrategy()
         )
+        PreviewEntryBuilder.removeExpiredCacheEntries(keepingNewest: Self.previewEntryCacheLimit)
 
         if await session.livePreviewInfo.state == .running {
             let loadStart = Date()

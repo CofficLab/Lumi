@@ -3,7 +3,7 @@ import AppKit
 import Testing
 @testable import LumiPreviewKit
 
-@Suite("PreviewHostProcess")
+@Suite("PreviewHostProcess", .serialized)
 struct HostProcessTests {
 
     @Test("RenderRequest 编码环境注入配置")
