@@ -67,7 +67,21 @@ find "$APP_PATH" -depth \
     rm -f "$ENTITLEMENTS_FILE"
 done
 
-# 3. Sign the Main App
+# 3. Sign helper executables (bare binaries in Contents/Helpers/)
+# These are standalone executables without bundle wrappers (e.g., LumiPreviewHostApp)
+# that are not matched by the framework/bundle/extension find above.
+echo "🔍 Signing helper executables..."
+HELPERS_DIR="$APP_PATH/Contents/Helpers"
+if [ -d "$HELPERS_DIR" ]; then
+    find "$HELPERS_DIR" -type f ! -type l 2>/dev/null | while read -r helper; do
+        if [ -x "$helper" ]; then
+            echo "✍️  Signing helper: $helper"
+            codesign --force --verbose --timestamp --sign "$IDENTITY" --options runtime "$helper"
+        fi
+    done
+fi
+
+# 4. Sign the Main App
 echo "✍️  Signing Main App..."
 OPTS="--force --verbose --timestamp --sign \"$IDENTITY\" --options runtime"
 if [ -n "$ENTITLEMENTS" ]; then
@@ -75,6 +89,6 @@ if [ -n "$ENTITLEMENTS" ]; then
 fi
 eval codesign $OPTS "\"$APP_PATH\""
 
-# 4. Verify Signature
+# 5. Verify Signature
 echo "✅ Verifying signature..."
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
