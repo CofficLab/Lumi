@@ -46,7 +46,7 @@ struct EditorRemoteHotPreviewDetailView: View {
 
     private var toolbar: some View {
         HStack(spacing: 8) {
-            Image(systemName: "bolt.rectangle")
+            Image(systemName: "bolt.horizontal")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 

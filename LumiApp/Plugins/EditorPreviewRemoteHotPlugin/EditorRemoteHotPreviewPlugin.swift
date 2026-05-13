@@ -15,7 +15,7 @@ actor EditorRemoteHotPreviewPlugin: SuperPlugin, SuperLog {
     static let id: String = "EditorRemoteHotPreview"
     static let displayName: String = "Hot Preview"
     static let description: String = "Experimental hot preview powered by LumiHotPreviewKit"
-    static let iconName: String = "bolt.rectangle"
+    static let iconName: String = "bolt.horizontal"
     static var isConfigurable: Bool { false }
     static var order: Int { 83 }
 
@@ -27,7 +27,7 @@ actor EditorRemoteHotPreviewPlugin: SuperPlugin, SuperLog {
         return [BottomPanelTab(
             id: "editor-bottom-hot-preview",
             title: "Hot Preview",
-            systemImage: "bolt.rectangle",
+            systemImage: "bolt.horizontal",
             priority: 83
         )]
     }
