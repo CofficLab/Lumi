@@ -6,8 +6,8 @@ import Testing
 @Suite("EditorPreviewLiveCanvasService")
 struct EditorPreviewLiveCanvasServiceTests {
 
-    @Test("应用失焦时隐藏，恢复后重新显示")
-    func resignAndBecomeKeyToggleVisibility() async throws {
+    @Test("应用失焦时保持显示，恢复时重新同步 frame")
+    func resignAndBecomeKeyKeepVisibility() async throws {
         let service = EditorPreviewLiveCanvasService(displayMode: .live)
         var events: [String] = []
 
@@ -25,11 +25,41 @@ struct EditorPreviewLiveCanvasServiceTests {
 
         service.lumiWindowDidResignKey()
         try await waitForAsyncCallbacks()
+        #expect(events == ["show"])
+        #expect(service.shouldShowLiveWindow)
 
+        events.removeAll()
         service.lumiWindowDidBecomeKey()
         try await waitForAsyncCallbacks()
 
-        #expect(events == ["show", "hide", "show"])
+        #expect(events == ["show"])
+        #expect(service.shouldShowLiveWindow)
+    }
+
+    @Test("连续焦点变化不会隐藏 Live 预览")
+    func focusChangesKeepVisibility() async throws {
+        let service = EditorPreviewLiveCanvasService(displayMode: .live)
+        var events: [String] = []
+
+        service.onShowLivePreview = {
+            events.append("show")
+        }
+        service.onHideLivePreview = {
+            events.append("hide")
+        }
+        service.onSyncLiveFrameFromEngine = {}
+
+        service.updateLiveCanvasRect(CGRect(x: 10, y: 20, width: 300, height: 200), scale: 2)
+        service.liveCanvasDidAppear()
+        try await waitForAsyncCallbacks()
+
+        events.removeAll()
+        service.lumiWindowDidResignKey()
+        service.lumiWindowDidBecomeKey()
+        service.lumiWindowDidResignKey()
+        try await waitForAsyncCallbacks()
+
+        #expect(!events.contains("hide"))
         #expect(service.shouldShowLiveWindow)
     }
 
@@ -174,8 +204,8 @@ struct EditorPreviewLiveCanvasServiceTests {
         #expect(service.shouldShowLiveWindow)
     }
 
-    @Test("重新激活前台时先请求 frame sync 再重新显示")
-    func appReactivationResyncsFrameBeforeShowing() async throws {
+    @Test("重新激活前台时同步 frame 且保持显示")
+    func appReactivationResyncsFrameWithoutHiding() async throws {
         let service = EditorPreviewLiveCanvasService(displayMode: .live)
         var events: [String] = []
 
@@ -196,7 +226,8 @@ struct EditorPreviewLiveCanvasServiceTests {
 
         service.lumiWindowDidResignKey()
         try await waitForAsyncCallbacks()
-        #expect(events == ["hide"])
+        #expect(events.isEmpty)
+        #expect(service.shouldShowLiveWindow)
 
         events.removeAll()
         service.lumiWindowDidBecomeKey()
@@ -206,8 +237,8 @@ struct EditorPreviewLiveCanvasServiceTests {
         #expect(service.shouldShowLiveWindow)
     }
 
-    @Test("重新激活前台时使用最新 frame 恢复位置")
-    func appReactivationUsesLatestFrameBeforeShowing() async throws {
+    @Test("重新激活前台时使用最新 frame 保持位置")
+    func appReactivationUsesLatestFrame() async throws {
         let service = EditorPreviewLiveCanvasService(displayMode: .live)
         let initialRect = CGRect(x: 10, y: 20, width: 320, height: 180)
         let movedRect = CGRect(x: 120, y: 80, width: 420, height: 240)

@@ -4,15 +4,11 @@ import Foundation
 /// 编辑器预览 Live Canvas 可见性与帧同步服务。
 ///
 /// 管理 Live 预览窗口的显示/隐藏状态逻辑，包括：
-/// - 应用活跃状态跟踪
 /// - 预览窗口活跃状态跟踪
 /// - Canvas 可见性和帧矩形跟踪
 /// - 根据综合条件决定是否显示/隐藏 Live 窗口
 @MainActor
 public final class EditorPreviewLiveCanvasService {
-
-    /// 应用是否处于活跃状态（前台）。
-    public private(set) var isApplicationActive: Bool
 
     /// 预览所属编辑器窗口是否仍可显示 Live overlay。
     ///
@@ -47,13 +43,11 @@ public final class EditorPreviewLiveCanvasService {
 
     public init(displayMode: PreviewDisplayMode) {
         self.displayMode = displayMode
-        self.isApplicationActive = Self.sharedApplicationIfAvailable?.isActive ?? true
     }
 
     /// 是否具备显示 Live 窗口的全部条件。
     public var shouldShowLiveWindow: Bool {
         displayMode == .live
-            && isApplicationActive
             && isPreviewWindowActive
             && isLiveCanvasVisible
             && !liveCanvasRect.isEmpty
@@ -121,16 +115,12 @@ public final class EditorPreviewLiveCanvasService {
 
     /// 应用失去焦点时调用。
     public func lumiWindowDidResignKey() {
-        isApplicationActive = false
-        guard displayMode == .live else { return }
-        Task {
-            await syncLiveVisibility()
-        }
+        // Focus changes do not imply the preview canvas disappeared. The live window
+        // stays bound to the canvas lifecycle instead.
     }
 
     /// 应用获得焦点时调用。
     public func lumiWindowDidBecomeKey() {
-        isApplicationActive = true
         guard displayMode == .live else { return }
         Task {
             await onSyncLiveFrameFromEngine?()
@@ -178,9 +168,5 @@ public final class EditorPreviewLiveCanvasService {
         } else {
             await onHideLivePreview?()
         }
-    }
-
-    private static var sharedApplicationIfAvailable: NSApplication? {
-        NSClassFromString("NSApplication").flatMap { _ in NSApp }
     }
 }
