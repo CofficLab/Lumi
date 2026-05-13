@@ -3,20 +3,19 @@ import os
 import MagicKit
 
 /// Xcode 项目解析器：发现并解析 .xcodeproj / .xcworkspace
-@MainActor
-final public class XcodeProjectResolver: SuperLog {
+final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
-    nonisolated public static let emoji = "🔍"
-    nonisolated public static let verbose = true
+    public static let emoji = "🔍"
+    public static let verbose = false
 
-    nonisolated private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.resolver")
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.resolver")
 
     public init() {}
 
     // MARK: - 项目发现
 
     /// 在指定目录中查找 .xcworkspace，找到第一个
-    nonisolated public static func findWorkspace(in directory: URL) -> URL? {
+    public static func findWorkspace(in directory: URL) -> URL? {
         let fm = FileManager.default
         guard let contents = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else {
             return nil
@@ -30,7 +29,7 @@ final public class XcodeProjectResolver: SuperLog {
     }
 
     /// 判断一个目录是否是 Xcode 项目根目录
-    nonisolated public static func isXcodeProjectRoot(_ directory: URL) -> Bool {
+    public static func isXcodeProjectRoot(_ directory: URL) -> Bool {
         findWorkspace(in: directory) != nil
     }
 
@@ -195,7 +194,7 @@ final public class XcodeProjectResolver: SuperLog {
 
     // MARK: - 工具方法
 
-    nonisolated static func resolveTargetSourceFiles(projectLikeURL: URL) -> [String: Set<String>] {
+    static func resolveTargetSourceFiles(projectLikeURL: URL) -> [String: Set<String>] {
         let projectURL: URL
         if projectLikeURL.pathExtension == "xcodeproj" {
             projectURL = projectLikeURL
@@ -233,7 +232,7 @@ final public class XcodeProjectResolver: SuperLog {
         }
     }
 
-    private nonisolated static func enumerateFiles(in rootURL: URL, excluding excludedRelativePaths: Set<String>) -> Set<String> {
+    private static func enumerateFiles(in rootURL: URL, excluding excludedRelativePaths: Set<String>) -> Set<String> {
         if let values = try? rootURL.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey]),
            values.isRegularFile == true {
             return excludedRelativePaths.isEmpty ? [rootURL.path] : []

@@ -7,7 +7,7 @@ import os
 /// Xcode 插件日志辅助（插件内共享）
 enum XcodePluginLog {
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.xcode")
-    nonisolated(unsafe) static var verbose = true
+    nonisolated(unsafe) static var verbose = false
 }
 
 /// Xcode 项目编辑器插件：提供 Xcode 项目标识、构建上下文和 sourcekit-lsp 集成
