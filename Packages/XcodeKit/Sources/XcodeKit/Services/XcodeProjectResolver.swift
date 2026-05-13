@@ -16,7 +16,7 @@ final public class XcodeProjectResolver: SuperLog {
     // MARK: - 项目发现
 
     /// 在指定目录中查找 .xcworkspace，找到第一个
-    public static func findWorkspace(in directory: URL) -> URL? {
+    nonisolated public static func findWorkspace(in directory: URL) -> URL? {
         let fm = FileManager.default
         guard let contents = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else {
             return nil
@@ -30,7 +30,7 @@ final public class XcodeProjectResolver: SuperLog {
     }
 
     /// 判断一个目录是否是 Xcode 项目根目录
-    public static func isXcodeProjectRoot(_ directory: URL) -> Bool {
+    nonisolated public static func isXcodeProjectRoot(_ directory: URL) -> Bool {
         findWorkspace(in: directory) != nil
     }
 

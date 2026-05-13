@@ -32,6 +32,9 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     /// build settings 缓存: cacheKey → settings
     private var buildSettingsCache: [String: [[String: String]]] = [:]
 
+    /// file path → matching targets cache.
+    private var targetMatchCache: [String: [XcodeTargetContext]] = [:]
+
     /// xcode-build-server 路径缓存
     private var xcodeBuildServerPath: String?
 
@@ -113,7 +116,12 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             return
         }
 
-        let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL)
+        let workspaceURL: URL?
+        if projectURL.pathExtension == "xcodeproj" || projectURL.pathExtension == "xcworkspace" {
+            workspaceURL = projectURL
+        } else {
+            workspaceURL = await XcodeProjectBackgroundQuery.findWorkspace(in: projectURL.path)
+        }
         guard let workspaceURL else {
             buildContextStatus = .unavailable("No .xcodeproj / .xcworkspace found")
             return
@@ -128,6 +136,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         }
 
         currentWorkspace = workspaceContext
+        targetMatchCache.removeAll()
         if currentWorkspace?.activeDestination == nil {
             currentWorkspace?.activeDestination = Self.defaultDestination()
         }
@@ -239,6 +248,9 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         guard let workspace = currentWorkspace else { return [] }
 
         let filePath = fileURL.path
+        if let cached = targetMatchCache[filePath] {
+            return cached
+        }
         var matches: [XcodeTargetContext] = []
         for project in workspace.projects {
             for target in project.targets {
@@ -247,6 +259,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
                 }
             }
         }
+        targetMatchCache[filePath] = matches
         return matches
     }
 
@@ -321,6 +334,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     /// 使所有缓存失效
     public func invalidateAllContexts() {
         buildSettingsCache.removeAll()
+        targetMatchCache.removeAll()
         buildContextStatus = .needsResync
         if Self.verbose { Self.logger.info("\(Self.t)所有 build context 已失效") }
     }

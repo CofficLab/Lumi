@@ -9,6 +9,7 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
 
     let id = "XcodeProjectContextCapability"
     private let bridge: XcodeProjectContextBridge
+    private var projectCapabilityCache: [String: Bool] = [:]
 
     init(bridge: XcodeProjectContextBridge = .shared) {
         self.bridge = bridge
@@ -24,7 +25,15 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
             }
             return false
         }
+        if let cachedState = bridge.cachedState, cachedState.projectPath == path {
+            projectCapabilityCache[path] = cachedState.isXcodeProject
+            return cachedState.isXcodeProject
+        }
+        if let cached = projectCapabilityCache[path] {
+            return cached
+        }
         let canHandle = XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: path))
+        projectCapabilityCache[path] = canHandle
         if XcodePluginLog.verbose {
             XcodePluginLog.logger.info("\(self.t)canHandleProject: \(path) -> \(canHandle)")
         }
@@ -156,6 +165,7 @@ final class XcodeLanguageIntegrationCapabilityAdapter: SuperEditorLanguageIntegr
 
     let id = "XcodeLanguageIntegrationCapability"
     private let bridge: XcodeProjectContextBridge
+    private var projectSupportCache: [String: Bool] = [:]
 
     init(bridge: XcodeProjectContextBridge = .shared) {
         self.bridge = bridge
@@ -177,7 +187,15 @@ final class XcodeLanguageIntegrationCapabilityAdapter: SuperEditorLanguageIntegr
             }
             return false
         }
+        if let cachedState = bridge.cachedState, cachedState.projectPath == projectPath {
+            projectSupportCache[projectPath] = cachedState.isXcodeProject
+            return cachedState.isXcodeProject
+        }
+        if let cached = projectSupportCache[projectPath] {
+            return cached
+        }
         let supported = XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: projectPath))
+        projectSupportCache[projectPath] = supported
         if XcodePluginLog.verbose {
             XcodePluginLog.logger.info("\(self.t)supports: language=\(languageId), project=\(projectPath) -> \(supported)")
         }
