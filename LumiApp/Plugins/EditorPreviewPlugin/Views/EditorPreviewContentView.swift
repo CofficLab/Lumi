@@ -92,8 +92,8 @@ struct EditorPreviewContentView: View {
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.isSVGMode {
-            svgContent
+        if viewModel.isImageMode {
+            imageContent
         } else if viewModel.isMarkdownMode {
             markdownContent
         } else if viewModel.previews.isEmpty {
@@ -115,9 +115,9 @@ struct EditorPreviewContentView: View {
     }
 
     @ViewBuilder
-    private var svgContent: some View {
-        if let svgFileURL = viewModel.svgFileURL {
-            EditorPreviewSVGView(fileURL: svgFileURL)
+    private var imageContent: some View {
+        if let fileURL = viewModel.imageFileURL {
+            EditorPreviewImageView(fileURL: fileURL)
         } else {
             EditorPreviewEmptyStateView()
         }

@@ -11,8 +11,8 @@ struct EditorPreviewToolbarView: View {
     @State private var isShowingDiagnostics = false
 
     private var toolbarIcon: String {
-        if viewModel.isSVGMode {
-            return "square.on.circle"
+        if viewModel.isImageMode {
+            return "photo"
         } else if viewModel.isMarkdownMode {
             return "doc.richtext"
         }
@@ -20,8 +20,8 @@ struct EditorPreviewToolbarView: View {
     }
 
     private var toolbarTitle: String {
-        if viewModel.isSVGMode {
-            return String(localized: "SVG Preview", table: "EditorPreview")
+        if viewModel.isImageMode {
+            return String(localized: "Image Preview", table: "EditorPreview")
         } else if viewModel.isMarkdownMode {
             return String(localized: "Markdown Preview", table: "EditorPreview")
         }
@@ -47,7 +47,7 @@ struct EditorPreviewToolbarView: View {
 
             Spacer(minLength: 0)
 
-            if !viewModel.isMarkdownMode, !viewModel.isSVGMode {
+            if !viewModel.isMarkdownMode, !viewModel.isImageMode {
                 EditorPreviewDisplayModePickerView(viewModel: viewModel)
 
                 EditorPreviewCanvasPresetPickerView(viewModel: viewModel)
