@@ -111,8 +111,6 @@ struct EditorPreviewContentView: View {
     private var previewDetail: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let preview = viewModel.selectedPreview {
-                previewHeader(preview)
-
                 if viewModel.isShowingStaleLivePreview {
                     staleLivePreviewDetail(preview)
                 } else if case .failed(let message) = viewModel.runState {
@@ -144,22 +142,6 @@ struct EditorPreviewContentView: View {
         }
 
         EditorPreviewSurfaceView(viewModel: viewModel, preview: preview)
-    }
-
-    private func previewHeader(_ preview: PreviewDiscovery) -> some View {
-        HStack(spacing: 8) {
-            Text(preview.title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
-
-            if let primaryTypeName = preview.primaryTypeName {
-                Label(primaryTypeName, systemImage: "swift")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-            }
-
-            Spacer(minLength: 0)
-        }
     }
 
     private func errorMessageView(_ message: String) -> some View {
