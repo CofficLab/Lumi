@@ -3,6 +3,13 @@ import CoreGraphics
 import Darwin
 import Foundation
 
+@_silgen_name("shm_open")
+private func lumi_shm_open(
+    _ name: UnsafePointer<CChar>,
+    _ oflag: Int32,
+    _ mode: mode_t
+) -> Int32
+
 public extension LumiHotPreviewPackage {
     final class SharedMemoryFrameChannel: @unchecked Sendable {
         public enum BackendKind: String, Sendable, Equatable {
@@ -157,7 +164,7 @@ public extension LumiHotPreviewPackage {
         }
 
         public static var machBackendAvailability: BackendAvailability {
-            .unavailable(reason: "Mach shared memory backend is not implemented yet.")
+            .available
         }
 
         public static func defaultDirectory(fileManager: FileManager = .default) -> URL {
@@ -456,37 +463,120 @@ private struct MachFrameStorageBackend: FrameStorageBackend {
         bytes: Data,
         at fileURL: URL
     ) throws {
-        _ = descriptor
-        _ = bytes
-        _ = fileURL
-        throw LumiHotPreviewPackage.SharedMemoryFrameChannel.ChannelError.backendUnavailable(
-            kind: .mach,
-            reason: unavailableReason
+        let sharedMemoryName = sharedMemoryName(for: fileURL)
+        let fileDescriptor = try openSharedMemoryObject(
+            name: sharedMemoryName,
+            flags: O_CREAT | O_RDWR
         )
+        defer { close(fileDescriptor) }
+
+        guard ftruncate(fileDescriptor, off_t(descriptor.byteCount)) == 0 else {
+            let code = errno
+            shm_unlink(sharedMemoryName)
+            throw LumiHotPreviewPackage.SharedMemoryFrameChannel.ChannelError.truncateFailed(
+                path: sharedMemoryName,
+                code: code
+            )
+        }
+
+        guard let baseAddress = mmap(
+            nil,
+            descriptor.byteCount,
+            PROT_READ | PROT_WRITE,
+            MAP_SHARED,
+            fileDescriptor,
+            0
+        ), baseAddress != MAP_FAILED else {
+            let code = errno
+            shm_unlink(sharedMemoryName)
+            throw LumiHotPreviewPackage.SharedMemoryFrameChannel.ChannelError.mapFailed(
+                path: sharedMemoryName,
+                code: code
+            )
+        }
+        defer { munmap(baseAddress, descriptor.byteCount) }
+
+        let copied = bytes.withUnsafeBytes { buffer -> Bool in
+            guard let source = buffer.baseAddress,
+                  buffer.count == descriptor.byteCount else {
+                return false
+            }
+            memcpy(baseAddress, source, descriptor.byteCount)
+            return true
+        }
+        guard copied else {
+            shm_unlink(sharedMemoryName)
+            throw LumiHotPreviewPackage.SharedMemoryFrameChannel.ChannelError.writeFailed
+        }
     }
 
     func mapFrame(
         descriptor: LumiHotPreviewPackage.SharedMemoryFrameChannel.FrameDescriptor,
         at fileURL: URL
     ) throws -> LumiHotPreviewPackage.SharedMemoryFrameChannel.MappedFrame {
-        _ = descriptor
-        _ = fileURL
-        throw LumiHotPreviewPackage.SharedMemoryFrameChannel.ChannelError.backendUnavailable(
-            kind: .mach,
-            reason: unavailableReason
+        let sharedMemoryName = sharedMemoryName(for: fileURL)
+        let fileDescriptor = try openSharedMemoryObject(name: sharedMemoryName, flags: O_RDONLY)
+        guard let baseAddress = mmap(
+            nil,
+            descriptor.byteCount,
+            PROT_READ,
+            MAP_SHARED,
+            fileDescriptor,
+            0
+        ), baseAddress != MAP_FAILED else {
+            let code = errno
+            close(fileDescriptor)
+            throw LumiHotPreviewPackage.SharedMemoryFrameChannel.ChannelError.mapFailed(
+                path: sharedMemoryName,
+                code: code
+            )
+        }
+
+        return LumiHotPreviewPackage.SharedMemoryFrameChannel.MappedFrame(
+            descriptor: descriptor,
+            fileDescriptor: fileDescriptor,
+            baseAddress: baseAddress
         )
     }
 
     func removeFrame(at fileURL: URL) throws {
-        _ = fileURL
+        let sharedMemoryName = sharedMemoryName(for: fileURL)
+        guard shm_unlink(sharedMemoryName) == 0 || errno == ENOENT else {
+            throw LumiHotPreviewPackage.SharedMemoryFrameChannel.ChannelError.removeFailed(
+                path: sharedMemoryName,
+                code: errno
+            )
+        }
     }
 
-    private var unavailableReason: String {
-        switch LumiHotPreviewPackage.SharedMemoryFrameChannel.machBackendAvailability {
-        case .available:
-            return "Mach backend reported available but is not wired yet."
-        case .unavailable(let reason):
-            return reason
+    private func sharedMemoryName(for fileURL: URL) -> String {
+        let stableHash = fnv1a64Hex(of: fileURL.lastPathComponent)
+        return "/lhtp-\(stableHash)"
+    }
+
+    private func openSharedMemoryObject(name: String, flags: Int32) throws -> Int32 {
+        let fileDescriptor = name.withCString { rawName in
+            lumi_shm_open(rawName, flags, S_IRUSR | S_IWUSR)
         }
+        guard fileDescriptor >= 0 else {
+            throw LumiHotPreviewPackage.SharedMemoryFrameChannel.ChannelError.openFailed(
+                path: name,
+                code: errno
+            )
+        }
+        return fileDescriptor
+    }
+
+    private func fnv1a64Hex(of string: String) -> String {
+        let offsetBasis: UInt64 = 14_695_981_039_346_656_037
+        let prime: UInt64 = 1_099_511_628_211
+
+        var hash = offsetBasis
+        for byte in string.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= prime
+        }
+
+        return String(format: "%016llx", hash)
     }
 }

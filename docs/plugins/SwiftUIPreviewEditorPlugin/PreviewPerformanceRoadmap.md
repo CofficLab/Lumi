@@ -183,7 +183,7 @@ Xcode Preview 使用大量 **Apple 私有组件**，我们无法直接使用：
 
 - [x] `HostProcessManager.warmup()`：后台启动一个宿主进程，不发任何渲染命令
 - [x] `EditorRemotePreviewPlugin`：插件加载时调用 `warmup()`
-- [ ] 新宿主 `LumiHotPreviewHostApp`：启动后立即进入 `NSApplication.run()` 等待命令
+- [x] 新宿主 `LumiHotPreviewHostApp`：启动后立即进入 `NSApplication.run()` 等待命令
 
 **预期收益**：首次预览体感提速 ~300-500ms
 
@@ -367,11 +367,11 @@ Phase 1 用临时文件替代了 Base64，Phase 2 进一步用共享内存消除
   5. 直接构建 NSBitmapImageRep → NSImage，零拷贝
 ```
 
-- [ ] `LumiHotPreviewKit` 新增 `SharedMemoryFrameChannel`：封装 Mach 共享内存的创建、写入、映射
+- [x] `LumiHotPreviewKit` 新增 `SharedMemoryFrameChannel`：封装共享内存对象的创建、写入、映射
 - [x] 新宿主 `HotPreviewRenderer+FrameStream`：新增 `snapshotToSharedMemory()` 方法，写 raw pixels
 - [x] `LumiHotPreviewKit` 的 `HotRenderResponse`：新增 `sharedMemoryTag` / `frameSize` / `bytesPerRow` 字段
-- [ ] `SharedMemoryFrameChannel.mapFrame(tag:size:bytesPerRow:)`：映射共享内存并构建 NSImage
-- [ ] 降级：共享内存不可用时自动降级到文件传输（Phase 1 方案）→ Base64（LumiPreviewKit 方案）
+- [x] `SharedMemoryFrameChannel.mapFrame(tag:size:bytesPerRow:)`：映射共享内存并构建 NSImage
+- [x] 降级：共享内存不可用时自动降级到文件传输（Phase 1 方案）→ Base64（LumiPreviewKit 方案）
 
 **预期收益**：帧传输延迟从百 ms 降到 < 10ms
 
@@ -483,7 +483,7 @@ if let liveWindow {
 - [x] **4.2** 实现 `IncrementalBuildPipeline` + `CompileCommandCache`
 - [x] **4.3** 实现 import 模块模式的入口生成
 - [x] **4.4** 新宿主实现 interposing 渲染模式
-- [ ] **4.5** 实现 `SharedMemoryFrameChannel` 共享内存帧传输
+- [x] **4.5** 实现 `SharedMemoryFrameChannel` 共享内存帧传输
 - [ ] 多项目类型验证（SPM / Xcode / 单文件）
 - [ ] 稳定性压测
 

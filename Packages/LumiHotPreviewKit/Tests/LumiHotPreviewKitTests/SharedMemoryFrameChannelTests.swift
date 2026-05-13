@@ -11,13 +11,13 @@ struct SharedMemoryFrameChannelTests {
             namePrefix: "/lumi-hot-preview-test-"
         )
         #expect(channel.preferredBackend == .automatic)
-        #expect(channel.backendKind == .mappedFile)
+        #expect(channel.backendKind == .mach)
         #expect(channel.usedFallbackBackend == false)
         #expect(channel.backendResolution == .init(
             requested: .automatic,
-            effective: .mappedFile,
+            effective: .mach,
             usedFallbackBackend: false,
-            reason: "Mach shared memory backend is not implemented yet."
+            reason: nil
         ))
         let tag = "frame-\(UUID().uuidString)"
         let bytes = Data([0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88])
@@ -44,21 +44,21 @@ struct SharedMemoryFrameChannelTests {
         #expect(roundTrip == bytes)
     }
 
-    @Test("mach backend preference currently falls back to mapped file")
-    func machPreferenceFallsBackToMappedFile() {
+    @Test("mach backend preference uses shared memory backend")
+    func machPreferenceUsesMachBackend() {
         let channel = LumiHotPreviewPackage.SharedMemoryFrameChannel(
             namePrefix: "/lumi-hot-preview-test-",
             preferredBackend: .mach
         )
 
         #expect(channel.preferredBackend == .mach)
-        #expect(channel.backendKind == .mappedFile)
-        #expect(channel.usedFallbackBackend == true)
+        #expect(channel.backendKind == .mach)
+        #expect(channel.usedFallbackBackend == false)
         #expect(channel.backendResolution == .init(
             requested: .mach,
-            effective: .mappedFile,
-            usedFallbackBackend: true,
-            reason: "Mach shared memory backend is not implemented yet."
+            effective: .mach,
+            usedFallbackBackend: false,
+            reason: nil
         ))
     }
 
@@ -66,7 +66,7 @@ struct SharedMemoryFrameChannelTests {
     func reportsMachBackendAvailabilityState() {
         #expect(
             LumiHotPreviewPackage.SharedMemoryFrameChannel.machBackendAvailability ==
-            .unavailable(reason: "Mach shared memory backend is not implemented yet.")
+            .available
         )
     }
 
