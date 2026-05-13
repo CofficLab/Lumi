@@ -107,6 +107,18 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     @Published var isCanvasScaleToFit: Bool = true
     @Published private(set) var canvasSizePreset: CanvasSizePreset = .automatic
 
+    /// Whether the current file is a Markdown file and should render inline.
+    @Published private(set) var isMarkdownMode: Bool = false
+
+    /// Markdown source text for inline rendering.
+    @Published private(set) var markdownSource: String?
+
+    /// Whether the current file is an SVG file and should render as image preview.
+    @Published private(set) var isSVGMode: Bool = false
+
+    /// SVG file URL for preview rendering.
+    @Published private(set) var svgFileURL: URL?
+
     // MARK: - Private State
 
     private static let preferredDisplayModeKey = "EditorPreviewPlugin.preferredDisplayMode"
@@ -269,6 +281,55 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     // MARK: - Scan & Source Updates
 
     func update(sourceText: String?, fileURL: URL?) {
+        // Handle SVG files — render as image preview using NSImage native SVG support
+        if let fileURL,
+           fileURL.pathExtension.lowercased() == "svg" {
+            isMarkdownMode = false
+            markdownSource = nil
+            isSVGMode = true
+            svgFileURL = fileURL
+            // Stop any running SwiftUI preview session
+            if session != nil {
+                stopActiveSessionForReplacement(hideFirst: true)
+            }
+            previews = []
+            selectedPreviewID = nil
+            runState = .idle
+            renderMessage = nil
+            renderImage = nil
+            diagnostics = nil
+            performanceSummary = nil
+            return
+        }
+
+        isSVGMode = false
+        svgFileURL = nil
+
+        // Handle Markdown files — render inline, no SwiftUI preview pipeline
+        if let sourceText,
+           let fileURL,
+           fileURL.pathExtension == "md" || fileURL.pathExtension == "markdown" {
+            cacheActiveContextForFileSwitch()
+            activeFileKey = nil
+            isMarkdownMode = true
+            markdownSource = sourceText
+            // Stop any running SwiftUI preview session
+            if session != nil {
+                stopActiveSessionForReplacement(hideFirst: true)
+            }
+            previews = []
+            selectedPreviewID = nil
+            runState = .idle
+            renderMessage = nil
+            renderImage = nil
+            diagnostics = nil
+            performanceSummary = nil
+            return
+        }
+
+        isMarkdownMode = false
+        markdownSource = nil
+
         guard let sourceText,
               let fileURL,
               fileURL.pathExtension == "swift" else {
@@ -312,6 +373,20 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     }
 
     func sourceDidChange(sourceText: String?, fileURL: URL?) {
+        // SVG files — just update the file URL, NSImage reloads via task(id:)
+        if let fileURL,
+           fileURL.pathExtension.lowercased() == "svg" {
+            update(sourceText: sourceText, fileURL: fileURL)
+            return
+        }
+
+        // Markdown files update live — no compile/refresh cycle needed
+        if let fileURL,
+           fileURL.pathExtension == "md" || fileURL.pathExtension == "markdown" {
+            update(sourceText: sourceText, fileURL: fileURL)
+            return
+        }
+
         let previousPreviewID = selectedPreviewID
         let hadRefreshableSessionBeforeUpdate = (runState == .running || staleLivePreviewMessage != nil) && session != nil
 
@@ -925,6 +1000,10 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         session = nil
         engine = nil
         isLivePreviewShown = false
+        isMarkdownMode = false
+        markdownSource = nil
+        isSVGMode = false
+        svgFileURL = nil
     }
 
     private func apply(_ context: PreviewContext) {

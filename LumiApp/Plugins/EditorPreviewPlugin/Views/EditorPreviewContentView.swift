@@ -92,7 +92,11 @@ struct EditorPreviewContentView: View {
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.previews.isEmpty {
+        if viewModel.isSVGMode {
+            svgContent
+        } else if viewModel.isMarkdownMode {
+            markdownContent
+        } else if viewModel.previews.isEmpty {
             EditorPreviewEmptyStateView()
         } else {
             HStack(spacing: 0) {
@@ -107,6 +111,24 @@ struct EditorPreviewContentView: View {
                 Divider()
                 previewDetail
             }
+        }
+    }
+
+    @ViewBuilder
+    private var svgContent: some View {
+        if let svgFileURL = viewModel.svgFileURL {
+            EditorPreviewSVGView(fileURL: svgFileURL)
+        } else {
+            EditorPreviewEmptyStateView()
+        }
+    }
+
+    @ViewBuilder
+    private var markdownContent: some View {
+        if let markdownSource = viewModel.markdownSource {
+            EditorPreviewMarkdownView(markdown: markdownSource)
+        } else {
+            EditorPreviewEmptyStateView()
         }
     }
 

@@ -10,13 +10,31 @@ struct EditorPreviewToolbarView: View {
     let currentFileURL: URL?
     @State private var isShowingDiagnostics = false
 
+    private var toolbarIcon: String {
+        if viewModel.isSVGMode {
+            return "square.on.circle"
+        } else if viewModel.isMarkdownMode {
+            return "doc.richtext"
+        }
+        return "rectangle.on.rectangle"
+    }
+
+    private var toolbarTitle: String {
+        if viewModel.isSVGMode {
+            return String(localized: "SVG Preview", table: "EditorPreview")
+        } else if viewModel.isMarkdownMode {
+            return String(localized: "Markdown Preview", table: "EditorPreview")
+        }
+        return String(localized: "Editor Preview", table: "EditorPreview")
+    }
+
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "rectangle.on.rectangle")
+            Image(systemName: toolbarIcon)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 
-            Text(String(localized: "Editor Preview", table: "EditorPreview"))
+            Text(toolbarTitle)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
 
@@ -29,62 +47,64 @@ struct EditorPreviewToolbarView: View {
 
             Spacer(minLength: 0)
 
-            EditorPreviewDisplayModePickerView(viewModel: viewModel)
+            if !viewModel.isMarkdownMode, !viewModel.isSVGMode {
+                EditorPreviewDisplayModePickerView(viewModel: viewModel)
 
-            EditorPreviewCanvasPresetPickerView(viewModel: viewModel)
+                EditorPreviewCanvasPresetPickerView(viewModel: viewModel)
 
-            EditorPreviewCanvasScalePickerView(viewModel: viewModel)
+                EditorPreviewCanvasScalePickerView(viewModel: viewModel)
 
-            EditorPreviewStatusBadgeView(viewModel: viewModel)
+                EditorPreviewStatusBadgeView(viewModel: viewModel)
 
-            Button {
-                isShowingDiagnostics.toggle()
-            } label: {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .buttonStyle(.plain)
-            .help(String(localized: "Preview diagnostics", table: "EditorPreview"))
-            .popover(isPresented: $isShowingDiagnostics, arrowEdge: .bottom) {
-                EditorPreviewDiagnosticPopoverView(viewModel: viewModel)
-            }
-
-            Button {
-                viewModel.startSelectedPreview()
-            } label: {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .buttonStyle(.plain)
-            .disabled(!viewModel.canStart)
-            .help(String(localized: "Start preview", table: "EditorPreview"))
-
-            Button {
-                viewModel.refreshPreview()
-            } label: {
-                if viewModel.isUpdatingPreview {
-                    ProgressView()
-                        .controlSize(.small)
-                        .scaleEffect(0.55)
-                        .frame(width: 13, height: 13)
-                } else {
-                    Image(systemName: "arrow.clockwise")
+                Button {
+                    isShowingDiagnostics.toggle()
+                } label: {
+                    Image(systemName: "info.circle")
                         .font(.system(size: 11, weight: .medium))
                 }
-            }
-            .buttonStyle(.plain)
-            .disabled(!viewModel.canRefresh)
-            .help(String(localized: "Refresh preview", table: "EditorPreview"))
+                .buttonStyle(.plain)
+                .help(String(localized: "Preview diagnostics", table: "EditorPreview"))
+                .popover(isPresented: $isShowingDiagnostics, arrowEdge: .bottom) {
+                    EditorPreviewDiagnosticPopoverView(viewModel: viewModel)
+                }
 
-            Button {
-                viewModel.stopPreview()
-            } label: {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 11, weight: .medium))
+                Button {
+                    viewModel.startSelectedPreview()
+                } label: {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .buttonStyle(.plain)
+                .disabled(!viewModel.canStart)
+                .help(String(localized: "Start preview", table: "EditorPreview"))
+
+                Button {
+                    viewModel.refreshPreview()
+                } label: {
+                    if viewModel.isUpdatingPreview {
+                        ProgressView()
+                            .controlSize(.small)
+                            .scaleEffect(0.55)
+                            .frame(width: 13, height: 13)
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(!viewModel.canRefresh)
+                .help(String(localized: "Refresh preview", table: "EditorPreview"))
+
+                Button {
+                    viewModel.stopPreview()
+                } label: {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .buttonStyle(.plain)
+                .disabled(!viewModel.canStop)
+                .help(String(localized: "Stop preview", table: "EditorPreview"))
             }
-            .buttonStyle(.plain)
-            .disabled(!viewModel.canStop)
-            .help(String(localized: "Stop preview", table: "EditorPreview"))
         }
         .frame(maxWidth: .infinity, minHeight: 38, maxHeight: 38, alignment: .leading)
         .padding(.horizontal, 12)
