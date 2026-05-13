@@ -88,6 +88,18 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         }
     }
 
+    // MARK: - Supported File Extensions
+
+    /// Image file extensions supported for inline preview.
+    /// Uses macOS native NSImage support: PNG, JPEG, GIF, TIFF, BMP, WebP, SVG, ICNS, ICO, HEIC.
+    private static let imageExtensions: Set<String> = [
+        "png", "jpg", "jpeg", "gif", "tiff", "tif", "bmp", "webp",
+        "svg", "icns", "ico", "heic", "heif"
+    ]
+
+    /// Markdown file extensions supported for inline rendering.
+    private static let markdownExtensions: Set<String> = ["md", "markdown"]
+
     // MARK: - Published State
 
     @Published private(set) var previews: [LumiPreviewPackage.PreviewDiscovery] = []
@@ -113,11 +125,12 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     /// Markdown source text for inline rendering.
     @Published private(set) var markdownSource: String?
 
-    /// Whether the current file is an SVG file and should render as image preview.
-    @Published private(set) var isSVGMode: Bool = false
+    /// Whether the current file is an image and should render as image preview.
+    /// Supports: PNG, JPEG, GIF, TIFF, BMP, WebP, SVG, ICNS, ICO, HEIC, HEIF.
+    @Published private(set) var isImageMode: Bool = false
 
-    /// SVG file URL for preview rendering.
-    @Published private(set) var svgFileURL: URL?
+    /// Image file URL for preview rendering.
+    @Published private(set) var imageFileURL: URL?
 
     // MARK: - Private State
 
@@ -281,13 +294,12 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     // MARK: - Scan & Source Updates
 
     func update(sourceText: String?, fileURL: URL?) {
-        // Handle SVG files — render as image preview using NSImage native SVG support
-        if let fileURL,
-           fileURL.pathExtension.lowercased() == "svg" {
+        // Handle image files — render via NSImage native support
+        if let fileURL, Self.imageExtensions.contains(fileURL.pathExtension.lowercased()) {
             isMarkdownMode = false
             markdownSource = nil
-            isSVGMode = true
-            svgFileURL = fileURL
+            isImageMode = true
+            imageFileURL = fileURL
             // Stop any running SwiftUI preview session
             if session != nil {
                 stopActiveSessionForReplacement(hideFirst: true)
@@ -302,13 +314,13 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
             return
         }
 
-        isSVGMode = false
-        svgFileURL = nil
+        isImageMode = false
+        imageFileURL = nil
 
         // Handle Markdown files — render inline, no SwiftUI preview pipeline
         if let sourceText,
            let fileURL,
-           fileURL.pathExtension == "md" || fileURL.pathExtension == "markdown" {
+           Self.markdownExtensions.contains(fileURL.pathExtension.lowercased()) {
             cacheActiveContextForFileSwitch()
             activeFileKey = nil
             isMarkdownMode = true
@@ -373,16 +385,16 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     }
 
     func sourceDidChange(sourceText: String?, fileURL: URL?) {
-        // SVG files — just update the file URL, NSImage reloads via task(id:)
+        // Image files — just update the file URL, NSImage reloads via task(id:)
         if let fileURL,
-           fileURL.pathExtension.lowercased() == "svg" {
+           Self.imageExtensions.contains(fileURL.pathExtension.lowercased()) {
             update(sourceText: sourceText, fileURL: fileURL)
             return
         }
 
         // Markdown files update live — no compile/refresh cycle needed
         if let fileURL,
-           fileURL.pathExtension == "md" || fileURL.pathExtension == "markdown" {
+           Self.markdownExtensions.contains(fileURL.pathExtension.lowercased()) {
             update(sourceText: sourceText, fileURL: fileURL)
             return
         }
@@ -1002,8 +1014,8 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         isLivePreviewShown = false
         isMarkdownMode = false
         markdownSource = nil
-        isSVGMode = false
-        svgFileURL = nil
+        isImageMode = false
+        imageFileURL = nil
     }
 
     private func apply(_ context: PreviewContext) {
