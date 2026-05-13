@@ -14,7 +14,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     nonisolated public static let emoji = "🏗️"
     nonisolated public static let verbose = true
 
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.buildcontext")
+    nonisolated private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.buildcontext")
 
     // MARK: - Published State
 
@@ -96,7 +96,12 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     ) {
         self.resolver = resolver
         self.store = store
-        locateXcodeBuildServer()
+        Task { [weak self] in
+            let path = await Self.locateXcodeBuildServerPath()
+            await MainActor.run {
+                self?.xcodeBuildServerPath = path
+            }
+        }
     }
 
     // MARK: - 核心方法
@@ -428,25 +433,41 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     // MARK: - 工具方法
 
     /// 查找 xcode-build-server 路径
-    private func locateXcodeBuildServer() {
-        let paths = [
-            "/opt/homebrew/bin/xcode-build-server",
-            "/usr/local/bin/xcode-build-server",
-        ]
+    private nonisolated static func locateXcodeBuildServerPath() async -> String? {
+        await Task.detached(priority: .utility) {
+            let paths = [
+                "/opt/homebrew/bin/xcode-build-server",
+                "/usr/local/bin/xcode-build-server",
+            ]
 
-        for path in paths {
-            if FileManager.default.fileExists(atPath: path) {
-                xcodeBuildServerPath = path
-                if Self.verbose { Self.logger.info("\(Self.t)找到 xcode-build-server: \(path, privacy: .public)") }
-                return
+            for path in paths {
+                if FileManager.default.fileExists(atPath: path) {
+                    if Self.verbose { Self.logger.info("\(Self.t)找到 xcode-build-server: \(path, privacy: .public)") }
+                    return path
+                }
             }
-        }
 
-        // 尝试 PATH
-        if let path = try? runShellCommand("which", args: ["xcode-build-server"])?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !path.isEmpty {
-            xcodeBuildServerPath = path
-        }
+            // 尝试 PATH。该调用可能阻塞，必须保持在后台任务中执行。
+            guard let path = try? runShellCommand("/usr/bin/which", args: ["xcode-build-server"])?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+                !path.isEmpty else {
+                return nil
+            }
+            if Self.verbose { Self.logger.info("\(Self.t)通过 which 找到 xcode-build-server: \(path, privacy: .public)") }
+            return path
+        }.value
+    }
+
+    private nonisolated static func runShellCommand(_ path: String, args: [String]) throws -> String? {
+        let process = Process()
+        process.executableURL = URL(filePath: path)
+        process.arguments = args
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        try process.run()
+        process.waitUntilExit()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8)
     }
 
     /// 执行命令
@@ -474,17 +495,6 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         }
     }
 
-    private func runShellCommand(_ path: String, args: [String]) throws -> String? {
-        let process = Process()
-        process.executableURL = URL(filePath: path)
-        process.arguments = args
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        try process.run()
-        process.waitUntilExit()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8)
-    }
 
     private func updateActiveDestination(using settings: [String: String]) {
         let derived = deriveDestination(from: settings)

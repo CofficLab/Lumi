@@ -5,7 +5,7 @@ import Foundation
 public enum XcodeBuildSettingsParser {
 
     /// 解析 `xcodebuild -list -json` 的结果
-    public struct ListResult {
+    public struct ListResult: Sendable {
         public let project: ProjectInfo?
         public let workspace: WorkspaceInfo?
 
@@ -14,7 +14,7 @@ public enum XcodeBuildSettingsParser {
             self.workspace = workspace
         }
 
-        public struct ProjectInfo {
+        public struct ProjectInfo: Sendable {
             public let name: String
             public let targets: [String]
             public let configurations: [String]
@@ -28,7 +28,7 @@ public enum XcodeBuildSettingsParser {
             }
         }
 
-        public struct WorkspaceInfo {
+        public struct WorkspaceInfo: Sendable {
             public let name: String
             public let schemes: [String]
 
