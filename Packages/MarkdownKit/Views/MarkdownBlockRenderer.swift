@@ -39,7 +39,7 @@ public struct MarkdownBlockRenderer: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(theme.textColor ?? .primary)
         .task(id: markdown) {
-            blocks = MarkdownParser.parse(markdown)
+            blocks = await MarkdownParseCache.shared.blocks(for: markdown)
         }
     }
 
@@ -213,6 +213,36 @@ public struct MarkdownBlockRenderer: View {
             Text("•")
                 .font(theme.bodyFont)
         }
+    }
+}
+
+// MARK: - MarkdownParseCache
+
+private actor MarkdownParseCache {
+    static let shared = MarkdownParseCache()
+
+    private let limit = 128
+    private var cache: [String: [MarkdownBlock]] = [:]
+    private var keys: [String] = []
+
+    func blocks(for markdown: String) -> [MarkdownBlock] {
+        if let cached = cache[markdown] {
+            return cached
+        }
+
+        let parsed = MarkdownParser.parse(markdown)
+        cache[markdown] = parsed
+        keys.append(markdown)
+
+        if keys.count > limit {
+            let overflow = keys.count - limit
+            for key in keys.prefix(overflow) {
+                cache.removeValue(forKey: key)
+            }
+            keys.removeFirst(overflow)
+        }
+
+        return parsed
     }
 }
 

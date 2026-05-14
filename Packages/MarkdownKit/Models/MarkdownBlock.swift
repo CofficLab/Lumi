@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Block Types
 
 /// Markdown 文档解析后的块级元素
-public enum MarkdownBlock: Equatable {
+public enum MarkdownBlock: Equatable, Sendable {
     case heading(level: Int, text: String)
     case paragraph(text: String)
     case unorderedList(items: [MarkdownListItem])
@@ -17,7 +17,7 @@ public enum MarkdownBlock: Equatable {
 // MARK: - List Item
 
 /// 无序列表项
-public struct MarkdownListItem: Identifiable, Equatable {
+public struct MarkdownListItem: Identifiable, Equatable, Sendable {
     public let id = UUID()
     public let text: String
     public let taskState: MarkdownTaskState?
@@ -33,7 +33,7 @@ public struct MarkdownListItem: Identifiable, Equatable {
 }
 
 /// 有序列表项
-public struct MarkdownOrderedItem: Identifiable, Equatable {
+public struct MarkdownOrderedItem: Identifiable, Equatable, Sendable {
     public let id = UUID()
     public let index: Int
     public let text: String
@@ -51,7 +51,7 @@ public struct MarkdownOrderedItem: Identifiable, Equatable {
 // MARK: - Task State
 
 /// 任务列表状态
-public enum MarkdownTaskState: Equatable {
+public enum MarkdownTaskState: Equatable, Sendable {
     case todo
     case done
 

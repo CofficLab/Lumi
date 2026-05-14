@@ -78,14 +78,16 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 
 - [ ] Inspect `MarkdownView.swift`.
   - Risk: content hash `.id(...)` forces native Markdown subtree rebuilds.
-- [ ] Inspect `MarkdownBlockRenderer.swift`.
+- [x] Inspect `MarkdownBlockRenderer.swift`.
   - Risk: `MarkdownParser.parse(markdown)` runs when Markdown changes.
-- [ ] Inspect `HighlightedCodeView.swift`.
+- [x] Inspect `HighlightedCodeView.swift`.
   - Risk: `.task(id: "\(language):\(code)")` highlights on every changed code string.
-- [ ] Inspect `TreeSitterCodeHighlightProvider.swift`.
+- [x] Inspect `TreeSitterCodeHighlightProvider.swift`.
   - Risk: synchronous tree-sitter parse and `AttributedString` construction for code blocks.
-- [ ] Add cache keyed by `messageId`, content hash, code block hash, language, and theme id.
-- [ ] Move parsing/highlighting work off the main thread where possible.
+- [x] Add cache keyed by content/code, language, and theme/provider id.
+  - Fixed: Markdown parse results and syntax-highlighted code blocks now use bounded actor caches.
+- [x] Move parsing/highlighting work off the main thread where possible.
+  - Fixed: renderer tasks await cache actors instead of parsing/highlighting directly in the view update path.
 
 ## Priority 6: Root Overlays And Global Change Propagation
 
@@ -127,3 +129,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [ ] 2026-05-14: Full `Lumi` scheme build is blocked by screenshot feature changes: `ScreenshotOverlay.swift` uses unavailable `CGDisplayCreateImage` on macOS SDK 26.2; temporary exclusion then fails because `ChatToolbarView` depends on `ScreenshotState`.
 - [x] 2026-05-14: Deduplicated network plugin view models and moved network counter sampling off the main actor.
 - [x] 2026-05-14: Moved CPU and memory sampling off the main actor; verified `Packages/DeviceMonitorKit` with `swift test`.
+- [x] 2026-05-14: Added bounded actor caches for Markdown parsing and code highlighting; verified `Packages/MarkdownKit` with `swift test`.
