@@ -178,12 +178,22 @@ final class ToolCallExecutor: SuperLog {
                 progressTask.cancel()
             }
             progressTask.cancel()
-            resultMsg = ChatMessage(
-                role: .tool,
-                conversationId: conversationId,
-                content: result,
-                toolCallID: toolCall.id
-            )
+            if let decoded = ToolImageResultCodec.decode(result) {
+                resultMsg = ChatMessage(
+                    role: .tool,
+                    conversationId: conversationId,
+                    content: decoded.content,
+                    toolCallID: toolCall.id,
+                    images: decoded.images
+                )
+            } else {
+                resultMsg = ChatMessage(
+                    role: .tool,
+                    conversationId: conversationId,
+                    content: result,
+                    toolCallID: toolCall.id
+                )
+            }
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
                 event: .completed(toolName: toolCall.name, current: step, total: total)

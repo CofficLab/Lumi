@@ -8,8 +8,16 @@ import SwiftUI
 struct ReadFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = false
+    private static let supportedImageExtensions: [String: String] = [
+        "png": "image/png",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "gif": "image/gif",
+        "webp": "image/webp",
+    ]
+
     let name = "read_file"
-    let description = "Read the contents of a file at the given path. Use this to examine code or configuration files."
+    let description = "Read the contents of a file at the given path. Use this to examine code, configuration files, or image files. For PNG, JPEG, GIF, and WebP images, the image is returned as visual input to compatible multimodal models."
 
     var inputSchema: [String: Any] {
         return [
@@ -41,15 +49,33 @@ struct ReadFileTool: SuperAgentTool, SuperLog {
             AgentCoreToolsPlugin.logger.info("\(self.t)读取文件：\(path.components(separatedBy: "/").last ?? path)")
         }
 
-        let fileURL = URL(fileURLWithPath: path)
+        let fileURL = Self.fileURL(from: path)
+        let expandedPath = fileURL.path
 
         do {
+            let ext = fileURL.pathExtension.lowercased()
+            if let mimeType = Self.supportedImageExtensions[ext] {
+                let data = try Data(contentsOf: fileURL)
+                guard !data.isEmpty else {
+                    return "Error: Image file is empty: \(expandedPath)"
+                }
+
+                if Self.verbose {
+                    AgentCoreToolsPlugin.logger.info("\(self.t)图片读取成功：\(expandedPath)")
+                }
+
+                return ToolImageResultCodec.encode(
+                    content: "Image file read: \(expandedPath) (\(data.count) bytes, \(mimeType)). The image is attached as visual input.",
+                    images: [ImageAttachment(data: data, mimeType: mimeType)]
+                )
+            }
+
             let data = try Data(contentsOf: fileURL)
             guard let content = String(data: data, encoding: .utf8) else {
                 if Self.verbose {
                     AgentCoreToolsPlugin.logger.error("\(self.t)文件内容不是有效的 UTF-8 文本")
                 }
-                return "Error: File content is not valid UTF-8 text."
+                return "Error: File content is not valid UTF-8 text. If this is an image, supported formats are: \(Self.supportedImageExtensions.keys.sorted().joined(separator: ", "))."
             }
 
             if content.count > 50_000 {
@@ -69,5 +95,13 @@ struct ReadFileTool: SuperAgentTool, SuperLog {
             return "Error reading file: \(error.localizedDescription)"
         }
     }
-}
 
+    private static func fileURL(from path: String) -> URL {
+        if let url = URL(string: path), url.isFileURL {
+            return url
+        }
+
+        let expandedPath = (path as NSString).expandingTildeInPath
+        return URL(fileURLWithPath: expandedPath)
+    }
+}

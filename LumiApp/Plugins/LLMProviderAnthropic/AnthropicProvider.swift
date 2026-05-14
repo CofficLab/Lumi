@@ -303,12 +303,7 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
 extension AnthropicProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
         if let toolCallID = message.toolCallID {
-            return [
-                "role": "user",
-                "content": [
-                    ["type": "tool_result", "tool_use_id": toolCallID, "content": message.content],
-                ],
-            ]
+            return AnthropicToolResultContentBuilder.message(for: message, toolCallID: toolCallID)
         }
 
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
@@ -397,6 +392,42 @@ extension AnthropicProvider {
         }
 
         return ["role": message.role.rawValue, "content": message.content]
+    }
+}
+
+enum AnthropicToolResultContentBuilder {
+    static func message(for message: ChatMessage, toolCallID: String) -> [String: Any] {
+        if message.images.isEmpty {
+            return [
+                "role": "user",
+                "content": [
+                    ["type": "tool_result", "tool_use_id": toolCallID, "content": message.content],
+                ],
+            ]
+        }
+
+        var resultContent: [[String: Any]] = []
+        if !message.content.isEmpty {
+            resultContent.append(["type": "text", "text": message.content])
+        }
+
+        for image in message.images {
+            resultContent.append([
+                "type": "image",
+                "source": [
+                    "type": "base64",
+                    "media_type": image.mimeType,
+                    "data": image.data.base64EncodedString(),
+                ],
+            ])
+        }
+
+        return [
+            "role": "user",
+            "content": [
+                ["type": "tool_result", "tool_use_id": toolCallID, "content": resultContent],
+            ],
+        ]
     }
 }
 
