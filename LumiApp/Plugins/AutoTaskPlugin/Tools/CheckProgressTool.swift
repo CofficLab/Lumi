@@ -56,7 +56,7 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
 
         for task in tasks {
             let icon = statusIcons[task.status] ?? "⬜"
-            result += "\(icon) **#\(task.order)** \(task.title)"
+            result += "\(icon) **#\(task.order)** `\(task.id)` \(task.title)"
             if let detail = task.detail {
                 result += "\n   _\(detail)_"
             }
