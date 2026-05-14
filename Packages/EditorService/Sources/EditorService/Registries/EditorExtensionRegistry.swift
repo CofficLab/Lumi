@@ -23,6 +23,7 @@ enum EditorLanguageID {
         "c",
         "objective-c",
         "objective-cpp",
+        "vue",
     ]
 }
 

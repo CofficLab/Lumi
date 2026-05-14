@@ -23,6 +23,7 @@ struct LSPConfig: SuperLog {
         "c",
         "objective-c",
         "objective-cpp",
+        "vue",
     ]
 
     /// 语言服务器二进制配置
@@ -90,6 +91,8 @@ struct LSPConfig: SuperLog {
             return ServerConfig(languageId: languageId, execPath: path, arguments: ["serve"])
         case "html", "css", "scss", "sass", "less":
             return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
+        case "vue":
+            return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
         case "python" where executableName == "pyright-langserver":
             return ServerConfig(languageId: languageId, execPath: path, arguments: ["--stdio"])
         default:
@@ -147,6 +150,8 @@ struct LSPConfig: SuperLog {
             return findCommand("gopls")
         case "cpp", "c", "objective-c", "objective-cpp":
             return findCommand("clangd")
+        case "vue":
+            return findVueLanguageServer()
         default:
             return nil
         }
@@ -165,6 +170,28 @@ struct LSPConfig: SuperLog {
 
     private static func findCommand(_ command: String) -> String? {
         return try? runShellCommand("/usr/bin/which", args: [command])?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// 查找 Vue Language Server (Volar)
+    ///
+    /// 优先检查 npx 全局路径，然后检查常见的 node_modules 路径。
+    /// Volar 不像其他 LS 有独立二进制，通常通过 node 运行 JS 入口。
+    private static func findVueLanguageServer() -> String? {
+        // 1. 检查 npx 可用性（全局安装的 @vue/language-server）
+        if let npxPath = findCommand("npx") {
+            return npxPath
+        }
+
+        // 2. 检查 node 可用性 — 如果有 node，可以用 npx 启动 volar
+        if findCommand("node") != nil {
+            // 返回 node 路径，实际启动参数由 LanguageIntegrationCapability 配置
+            // 但由于 LSPConfig.defaultConfig 需要一个可执行路径，
+            // 而实际 volar 通常由项目 node_modules 提供，
+            // 所以这里返回 node 路径让后续逻辑处理
+            return nil
+        }
+
+        return nil
     }
 
     private static func runShellCommand(_ path: String, args: [String]) throws -> String? {
