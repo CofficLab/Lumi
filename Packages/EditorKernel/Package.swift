@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "EditorKernelCore",
+    name: "EditorKernel",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "EditorKernelCore",
-            targets: ["EditorKernelCore"]
+            name: "EditorKernel",
+            targets: ["EditorKernel"]
         )
     ],
     dependencies: [
@@ -17,14 +17,14 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "EditorKernelCore",
+            name: "EditorKernel",
             dependencies: [
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol")
             ]
         ),
         .testTarget(
-            name: "EditorKernelCoreTests",
-            dependencies: ["EditorKernelCore"]
+            name: "EditorKernelTests",
+            dependencies: ["EditorKernel"]
         )
     ]
 )

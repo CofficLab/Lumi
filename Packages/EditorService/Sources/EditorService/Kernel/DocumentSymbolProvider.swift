@@ -1,4 +1,4 @@
-import EditorKernelCore
+import EditorKernel
 
-public typealias DocumentSymbolProvider = EditorKernelCore.EditorDocumentSymbolProviderCore
-extension EditorKernelCore.EditorDocumentSymbolProviderCore: SuperEditorDocumentSymbolProvider {}
+public typealias DocumentSymbolProvider = EditorKernel.EditorDocumentSymbolProviderCore
+extension EditorKernel.EditorDocumentSymbolProviderCore: SuperEditorDocumentSymbolProvider {}

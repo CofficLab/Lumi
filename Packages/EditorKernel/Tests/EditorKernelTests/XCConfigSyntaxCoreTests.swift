@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import EditorKernelCore
+@testable import EditorKernel
 
 @Suite("XCConfigSyntaxCore")
 struct XCConfigSyntaxCoreTests {

@@ -1,9 +1,9 @@
 import Foundation
 import LanguageServerProtocol
 import Testing
-@testable import EditorKernelCore
+@testable import EditorKernel
 
-struct EditorKernelCoreTests {
+struct EditorKernelTests {
     @Test
     @MainActor
     func textInputControllerBuildsBracketAndIndentPlans() {
@@ -2130,7 +2130,7 @@ struct EditorKernelCoreTests {
     @Test
     @MainActor
     func peekControllerBuildsDefinitionPresentationFromCurrentBuffer() {
-        let fileURL = URL(fileURLWithPath: "/tmp/EditorKernelCorePeek.swift")
+        let fileURL = URL(fileURLWithPath: "/tmp/EditorKernelPeek.swift")
         let location = Location(
             uri: fileURL.absoluteString,
             range: LSPRange(
@@ -2148,7 +2148,7 @@ struct EditorKernelCoreTests {
         )
 
         #expect(presentation?.mode == .definition)
-        #expect(presentation?.summary == "EditorKernelCorePeek.swift:2:5")
+        #expect(presentation?.summary == "EditorKernelPeek.swift:2:5")
         #expect(presentation?.items.first?.preview == "value")
         #expect(presentation?.items.first?.target == .init(
             url: fileURL,

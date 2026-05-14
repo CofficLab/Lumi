@@ -1,3 +1,3 @@
-import EditorKernelCore
+import EditorKernel
 
-typealias EditorScrollState = EditorKernelCore.EditorScrollState
+typealias EditorScrollState = EditorKernel.EditorScrollState

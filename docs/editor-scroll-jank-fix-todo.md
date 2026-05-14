@@ -154,7 +154,7 @@ Goal: reduce visible stutter while scrolling the editor by removing per-scroll-t
 ## Phase 8: Verification
 
 - [ ] Run unit tests:
-  - [ ] `swift test` in `Packages/EditorKernelCore`.
+  - [ ] `swift test` in `Packages/EditorKernel`.
   - [ ] `swift test` in `Packages/EditorService` if package tests are available.
   - [ ] `swift test` in `Packages/LumiCodeEditSourceEditor` if dependencies resolve locally.
 - [ ] Run targeted app verification:

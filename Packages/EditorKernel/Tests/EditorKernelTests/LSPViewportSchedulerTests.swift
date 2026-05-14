@@ -1,5 +1,5 @@
 import Testing
-@testable import EditorKernelCore
+@testable import EditorKernel
 
 @MainActor
 @Suite("LSPViewportScheduler")

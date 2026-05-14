@@ -1,5 +1,5 @@
 import Foundation
-import EditorKernelCore
+import EditorKernel
 import CodeEditSourceEditor
 import CodeEditTextView
 import SwiftUI

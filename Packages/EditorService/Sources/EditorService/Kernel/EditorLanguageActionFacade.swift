@@ -1,6 +1,6 @@
-import EditorKernelCore
+import EditorKernel
 
-typealias EditorLanguageActionFacade = EditorKernelCore.EditorLanguageActionFacade
-typealias EditorLSPActionProviding = EditorKernelCore.EditorLSPActionProviding
-typealias EditorLSPActionJumpKind = EditorKernelCore.EditorLSPActionJumpKind
-typealias EditorRenamePrompting = EditorKernelCore.EditorRenamePrompting
+typealias EditorLanguageActionFacade = EditorKernel.EditorLanguageActionFacade
+typealias EditorLSPActionProviding = EditorKernel.EditorLSPActionProviding
+typealias EditorLSPActionJumpKind = EditorKernel.EditorLSPActionJumpKind
+typealias EditorRenamePrompting = EditorKernel.EditorRenamePrompting

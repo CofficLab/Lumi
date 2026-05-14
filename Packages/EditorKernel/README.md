@@ -1,4 +1,4 @@
-# EditorKernelCore
+# EditorKernel
 
 Lumi 的编辑器“内核纯逻辑”模块（SwiftPM 包），尽量保持与 UI 解耦。
 
@@ -16,19 +16,19 @@ Lumi 的编辑器“内核纯逻辑”模块（SwiftPM 包），尽量保持与 
 在其他 SwiftPM 包的 `Package.swift` 中添加依赖：
 
 ```swift
-.package(path: "../EditorKernelCore")
+.package(path: "../EditorKernel")
 ```
 
 然后在目标依赖中引入：
 
 ```swift
-.product(name: "EditorKernelCore", package: "EditorKernelCore")
+.product(name: "EditorKernel", package: "EditorKernel")
 ```
 
 ## 运行测试
 
 ```bash
-cd Packages/EditorKernelCore
+cd Packages/EditorKernel
 swift test
 ```
 

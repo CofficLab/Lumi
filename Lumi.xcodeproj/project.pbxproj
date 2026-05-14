@@ -35,7 +35,7 @@
 		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
 		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
 		A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E12F70000100AAA101 /* MarkdownKit */; };
-		A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E72F70000100AAA101 /* EditorKernelCore */; };
+		A1B2C3E42F70000100AAA101 /* EditorKernel in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E72F70000100AAA101 /* EditorKernel */; };
 		A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3EF2F70000100AAA101 /* DatabaseKit */; };
 		A1B2C4002F70000100AAA101 /* EditorService in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4012F70000100AAA101 /* EditorService */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
@@ -310,7 +310,7 @@
 				A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */,
 				A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */,
 				A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */,
-				A1B2C3E42F70000100AAA101 /* EditorKernelCore in Frameworks */,
+				A1B2C3E42F70000100AAA101 /* EditorKernel in Frameworks */,
 				A1B2C4002F70000100AAA101 /* EditorService in Frameworks */,
 				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
 				A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */,
@@ -845,7 +845,7 @@
 				A1B2C3DC2F70000100AAA101 /* FilePreviewKit */,
 				A1B2C3E12F70000100AAA101 /* MarkdownKit */,
 				A1B2C3D62F70000100AAA101 /* MarkdownKitCore */,
-				A1B2C3E72F70000100AAA101 /* EditorKernelCore */,
+				A1B2C3E72F70000100AAA101 /* EditorKernel */,
 				A1B2C4012F70000100AAA101 /* EditorService */,
 				A1B2C3EF2F70000100AAA101 /* DatabaseKit */,
 				A1B2C4132F70000100AAA101 /* LumiUI */,
@@ -947,7 +947,7 @@
 				F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */,
 				A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */,
 				A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */,
-				A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */,
+				A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernel" */,
 				A1B2C4022F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorService" */,
 				A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */,
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
@@ -1845,9 +1845,9 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FilePreviewKit;
 		};
-		A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */ = {
+		A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernel" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/EditorKernelCore;
+			relativePath = Packages/EditorKernel;
 		};
 		A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -2184,10 +2184,10 @@
 			package = A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */;
 			productName = MarkdownKit;
 		};
-		A1B2C3E72F70000100AAA101 /* EditorKernelCore */ = {
+		A1B2C3E72F70000100AAA101 /* EditorKernel */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernelCore" */;
-			productName = EditorKernelCore;
+			package = A1B2C3E62F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/EditorKernel" */;
+			productName = EditorKernel;
 		};
 		A1B2C3EF2F70000100AAA101 /* DatabaseKit */ = {
 			isa = XCSwiftPackageProductDependency;

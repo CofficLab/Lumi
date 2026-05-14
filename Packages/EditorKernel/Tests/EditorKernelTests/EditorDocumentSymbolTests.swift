@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import LanguageServerProtocol
-@testable import EditorKernelCore
+@testable import EditorKernel
 
 @MainActor
 @Suite("EditorDocumentSymbolProviderCore Tests")

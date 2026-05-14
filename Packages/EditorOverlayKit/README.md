@@ -9,7 +9,7 @@ SwiftUI overlay components for Lumi editor surfaces.
 - Product: `EditorOverlayKit`
 - Platform: macOS 14+
 - Swift tools: 6.0
-- Local dependencies: `EditorService`, `EditorKernelCore`, `MarkdownKit`, `LumiUI`
+- Local dependencies: `EditorService`, `EditorKernel`, `MarkdownKit`, `LumiUI`
 - Remote dependency: `MagicKit`
 
 ## Source Layout

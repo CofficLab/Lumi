@@ -1,6 +1,6 @@
 #if canImport(XCTest)
 import XCTest
-import EditorKernelCore
+import EditorKernel
 @testable import Lumi
 
 @MainActor

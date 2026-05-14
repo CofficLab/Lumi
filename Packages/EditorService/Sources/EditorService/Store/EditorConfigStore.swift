@@ -1,5 +1,5 @@
 import Foundation
-import EditorKernelCore
+import EditorKernel
 
 /// Editor plugin config persistence store
 enum EditorConfigStore {

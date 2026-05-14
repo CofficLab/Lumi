@@ -1,4 +1,4 @@
-import EditorKernelCore
+import EditorKernel
 import Foundation
 import SwiftUI
 

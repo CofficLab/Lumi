@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import EditorKernelCore
+import EditorKernel
 
 @MainActor
 final class EditorRenameController: EditorRenamePrompting {

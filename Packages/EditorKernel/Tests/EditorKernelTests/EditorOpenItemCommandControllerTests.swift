@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import LanguageServerProtocol
-@testable import EditorKernelCore
+@testable import EditorKernel
 
 @Suite("EditorOpenItemCommandController")
 struct EditorOpenItemCommandControllerTests {

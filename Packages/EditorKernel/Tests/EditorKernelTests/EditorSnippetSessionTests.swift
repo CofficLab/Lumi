@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import EditorKernelCore
+@testable import EditorKernel
 
 @Suite("EditorSnippetSession Tests")
 struct EditorSnippetSessionTests {
