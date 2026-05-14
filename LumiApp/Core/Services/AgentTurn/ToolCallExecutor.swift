@@ -169,14 +169,22 @@ final class ToolCallExecutor: SuperLog {
             startedAt: startedAt,
             conversationId: conversationId
         )
+        let toolContext = ToolExecutionContext(
+            conversationId: conversationId,
+            toolCallId: toolCall.id,
+            toolName: toolCall.name
+        )
 
         let resultMsg: ChatMessage
         do {
             let result = try await withTaskCancellationHandler {
-                try await toolExecutionService.executeTool(toolCall)
+                try toolContext.checkCancellation()
+                return try await toolExecutionService.executeTool(toolCall, context: toolContext)
             } onCancel: {
                 progressTask.cancel()
+                toolContext.cancel()
             }
+            try toolContext.checkCancellation()
             progressTask.cancel()
             if let decoded = ToolImageResultCodec.decode(result) {
                 resultMsg = ChatMessage(

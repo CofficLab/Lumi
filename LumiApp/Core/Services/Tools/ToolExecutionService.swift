@@ -86,8 +86,9 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
     /// - Parameter toolCall: 工具调用信息
     /// - Returns: 工具执行结果
     /// - Throws: 执行过程中的错误
-    func executeTool(_ toolCall: ToolCall) async throws -> String {
+    func executeTool(_ toolCall: ToolCall, context: ToolExecutionContext? = nil) async throws -> String {
         let startTime = Date()
+        try context?.checkCancellation()
 
         // 检查工具是否存在
         let hasTool = toolService.hasTool(named: toolCall.name)
@@ -99,8 +100,10 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
         // 执行工具
         let result = try await toolService.executeTool(
             named: toolCall.name,
-            argumentsJSON: toolCall.arguments
+            argumentsJSON: toolCall.arguments,
+            context: context
         )
+        try context?.checkCancellation()
 
         let duration = Date().timeIntervalSince(startTime)
 

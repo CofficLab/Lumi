@@ -46,6 +46,15 @@ Returns the file path of the saved screenshot image (PNG format).
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await executeScreenshot(arguments: arguments, context: nil)
+    }
+
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        return try await executeScreenshot(arguments: arguments, context: context)
+    }
+
+    private func executeScreenshot(arguments: [String: ToolArgument], context: ToolExecutionContext?) async throws -> String {
         guard let urlString = arguments["url"]?.value as? String else {
             return "Error: Missing required 'url' parameter"
         }
@@ -66,11 +75,14 @@ Returns the file path of the saved screenshot image (PNG format).
         }
 
         do {
+            try context?.checkCancellation()
             let screenshotPath = try await takeScreenshot(
                 url: url,
                 width: width,
-                waitSeconds: waitSeconds
+                waitSeconds: waitSeconds,
+                context: context
             )
+            try context?.checkCancellation()
             return screenshotPath
         } catch {
             if Self.verbose {
@@ -87,8 +99,10 @@ Returns the file path of the saved screenshot image (PNG format).
     private func takeScreenshot(
         url: URL,
         width: Int,
-        waitSeconds: Double
+        waitSeconds: Double,
+        context: ToolExecutionContext?
     ) async throws -> String {
+        try context?.checkCancellation()
         // 创建 WKWebView（非持久化数据存储，干净隔离）
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
@@ -100,10 +114,12 @@ Returns the file path of the saved screenshot image (PNG format).
 
         // 加载页面
         let request = URLRequest(url: url)
-        try await webView.loadAndWait(request, timeout: 30)
+        try await webView.loadAndWait(request, timeout: 30, context: context)
+        try context?.checkCancellation()
 
         // 额外等待，让 JS 渲染完成
         try await Task.sleep(for: .seconds(max(0.1, waitSeconds)))
+        try context?.checkCancellation()
 
         // 获取页面内容高度
         let contentHeight = try await webView.evaluateJavaScript("document.body.scrollHeight") as? Int ?? 800
@@ -112,6 +128,7 @@ Returns the file path of the saved screenshot image (PNG format).
         // 调整 WebView 尺寸以匹配完整页面
         webView.frame = CGRect(x: 0, y: 0, width: width, height: finalHeight)
         try await Task.sleep(for: .milliseconds(200))
+        try context?.checkCancellation()
 
         // 截图
         let snapshotConfig = WKSnapshotConfiguration()
@@ -144,12 +161,21 @@ Returns the file path of the saved screenshot image (PNG format).
 /// WKWebView 异步加载扩展
 extension WKWebView {
     /// 加载请求并等待页面加载完成
-    func loadAndWait(_ request: URLRequest, timeout: TimeInterval = 30) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+    func loadAndWait(_ request: URLRequest, timeout: TimeInterval = 30, context: ToolExecutionContext? = nil) async throws {
+        try context?.checkCancellation()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             let delegate = NavigationObserver()
             self.navigationDelegate = delegate
+            let cancellationHandlerId = context?.onCancel { [weak self, weak delegate] in
+                Task { @MainActor in
+                    self?.stopLoading()
+                    delegate?.onCancel()
+                }
+            }
 
             delegate.onComplete = { error in
+                context?.removeCancellationHandler(cancellationHandlerId)
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else {
@@ -163,6 +189,12 @@ extension WKWebView {
             Task {
                 try? await Task.sleep(for: .seconds(timeout))
                 delegate.onTimeout()
+            }
+            }
+        } onCancel: { [weak self] in
+            context?.cancel()
+            Task { @MainActor in
+                self?.stopLoading()
             }
         }
     }
@@ -210,6 +242,12 @@ private final class NavigationObserver: NSObject, WKNavigationDelegate, @uncheck
         guard !completed else { return }
         completed = true
         onComplete?(NSError(domain: "BrowserPlugin", code: -1, userInfo: [NSLocalizedDescriptionKey: "Page load timed out"]))
+    }
+
+    func onCancel() {
+        guard !completed else { return }
+        completed = true
+        onComplete?(CancellationError())
     }
 }
 

@@ -39,6 +39,17 @@ struct ShellTool: SuperAgentTool, SuperLog {
 
     @MainActor
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await executeShell(arguments: arguments, context: nil)
+    }
+
+    @MainActor
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        return try await executeShell(arguments: arguments, context: context)
+    }
+
+    @MainActor
+    private func executeShell(arguments: [String: ToolArgument], context: ToolExecutionContext?) async throws -> String {
         guard let command = arguments["command"]?.value as? String else {
             throw ShellToolError.missingCommand
         }
@@ -50,7 +61,10 @@ struct ShellTool: SuperAgentTool, SuperLog {
 
         let shellService = ShellService.shared
         do {
-            return try await shellService.execute(command)
+            try context?.checkCancellation()
+            let result = try await shellService.execute(command)
+            try context?.checkCancellation()
+            return result
         } catch {
             AgentCoreToolsPlugin.logger.error("\(self.t)Shell execution failed: \(error.localizedDescription)")
             throw ShellToolError.executionFailed(underlying: error)

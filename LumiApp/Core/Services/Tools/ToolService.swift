@@ -198,7 +198,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///   - argumentsJSON: 工具参数（JSON 字符串格式）
     /// - Returns: 执行结果字符串
     /// - Throws: 如果工具不存在或执行失败则抛出错误
-    func executeTool(named name: String, argumentsJSON: String) async throws -> String {
+    func executeTool(named name: String, argumentsJSON: String, context: ToolExecutionContext? = nil) async throws -> String {
         // 解析 JSON 字符串
         let arguments: [String: Any]
         if let data = argumentsJSON.data(using: .utf8),
@@ -208,7 +208,7 @@ class ToolService: SuperLog, @unchecked Sendable {
             arguments = [:]
         }
         
-        return try await executeTool(named: name, arguments: arguments)
+        return try await executeTool(named: name, arguments: arguments, context: context)
     }
     
     /// 执行工具
@@ -226,7 +226,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///   - arguments: 工具参数字典
     /// - Returns: 执行结果字符串
     /// - Throws: 如果工具不存在或执行失败则抛出错误
-    func executeTool(named name: String, arguments: [String: Any]) async throws -> String {
+    func executeTool(named name: String, arguments: [String: Any], context: ToolExecutionContext? = nil) async throws -> String {
         // 查找工具
         guard let tool = tool(named: name) else {
             throw ToolError.toolNotFound(name)
@@ -244,7 +244,14 @@ class ToolService: SuperLog, @unchecked Sendable {
             let toolArguments = arguments.mapValues { value in
                 ToolArgument(value)
             }
-            let result = try await tool.execute(arguments: toolArguments)
+            let result: String
+            if let context {
+                try context.checkCancellation()
+                result = try await tool.execute(arguments: toolArguments, context: context)
+                try context.checkCancellation()
+            } else {
+                result = try await tool.execute(arguments: toolArguments)
+            }
             let duration = Date().timeIntervalSince(startTime)
 
             if Self.verbose {

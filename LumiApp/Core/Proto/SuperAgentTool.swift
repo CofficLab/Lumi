@@ -1,5 +1,78 @@
 import Foundation
 
+/// 单次工具调用的取消上下文。
+///
+/// 和 Swift `Task.cancel()` 不同，这个上下文会显式传入工具内部，让工具可以把取消
+/// 转发给底层资源（如 `Process.terminate()`、`WKWebView.stopLoading()` 或外部 SDK）。
+final class ToolExecutionContext: @unchecked Sendable {
+    typealias CancellationHandler = @Sendable () -> Void
+
+    let conversationId: UUID
+    let toolCallId: String
+    let toolName: String
+
+    private let lock = NSLock()
+    private var cancelled = false
+    private var handlers: [UUID: CancellationHandler] = [:]
+
+    init(conversationId: UUID, toolCallId: String, toolName: String) {
+        self.conversationId = conversationId
+        self.toolCallId = toolCallId
+        self.toolName = toolName
+    }
+
+    var isCancelled: Bool {
+        lock.lock()
+        let value = cancelled
+        lock.unlock()
+        return value || Task.isCancelled
+    }
+
+    func checkCancellation() throws {
+        if isCancelled {
+            throw CancellationError()
+        }
+    }
+
+    @discardableResult
+    func onCancel(_ handler: @escaping CancellationHandler) -> UUID? {
+        lock.lock()
+        if cancelled {
+            lock.unlock()
+            handler()
+            return nil
+        }
+        let id = UUID()
+        handlers[id] = handler
+        lock.unlock()
+        return id
+    }
+
+    func removeCancellationHandler(_ id: UUID?) {
+        guard let id else { return }
+        lock.lock()
+        handlers[id] = nil
+        lock.unlock()
+    }
+
+    func cancel() {
+        let handlersToRun: [CancellationHandler]
+        lock.lock()
+        guard !cancelled else {
+            lock.unlock()
+            return
+        }
+        cancelled = true
+        handlersToRun = Array(handlers.values)
+        handlers.removeAll()
+        lock.unlock()
+
+        for handler in handlersToRun {
+            handler()
+        }
+    }
+}
+
 /// 工具风险等级元数据由插件定义，内核只消费结果。
 
 /// 代理工具协议
@@ -81,6 +154,21 @@ protocol SuperAgentTool: Sendable {
     /// - Throws: 执行过程中可能抛出的错误
     func execute(arguments: [String: ToolArgument]) async throws -> String
 
+    /// 带取消上下文的执行入口。
+    ///
+    /// 新工具应优先实现这个方法，把 `context` 传给底层长耗时操作。旧工具可以继续只实现
+    /// `execute(arguments:)`；默认实现会在调用前后检查取消。
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String
+
     /// 工具自行评估当前调用的风险等级（必填，禁止省略）。
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel
+}
+
+extension SuperAgentTool {
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        let result = try await execute(arguments: arguments)
+        try context.checkCancellation()
+        return result
+    }
 }
