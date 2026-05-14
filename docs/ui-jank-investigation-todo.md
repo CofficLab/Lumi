@@ -55,10 +55,10 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - Risk: many `get...Views()` methods filter enabled plugins and recreate `AnyView`s repeatedly.
 - [x] Inspect `ContentView.swift` toolbar and layout body.
   - Risk: toolbar, sidebar, rail, and panel availability are recomputed during body updates.
-- [ ] Inspect `StatusBar.swift`.
-  - Risk: leading/center/trailing status views are rebuilt in every body pass.
-- [ ] Inspect `PanelContentView.swift`, `RailView.swift`, and `BottomPanelBarView.swift`.
-  - Risk: active panel, header, bottom tab, and rail content views are created from plugin callbacks during rendering.
+- [x] Inspect `StatusBar.swift`.
+  - Verified: leading/center/trailing status views now read from `PluginVM` caches instead of recreating plugin contribution views in every body pass.
+- [x] Inspect `PanelContentView.swift`, `RailView.swift`, and `BottomPanelBarView.swift`.
+  - Verified: active panel, header, bottom tab, and rail content views now read from cached `PluginVM` contribution lookups.
 - [x] Add caching keyed by plugin settings version and `activePanelIcon`.
   - Fixed: cached toolbar, status bar, side bar, panel, rail, bottom panel, and menu bar contribution views; caches invalidate on plugin settings changes, plugin discovery, and active panel icon changes.
 - [ ] Prefer stable contribution descriptors over calling `addXXXView()` from body paths.
@@ -94,14 +94,17 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 ## Priority 6: Root Overlays And Global Change Propagation
 
 - [ ] Inspect root wrappers from plugins:
-  - [ ] `LayoutPlugin`
-  - [ ] `RecentProjectsPlugin`
-  - [ ] `QuickFileSearchPlugin`
-  - [ ] `ThemeStatusBarPlugin`
-  - [ ] `AgentRAGPlugin`
+  - [x] `LayoutPlugin`
+  - [x] `RecentProjectsPlugin`
+    - Fixed: startup restore now reads recent/current project files in a utility task and only applies the snapshot on the main actor.
+    - Fixed: adding a project updates `ProjectVM` from in-memory state instead of immediately reloading the recent-projects JSON on the main actor.
+  - [x] `QuickFileSearchPlugin`
+  - [x] `ThemeStatusBarPlugin`
+  - [x] `AgentRAGPlugin`
   - [ ] `ModelPreferencePlugin`
-  - [ ] `LLMAvailabilityPlugin`
+  - [x] `LLMAvailabilityPlugin`
 - [ ] Verify root overlays do not trigger repeated restoration, file reads, or network/model checks.
+  - Partially verified: `LayoutPlugin` and `ThemeStatusBarPlugin` use one-shot restore guards; `LLMAvailabilityPlugin` uses a one-shot initialization guard and background checks; `AgentRAGPlugin` now dedupes/cancels auto-index triggers.
 - [x] Inspect `RootViewContainer.swift` object-change forwarding.
   - Risk: forwarding many child VM changes may broaden SwiftUI invalidation.
   - Fixed: removed broad child `objectWillChange` forwarding from `RootViewContainer`; `RootView` now subscribes only to the concrete event publishers it needs.
@@ -120,7 +123,8 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - Fixed: Xcode, cache, and project cleaner views now only auto-scan once on first appearance; manual scan controls still force a rescan.
 - [x] Inspect `AgentRAGPlugin` auto-index overlay.
   - Fixed: auto-index overlay now loads recent projects off the main actor, cancels superseded trigger tasks, dedupes unchanged candidate sets, and stops work when the overlay disappears.
-- [ ] Confirm scans run off main and are not triggered repeatedly by view appearance.
+- [x] Confirm scans run off main and are not triggered repeatedly by view appearance.
+  - Verified for `QuickFileSearchPlugin`, `AppManagerPlugin`, `DiskManagerPlugin`, `AgentRAGPlugin`, and `EditorRailFileTreePlugin`.
 
 ## Deliverables
 
@@ -147,3 +151,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Added cancellation and stale-result guards for AppManager related-file scans.
 - [x] 2026-05-14: Reduced repeated RAG auto-index trigger work from root overlay appearances/project changes.
 - [x] 2026-05-14: Reduced EditorRail file tree body-time file-system checks and canceled superseded directory loads.
+- [x] 2026-05-14: Moved RecentProjects root restore file reads off the main actor.
