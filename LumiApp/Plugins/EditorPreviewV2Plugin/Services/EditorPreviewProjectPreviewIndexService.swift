@@ -17,22 +17,35 @@ final class EditorPreviewProjectPreviewIndexService {
         let previews: [LumiPreviewPackage.PreviewDiscovery]
     }
 
+    private struct Watch: @unchecked Sendable {
+        let fileDescriptor: Int32
+        let source: DispatchSourceProtocol
+    }
+
     nonisolated private static let excludedDirectoryNames: Set<String> = [
         ".build", ".git", ".swiftpm", "DerivedData", "Pods", "build", "node_modules"
     ]
     nonisolated private static let maxSwiftFileCount = 3_000
     nonisolated private static let maxFileSize = 1_500_000
+    nonisolated private static let maxWatchedDirectoryCount = 512
 
     var onSnapshotChanged: ((Snapshot?) -> Void)?
 
     private var rootURL: URL?
     private var entriesByPath: [String: Entry] = [:]
+    private var indexedSwiftFilePaths: Set<String> = []
     private var previewCandidates: [LumiPreviewPackage.PreviewDiscovery] = []
     private var snapshot: Snapshot?
     private var indexTask: Task<Void, Never>?
+    private var incrementalIndexTasks: [String: Task<Void, Never>] = [:]
+    private var directoryWatches: [String: Watch] = [:]
 
     deinit {
         indexTask?.cancel()
+        incrementalIndexTasks.values.forEach { $0.cancel() }
+        for watch in directoryWatches.values {
+            watch.source.cancel()
+        }
     }
 
     func prepareIndex(projectRootPath: String?, currentFileURL: URL?) {
@@ -57,6 +70,7 @@ final class EditorPreviewProjectPreviewIndexService {
         guard let rootURL, fileURL.standardizedFileURL.path.hasPrefix(rootURL.standardizedFileURL.path) else { return }
 
         let metadata = Self.metadata(for: fileURL)
+        indexedSwiftFilePaths.insert(fileURL.standardizedFileURL.path)
         entriesByPath[fileURL.standardizedFileURL.path] = Entry(
             fileURL: fileURL,
             modifiedAt: metadata.modifiedAt,
@@ -64,6 +78,8 @@ final class EditorPreviewProjectPreviewIndexService {
             previews: previews.withoutSourceText()
         )
         rebuildPreviewCandidates()
+        updateSnapshot()
+        updateDirectoryWatches(rootURL: rootURL)
     }
 
     func cachedPreviews(for fileURL: URL) -> [LumiPreviewPackage.PreviewDiscovery]? {
@@ -109,8 +125,12 @@ final class EditorPreviewProjectPreviewIndexService {
     private func reset() {
         indexTask?.cancel()
         indexTask = nil
+        incrementalIndexTasks.values.forEach { $0.cancel() }
+        incrementalIndexTasks = [:]
+        stopDirectoryWatches()
         rootURL = nil
         entriesByPath = [:]
+        indexedSwiftFilePaths = []
         previewCandidates = []
         snapshot = nil
         onSnapshotChanged?(nil)
@@ -130,15 +150,65 @@ final class EditorPreviewProjectPreviewIndexService {
     private func apply(result: ScanResult, rootURL: URL) {
         guard self.rootURL?.standardizedFileURL.path == rootURL.standardizedFileURL.path else { return }
         entriesByPath = Dictionary(uniqueKeysWithValues: result.entries.map { ($0.fileURL.standardizedFileURL.path, $0) })
+        indexedSwiftFilePaths = Set(result.scannedSwiftFileURLs.map { $0.standardizedFileURL.path })
         previewCandidates = result.entries.flatMap(\.previews)
+        updateSnapshot()
+        indexTask = nil
+        updateDirectoryWatches(rootURL: rootURL)
+        onSnapshotChanged?(snapshot)
+    }
+
+    private func scheduleIncrementalIndex(directoryURL: URL) {
+        guard let rootURL else { return }
+        let directoryPath = directoryURL.standardizedFileURL.path
+        incrementalIndexTasks[directoryPath]?.cancel()
+        incrementalIndexTasks[directoryPath] = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard !Task.isCancelled else { return }
+            let result = await Self.scanProject(rootURL: directoryURL, priorityFileURL: nil)
+            guard !Task.isCancelled else { return }
+            self?.applyIncremental(result: result, directoryURL: directoryURL, rootURL: rootURL)
+        }
+    }
+
+    private func applyIncremental(result: ScanResult, directoryURL: URL, rootURL: URL) {
+        let rootPath = rootURL.standardizedFileURL.path
+        guard self.rootURL?.standardizedFileURL.path == rootPath else { return }
+
+        let directoryPath = directoryURL.standardizedFileURL.path
+        let directoryPrefix = directoryPath + "/"
+        entriesByPath = entriesByPath.filter { path, _ in
+            path != directoryPath && !path.hasPrefix(directoryPrefix)
+        }
+        indexedSwiftFilePaths = indexedSwiftFilePaths.filter { path in
+            path != directoryPath && !path.hasPrefix(directoryPrefix)
+        }
+
+        for entry in result.entries {
+            entriesByPath[entry.fileURL.standardizedFileURL.path] = entry
+        }
+        for fileURL in result.scannedSwiftFileURLs {
+            indexedSwiftFilePaths.insert(fileURL.standardizedFileURL.path)
+        }
+
+        rebuildPreviewCandidates()
+        updateSnapshot()
+        incrementalIndexTasks[directoryPath] = nil
+        updateDirectoryWatches(rootURL: rootURL)
+        onSnapshotChanged?(snapshot)
+    }
+
+    private func updateSnapshot() {
+        guard let rootURL else {
+            snapshot = nil
+            return
+        }
         snapshot = Snapshot(
             rootURL: rootURL,
-            scannedFileCount: result.scannedFileCount,
-            previewCount: result.entries.reduce(0) { $0 + $1.previews.count },
+            scannedFileCount: indexedSwiftFilePaths.count,
+            previewCount: entriesByPath.values.reduce(0) { $0 + $1.previews.count },
             indexedAt: Date()
         )
-        indexTask = nil
-        onSnapshotChanged?(snapshot)
     }
 
     private func rebuildPreviewCandidates() {
@@ -157,6 +227,7 @@ final class EditorPreviewProjectPreviewIndexService {
     private struct ScanResult: Sendable {
         let entries: [Entry]
         let scannedFileCount: Int
+        let scannedSwiftFileURLs: [URL]
     }
 
     nonisolated private static func scanProject(rootURL: URL, priorityFileURL: URL?) async -> ScanResult {
@@ -185,8 +256,64 @@ final class EditorPreviewProjectPreviewIndexService {
                 )
             }
 
-            return ScanResult(entries: entries, scannedFileCount: fileURLs.count)
+            return ScanResult(entries: entries, scannedFileCount: fileURLs.count, scannedSwiftFileURLs: fileURLs)
         }.value
+    }
+
+    private func updateDirectoryWatches(rootURL: URL) {
+        var directoryPaths = Set<String>()
+        directoryPaths.insert(rootURL.standardizedFileURL.path)
+        for path in indexedSwiftFilePaths {
+            let directoryPath = URL(fileURLWithPath: path).deletingLastPathComponent().standardizedFileURL.path
+            directoryPaths.insert(directoryPath)
+            if directoryPaths.count >= Self.maxWatchedDirectoryCount {
+                break
+            }
+        }
+
+        let currentPaths = Set(directoryWatches.keys)
+        for path in currentPaths.subtracting(directoryPaths) {
+            stopWatchingDirectory(path: path)
+        }
+        for path in directoryPaths.subtracting(currentPaths) {
+            startWatchingDirectory(URL(fileURLWithPath: path, isDirectory: true))
+        }
+    }
+
+    private func startWatchingDirectory(_ directoryURL: URL) {
+        let path = directoryURL.standardizedFileURL.path
+        guard directoryWatches[path] == nil else { return }
+
+        let fileDescriptor = Darwin.open(path, O_EVTONLY)
+        guard fileDescriptor >= 0 else { return }
+
+        let source = DispatchSource.makeFileSystemObjectSource(
+            fileDescriptor: fileDescriptor,
+            eventMask: [.write, .delete, .rename, .extend],
+            queue: .global(qos: .utility)
+        )
+        source.setEventHandler { [weak self] in
+            DispatchQueue.main.async {
+                self?.scheduleIncrementalIndex(directoryURL: directoryURL)
+            }
+        }
+        source.setCancelHandler {
+            Darwin.close(fileDescriptor)
+        }
+        directoryWatches[path] = Watch(fileDescriptor: fileDescriptor, source: source)
+        source.resume()
+    }
+
+    private func stopWatchingDirectory(path: String) {
+        guard let watch = directoryWatches.removeValue(forKey: path) else { return }
+        watch.source.cancel()
+    }
+
+    private func stopDirectoryWatches() {
+        for watch in directoryWatches.values {
+            watch.source.cancel()
+        }
+        directoryWatches = [:]
     }
 
     nonisolated private static func swiftFileURLs(rootURL: URL, priorityFileURL: URL?) -> [URL] {

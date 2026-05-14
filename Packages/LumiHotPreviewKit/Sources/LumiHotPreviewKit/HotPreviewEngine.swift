@@ -145,8 +145,9 @@ public extension LumiHotPreviewPackage {
             currentPerformanceMetrics.lastCompileUsedCache = usedCache
         }
 
-        func recordLoad(duration: TimeInterval) {
+        func recordLoad(duration: TimeInterval, usedEntryCache: Bool = false) {
             currentPerformanceMetrics.lastLoadDuration = duration
+            currentPerformanceMetrics.lastEntryUsedCache = usedEntryCache
         }
 
         func recordRefresh(duration: TimeInterval) {
@@ -750,8 +751,10 @@ public extension LumiHotPreviewPackage {
                 entryVariant: preferredVariant.rawValue
             )
             let entryURL: URL
+            let usedEntryCache: Bool
             if let cached = await entryCacheManager.cachedEntryURL(for: cacheKey) {
                 entryURL = cached
+                usedEntryCache = true
             } else {
                 let built = try await buildPreviewEntry(
                     discovery: discovery,
@@ -766,6 +769,7 @@ public extension LumiHotPreviewPackage {
                 )
                 await entryCacheManager.storeEntryURL(built.url, for: builtCacheKey)
                 entryURL = built.url
+                usedEntryCache = false
             }
             LumiPreviewPackage.PreviewEntryBuilder.removeExpiredCacheEntries(
                 keepingNewest: Self.previewEntryCacheLimit
@@ -810,7 +814,10 @@ public extension LumiHotPreviewPackage {
             if response.success {
                 await session.setLoadedPreviewBodySource(discovery.bodySource)
             }
-            await session.recordLoad(duration: Date().timeIntervalSince(loadStart))
+            await session.recordLoad(
+                duration: Date().timeIntervalSince(loadStart),
+                usedEntryCache: usedEntryCache
+            )
             return response
         }
 

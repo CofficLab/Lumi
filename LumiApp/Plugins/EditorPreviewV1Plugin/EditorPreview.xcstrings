@@ -431,8 +431,15 @@
         }
       }
     },
-    "Load %@" : {
-
+    "Load %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Load %1$@%2$@"
+          }
+        }
+      }
     },
     "Loading image…" : {
 

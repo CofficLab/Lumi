@@ -39,6 +39,8 @@ struct PreviewPerformanceMetrics: Sendable, Equatable {
     public var lastRefreshDuration: TimeInterval?
     /// 最近一次编译是否命中缓存。
     public var lastCompileUsedCache: Bool
+    /// 最近一次预览入口是否命中缓存。
+    public var lastEntryUsedCache: Bool
 
     /// 创建一组性能指标。
     ///
@@ -47,16 +49,19 @@ struct PreviewPerformanceMetrics: Sendable, Equatable {
     ///   - lastLoadDuration: 最近一次宿主加载预览入口耗时，单位秒。
     ///   - lastRefreshDuration: 最近一次刷新耗时，单位秒。
     ///   - lastCompileUsedCache: 最近一次编译是否命中缓存。
+    ///   - lastEntryUsedCache: 最近一次预览入口是否命中缓存。
     public init(
         lastCompileDuration: TimeInterval? = nil,
         lastLoadDuration: TimeInterval? = nil,
         lastRefreshDuration: TimeInterval? = nil,
-        lastCompileUsedCache: Bool = false
+        lastCompileUsedCache: Bool = false,
+        lastEntryUsedCache: Bool = false
     ) {
         self.lastCompileDuration = lastCompileDuration
         self.lastLoadDuration = lastLoadDuration
         self.lastRefreshDuration = lastRefreshDuration
         self.lastCompileUsedCache = lastCompileUsedCache
+        self.lastEntryUsedCache = lastEntryUsedCache
     }
 }
 

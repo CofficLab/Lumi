@@ -61,10 +61,13 @@ enum EditorPreviewFormatter {
             )
         }
         if let loadDuration = metrics.lastLoadDuration {
+            let cacheSuffix = metrics.lastEntryUsedCache
+                ? String(localized: " cached", table: "EditorPreview") : ""
             parts.append(
                 String(
-                    format: String(localized: "Load %@", table: "EditorPreview"),
-                    format(seconds: loadDuration)
+                    format: String(localized: "Load %@%@", table: "EditorPreview"),
+                    format(seconds: loadDuration),
+                    cacheSuffix
                 )
             )
         }
