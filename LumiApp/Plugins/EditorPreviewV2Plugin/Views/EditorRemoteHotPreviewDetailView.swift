@@ -32,7 +32,9 @@ struct EditorRemoteHotPreviewDetailView: View {
                 onWindowBecameActive: {
                     viewModel.previewWindowDidBecomeActive()
                 },
-                onWindowBecameInactive: {},
+                onWindowBecameInactive: {
+                    viewModel.previewWindowDidBecomeInactive()
+                },
                 onWindowMiniaturized: {
                     viewModel.previewWindowDidMiniaturize()
                 },
@@ -62,6 +64,9 @@ struct EditorRemoteHotPreviewDetailView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             viewModel.previewWindowDidBecomeActive()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+            viewModel.previewWindowDidBecomeInactive()
         }
     }
 

@@ -312,6 +312,12 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         }
     }
 
+    func previewWindowDidBecomeInactive() {
+        Task { [weak self] in
+            await self?.hideLivePreviewIfNeeded(reason: "preview window became inactive")
+        }
+    }
+
     func previewWindowDidReceiveInteraction() {
         Task { [weak self] in
             await self?.restoreLivePreviewIfNeeded(reason: "preview window received interaction")
