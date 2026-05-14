@@ -1,24 +1,7 @@
 import Foundation
 import SwiftUI
 import MagicKit
-
-private final class LockedDataBuffer: @unchecked Sendable {
-    private let lock = NSLock()
-    private var data = Data()
-
-    func append(_ chunk: Data) {
-        lock.lock()
-        data.append(chunk)
-        lock.unlock()
-    }
-
-    func snapshot() -> Data {
-        lock.lock()
-        let copy = data
-        lock.unlock()
-        return copy
-    }
-}
+import ShellKit
 
 struct PortInfo: Identifiable, Hashable {
     let id = UUID()
@@ -38,47 +21,19 @@ final class PortScanner: Sendable, SuperLog {
     private init() {}
 
     func scanPorts() async -> [PortInfo] {
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let task = Process()
-                task.launchPath = "/usr/sbin/lsof"
-                // -iTCP: list TCP files
-                // -sTCP:LISTEN: list only listening ports
-                // -n: no host names
-                // -P: no port names
-                task.arguments = ["-iTCP", "-sTCP:LISTEN", "-n", "-P"]
-
-                let pipe = Pipe()
-                task.standardOutput = pipe
-
-                do {
-                    try task.run()
-                    let buffer = LockedDataBuffer()
-                    let handle = pipe.fileHandleForReading
-                    handle.readabilityHandler = { h in
-                        let chunk = h.availableData
-                        if !chunk.isEmpty { buffer.append(chunk) }
-                    }
-
-                    task.terminationHandler = { _ in
-                        handle.readabilityHandler = nil
-                        let final = handle.availableData
-                        if !final.isEmpty { buffer.append(final) }
-
-                        if let output = String(data: buffer.snapshot(), encoding: .utf8) {
-                        let ports = self.parseLsofOutput(output)
-                            continuation.resume(returning: ports)
-                        } else {
-                            continuation.resume(returning: [])
-                        }
-                    }
-                } catch {
-                    if Self.verbose {
-                        PortManagerPlugin.logger.error("Failed to scan ports: \(error.localizedDescription)")
-                    }
-                    continuation.resume(returning: [])
-                }
+        do {
+            let result = try await Shell.execute(
+                executable: "/usr/sbin/lsof",
+                arguments: ["-iTCP", "-sTCP:LISTEN", "-n", "-P"],
+                options: ShellOptions(throwsOnError: false)
+            )
+            guard result.exitCode == 0 else { return [] }
+            return parseLsofOutput(result.stdout)
+        } catch {
+            if Self.verbose {
+                PortManagerPlugin.logger.error("Failed to scan ports: \(error.localizedDescription)")
             }
+            return []
         }
     }
 
@@ -121,22 +76,13 @@ final class PortScanner: Sendable, SuperLog {
     }
 
     func killProcess(pid: String) async throws {
-        return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let task = Process()
-                task.launchPath = "/bin/kill"
-                task.arguments = ["-9", pid]
-
-                do {
-                    try task.run()
-                    continuation.resume(returning: ())
-                } catch {
-                    if Self.verbose {
-                        PortManagerPlugin.logger.error("Failed to kill process \(pid): \(error.localizedDescription)")
-                    }
-                    continuation.resume(throwing: error)
-                }
+        do {
+            _ = try await Shell.execute(executable: "/bin/kill", arguments: ["-9", pid])
+        } catch {
+            if Self.verbose {
+                PortManagerPlugin.logger.error("Failed to kill process \(pid): \(error.localizedDescription)")
             }
+            throw error
         }
     }
 }

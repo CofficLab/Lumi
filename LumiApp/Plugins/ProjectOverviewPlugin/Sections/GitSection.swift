@@ -1,4 +1,5 @@
 import Foundation
+import ShellKit
 
 enum GitSection {
     static func render(at root: URL) -> String {
@@ -21,20 +22,42 @@ enum GitSection {
     }
 
     private static func runGit(args: [String], in directory: URL) -> String? {
-        let process = Process()
-        let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = args
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-        process.currentDirectoryURL = directory
-        var env = ProcessInfo.processInfo.environment
-        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-        process.environment = env
-        try? process.run()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else { return nil }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8)
+        let semaphore = DispatchSemaphore(value: 0)
+        let box = GitSectionLockedStringBox()
+        Task {
+            let result = try? await Shell.execute(
+                executable: "/usr/bin/git",
+                arguments: args,
+                options: ShellOptions(
+                    workingDirectory: directory.path,
+                    environment: [
+                        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+                    ],
+                    throwsOnError: false
+                )
+            )
+            box.set(result?.exitCode == 0 ? result?.stdout : nil)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return box.get()
+    }
+}
+
+private final class GitSectionLockedStringBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: String?
+
+    func set(_ value: String?) {
+        lock.lock()
+        self.value = value
+        lock.unlock()
+    }
+
+    func get() -> String? {
+        lock.lock()
+        let result = value
+        lock.unlock()
+        return result
     }
 }

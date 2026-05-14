@@ -3,30 +3,13 @@ import SystemConfiguration
 import Darwin
 import MagicKit
 import Combine
+import ShellKit
 
 @MainActor
 class NetworkService: SuperLog, ObservableObject {
     nonisolated static let emoji = "📡"
     nonisolated static let verbose: Bool = false
     static let shared = NetworkService()
-
-    private final class LockedDataBuffer: @unchecked Sendable {
-        private let lock = NSLock()
-        private var data = Data()
-
-        func append(_ chunk: Data) {
-            lock.lock()
-            data.append(chunk)
-            lock.unlock()
-        }
-
-        func snapshot() -> Data {
-            lock.lock()
-            let copy = data
-            lock.unlock()
-            return copy
-        }
-    }
 
     // Published properties for subscribers
     @Published var downloadSpeed: Double = 0
@@ -290,98 +273,52 @@ class NetworkService: SuperLog, ObservableObject {
     
     /// Get Wi-Fi Info (SSID, RSSI) via airport utility
     func getWifiInfo() async -> (ssid: String?, rssi: Int) {
-        await Task.detached(priority: .utility) {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport")
-            process.arguments = ["-I"]
+        do {
+            let result = try await Shell.execute(
+                executable: "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport",
+                arguments: ["-I"],
+                options: ShellOptions(qos: .utility, throwsOnError: false)
+            )
+            guard result.exitCode == 0 else { return (nil, 0) }
 
-            let pipe = Pipe()
-            process.standardOutput = pipe
-
-            do {
-                try process.run()
-                let buffer = LockedDataBuffer()
-                let handle = pipe.fileHandleForReading
-                handle.readabilityHandler = { h in
-                    let chunk = h.availableData
-                    if !chunk.isEmpty { buffer.append(chunk) }
-                }
-
-                await withCheckedContinuation { continuation in
-                    process.terminationHandler = { _ in
-                        continuation.resume()
+            var ssid: String?
+            var rssi: Int = 0
+            let lines = result.stdout.components(separatedBy: .newlines)
+            for line in lines {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                if trimmed.hasPrefix("SSID:") {
+                    ssid = trimmed.replacingOccurrences(of: "SSID: ", with: "")
+                } else if trimmed.hasPrefix("agrCtlRSSI:") {
+                    if let val = Int(trimmed.replacingOccurrences(of: "agrCtlRSSI: ", with: "")) {
+                        rssi = val
                     }
                 }
-
-                handle.readabilityHandler = nil
-                let final = handle.availableData
-                if !final.isEmpty { buffer.append(final) }
-                if let output = String(data: buffer.snapshot(), encoding: .utf8) {
-                    var ssid: String?
-                    var rssi: Int = 0
-
-                    let lines = output.components(separatedBy: .newlines)
-                    for line in lines {
-                        let trimmed = line.trimmingCharacters(in: .whitespaces)
-                        if trimmed.hasPrefix("SSID:") {
-                            ssid = trimmed.replacingOccurrences(of: "SSID: ", with: "")
-                        } else if trimmed.hasPrefix("agrCtlRSSI:") {
-                            if let val = Int(trimmed.replacingOccurrences(of: "agrCtlRSSI: ", with: "")) {
-                                rssi = val
-                            }
-                        }
-                    }
-                    return (ssid, rssi)
-                }
-            } catch {
-                return (nil, 0)
             }
+            return (ssid, rssi)
+        } catch {
             return (nil, 0)
-        }.value
+        }
     }
     
     /// Simple Ping Test
     func ping(host: String = "8.8.8.8") async -> Double {
-        await Task.detached(priority: .utility) {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/sbin/ping")
-            process.arguments = ["-c", "1", "-t", "1", host] // count 1, timeout 1s
-
-            let pipe = Pipe()
-            process.standardOutput = pipe
-
-            do {
-                try process.run()
-                let buffer = LockedDataBuffer()
-                let handle = pipe.fileHandleForReading
-                handle.readabilityHandler = { h in
-                    let chunk = h.availableData
-                    if !chunk.isEmpty { buffer.append(chunk) }
+        do {
+            let result = try await Shell.execute(
+                executable: "/sbin/ping",
+                arguments: ["-c", "1", "-t", "1", host],
+                options: ShellOptions(qos: .utility, throwsOnError: false)
+            )
+            guard result.exitCode == 0 else { return 0 }
+            if let range = result.stdout.range(of: "time=") {
+                let substring = result.stdout[range.upperBound...]
+                let components = substring.components(separatedBy: " ")
+                if let msString = components.first, let ms = Double(msString) {
+                    return ms
                 }
-
-                await withCheckedContinuation { continuation in
-                    process.terminationHandler = { _ in
-                        continuation.resume()
-                    }
-                }
-
-                handle.readabilityHandler = nil
-                let final = handle.availableData
-                if !final.isEmpty { buffer.append(final) }
-                if let output = String(data: buffer.snapshot(), encoding: .utf8) {
-                    // Parse "time=12.345 ms"
-                    if let range = output.range(of: "time=") {
-                        let substring = output[range.upperBound...]
-                        let components = substring.components(separatedBy: " ")
-                        if let msString = components.first, let ms = Double(msString) {
-                            return ms
-                        }
-                    }
-                }
-            } catch {
-                return 0
             }
             return 0
-        }.value
+        } catch {
+            return 0
+        }
     }
 }

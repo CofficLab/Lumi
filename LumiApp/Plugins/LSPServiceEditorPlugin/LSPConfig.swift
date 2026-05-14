@@ -1,6 +1,7 @@
 import Foundation
 import os
 import MagicKit
+import ShellKit
 
 /// LSP 配置：定义语言服务器二进制路径和默认参数
 struct LSPConfig: SuperLog {
@@ -169,7 +170,7 @@ struct LSPConfig: SuperLog {
     }
 
     private static func findCommand(_ command: String) -> String? {
-        return try? runShellCommand("/usr/bin/which", args: [command])?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return Shell.findCommandSync(command)
     }
 
     /// 查找 Vue Language Server (Volar)
@@ -195,14 +196,39 @@ struct LSPConfig: SuperLog {
     }
 
     private static func runShellCommand(_ path: String, args: [String]) throws -> String? {
-        let process = Process()
-        process.executableURL = URL(filePath: path)
-        process.arguments = args
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        try process.run()
-        process.waitUntilExit()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8)
+        let executable = path.hasPrefix("/") ? path : Shell.findCommandSync(path)
+        guard let executable else { return nil }
+
+        let semaphore = DispatchSemaphore(value: 0)
+        let box = LSPLockedStringBox()
+        Task {
+            let result = try? await Shell.execute(
+                executable: executable,
+                arguments: args,
+                options: ShellOptions(throwsOnError: false)
+            )
+            box.set(result?.exitCode == 0 ? result?.stdout : nil)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return box.get()
+    }
+}
+
+private final class LSPLockedStringBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: String?
+
+    func set(_ value: String?) {
+        lock.lock()
+        self.value = value
+        lock.unlock()
+    }
+
+    func get() -> String? {
+        lock.lock()
+        let result = value
+        lock.unlock()
+        return result
     }
 }

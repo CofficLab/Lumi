@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import ShellKit
 
 /// Git Commit Detail 服务
 ///
@@ -183,24 +184,12 @@ enum GitCommitDetailService {
 
     /// 执行 git 命令并返回输出
     private static func runGit(_ path: String, args: [String]) async -> String {
-        await Task.detached {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            process.arguments = ["git", "-C", path] + args
-
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            process.standardError = FileHandle.nullDevice
-
-            do {
-                try process.run()
-                process.waitUntilExit()
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                return String(data: data, encoding: .utf8) ?? ""
-            } catch {
-                return ""
-            }
-        }.value
+        let result = try? await Shell.execute(
+            executable: "/usr/bin/env",
+            arguments: ["git", "-C", path] + args,
+            options: ShellOptions(throwsOnError: false)
+        )
+        return result?.exitCode == 0 ? result?.stdout ?? "" : ""
     }
 
     // MARK: - Load File Diff

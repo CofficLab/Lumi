@@ -2,6 +2,7 @@ import MagicKit
 import SwiftUI
 import Foundation
 import os
+import ShellKit
 
 /// 在浏览器中打开远程仓库插件
 ///
@@ -170,33 +171,18 @@ struct OpenRemoteStatusBarView: View {
     }
 
     private func runGit(args: [String], in directory: URL) async -> String? {
-        await Task.detached {
-            let process = Process()
-            let pipe = Pipe()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-            process.arguments = args
-            process.standardOutput = pipe
-            process.standardError = Pipe()
-            process.currentDirectoryURL = directory
-
-            var env = ProcessInfo.processInfo.environment
-            env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-            process.environment = env
-
-            do {
-                try process.run()
-                process.waitUntilExit()
-
-                guard process.terminationStatus == 0 else {
-                    return nil
-                }
-
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                return String(data: data, encoding: .utf8)
-            } catch {
-                return nil
-            }
-        }.value
+        let result = try? await Shell.execute(
+            executable: "/usr/bin/git",
+            arguments: args,
+            options: ShellOptions(
+                workingDirectory: directory.path,
+                environment: [
+                    "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+                ],
+                throwsOnError: false
+            )
+        )
+        return result?.exitCode == 0 ? result?.stdout : nil
     }
 
     private func openInBrowser() {
