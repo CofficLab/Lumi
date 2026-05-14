@@ -57,6 +57,15 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
             return "Error: task not found (id: \(taskId))"
         }
 
+        // 通知 UI 刷新
+        if let task = await manager.fetchTask(id: taskId) {
+            NotificationCenter.default.post(
+                name: .autoTaskDidChange,
+                object: nil,
+                userInfo: ["conversationId": task.conversationId]
+            )
+        }
+
         let statusEmoji: String
         switch status {
         case .inProgress: statusEmoji = "🔄"

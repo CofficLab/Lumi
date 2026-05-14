@@ -78,6 +78,13 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
         let manager = TaskStateManager.shared
         await manager.createTasks(conversationId: conversationId, items: items)
 
+        // 通知 UI 刷新
+        NotificationCenter.default.post(
+            name: .autoTaskDidChange,
+            object: nil,
+            userInfo: ["conversationId": conversationId]
+        )
+
         let summary = await manager.getProgressSummary(conversationId: conversationId)
 
         var result = "✅ Created \(items.count) tasks:\n\n"
