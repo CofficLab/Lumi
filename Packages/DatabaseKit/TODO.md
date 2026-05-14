@@ -74,3 +74,8 @@
 
 - [x] Apply `params` to Redis `execute`, `query`, and transaction `execute` calls.
 - [x] Add tests for Redis command argument composition.
+
+## P12 - Redis value consistency
+
+- [x] Return RESP null bulk strings as `DatabaseValue.null` instead of the string `"NULL"`.
+- [x] Preserve non-UTF-8 Redis bulk strings as `.data`.

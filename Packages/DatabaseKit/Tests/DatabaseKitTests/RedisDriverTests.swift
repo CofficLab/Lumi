@@ -145,7 +145,7 @@ struct RedisDriverTests {
             try await transaction.rollback()
 
             let result = try await connection.query("GET \(key)", params: nil)
-            #expect(result.rows == [[.string(key), .string("NULL")]])
+            #expect(result.rows == [[.string(key), .null]])
         } catch {
             _ = try? await connection.execute("DEL \(key)", params: nil)
             await connection.close()
@@ -225,6 +225,25 @@ struct RedisCommandParserTests {
         #expect(throws: DatabaseError.self) {
             _ = try RedisCommandArguments.compose(command: "SET key", params: [.data(Data([0xFF]))])
         }
+    }
+}
+
+struct RedisValueConverterTests {
+    @Test
+    func convertsNullBulkStringToDatabaseNull() {
+        #expect(RedisValueConverter.databaseValue(fromBulkString: nil) == .null)
+    }
+
+    @Test
+    func convertsUTF8BulkStringToDatabaseString() {
+        #expect(RedisValueConverter.databaseValue(fromBulkString: Data("hello".utf8)) == .string("hello"))
+    }
+
+    @Test
+    func convertsBinaryBulkStringToDatabaseData() {
+        let data = Data([0xFF, 0x00])
+
+        #expect(RedisValueConverter.databaseValue(fromBulkString: data) == .data(data))
     }
 }
 

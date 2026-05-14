@@ -249,6 +249,16 @@ enum RedisCommandArguments {
     }
 }
 
+enum RedisValueConverter {
+    static func databaseValue(fromBulkString data: Data?) -> DatabaseValue {
+        guard let data else { return .null }
+        if let string = String(data: data, encoding: .utf8) {
+            return .string(string)
+        }
+        return .data(data)
+    }
+}
+
 public final class RedisDriver: DatabaseDriver, Sendable {
     public var type: DatabaseType { .redis }
 
@@ -310,20 +320,20 @@ public actor RedisConnection: DatabaseConnection {
         switch command {
         case "GET":
             let key = args.count > 1 ? args[1] : ""
-            let valueString: String
+            let value: DatabaseValue
             switch response {
             case .bulkString(let data):
-                valueString = data.flatMap { String(data: $0, encoding: .utf8) } ?? "NULL"
-            case .simpleString(let value):
-                valueString = value
-            case .integer(let value):
-                valueString = String(value)
+                value = RedisValueConverter.databaseValue(fromBulkString: data)
+            case .simpleString(let string):
+                value = .string(string)
+            case .integer(let integer):
+                value = .integer(integer)
             case .error(let error):
                 throw DatabaseError.queryFailed(error)
             default:
-                valueString = "\(response)"
+                value = .string("\(response)")
             }
-            return QueryResult(columns: ["Key", "Value"], rows: [[.string(key), .string(valueString)]], rowsAffected: 0)
+            return QueryResult(columns: ["Key", "Value"], rows: [[.string(key), value]], rowsAffected: 0)
 
         case "SCAN":
             var keys: [String] = []
@@ -344,12 +354,15 @@ public actor RedisConnection: DatabaseConnection {
             case .array(let values):
                 return QueryResult(
                     columns: ["Value"],
-                    rows: flattenArray(values ?? []).map { [.string($0)] },
+                    rows: flattenArray(values ?? []).map { [$0] },
                     rowsAffected: 0
                 )
             case .bulkString(let data):
-                let value = data.flatMap { String(data: $0, encoding: .utf8) } ?? "NULL"
-                return QueryResult(columns: ["Value"], rows: [[.string(value)]], rowsAffected: 0)
+                return QueryResult(
+                    columns: ["Value"],
+                    rows: [[RedisValueConverter.databaseValue(fromBulkString: data)]],
+                    rowsAffected: 0
+                )
             case .simpleString(let value):
                 return QueryResult(columns: ["Value"], rows: [[.string(value)]], rowsAffected: 0)
             case .integer(let value):
@@ -403,22 +416,20 @@ public actor RedisConnection: DatabaseConnection {
         }
     }
 
-    private func flattenArray(_ values: [RespValue]) -> [String] {
-        var flattened: [String] = []
+    private func flattenArray(_ values: [RespValue]) -> [DatabaseValue] {
+        var flattened: [DatabaseValue] = []
         for value in values {
             switch value {
             case .bulkString(let data):
-                if let data, let string = String(data: data, encoding: .utf8) {
-                    flattened.append(string)
-                }
+                flattened.append(RedisValueConverter.databaseValue(fromBulkString: data))
             case .simpleString(let string):
-                flattened.append(string)
+                flattened.append(.string(string))
             case .integer(let integer):
-                flattened.append(String(integer))
+                flattened.append(.integer(integer))
             case .array(let nested):
                 flattened.append(contentsOf: flattenArray(nested ?? []))
             case .error(let error):
-                flattened.append("ERR: \(error)")
+                flattened.append(.string("ERR: \(error)"))
             }
         }
         return flattened
