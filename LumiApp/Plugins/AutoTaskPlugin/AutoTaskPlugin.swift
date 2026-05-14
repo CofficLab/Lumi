@@ -1,6 +1,7 @@
 import Foundation
 import MagicKit
 import os
+import SwiftUI
 
 /// AutoTask 插件
 ///
@@ -57,5 +58,12 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(TaskContextMiddleware())]
+    }
+
+    // MARK: - UI Contributions
+
+    /// 右侧栏视图：任务列表
+    @MainActor func addSidebarView(activeIcon: String?) -> AnyView? {
+        AnyView(AutoTaskSidebarView())
     }
 }

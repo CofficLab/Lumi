@@ -1,29 +1,56 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Auto Task": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto Task"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Auto Task" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Task"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自动任务"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动任务"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動任務"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動任務"
           }
         }
       }
+    },
+    "Completed" : {
+
+    },
+    "In Progress" : {
+
+    },
+    "No tasks yet" : {
+
+    },
+    "Pending" : {
+
+    },
+    "Refresh" : {
+
+    },
+    "Skipped" : {
+
+    },
+    "Task List" : {
+
+    },
+    "Tasks" : {
+
+    },
+    "Tasks will appear when the Agent breaks down a complex goal." : {
+
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

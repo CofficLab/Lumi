@@ -220,6 +220,9 @@
         }
       }
     },
+    "#%lld" : {
+
+    },
     "%@" : {
 
     },
@@ -490,6 +493,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld/%lld"
+          }
+        }
+      }
+    },
+    "%lld/%lld (%lld%%)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld (%3$lld%%)"
           }
         }
       }
