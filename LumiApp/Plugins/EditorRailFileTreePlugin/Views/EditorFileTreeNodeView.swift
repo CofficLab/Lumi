@@ -28,6 +28,9 @@ struct EditorFileTreeNodeView: View {
     /// 本地子节点缓存
     @State private var children: [URL] = []
 
+    /// 当前目录加载任务
+    @State private var loadChildrenTask: Task<Void, Never>?
+
     /// 是否处于 hover 状态（用于高亮当前行）
     @State private var isHovering: Bool = false
 
@@ -51,6 +54,9 @@ struct EditorFileTreeNodeView: View {
 
     /// 是否文件夹（启动时缓存，避免 body 求值时反复调 FileManager）
     private let isDirectory: Bool
+
+    /// 非目录文件图标（启动时缓存，避免 body 求值时反复调 FileManager）
+    private let fileIconName: String
 
     /// 文件名（不含路径）
     private var fileName: String {
@@ -78,6 +84,7 @@ struct EditorFileTreeNodeView: View {
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
         self.isDirectory = EditorFileTreeService.isDirectory(url)
+        self.fileIconName = EditorFileTreeService.getFileIcon(fileExtension: url.pathExtension)
 
         // 从 store 恢复展开状态
         if !projectRootPath.isEmpty {
@@ -187,6 +194,10 @@ struct EditorFileTreeNodeView: View {
         .onChange(of: refreshToken) { _, newValue in
             handleRefreshTokenChange(newValue)
         }
+        .onDisappear {
+            loadChildrenTask?.cancel()
+            loadChildrenTask = nil
+        }
     }
 
     // MARK: - Context Menu
@@ -259,7 +270,7 @@ struct EditorFileTreeNodeView: View {
         if isDirectory {
             return isExpanded ? "folder.fill" : "folder"
         }
-        return EditorFileTreeService.getFileIcon(for: url)
+        return fileIconName
     }
 
     fileprivate func rowBackground(isSelected: Bool) -> Color {
@@ -302,16 +313,17 @@ extension EditorFileTreeNodeView {
     // MARK: - Data Loading
     private func loadChildren() {
         let currentURL = url
-        Task.detached(priority: .userInitiated) { [self] in
+        loadChildrenTask?.cancel()
+        loadChildrenTask = Task { @MainActor in
             do {
-                let sorted = try EditorFileTreeService.loadContents(of: currentURL)
-                await MainActor.run { [self] in
-                    self.children = sorted
-                }
+                let sorted = try await Task.detached(priority: .userInitiated) {
+                    try EditorFileTreeService.loadContents(of: currentURL)
+                }.value
+                guard !Task.isCancelled else { return }
+                children = sorted
             } catch {
-                await MainActor.run { [self] in
-                    self.children = []
-                }
+                guard !Task.isCancelled else { return }
+                children = []
             }
         }
     }

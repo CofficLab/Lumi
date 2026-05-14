@@ -39,7 +39,14 @@ enum EditorFileTreeService {
             return "folder.fill"
         }
 
-        let ext = url.pathExtension.lowercased()
+        return getFileIcon(fileExtension: url.pathExtension)
+    }
+
+    /// 获取非目录文件图标，避免文件树行在 SwiftUI body 求值时反复查询文件系统资源值。
+    /// - Parameter fileExtension: 文件扩展名
+    /// - Returns: 图标 SF Symbol 名称
+    static func getFileIcon(fileExtension: String) -> String {
+        let ext = fileExtension.lowercased()
 
         switch ext {
         // 源代码文件

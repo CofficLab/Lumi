@@ -108,7 +108,9 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 
 ## Priority 7: File/System Scans Triggered By UI
 
-- [ ] Inspect `EditorRailFileTreePlugin` file tree services.
+- [x] Inspect `EditorRailFileTreePlugin` file tree services.
+  - Fixed: file row icons no longer query file-system resource values during SwiftUI body evaluation.
+  - Fixed: directory child loading tasks are now cancelable so refresh/appearance churn cannot publish older loads after newer requests.
 - [x] Inspect `QuickFileSearchPlugin` file search services.
   - Fixed: `quickOpenResults` no longer synchronously scans the project on the main actor; stale/missing indexes rebuild in the background.
   - Fixed: query matching now runs in a detached task and publishes only final results on the main actor.
@@ -144,3 +146,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Moved QuickFileSearch project indexing/search matching out of synchronous main-actor paths.
 - [x] 2026-05-14: Added cancellation and stale-result guards for AppManager related-file scans.
 - [x] 2026-05-14: Reduced repeated RAG auto-index trigger work from root overlay appearances/project changes.
+- [x] 2026-05-14: Reduced EditorRail file tree body-time file-system checks and canceled superseded directory loads.
