@@ -60,3 +60,7 @@
 ## P8 - RESP parser correctness
 
 - [x] Reject malformed RESP integers instead of coercing them to zero.
+
+## P9 - Swift concurrency cleanup
+
+- [x] Remove unsafe mutable metadata capture from MySQL affected-row handling.

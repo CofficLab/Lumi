@@ -56,15 +56,15 @@ public actor MySQLConnection: DatabaseConnection {
 
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
         guard let conn else { throw DatabaseError.connectionFailed("Not connected") }
-        nonisolated(unsafe) var affectedRows = 0
+        let metadataStore = MySQLQueryMetadataStore()
         _ = try await conn.query(
             sql,
             toMySQLData(params ?? []),
             onMetadata: { metadata in
-                affectedRows = Int(metadata.affectedRows)
+                metadataStore.setAffectedRows(Int(metadata.affectedRows))
             }
         ).get()
-        return affectedRows
+        return metadataStore.affectedRows
     }
 
     public func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
@@ -219,6 +219,23 @@ public final actor MySQLTransaction: DatabaseTransaction {
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
         guard !completed else { throw DatabaseError.transactionFailed("Transaction already completed") }
         return try await connection.execute(sql, params: params)
+    }
+}
+
+private final class MySQLQueryMetadataStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _affectedRows = 0
+
+    var affectedRows: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return _affectedRows
+    }
+
+    func setAffectedRows(_ affectedRows: Int) {
+        lock.lock()
+        _affectedRows = affectedRows
+        lock.unlock()
     }
 }
 #else
