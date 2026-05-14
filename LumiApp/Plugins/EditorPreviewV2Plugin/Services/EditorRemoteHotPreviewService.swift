@@ -20,6 +20,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private static let minimumEditorIdleIntervalBeforePrewarm: TimeInterval = 1.5
     private static let maximumPrewarmResourceDeferral: TimeInterval = 4.0
     private static let hostIdleShutdownDelay: TimeInterval = 600
+    private static let previewHistoryStorageKey = "EditorRemoteHotPreview.ProjectHistory"
 
     private enum PrewarmResourceAction: Equatable {
         case run
@@ -35,6 +36,13 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private struct PrewarmResourceDecision {
         let action: PrewarmResourceAction
         let summary: String
+    }
+
+    private struct ProjectPreviewHistory: Codable {
+        var recentFilePaths: [String] = []
+        var successfulFilePaths: [String] = []
+        var previewStartCountsByFilePath: [String: Int] = [:]
+        var failedPrewarmFingerprints: [String] = []
     }
 
     nonisolated static let emoji = "⚡"
@@ -67,6 +75,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     @Published private(set) var prewarmResourceSummary = "prewarm resources: ready"
     @Published private(set) var startupTimingSummary = "startup: idle"
     @Published private(set) var hostLifecycleSummary = "host lifecycle: cold"
+    @Published private(set) var prewarmCandidateSummary = "prewarm candidates: idle"
 
     private let scanner = LumiPreviewPackage.PreviewScanner()
     private let imageLoader = LumiHotPreviewPackage.ImageFileLoader()
@@ -88,7 +97,11 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private var scheduledPrewarmPriority: PrewarmPriority?
     private var prewarmedPreviewFingerprints: Set<String> = []
     private var scheduledPrewarmFingerprints: Set<String> = []
+    private var activeProjectHistoryKey: String?
     private var recentPreviewFilePaths: [String] = []
+    private var successfulPreviewFilePaths: [String] = []
+    private var previewStartCountsByFilePath: [String: Int] = [:]
+    private var failedPrewarmFingerprints: Set<String> = []
     private var prewarmAttemptCount = 0
     private var prewarmSuccessCount = 0
     private var prewarmFailureCount = 0
@@ -108,6 +121,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     deinit {
+        persistProjectPreviewHistory()
         commandTask?.cancel()
         scheduledRefreshTask?.cancel()
         scheduledPrewarmTask?.cancel()
@@ -126,6 +140,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     ) {
         activeSourceText = sourceText
         activeFileURL = fileURL
+        updateProjectHistoryContext(projectRootPath: projectRootPath, fileURL: fileURL)
         projectPreviewIndexService.prepareIndex(projectRootPath: projectRootPath, currentFileURL: fileURL)
 
         if let fileURL,
@@ -490,7 +505,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             return
         }
         let selectedFingerprint = previewFingerprint(for: selectedPreview)
-        recordPreviewStart(fingerprint: selectedFingerprint)
+        recordPreviewStart(fingerprint: selectedFingerprint, fileURL: selectedPreview.sourceFileURL)
 
         guard let hostExecutableURL = LumiHotPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
             handle(.failed(message: String(localized: "Hot preview host executable was not found.", table: "EditorPreviewRemoteHotPlugin")))
@@ -525,6 +540,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             previewSession = session
             await syncPreviewState(from: session)
             lastRenderedPreviewFingerprint = selectedFingerprint
+            recordSuccessfulPreviewFile(selectedPreview.sourceFileURL)
             handle(.frameRendered(makeFrame()))
             if preferredDisplayMode == .live, shouldRestorePreferredLiveMode {
                 await startLivePreviewSession(reason: "restoring preferred live mode after start")
@@ -768,6 +784,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         isShowingStaleFrame = false
         modeStatusMessage = nil
         prewarmSummary = "prewarm: idle"
+        prewarmCandidateSummary = "prewarm candidates: idle"
         startupTimingSummary = "startup: idle"
         hostLifecycleSummary = previewEngine == nil ? "host lifecycle: cold" : "host lifecycle: idle"
         lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
@@ -891,6 +908,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private func scheduleCurrentFilePrewarm(preferredPreviewID: String?, previews: [LumiPreviewPackage.PreviewDiscovery]) {
         guard previewSession == nil else { return }
         let orderedPreviews = orderedPrewarmPreviews(preferredPreviewID: preferredPreviewID, previews: previews)
+        prewarmCandidateSummary = "prewarm candidates: current file"
         schedulePrewarmBatch(
             for: Array(orderedPreviews.prefix(Self.maxBackgroundPrewarmCount)),
             reason: "current file preview candidates",
@@ -917,7 +935,8 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
                 candidate.fingerprint != lastPrewarmedPreviewFingerprint &&
                 !prewarmedPreviewFingerprints.contains(candidate.fingerprint) &&
                 candidate.fingerprint != scheduledPrewarmFingerprint &&
-                !scheduledPrewarmFingerprints.contains(candidate.fingerprint)
+                !scheduledPrewarmFingerprints.contains(candidate.fingerprint) &&
+                !failedPrewarmFingerprints.contains(candidate.fingerprint)
             }
 
         guard !candidates.isEmpty else { return }
@@ -951,8 +970,10 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         guard !previews.isEmpty else {
             return
         }
+        let orderedPreviews = orderedProjectPrewarmPreviews(previews)
+        prewarmCandidateSummary = projectPrewarmCandidateSummary(for: orderedPreviews)
         schedulePrewarmBatch(
-            for: Array(orderedProjectPrewarmPreviews(previews).prefix(Self.maxBackgroundPrewarmCount)),
+            for: Array(orderedPreviews.prefix(Self.maxBackgroundPrewarmCount)),
             reason: "project preview index candidates",
             priority: .indexedProject
         )
@@ -972,16 +993,78 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private func orderedProjectPrewarmPreviews(
         _ previews: [LumiPreviewPackage.PreviewDiscovery]
     ) -> [LumiPreviewPackage.PreviewDiscovery] {
-        guard !recentPreviewFilePaths.isEmpty else { return previews }
-        let rankByPath = Dictionary(uniqueKeysWithValues: recentPreviewFilePaths.enumerated().map { ($0.element, $0.offset) })
-        return previews.sorted { lhs, rhs in
-            let lhsRank = rankByPath[lhs.sourceFileURL.standardizedFileURL.path] ?? Int.max
-            let rhsRank = rankByPath[rhs.sourceFileURL.standardizedFileURL.path] ?? Int.max
-            if lhsRank != rhsRank {
-                return lhsRank < rhsRank
+        scoredProjectPrewarmPreviews(previews).map(\.preview)
+    }
+
+    private func scoredProjectPrewarmPreviews(
+        _ previews: [LumiPreviewPackage.PreviewDiscovery]
+    ) -> [(preview: LumiPreviewPackage.PreviewDiscovery, score: Int, reasons: [String])] {
+        previews
+            .map { preview in
+                let scoring = projectPrewarmScore(for: preview)
+                return (preview: preview, score: scoring.score, reasons: scoring.reasons)
             }
-            return lhs.lineNumber < rhs.lineNumber
+            .sorted { lhs, rhs in
+                if lhs.score != rhs.score {
+                    return lhs.score > rhs.score
+                }
+                if lhs.preview.sourceFileURL.path != rhs.preview.sourceFileURL.path {
+                    return lhs.preview.sourceFileURL.path.localizedStandardCompare(rhs.preview.sourceFileURL.path) == .orderedAscending
+                }
+                return lhs.preview.lineNumber < rhs.preview.lineNumber
+            }
+    }
+
+    private func projectPrewarmScore(
+        for preview: LumiPreviewPackage.PreviewDiscovery
+    ) -> (score: Int, reasons: [String]) {
+        let path = preview.sourceFileURL.standardizedFileURL.path
+        let directoryPath = preview.sourceFileURL.deletingLastPathComponent().standardizedFileURL.path
+        let activePath = activeFileURL?.standardizedFileURL.path
+        let activeDirectoryPath = activeFileURL?.deletingLastPathComponent().standardizedFileURL.path
+        var score = 0
+        var reasons: [String] = []
+
+        if path == activePath {
+            score += 1_000
+            reasons.append("current")
+        } else if directoryPath == activeDirectoryPath {
+            score += 250
+            reasons.append("same-dir")
         }
+
+        if let rank = recentPreviewFilePaths.firstIndex(of: path) {
+            score += max(150 - rank * 10, 20)
+            reasons.append("recent")
+        }
+
+        if let rank = successfulPreviewFilePaths.firstIndex(of: path) {
+            score += max(120 - rank * 8, 16)
+            reasons.append("successful")
+        }
+
+        if let startCount = previewStartCountsByFilePath[path], startCount > 0 {
+            score += min(startCount * 15, 150)
+            reasons.append("starts:\(startCount)")
+        }
+
+        return (score, reasons.isEmpty ? ["indexed"] : reasons)
+    }
+
+    private func projectPrewarmCandidateSummary(
+        for previews: [LumiPreviewPackage.PreviewDiscovery]
+    ) -> String {
+        let scored = scoredProjectPrewarmPreviews(Array(previews.prefix(Self.maxBackgroundPrewarmCount)))
+        guard !scored.isEmpty else {
+            return "prewarm candidates: none"
+        }
+
+        let parts = scored.prefix(Self.maxBackgroundPrewarmCount).map { candidate in
+            let fileName = candidate.preview.sourceFileURL.lastPathComponent
+            let reasons = candidate.reasons.joined(separator: "+")
+            return "\(fileName) score:\(candidate.score) \(reasons)"
+        }
+        return "prewarm candidates: " + parts.joined(separator: ", ")
     }
 
     private func touchRecentPreviewFile(_ fileURL: URL) {
@@ -991,6 +1074,93 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         if recentPreviewFilePaths.count > 12 {
             recentPreviewFilePaths.removeLast(recentPreviewFilePaths.count - 12)
         }
+        persistProjectPreviewHistory()
+    }
+
+    private func recordSuccessfulPreviewFile(_ fileURL: URL) {
+        let path = fileURL.standardizedFileURL.path
+        successfulPreviewFilePaths.removeAll { $0 == path }
+        successfulPreviewFilePaths.insert(path, at: 0)
+        if successfulPreviewFilePaths.count > 12 {
+            successfulPreviewFilePaths.removeLast(successfulPreviewFilePaths.count - 12)
+        }
+        persistProjectPreviewHistory()
+    }
+
+    private func incrementPreviewStartCount(for fileURL: URL) {
+        let path = fileURL.standardizedFileURL.path
+        previewStartCountsByFilePath[path, default: 0] += 1
+        persistProjectPreviewHistory()
+    }
+
+    private func recordPrewarmFailure(fingerprint: String) {
+        failedPrewarmFingerprints.insert(fingerprint)
+        persistProjectPreviewHistory()
+    }
+
+    private func clearPrewarmFailure(fingerprint: String) {
+        guard failedPrewarmFingerprints.remove(fingerprint) != nil else { return }
+        persistProjectPreviewHistory()
+    }
+
+    private func updateProjectHistoryContext(projectRootPath: String?, fileURL: URL?) {
+        let nextKey: String?
+        if let projectRootPath, !projectRootPath.isEmpty {
+            nextKey = URL(fileURLWithPath: projectRootPath, isDirectory: true).standardizedFileURL.path
+        } else {
+            nextKey = fileURL?.deletingLastPathComponent().standardizedFileURL.path
+        }
+
+        guard activeProjectHistoryKey != nextKey else {
+            return
+        }
+
+        persistProjectPreviewHistory()
+        activeProjectHistoryKey = nextKey
+        loadProjectPreviewHistory()
+    }
+
+    private func loadProjectPreviewHistory() {
+        guard let activeProjectHistoryKey else {
+            recentPreviewFilePaths = []
+            successfulPreviewFilePaths = []
+            previewStartCountsByFilePath = [:]
+            failedPrewarmFingerprints = []
+            return
+        }
+
+        let storage = Self.loadProjectPreviewHistoryStorage()
+        let history = storage[activeProjectHistoryKey] ?? ProjectPreviewHistory()
+        recentPreviewFilePaths = history.recentFilePaths
+        successfulPreviewFilePaths = history.successfulFilePaths
+        previewStartCountsByFilePath = history.previewStartCountsByFilePath
+        failedPrewarmFingerprints = Set(history.failedPrewarmFingerprints)
+    }
+
+    private func persistProjectPreviewHistory() {
+        guard let activeProjectHistoryKey else { return }
+
+        var storage = Self.loadProjectPreviewHistoryStorage()
+        storage[activeProjectHistoryKey] = ProjectPreviewHistory(
+            recentFilePaths: Array(recentPreviewFilePaths.prefix(12)),
+            successfulFilePaths: Array(successfulPreviewFilePaths.prefix(12)),
+            previewStartCountsByFilePath: previewStartCountsByFilePath,
+            failedPrewarmFingerprints: Array(failedPrewarmFingerprints.prefix(64))
+        )
+        Self.saveProjectPreviewHistoryStorage(storage)
+    }
+
+    private static func loadProjectPreviewHistoryStorage() -> [String: ProjectPreviewHistory] {
+        guard let data = UserDefaults.standard.data(forKey: previewHistoryStorageKey),
+              let decoded = try? JSONDecoder().decode([String: ProjectPreviewHistory].self, from: data) else {
+            return [:]
+        }
+        return decoded
+    }
+
+    private static func saveProjectPreviewHistoryStorage(_ storage: [String: ProjectPreviewHistory]) {
+        guard let data = try? JSONEncoder().encode(storage) else { return }
+        UserDefaults.standard.set(data, forKey: previewHistoryStorageKey)
     }
 
     private func waitForPrewarmOpportunity() async -> Bool {
@@ -1110,6 +1280,10 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
                 if let fingerprint = fingerprintByID[result.discoveryID] {
                     lastPrewarmedPreviewFingerprint = fingerprint
                     prewarmedPreviewFingerprints.insert(fingerprint)
+                    clearPrewarmFailure(fingerprint: fingerprint)
+                }
+                if let preview = candidates.first(where: { $0.preview.id == result.discoveryID })?.preview {
+                    recordSuccessfulPreviewFile(preview.sourceFileURL)
                 }
                 recordPrewarmResult(
                     success: true,
@@ -1123,6 +1297,9 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
                     usedCachedEntry: false,
                     duration: duration / Double(max(results.count, 1))
                 )
+                if let fingerprint = fingerprintByID[result.discoveryID] {
+                    recordPrewarmFailure(fingerprint: fingerprint)
+                }
                 if let errorDescription = result.errorDescription {
                     EditorRemoteHotPreviewPlugin.logger.debug(
                         "\(self.t)Hot preview prewarm failed: \(errorDescription, privacy: .public)"
@@ -1165,8 +1342,9 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         refreshPrewarmStatsSummary()
     }
 
-    private func recordPreviewStart(fingerprint: String) {
+    private func recordPreviewStart(fingerprint: String, fileURL: URL) {
         previewStartCount += 1
+        incrementPreviewStartCount(for: fileURL)
         if prewarmedPreviewFingerprints.contains(fingerprint) {
             prewarmHitCount += 1
         }
@@ -1588,6 +1766,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             "transport: \(transportSummary)",
             projectPreviewIndexSummary,
             prewarmSummary,
+            prewarmCandidateSummary,
             prewarmStatsSummary,
             prewarmResourceSummary,
             startupTimingSummary,

@@ -53,15 +53,15 @@ Further optimization should avoid blind tuning. The next work should make the re
 
 ## Priority 4: Project Preview Ranking
 
-- [ ] Improve project prewarm candidate ordering with weighted signals:
+- [x] Improve project prewarm candidate ordering with weighted signals:
   - current file
   - same directory as current file
   - recently opened files
   - recently successful preview files
   - files with frequent preview starts
-- [ ] Persist lightweight recent-preview history per project.
-- [ ] Avoid repeatedly prewarming previews that failed recently unless the source file changed.
-- [ ] Add diagnostics that explain why a preview candidate was selected.
+- [x] Persist lightweight recent-preview history per project.
+- [x] Avoid repeatedly prewarming previews that failed recently unless the source file changed.
+- [x] Add diagnostics that explain why a preview candidate was selected.
 
 ## Priority 5: Validation
 
