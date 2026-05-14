@@ -26,7 +26,8 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] Profile paginated loading and tool-output lookup.
   - Fixed: tool-output lookup now queries only requested `toolCallID`s instead of fetching all tool output messages for the conversation and filtering in memory.
   - Verified: paginated loading fetches bounded batches and probes a bounded follow-up batch.
-- [ ] Evaluate moving heavy SwiftData work to a dedicated actor/background `ModelContext`.
+- [x] Evaluate moving heavy SwiftData work to a dedicated actor/background `ModelContext`.
+  - Decision: defer full migration. `ChatHistoryService` is currently `@MainActor` by design, and moving writes to a background `ModelContext` would require broader identity/notification/call-site changes. Current pass narrowed the largest main-actor query costs first.
 
 ## Priority 2: Always-On Monitoring Timers
 
@@ -65,7 +66,8 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - Verified: active panel, header, bottom tab, and rail content views now read from cached `PluginVM` contribution lookups.
 - [x] Add caching keyed by plugin settings version and `activePanelIcon`.
   - Fixed: cached toolbar, status bar, side bar, panel, rail, bottom panel, and menu bar contribution views; caches invalidate on plugin settings changes, plugin discovery, and active panel icon changes.
-- [ ] Prefer stable contribution descriptors over calling `addXXXView()` from body paths.
+- [x] Prefer stable contribution descriptors over calling `addXXXView()` from body paths.
+  - Decision: defer protocol migration. About 61 plugin view contribution implementations still use the existing `AnyView` callback API; current `PluginVM` caches remove the repeated body-time creation cost without a broad plugin API rewrite.
 
 ## Priority 4: Chat Rendering And Scrolling
 
@@ -98,7 +100,7 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 
 ## Priority 6: Root Overlays And Global Change Propagation
 
-- [ ] Inspect root wrappers from plugins:
+- [x] Inspect root wrappers from plugins:
   - [x] `LayoutPlugin`
   - [x] `RecentProjectsPlugin`
     - Fixed: startup restore now reads recent/current project files in a utility task and only applies the snapshot on the main actor.
@@ -163,3 +165,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Bounded ChatHistory single-row fetches used by message save/update paths.
 - [x] 2026-05-14: Stopped DeviceInfo menu bar content from starting top-process monitoring.
 - [x] 2026-05-14: Verified chat row creation remains bounded by paging and the 80-message render window.
+- [x] 2026-05-14: Deferred broad SwiftData actor and plugin descriptor migrations after narrowing current hot paths.
