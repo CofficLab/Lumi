@@ -621,14 +621,8 @@ public extension LumiHotPreviewPackage {
 
         private func start(_ session: HotPreviewSession) async throws {
             await session.setState(.planning)
-            let discovery = await session.discovery
 
-            guard let strategy = buildPlanner.plan(for: discovery.sourceFileURL) else {
-                throw LumiPreviewPackage.PreviewError.targetNotFound(file: discovery.sourceFileURL.path)
-            }
-
-            await session.setBuildStrategy(strategy)
-            try await build(strategy, session: session)
+            try await rebuild(session)
 
             await session.setState(.launching)
             let connection = try await hostProcessManager.acquire()
