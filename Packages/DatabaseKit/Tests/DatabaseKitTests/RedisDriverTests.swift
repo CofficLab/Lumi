@@ -244,6 +244,15 @@ struct RedisRESPCodecTests {
     }
 
     @Test
+    func parseMalformedIntegerThrows() throws {
+        let data = Data(":not-an-int\r\n".utf8)
+
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisRESPCodec.parse(data)
+        }
+    }
+
+    @Test
     func parseBulkString() throws {
         let data = Data("$5\r\nhello\r\n".utf8)
         let result = try RedisRESPCodec.parse(data)

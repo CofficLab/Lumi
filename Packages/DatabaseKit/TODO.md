@@ -56,3 +56,7 @@
 
 - [x] Return MySQL column metadata for empty `SELECT` query results without relying on private `MySQLNIO` APIs.
 - [x] Add opt-in MySQL integration coverage for empty result columns.
+
+## P8 - RESP parser correctness
+
+- [x] Reject malformed RESP integers instead of coercing them to zero.

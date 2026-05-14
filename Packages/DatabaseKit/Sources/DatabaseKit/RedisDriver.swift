@@ -83,7 +83,11 @@ enum RedisRESPCodec {
             case UInt8(ascii: "-"):
                 return .error(try readLine())
             case UInt8(ascii: ":"):
-                return .integer(Int(try readLine()) ?? 0)
+                let line = try readLine()
+                guard let integer = Int(line) else {
+                    throw RedisRESPParseError.malformed("Invalid RESP integer")
+                }
+                return .integer(integer)
             case UInt8(ascii: "$"):
                 guard let length = Int(try readLine()) else {
                     throw RedisRESPParseError.malformed("Invalid RESP bulk string length")
