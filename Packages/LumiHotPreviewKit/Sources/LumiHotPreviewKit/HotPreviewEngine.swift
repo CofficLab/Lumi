@@ -2,6 +2,18 @@ import Foundation
 import LumiPreviewKit
 
 public extension LumiHotPreviewPackage {
+    struct HotPreviewStartupTiming: Sendable, Equatable {
+        public let stage: String
+        public let duration: TimeInterval
+        public let detail: String?
+
+        public init(stage: String, duration: TimeInterval, detail: String? = nil) {
+            self.stage = stage
+            self.duration = duration
+            self.detail = detail
+        }
+    }
+
     actor HotPreviewSession: LumiPreviewPackage.PreviewSession {
         public nonisolated let id: String
 
@@ -16,6 +28,7 @@ public extension LumiHotPreviewPackage {
         private var currentLastHotRenderResponse: HotRenderResponse?
         private var currentLoadedPreviewBodySource: String?
         private var currentLegacySession: (any LumiPreviewPackage.PreviewSession)?
+        private var currentStartupTimings: [HotPreviewStartupTiming] = []
 
         public var state: LumiPreviewPackage.PreviewSessionState { currentState }
         public var hostingView: (any Sendable)? { nil }
@@ -24,6 +37,7 @@ public extension LumiHotPreviewPackage {
         public var displayMode: LumiPreviewPackage.PreviewDisplayMode { currentDisplayMode }
         public var livePreviewInfo: LumiPreviewPackage.LivePreviewInfo { currentLivePreviewInfo }
         public var lastHotRenderResponse: HotRenderResponse? { currentLastHotRenderResponse }
+        public var startupTimings: [HotPreviewStartupTiming] { currentStartupTimings }
 
         public var lastRenderResponse: LumiPreviewPackage.RenderResponse? {
             guard let response = currentLastHotRenderResponse else {
@@ -152,6 +166,16 @@ public extension LumiHotPreviewPackage {
 
         func recordRefresh(duration: TimeInterval) {
             currentPerformanceMetrics.lastRefreshDuration = duration
+        }
+
+        func resetStartupTimings() {
+            currentStartupTimings = []
+        }
+
+        func recordStartupTiming(stage: String, duration: TimeInterval, detail: String? = nil) {
+            currentStartupTimings.append(
+                HotPreviewStartupTiming(stage: stage, duration: duration, detail: detail)
+            )
         }
 
         func terminateHost() async {
@@ -295,10 +319,17 @@ public extension LumiHotPreviewPackage {
             configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
         ) async throws -> HotPreviewSession {
             let session = HotPreviewSession(discovery: discovery, configuration: configuration)
+            let startedAt = Date()
+            await session.resetStartupTimings()
 
             do {
-                try await syntaxPreflight(discovery)
+                try await syntaxPreflight(discovery, session: session)
                 try await start(session)
+                await session.recordStartupTiming(
+                    stage: "total start",
+                    duration: Date().timeIntervalSince(startedAt),
+                    detail: discovery.id
+                )
             } catch let error as LumiPreviewPackage.PreviewError {
                 if try await startFallbackPreviewIfPossible(
                     discovery: discovery,
@@ -436,6 +467,7 @@ public extension LumiHotPreviewPackage {
             _ session: HotPreviewSession,
             configuration: LumiPreviewPackage.PreviewRenderConfiguration? = nil
         ) async throws {
+            await session.resetStartupTimings()
             if let configuration {
                 await session.setConfiguration(configuration)
             }
@@ -447,7 +479,7 @@ public extension LumiHotPreviewPackage {
 
             do {
                 let refreshStart = Date()
-                try await syntaxPreflight(await session.discovery)
+                try await syntaxPreflight(await session.discovery, session: session)
                 try await rebuild(session)
                 let connection = try await runningHostConnection(for: session)
                 let response = try await loadPreviewEntry(for: session, using: connection)
@@ -459,6 +491,11 @@ public extension LumiHotPreviewPackage {
                     )
                 }
                 await session.recordRefresh(duration: Date().timeIntervalSince(refreshStart))
+                await session.recordStartupTiming(
+                    stage: "total refresh",
+                    duration: Date().timeIntervalSince(refreshStart),
+                    detail: (await session.discovery).id
+                )
                 await session.setState(.running)
             } catch let error as LumiPreviewPackage.PreviewError {
                 if let legacySession = try await migrateToFallbackIfPossible(session, hotError: error) {
@@ -518,7 +555,13 @@ public extension LumiHotPreviewPackage {
             guard let connection = await session.hostConnection() else {
                 throw LumiPreviewPackage.PreviewError.runtimeCrashed(message: "No active hot preview session.")
             }
+            let startedAt = Date()
             let response = try await connection.requestStartLivePreview()
+            await session.recordStartupTiming(
+                stage: "live start",
+                duration: Date().timeIntervalSince(startedAt),
+                detail: response.liveWindowNumber.map { "window \($0)" }
+            )
             await session.setLivePreviewInfo(
                 LumiPreviewPackage.LivePreviewInfo(
                     state: .running,
@@ -563,7 +606,13 @@ public extension LumiHotPreviewPackage {
                 return
             }
             guard let connection = await session.hostConnection() else { return }
+            let startedAt = Date()
             let response = try await connection.requestShowLivePreview()
+            await session.recordStartupTiming(
+                stage: "live window sync",
+                duration: Date().timeIntervalSince(startedAt),
+                detail: response.liveWindowNumber.map { "window \($0)" }
+            )
             await session.markLivePreviewRunning(
                 windowNumber: response.liveWindowNumber,
                 hostProcessID: await connection.processID
@@ -606,10 +655,20 @@ public extension LumiHotPreviewPackage {
             )
         }
 
-        private func syntaxPreflight(_ discovery: LumiPreviewPackage.PreviewDiscovery) async throws {
-            let result = await syntaxPreflightCache.result(for: discovery.sourceFileURL) {
+        private func syntaxPreflight(
+            _ discovery: LumiPreviewPackage.PreviewDiscovery,
+            session: HotPreviewSession? = nil
+        ) async throws {
+            let startedAt = Date()
+            let lookup = await syntaxPreflightCache.result(for: discovery.sourceFileURL) {
                 await syntaxChecker.check(fileURL: discovery.sourceFileURL)
             }
+            await session?.recordStartupTiming(
+                stage: "syntax preflight",
+                duration: Date().timeIntervalSince(startedAt),
+                detail: lookup.usedCache ? "cached" : "checked"
+            )
+            let result = lookup.result
             guard case .valid = result else {
                 if case .invalid(let issues) = result {
                     let message = issues.map(\.message).joined(separator: "\n")
@@ -625,7 +684,13 @@ public extension LumiHotPreviewPackage {
             try await rebuild(session)
 
             await session.setState(.launching)
+            let hostAcquireStartedAt = Date()
             let connection = try await hostProcessManager.acquire()
+            await session.recordStartupTiming(
+                stage: "host acquire",
+                duration: Date().timeIntervalSince(hostAcquireStartedAt),
+                detail: "start"
+            )
             await session.setHostConnection(connection)
 
             do {
@@ -647,11 +712,17 @@ public extension LumiHotPreviewPackage {
 
         private func rebuild(_ session: HotPreviewSession) async throws {
             let discovery = await session.discovery
+            let planningStartedAt = Date()
             let baseStrategy = try await plannedBuildStrategy(for: session, discovery: discovery)
 
             let effectiveStrategy = await preferredBuildStrategy(
                 for: discovery,
                 baseStrategy: baseStrategy
+            )
+            await session.recordStartupTiming(
+                stage: "build planning",
+                duration: Date().timeIntervalSince(planningStartedAt),
+                detail: effectiveStrategy == baseStrategy ? "base" : "incremental"
             )
             do {
                 try await build(
@@ -712,7 +783,13 @@ public extension LumiHotPreviewPackage {
                 await session.setHostConnection(nil)
             }
             await session.setState(.launching)
+            let hostAcquireStartedAt = Date()
             let connection = try await hostProcessManager.acquire()
+            await session.recordStartupTiming(
+                stage: "host acquire",
+                duration: Date().timeIntervalSince(hostAcquireStartedAt),
+                detail: "reuse"
+            )
             await session.setHostConnection(connection)
 
             do {
@@ -764,7 +841,14 @@ public extension LumiHotPreviewPackage {
                     discovery: discovery
                 )
             }
-            await session.recordCompile(duration: Date().timeIntervalSince(startedAt), usedCache: result != .built)
+            let duration = Date().timeIntervalSince(startedAt)
+            let usedCache = result != .built
+            await session.recordCompile(duration: duration, usedCache: usedCache)
+            await session.recordStartupTiming(
+                stage: "build",
+                duration: duration,
+                detail: usedCache ? "cached" : "built"
+            )
             await session.setState(.compiling(progress: 1))
         }
 
@@ -780,6 +864,7 @@ public extension LumiHotPreviewPackage {
                 configuration: configuration,
                 buildStrategy: buildStrategy
             )
+            let entryLookupStartedAt = Date()
             let cacheKey = await entryCacheManager.makeCacheKey(
                 discovery: discovery,
                 configuration: configuration,
@@ -792,6 +877,12 @@ public extension LumiHotPreviewPackage {
                 entryURL = cached
                 usedEntryCache = true
             } else {
+                await session.recordStartupTiming(
+                    stage: "entry cache lookup",
+                    duration: Date().timeIntervalSince(entryLookupStartedAt),
+                    detail: "miss"
+                )
+                let entryGenerationStartedAt = Date()
                 let built = try await buildPreviewEntry(
                     discovery: discovery,
                     configuration: configuration,
@@ -806,6 +897,18 @@ public extension LumiHotPreviewPackage {
                 await entryCacheManager.storeEntryURL(built.url, for: builtCacheKey)
                 entryURL = built.url
                 usedEntryCache = false
+                await session.recordStartupTiming(
+                    stage: "entry generation",
+                    duration: Date().timeIntervalSince(entryGenerationStartedAt),
+                    detail: built.variant.rawValue
+                )
+            }
+            if usedEntryCache {
+                await session.recordStartupTiming(
+                    stage: "entry cache lookup",
+                    duration: Date().timeIntervalSince(entryLookupStartedAt),
+                    detail: "hit"
+                )
             }
             LumiPreviewPackage.PreviewEntryBuilder.removeExpiredCacheEntries(
                 keepingNewest: Self.previewEntryCacheLimit
@@ -850,9 +953,20 @@ public extension LumiHotPreviewPackage {
             if response.success {
                 await session.setLoadedPreviewBodySource(discovery.bodySource)
             }
+            let loadDuration = Date().timeIntervalSince(loadStart)
             await session.recordLoad(
-                duration: Date().timeIntervalSince(loadStart),
+                duration: loadDuration,
                 usedEntryCache: usedEntryCache
+            )
+            await session.recordStartupTiming(
+                stage: "host entry load",
+                duration: loadDuration,
+                detail: response.success ? "success" : "failed"
+            )
+            await session.recordStartupTiming(
+                stage: "first frame",
+                duration: 0,
+                detail: response.sharedMemoryTag != nil || response.previewImagePNGBase64 != nil ? "image" : "metadata"
             )
             return response
         }
@@ -1186,6 +1300,11 @@ private actor HotPreviewBuildCoordinator {
 }
 
 private actor HotSyntaxPreflightCache {
+    struct LookupResult: Sendable {
+        let result: LumiHotPreviewPackage.SyntaxCheckResult
+        let usedCache: Bool
+    }
+
     private struct CacheKey: Hashable {
         let path: String
         let modifiedAt: TimeInterval
@@ -1198,19 +1317,19 @@ private actor HotSyntaxPreflightCache {
     func result(
         for fileURL: URL,
         check: @Sendable () async -> LumiHotPreviewPackage.SyntaxCheckResult
-    ) async -> LumiHotPreviewPackage.SyntaxCheckResult {
+    ) async -> LookupResult {
         guard let key = cacheKey(for: fileURL) else {
-            return await check()
+            return LookupResult(result: await check(), usedCache: false)
         }
 
         if let cached = resultsByPath[key.path], cached.key == key {
-            return cached.result
+            return LookupResult(result: cached.result, usedCache: true)
         }
 
         let result = await check()
         resultsByPath[key.path] = (key, result)
         trimIfNeeded()
-        return result
+        return LookupResult(result: result, usedCache: false)
     }
 
     private func cacheKey(for fileURL: URL) -> CacheKey? {

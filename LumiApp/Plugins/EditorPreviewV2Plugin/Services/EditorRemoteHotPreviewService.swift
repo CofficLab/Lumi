@@ -64,6 +64,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     @Published private(set) var prewarmSummary = "prewarm: idle"
     @Published private(set) var prewarmStatsSummary = "prewarm stats: 0/0"
     @Published private(set) var prewarmResourceSummary = "prewarm resources: ready"
+    @Published private(set) var startupTimingSummary = "startup: idle"
 
     private let scanner = LumiPreviewPackage.PreviewScanner()
     private let imageLoader = LumiHotPreviewPackage.ImageFileLoader()
@@ -658,6 +659,9 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         }
 
         performanceSummary = EditorPreviewFormatter.performanceSummary(for: await session.performanceMetrics)
+        let startupTimings = await session.startupTimings
+        startupTimingSummary = Self.startupTimingSummary(for: startupTimings)
+        logStartupTimings(startupTimings)
         livePreviewInfo = await session.livePreviewInfo
         effectiveDisplayMode = resolvedEffectiveDisplayMode(
             preferredMode: preferredDisplayMode,
@@ -753,6 +757,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         isShowingStaleFrame = false
         modeStatusMessage = nil
         prewarmSummary = "prewarm: idle"
+        startupTimingSummary = "startup: idle"
         lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
         refreshDiagnosticSummary()
     }
@@ -1135,6 +1140,40 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         )
     }
 
+    private static func startupTimingSummary(
+        for timings: [LumiHotPreviewPackage.HotPreviewStartupTiming]
+    ) -> String {
+        guard !timings.isEmpty else {
+            return "startup: idle"
+        }
+
+        let parts = timings.map { timing in
+            let detail = timing.detail.map { " \($0)" } ?? ""
+            return "\(timing.stage) \(formatTimingDuration(timing.duration))\(detail)"
+        }
+        return "startup: " + parts.joined(separator: ", ")
+    }
+
+    private static func formatTimingDuration(_ duration: TimeInterval) -> String {
+        if duration < 0.001 {
+            return "0ms"
+        }
+        if duration < 1 {
+            return "\(Int((duration * 1_000).rounded()))ms"
+        }
+        return String(format: "%.2fs", duration)
+    }
+
+    private func logStartupTimings(_ timings: [LumiHotPreviewPackage.HotPreviewStartupTiming]) {
+        guard !timings.isEmpty else { return }
+        let timingSummary = Self.startupTimingSummary(for: timings)
+        let previewID = selectedPreview?.id ?? "-"
+        let filePath = activeFileURL?.path ?? "-"
+        EditorRemoteHotPreviewPlugin.logger.info(
+            "\(self.t)Hot preview startup timings preview=\(previewID, privacy: .public) file=\(filePath, privacy: .public) \(timingSummary, privacy: .public)"
+        )
+    }
+
     private func finishScheduledPrewarmBatch() {
         scheduledPrewarmFingerprint = nil
         scheduledPrewarmPriority = nil
@@ -1462,6 +1501,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             prewarmSummary,
             prewarmStatsSummary,
             prewarmResourceSummary,
+            startupTimingSummary,
             "pid: \(livePreviewInfo.hostProcessID.map(String.init) ?? "-")",
             "window: \(livePreviewInfo.hostWindowNumber.map(String.init) ?? "-")",
             String(format: "frame: %.1f, %.1f, %.1f x %.1f", rect.origin.x, rect.origin.y, rect.width, rect.height)
