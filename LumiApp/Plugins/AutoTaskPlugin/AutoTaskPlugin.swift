@@ -30,7 +30,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "checklist"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
-    static var order: Int { 7 }
+    static var order: Int { 90 }
 
     static let shared = AutoTaskPlugin()
 

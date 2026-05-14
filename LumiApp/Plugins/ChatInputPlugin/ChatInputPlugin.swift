@@ -16,7 +16,7 @@ actor ChatInputPlugin: SuperPlugin, SuperLog {
     static let displayName = String(localized: "Chat Input", table: "AgentChat")
     static let description = String(localized: "Chat input area with editor, toolbar and model selector", table: "AgentChat")
     static let iconName = "keyboard"
-    static var order: Int { 83 }
+    static var order: Int { 95 }
     nonisolated static let enable: Bool = true
     static let shared = ChatInputPlugin()
 
