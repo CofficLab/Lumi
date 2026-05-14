@@ -139,7 +139,11 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [ ] Instruments trace summary with top main-thread offenders.
 - [x] Ranked issue list with file/line references.
 - [x] Minimal fix plan grouped by risk and expected impact.
-- [ ] Regression checklist for chat scrolling, menu bar popover, panel switching, and app launch.
+- [x] Regression checklist for chat scrolling, menu bar popover, panel switching, and app launch.
+  - Chat scrolling: open a long conversation, verify initial bottom scroll, manual scroll-up disables auto-follow, streaming at bottom follows without animation jitter, and "Load More" prepends older rows without jumping unexpectedly.
+  - Menu bar popover: verify DeviceInfo menu bar CPU/memory glyph remains live, opening the popup starts top-process data, closing it stops extra process scanning, and Network menu bar speed still updates.
+  - Panel switching: switch between ActivityBar panels, Rail tabs, BottomPanel tabs, and right sidebars; verify cached plugin views refresh only when active icon/settings change.
+  - App launch/root overlays: launch with a saved project, verify recent project restore, model preference restore, RAG auto-index trigger, quick file search overlay, and LLM availability initialization do not repeat on normal body refresh.
 
 ## Execution Log
 
@@ -166,3 +170,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Stopped DeviceInfo menu bar content from starting top-process monitoring.
 - [x] 2026-05-14: Verified chat row creation remains bounded by paging and the 80-message render window.
 - [x] 2026-05-14: Deferred broad SwiftData actor and plugin descriptor migrations after narrowing current hot paths.
+- [x] 2026-05-14: Verified `Packages/DeviceMonitorKit` with `swift test` (52 tests) and `Packages/MarkdownKit` with `swift test` (84 tests).
