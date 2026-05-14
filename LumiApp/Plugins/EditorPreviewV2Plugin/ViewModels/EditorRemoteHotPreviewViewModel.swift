@@ -59,8 +59,8 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func update(sourceText: String?, fileURL: URL?, projectRootPath: String?) {
-        service.update(sourceText: sourceText, fileURL: fileURL, projectRootPath: projectRootPath)
+    func update(sourceText: String?, fileURL: URL?, projectRootPath: String?, reloadPolicy: EditorRemoteHotPreviewService.UpdateReloadPolicy = .reloadOnFingerprintChange) {
+        service.update(sourceText: sourceText, fileURL: fileURL, projectRootPath: projectRootPath, reloadPolicy: reloadPolicy)
     }
 
     func viewDidAppear() {

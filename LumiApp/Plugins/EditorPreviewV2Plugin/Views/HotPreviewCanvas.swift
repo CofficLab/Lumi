@@ -7,7 +7,7 @@ struct HotPreviewCanvas: View {
 
     var body: some View {
         canvasContent
-            .padding(18)
+            .frame(maxHeight: .infinity)
     }
 
     @ViewBuilder

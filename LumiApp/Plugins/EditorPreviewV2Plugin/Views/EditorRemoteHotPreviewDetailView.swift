@@ -68,9 +68,9 @@ struct EditorRemoteHotPreviewDetailView: View {
             refreshScanAndReloadIfNeeded()
         }
         .onChange(of: editorVM.service.contentRevision) { _, _ in
-            // Keep the in-memory source text in sync while editing,
+            // Keep the in-memory source text and preview list in sync while editing,
             // but do NOT trigger a preview reload until save.
-            viewModel.update(sourceText: sourceText, fileURL: currentFileURL, projectRootPath: projectRootPath)
+            viewModel.update(sourceText: sourceText, fileURL: currentFileURL, projectRootPath: projectRootPath, reloadPolicy: .scanOnly)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             viewModel.previewWindowDidBecomeActive()
