@@ -431,9 +431,11 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         switch runState {
         case .idle:
             startSelectedPreview()
+        case .failed:
+            startSelectedPreview()
         case .stopped where allowsStopped:
             startSelectedPreview()
-        case .hostMissing, .starting, .running, .failed, .stopped:
+        case .hostMissing, .starting, .running, .stopped:
             return
         }
     }

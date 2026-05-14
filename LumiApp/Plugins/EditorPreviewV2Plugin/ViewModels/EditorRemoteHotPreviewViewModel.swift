@@ -24,8 +24,16 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
     var livePreviewInfo: LumiPreviewPackage.LivePreviewInfo { service.livePreviewInfo }
     var isLiveLoading: Bool { service.isLiveLoading }
     var effectiveDisplayMode: LumiPreviewPackage.PreviewDisplayMode { service.effectiveDisplayMode }
+    var preferredDisplayMode: LumiPreviewPackage.PreviewDisplayMode { service.preferredDisplayMode }
     var modeStatusMessage: String? { service.modeStatusMessage }
     var isShowingStaleFrame: Bool { service.isShowingStaleFrame }
+    var isMarkdownMode: Bool { service.isMarkdownMode }
+    var markdownSource: String? { service.markdownSource }
+    var isImageMode: Bool { service.isImageMode }
+    var imageFileURL: URL? { service.imageFileURL }
+    var canSwitchToLive: Bool { service.canSwitchToLive }
+    var canSwitchToImage: Bool { service.canSwitchToImage }
+    var liveUnavailableReason: String? { service.liveUnavailableReason }
 
     var selectedPreviewID: String? {
         get { service.selectedPreviewID }
@@ -73,6 +81,14 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
         service.stop(reason: "toolbar stop button")
     }
 
+    func switchToLive() {
+        service.switchToLive()
+    }
+
+    func switchToImage() {
+        service.switchToImage()
+    }
+
     func viewDidDisappear() {
         service.detailViewDidDisappear()
     }
@@ -99,5 +115,13 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
 
     func previewWindowDidReceiveInteraction() {
         service.previewWindowDidReceiveInteraction()
+    }
+
+    func previewWindowDidMiniaturize() {
+        service.previewWindowDidMiniaturize()
+    }
+
+    func previewWindowDidDeminiaturize() {
+        service.previewWindowDidDeminiaturize()
     }
 }

@@ -12,8 +12,8 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = false
     static let id: String = "EditorPreview"
-    static let displayName: String = String(localized: "Editor Preview", table: "EditorPreview")
-    static let description: String = String(localized: "Shows source-based SwiftUI previews for the active editor file", table: "EditorPreview")
+    static let displayName: String = "预览V1"
+    static let description: String = String(localized: "V1 preview powered by LumiPreviewKit", table: "EditorPreview")
     static let iconName: String = "rectangle.on.rectangle"
     static var isConfigurable: Bool { false }
     static var order: Int { 81 }
@@ -25,7 +25,7 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-editor-preview",
-            title: String(localized: "Preview", table: "EditorPreview"),
+            title: "预览V1",
             systemImage: "rectangle.on.rectangle",
             priority: 81
         )]

@@ -14,6 +14,7 @@ public extension LumiHotPreviewPackage {
         private var currentBuildStrategy: LumiPreviewPackage.BuildStrategy?
         private var currentHostConnection: HotHostConnection?
         private var currentLastHotRenderResponse: HotRenderResponse?
+        private var currentLoadedPreviewBodySource: String?
         private var currentLegacySession: (any LumiPreviewPackage.PreviewSession)?
 
         public var state: LumiPreviewPackage.PreviewSessionState { currentState }
@@ -84,6 +85,14 @@ public extension LumiHotPreviewPackage {
 
         func setLastHotRenderResponse(_ response: HotRenderResponse) {
             currentLastHotRenderResponse = response
+        }
+
+        func setLoadedPreviewBodySource(_ bodySource: String?) {
+            currentLoadedPreviewBodySource = bodySource
+        }
+
+        func loadedPreviewBodySource() -> String? {
+            currentLoadedPreviewBodySource
         }
 
         func setLegacySession(_ session: (any LumiPreviewPackage.PreviewSession)?) {
@@ -650,7 +659,8 @@ public extension LumiHotPreviewPackage {
             let loadStart = Date()
             let response: HotRenderResponse
             if await session.livePreviewInfo.state == .running {
-                if preferredVariant == .moduleImport {
+                if preferredVariant == .moduleImport,
+                   await session.loadedPreviewBodySource() == discovery.bodySource {
                     do {
                         let interposed = try await connection.requestInterposeDylib(
                             at: entryURL,
@@ -682,6 +692,9 @@ public extension LumiHotPreviewPackage {
                     symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
                 )
             }
+            if response.success {
+                await session.setLoadedPreviewBodySource(discovery.bodySource)
+            }
             await session.recordLoad(duration: Date().timeIntervalSince(loadStart))
             return response
         }
@@ -711,6 +724,22 @@ public extension LumiHotPreviewPackage {
                     await importEntryFallbackCache.recordFailure(for: context.fallbackKey)
                     // Fall back to the source-including builder when module import
                     // cannot compile due to access control or missing module context.
+                }
+            }
+
+            if let buildStrategy {
+                do {
+                    return BuiltPreviewEntry(
+                        url: try await incrementalBuildPipeline.compilePreviewEntryIncludingCurrentSource(
+                            discovery: discovery,
+                            configuration: configuration,
+                            buildStrategy: buildStrategy
+                        ),
+                        variant: .sourceInclude
+                    )
+                } catch {
+                    // Fall through to the legacy source-including builder as the
+                    // last fallback if the current-file-only compilation fails.
                 }
             }
 

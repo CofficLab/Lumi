@@ -233,6 +233,103 @@ struct IncrementalBuildPipelineTests {
         #expect(command.contains("/tmp/PreviewEntry.dylib"))
     }
 
+    @Test("generates source-include entry source without target-wide source inclusion")
+    func generatesSourceIncludeEntrySource() throws {
+        let pipeline = LumiHotPreviewPackage.IncrementalBuildPipeline()
+        let discovery = LumiPreviewPackage.PreviewDiscovery(
+            id: "preview.source-include",
+            title: "SourceInclude",
+            sourceFileURL: URL(fileURLWithPath: "/tmp/SourceInclude.swift"),
+            lineNumber: 10,
+            endLineNumber: 14,
+            bodySource: "DemoView()"
+        )
+
+        let source = try pipeline.generateEntryIncludingCurrentSource(
+            discovery: discovery,
+            configuration: .empty
+        )
+
+        #expect(source.contains(LumiPreviewPackage.PreviewEntryBuilder.symbolName))
+        #expect(source.contains(LumiPreviewPackage.PreviewEntryBuilder.viewSymbolName))
+        #expect(source.contains("let rootView = AnyView({"))
+        #expect(source.contains("DemoView()"))
+    }
+
+    @Test("current source sanitization strips preview blocks and main attribute")
+    func currentSourceSanitizationStripsPreviewBlocksAndMainAttribute() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fileManager = FileManager.default
+        let tempDirectory = fileManager.temporaryDirectory
+        let existingGeneratedDirectories = Set(
+            (try? fileManager.contentsOfDirectory(
+                at: tempDirectory,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            ))?.filter { $0.lastPathComponent.hasPrefix("LumiHotPreviewKit-SourceEntry-") }
+            .map(\.path) ?? []
+        )
+        let sourceURL = directory.appendingPathComponent("Demo.swift")
+        try """
+        import SwiftUI
+
+        @main
+        struct DemoApp: App {
+            var body: some Scene { WindowGroup { DemoView() } }
+        }
+
+        struct DemoView: View {
+            var body: some View { Text("Demo") }
+        }
+
+        #Preview {
+            DemoView()
+        }
+        """.write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let pipeline = LumiHotPreviewPackage.IncrementalBuildPipeline(
+            compilerArgumentResolver: { _ in [] }
+        )
+        let discovery = LumiPreviewPackage.PreviewDiscovery(
+            id: "preview.sanitized",
+            title: "Sanitized",
+            sourceFileURL: sourceURL,
+            lineNumber: 11,
+            endLineNumber: 13,
+            bodySource: "DemoView()",
+            sourceText: try String(contentsOf: sourceURL, encoding: .utf8)
+        )
+
+        _ = try await pipeline.compilePreviewEntryIncludingCurrentSource(
+            discovery: discovery,
+            configuration: .empty,
+            buildStrategy: .incremental(fileURL: sourceURL, compileCommand: "/usr/bin/env swiftc")
+        )
+
+        let generatedDirectories = try fileManager.contentsOfDirectory(
+            at: tempDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ).filter {
+            $0.lastPathComponent.hasPrefix("LumiHotPreviewKit-SourceEntry-")
+                && !existingGeneratedDirectories.contains($0.path)
+        }
+        #expect(generatedDirectories.count == 1)
+        guard let latestDirectory = generatedDirectories.first else {
+            Issue.record("Expected generated source entry directory")
+            return
+        }
+
+        let sanitizedSource = try String(
+            contentsOf: latestDirectory.appendingPathComponent("CurrentSource.swift"),
+            encoding: .utf8
+        )
+        #expect(!sanitizedSource.contains("#Preview"))
+        #expect(!sanitizedSource.contains("@main"))
+        #expect(sanitizedSource.contains("struct DemoView"))
+    }
+
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiHotPreviewKitTests-\(UUID().uuidString)", isDirectory: true)

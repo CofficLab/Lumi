@@ -175,6 +175,43 @@ public extension LumiHotPreviewPackage {
             return dylib
         }
 
+        public func compilePreviewEntryIncludingCurrentSource(
+            discovery: LumiPreviewPackage.PreviewDiscovery,
+            configuration: LumiPreviewPackage.PreviewRenderConfiguration,
+            buildStrategy: LumiPreviewPackage.BuildStrategy
+        ) async throws -> URL {
+            let compilerArguments = try await compilerArgumentResolver(buildStrategy)
+            let directory = FileManager.default.temporaryDirectory
+                .appendingPathComponent("LumiHotPreviewKit-SourceEntry-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+            let currentSourceURL = directory.appendingPathComponent("CurrentSource.swift")
+            let entrySourceURL = directory.appendingPathComponent("PreviewEntry.swift")
+            let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
+
+            let currentSource = try sanitizedCurrentSource(discovery: discovery)
+            let entrySource = try generateEntryIncludingCurrentSource(
+                discovery: discovery,
+                configuration: configuration
+            )
+
+            try currentSource.write(to: currentSourceURL, atomically: true, encoding: .utf8)
+            try entrySource.write(to: entrySourceURL, atomically: true, encoding: .utf8)
+
+            let moduleName = Self.previewEntryModuleName(
+                previewID: discovery.id,
+                importedModuleName: "SourceInclude"
+            )
+            let dylib = try await compileLibrary(
+                sourceURLs: [currentSourceURL, entrySourceURL],
+                dylibURL: dylibURL,
+                compilerArguments: compilerArguments,
+                moduleName: moduleName
+            )
+            try await incrementalCompiler.codesign(dylibURL: dylib)
+            return dylib
+        }
+
         public func resolveModuleSearchPaths(
             buildStrategy: LumiPreviewPackage.BuildStrategy
         ) async throws -> [String] {
@@ -260,6 +297,40 @@ public extension LumiHotPreviewPackage {
                 return importPlan
             }
             return try await resolveModuleImportPlan(buildStrategy: buildStrategy)
+        }
+
+        public func generateEntryIncludingCurrentSource(
+            discovery: LumiPreviewPackage.PreviewDiscovery,
+            configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
+        ) throws -> String {
+            let previewBody = discovery.bodySource?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let viewBody = (previewBody?.isEmpty == false) ? previewBody! : #"Text("Empty Preview")"#
+            let descriptor = Self.previewEntryDescriptorJSON(
+                discovery: discovery,
+                configuration: configuration
+            )
+
+            return """
+            import AppKit
+            import Darwin
+            import SwiftUI
+
+            @_cdecl("\(LumiPreviewPackage.PreviewEntryBuilder.symbolName)")
+            public func \(Self.previewDescriptorFunctionName)() -> UnsafePointer<CChar>? {
+                let json = "\(Self.swiftStringLiteralContents(descriptor))"
+                return strdup(json).map { UnsafePointer($0) }
+            }
+
+            @_cdecl("\(LumiPreviewPackage.PreviewEntryBuilder.viewSymbolName)")
+            public func \(Self.previewViewFunctionName)() -> UnsafeMutableRawPointer? {
+                let rootView = AnyView({
+            \(Self.indented(viewBody, spaces: 8))
+                }())
+                let view = NSHostingView(rootView: rootView)
+                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
+                return Unmanaged.passRetained(view).toOpaque()
+            }
+            """
         }
 
         private func extractCommand(from buildLog: String, for fileURL: URL) -> String? {
@@ -720,6 +791,50 @@ public extension LumiHotPreviewPackage {
 
         private static func shellQuoted(_ value: String) -> String {
             "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
+        }
+
+        private func sanitizedCurrentSource(
+            discovery: LumiPreviewPackage.PreviewDiscovery
+        ) throws -> String {
+            let source: String
+            if let existingSource = discovery.sourceText {
+                source = existingSource
+            } else {
+                source = try String(contentsOf: discovery.sourceFileURL, encoding: .utf8)
+            }
+            let previews = LumiPreviewPackage.PreviewScanner().scan(
+                fileURL: discovery.sourceFileURL,
+                sourceText: source
+            )
+            var lines = source.components(separatedBy: .newlines)
+            for preview in previews.sorted(by: { $0.lineNumber > $1.lineNumber }) {
+                let start = max(preview.lineNumber - 1, 0)
+                let end = min(preview.endLineNumber - 1, lines.count - 1)
+                guard start <= end else { continue }
+                lines.replaceSubrange(start...end, with: [])
+            }
+            Self.removeMainAttribute(from: &lines)
+            return lines.joined(separator: "\n")
+        }
+
+        private static func removeMainAttribute(from lines: inout [String]) {
+            for index in lines.indices.reversed() {
+                let trimmed = lines[index].trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed == "@main" {
+                    lines.remove(at: index)
+                } else if trimmed.hasPrefix("@main "),
+                          let range = lines[index].range(of: "@main") {
+                    lines[index].removeSubrange(range)
+                }
+            }
+        }
+
+        private static func indented(_ value: String, spaces: Int) -> String {
+            let padding = String(repeating: " ", count: spaces)
+            return value
+                .split(separator: "\n", omittingEmptySubsequences: false)
+                .map { "\(padding)\($0)" }
+                .joined(separator: "\n")
         }
 
         private static let previewDescriptorFunctionName = "lumiPreviewEntry"

@@ -6,6 +6,12 @@ import LumiPreviewKit
 
 @MainActor
 final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
+    private static let imageExtensions: Set<String> = [
+        "png", "jpg", "jpeg", "gif", "tiff", "tif", "bmp", "webp",
+        "svg", "icns", "ico", "heic", "heif"
+    ]
+    private static let markdownExtensions: Set<String> = ["md", "markdown"]
+
     nonisolated static let emoji = "⚡"
     @Published private(set) var hostState: EditorRemoteHotPreviewHostState = .idle
     @Published private(set) var lastFrame: EditorRemoteHotPreviewFrame?
@@ -26,6 +32,10 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     @Published private(set) var effectiveDisplayMode: LumiPreviewPackage.PreviewDisplayMode = .image
     @Published private(set) var modeStatusMessage: String?
     @Published private(set) var isShowingStaleFrame = false
+    @Published private(set) var isMarkdownMode = false
+    @Published private(set) var markdownSource: String?
+    @Published private(set) var isImageMode = false
+    @Published private(set) var imageFileURL: URL?
 
     private let scanner = LumiPreviewPackage.PreviewScanner()
     private let imageLoader = LumiHotPreviewPackage.ImageFileLoader()
@@ -56,6 +66,67 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     func update(sourceText: String?, fileURL: URL?) {
         activeSourceText = sourceText
         activeFileURL = fileURL
+
+        if let fileURL,
+           Self.imageExtensions.contains(fileURL.pathExtension.lowercased()) {
+            teardownPreviewSessionForExternalModeChange()
+            isMarkdownMode = false
+            markdownSource = nil
+            isImageMode = true
+            imageFileURL = fileURL
+            previews = []
+            selectedPreviewID = nil
+            renderImage = nil
+            hostState = .idle
+            updatePhase = .idle
+            failureMessage = nil
+            renderMessage = nil
+            diagnostics = nil
+            performanceSummary = nil
+            transportSummary = "-"
+            livePreviewInfo = LumiPreviewPackage.LivePreviewInfo()
+            effectiveDisplayMode = .image
+            isShowingStaleFrame = false
+            modeStatusMessage = nil
+            lastFrame = nil
+            lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
+            refreshDiagnosticSummary()
+            return
+        }
+
+        isImageMode = false
+        imageFileURL = nil
+
+        if let sourceText,
+           let fileURL,
+           Self.markdownExtensions.contains(fileURL.pathExtension.lowercased()) {
+            teardownPreviewSessionForExternalModeChange()
+            isMarkdownMode = true
+            markdownSource = sourceText
+            isImageMode = false
+            imageFileURL = nil
+            previews = []
+            selectedPreviewID = nil
+            renderImage = nil
+            hostState = .idle
+            updatePhase = .idle
+            failureMessage = nil
+            renderMessage = nil
+            diagnostics = nil
+            performanceSummary = nil
+            transportSummary = "-"
+            livePreviewInfo = LumiPreviewPackage.LivePreviewInfo()
+            effectiveDisplayMode = .image
+            isShowingStaleFrame = false
+            modeStatusMessage = nil
+            lastFrame = nil
+            lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
+            refreshDiagnosticSummary()
+            return
+        }
+
+        isMarkdownMode = false
+        markdownSource = nil
 
         guard let sourceText, let fileURL, fileURL.pathExtension == "swift" else {
             previews = []
@@ -143,6 +214,58 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         run(.stop(reason: reason))
     }
 
+    var canSwitchToLive: Bool {
+        guard previewSession != nil, hostState == .connected else { return false }
+        switch livePreviewInfo.state {
+        case .available, .running, .stopped:
+            return true
+        case .failed, .launching, .unavailable:
+            return false
+        }
+    }
+
+    var canSwitchToImage: Bool {
+        preferredDisplayMode == .live
+    }
+
+    var liveUnavailableReason: String? {
+        guard previewSession != nil else {
+            return String(localized: "Start a preview first", table: "EditorPreviewRemoteHotPlugin")
+        }
+        switch livePreviewInfo.state {
+        case .unavailable:
+            return String(localized: "Live requires a real SwiftUI view entry", table: "EditorPreviewRemoteHotPlugin")
+        case .failed:
+            return livePreviewInfo.unavailableReason
+                ?? String(localized: "Live preview failed", table: "EditorPreviewRemoteHotPlugin")
+        case .launching:
+            return String(localized: "Live preview is starting", table: "EditorPreviewRemoteHotPlugin")
+        case .available, .running:
+            return nil
+        case .stopped:
+            return String(localized: "Live preview stopped", table: "EditorPreviewRemoteHotPlugin")
+        }
+    }
+
+    func switchToLive() {
+        preferredDisplayMode = .live
+        shouldRestorePreferredLiveMode = true
+        syncModeStatusMessage()
+        refreshDiagnosticSummary()
+        Task { [weak self] in
+            await self?.restoreOrStartLivePreviewAfterModeSwitch()
+        }
+    }
+
+    func switchToImage() {
+        preferredDisplayMode = .image
+        syncModeStatusMessage()
+        refreshDiagnosticSummary()
+        Task { [weak self] in
+            await self?.switchToImageMode()
+        }
+    }
+
     func detailViewDidDisappear() {
         isDetailViewVisible = false
         liveCanvasService.canvasDidDisappear()
@@ -192,6 +315,18 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     func previewWindowDidReceiveInteraction() {
         Task { [weak self] in
             await self?.restoreLivePreviewIfNeeded(reason: "preview window received interaction")
+        }
+    }
+
+    func previewWindowDidMiniaturize() {
+        Task { [weak self] in
+            await self?.hideLivePreviewIfNeeded(reason: "preview window miniaturized")
+        }
+    }
+
+    func previewWindowDidDeminiaturize() {
+        Task { [weak self] in
+            await self?.restoreLivePreviewIfNeeded(reason: "preview window deminiaturized")
         }
     }
 
@@ -502,6 +637,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
     private func resetRenderState() {
         previewSession = nil
+        previewEngine = nil
         lastFrame = nil
         renderImage = nil
         renderMessage = nil
@@ -519,6 +655,21 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         modeStatusMessage = nil
         lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
         refreshDiagnosticSummary()
+    }
+
+    private func teardownPreviewSessionForExternalModeChange() {
+        guard let session = previewSession, let engine = previewEngine else {
+            previewSession = nil
+            previewEngine = nil
+            return
+        }
+
+        previewSession = nil
+        previewEngine = nil
+        Task {
+            try? await engine.stopLivePreview(session)
+            await engine.stopPreview(session)
+        }
     }
 
     private func resolvedEffectiveDisplayMode(
@@ -729,6 +880,40 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             )
         }
 
+        refreshDiagnosticSummary()
+    }
+
+    private func restoreOrStartLivePreviewAfterModeSwitch() async {
+        if previewSession == nil {
+            start(reason: "switched display mode to live")
+            return
+        }
+
+        switch livePreviewInfo.state {
+        case .running, .launching, .available, .stopped:
+            await restoreLivePreviewIfNeeded(reason: "switched display mode to live")
+        case .failed, .unavailable:
+            await startLivePreviewSession(reason: "switched display mode to live")
+        }
+    }
+
+    private func switchToImageMode() async {
+        if renderImage == nil,
+           let session = previewSession,
+           let engine = previewEngine {
+            do {
+                let response = try await engine.capturePreviewFrame(session)
+                applyRenderResponse(response)
+            } catch {
+                EditorRemoteHotPreviewPlugin.logger.debug(
+                    "\(self.t)Failed to capture fallback image while switching to image mode: \(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
+
+        effectiveDisplayMode = .image
+        await hideLivePreviewIfNeeded(reason: "switched display mode to image")
+        syncModeStatusMessage()
         refreshDiagnosticSummary()
     }
 

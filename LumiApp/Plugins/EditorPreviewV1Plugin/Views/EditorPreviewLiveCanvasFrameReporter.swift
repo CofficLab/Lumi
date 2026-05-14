@@ -157,6 +157,8 @@ struct EditorPreviewLiveCanvasFrameReporter: NSViewRepresentable {
 struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
     let onWindowBecameActive: () -> Void
     let onWindowBecameInactive: () -> Void
+    let onWindowMiniaturized: () -> Void
+    let onWindowDeminiaturized: () -> Void
     let onWindowFrameChanged: () -> Void
     let onWindowInteraction: () -> Void
 
@@ -164,6 +166,8 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         let view = ReportingView()
         view.onWindowBecameActive = onWindowBecameActive
         view.onWindowBecameInactive = onWindowBecameInactive
+        view.onWindowMiniaturized = onWindowMiniaturized
+        view.onWindowDeminiaturized = onWindowDeminiaturized
         view.onWindowFrameChanged = onWindowFrameChanged
         view.onWindowInteraction = onWindowInteraction
         return view
@@ -172,6 +176,8 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
     func updateNSView(_ nsView: ReportingView, context: Context) {
         nsView.onWindowBecameActive = onWindowBecameActive
         nsView.onWindowBecameInactive = onWindowBecameInactive
+        nsView.onWindowMiniaturized = onWindowMiniaturized
+        nsView.onWindowDeminiaturized = onWindowDeminiaturized
         nsView.onWindowFrameChanged = onWindowFrameChanged
         nsView.onWindowInteraction = onWindowInteraction
         nsView.attachToCurrentWindow()
@@ -180,6 +186,8 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
     final class ReportingView: NSView {
         var onWindowBecameActive: (() -> Void)?
         var onWindowBecameInactive: (() -> Void)?
+        var onWindowMiniaturized: (() -> Void)?
+        var onWindowDeminiaturized: (() -> Void)?
         var onWindowFrameChanged: (() -> Void)?
         var onWindowInteraction: (() -> Void)?
 
@@ -246,6 +254,7 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
 
         @objc private func windowDidMiniaturize() {
             onWindowBecameInactive?()
+            onWindowMiniaturized?()
         }
 
         @objc private func windowWillClose() {
@@ -256,6 +265,7 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
             if observedWindow?.isVisible == true {
                 onWindowBecameActive?()
             }
+            onWindowDeminiaturized?()
             onWindowFrameChanged?()
         }
 

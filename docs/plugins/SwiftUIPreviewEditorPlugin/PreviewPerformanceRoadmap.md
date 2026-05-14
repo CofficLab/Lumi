@@ -318,7 +318,7 @@ public func lumiPreviewMake_nsview() -> UnsafeMutableRawPointer? {
 
 - [x] `IncrementalBuildPipeline.generateEntryImportingModule(discovery:buildStrategy:)`：生成只 import 模块的入口文件
 - [x] `IncrementalBuildPipeline.resolveModuleSearchPaths(buildStrategy:)`：从 build 产物中定位 `.swiftmodule` 和 `-I` 路径
-- [ ] 不再需要 `sanitizedSourceFile`（源码清理逻辑），因为不再包含 target 源文件
+- [x] 不再需要 `sanitizedSourceFile`（源码清理逻辑），因为不再包含 target 源文件
 - [x] 降级：如果 import 模块失败（如访问 `internal` 类型），回退到 `LumiPreviewKit` 的源码包含模式
 
 **预期收益**：Entry 编译从"编译 N 个文件"降到"编译 1 个 30 行文件"，提速 10x+

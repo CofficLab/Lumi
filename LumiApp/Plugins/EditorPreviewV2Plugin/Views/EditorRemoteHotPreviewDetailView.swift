@@ -23,13 +23,8 @@ struct EditorRemoteHotPreviewDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HotPreviewToolbar(viewModel: viewModel)
-            HStack(spacing: 0) {
-                HotPreviewList(viewModel: viewModel)
-                    .frame(width: 230)
-                Divider()
-                HotPreviewCanvas(viewModel: viewModel)
-            }
+            HotPreviewToolbar(viewModel: viewModel, currentFileURL: currentFileURL)
+            content
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .background(
@@ -38,6 +33,12 @@ struct EditorRemoteHotPreviewDetailView: View {
                     viewModel.previewWindowDidBecomeActive()
                 },
                 onWindowBecameInactive: {},
+                onWindowMiniaturized: {
+                    viewModel.previewWindowDidMiniaturize()
+                },
+                onWindowDeminiaturized: {
+                    viewModel.previewWindowDidDeminiaturize()
+                },
                 onWindowFrameChanged: {
                     EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
                 },
@@ -66,15 +67,49 @@ struct EditorRemoteHotPreviewDetailView: View {
 
     @EnvironmentObject private var themeVM: ThemeVM
 
+    @ViewBuilder
+    private var content: some View {
+        if viewModel.isImageMode {
+            if let fileURL = viewModel.imageFileURL {
+                EditorPreviewImageView(fileURL: fileURL)
+            } else {
+                HotPreviewMessageView(
+                    systemImage: "photo",
+                    message: String(localized: "The current image could not be loaded.", table: "EditorPreviewRemoteHotPlugin"),
+                    color: .orange
+                )
+            }
+        } else if viewModel.isMarkdownMode {
+            if let markdownSource = viewModel.markdownSource {
+                EditorPreviewMarkdownView(markdown: markdownSource)
+            } else {
+                HotPreviewMessageView(
+                    systemImage: "doc.richtext",
+                    message: String(localized: "The current Markdown content is unavailable.", table: "EditorPreviewRemoteHotPlugin"),
+                    color: .orange
+                )
+            }
+        } else {
+            HStack(spacing: 0) {
+                HotPreviewList(viewModel: viewModel)
+                    .frame(width: 230)
+                Divider()
+                HotPreviewCanvas(viewModel: viewModel)
+            }
+        }
+    }
+
     private func refreshScanAndStartIfNeeded() {
         viewModel.update(sourceText: sourceText, fileURL: currentFileURL)
-        if viewModel.hostState == .connected || viewModel.hostState == .launching {
+        guard !viewModel.isImageMode, !viewModel.isMarkdownMode else { return }
+        if viewModel.hostState == .idle || viewModel.hostState == .failed {
             viewModel.startHost()
         }
     }
 
     private func refreshScanAndReloadIfNeeded() {
         viewModel.update(sourceText: sourceText, fileURL: currentFileURL)
+        guard !viewModel.isImageMode, !viewModel.isMarkdownMode else { return }
         if viewModel.hostState == .connected || viewModel.hostState == .rendering {
             viewModel.scheduleRenderFrame(reason: "editor refresh signal changed")
         }

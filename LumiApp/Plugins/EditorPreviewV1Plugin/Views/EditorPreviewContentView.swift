@@ -56,6 +56,12 @@ struct EditorPreviewContentView: View {
                 onWindowBecameInactive: {
                     viewModel.previewWindowDidBecomeInactive()
                 },
+                onWindowMiniaturized: {
+                    viewModel.previewWindowDidBecomeInactive()
+                },
+                onWindowDeminiaturized: {
+                    viewModel.previewWindowDidBecomeActive()
+                },
                 onWindowFrameChanged: {
                     EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
                 },
