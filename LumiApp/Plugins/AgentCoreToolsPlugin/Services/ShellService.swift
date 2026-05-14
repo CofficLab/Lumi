@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import Darwin
 import MagicKit
 
 /// Shell 服务：负责执行 Shell 命令
@@ -12,6 +13,18 @@ import MagicKit
 ///
 /// 线程安全：此类通过方法内部同步保证线程安全，因此可以安全地在并发代码中使用
 class ShellService: SuperLog {
+    private enum Constants {
+        static let defaultCommandTimeout: TimeInterval = 600
+    }
+
+    private struct CommandTimeoutError: LocalizedError {
+        let seconds: TimeInterval
+
+        var errorDescription: String? {
+            "Command timed out after \(Int(seconds))s"
+        }
+    }
+
     private final class LockedDataBuffer: @unchecked Sendable {
         private let lock = NSLock()
         private var data = Data()
@@ -175,8 +188,7 @@ class ShellService: SuperLog {
         await activeProgressStore.set(progress: executionProgress, startedAt: startedAt)
 
         let result: String
-        do {
-            result = try await Task.detached(priority: .userInitiated) {
+        let commandTask = Task.detached(priority: .userInitiated) {
             let process = Process()
             let stdoutPipe = Pipe()
             let stderrPipe = Pipe()
@@ -234,9 +246,7 @@ class ShellService: SuperLog {
                     }
                 }
             } onCancel: {
-                if process.isRunning {
-                    process.terminate()
-                }
+                Self.terminateProcessTree(process)
             }
 
             // 清理 handler，确保不再回调
@@ -284,8 +294,15 @@ class ShellService: SuperLog {
             }
 
             return output + (errorOutput.isEmpty ? "" : "\nError:\n\(errorOutput)")
-            }.value
+        }
+
+        do {
+            result = try await Self.value(
+                of: commandTask,
+                timeout: Constants.defaultCommandTimeout
+            )
         } catch {
+            commandTask.cancel()
             await activeProgressStore.clear()
             throw error
         }
@@ -296,6 +313,57 @@ class ShellService: SuperLog {
             outputPublisher.send(result)
         }
         return result
+    }
+
+    private static func value<T>(
+        of task: Task<T, Error>,
+        timeout: TimeInterval
+    ) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask {
+                try await task.value
+            }
+            group.addTask {
+                let nanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
+                try await Task.sleep(nanoseconds: nanoseconds)
+                task.cancel()
+                throw CommandTimeoutError(seconds: timeout)
+            }
+
+            defer {
+                group.cancelAll()
+            }
+            guard let value = try await group.next() else {
+                throw CancellationError()
+            }
+            return value
+        }
+    }
+
+    private static func terminateProcessTree(_ process: Process) {
+        let pid = process.processIdentifier
+        guard pid > 0 else { return }
+
+        terminateChildren(of: pid, signal: SIGTERM)
+        if process.isRunning {
+            process.terminate()
+        }
+
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 2) {
+            terminateChildren(of: pid, signal: SIGKILL)
+            if process.isRunning {
+                kill(pid, SIGKILL)
+            }
+        }
+    }
+
+    private static func terminateChildren(of pid: Int32, signal: Int32) {
+        let pkill = Process()
+        pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        pkill.arguments = ["-\(signal)", "-P", "\(pid)"]
+        pkill.standardOutput = Pipe()
+        pkill.standardError = Pipe()
+        try? pkill.run()
     }
 }
 
