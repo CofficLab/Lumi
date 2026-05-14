@@ -121,7 +121,6 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     deinit {
-        persistProjectPreviewHistory()
         commandTask?.cancel()
         scheduledRefreshTask?.cancel()
         scheduledPrewarmTask?.cancel()
@@ -998,57 +997,16 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
     private func scoredProjectPrewarmPreviews(
         _ previews: [LumiPreviewPackage.PreviewDiscovery]
-    ) -> [(preview: LumiPreviewPackage.PreviewDiscovery, score: Int, reasons: [String])] {
-        previews
-            .map { preview in
-                let scoring = projectPrewarmScore(for: preview)
-                return (preview: preview, score: scoring.score, reasons: scoring.reasons)
-            }
-            .sorted { lhs, rhs in
-                if lhs.score != rhs.score {
-                    return lhs.score > rhs.score
-                }
-                if lhs.preview.sourceFileURL.path != rhs.preview.sourceFileURL.path {
-                    return lhs.preview.sourceFileURL.path.localizedStandardCompare(rhs.preview.sourceFileURL.path) == .orderedAscending
-                }
-                return lhs.preview.lineNumber < rhs.preview.lineNumber
-            }
-    }
-
-    private func projectPrewarmScore(
-        for preview: LumiPreviewPackage.PreviewDiscovery
-    ) -> (score: Int, reasons: [String]) {
-        let path = preview.sourceFileURL.standardizedFileURL.path
-        let directoryPath = preview.sourceFileURL.deletingLastPathComponent().standardizedFileURL.path
-        let activePath = activeFileURL?.standardizedFileURL.path
-        let activeDirectoryPath = activeFileURL?.deletingLastPathComponent().standardizedFileURL.path
-        var score = 0
-        var reasons: [String] = []
-
-        if path == activePath {
-            score += 1_000
-            reasons.append("current")
-        } else if directoryPath == activeDirectoryPath {
-            score += 250
-            reasons.append("same-dir")
-        }
-
-        if let rank = recentPreviewFilePaths.firstIndex(of: path) {
-            score += max(150 - rank * 10, 20)
-            reasons.append("recent")
-        }
-
-        if let rank = successfulPreviewFilePaths.firstIndex(of: path) {
-            score += max(120 - rank * 8, 16)
-            reasons.append("successful")
-        }
-
-        if let startCount = previewStartCountsByFilePath[path], startCount > 0 {
-            score += min(startCount * 15, 150)
-            reasons.append("starts:\(startCount)")
-        }
-
-        return (score, reasons.isEmpty ? ["indexed"] : reasons)
+    ) -> [ProjectPreviewPrewarmRanker.RankedPreview] {
+        ProjectPreviewPrewarmRanker().rank(
+            previews,
+            context: ProjectPreviewPrewarmRanker.Context(
+                activeFileURL: activeFileURL,
+                recentFilePaths: recentPreviewFilePaths,
+                successfulFilePaths: successfulPreviewFilePaths,
+                previewStartCountsByFilePath: previewStartCountsByFilePath
+            )
+        )
     }
 
     private func projectPrewarmCandidateSummary(
