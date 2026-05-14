@@ -7,10 +7,6 @@ struct MarkdownView: View {
     let message: ChatMessage
     let showRawMessage: Bool
     
-    private var renderMetadata: MessageRenderMetadata {
-        MessageRenderCache.shared.metadata(for: message)
-    }
-
     var body: some View {
         Group {
             if showRawMessage {
@@ -30,6 +26,5 @@ struct MarkdownView: View {
         MarkdownContent(
             content: message.content
         )
-        .id("native-\(message.id.uuidString)-\(renderMetadata.contentHash)")
     }
 }

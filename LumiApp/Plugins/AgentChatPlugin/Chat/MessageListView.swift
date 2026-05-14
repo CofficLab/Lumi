@@ -25,6 +25,20 @@ struct MessageListView: View {
         let relatedToolOutputs: [ChatMessage]
     }
 
+    private struct LastRowChangeToken: Equatable {
+        let rowCount: Int
+        let id: UUID?
+        let timestamp: TimeInterval
+        let contentLength: Int
+        let contentTail: Unicode.Scalar?
+
+        func isStreamingContentUpdate(from previous: LastRowChangeToken) -> Bool {
+            rowCount == previous.rowCount &&
+                id == previous.id &&
+                contentLength != previous.contentLength
+        }
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.persistedMessages)
@@ -67,8 +81,11 @@ struct MessageListView: View {
                 forceScrollToBottomOnNextChange = false
                 setFollowNewMessages(true)
             }
-            .onChange(of: lastRowChangeToken) { _, _ in
-                handleLastMessageChanged(proxy: proxy)
+            .onChange(of: lastRowChangeToken) { oldToken, newToken in
+                handleLastMessageChanged(
+                    proxy: proxy,
+                    isStreamingContentUpdate: newToken.isStreamingContentUpdate(from: oldToken)
+                )
             }
             .onMessageSaved { message, conversationId in
                 timelineViewModel.handleMessageSaved(message, conversationId: conversationId)
@@ -256,7 +273,7 @@ extension MessageListView {
         }
     }
 
-    private func handleLastMessageChanged(proxy: ScrollViewProxy) {
+    private func handleLastMessageChanged(proxy: ScrollViewProxy, isStreamingContentUpdate: Bool) {
         guard !windowedHistoryRows(from: timelineViewModel.persistedMessages).isEmpty else { return }
 
         if forceScrollToBottomOnNextChange {
@@ -279,7 +296,7 @@ extension MessageListView {
         }
 
         if followNewMessages {
-            scrollToBottom(proxy: proxy, animated: true)
+            scrollToBottom(proxy: proxy, animated: !isStreamingContentUpdate)
         }
     }
 
@@ -341,15 +358,24 @@ extension MessageListView {
         return DisplayRow(id: vmMessage.id, message: vmMessage, relatedToolOutputs: [])
     }
 
-    private func lastRowChangeToken(for rows: [DisplayRow]) -> Int {
-        var hasher = Hasher()
-        hasher.combine(rows.count)
-        if let last = rows.last {
-            hasher.combine(last.id)
-            hasher.combine(last.message.timestamp.timeIntervalSinceReferenceDate)
-            hasher.combine(last.message.content)
+    private func lastRowChangeToken(for rows: [DisplayRow]) -> LastRowChangeToken {
+        guard let last = rows.last else {
+            return LastRowChangeToken(
+                rowCount: 0,
+                id: nil,
+                timestamp: 0,
+                contentLength: 0,
+                contentTail: nil
+            )
         }
-        return hasher.finalize()
+
+        return LastRowChangeToken(
+            rowCount: rows.count,
+            id: last.id,
+            timestamp: last.message.timestamp.timeIntervalSinceReferenceDate,
+            contentLength: last.message.content.utf8.count,
+            contentTail: last.message.content.unicodeScalars.last
+        )
     }
 
     private func handleScrollPositionChanged(atBottom: Bool, userInitiated: Bool) {

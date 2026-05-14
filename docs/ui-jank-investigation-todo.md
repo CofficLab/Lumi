@@ -71,13 +71,15 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - Risk: document frame changes emit metrics on every layout change.
 - [x] Add dedupe/throttle to scroll metric callbacks.
   - Fixed: scroll metric callbacks now emit only when bottom/user-scroll state changes, reducing layout-change churn during streaming.
-- [ ] Verify whether programmatic scroll animations occur too often while streaming.
+- [x] Verify whether programmatic scroll animations occur too often while streaming.
+  - Fixed: same-row streaming content updates now follow the bottom without animation; new rows can still animate.
 - [ ] Measure row creation cost for the 80-message window.
 
 ## Priority 5: Markdown And Code Highlighting
 
-- [ ] Inspect `MarkdownView.swift`.
+- [x] Inspect `MarkdownView.swift`.
   - Risk: content hash `.id(...)` forces native Markdown subtree rebuilds.
+  - Fixed: removed content-hash `.id(...)` so streaming updates no longer force replacement of the entire Markdown subtree.
 - [x] Inspect `MarkdownBlockRenderer.swift`.
   - Risk: `MarkdownParser.parse(markdown)` runs when Markdown changes.
 - [x] Inspect `HighlightedCodeView.swift`.
@@ -130,3 +132,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Deduplicated network plugin view models and moved network counter sampling off the main actor.
 - [x] 2026-05-14: Moved CPU and memory sampling off the main actor; verified `Packages/DeviceMonitorKit` with `swift test`.
 - [x] 2026-05-14: Added bounded actor caches for Markdown parsing and code highlighting; verified `Packages/MarkdownKit` with `swift test`.
+- [x] 2026-05-14: Removed Markdown subtree force-rebuild id and reduced streaming auto-scroll animation churn.
