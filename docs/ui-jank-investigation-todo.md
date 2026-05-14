@@ -22,8 +22,9 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] Profile `getMessageCount(forConversationId:)`.
   - Risk: fetches message entities, converts all to `ChatMessage`, then filters in memory.
   - Fixed: replaced full fetch + conversion with SwiftData `fetchCount` filtered by conversation id and visible roles.
-- [ ] Profile paginated loading and tool-output lookup.
-  - Risk: large conversations or many tool outputs may block the main thread.
+- [x] Profile paginated loading and tool-output lookup.
+  - Fixed: tool-output lookup now queries only requested `toolCallID`s instead of fetching all tool output messages for the conversation and filtering in memory.
+  - Verified: paginated loading fetches bounded batches and probes a bounded follow-up batch.
 - [ ] Evaluate moving heavy SwiftData work to a dedicated actor/background `ModelContext`.
 
 ## Priority 2: Always-On Monitoring Timers
@@ -154,3 +155,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Reduced EditorRail file tree body-time file-system checks and canceled superseded directory loads.
 - [x] 2026-05-14: Moved RecentProjects root restore file reads off the main actor.
 - [x] 2026-05-14: Moved ModelPreference project preference reads off the main actor.
+- [x] 2026-05-14: Narrowed ChatHistory tool-output lookup queries to requested tool call IDs.

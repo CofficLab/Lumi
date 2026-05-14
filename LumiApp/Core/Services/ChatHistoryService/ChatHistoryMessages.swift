@@ -334,25 +334,23 @@ extension ChatHistoryService {
         guard !normalizedIDs.isEmpty else { return [] }
 
         let context = self.getContext()
-        let descriptor = FetchDescriptor<ChatMessageEntity>(
-            predicate: #Predicate<ChatMessageEntity> { msg in
-                msg.conversation?.id == conversationId && msg.toolCallID != nil
-            },
-            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-        )
+        var messages: [ChatMessage] = []
 
-        guard let fetched = try? context.fetch(descriptor) else {
-            return []
+        for toolCallID in normalizedIDs {
+            let descriptor = FetchDescriptor<ChatMessageEntity>(
+                predicate: #Predicate<ChatMessageEntity> { msg in
+                    msg.conversation?.id == conversationId && msg.toolCallID == toolCallID
+                },
+                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+            )
+
+            guard let fetched = try? context.fetch(descriptor) else {
+                continue
+            }
+            messages.append(contentsOf: fetched.compactMap { $0.toChatMessage() })
         }
 
-        let toolCallIDSet = Set(normalizedIDs)
-        let messages = fetched.compactMap { entity -> ChatMessage? in
-            guard let toolCallID = entity.toolCallID,
-                  toolCallIDSet.contains(toolCallID) else { return nil }
-            return entity.toChatMessage()
-        }
-
-        return messages
+        return messages.sorted { $0.timestamp < $1.timestamp }
     }
 
     /// 获取会话消息总数
