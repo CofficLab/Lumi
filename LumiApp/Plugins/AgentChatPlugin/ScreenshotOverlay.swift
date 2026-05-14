@@ -12,9 +12,10 @@ final class ScreenshotState: ObservableObject {
     static let shared = ScreenshotState()
 
     @Published private(set) var isCapturing = false
+    @Published private(set) var isPreparing = false
     @Published fileprivate var selectionRect: CGRect = .zero
 
-    private var overlayWindow: ScreenshotOverlayWindow?
+    private var overlayWindows: [ScreenshotOverlayWindow] = []
     private var captureImage: CGImage?
     private var captureFrame: CGRect = .zero
 
@@ -29,6 +30,7 @@ final class ScreenshotState: ObservableObject {
         }
 
         isCapturing = true
+        isPreparing = true
 
         Task {
             do {
@@ -36,23 +38,25 @@ final class ScreenshotState: ObservableObject {
                 captureImage = capture.image
                 captureFrame = capture.frame
                 selectionRect = .zero
+                isPreparing = false
 
-                let window = ScreenshotOverlayWindow(frame: capture.frame, state: self)
-                overlayWindow = window
-                window.makeKeyAndOrderFront(nil)
+                overlayWindows = Self.makeOverlayWindows(state: self)
+                overlayWindows.forEach { $0.orderFront(nil) }
+                overlayWindows.first?.makeKeyAndOrderFront(nil)
                 NSApp.activate(ignoringOtherApps: true)
             } catch {
                 endCapture()
-                NSSound.beep()
+                presentCaptureFailureAlert(error: error)
             }
         }
     }
 
     func endCapture() {
-        overlayWindow?.orderOut(nil)
-        overlayWindow = nil
+        overlayWindows.forEach { $0.orderOut(nil) }
+        overlayWindows.removeAll()
         captureImage = nil
         selectionRect = .zero
+        isPreparing = false
         isCapturing = false
     }
 
@@ -62,13 +66,12 @@ final class ScreenshotState: ObservableObject {
 
     fileprivate func completeCapture(selection: CGRect) {
         let normalizedSelection = selection.standardized.integral
-        let screenSelection = normalizedSelection.offsetBy(dx: captureFrame.minX, dy: captureFrame.minY)
         defer { endCapture() }
 
         guard normalizedSelection.width >= 10,
               normalizedSelection.height >= 10,
               let image = captureImage,
-              let cropped = Self.crop(image: image, captureFrame: captureFrame, selection: screenSelection),
+              let cropped = Self.crop(image: image, captureFrame: captureFrame, selection: normalizedSelection),
               let pngData = NSBitmapImageRep(cgImage: cropped).representation(using: .png, properties: [:]) else {
             return
         }
@@ -120,6 +123,12 @@ final class ScreenshotState: ObservableObject {
         return image.cropping(to: cropRect)
     }
 
+    private static func makeOverlayWindows(state: ScreenshotState) -> [ScreenshotOverlayWindow] {
+        NSScreen.screens.map { screen in
+            ScreenshotOverlayWindow(screenFrame: screen.frame, state: state)
+        }
+    }
+
     private nonisolated static func hasScreenCapturePermission() -> Bool {
         if #available(macOS 10.15, *) {
             return CGPreflightScreenCaptureAccess()
@@ -141,6 +150,27 @@ final class ScreenshotState: ObservableObject {
         }
     }
 
+    private func presentCaptureFailureAlert(error: Error) {
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Screenshot Failed", table: "AgentChat")
+        alert.informativeText = captureFailureMessage(for: error)
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: String(localized: "OK", table: "AgentChat"))
+        alert.runModal()
+    }
+
+    private func captureFailureMessage(for error: Error) -> String {
+        switch error {
+        case ScreenshotError.noScreens:
+            return String(localized: "Screenshot Failed No Screens", table: "AgentChat")
+        case ScreenshotError.captureFailed:
+            return String(localized: "Screenshot Failed No Image", table: "AgentChat")
+        default:
+            let prefix = String(localized: "Screenshot Failed Generic", table: "AgentChat")
+            return "\(prefix)\n\n\(error.localizedDescription)"
+        }
+    }
+
     private enum ScreenshotError: Error {
         case noScreens
         case captureFailed
@@ -148,9 +178,9 @@ final class ScreenshotState: ObservableObject {
 }
 
 final class ScreenshotOverlayWindow: NSWindow {
-    init(frame: CGRect, state: ScreenshotState) {
+    init(screenFrame: CGRect, state: ScreenshotState) {
         super.init(
-            contentRect: frame,
+            contentRect: screenFrame,
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -163,7 +193,7 @@ final class ScreenshotOverlayWindow: NSWindow {
         ignoresMouseEvents = false
         acceptsMouseMovedEvents = true
         hasShadow = false
-        contentView = NSHostingView(rootView: ScreenshotOverlayRepresentable(state: state, frame: frame))
+        contentView = NSHostingView(rootView: ScreenshotOverlayRepresentable(state: state, screenFrame: screenFrame))
     }
 
     override var canBecomeKey: Bool { true }
@@ -172,10 +202,10 @@ final class ScreenshotOverlayWindow: NSWindow {
 
 struct ScreenshotOverlayRepresentable: NSViewRepresentable {
     @ObservedObject var state: ScreenshotState
-    let frame: CGRect
+    let screenFrame: CGRect
 
     func makeNSView(context: Context) -> ScreenshotOverlayContentView {
-        let view = ScreenshotOverlayContentView(frame: frame)
+        let view = ScreenshotOverlayContentView(screenFrame: screenFrame)
         view.onSelectionChanged = { [weak state] rect in
             Task { @MainActor in
                 state?.updateSelection(rect)
@@ -209,12 +239,14 @@ final class ScreenshotOverlayContentView: NSView {
     }
 
     private var dragStart: CGPoint?
+    private let screenFrame: CGRect
 
     override var acceptsFirstResponder: Bool { true }
     override var isFlipped: Bool { false }
 
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
+    init(screenFrame: CGRect) {
+        self.screenFrame = screenFrame
+        super.init(frame: CGRect(origin: .zero, size: screenFrame.size))
         wantsLayer = true
         layer?.backgroundColor = NSColor.clear.cgColor
     }
@@ -237,35 +269,35 @@ final class ScreenshotOverlayContentView: NSView {
         context.setFillColor(NSColor.black.withAlphaComponent(0.48).cgColor)
         context.fill(bounds)
 
-        if !selectionRect.isEmpty {
-            context.clear(selectionRect)
+        if let localSelectionRect {
+            context.clear(localSelectionRect)
 
-            let borderPath = CGPath(rect: selectionRect.insetBy(dx: 1, dy: 1), transform: nil)
+            let borderPath = CGPath(rect: localSelectionRect.insetBy(dx: 1, dy: 1), transform: nil)
             context.addPath(borderPath)
             context.setStrokeColor(NSColor.controlAccentColor.cgColor)
             context.setLineWidth(2)
             context.strokePath()
 
-            drawSizeLabel(for: selectionRect)
+            drawSizeLabel(for: localSelectionRect, globalRect: selectionRect)
         }
 
         drawHint()
     }
 
     override func mouseDown(with event: NSEvent) {
-        let point = convert(event.locationInWindow, from: nil)
+        let point = NSEvent.mouseLocation
         dragStart = point
         updateSelection(from: point, to: point)
     }
 
     override func mouseDragged(with event: NSEvent) {
         guard let dragStart else { return }
-        updateSelection(from: dragStart, to: convert(event.locationInWindow, from: nil))
+        updateSelection(from: dragStart, to: NSEvent.mouseLocation)
     }
 
     override func mouseUp(with event: NSEvent) {
         guard let dragStart else { return }
-        let endPoint = convert(event.locationInWindow, from: nil)
+        let endPoint = NSEvent.mouseLocation
         self.dragStart = nil
         let rect = rectBetween(dragStart, endPoint)
         onSelectionChanged?(rect)
@@ -295,8 +327,16 @@ final class ScreenshotOverlayContentView: NSView {
         )
     }
 
-    private func drawSizeLabel(for rect: CGRect) {
-        let label = "\(Int(rect.width)) x \(Int(rect.height))"
+    private var localSelectionRect: CGRect? {
+        let intersection = selectionRect.intersection(screenFrame)
+        guard !intersection.isNull, !intersection.isEmpty else { return nil }
+        return intersection.offsetBy(dx: -screenFrame.minX, dy: -screenFrame.minY)
+    }
+
+    private func drawSizeLabel(for rect: CGRect, globalRect: CGRect) {
+        guard screenFrame.contains(CGPoint(x: globalRect.minX, y: globalRect.minY)) else { return }
+
+        let label = "\(Int(globalRect.width)) x \(Int(globalRect.height))"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium),
             .foregroundColor: NSColor.white

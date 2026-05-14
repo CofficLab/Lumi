@@ -1657,6 +1657,52 @@
         }
       }
     },
+    "OK": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定"
+          }
+        }
+      }
+    },
+    "Preparing Screenshot": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing screenshot"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在准备截图"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在準備截圖"
+          }
+        }
+      }
+    },
     "Screen Recording Permission Required": {
       "extractionState": "manual",
       "localizations": {
@@ -1699,6 +1745,98 @@
           "stringUnit": {
             "state": "translated",
             "value": "請在「系統設定 > 私隱與安全性 > 螢幕錄製」中允許 Lumi，然後重試。"
+          }
+        }
+      }
+    },
+    "Screenshot Failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截图失败"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截圖失敗"
+          }
+        }
+      }
+    },
+    "Screenshot Failed Generic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi could not capture the screen. Try again, or check Screen Recording permission in System Settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 无法捕获屏幕。请重试，或在系统设置中检查屏幕录制权限。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 無法擷取螢幕。請重試，或在系統設定中檢查螢幕錄製權限。"
+          }
+        }
+      }
+    },
+    "Screenshot Failed No Image": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The system did not return screenshot data. Try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统没有返回截图数据，请重试。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統沒有返回截圖資料，請重試。"
+          }
+        }
+      }
+    },
+    "Screenshot Failed No Screens": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active screen was found."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有找到可用屏幕。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有找到可用螢幕。"
           }
         }
       }

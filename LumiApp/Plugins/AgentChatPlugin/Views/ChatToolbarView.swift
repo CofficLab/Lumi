@@ -238,19 +238,33 @@ extension ChatToolbarView {
         Button(action: {
             screenshotState.startCapture()
         }) {
-            Image(systemName: "crop")
-                .font(.system(size: 14))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                .frame(width: 28, height: 28)
-                .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.06))
-                .clipShape(Circle())
+            Group {
+                if screenshotState.isPreparing {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "crop")
+                        .font(.system(size: 14))
+                }
+            }
+            .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+            .frame(width: 28, height: 28)
+            .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.06))
+            .clipShape(Circle())
         }
         .buttonStyle(.plain)
         .disabled(screenshotState.isCapturing)
-        .help(String(localized: "Screenshot Region", table: "AgentChat"))
+        .help(screenshotHelpText)
         .keyboardShortcut("S", modifiers: [.command, .shift])
         .accessibilityLabel(String(localized: "Screenshot Region", table: "AgentChat"))
         .accessibilityHint(String(localized: "Screenshot Region Hint", table: "AgentChat"))
+    }
+
+    private var screenshotHelpText: String {
+        if screenshotState.isPreparing {
+            return String(localized: "Preparing Screenshot", table: "AgentChat")
+        }
+        return String(localized: "Screenshot Region", table: "AgentChat")
     }
 
     /// 选择图片文件
