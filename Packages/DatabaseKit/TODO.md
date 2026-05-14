@@ -69,3 +69,8 @@
 
 - [x] Reject RESP bulk string lengths below `-1`.
 - [x] Reject RESP array lengths below `-1`.
+
+## P11 - Redis parameter consistency
+
+- [x] Apply `params` to Redis `execute`, `query`, and transaction `execute` calls.
+- [x] Add tests for Redis command argument composition.

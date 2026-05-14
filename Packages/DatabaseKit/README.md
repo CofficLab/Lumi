@@ -142,7 +142,7 @@ await manager.shutdown()
 - SQLite 使用 `?`，例如 `WHERE name = ?`。
 - MySQL 使用 `?`，例如 `WHERE name = ?`。
 - PostgreSQL 使用 `$1`, `$2`，例如 `WHERE name = $1 AND age = $2`。
-- Redis 的 `execute` / `query` 接收 Redis 命令字符串，支持双引号、单引号和反斜杠转义，例如 `SET greeting "hello world"`。
+- Redis 的 `execute` / `query` 接收 Redis 命令字符串，支持双引号、单引号和反斜杠转义，例如 `SET greeting "hello world"`；`params` 会作为额外 RESP 参数追加到命令后，例如 `execute("SET", params: [.string("key"), .string("value")])`。
 
 查询结果会尽量保留列元数据；PostgreSQL 即使查询结果为空，也会返回服务端提供的列名。
 

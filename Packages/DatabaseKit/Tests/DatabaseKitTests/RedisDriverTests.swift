@@ -75,6 +75,34 @@ struct RedisDriverTests {
     }
 
     @Test
+    func redisIntegrationAppendsParamsWhenConfigured() async throws {
+        guard let config = DatabaseKitIntegrationConfig.redis else {
+            return
+        }
+
+        let driver = RedisDriver()
+        let connection = try await driver.connect(config: config)
+
+        let key = "databasekit:redis:params:\(UUID().uuidString)"
+        let value = "hello params"
+
+        do {
+            let setResult = try await connection.execute("SET", params: [.string(key), .string(value)])
+            let getResult = try await connection.query("GET", params: [.string(key)])
+
+            #expect(setResult == 1)
+            #expect(getResult.rows == [[.string(key), .string(value)]])
+        } catch {
+            _ = try? await connection.execute("DEL", params: [.string(key)])
+            await connection.close()
+            throw error
+        }
+
+        _ = try? await connection.execute("DEL", params: [.string(key)])
+        await connection.close()
+    }
+
+    @Test
     func redisIntegrationCommitsTransactionWhenConfigured() async throws {
         guard let config = DatabaseKitIntegrationConfig.redis else {
             return
@@ -169,6 +197,33 @@ struct RedisCommandParserTests {
     func tokenizeUnterminatedQuoteThrows() {
         #expect(throws: DatabaseError.self) {
             _ = try RedisCommandParser.tokenize("SET key \"unterminated")
+        }
+    }
+
+    @Test
+    func composeAppendsDatabaseValueParams() throws {
+        let args = try RedisCommandArguments.compose(
+            command: "SET key",
+            params: [.string("hello world"), .integer(7), .double(1.5), .bool(true), .null]
+        )
+
+        #expect(args == ["SET", "key", "hello world", "7", "1.5", "true", "NULL"])
+    }
+
+    @Test
+    func composeAcceptsUTF8DataParams() throws {
+        let args = try RedisCommandArguments.compose(
+            command: "SET key",
+            params: [.data(Data("value".utf8))]
+        )
+
+        #expect(args == ["SET", "key", "value"])
+    }
+
+    @Test
+    func composeRejectsNonUTF8DataParams() {
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisCommandArguments.compose(command: "SET key", params: [.data(Data([0xFF]))])
         }
     }
 }

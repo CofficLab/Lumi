@@ -226,6 +226,29 @@ enum RedisCommandParser {
     }
 }
 
+enum RedisCommandArguments {
+    static func compose(command: String, params: [DatabaseValue]?) throws -> [String] {
+        let commandArgs = try RedisCommandParser.tokenize(command)
+        let paramArgs = try (params ?? []).map { try argumentString($0) }
+        return commandArgs + paramArgs
+    }
+
+    private static func argumentString(_ value: DatabaseValue) throws -> String {
+        switch value {
+        case .integer(let int): return String(int)
+        case .double(let double): return String(double)
+        case .string(let string): return string
+        case .bool(let bool): return bool ? "true" : "false"
+        case .null: return "NULL"
+        case .data(let data):
+            guard let string = String(data: data, encoding: .utf8) else {
+                throw DatabaseError.invalidConfiguration("Redis Data parameters must be valid UTF-8")
+            }
+            return string
+        }
+    }
+}
+
 public final class RedisDriver: DatabaseDriver, Sendable {
     public var type: DatabaseType { .redis }
 
@@ -263,7 +286,7 @@ public actor RedisConnection: DatabaseConnection {
 
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
         guard alive else { throw DatabaseError.connectionFailed("Redis 连接未就绪") }
-        let response = try await send(RedisCommandParser.tokenize(sql))
+        let response = try await send(RedisCommandArguments.compose(command: sql, params: params))
         switch response {
         case .simpleString(let value) where value.uppercased() == "OK":
             return 1
@@ -280,7 +303,7 @@ public actor RedisConnection: DatabaseConnection {
 
     public func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
         guard alive else { throw DatabaseError.connectionFailed("Redis 连接未就绪") }
-        let args = try RedisCommandParser.tokenize(sql)
+        let args = try RedisCommandArguments.compose(command: sql, params: params)
         let command = args.first?.uppercased() ?? ""
         let response = try await send(args)
 
@@ -496,7 +519,7 @@ public final actor RedisTransaction: DatabaseTransaction {
             throw DatabaseError.transactionFailed("Transaction already completed")
         }
 
-        let response = try await connection.sendCommand(RedisCommandParser.tokenize(sql))
+        let response = try await connection.sendCommand(RedisCommandArguments.compose(command: sql, params: params))
         switch response {
         case .simpleString(let value) where value.uppercased() == "QUEUED":
             return 0
