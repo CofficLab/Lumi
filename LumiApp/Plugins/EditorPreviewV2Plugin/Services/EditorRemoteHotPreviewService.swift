@@ -187,7 +187,9 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             return
         }
 
-        let nextPreviews = scanner.scan(fileURL: fileURL, sourceText: sourceText)
+        let nextPreviews = sourceText.contains("#Preview")
+            ? scanner.scan(fileURL: fileURL, sourceText: sourceText)
+            : []
         projectPreviewIndexService.refreshCurrentFile(fileURL: fileURL, sourceText: sourceText, previews: nextPreviews)
         previews = nextPreviews
         lastSourceUpdateAt = Date()
