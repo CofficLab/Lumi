@@ -101,10 +101,11 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - [x] `QuickFileSearchPlugin`
   - [x] `ThemeStatusBarPlugin`
   - [x] `AgentRAGPlugin`
-  - [ ] `ModelPreferencePlugin`
+  - [x] `ModelPreferencePlugin`
+    - Fixed: project preference plist reads now run in a cancelable utility task and use a token/current-project guard before applying results.
   - [x] `LLMAvailabilityPlugin`
-- [ ] Verify root overlays do not trigger repeated restoration, file reads, or network/model checks.
-  - Partially verified: `LayoutPlugin` and `ThemeStatusBarPlugin` use one-shot restore guards; `LLMAvailabilityPlugin` uses a one-shot initialization guard and background checks; `AgentRAGPlugin` now dedupes/cancels auto-index triggers.
+- [x] Verify root overlays do not trigger repeated restoration, file reads, or network/model checks.
+  - Verified: `LayoutPlugin` and `ThemeStatusBarPlugin` use one-shot restore guards; `LLMAvailabilityPlugin` uses a one-shot initialization guard and background checks; `AgentRAGPlugin` now dedupes/cancels auto-index triggers; `RecentProjectsPlugin` and `ModelPreferencePlugin` now move root restore file reads off the main actor.
 - [x] Inspect `RootViewContainer.swift` object-change forwarding.
   - Risk: forwarding many child VM changes may broaden SwiftUI invalidation.
   - Fixed: removed broad child `objectWillChange` forwarding from `RootViewContainer`; `RootView` now subscribes only to the concrete event publishers it needs.
@@ -152,3 +153,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Reduced repeated RAG auto-index trigger work from root overlay appearances/project changes.
 - [x] 2026-05-14: Reduced EditorRail file tree body-time file-system checks and canceled superseded directory loads.
 - [x] 2026-05-14: Moved RecentProjects root restore file reads off the main actor.
+- [x] 2026-05-14: Moved ModelPreference project preference reads off the main actor.
