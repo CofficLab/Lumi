@@ -181,6 +181,14 @@ struct MySQLDriverTests {
     }
 
     @Test
+    func mysqlColumnProbeOnlyAcceptsSingleSelectStatements() {
+        #expect(MySQLConnection.normalizedSelectForColumnProbe("SELECT id FROM users;") == "SELECT id FROM users")
+        #expect(MySQLConnection.normalizedSelectForColumnProbe("  select ? AS name  ") == "select ? AS name")
+        #expect(MySQLConnection.normalizedSelectForColumnProbe("UPDATE users SET name = ?") == nil)
+        #expect(MySQLConnection.normalizedSelectForColumnProbe("SELECT 1; SELECT 2") == nil)
+    }
+
+    @Test
     func mysqlIntegrationExecutesParameterizedCRUDWhenConfigured() async throws {
         guard let config = DatabaseKitIntegrationConfig.mysql else {
             return
@@ -221,6 +229,32 @@ struct MySQLDriverTests {
         }
 
         _ = try? await connection.execute("DROP TABLE IF EXISTS \(table)", params: nil)
+        await connection.close()
+    }
+
+    @Test
+    func mysqlIntegrationReturnsColumnsForEmptyResultsWhenConfigured() async throws {
+        guard let config = DatabaseKitIntegrationConfig.mysql else {
+            return
+        }
+
+        let driver = MySQLDriver()
+        let connection = try await driver.connect(config: config)
+
+        do {
+            let result = try await connection.query(
+                "SELECT ? AS name, ? AS count_value WHERE false",
+                params: [.string("lumi"), .integer(7)]
+            )
+
+            #expect(result.columns == ["name", "count_value"])
+            #expect(result.rows.isEmpty)
+            #expect(result.rowsAffected == 0)
+        } catch {
+            await connection.close()
+            throw error
+        }
+
         await connection.close()
     }
 }

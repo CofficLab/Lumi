@@ -51,3 +51,8 @@
 - [x] Prevent duplicate releases from adding the same connection to idle storage twice.
 - [x] Close foreign connections released into a pool instead of caching them.
 - [x] Add regression tests for duplicate and foreign releases.
+
+## P7 - Result metadata consistency
+
+- [x] Return MySQL column metadata for empty `SELECT` query results without relying on private `MySQLNIO` APIs.
+- [x] Add opt-in MySQL integration coverage for empty result columns.
