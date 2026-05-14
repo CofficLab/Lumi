@@ -109,7 +109,9 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 ## Priority 7: File/System Scans Triggered By UI
 
 - [ ] Inspect `EditorRailFileTreePlugin` file tree services.
-- [ ] Inspect `QuickFileSearchPlugin` file search services.
+- [x] Inspect `QuickFileSearchPlugin` file search services.
+  - Fixed: `quickOpenResults` no longer synchronously scans the project on the main actor; stale/missing indexes rebuild in the background.
+  - Fixed: query matching now runs in a detached task and publishes only final results on the main actor.
 - [ ] Inspect `AppManagerPlugin` app scan services.
 - [x] Inspect `DiskManagerPlugin` views and scan view models.
   - Fixed: Xcode, cache, and project cleaner views now only auto-scan once on first appearance; manual scan controls still force a rescan.
@@ -137,3 +139,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Removed Markdown subtree force-rebuild id and reduced streaming auto-scroll animation churn.
 - [x] 2026-05-14: Removed broad `RootViewContainer` object-change forwarding and replaced it with narrow `RootView` event subscriptions.
 - [x] 2026-05-14: Prevented repeated DiskManager auto-scans on view reappearance.
+- [x] 2026-05-14: Moved QuickFileSearch project indexing/search matching out of synchronous main-actor paths.
