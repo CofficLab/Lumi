@@ -172,6 +172,11 @@ public extension LumiHotPreviewPackage {
             let variant: PreviewEntryVariant
         }
 
+        private struct PrewarmEntryOutcome {
+            let usedCachedEntry: Bool
+            let builtStrategy: LumiPreviewPackage.BuildStrategy?
+        }
+
         public struct PrewarmEntryResult: Sendable {
             public let discoveryID: String
             public let succeeded: Bool
@@ -326,6 +331,18 @@ public extension LumiHotPreviewPackage {
             _ discovery: LumiPreviewPackage.PreviewDiscovery,
             configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
         ) async throws -> Bool {
+            try await prewarmPreviewEntry(
+                discovery,
+                configuration: configuration,
+                alreadyBuiltStrategies: []
+            ).usedCachedEntry
+        }
+
+        private func prewarmPreviewEntry(
+            _ discovery: LumiPreviewPackage.PreviewDiscovery,
+            configuration: LumiPreviewPackage.PreviewRenderConfiguration,
+            alreadyBuiltStrategies: Set<LumiPreviewPackage.BuildStrategy>
+        ) async throws -> PrewarmEntryOutcome {
             let session = HotPreviewSession(discovery: discovery, configuration: configuration)
             try await syntaxPreflight(discovery)
             let plannedStrategy = try await plannedBuildStrategy(for: session, discovery: discovery)
@@ -334,9 +351,23 @@ public extension LumiHotPreviewPackage {
                 configuration: configuration,
                 buildStrategy: plannedStrategy
             ) != nil {
-                return true
+                return PrewarmEntryOutcome(usedCachedEntry: true, builtStrategy: nil)
             }
-            try await rebuild(session)
+
+            let effectiveStrategy = await preferredBuildStrategy(
+                for: discovery,
+                baseStrategy: plannedStrategy
+            )
+            var rebuiltStrategy: LumiPreviewPackage.BuildStrategy?
+            if effectiveStrategy == plannedStrategy,
+               alreadyBuiltStrategies.contains(plannedStrategy) {
+                await session.setBuildStrategy(plannedStrategy)
+            } else {
+                try await rebuild(session)
+                if effectiveStrategy == plannedStrategy {
+                    rebuiltStrategy = plannedStrategy
+                }
+            }
 
             let buildStrategy = await session.buildStrategy()
             if await cachedPreviewEntryURL(
@@ -344,7 +375,7 @@ public extension LumiHotPreviewPackage {
                 configuration: configuration,
                 buildStrategy: buildStrategy
             ) != nil {
-                return true
+                return PrewarmEntryOutcome(usedCachedEntry: true, builtStrategy: rebuiltStrategy)
             }
 
             let built = try await buildPreviewEntry(
@@ -359,7 +390,7 @@ public extension LumiHotPreviewPackage {
                 entryVariant: built.variant.rawValue
             )
             await entryCacheManager.storeEntryURL(built.url, for: builtCacheKey)
-            return false
+            return PrewarmEntryOutcome(usedCachedEntry: false, builtStrategy: rebuiltStrategy)
         }
 
         public func prewarmPreviewEntries(
@@ -367,15 +398,23 @@ public extension LumiHotPreviewPackage {
             configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
         ) async -> [PrewarmEntryResult] {
             var results: [PrewarmEntryResult] = []
+            var builtStrategies = Set<LumiPreviewPackage.BuildStrategy>()
             for discovery in discoveries {
                 guard !Task.isCancelled else { break }
                 do {
-                    let usedCache = try await prewarmPreviewEntry(discovery, configuration: configuration)
+                    let outcome = try await prewarmPreviewEntry(
+                        discovery,
+                        configuration: configuration,
+                        alreadyBuiltStrategies: builtStrategies
+                    )
+                    if let builtStrategy = outcome.builtStrategy {
+                        builtStrategies.insert(builtStrategy)
+                    }
                     results.append(
                         PrewarmEntryResult(
                             discoveryID: discovery.id,
                             succeeded: true,
-                            usedCachedEntry: usedCache,
+                            usedCachedEntry: outcome.usedCachedEntry,
                             errorDescription: nil
                         )
                     )

@@ -290,12 +290,10 @@ final class EditorPreviewProjectPreviewIndexService {
         let source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: fileDescriptor,
             eventMask: [.write, .delete, .rename, .extend],
-            queue: .global(qos: .utility)
+            queue: .main
         )
         source.setEventHandler { [weak self] in
-            DispatchQueue.main.async {
-                self?.scheduleIncrementalIndex(directoryURL: directoryURL)
-            }
+            self?.scheduleIncrementalIndex(directoryURL: directoryURL)
         }
         source.setCancelHandler {
             Darwin.close(fileDescriptor)

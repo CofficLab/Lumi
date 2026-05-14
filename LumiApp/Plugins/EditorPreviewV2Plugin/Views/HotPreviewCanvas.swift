@@ -32,7 +32,6 @@ struct HotPreviewCanvas: View {
             )
         } else {
             liveCanvasSurface
-                .padding(18)
         }
     }
 
@@ -42,18 +41,16 @@ struct HotPreviewCanvas: View {
 
             ZStack {
                 HotPreviewBoardGrid()
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 0)
                     .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
 
                 if shouldShowFallbackImage, let renderImage = viewModel.renderImage {
                     Image(nsImage: renderImage)
                         .resizable()
                         .interpolation(.high)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: 0)
                                 .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
                         )
                 } else if let failureMessage = viewModel.failureMessage, viewModel.effectiveDisplayMode == .image {
@@ -76,7 +73,6 @@ struct HotPreviewCanvas: View {
                     EmptyView()
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 8))
             .background(
                 EditorPreviewLiveCanvasFrameReporter { screenFrame, scale in
                     viewModel.updateLiveCanvasRect(screenFrame, scale: scale)
@@ -110,7 +106,7 @@ private struct HotPreviewBoardGrid: View {
                 lineWidth: 1
             )
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 0))
         .allowsHitTesting(false)
     }
 
