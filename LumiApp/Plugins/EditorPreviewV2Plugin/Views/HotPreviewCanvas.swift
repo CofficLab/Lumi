@@ -6,17 +6,8 @@ struct HotPreviewCanvas: View {
     @ObservedObject var viewModel: EditorRemoteHotPreviewViewModel
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(themeVM.activeAppTheme.workspaceBackgroundColor())
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
-                )
-
-            canvasContent
-        }
-        .padding(18)
+        canvasContent
+            .padding(18)
     }
 
     @ViewBuilder
@@ -47,19 +38,19 @@ struct HotPreviewCanvas: View {
 
     private var liveCanvasSurface: some View {
         GeometryReader { geometry in
-            let preferredSize = viewModel.renderImage?.size ?? CGSize(width: 900, height: 560)
-            let canvasSize = Self.scaledCanvasSize(for: geometry.size, preferredSize: preferredSize)
             let shouldShowFallbackImage = viewModel.effectiveDisplayMode == .image && viewModel.renderImage != nil
 
             ZStack {
+                HotPreviewBoardGrid()
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(themeVM.activeAppTheme.workspaceBackgroundColor())
+                    .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
 
                 if shouldShowFallbackImage, let renderImage = viewModel.renderImage {
                     Image(nsImage: renderImage)
                         .resizable()
                         .interpolation(.high)
-                        .frame(width: canvasSize.width, height: canvasSize.height)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
@@ -78,20 +69,14 @@ struct HotPreviewCanvas: View {
                         color: .orange
                     )
                 } else if viewModel.effectiveDisplayMode == .live {
-                    HotPreviewMessageView(
-                        systemImage: "play.rectangle.fill",
-                        message: String(localized: "Hot live preview active", table: "EditorPreviewRemoteHotPlugin"),
-                        color: .green
-                    )
-                } else {
-                    HotPreviewMessageView(
-                        systemImage: "photo",
-                        message: String(localized: "Showing image fallback preview", table: "EditorPreviewRemoteHotPlugin"),
-                        color: .secondary
-                    )
+                    EmptyView()
+                } else if viewModel.renderImage == nil {
+                    // Refreshing or waiting for the first frame — show only the
+                    // grid background without any placeholder text.
+                    EmptyView()
                 }
             }
-            .frame(width: canvasSize.width, height: canvasSize.height)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
             .background(
                 EditorPreviewLiveCanvasFrameReporter { screenFrame, scale in
                     viewModel.updateLiveCanvasRect(screenFrame, scale: scale)
@@ -99,7 +84,6 @@ struct HotPreviewCanvas: View {
                     viewModel.liveCanvasFrameUnavailable()
                 }
             )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
                 viewModel.liveCanvasDidAppear()
             }
@@ -111,19 +95,49 @@ struct HotPreviewCanvas: View {
             }
         }
     }
+}
 
-    private static func scaledCanvasSize(for availableSize: CGSize, preferredSize: CGSize) -> CGSize {
-        guard availableSize.width > 0, availableSize.height > 0 else {
-            return .zero
+private struct HotPreviewBoardGrid: View {
+    private let spacing: CGFloat = 24
+
+    var body: some View {
+        Canvas { context, size in
+            drawGrid(
+                context: &context,
+                size: size,
+                spacing: spacing,
+                color: NSColor.separatorColor.withAlphaComponent(0.04),
+                lineWidth: 1
+            )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .allowsHitTesting(false)
+    }
+
+    private func drawGrid(
+        context: inout GraphicsContext,
+        size: CGSize,
+        spacing: CGFloat,
+        color: NSColor,
+        lineWidth: CGFloat
+    ) {
+        guard spacing > 0 else { return }
+
+        var path = Path()
+        var x: CGFloat = 0
+        while x <= size.width {
+            path.move(to: CGPoint(x: x, y: 0))
+            path.addLine(to: CGPoint(x: x, y: size.height))
+            x += spacing
         }
 
-        let widthScale = availableSize.width / max(preferredSize.width, 1)
-        let heightScale = availableSize.height / max(preferredSize.height, 1)
-        let scale = min(widthScale, heightScale, 1)
+        var y: CGFloat = 0
+        while y <= size.height {
+            path.move(to: CGPoint(x: 0, y: y))
+            path.addLine(to: CGPoint(x: size.width, y: y))
+            y += spacing
+        }
 
-        return CGSize(
-            width: preferredSize.width * scale,
-            height: preferredSize.height * scale
-        )
+        context.stroke(path, with: .color(Color(nsColor: color)), lineWidth: lineWidth)
     }
 }
