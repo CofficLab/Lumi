@@ -104,7 +104,7 @@ final class PluginVM: ObservableObject, SuperLog {
     private var bottomPanelContentViewCache: [String: AnyView] = [:]
     private var railTabsCache: (key: String, tabs: [RailTab])?
     private var railContentViewCache: [String: AnyView] = [:]
-    private var sidebarViewsCache: (key: String, views: [AnyView])?
+    private var sidebarSectionsCache: (key: String, sections: [AnyView])?
     private var menuBarContentViewsCache: [AnyView]?
     private var statusBarLeadingViewsCache: (key: String, views: [AnyView])?
     private var statusBarCenterViewsCache: (key: String, views: [AnyView])?
@@ -162,7 +162,7 @@ final class PluginVM: ObservableObject, SuperLog {
         bottomPanelContentViewCache.removeAll()
         railTabsCache = nil
         railContentViewCache.removeAll()
-        sidebarViewsCache = nil
+        sidebarSectionsCache = nil
         menuBarContentViewsCache = nil
         statusBarLeadingViewsCache = nil
         statusBarCenterViewsCache = nil
@@ -643,31 +643,29 @@ final class PluginVM: ObservableObject, SuperLog {
         !getRailTabs().isEmpty
     }
 
-    /// 获取所有插件提供的右侧栏视图
+    /// 获取所有插件提供的右侧栏 Section 视图
     ///
-    /// 收集所有启用插件提供的右侧栏视图。
-    /// 多个右侧栏会水平堆叠，按插件 order 升序排列。
+    /// 收集所有启用插件通过 `addSidebarSections()` 提供的 Section 视图，
+    /// 按插件 `order` 升序扁平化排列（order 小的在上，大的在下）。
+    /// 内核将这些 Section 使用 VStack 垂直堆叠在右侧栏中。
     ///
-    /// - Returns: 右侧栏视图数组
-    func getSidebarViews() -> [AnyView] {
+    /// - Returns: 右侧栏 Section 视图数组
+    func getSidebarSections() -> [AnyView] {
         let activeIcon = activePanelIcon
         let key = activeIconCacheKey()
-        if let cached = sidebarViewsCache, cached.key == key {
-            return cached.views
+        if let cached = sidebarSectionsCache, cached.key == key {
+            return cached.sections
         }
-        let views = plugins
+        let sections = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addSidebarView(activeIcon: activeIcon) }
-        sidebarViewsCache = (key, views)
-        return views
+            .flatMap { $0.addSidebarSections(activeIcon: activeIcon) }
+        sidebarSectionsCache = (key, sections)
+        return sections
     }
 
-    /// 当前是否有右侧栏视图
+    /// 当前是否有右侧栏 Section 视图
     func hasSidebars() -> Bool {
-        let activeIcon = activePanelIcon
-        return plugins
-            .filter { isPluginEnabled($0) }
-            .contains { $0.addSidebarView(activeIcon: activeIcon) != nil }
+        !getSidebarSections().isEmpty
     }
 
     /// 获取所有插件提供的菜单栏弹窗视图

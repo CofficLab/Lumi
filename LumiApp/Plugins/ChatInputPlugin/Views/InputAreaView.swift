@@ -335,7 +335,7 @@ extension InputAreaView {
     /// - Parameter fileURL: 拖放的文件 URL
     private func handleFileDrop(fileURL: URL) {
         if Self.verbose {
-            AgentChatPlugin.logger.info("\(Self.t)📎 handleFileDrop: \(fileURL.path)")
+            ChatInputPlugin.logger.info("\(Self.t)📎 handleFileDrop: \(fileURL.path)")
         }
 
         // 检查是否是图片文件
@@ -352,7 +352,7 @@ extension InputAreaView {
         }
 
         if Self.verbose {
-            AgentChatPlugin.logger.info("\(Self.t)✅ handleFileDrop 完成，text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
+            ChatInputPlugin.logger.info("\(Self.t)✅ handleFileDrop 完成，text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
         }
     }
 }

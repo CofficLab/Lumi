@@ -3,7 +3,7 @@ import MagicKit
 
 /// AutoTask 右侧栏视图
 ///
-/// 展示当前会话的任务列表，由 AutoTaskPlugin 通过 `addSidebarView()` 注册。
+/// 展示当前会话的任务列表，由 AutoTaskPlugin 通过 `addSidebarSections()` 注册。
 struct AutoTaskSidebarView: View {
     @EnvironmentObject var conversationVM: ConversationVM
     @EnvironmentObject private var themeVM: ThemeVM

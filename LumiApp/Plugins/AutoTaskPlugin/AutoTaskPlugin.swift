@@ -62,8 +62,8 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 右侧栏视图：任务列表
-    @MainActor func addSidebarView(activeIcon: String?) -> AnyView? {
-        AnyView(AutoTaskSidebarView())
+    /// 右侧栏 Section 视图：任务列表
+    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
+        [AnyView(AutoTaskSidebarView())]
     }
 }

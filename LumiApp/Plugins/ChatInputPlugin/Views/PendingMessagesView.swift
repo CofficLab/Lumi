@@ -102,7 +102,7 @@ struct PendingMessagesView: View, SuperLog {
             cachedConversationTitle = try modelContext.fetch(descriptor).first?.title
         } catch {
             if Self.verbose {
-                AgentChatPlugin.logger.error("\(Self.t)❌ 获取会话标题失败：\(error.localizedDescription)")
+                ChatInputPlugin.logger.error("\(Self.t)❌ 获取会话标题失败：\(error.localizedDescription)")
             }
         }
     }

@@ -12,14 +12,15 @@ final class AgentChatPluginTests: XCTestCase {
         XCTAssertEqual(AgentChatPlugin.order, 82)
     }
 
-    func testSidebarViewIsHiddenForNonEditorIcon() async {
-        let view = await AgentChatPlugin.shared.addSidebarView(activeIcon: "not-editor")
-        XCTAssertNil(view)
+    func testSidebarSectionsAreEmptyForNonEditorIcon() async {
+        let sections = await AgentChatPlugin.shared.addSidebarSections(activeIcon: "not-editor")
+        XCTAssertTrue(sections.isEmpty)
     }
 
-    func testSidebarViewIsAvailableForEditorIcon() async {
-        let view = await AgentChatPlugin.shared.addSidebarView(activeIcon: EditorPlugin.iconName)
-        XCTAssertNotNil(view)
+    func testSidebarSectionsAreAvailableForEditorIcon() async {
+        let sections = await AgentChatPlugin.shared.addSidebarSections(activeIcon: EditorPlugin.iconName)
+        XCTAssertFalse(sections.isEmpty)
+        XCTAssertEqual(sections.count, 1)
     }
 
     func testModelSelectorTabBuiltInTitlesRemainStable() {

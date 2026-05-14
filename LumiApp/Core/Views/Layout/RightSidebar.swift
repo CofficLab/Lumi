@@ -2,61 +2,49 @@ import SwiftUI
 
 /// 右侧栏容器视图
 ///
-/// 聚合所有插件提供的右侧栏视图，使用 HSplitView 水平排列。
-/// 当有多个右侧栏时，会在它们之间自动添加分隔线。
-/// 每个侧边栏的宽度比例按插件 ID 独立持久化。
+/// 聚合所有插件提供的右侧栏 Section 视图，使用 VStack 垂直堆叠。
+/// 每个插件通过 `addSidebarSections()` 提供一个或多个 Section，
+/// 内核按插件 order 升序将所有 Section 垂直排列在右侧栏中。
 struct RightSidebarContainerView: View {
-    /// 插件提供的右侧栏视图列表（按插件 order 升序排列）
-    let views: [AnyView]
-
-    /// 持久化 storage key 前缀
-    private let storageKeyPrefix = "Split.Panel.RightSidebar"
+    /// 插件提供的右侧栏 Section 视图列表（按插件 order 升序、数组顺序排列）
+    let sections: [AnyView]
 
     var body: some View {
-        guard !views.isEmpty else {
+        guard !sections.isEmpty else {
             return AnyView(Color.clear)
         }
 
-        if views.count == 1 {
-            return AnyView(
-                views[0]
-                    .background(SplitViewWidthPersistence(storageKey: "\(storageKeyPrefix).0"))
-            )
-        } else {
-            var result: AnyView = AnyView(
-                views[0]
-                    .background(SplitViewWidthPersistence(storageKey: "\(storageKeyPrefix).0"))
-            )
+        return AnyView(
+            VStack(spacing: 0) {
+                ForEach(Array(sections.enumerated()), id: \.offset) { index, section in
+                    section
 
-            for (index, view) in views.dropFirst().enumerated() {
-                let wrapped = AnyView(
-                    HSplitView {
-                        result
-                        view
-                            .background(SplitViewWidthPersistence(storageKey: "\(storageKeyPrefix).\(index + 1)"))
+                    // 非最后一个 section 之间添加分隔线
+                    if index < sections.count - 1 {
+                        GlassDivider()
                     }
-                    .background(SplitViewAutosaveConfigurator(autosaveName: "\(storageKeyPrefix).combined"))
-                )
-                result = wrapped
+                }
             }
-
-            return result
-        }
+            .frame(maxHeight: .infinity)
+            .frame(minWidth: 320, idealWidth: 400)
+        )
     }
 }
 
-#Preview("Single Sidebar") {
-    RightSidebarContainerView(views: [
-        AnyView(Text("Sidebar 1").frame(width: 350))
+// MARK: - Preview
+
+#Preview("Single Section") {
+    RightSidebarContainerView(sections: [
+        AnyView(Text("Messages").frame(maxWidth: .infinity, maxHeight: .infinity))
     ])
     .inRootView()
     .frame(height: 400)
 }
 
-#Preview("Multiple Sidebars") {
-    RightSidebarContainerView(views: [
-        AnyView(Text("Chat").frame(width: 350)),
-        AnyView(Text("Preview").frame(width: 300))
+#Preview("Multiple Sections") {
+    RightSidebarContainerView(sections: [
+        AnyView(Text("Messages").frame(maxWidth: .infinity, maxHeight: .infinity)),
+        AnyView(Text("Input Area").frame(maxWidth: .infinity).padding(8)),
     ])
     .inRootView()
     .frame(height: 400)

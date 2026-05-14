@@ -228,17 +228,19 @@ protocol SuperPlugin: Actor {
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView?
 
-    /// 添加右侧栏视图
+    /// 添加右侧栏 Section 视图
     ///
-    /// 提供一个在窗口右侧显示的侧边栏视图。多个插件提供的侧边栏视图
-    /// 会被水平堆叠，按插件的 `order` 升序排列（order 小的在左，大的在右）。
-    /// 右侧栏与面板内容区之间支持拖拽调整宽度。
+    /// 插件通过此方法提供一个或多个 Section 视图，由内核使用 VStack 垂直堆叠
+    /// 在窗口右侧栏中。每个 Section 独立贡献一块 UI 区域（如消息列表、输入框等）。
+    ///
+    /// 多个插件的 Sections 按插件 `order` 升序排列（order 小的在上，大的在下）；
+    /// 同一插件内的多个 Sections 按数组顺序排列。
     ///
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    ///   插件可据此判断是否提供侧边栏视图（例如仅在特定插件激活时显示）。
+    ///   插件可据此判断是否提供侧边栏 Section（例如仅在特定插件激活时显示）。
     ///
-    /// 典型用例：聊天栏、预览面板、属性检查器等。
-    @MainActor func addSidebarView(activeIcon: String?) -> AnyView?
+    /// 典型用例：聊天消息列表、输入区域、预览面板、属性检查器等。
+    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView]
 
     /// 添加设置视图
     @MainActor func addSettingsView() -> AnyView?

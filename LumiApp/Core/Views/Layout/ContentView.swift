@@ -104,14 +104,14 @@ struct ContentView: View, SuperLog {
                 }
                 .background(SplitViewAutosaveConfigurator(autosaveName: "Unified_MainSplit_noProvider"))
             } else {
-                let sidebarViews = pluginProvider.getSidebarViews()
+                let sidebarSections = pluginProvider.getSidebarSections()
                 let hasRail = pluginProvider.hasRailTabs()
 
                 // 根据分栏组合生成布局签名，避免不同分栏数共享 autosaveName 导致位置错乱
-                let layoutSignature = Self.layoutSignature(hasRail: hasRail, hasSidebar: !sidebarViews.isEmpty)
+                let layoutSignature = Self.layoutSignature(hasRail: hasRail, hasSidebar: !sidebarSections.isEmpty)
                 let autosaveName = "Unified_MainSplit_\(layoutSignature)"
 
-                if !sidebarViews.isEmpty && hasRail {
+                if !sidebarSections.isEmpty && hasRail {
                     // 4 栏: ActivityBar(固定) | Rail | Panel | RightSidebar
                     HSplitView {
                         // 图标栏（固定 48px）
@@ -127,15 +127,15 @@ struct ContentView: View, SuperLog {
                         // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                         PanelContentView().frame(maxWidth: .infinity)
 
-                        // 右侧栏：聚合所有插件提供的侧边栏视图
-                        RightSidebarContainerView(views: sidebarViews)
+                        // 右侧栏：聚合所有插件提供的 Section 视图，VStack 垂直堆叠
+                        RightSidebarContainerView(sections: sidebarSections)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.RightSidebar",
                                 columnIndex: 3
                             ))
                     }
                     .background(SplitViewAutosaveConfigurator(autosaveName: autosaveName))
-                } else if !sidebarViews.isEmpty {
+                } else if !sidebarSections.isEmpty {
                     // 3 栏: ActivityBar(固定) | Panel | RightSidebar
                     HSplitView {
                         // 图标栏（固定 48px）
@@ -144,8 +144,8 @@ struct ContentView: View, SuperLog {
                         // 面板内容区（可拖拽调整宽度，按插件 id 持久化）
                         PanelContentView().frame(maxWidth: .infinity)
 
-                        // 右侧栏：聚合所有插件提供的侧边栏视图
-                        RightSidebarContainerView(views: sidebarViews)
+                        // 右侧栏：聚合所有插件提供的 Section 视图，VStack 垂直堆叠
+                        RightSidebarContainerView(sections: sidebarSections)
                             .background(SplitViewWidthPersistence(
                                 storageKey: "Layout.Main.RightSidebar",
                                 columnIndex: 2
