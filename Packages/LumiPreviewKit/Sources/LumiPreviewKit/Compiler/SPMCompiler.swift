@@ -205,7 +205,8 @@ final class SPMCompiler: Sendable {
                 continue
             }
 
-            for case let entry as URL in enumerator where entry.pathExtension == "o" {
+            for case let entry as URL in enumerator
+            where entry.pathExtension == "o" || entry.pathExtension == "a" {
                 guard isLinkInput(entry, excludingProductNames: productNames) else { continue }
                 inputs.append(entry.path)
             }
@@ -221,6 +222,10 @@ final class SPMCompiler: Sendable {
             return false
         }
 
+        if containsTestBuildComponent(url) {
+            return false
+        }
+
         for productName in productNames where !productName.isEmpty {
             if fileName == "\(productName).o"
                 || fileName == "lib\(productName).a"
@@ -230,6 +235,19 @@ final class SPMCompiler: Sendable {
         }
 
         return true
+    }
+
+    private static func containsTestBuildComponent(_ url: URL) -> Bool {
+        let testBuildSuffixes = [
+            "Tests.build",
+            "PackageTests.build",
+            "PackageDiscoveredTests.build",
+            "PackageDiscoveredTests.derived"
+        ]
+
+        return url.pathComponents.contains { component in
+            testBuildSuffixes.contains(where: { component.hasSuffix($0) })
+        }
     }
 
     private static func packageLinkedLibraryArguments(packageDirectory: URL) -> [String] {
@@ -319,4 +337,3 @@ private extension Array where Element == String {
         return result
     }
 }
-

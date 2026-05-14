@@ -32,6 +32,20 @@ struct EditorRemoteHotPreviewDetailView: View {
             }
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+        .background(
+            EditorPreviewWindowLifecycleReporter(
+                onWindowBecameActive: {
+                    viewModel.previewWindowDidBecomeActive()
+                },
+                onWindowBecameInactive: {},
+                onWindowFrameChanged: {
+                    EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
+                },
+                onWindowInteraction: {
+                    viewModel.previewWindowDidReceiveInteraction()
+                }
+            )
+        )
         .onAppear {
             viewModel.viewDidAppear()
             refreshScanAndStartIfNeeded()
@@ -44,6 +58,9 @@ struct EditorRemoteHotPreviewDetailView: View {
         }
         .onChange(of: refreshSignal) { _, _ in
             refreshScanAndReloadIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            viewModel.previewWindowDidBecomeActive()
         }
     }
 

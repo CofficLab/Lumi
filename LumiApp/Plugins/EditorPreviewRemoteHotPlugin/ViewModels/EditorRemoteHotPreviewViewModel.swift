@@ -92,4 +92,12 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
     func updateLiveCanvasRect(_ rect: CGRect, scale: CGFloat) {
         service.updateLiveCanvasRect(rect, scale: scale)
     }
+
+    func previewWindowDidBecomeActive() {
+        service.previewWindowDidBecomeActive()
+    }
+
+    func previewWindowDidReceiveInteraction() {
+        service.previewWindowDidReceiveInteraction()
+    }
 }

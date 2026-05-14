@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Active: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -44,6 +45,9 @@
           }
         }
       }
+    },
+    "Diagnostics" : {
+
     },
     "Experimental hot preview powered by LumiHotPreviewKit" : {
       "localizations" : {
@@ -266,6 +270,7 @@
       }
     },
     "Live: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -444,6 +449,9 @@
         }
       }
     },
+    "Showing image fallback preview" : {
+
+    },
     "Showing the previous frame because no fresh frame is available yet." : {
       "localizations" : {
         "en" : {
@@ -576,7 +584,11 @@
         }
       }
     },
+    "Toggle diagnostics info" : {
+
+    },
     "Transport: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

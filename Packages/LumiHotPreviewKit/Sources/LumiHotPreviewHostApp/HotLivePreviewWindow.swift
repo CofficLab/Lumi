@@ -16,7 +16,8 @@ final class HotLivePreviewWindow: NSPanel {
         backgroundColor = .clear
         ignoresMouseEvents = false
         hasShadow = false
-        level = .normal
+        level = .floating
+        isFloatingPanel = true
         hidesOnDeactivate = false
         collectionBehavior = [.fullScreenAuxiliary]
         isOpaque = false

@@ -195,6 +195,41 @@ struct SPMCompilerTests {
         #expect(arguments.contains("-lz"))
     }
 
+    @Test("previewCompilerArguments 排除测试 target 的对象文件")
+    func previewCompilerArgumentsExcludeTestTargetObjects() throws {
+        let packageDirectory = try makeTemporaryPackage(
+            targetName: "PreviewTarget",
+            sourceFileName: "main.swift",
+            source: """
+            @main
+            struct PreviewTarget {
+                static func main() {}
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let debugDirectory = packageDirectory
+            .appendingPathComponent(".build", isDirectory: true)
+            .appendingPathComponent("debug", isDirectory: true)
+        let mainObject = debugDirectory.appendingPathComponent("Helper.o")
+        let testBuildDirectory = debugDirectory.appendingPathComponent("LumiUITests.build", isDirectory: true)
+        let testObject = testBuildDirectory.appendingPathComponent("AppButtonTests.swift.o")
+
+        try FileManager.default.createDirectory(at: testBuildDirectory, withIntermediateDirectories: true)
+        FileManager.default.createFile(atPath: mainObject.path, contents: Data())
+        FileManager.default.createFile(atPath: testObject.path, contents: Data())
+
+        let arguments = LumiPreviewPackage.SPMCompiler().previewCompilerArguments(
+            packageDirectory: packageDirectory,
+            targetName: "PreviewTarget"
+        )
+        let normalizedArguments = arguments.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
+
+        #expect(normalizedArguments.contains(mainObject.standardizedFileURL.path))
+        #expect(!normalizedArguments.contains(testObject.standardizedFileURL.path))
+    }
+
     private func makeTemporaryPackage(
         targetName: String,
         sourceFileName: String,

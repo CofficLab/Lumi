@@ -134,6 +134,20 @@ extension HotPreviewRenderer {
         let size = preferredSize ?? Self.snapshotSize(for: view)
         let frame = NSRect(origin: .zero, size: Self.clampedSnapshotSize(size))
 
+        if let window = view.window, window !== renderWindow {
+            if window === liveWindow {
+                liveWindow?.setContentSize(frame.size)
+            }
+
+            view.frame = frame
+            view.needsLayout = true
+            view.needsDisplay = true
+            view.layoutSubtreeIfNeeded()
+            view.displayIfNeeded()
+
+            return view.bounds.isEmpty ? frame : view.bounds
+        }
+
         if renderWindow?.contentView !== view {
             renderWindow?.orderOut(nil)
             renderWindow?.contentView = nil

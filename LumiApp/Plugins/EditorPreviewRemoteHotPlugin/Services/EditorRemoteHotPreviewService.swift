@@ -183,6 +183,18 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         refreshDiagnosticSummary()
     }
 
+    func previewWindowDidBecomeActive() {
+        Task { [weak self] in
+            await self?.restoreLivePreviewIfNeeded(reason: "preview window became active")
+        }
+    }
+
+    func previewWindowDidReceiveInteraction() {
+        Task { [weak self] in
+            await self?.restoreLivePreviewIfNeeded(reason: "preview window received interaction")
+        }
+    }
+
     private func startLivePreview(reason: String) {
         Task { [weak self] in
             await self?.startLivePreviewSession(reason: reason)
@@ -418,7 +430,11 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
         performanceSummary = EditorPreviewFormatter.performanceSummary(for: await session.performanceMetrics)
         livePreviewInfo = await session.livePreviewInfo
-        effectiveDisplayMode = await session.displayMode
+        effectiveDisplayMode = resolvedEffectiveDisplayMode(
+            preferredMode: preferredDisplayMode,
+            liveInfo: livePreviewInfo,
+            fallbackMode: await session.displayMode
+        )
 
         switch await session.state {
         case .running:
@@ -503,6 +519,23 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         modeStatusMessage = nil
         lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
         refreshDiagnosticSummary()
+    }
+
+    private func resolvedEffectiveDisplayMode(
+        preferredMode: LumiPreviewPackage.PreviewDisplayMode,
+        liveInfo: LumiPreviewPackage.LivePreviewInfo,
+        fallbackMode: LumiPreviewPackage.PreviewDisplayMode
+    ) -> LumiPreviewPackage.PreviewDisplayMode {
+        guard preferredMode == .live else {
+            return fallbackMode
+        }
+
+        switch liveInfo.state {
+        case .available, .launching, .running:
+            return .live
+        case .failed, .stopped, .unavailable:
+            return .image
+        }
     }
 
     private func warmupHostIfPossible() {

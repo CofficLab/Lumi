@@ -74,6 +74,14 @@ struct HotPreviewHostProcessTests {
         let capturedFrame = try frameBytes(from: captureResponse)
         #expect(capturedFrame == interposedFrame)
         #expect(capturedFrame != initialFrame)
+
+        let hideResponse = try await connection.requestHideLivePreview()
+        #expect(hideResponse.success)
+        #expect(hideResponse.liveWindowNumber == startResponse.liveWindowNumber)
+
+        let showResponse = try await connection.requestShowLivePreview()
+        #expect(showResponse.success)
+        #expect(showResponse.liveWindowNumber == startResponse.liveWindowNumber)
     }
 
     private func buildHotHostExecutable() throws -> URL {

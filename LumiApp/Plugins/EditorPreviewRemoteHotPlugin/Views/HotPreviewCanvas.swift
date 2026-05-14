@@ -49,12 +49,13 @@ struct HotPreviewCanvas: View {
         GeometryReader { geometry in
             let preferredSize = viewModel.renderImage?.size ?? CGSize(width: 900, height: 560)
             let canvasSize = Self.scaledCanvasSize(for: geometry.size, preferredSize: preferredSize)
+            let shouldShowFallbackImage = viewModel.effectiveDisplayMode == .image && viewModel.renderImage != nil
 
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(themeVM.activeAppTheme.workspaceBackgroundColor())
 
-                if let renderImage = viewModel.renderImage {
+                if shouldShowFallbackImage, let renderImage = viewModel.renderImage {
                     Image(nsImage: renderImage)
                         .resizable()
                         .interpolation(.high)
@@ -64,7 +65,7 @@ struct HotPreviewCanvas: View {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
                         )
-                } else if let failureMessage = viewModel.failureMessage {
+                } else if let failureMessage = viewModel.failureMessage, viewModel.effectiveDisplayMode == .image {
                     HotPreviewMessageView(
                         systemImage: "exclamationmark.triangle",
                         message: failureMessage,
@@ -76,11 +77,17 @@ struct HotPreviewCanvas: View {
                         message: String(localized: "Starting hot live preview", table: "EditorPreviewRemoteHotPlugin"),
                         color: .orange
                     )
-                } else {
+                } else if viewModel.effectiveDisplayMode == .live {
                     HotPreviewMessageView(
                         systemImage: "play.rectangle.fill",
                         message: String(localized: "Hot live preview active", table: "EditorPreviewRemoteHotPlugin"),
                         color: .green
+                    )
+                } else {
+                    HotPreviewMessageView(
+                        systemImage: "photo",
+                        message: String(localized: "Showing image fallback preview", table: "EditorPreviewRemoteHotPlugin"),
+                        color: .secondary
                     )
                 }
             }
