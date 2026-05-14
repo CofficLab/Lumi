@@ -65,9 +65,9 @@ Further optimization should avoid blind tuning. The next work should make the re
 
 ## Priority 5: Validation
 
-- [ ] Add focused tests for prewarm result reuse and stale invalidation.
+- [x] Add focused tests for prewarm result reuse and stale invalidation.
 - [ ] Add tests for project preview ranking.
-- [ ] Add tests for syntax preflight cache invalidation by file mtime/size.
+- [x] Add tests for syntax preflight cache invalidation by file mtime/size.
 - [ ] Manually verify these scenarios:
   - first Preview V2 start after Lumi launch
   - switching between two files with previews

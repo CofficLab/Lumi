@@ -186,7 +186,7 @@ public extension LumiHotPreviewPackage {
     }
 
     final class HotPreviewEngine: Sendable {
-        private enum PreviewEntryVariant: String {
+        enum PreviewEntryVariant: String {
             case moduleImport = "module-import"
             case sourceInclude = "source-include"
         }
@@ -196,7 +196,7 @@ public extension LumiHotPreviewPackage {
             let variant: PreviewEntryVariant
         }
 
-        private struct CachedPreviewEntry {
+        struct CachedPreviewEntry {
             let url: URL
             let variant: PreviewEntryVariant
         }
@@ -206,7 +206,7 @@ public extension LumiHotPreviewPackage {
             let builtStrategy: LumiPreviewPackage.BuildStrategy?
         }
 
-        private actor PrewarmEntryStore {
+        actor PrewarmEntryStore {
             private struct Entry: Sendable {
                 let entryURL: URL
                 let buildStrategy: LumiPreviewPackage.BuildStrategy?
@@ -1452,7 +1452,7 @@ private actor HotPreviewBuildCoordinator {
     }
 }
 
-private actor HotSyntaxPreflightCache {
+actor HotSyntaxPreflightCache {
     struct LookupResult: Sendable {
         let result: LumiHotPreviewPackage.SyntaxCheckResult
         let usedCache: Bool
