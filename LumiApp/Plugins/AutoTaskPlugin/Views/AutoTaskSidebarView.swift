@@ -25,7 +25,7 @@ struct AutoTaskSidebarView: View {
                 taskListView
             }
         }
-        .frame(maxHeight: .infinity)
+        .frame(maxHeight: 200)
         .frame(minWidth: 240, idealWidth: 320)
         .background(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.6))
         .task(id: conversationVM.selectedConversationId) {
