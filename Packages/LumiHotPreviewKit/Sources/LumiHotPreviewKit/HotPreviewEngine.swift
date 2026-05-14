@@ -196,9 +196,130 @@ public extension LumiHotPreviewPackage {
             let variant: PreviewEntryVariant
         }
 
+        private struct CachedPreviewEntry {
+            let url: URL
+            let variant: PreviewEntryVariant
+        }
+
         private struct PrewarmEntryOutcome {
             let usedCachedEntry: Bool
             let builtStrategy: LumiPreviewPackage.BuildStrategy?
+        }
+
+        private actor PrewarmEntryStore {
+            private struct Entry: Sendable {
+                let entryURL: URL
+                let buildStrategy: LumiPreviewPackage.BuildStrategy?
+                let entryVariant: PreviewEntryVariant
+                let sourceFingerprint: String
+                let configurationFingerprint: String
+                let storedAt: Date
+            }
+
+            private var entriesByKey: [String: Entry] = [:]
+            private let maximumCount = 32
+            private let fileManager: FileManager = .default
+
+            func store(
+                entryURL: URL,
+                buildStrategy: LumiPreviewPackage.BuildStrategy?,
+                entryVariant: PreviewEntryVariant,
+                discovery: LumiPreviewPackage.PreviewDiscovery,
+                configuration: LumiPreviewPackage.PreviewRenderConfiguration
+            ) {
+                guard let sourceFingerprint = Self.sourceFingerprint(for: discovery.sourceFileURL) else {
+                    return
+                }
+
+                let key = Self.key(
+                    discovery: discovery,
+                    configuration: configuration,
+                    buildStrategy: buildStrategy
+                )
+                entriesByKey[key] = Entry(
+                    entryURL: entryURL,
+                    buildStrategy: buildStrategy,
+                    entryVariant: entryVariant,
+                    sourceFingerprint: sourceFingerprint,
+                    configurationFingerprint: Self.configurationFingerprint(configuration),
+                    storedAt: Date()
+                )
+                trimIfNeeded()
+            }
+
+            func entry(
+                discovery: LumiPreviewPackage.PreviewDiscovery,
+                configuration: LumiPreviewPackage.PreviewRenderConfiguration,
+                buildStrategy: LumiPreviewPackage.BuildStrategy?
+            ) -> CachedPreviewEntry? {
+                let key = Self.key(
+                    discovery: discovery,
+                    configuration: configuration,
+                    buildStrategy: buildStrategy
+                )
+                guard let entry = entriesByKey[key] else {
+                    return nil
+                }
+
+                guard fileManager.fileExists(atPath: entry.entryURL.path),
+                      entry.buildStrategy == buildStrategy,
+                      entry.configurationFingerprint == Self.configurationFingerprint(configuration),
+                      entry.sourceFingerprint == Self.sourceFingerprint(for: discovery.sourceFileURL) else {
+                    entriesByKey.removeValue(forKey: key)
+                    return nil
+                }
+
+                return CachedPreviewEntry(url: entry.entryURL, variant: entry.entryVariant)
+            }
+
+            private func trimIfNeeded() {
+                guard entriesByKey.count > maximumCount else { return }
+                let overflow = entriesByKey.count - maximumCount
+                let staleKeys = entriesByKey
+                    .sorted { lhs, rhs in lhs.value.storedAt < rhs.value.storedAt }
+                    .prefix(overflow)
+                    .map(\.key)
+                for key in staleKeys {
+                    entriesByKey.removeValue(forKey: key)
+                }
+            }
+
+            private static func key(
+                discovery: LumiPreviewPackage.PreviewDiscovery,
+                configuration: LumiPreviewPackage.PreviewRenderConfiguration,
+                buildStrategy: LumiPreviewPackage.BuildStrategy?
+            ) -> String {
+                [
+                    discovery.id,
+                    discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath().path,
+                    "\(discovery.lineNumber)",
+                    "\(discovery.endLineNumber)",
+                    discovery.title,
+                    discovery.primaryTypeName ?? "",
+                    discovery.bodySource ?? "",
+                    configurationFingerprint(configuration),
+                    String(describing: buildStrategy)
+                ].joined(separator: "\u{1f}")
+            }
+
+            private static func sourceFingerprint(for fileURL: URL) -> String? {
+                let standardizedURL = fileURL.standardizedFileURL.resolvingSymlinksInPath()
+                guard let values = try? standardizedURL.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) else {
+                    return nil
+                }
+
+                let modifiedAt = values.contentModificationDate?.timeIntervalSince1970 ?? 0
+                let fileSize = values.fileSize ?? 0
+                return "\(standardizedURL.path)|\(fileSize)|\(modifiedAt)"
+            }
+
+            private static func configurationFingerprint(_ configuration: LumiPreviewPackage.PreviewRenderConfiguration) -> String {
+                guard let data = try? JSONEncoder().encode(configuration),
+                      let text = String(data: data, encoding: .utf8) else {
+                    return String(describing: configuration)
+                }
+                return text
+            }
         }
 
         public struct PrewarmEntryResult: Sendable {
@@ -237,6 +358,7 @@ public extension LumiHotPreviewPackage {
         private let moduleImportEligibilityCache: ModuleImportEligibilityCache
         private let syntaxChecker: SyntaxChecker
         private let syntaxPreflightCache = HotSyntaxPreflightCache()
+        private let prewarmEntryStore = PrewarmEntryStore()
         private let buildCoordinator = HotPreviewBuildCoordinator()
         private let hostProcessManager: HostProcessManager<HotHostConnection>
         private let fallbackEngine: LumiPreviewPackage.LivePreviewEngine?
@@ -378,11 +500,18 @@ public extension LumiHotPreviewPackage {
             let session = HotPreviewSession(discovery: discovery, configuration: configuration)
             try await syntaxPreflight(discovery)
             let plannedStrategy = try await plannedBuildStrategy(for: session, discovery: discovery)
-            if await cachedPreviewEntryURL(
+            if let cached = await cachedPreviewEntry(
                 discovery: discovery,
                 configuration: configuration,
                 buildStrategy: plannedStrategy
-            ) != nil {
+            ) {
+                await prewarmEntryStore.store(
+                    entryURL: cached.url,
+                    buildStrategy: plannedStrategy,
+                    entryVariant: cached.variant,
+                    discovery: discovery,
+                    configuration: configuration
+                )
                 return PrewarmEntryOutcome(usedCachedEntry: true, builtStrategy: nil)
             }
 
@@ -402,11 +531,18 @@ public extension LumiHotPreviewPackage {
             }
 
             let buildStrategy = await session.buildStrategy()
-            if await cachedPreviewEntryURL(
+            if let cached = await cachedPreviewEntry(
                 discovery: discovery,
                 configuration: configuration,
                 buildStrategy: buildStrategy
-            ) != nil {
+            ) {
+                await prewarmEntryStore.store(
+                    entryURL: cached.url,
+                    buildStrategy: buildStrategy,
+                    entryVariant: cached.variant,
+                    discovery: discovery,
+                    configuration: configuration
+                )
                 return PrewarmEntryOutcome(usedCachedEntry: true, builtStrategy: rebuiltStrategy)
             }
 
@@ -422,6 +558,13 @@ public extension LumiHotPreviewPackage {
                 entryVariant: built.variant.rawValue
             )
             await entryCacheManager.storeEntryURL(built.url, for: builtCacheKey)
+            await prewarmEntryStore.store(
+                entryURL: built.url,
+                buildStrategy: buildStrategy,
+                entryVariant: built.variant,
+                discovery: discovery,
+                configuration: configuration
+            )
             return PrewarmEntryOutcome(usedCachedEntry: false, builtStrategy: rebuiltStrategy)
         }
 
@@ -753,11 +896,11 @@ public extension LumiHotPreviewPackage {
             return plannedStrategy
         }
 
-        private func cachedPreviewEntryURL(
+        private func cachedPreviewEntry(
             discovery: LumiPreviewPackage.PreviewDiscovery,
             configuration: LumiPreviewPackage.PreviewRenderConfiguration,
             buildStrategy: LumiPreviewPackage.BuildStrategy?
-        ) async -> URL? {
+        ) async -> CachedPreviewEntry? {
             let preferredVariant = await preferredEntryVariant(
                 discovery: discovery,
                 configuration: configuration,
@@ -769,7 +912,10 @@ public extension LumiHotPreviewPackage {
                 buildStrategy: buildStrategy,
                 entryVariant: preferredVariant.rawValue
             )
-            return await entryCacheManager.cachedEntryURL(for: cacheKey)
+            guard let url = await entryCacheManager.cachedEntryURL(for: cacheKey) else {
+                return nil
+            }
+            return CachedPreviewEntry(url: url, variant: preferredVariant)
         }
 
         private func runningHostConnection(for session: HotPreviewSession) async throws -> HotHostConnection {
@@ -859,23 +1005,36 @@ public extension LumiHotPreviewPackage {
             let discovery = await session.discovery
             let configuration = await session.configuration
             let buildStrategy = await session.buildStrategy()
-            let preferredVariant = await preferredEntryVariant(
+            let entryLookupStartedAt = Date()
+            let entryURL: URL
+            let preferredVariant: PreviewEntryVariant
+            let usedEntryCache: Bool
+            if let prewarmed = await prewarmEntryStore.entry(
                 discovery: discovery,
                 configuration: configuration,
                 buildStrategy: buildStrategy
-            )
-            let entryLookupStartedAt = Date()
-            let cacheKey = await entryCacheManager.makeCacheKey(
+            ) {
+                entryURL = prewarmed.url
+                preferredVariant = prewarmed.variant
+                usedEntryCache = true
+                await session.recordStartupTiming(
+                    stage: "entry cache lookup",
+                    duration: Date().timeIntervalSince(entryLookupStartedAt),
+                    detail: "prewarm"
+                )
+            } else if let cached = await cachedPreviewEntry(
                 discovery: discovery,
                 configuration: configuration,
-                buildStrategy: buildStrategy,
-                entryVariant: preferredVariant.rawValue
-            )
-            let entryURL: URL
-            let usedEntryCache: Bool
-            if let cached = await entryCacheManager.cachedEntryURL(for: cacheKey) {
-                entryURL = cached
+                buildStrategy: buildStrategy
+            ) {
+                entryURL = cached.url
+                preferredVariant = cached.variant
                 usedEntryCache = true
+                await session.recordStartupTiming(
+                    stage: "entry cache lookup",
+                    duration: Date().timeIntervalSince(entryLookupStartedAt),
+                    detail: "hit"
+                )
             } else {
                 await session.recordStartupTiming(
                     stage: "entry cache lookup",
@@ -896,18 +1055,12 @@ public extension LumiHotPreviewPackage {
                 )
                 await entryCacheManager.storeEntryURL(built.url, for: builtCacheKey)
                 entryURL = built.url
+                preferredVariant = built.variant
                 usedEntryCache = false
                 await session.recordStartupTiming(
                     stage: "entry generation",
                     duration: Date().timeIntervalSince(entryGenerationStartedAt),
                     detail: built.variant.rawValue
-                )
-            }
-            if usedEntryCache {
-                await session.recordStartupTiming(
-                    stage: "entry cache lookup",
-                    duration: Date().timeIntervalSince(entryLookupStartedAt),
-                    detail: "hit"
                 )
             }
             LumiPreviewPackage.PreviewEntryBuilder.removeExpiredCacheEntries(

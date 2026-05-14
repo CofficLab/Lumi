@@ -25,16 +25,16 @@ Further optimization should avoid blind tuning. The next work should make the re
 
 ## Priority 2: Direct Prewarm Result Reuse
 
-- [ ] Track recent successful prewarm results by preview fingerprint.
-- [ ] Store enough metadata to attempt direct reuse:
+- [x] Track recent successful prewarm results by preview fingerprint.
+- [x] Store enough metadata to attempt direct reuse:
   - entry URL
   - build strategy
   - entry variant
   - source file fingerprint
   - configuration fingerprint
-- [ ] On real Start, check the recent prewarm result before recalculating the entry path.
-- [ ] Fall back to the current cache lookup/build path if the prewarm result is stale or missing.
-- [ ] Record when Start was served by a direct prewarm result.
+- [x] On real Start, check the recent prewarm result before recalculating the entry path.
+- [x] Fall back to the current cache lookup/build path if the prewarm result is stale or missing.
+- [x] Record when Start was served by a direct prewarm result.
 
 ## Priority 3: Host Lifecycle Policy
 
