@@ -1,5 +1,6 @@
 import AppKit
 import MagicKit
+import SwiftData
 import SwiftUI
 
 /// 模型选择器视图
@@ -325,6 +326,12 @@ struct ModelSelectorView: View, SuperLog {
     }
 }
 
+private struct ModelSelectorStatsSnapshot: Sendable {
+    let detailedStats: [String: ModelPerformanceStats]
+    let frequentModels: [FrequentModelEntry]
+    let fastModels: [FastModelEntry]
+}
+
 // MARK: - View
 
 extension ModelSelectorView {
@@ -370,63 +377,141 @@ extension ModelSelectorView {
 
     /// 在后台线程加载所有统计数据，避免阻塞 UI
     private func loadAllStats() async {
-        loadLatencyStats()
-        loadFrequentModels()
-        loadFastModels()
-        isStatsLoaded = true
-    }
+        isStatsLoaded = false
 
-    /// 加载性能统计数据（仅内部使用，已移至 loadAllStats）
-    private func loadLatencyStats() {
-        detailedStats = chatHistoryVM.getModelDetailedStats()
+        let modelContainer = chatHistoryVM.chatHistoryService.getModelContainer()
+        let providers = llmVM.allProviders
+
+        let snapshot = await Task.detached(priority: .userInitiated) {
+            Self.buildStatsSnapshot(modelContainer: modelContainer, providers: providers)
+        }.value
+
+        guard !Task.isCancelled else { return }
+
+        detailedStats = snapshot.detailedStats
+        frequentModels = snapshot.frequentModels
+        fastModels = snapshot.fastModels
+        isStatsLoaded = true
+
         if Self.verbose {
             AgentChatPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
+            AgentChatPlugin.logger.info("\(Self.t)📊 加载到 \(frequentModels.count) 个常用模型")
+            AgentChatPlugin.logger.info("\(Self.t)⚡️ 加载到 \(fastModels.count) 个较快模型")
         }
     }
 
-    /// 加载常用模型列表
-    /// 从聊天历史中统计每个 provider+model 的使用次数，按次数降序排列，最多显示 10 个
-    private func loadFrequentModels() {
-        let stats = chatHistoryVM.getModelLatencyStats()
-        let providers = llmVM.allProviders
-        let providerMap = Dictionary(uniqueKeysWithValues: providers.map { ($0.id, $0) })
-
-        // 按 (providerId, modelName) 聚合使用次数
-        var usageDict: [String: (providerId: String, modelName: String, count: Int)] = [:]
-        for stat in stats {
-            let key = "\(stat.providerId)|\(stat.modelName)"
-            if var existing = usageDict[key] {
-                existing.count += stat.sampleCount
-                usageDict[key] = existing
-            } else {
-                usageDict[key] = (providerId: stat.providerId, modelName: stat.modelName, count: stat.sampleCount)
+    nonisolated private static func buildStatsSnapshot(
+        modelContainer: ModelContainer,
+        providers: [LLMProviderInfo]
+    ) -> ModelSelectorStatsSnapshot {
+        let context = ModelContext(modelContainer)
+        let descriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate { msg in
+                msg.metrics != nil && msg.providerId != nil && msg.modelName != nil
             }
+        )
+
+        guard let messageEntities = try? context.fetch(descriptor) else {
+            AppLogger.core.error("\(Self.t)❌ 获取模型统计消息失败")
+            return ModelSelectorStatsSnapshot(detailedStats: [:], frequentModels: [], fastModels: [])
         }
 
-        // 只保留当前已注册供应商中仍然可用的模型
-        let entries = usageDict.values
-            .filter { entry in
-                guard let provider = providerMap[entry.providerId] else { return false }
-                return provider.availableModels.contains(entry.modelName)
+        var detailedStats: [String: ModelPerformanceStats] = [:]
+
+        for entity in messageEntities {
+            guard let providerId = entity.providerId,
+                  let modelName = entity.modelName,
+                  let metrics = entity.metrics,
+                  let latency = metrics.latency else {
+                continue
             }
-            .map { entry -> FrequentModelEntry in
-                let provider = providerMap[entry.providerId]
+
+            let key = "\(providerId)|\(modelName)"
+            var stats = detailedStats[key] ?? ModelPerformanceStats(
+                providerId: providerId,
+                modelName: modelName,
+                sampleCount: 0,
+                totalLatency: 0,
+                totalTTFT: 0,
+                totalInputTokens: 0,
+                totalOutputTokens: 0
+            )
+
+            stats.sampleCount += 1
+            stats.totalLatency += latency
+
+            if let ttft = metrics.timeToFirstToken {
+                stats.totalTTFT += ttft
+                stats.ttftCount += 1
+            }
+
+            if let inputTokens = metrics.inputTokens {
+                stats.totalInputTokens += inputTokens
+                stats.inputTokenCount += 1
+            }
+
+            if let outputTokens = metrics.outputTokens,
+               let streamingDuration = metrics.streamingDuration {
+                stats.totalOutputTokens += outputTokens
+                stats.outputTokenCount += 1
+                stats.totalStreamingDuration += streamingDuration
+                stats.streamingDurationCount += 1
+            }
+
+            detailedStats[key] = stats
+        }
+
+        let providerMap = Dictionary(uniqueKeysWithValues: providers.map { ($0.id, $0) })
+
+        let frequentModels = detailedStats.values
+            .filter { stat in
+                guard let provider = providerMap[stat.providerId] else { return false }
+                return provider.availableModels.contains(stat.modelName)
+            }
+            .map { stat -> FrequentModelEntry in
+                let provider = providerMap[stat.providerId]
                 return FrequentModelEntry(
-                    id: "\(entry.providerId)|\(entry.modelName)",
-                    providerId: entry.providerId,
-                    providerDisplayName: provider?.displayName ?? entry.providerId,
-                    modelName: entry.modelName,
-                    useCount: entry.count,
+                    id: "\(stat.providerId)|\(stat.modelName)",
+                    providerId: stat.providerId,
+                    providerDisplayName: provider?.displayName ?? stat.providerId,
+                    modelName: stat.modelName,
+                    useCount: stat.sampleCount,
                     lastUsedAt: Date()
                 )
             }
             .sorted { $0.useCount > $1.useCount }
 
-        frequentModels = Array(entries.prefix(10))
+        let fastModels = detailedStats.values
+            .filter { stat in
+                stat.avgTPS > 0 && stat.sampleCount > 0
+            }
+            .filter { stat in
+                guard let provider = providerMap[stat.providerId] else { return false }
+                return provider.availableModels.contains(stat.modelName)
+            }
+            .map { stat -> FastModelEntry in
+                let provider = providerMap[stat.providerId]
+                return FastModelEntry(
+                    id: "\(stat.providerId)|\(stat.modelName)",
+                    providerId: stat.providerId,
+                    providerDisplayName: provider?.displayName ?? stat.providerId,
+                    modelName: stat.modelName,
+                    avgTPS: stat.avgTPS,
+                    sampleCount: stat.sampleCount
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.avgTPS == rhs.avgTPS {
+                    return lhs.sampleCount > rhs.sampleCount
+                }
+                return lhs.avgTPS > rhs.avgTPS
+            }
 
-        if Self.verbose {
-            AgentChatPlugin.logger.info("\(Self.t)📊 加载到 \(frequentModels.count) 个常用模型")
-        }
+        return ModelSelectorStatsSnapshot(
+            detailedStats: detailedStats,
+            frequentModels: Array(frequentModels.prefix(10)),
+            fastModels: Array(fastModels.prefix(10))
+        )
     }
 
     /// 加载指定供应商的模型详情（含系列），用于按系列展示
@@ -525,44 +610,6 @@ extension ModelSelectorView {
             entry.modelName.localizedCaseInsensitiveContains(keyword)
                 || entry.providerDisplayName.localizedCaseInsensitiveContains(keyword)
                 || entry.providerId.localizedCaseInsensitiveContains(keyword)
-        }
-    }
-
-    /// 加载 TPS 较快模型列表（跨供应商，按 TPS 降序，最多 10 个）
-    private func loadFastModels() {
-        let providers = llmVM.allProviders
-        let providerMap = Dictionary(uniqueKeysWithValues: providers.map { ($0.id, $0) })
-
-        let entries = detailedStats.values
-            .filter { stat in
-                stat.avgTPS > 0 && stat.sampleCount > 0
-            }
-            .filter { stat in
-                guard let provider = providerMap[stat.providerId] else { return false }
-                return provider.availableModels.contains(stat.modelName)
-            }
-            .map { stat -> FastModelEntry in
-                let provider = providerMap[stat.providerId]
-                return FastModelEntry(
-                    id: "\(stat.providerId)|\(stat.modelName)",
-                    providerId: stat.providerId,
-                    providerDisplayName: provider?.displayName ?? stat.providerId,
-                    modelName: stat.modelName,
-                    avgTPS: stat.avgTPS,
-                    sampleCount: stat.sampleCount
-                )
-            }
-            .sorted { lhs, rhs in
-                if lhs.avgTPS == rhs.avgTPS {
-                    return lhs.sampleCount > rhs.sampleCount
-                }
-                return lhs.avgTPS > rhs.avgTPS
-            }
-
-        fastModels = Array(entries.prefix(10))
-
-        if Self.verbose {
-            AgentChatPlugin.logger.info("\(Self.t)⚡️ 加载到 \(fastModels.count) 个较快模型")
         }
     }
 

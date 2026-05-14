@@ -1,7 +1,7 @@
 import Foundation
 
 /// 常用模型条目，用于跨供应商展示最近常用的模型
-struct FrequentModelEntry: Identifiable {
+struct FrequentModelEntry: Identifiable, Sendable {
     /// 唯一标识（providerId + modelName 组合）
     let id: String
     /// 供应商 ID

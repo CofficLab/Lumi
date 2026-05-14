@@ -1,5 +1,5 @@
 /// TPS 较快的模型条目
-struct FastModelEntry: Identifiable {
+struct FastModelEntry: Identifiable, Sendable {
     /// 唯一标识（providerId + modelName 组合）
     let id: String
     /// 供应商 ID
