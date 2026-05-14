@@ -104,37 +104,19 @@ private struct TaskRowView: View {
     let task: TaskDisplayItem
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(spacing: 6) {
             Text(task.statusIcon)
                 .font(.caption2)
-                .frame(width: 16)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(task.title)
-                    .font(.subheadline)
-                    .lineLimit(2)
-
-                if let detail = task.detail, !detail.isEmpty {
-                    Text(detail)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(3)
-                }
-
-                Text(task.statusText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
+            Text(task.title)
+                .font(.subheadline)
+                .lineLimit(1)
+                .truncationMode(.tail)
 
             Spacer()
-
-            Text("#\(task.order)")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .frame(minWidth: 24, alignment: .trailing)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.vertical, 5)
         .background(Color.secondary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
