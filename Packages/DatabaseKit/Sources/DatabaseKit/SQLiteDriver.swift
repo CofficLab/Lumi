@@ -39,11 +39,7 @@ public actor SQLiteConnection: DatabaseConnection {
         }
         defer { sqlite3_finalize(statement) }
 
-        if let params {
-            for (index, param) in params.enumerated() {
-                bind(statement: statement, index: index + 1, value: param)
-            }
-        }
+        try bind(params: params ?? [], to: statement, db: db)
 
         if sqlite3_step(statement) != SQLITE_DONE {
             let errorMsg = String(cString: sqlite3_errmsg(db))
@@ -63,11 +59,7 @@ public actor SQLiteConnection: DatabaseConnection {
         }
         defer { sqlite3_finalize(statement) }
 
-        if let params {
-            for (index, param) in params.enumerated() {
-                bind(statement: statement, index: index + 1, value: param)
-            }
-        }
+        try bind(params: params ?? [], to: statement, db: db)
 
         var columns: [String] = []
         var rows: [[DatabaseValue]] = []
@@ -81,7 +73,8 @@ public actor SQLiteConnection: DatabaseConnection {
             }
         }
 
-        while sqlite3_step(statement) == SQLITE_ROW {
+        var stepResult = sqlite3_step(statement)
+        while stepResult == SQLITE_ROW {
             var row: [DatabaseValue] = []
             for i in 0..<columnCount {
                 switch sqlite3_column_type(statement, i) {
@@ -109,6 +102,12 @@ public actor SQLiteConnection: DatabaseConnection {
                 }
             }
             rows.append(row)
+            stepResult = sqlite3_step(statement)
+        }
+
+        guard stepResult == SQLITE_DONE else {
+            let errorMsg = String(cString: sqlite3_errmsg(db))
+            throw DatabaseError.queryFailed(errorMsg)
         }
 
         return QueryResult(columns: columns, rows: rows, rowsAffected: 0)
@@ -130,8 +129,21 @@ public actor SQLiteConnection: DatabaseConnection {
         db != nil
     }
 
-    private func bind(statement: OpaquePointer?, index: Int, value: DatabaseValue) {
-        switch value {
+    private func bind(params: [DatabaseValue], to statement: OpaquePointer?, db: OpaquePointer) throws {
+        let expectedCount = Int(sqlite3_bind_parameter_count(statement))
+        guard params.count == expectedCount else {
+            throw DatabaseError.invalidConfiguration(
+                "Expected \(expectedCount) SQLite parameters, received \(params.count)"
+            )
+        }
+
+        for (index, param) in params.enumerated() {
+            try bind(statement: statement, index: index + 1, value: param, db: db)
+        }
+    }
+
+    private func bind(statement: OpaquePointer?, index: Int, value: DatabaseValue, db: OpaquePointer) throws {
+        let result: Int32 = switch value {
         case .integer(let intValue):
             sqlite3_bind_int64(statement, Int32(index), Int64(intValue))
         case .double(let doubleValue):
@@ -141,11 +153,16 @@ public actor SQLiteConnection: DatabaseConnection {
         case .bool(let boolValue):
             sqlite3_bind_int(statement, Int32(index), boolValue ? 1 : 0)
         case .data(let dataValue):
-            _ = dataValue.withUnsafeBytes { ptr in
+            dataValue.withUnsafeBytes { ptr in
                 sqlite3_bind_blob(statement, Int32(index), ptr.baseAddress, Int32(dataValue.count), sqliteTransient)
             }
         case .null:
             sqlite3_bind_null(statement, Int32(index))
+        }
+
+        guard result == SQLITE_OK else {
+            let errorMsg = String(cString: sqlite3_errmsg(db))
+            throw DatabaseError.queryFailed(errorMsg)
         }
     }
 }

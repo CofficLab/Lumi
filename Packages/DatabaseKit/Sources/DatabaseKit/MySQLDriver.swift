@@ -56,8 +56,15 @@ public actor MySQLConnection: DatabaseConnection {
 
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
         guard let conn else { throw DatabaseError.connectionFailed("Not connected") }
-        let rows = try await conn.query(sql, toMySQLData(params ?? [])).get()
-        return rows.count
+        nonisolated(unsafe) var affectedRows = 0
+        _ = try await conn.query(
+            sql,
+            toMySQLData(params ?? []),
+            onMetadata: { metadata in
+                affectedRows = Int(metadata.affectedRows)
+            }
+        ).get()
+        return affectedRows
     }
 
     public func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
@@ -107,7 +114,7 @@ public actor MySQLConnection: DatabaseConnection {
 
     public func close() async {
         guard let conn else { return }
-        _ = conn.close()
+        try? await conn.close().get()
         self.conn = nil
         try? await group.shutdownGracefully()
     }

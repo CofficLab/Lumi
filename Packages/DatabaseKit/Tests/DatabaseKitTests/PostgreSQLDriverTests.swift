@@ -176,4 +176,74 @@ struct PostgreSQLDriverTests {
             // Other errors are acceptable
         }
     }
+
+    @Test
+    func postgresqlIntegrationExecutesParameterizedCRUDWhenConfigured() async throws {
+        guard let config = DatabaseKitIntegrationConfig.postgresql else {
+            return
+        }
+
+        let driver = PostgreSQLDriver()
+        let connection = try await driver.connect(config: config)
+
+        let table = "databasekit_postgres_\(UUID().uuidString.replacingOccurrences(of: "-", with: "_"))"
+        do {
+            _ = try await connection.execute(
+                "CREATE TABLE \(table) (id SERIAL PRIMARY KEY, name TEXT, count_value INT)",
+                params: nil
+            )
+
+            let inserted = try await connection.execute(
+                "INSERT INTO \(table) (name, count_value) VALUES ($1, $2)",
+                params: [.string("lumi"), .integer(7)]
+            )
+            let result = try await connection.query(
+                "SELECT name, count_value FROM \(table) WHERE name = $1",
+                params: [.string("lumi")]
+            )
+            let updated = try await connection.execute(
+                "UPDATE \(table) SET count_value = $1 WHERE name = $2",
+                params: [.integer(8), .string("lumi")]
+            )
+
+            #expect(inserted == 1)
+            #expect(updated == 1)
+            #expect(result.rows.count == 1)
+            #expect(result.rows[0][0] == .string("lumi"))
+            #expect(result.rows[0][1] == .integer(7))
+        } catch {
+            _ = try? await connection.execute("DROP TABLE IF EXISTS \(table)", params: nil)
+            await connection.close()
+            throw error
+        }
+
+        _ = try? await connection.execute("DROP TABLE IF EXISTS \(table)", params: nil)
+        await connection.close()
+    }
+
+    @Test
+    func postgresqlIntegrationReturnsColumnsForEmptyResultsWhenConfigured() async throws {
+        guard let config = DatabaseKitIntegrationConfig.postgresql else {
+            return
+        }
+
+        let driver = PostgreSQLDriver()
+        let connection = try await driver.connect(config: config)
+
+        do {
+            let result = try await connection.query(
+                "SELECT $1::TEXT AS name, $2::INT AS count_value WHERE false",
+                params: [.string("lumi"), .integer(7)]
+            )
+
+            #expect(result.columns == ["name", "count_value"])
+            #expect(result.rows.isEmpty)
+            #expect(result.rowsAffected == 0)
+        } catch {
+            await connection.close()
+            throw error
+        }
+
+        await connection.close()
+    }
 }

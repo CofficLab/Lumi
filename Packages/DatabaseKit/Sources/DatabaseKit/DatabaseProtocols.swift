@@ -98,7 +98,7 @@ public protocol DatabaseDriver: Sendable {
     func connect(config: DatabaseConfig) async throws -> any DatabaseConnection
 }
 
-public protocol DatabaseConnection: Sendable {
+public protocol DatabaseConnection: AnyObject, Sendable {
     func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int
     func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult
     func beginTransaction() async throws -> any DatabaseTransaction

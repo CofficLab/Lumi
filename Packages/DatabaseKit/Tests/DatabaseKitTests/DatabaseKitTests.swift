@@ -51,6 +51,27 @@ struct DatabaseKitTests {
     }
 
     @Test
+    func databaseManagerClosesExistingConnectionWhenReconnectingSameConfig() async throws {
+        let manager = DatabaseManager()
+        let recorder = MockDriverRecorder()
+        let driver = MockDatabaseDriver(type: .sqlite, recorder: recorder)
+        await manager.register(driver: driver)
+
+        let config = DatabaseConfig(name: "Reconnect", type: .sqlite, database: "reconnect.sqlite")
+        let firstConnection = try await manager.connect(config: config)
+        let secondConnection = try await manager.connect(config: config)
+
+        #expect(firstConnection is MockDatabaseConnection)
+        #expect(secondConnection is MockDatabaseConnection)
+        #expect(await recorder.connectCallCount == 2)
+        #expect(await recorder.closeCallCount == 1)
+        #expect(await manager.getConnection(for: config.id) != nil)
+
+        await manager.disconnect(configId: config.id)
+        #expect(await recorder.closeCallCount == 2)
+    }
+
+    @Test
     func databaseManagerProbeUsesTemporaryConnection() async throws {
         let manager = DatabaseManager()
         let recorder = MockDriverRecorder()
@@ -77,6 +98,78 @@ struct DatabaseKitTests {
         let second = try await manager.getPool(for: config)
 
         #expect(first === second)
+    }
+
+    @Test
+    func databaseManagerUsesConfiguredPoolSizeForNewPools() async throws {
+        let manager = DatabaseManager()
+        let recorder = MockDriverRecorder()
+        let driver = MockDatabaseDriver(type: .sqlite, recorder: recorder)
+        await manager.register(driver: driver)
+
+        let config = DatabaseConfig(name: "Sized Pool", type: .sqlite, database: "sized-pool.sqlite")
+        let pool = try await manager.getPool(for: config, maxConnections: 2)
+
+        #expect(pool.maxConnections == 2)
+    }
+
+    @Test
+    func databaseManagerDisconnectAllClosesTrackedConnections() async throws {
+        let manager = DatabaseManager()
+        let recorder = MockDriverRecorder()
+        let driver = MockDatabaseDriver(type: .sqlite, recorder: recorder)
+        await manager.register(driver: driver)
+
+        let firstConfig = DatabaseConfig(name: "First", type: .sqlite, database: "first.sqlite")
+        let secondConfig = DatabaseConfig(name: "Second", type: .sqlite, database: "second.sqlite")
+        _ = try await manager.connect(config: firstConfig)
+        _ = try await manager.connect(config: secondConfig)
+
+        await manager.disconnectAll()
+
+        #expect(await recorder.closeCallCount == 2)
+        #expect(await manager.getConnection(for: firstConfig.id) == nil)
+        #expect(await manager.getConnection(for: secondConfig.id) == nil)
+    }
+
+    @Test
+    func databaseManagerShutdownPoolRemovesCachedPool() async throws {
+        let manager = DatabaseManager()
+        let recorder = MockDriverRecorder()
+        let driver = MockDatabaseDriver(type: .sqlite, recorder: recorder)
+        await manager.register(driver: driver)
+
+        let config = DatabaseConfig(name: "Shutdown Pool", type: .sqlite, database: "shutdown-pool.sqlite")
+        let firstPool = try await manager.getPool(for: config)
+        let connection = try await firstPool.acquire()
+        await firstPool.release(connection)
+
+        await manager.shutdownPool(configId: config.id)
+        let secondPool = try await manager.getPool(for: config)
+
+        #expect(firstPool !== secondPool)
+        #expect(await recorder.closeCallCount == 1)
+    }
+
+    @Test
+    func databaseManagerShutdownClosesConnectionsAndPools() async throws {
+        let manager = DatabaseManager()
+        let recorder = MockDriverRecorder()
+        let driver = MockDatabaseDriver(type: .sqlite, recorder: recorder)
+        await manager.register(driver: driver)
+
+        let connectionConfig = DatabaseConfig(name: "Connection", type: .sqlite, database: "connection.sqlite")
+        let poolConfig = DatabaseConfig(name: "Pool", type: .sqlite, database: "pool-shutdown.sqlite")
+        _ = try await manager.connect(config: connectionConfig)
+
+        let pool = try await manager.getPool(for: poolConfig)
+        let pooledConnection = try await pool.acquire()
+        await pool.release(pooledConnection)
+
+        await manager.shutdown()
+
+        #expect(await recorder.closeCallCount == 2)
+        #expect(await manager.getConnection(for: connectionConfig.id) == nil)
     }
 
     @Test

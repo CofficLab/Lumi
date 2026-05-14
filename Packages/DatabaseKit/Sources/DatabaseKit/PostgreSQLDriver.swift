@@ -61,22 +61,25 @@ public actor PGConnection: DatabaseConnection {
     }
 
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
-        let query = PostgresQuery(unsafeSQL: sql)
-        _ = try await conn.query(query, logger: Logger(label: "com.lumi.postgres.exec")).get()
-        return 1
+        let result = try await conn.query(sql, toPostgresData(params ?? [])).get()
+        return result.metadata.rows ?? result.rows.count
     }
 
     public func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
-        let query = PostgresQuery(unsafeSQL: sql)
-        let rows = try await conn.query(query, logger: Logger(label: "com.lumi.postgres.query")).get()
+        let rowSequence = try await conn.query(
+            PostgresQuery(unsafeSQL: sql, binds: toPostgresBindings(params ?? [])),
+            logger: Logger(label: "com.lumi.postgres.query")
+        )
 
         var columns: [String] = []
         var resultRows: [[DatabaseValue]] = []
 
-        for row in rows {
+        for try await row in rowSequence {
             var values: [DatabaseValue] = []
-            var index = 0
             for cell in row {
+                if resultRows.isEmpty {
+                    columns.append(cell.columnName)
+                }
                 if let s = try? cell.decode(String.self) {
                     values.append(.string(s))
                 } else if let i = try? cell.decode(Int.self) {
@@ -94,16 +97,11 @@ public actor PGConnection: DatabaseConnection {
                 } else {
                     values.append(.null)
                 }
-
-                if resultRows.isEmpty {
-                    columns.append(row.rowDescription.fields[index].name)
-                }
-                index += 1
             }
             resultRows.append(values)
         }
 
-        return QueryResult(columns: columns, rows: resultRows, rowsAffected: 0)
+        return QueryResult(columns: columns, rows: resultRows, rowsAffected: resultRows.count)
     }
 
     public func beginTransaction() async throws -> any DatabaseTransaction {
@@ -119,6 +117,25 @@ public actor PGConnection: DatabaseConnection {
 
     public func isAlive() async -> Bool {
         !conn.isClosed
+    }
+
+    private func toPostgresData(_ params: [DatabaseValue]) -> [PostgresData] {
+        params.map { value in
+            switch value {
+            case .integer(let int): return PostgresData(int: int)
+            case .double(let double): return PostgresData(double: double)
+            case .string(let string): return PostgresData(string: string)
+            case .bool(let bool): return PostgresData(bool: bool)
+            case .data(let data): return PostgresData(bytes: data)
+            case .null: return .null
+            }
+        }
+    }
+
+    private func toPostgresBindings(_ params: [DatabaseValue]) -> PostgresBindings {
+        var bindings = PostgresBindings(capacity: params.count)
+        toPostgresData(params).forEach { bindings.append($0) }
+        return bindings
     }
 }
 

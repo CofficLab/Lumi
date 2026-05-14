@@ -179,4 +179,48 @@ struct MySQLDriverTests {
             // Other errors are acceptable
         }
     }
+
+    @Test
+    func mysqlIntegrationExecutesParameterizedCRUDWhenConfigured() async throws {
+        guard let config = DatabaseKitIntegrationConfig.mysql else {
+            return
+        }
+
+        let driver = MySQLDriver()
+        let connection = try await driver.connect(config: config)
+
+        let table = "databasekit_mysql_\(UUID().uuidString.replacingOccurrences(of: "-", with: "_"))"
+        do {
+            _ = try await connection.execute(
+                "CREATE TABLE \(table) (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), count_value INT)",
+                params: nil
+            )
+
+            let inserted = try await connection.execute(
+                "INSERT INTO \(table) (name, count_value) VALUES (?, ?)",
+                params: [.string("lumi"), .integer(7)]
+            )
+            let result = try await connection.query(
+                "SELECT name, count_value FROM \(table) WHERE name = ?",
+                params: [.string("lumi")]
+            )
+            let updated = try await connection.execute(
+                "UPDATE \(table) SET count_value = ? WHERE name = ?",
+                params: [.integer(8), .string("lumi")]
+            )
+
+            #expect(inserted == 1)
+            #expect(updated == 1)
+            #expect(result.rows.count == 1)
+            #expect(result.rows[0][0] == .string("lumi"))
+            #expect(result.rows[0][1] == .integer(7))
+        } catch {
+            _ = try? await connection.execute("DROP TABLE IF EXISTS \(table)", params: nil)
+            await connection.close()
+            throw error
+        }
+
+        _ = try? await connection.execute("DROP TABLE IF EXISTS \(table)", params: nil)
+        await connection.close()
+    }
 }

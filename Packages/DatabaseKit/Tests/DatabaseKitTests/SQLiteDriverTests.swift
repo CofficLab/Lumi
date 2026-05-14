@@ -412,6 +412,62 @@ struct SQLiteDriverTests {
     }
 
     @Test
+    func sqliteConnectionThrowsWhenExecuteParameterCountDoesNotMatch() async throws {
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("sqlite")
+
+        let driver = SQLiteDriver()
+        let config = DatabaseConfig(name: "Parameter Count Test", type: .sqlite, database: fileURL.path)
+        let connection = try await driver.connect(config: config)
+
+        _ = try await connection.execute("CREATE TABLE items (name TEXT, count INTEGER)", params: nil)
+
+        do {
+            _ = try await connection.execute(
+                "INSERT INTO items (name, count) VALUES (?, ?)",
+                params: [.string("missing-count")]
+            )
+            Issue.record("Should have thrown error")
+        } catch DatabaseError.invalidConfiguration(_) {
+            // Expected error
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+
+        await connection.close()
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
+    @Test
+    func sqliteConnectionThrowsWhenQueryParameterCountDoesNotMatch() async throws {
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("sqlite")
+
+        let driver = SQLiteDriver()
+        let config = DatabaseConfig(name: "Query Parameter Count Test", type: .sqlite, database: fileURL.path)
+        let connection = try await driver.connect(config: config)
+
+        _ = try await connection.execute("CREATE TABLE items (name TEXT)", params: nil)
+
+        do {
+            _ = try await connection.query(
+                "SELECT name FROM items WHERE name = ?",
+                params: nil
+            )
+            Issue.record("Should have thrown error")
+        } catch DatabaseError.invalidConfiguration(_) {
+            // Expected error
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+
+        await connection.close()
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
+    @Test
     func sqliteConnectionHandlesUnicode() async throws {
         let fileURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
