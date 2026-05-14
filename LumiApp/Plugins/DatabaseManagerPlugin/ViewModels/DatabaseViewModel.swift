@@ -26,11 +26,23 @@ class DatabaseViewModel: ObservableObject, SuperLog {
             DatabaseManagerPlugin.logger.info("\(Self.t)初始化数据库视图模型")
         }
         // Load mock config
-        configs.append(DatabaseConfig(name: "Demo SQLite", type: .sqlite, database: ":memory:")) // In-memory DB
+        let demoConfig = DatabaseConfig(name: "Demo SQLite", type: .sqlite, database: ":memory:")
+        configs.append(demoConfig) // In-memory DB
+        Task {
+            await DatabaseAgentConnectionRegistry.shared.upsert(demoConfig)
+        }
+    }
+
+    func addConfig(_ config: DatabaseConfig) {
+        configs.append(config)
+        Task {
+            await DatabaseAgentConnectionRegistry.shared.upsert(config)
+        }
     }
     
     func connect(config: DatabaseConfig) async {
         await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
+        await DatabaseAgentConnectionRegistry.shared.upsert(config)
         if Self.verbose {
             DatabaseManagerPlugin.logger.info("\(self.t)连接数据库: \(config.name)")
         }

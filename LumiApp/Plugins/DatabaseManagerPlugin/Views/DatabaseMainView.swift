@@ -315,7 +315,7 @@ struct AddConnectionView: View {
                         password: password.isEmpty ? nil : password,
                         options: nil
                     )
-                    viewModel.configs.append(config)
+                    viewModel.addConfig(config)
                     isPresented = false
                 }
                 .disabled(!isValid())
