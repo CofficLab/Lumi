@@ -64,3 +64,8 @@
 ## P9 - Swift concurrency cleanup
 
 - [x] Remove unsafe mutable metadata capture from MySQL affected-row handling.
+
+## P10 - RESP protocol strictness
+
+- [x] Reject RESP bulk string lengths below `-1`.
+- [x] Reject RESP array lengths below `-1`.

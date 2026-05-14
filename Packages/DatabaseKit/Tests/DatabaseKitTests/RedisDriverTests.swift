@@ -314,6 +314,15 @@ struct RedisRESPCodecTests {
     }
 
     @Test
+    func parseInvalidNegativeBulkStringLengthThrows() throws {
+        let data = Data("$-2\r\n".utf8)
+
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisRESPCodec.parse(data)
+        }
+    }
+
+    @Test
     func parseEmptyBulkString() throws {
         let data = Data("$0\r\n\r\n".utf8)
         let result = try RedisRESPCodec.parse(data)
@@ -380,6 +389,15 @@ struct RedisRESPCodecTests {
             // Success
         } else {
             Issue.record("Expected null array")
+        }
+    }
+
+    @Test
+    func parseInvalidNegativeArrayLengthThrows() throws {
+        let data = Data("*-2\r\n".utf8)
+
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisRESPCodec.parse(data)
         }
     }
 

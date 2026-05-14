@@ -92,12 +92,18 @@ enum RedisRESPCodec {
                 guard let length = Int(try readLine()) else {
                     throw RedisRESPParseError.malformed("Invalid RESP bulk string length")
                 }
+                guard length >= -1 else {
+                    throw RedisRESPParseError.malformed("Invalid RESP bulk string length")
+                }
                 guard length >= 0 else { return .bulkString(nil) }
                 let content = try readData(length: length)
                 try consumeCRLF()
                 return .bulkString(content)
             case UInt8(ascii: "*"):
                 guard let count = Int(try readLine()) else {
+                    throw RedisRESPParseError.malformed("Invalid RESP array length")
+                }
+                guard count >= -1 else {
                     throw RedisRESPParseError.malformed("Invalid RESP array length")
                 }
                 guard count >= 0 else { return .array(nil) }
