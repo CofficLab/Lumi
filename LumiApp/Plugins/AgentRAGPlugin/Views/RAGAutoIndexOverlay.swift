@@ -70,7 +70,7 @@ extension RAGAutoIndexOverlay {
         }
     }
 
-    private static func uniqueNonEmptyPaths(_ paths: [String]) -> [String] {
+    nonisolated private static func uniqueNonEmptyPaths(_ paths: [String]) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
         for rawPath in paths {
@@ -84,7 +84,7 @@ extension RAGAutoIndexOverlay {
         return result
     }
 
-    private static func isExistingDirectory(path: String) -> Bool {
+    nonisolated private static func isExistingDirectory(path: String) -> Bool {
         var isDirectory: ObjCBool = false
         return FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
