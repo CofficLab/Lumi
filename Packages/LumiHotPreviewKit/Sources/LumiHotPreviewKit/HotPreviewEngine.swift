@@ -212,6 +212,7 @@ public extension LumiHotPreviewPackage {
         private let moduleImportEligibilityChecker: ModuleImportEligibilityChecker
         private let moduleImportEligibilityCache: ModuleImportEligibilityCache
         private let syntaxChecker: SyntaxChecker
+        private let syntaxPreflightCache = HotSyntaxPreflightCache()
         private let buildCoordinator = HotPreviewBuildCoordinator()
         private let hostProcessManager: HostProcessManager<HotHostConnection>
         private let fallbackEngine: LumiPreviewPackage.LivePreviewEngine?
@@ -606,7 +607,9 @@ public extension LumiHotPreviewPackage {
         }
 
         private func syntaxPreflight(_ discovery: LumiPreviewPackage.PreviewDiscovery) async throws {
-            let result = await syntaxChecker.check(fileURL: discovery.sourceFileURL)
+            let result = await syntaxPreflightCache.result(for: discovery.sourceFileURL) {
+                await syntaxChecker.check(fileURL: discovery.sourceFileURL)
+            }
             guard case .valid = result else {
                 if case .invalid(let issues) = result {
                     let message = issues.map(\.message).joined(separator: "\n")
@@ -1185,6 +1188,56 @@ private actor HotPreviewBuildCoordinator {
         inFlightBuilds[key] = nil
         fingerprints[strategy] = fingerprint
         return .built
+    }
+}
+
+private actor HotSyntaxPreflightCache {
+    private struct CacheKey: Hashable {
+        let path: String
+        let modifiedAt: TimeInterval
+        let fileSize: Int
+    }
+
+    private var resultsByPath: [String: (key: CacheKey, result: LumiHotPreviewPackage.SyntaxCheckResult)] = [:]
+    private let maximumCount = 64
+
+    func result(
+        for fileURL: URL,
+        check: @Sendable () async -> LumiHotPreviewPackage.SyntaxCheckResult
+    ) async -> LumiHotPreviewPackage.SyntaxCheckResult {
+        guard let key = cacheKey(for: fileURL) else {
+            return await check()
+        }
+
+        if let cached = resultsByPath[key.path], cached.key == key {
+            return cached.result
+        }
+
+        let result = await check()
+        resultsByPath[key.path] = (key, result)
+        trimIfNeeded()
+        return result
+    }
+
+    private func cacheKey(for fileURL: URL) -> CacheKey? {
+        let standardizedURL = fileURL.standardizedFileURL.resolvingSymlinksInPath()
+        guard let values = try? standardizedURL.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) else {
+            return nil
+        }
+
+        return CacheKey(
+            path: standardizedURL.path,
+            modifiedAt: values.contentModificationDate?.timeIntervalSince1970 ?? 0,
+            fileSize: values.fileSize ?? 0
+        )
+    }
+
+    private func trimIfNeeded() {
+        guard resultsByPath.count > maximumCount else { return }
+        let overflow = resultsByPath.count - maximumCount
+        for path in resultsByPath.keys.sorted().prefix(overflow) {
+            resultsByPath.removeValue(forKey: path)
+        }
     }
 }
 
