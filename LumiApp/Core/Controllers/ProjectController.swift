@@ -6,15 +6,10 @@ import MagicKit
 final class ProjectController: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
-    private let container: RootViewContainer
+    private let container: RootContainer
 
-    init(container: RootViewContainer) {
+    init(container: RootContainer) {
         self.container = container
-    }
-
-    /// 从偏好恢复上次选中的项目路径
-    func applySavedProjectFromPreferences() {
-       
     }
 
     /// 响应 `ProjectContextRequestVM` 的请求

@@ -12,12 +12,12 @@ import os
 /// - 插件内部服务由插件自己管理
 /// - 内核不知道具体插件的内部实现
 @MainActor
-final class RootViewContainer: ObservableObject, SuperLog {
+final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"
     nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "root")
 
     /// 共享实例
-    static let shared = RootViewContainer()
+    static let shared = RootContainer()
 
     // MARK: - 服务
 
@@ -56,9 +56,6 @@ final class RootViewContainer: ObservableObject, SuperLog {
     let gitVM: GitVM
     let agentSessionConfig: LLMVM
     let captureThinkingContent: Bool
-
-    // MARK: - Editor
-
     let editorVM: EditorVM
 
     // MARK: - 初始化
@@ -220,7 +217,6 @@ final class RootViewContainer: ObservableObject, SuperLog {
         let editorExtensionRegistry = EditorExtensionRegistry()
 
         // 让所有已启用的插件自行注册 editor 扩展
-        // （替代通过 providesEditorExtensions 过滤的方案，避免 Swift 6 Actor 动态派发问题）
         let localPluginVM = pluginVM
         let pluginsToRegister = localPluginVM.plugins.filter { localPluginVM.isPluginEnabled($0) }
         for plugin in pluginsToRegister {

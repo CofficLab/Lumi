@@ -134,7 +134,7 @@ extension AgentTurnNotificationHandler: UNUserNotificationCenterDelegate {
             }
 
             // 3. 选中对应的对话
-            RootViewContainer.shared.conversationVM.setSelectedConversation(conversationId)
+            RootContainer.shared.conversationVM.setSelectedConversation(conversationId)
 
             if Self.verbose {
                 AppLogger.core.info("已选中对话: \(conversationId)")

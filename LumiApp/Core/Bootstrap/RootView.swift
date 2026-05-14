@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import MagicAlert
 import MagicKit
 import SwiftData
@@ -21,22 +21,22 @@ import SwiftUI
 /// ```
 struct RootView<Content>: View, SuperLog where Content: View {
     nonisolated static var emoji: String { "📤" }
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
 
     /// 视图内容
     var content: Content
 
     /// 全局服务容器（单例）。
-    @StateObject var container = RootViewContainer.shared
+    @StateObject var container = RootContainer.shared
 
     /// 发送与回合管线（与 `container` 同源，见 `SendController.init(container:)`）。
-    @StateObject var sendController = SendController(container: RootViewContainer.shared)
+    @StateObject var sendController = SendController(container: RootContainer.shared)
 
     /// 项目上下文与系统提示词（与 `container` 同源，见 `ProjectController.init(container:)`）。
-    @StateObject var projectController = ProjectController(container: RootViewContainer.shared)
+    @StateObject var projectController = ProjectController(container: RootContainer.shared)
 
     /// 会话控制器（创建、删除、重命名等会话操作）。
-    @StateObject var conversationController = ConversationController(container: RootViewContainer.shared)
+    @StateObject var conversationController = ConversationController(container: RootContainer.shared)
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -70,11 +70,10 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.gitVM)
             .environmentObject(container.editorVM)
             .modelContainer(container.modelContainer)
-            .onAppear(perform: onAppear)
             .onReceive(container.messageQueueVM.$queueVersion.dropFirst()) { _ in
-                onQueueChanged()
+                onMessageQueueChanged()
             }
-            .onReceive(container.inputQueueVM.$pendingRequest.compactMap { $0?.id }) { _ in
+            .onReceive(container.inputQueueVM.$queueVersion.dropFirst()) { _ in
                 onInputQueueRequested()
             }
             .onReceive(container.conversationCreationVM.$pendingRequest.compactMap { $0 }) { _ in
@@ -99,22 +98,9 @@ extension View {
     }
 }
 
-// MARK: - Actions
-
-extension RootView {
-    @MainActor
-    func loadPreferences() {
-        projectController.applySavedProjectFromPreferences()
-    }
-}
-
 // MARK: - Event Handlers
 
 extension RootView {
-    func onAppear() {
-        loadPreferences()
-    }
-
     func onAgentConversationSendTurnFinished(_: UUID) {
         Task {
             await sendController.attemptBeginNextQueuedSend()
@@ -127,16 +113,16 @@ extension RootView {
         }
     }
 
-    /// 待发送的队列版本发生变化
-    func onQueueChanged() {
+    /// 待发送的Message队列版本发生变化
+    func onMessageQueueChanged() {
         if self.container.messageQueueVM.messages.isEmpty {
             return
         }
-        
+
         if Self.verbose {
             AppLogger.core.info("\(Self.t) 队列发生变化，尝试开始发送")
         }
-        
+
         Task {
             await sendController.attemptBeginNextQueuedSend()
         }
@@ -144,22 +130,37 @@ extension RootView {
 
     @MainActor
     func onInputQueueRequested() {
-        guard let requestId = container.inputQueueVM.pendingRequest?.id else { return }
-        guard let request = container.inputQueueVM.consumePendingRequest(id: requestId) else { return }
+        guard let requestId = container.inputQueueVM.pendingRequest?.id else {
+            AppLogger.core.warning("\(Self.t) 收到输入队列版本变化，但没有待处理输入请求")
+            return
+        }
+        guard let request = container.inputQueueVM.consumePendingRequest(id: requestId) else {
+            AppLogger.core.warning("\(Self.t) 输入请求已不存在或 ID 不匹配，忽略：\(requestId)")
+            return
+        }
 
         guard let conversationId = container.conversationVM.selectedConversationId else {
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t) No conversation selected")
-            }
+            AppLogger.core.warning("\(Self.t) 用户输入了数据，但没有选择对话，忽略")
             return
         }
 
         let pendingImages = container.agentAttachmentsVM.drainPendingImageAttachments()
         let allImages = request.images + pendingImages
-        guard !request.text.isEmpty || !allImages.isEmpty else { return }
+        guard !request.text.isEmpty || !allImages.isEmpty else {
+            AppLogger.core.warning("\(Self.t) 用户输入了数据，但是文本和图片都为空，忽略")
+            return
+        }
+        
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)将用户的输入加入消息队列")
+        }
 
-        let message = ChatMessage(role: .user, conversationId: conversationId, content: request.text, images: allImages)
-        container.messageQueueVM.enqueueMessage(message)
+        container.messageQueueVM.enqueueMessage(ChatMessage(
+            role: .user,
+            conversationId: conversationId,
+            content: request.text,
+            images: allImages)
+        )
     }
 
     func onConversationCreationRequested() {

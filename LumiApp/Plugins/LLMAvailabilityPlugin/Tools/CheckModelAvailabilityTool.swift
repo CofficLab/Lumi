@@ -53,7 +53,7 @@ struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
             LLMAvailabilityPlugin.logger.info("\(self.t)🔍 开始检测：\(providerId) / \(modelId)")
         }
 
-        let llmService = RootViewContainer.shared.llmService
+        let llmService = RootContainer.shared.llmService
         let checker = LLMAvailabilityChecker(llmService: llmService)
         let result = await checker.checkModel(providerId: providerId, modelId: modelId)
 

@@ -205,11 +205,11 @@ struct GitCommitInputView: View {
             let changes = try await GitCommitService.gatherChanges(at: path)
 
             // 2. 生成 commit message
-            let config = RootViewContainer.shared.agentSessionConfig.getCurrentConfig()
+            let config = RootContainer.shared.agentSessionConfig.getCurrentConfig()
             let message = try await GitCommitService.generateCommitMessage(
                 changes: changes,
                 language: .english,
-                llmService: RootViewContainer.shared.llmService,
+                llmService: RootContainer.shared.llmService,
                 config: config
             )
 

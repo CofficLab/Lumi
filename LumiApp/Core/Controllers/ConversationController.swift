@@ -20,9 +20,9 @@ final class ConversationController: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose: Bool = true
 
-    private let container: RootViewContainer
+    private let container: RootContainer
 
-    init(container: RootViewContainer) {
+    init(container: RootContainer) {
         self.container = container
     }
 
