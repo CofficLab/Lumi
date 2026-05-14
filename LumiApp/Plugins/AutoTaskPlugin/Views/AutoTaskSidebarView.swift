@@ -8,26 +8,32 @@ struct AutoTaskSidebarView: View {
     @EnvironmentObject var conversationVM: ConversationVM
     @EnvironmentObject private var themeVM: ThemeVM
     @StateObject private var viewModel = AutoTaskSidebarViewModel()
-    @State private var lastConversationId: UUID?
+
+    /// 是否有正在进行的任务（需要显示 UI）
+    private var hasVisibleTasks: Bool {
+        guard let summary = viewModel.summary, !summary.isEmpty else { return false }
+        return !summary.isAllDone
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerView
+        Group {
+            if hasVisibleTasks {
+                VStack(spacing: 0) {
+                    headerView
 
-            if viewModel.isLoading {
-                Spacer()
-                ProgressView()
-                    .controlSize(.small)
-                Spacer()
-            } else if viewModel.tasks.isEmpty {
-                emptyStateView
-            } else {
-                taskListView
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                            .padding(.vertical, 8)
+                    } else {
+                        taskListView
+                    }
+                }
+                .frame(maxHeight: 200)
+                .frame(minWidth: 240, idealWidth: 320)
+                .background(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.6))
             }
         }
-        .frame(maxHeight: 200)
-        .frame(minWidth: 240, idealWidth: 320)
-        .background(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.6))
         .task(id: conversationVM.selectedConversationId) {
             await viewModel.refresh(conversationId: conversationVM.selectedConversationId)
         }
@@ -61,26 +67,6 @@ struct AutoTaskSidebarView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-    }
-
-    // MARK: - Empty State
-
-    private var emptyStateView: some View {
-        VStack(spacing: 8) {
-            Spacer()
-            Image(systemName: "checklist")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
-            Text(String(localized: "No tasks yet", table: "AutoTask"))
-                .font(.headline)
-                .foregroundStyle(.secondary)
-            Text(String(localized: "Tasks will appear when the Agent breaks down a complex goal.", table: "AutoTask"))
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-            Spacer()
-        }
-        .padding()
     }
 
     // MARK: - Task List
