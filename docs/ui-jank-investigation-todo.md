@@ -111,7 +111,8 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [ ] Inspect `EditorRailFileTreePlugin` file tree services.
 - [ ] Inspect `QuickFileSearchPlugin` file search services.
 - [ ] Inspect `AppManagerPlugin` app scan services.
-- [ ] Inspect `DiskManagerPlugin` views and scan view models.
+- [x] Inspect `DiskManagerPlugin` views and scan view models.
+  - Fixed: Xcode, cache, and project cleaner views now only auto-scan once on first appearance; manual scan controls still force a rescan.
 - [ ] Inspect `AgentRAGPlugin` auto-index overlay.
 - [ ] Confirm scans run off main and are not triggered repeatedly by view appearance.
 
@@ -135,3 +136,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Added bounded actor caches for Markdown parsing and code highlighting; verified `Packages/MarkdownKit` with `swift test`.
 - [x] 2026-05-14: Removed Markdown subtree force-rebuild id and reduced streaming auto-scroll animation churn.
 - [x] 2026-05-14: Removed broad `RootViewContainer` object-change forwarding and replaced it with narrow `RootView` event subscriptions.
+- [x] 2026-05-14: Prevented repeated DiskManager auto-scans on view reappearance.

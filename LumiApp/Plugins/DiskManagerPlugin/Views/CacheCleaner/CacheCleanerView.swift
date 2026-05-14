@@ -38,9 +38,7 @@ struct CacheCleanerView: View {
             }
         }
         .onAppear {
-            if viewModel.categories.isEmpty {
-                viewModel.scan()
-            }
+            viewModel.scanIfNeeded()
         }
         .alert(Text("Confirm Cleanup"), isPresented: $showCleanConfirmation) {
             Button(role: .destructive) {

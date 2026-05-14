@@ -42,9 +42,7 @@ struct ProjectCleanerView: View {
             }
         }
         .onAppear {
-            if viewModel.projects.isEmpty {
-                Task { await viewModel.scanProjects() }
-            }
+            Task { await viewModel.scanProjectsIfNeeded() }
         }
         .alert(Text("Confirm Cleanup"), isPresented: $showCleanConfirmation) {
             Button(role: .cancel) { } label: {

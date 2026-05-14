@@ -41,7 +41,7 @@ struct XcodeCleanerView: View {
             }
         }
         .onAppear {
-            Task { await viewModel.scanAll() }
+            Task { await viewModel.scanAllIfNeeded() }
         }
         .alert(Text("Confirm Cleanup"), isPresented: $showCleanConfirmation) {
             Button(role: .cancel) {} label: {

@@ -19,6 +19,7 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
     private let service = CacheCleanerService.shared
     private var scanTask: Task<Void, Never>?
     private var progressTask: Task<Void, Never>?
+    private var hasCompletedInitialScan = false
 
     var totalSelectedSize: Int64 {
         var total: Int64 = 0
@@ -58,12 +59,18 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
                 await MainActor.run {
                     self.categories = results
                     self.isScanning = false
+                    self.hasCompletedInitialScan = true
                     self.scanProgress = ""
                     self.progressTask?.cancel()
                 }
                 self.selectAllSafe()
             }
         }
+    }
+
+    func scanIfNeeded() {
+        guard !hasCompletedInitialScan else { return }
+        scan()
     }
 
     func stopScan() {
