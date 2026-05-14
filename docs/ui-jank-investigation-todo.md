@@ -28,17 +28,23 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 
 ## Priority 2: Always-On Monitoring Timers
 
-- [ ] Inspect `Packages/DeviceMonitorKit/Sources/DeviceMonitorKit/Services/CPUService.swift`.
+- [x] Inspect `Packages/DeviceMonitorKit/Sources/DeviceMonitorKit/Services/CPUService.swift`.
   - Risk: 1s timer updates CPU stats on `@MainActor`.
-- [ ] Inspect `Packages/DeviceMonitorKit/Sources/DeviceMonitorKit/Services/MemoryService.swift`.
+- [x] Inspect `Packages/DeviceMonitorKit/Sources/DeviceMonitorKit/Services/MemoryService.swift`.
   - Risk: 1s timer updates memory stats on `@MainActor`.
 - [x] Inspect `Packages/DeviceMonitorKit/Sources/DeviceMonitorKit/Services/ProcessService.swift`.
   - Risk: 3s timer scans all processes on `@MainActor`.
   - Fixed: process enumeration and CPU calculations now run in a detached utility task; main actor only updates snapshots and publishes compact metrics.
-- [ ] Inspect `LumiApp/Plugins/NetworkManagerPlugin/Services/NetworkService.swift`.
+- [x] Move CPU and memory sampling off the main actor.
+  - Fixed: CPU tick snapshots and VM memory stats now sample in detached utility tasks; MainActor only stores snapshots and publishes values.
+- [x] Inspect `LumiApp/Plugins/NetworkManagerPlugin/Services/NetworkService.swift`.
   - Risk: 1s timer samples interfaces and publishes several values on `@MainActor`.
-- [ ] Inspect `NetworkManagerViewModel`.
+- [x] Inspect `NetworkManagerViewModel`.
   - Risk: each view model instance owns its own slow-stats timer.
+- [x] Deduplicate `NetworkManagerViewModel` instances used by network menu bar, popup, detail, dashboard, and controller.
+  - Fixed: these entry points now observe a shared VM, so Wi-Fi, ping, local IP, and public IP refresh work no longer multiplies per view.
+- [x] Move network interface counter sampling off the main actor.
+  - Fixed: `NetworkService` now reads interface counters in a detached utility task and publishes compact speed totals on the main actor.
 - [ ] Verify whether menu bar content starts monitoring even when no popover is open.
 - [x] Prototype moving system sampling to background tasks and publishing only compact snapshots on main.
   - Done for `ProcessService`; CPU, memory, and network sampling remain to be measured before changing.
@@ -119,3 +125,5 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Deduped chat scroll metric callbacks.
 - [x] 2026-05-14: Verified `Packages/DeviceMonitorKit` with `swift test`.
 - [ ] 2026-05-14: Full `Lumi` scheme build is blocked by screenshot feature changes: `ScreenshotOverlay.swift` uses unavailable `CGDisplayCreateImage` on macOS SDK 26.2; temporary exclusion then fails because `ChatToolbarView` depends on `ScreenshotState`.
+- [x] 2026-05-14: Deduplicated network plugin view models and moved network counter sampling off the main actor.
+- [x] 2026-05-14: Moved CPU and memory sampling off the main actor; verified `Packages/DeviceMonitorKit` with `swift test`.

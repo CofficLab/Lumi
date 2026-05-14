@@ -5,7 +5,7 @@ import SwiftUI
 struct NetworkMenuBarPopupView: View {
     // MARK: - Properties
 
-    @StateObject private var viewModel = NetworkManagerViewModel()
+    @ObservedObject private var viewModel = NetworkManagerViewModel.shared
     @ObservedObject private var historyService = NetworkHistoryService.shared
 
     // MARK: - Body

@@ -2,7 +2,7 @@ import SwiftUI
 import LumiUI
 
 struct NetworkDashboardView: View {
-    @StateObject private var viewModel = NetworkManagerViewModel()
+    @ObservedObject private var viewModel = NetworkManagerViewModel.shared
 
     var body: some View {
         VSplitView {

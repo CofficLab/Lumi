@@ -36,6 +36,7 @@ class NetworkService: SuperLog, ObservableObject {
     
     // Monitoring state
     private var monitoringTimer: Timer?
+    private var samplingTask: Task<Void, Never>?
     private var subscribersCount = 0
 
     // Previous data for speed calculation
@@ -49,7 +50,7 @@ class NetworkService: SuperLog, ObservableObject {
         }
 
         // Initialize baseline
-        let (In, Out) = getInterfaceCounters()
+        let (In, Out) = Self.getInterfaceCounters()
         lastBytesIn = In
         lastBytesOut = Out
         lastCheckTime = Date().timeIntervalSince1970
@@ -62,7 +63,7 @@ class NetworkService: SuperLog, ObservableObject {
                 NetworkManagerPlugin.logger.info("\(Self.t)Starting network monitoring")
             }
             // Reset baseline to avoid huge spike if paused for long time
-            let (In, Out) = getInterfaceCounters()
+            let (In, Out) = Self.getInterfaceCounters()
             lastBytesIn = In
             lastBytesOut = Out
             lastCheckTime = Date().timeIntervalSince1970
@@ -83,39 +84,51 @@ class NetworkService: SuperLog, ObservableObject {
             }
             monitoringTimer?.invalidate()
             monitoringTimer = nil
+            samplingTask?.cancel()
+            samplingTask = nil
         }
     }
     
     /// Internal update loop
     private func updateNetworkUsage() {
+        guard samplingTask == nil else { return }
+
         let currentTime = Date().timeIntervalSince1970
-        let (currentIn, currentOut) = getInterfaceCounters()
-        
-        let timeDelta = currentTime - lastCheckTime
-        
-        var dSpeed: Double = 0
-        var uSpeed: Double = 0
-        
-        if timeDelta > 0 {
-            // Handle wrap-around or reset
-            if currentIn >= lastBytesIn {
-                dSpeed = Double(currentIn - lastBytesIn) / timeDelta
+        let previousBytesIn = lastBytesIn
+        let previousBytesOut = lastBytesOut
+        let previousCheckTime = lastCheckTime
+
+        samplingTask = Task.detached(priority: .utility) { [currentTime, previousBytesIn, previousBytesOut, previousCheckTime] in
+            let (currentIn, currentOut) = Self.getInterfaceCounters()
+            let timeDelta = currentTime - previousCheckTime
+
+            var downloadSpeed: Double = 0
+            var uploadSpeed: Double = 0
+
+            if timeDelta > 0 {
+                // Handle wrap-around or reset
+                if currentIn >= previousBytesIn {
+                    downloadSpeed = Double(currentIn - previousBytesIn) / timeDelta
+                }
+                if currentOut >= previousBytesOut {
+                    uploadSpeed = Double(currentOut - previousBytesOut) / timeDelta
+                }
             }
-            if currentOut >= lastBytesOut {
-                uSpeed = Double(currentOut - lastBytesOut) / timeDelta
+
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.samplingTask = nil
+                guard self.subscribersCount > 0 else { return }
+
+                self.lastBytesIn = currentIn
+                self.lastBytesOut = currentOut
+                self.lastCheckTime = currentTime
+                self.downloadSpeed = downloadSpeed
+                self.uploadSpeed = uploadSpeed
+                self.totalDownload = currentIn
+                self.totalUpload = currentOut
             }
         }
-        
-        // Update state
-        lastBytesIn = currentIn
-        lastBytesOut = currentOut
-        lastCheckTime = currentTime
-
-        // Publish updates
-        downloadSpeed = dSpeed
-        uploadSpeed = uSpeed
-        totalDownload = currentIn
-        totalUpload = currentOut
     }
     
     /// Get current network speeds (bytes/s) and total bytes (Legacy/Direct Access)
@@ -133,7 +146,7 @@ class NetworkService: SuperLog, ObservableObject {
     }
     
     /// Get aggregated bytes In/Out from all interfaces
-    private func getInterfaceCounters() -> (UInt64, UInt64) {
+    private nonisolated static func getInterfaceCounters() -> (UInt64, UInt64) {
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
         
         guard getifaddrs(&ifaddr) == 0 else { return (0, 0) }

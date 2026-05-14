@@ -6,7 +6,7 @@ import Combine
 struct NetworkMenuBarContentView: View {
     // MARK: - Properties
 
-    @StateObject private var viewModel = NetworkManagerViewModel()
+    @ObservedObject private var viewModel = NetworkManagerViewModel.shared
 
     // MARK: - Body
 

@@ -3,7 +3,7 @@ import SwiftUI
 
 struct NetworkHistoryDetailView: View {
     @ObservedObject private var historyService = NetworkHistoryService.shared
-    @StateObject private var viewModel = NetworkManagerViewModel()
+    @ObservedObject private var viewModel = NetworkManagerViewModel.shared
     @State private var selectedRange: TimeRange = .hour1
 
     var body: some View {
