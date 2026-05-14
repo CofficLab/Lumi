@@ -6,9 +6,16 @@ struct GitHubTrendingTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔥"
     nonisolated static let verbose: Bool = false
     let name = "github_trending"
-    let description = "获取 GitHub 趋势项目列表，按时间范围（daily/weekly/monthly）筛选热门开源项目。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取 GitHub 趋势项目列表，按时间范围（daily/weekly/monthly）筛选热门开源项目。"
+        case .english:
+            return "获取 GitHub 趋势项目列表，按时间范围（daily/weekly/monthly）筛选热门开源项目。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

@@ -13,15 +13,30 @@ struct ShellTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💻"
     nonisolated static let verbose: Bool = false
     let name = "run_command"
-    let description = "Execute a shell command in terminal. Use this to run build commands, git commands, or other system tools."
 
-    var inputSchema: [String: Any] {
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在终端中执行 Shell 命令。可用于运行构建命令、git 命令或其他系统工具。"
+        case .english:
+            return "Execute a shell command in terminal. Use this to run build commands, git commands, or other system tools."
+        }
+    }
+
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        let commandDescription: String
+        switch language {
+        case .chinese:
+            commandDescription = "要执行的命令字符串（如 'git status'）"
+        case .english:
+            commandDescription = "The command string to execute (e.g., 'git status')"
+        }
         return [
             "type": "object",
             "properties": [
                 "command": [
                     "type": "string",
-                    "description": "The command string to execute (e.g., 'git status')"
+                    "description": commandDescription
                 ]
             ],
             "required": ["command"]

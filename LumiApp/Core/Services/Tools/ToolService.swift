@@ -68,10 +68,13 @@ class ToolService: SuperLog, @unchecked Sendable {
     nonisolated static let verbose: Bool = false
     // MARK: - Properties
 
-    /// 所有可用工具
+    /// 所有可用工具（原始，未本地化）
     ///
     /// 每次工具列表更新时都会重新计算。
     private(set) var allTools: [SuperAgentTool] = []
+
+    /// 当前语言偏好（由 LLMRequester 在每次请求前设置）
+    var languagePreference: LanguagePreference = .english
 
     /// 内置工具列表
     private var builtInTools: [SuperAgentTool] = []
@@ -160,11 +163,14 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - 工具相关
 
-    /// 获取所有可用工具（只读）
+    /// 获取所有可用工具（已按语言偏好本地化）
     ///
-    /// 返回完整的工具列表，包括内置和 MCP 工具。
+    /// 返回经过 `LocalizedAgentTool` 包装的工具列表。
+    /// 包装器调用每个工具的 `description(for:)` / `inputSchema(for:)` 方法，
+    /// 使用 `languagePreference` 指定的语言。
+    /// Provider 层拿到的工具已经是特定语言的了，无需关心语言切换。
     var tools: [SuperAgentTool] {
-        return allTools
+        return allTools.map { LocalizedAgentTool(underlying: $0, language: languagePreference) }
     }
 
     /// 根据名称获取工具

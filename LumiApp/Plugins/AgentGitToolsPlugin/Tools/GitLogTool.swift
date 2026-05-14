@@ -6,9 +6,16 @@ struct GitLogTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📜"
     nonisolated static let verbose: Bool = true
     let name = "git_log"
-    let description = "查看 Git 提交历史。支持限制数量、查看特定分支或文件的日志。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "查看 Git 提交历史。支持限制数量、查看特定分支或文件的日志。"
+        case .english:
+            return "查看 Git 提交历史。支持限制数量、查看特定分支或文件的日志。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

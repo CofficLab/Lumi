@@ -9,9 +9,16 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✏️"
     nonisolated static let verbose: Bool = false
     let name = "write_file"
-    let description = "Create a new file or overwrite an existing file with the given content."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Create a new file or overwrite an existing file with the given content."
+        case .english:
+            return "Create a new file or overwrite an existing file with the given content."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         return [
             "type": "object",
             "properties": [

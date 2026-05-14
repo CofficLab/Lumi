@@ -6,9 +6,16 @@ struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✍️"
     nonisolated static let verbose: Bool = false
     let name = "github_create_issue"
-    let description = "在 GitHub 仓库中创建新的 Issue。支持设置标题、描述、标签、指派人员和里程碑。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在 GitHub 仓库中创建新的 Issue。支持设置标题、描述、标签、指派人员和里程碑。"
+        case .english:
+            return "在 GitHub 仓库中创建新的 Issue。支持设置标题、描述、标签、指派人员和里程碑。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

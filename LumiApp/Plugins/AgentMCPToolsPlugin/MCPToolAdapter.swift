@@ -24,11 +24,15 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
         return "mcp__\(safeServerName)__\(mcpTool.name)"
     }
 
-    var description: String {
+    /// MCP 工具的描述来自外部服务器，无法提供多语言版本。
+    /// 两种语言均返回原始描述。
+    func description(for language: LanguagePreference) -> String {
         mcpTool.description ?? ""
     }
 
-    var inputSchema: [String: Any] {
+    /// MCP 工具的 schema 来自外部服务器，无法提供多语言版本。
+    /// 两种语言均返回原始 schema。
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         guard let data = try? JSONEncoder().encode(mcpTool.inputSchema),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else {

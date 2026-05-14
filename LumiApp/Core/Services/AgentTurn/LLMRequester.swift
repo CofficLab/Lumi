@@ -50,6 +50,7 @@ final class LLMRequester: SuperLog {
     private let pluginVM: PluginVM
     private let statusVM: ConversationStatusVM
     private let retryPolicy: StreamRetryPolicy
+    private let projectVM: ProjectVM
 
     init(
         llmService: LLMService,
@@ -57,6 +58,7 @@ final class LLMRequester: SuperLog {
         toolService: ToolService,
         pluginVM: PluginVM,
         statusVM: ConversationStatusVM,
+        projectVM: ProjectVM,
         retryPolicy: StreamRetryPolicy = .default
     ) {
         self.llmService = llmService
@@ -64,6 +66,7 @@ final class LLMRequester: SuperLog {
         self.toolService = toolService
         self.pluginVM = pluginVM
         self.statusVM = statusVM
+        self.projectVM = projectVM
         self.retryPolicy = retryPolicy
     }
 
@@ -87,6 +90,10 @@ final class LLMRequester: SuperLog {
             additionalSystemPrompts: additionalSystemPrompts
         )
         let config = agentSessionConfig.getCurrentConfig()
+
+        // 将语言偏好注入工具服务，使 tools 返回本地化后的描述
+        toolService.languagePreference = projectVM.languagePreference
+
         let availableTools = ToolAvailabilityGuard().evaluate(
             tools: toolService.tools,
             allowsTools: agentSessionConfig.chatMode.allowsTools,

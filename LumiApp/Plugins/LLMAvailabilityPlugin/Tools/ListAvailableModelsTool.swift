@@ -8,9 +8,16 @@ struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = true
 
     let name = "list_available_models"
-    let description = "列出当前可用的 LLM 供应商和模型。返回实际通过连通性检测的供应商+模型对。如果未传入参数，返回全部可用列表；可指定供应商过滤。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "列出当前可用的 LLM 供应商和模型。返回实际通过连通性检测的供应商+模型对。如果未传入参数，返回全部可用列表；可指定供应商过滤。"
+        case .english:
+            return "List all available LLM providers and models. Returns provider+model pairs that passed connectivity checks. Returns all available results if no parameter is provided; can filter by provider."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

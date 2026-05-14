@@ -11,8 +11,13 @@ struct AutoTaskSidebarView: View {
 
     /// 是否有正在进行的任务（需要显示 UI）
     private var hasVisibleTasks: Bool {
-        guard let summary = viewModel.summary, !summary.isEmpty else { return false }
-        return !summary.isAllDone
+        guard let summary = viewModel.summary, !summary.isEmpty else {
+            AutoTaskPlugin.logger.debug("📋 hasVisibleTasks=false (summary=\(viewModel.summary == nil ? "nil" : "empty"))")
+            return false
+        }
+        let result = !summary.isAllDone
+        AutoTaskPlugin.logger.debug("📋 hasVisibleTasks=\(result) (total=\(summary.total), isAllDone=\(summary.isAllDone))")
+        return result
     }
 
     var body: some View {

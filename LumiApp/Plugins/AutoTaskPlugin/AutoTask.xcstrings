@@ -30,9 +30,6 @@
     "In Progress" : {
 
     },
-    "No tasks yet" : {
-
-    },
     "Pending" : {
 
     },
@@ -46,9 +43,6 @@
 
     },
     "Tasks" : {
-
-    },
-    "Tasks will appear when the Agent breaks down a complex goal." : {
 
     }
   },

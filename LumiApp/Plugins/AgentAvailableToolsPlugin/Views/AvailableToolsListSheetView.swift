@@ -96,8 +96,8 @@ extension AvailableToolsListDetailView {
                 Spacer()
             }
 
-            if !tool.description.isEmpty {
-                Text(tool.description)
+            if !tool.description(for: .english).isEmpty {
+                Text(tool.description(for: .english))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .textSelection(.enabled)
@@ -115,7 +115,7 @@ extension AvailableToolsListDetailView {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return tools.sorted { $0.name < $1.name } }
         return tools
-            .filter { $0.name.localizedCaseInsensitiveContains(q) || $0.description.localizedCaseInsensitiveContains(q) }
+            .filter { $0.name.localizedCaseInsensitiveContains(q) || $0.description(for: .english).localizedCaseInsensitiveContains(q) }
             .sorted { $0.name < $1.name }
     }
 }

@@ -13,14 +13,21 @@ struct WebSearchTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
     
     let name = "web_search"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Search the web for real-time information.\nUse this tool to find current information, news, or specific data from the internet.\n\nNote: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen)."
+        case .english:
+            return     """
 Search the web for real-time information.
 Use this tool to find current information, news, or specific data from the internet.
 
 Note: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen).
 """
+        }
+    }
     
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

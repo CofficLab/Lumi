@@ -13,7 +13,12 @@ struct EditFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔧"
     nonisolated static let verbose: Bool = false
     let name = "edit_file"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Performs exact string replacements in files.\n\nUsage:\n- The file must have been read with `read_file` in this conversation before editing. This tool will error if you attempt an edit without reading the file.\n- When editing text from Read tool output, ensure you preserve the exact indentation (tabs/spaces) — everything after the line number prefix is the actual file content to match.\n- The edit will FAIL if `old_string` is not unique in the file. Either provide a larger string with more surrounding context to make it unique or use `replace_all` to change every instance of `old_string`.\n- Use `replace_all` for replacing and renaming strings across the file.\n- Use the smallest old_string that's clearly unique — usually 2-4 adjacent lines is sufficient."
+        case .english:
+            return     """
 Performs exact string replacements in files.
 
 Usage:
@@ -23,8 +28,10 @@ Usage:
 - Use `replace_all` for replacing and renaming strings across the file.
 - Use the smallest old_string that's clearly unique — usually 2-4 adjacent lines is sufficient.
 """
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         return [
             "type": "object",
             "properties": [

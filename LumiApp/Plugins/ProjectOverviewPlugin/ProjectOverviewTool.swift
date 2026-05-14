@@ -6,9 +6,16 @@ struct ProjectOverviewTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = false
     let name = "project_overview"
-    let description = "Get a project overview: path, type, two-level directory structure, Git (branch, remote, clean/dirty), manifest files, README preview, key files. Use when you need to understand the project before diving in."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Get a project overview: path, type, two-level directory structure, Git (branch, remote, clean/dirty), manifest files, README preview, key files. Use when you need to understand the project before diving in."
+        case .english:
+            return "Get a project overview: path, type, two-level directory structure, Git (branch, remote, clean/dirty), manifest files, README preview, key files. Use when you need to understand the project before diving in."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

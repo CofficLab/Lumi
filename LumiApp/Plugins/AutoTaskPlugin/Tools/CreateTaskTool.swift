@@ -10,14 +10,21 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "create_task"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Create tasks for a complex goal. When the user asks you to do something that requires multiple steps, \\nbreak it down into tasks using this tool. You can create a single task or a batch of tasks at once. \\nEach task should be a concrete, actionable step. Tasks are tracked in a kanban board and you will be \\nreminded of progress automatically. After creating tasks, start working on the first one immediately."
+        case .english:
+            return     """
     Create tasks for a complex goal. When the user asks you to do something that requires multiple steps, \
     break it down into tasks using this tool. You can create a single task or a batch of tasks at once. \
     Each task should be a concrete, actionable step. Tasks are tracked in a kanban board and you will be \
     reminded of progress automatically. After creating tasks, start working on the first one immediately.
     """
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [
@@ -53,6 +60,7 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        AutoTaskPlugin.logger.warning("📝[CreateTaskTool] execute called")
         guard let conversationId = arguments["conversation_id"]?.value as? String else {
             return "Error: conversation_id is required"
         }
@@ -77,6 +85,8 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
 
         let manager = TaskStateManager.shared
         await manager.createTasks(conversationId: conversationId, items: items)
+
+        AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks, posting autoTaskDidChange for cid=\(conversationId.prefix(8))")
 
         // 通知 UI 刷新
         NotificationCenter.default.post(

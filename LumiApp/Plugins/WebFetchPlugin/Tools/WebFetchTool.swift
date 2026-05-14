@@ -11,7 +11,12 @@ struct WebFetchTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
     
     let name = "web_fetch"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Fetch and extract content from a URL. Converts HTML to Markdown format automatically.\nUse this tool to retrieve web pages, documentation, or any publicly accessible HTTP content.\n\nNote: This tool does NOT work with authenticated/private URLs (requires login, cookies, etc.).\n\nSupported content types:\n- HTML pages → converted to Markdown\n- JSON → formatted as code block\n- Plain text → returned directly\n- Binary files (PDF, images) → returns file info and saves to temp directory"
+        case .english:
+            return     """
 Fetch and extract content from a URL. Converts HTML to Markdown format automatically.
 Use this tool to retrieve web pages, documentation, or any publicly accessible HTTP content.
 
@@ -23,8 +28,10 @@ Supported content types:
 - Plain text → returned directly
 - Binary files (PDF, images) → returns file info and saves to temp directory
 """
+        }
+    }
     
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

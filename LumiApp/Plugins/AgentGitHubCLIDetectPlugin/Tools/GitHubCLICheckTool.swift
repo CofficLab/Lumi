@@ -8,9 +8,16 @@ struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
     nonisolated static let verbose: Bool = true
     let name = "github_cli_check"
-    let description = "检测用户系统是否安装了 GitHub CLI (gh) 命令行工具，返回安装状态、版本号和安装路径。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "检测用户系统是否安装了 GitHub CLI (gh) 命令行工具，返回安装状态、版本号和安装路径。"
+        case .english:
+            return "检测用户系统是否安装了 GitHub CLI (gh) 命令行工具，返回安装状态、版本号和安装路径。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [:]

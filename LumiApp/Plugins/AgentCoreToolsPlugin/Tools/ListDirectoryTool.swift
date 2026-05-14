@@ -6,9 +6,16 @@ struct ListDirectoryTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = false
     let name = "ls"
-    let description = "List files and directories at a given path. Useful for exploring the project structure."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "List files and directories at a given path. Useful for exploring the project structure."
+        case .english:
+            return "List files and directories at a given path. Useful for exploring the project structure."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         return [
             "type": "object",
             "properties": [

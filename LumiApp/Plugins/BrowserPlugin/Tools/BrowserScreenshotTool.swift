@@ -12,15 +12,22 @@ struct BrowserScreenshotTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "browser_screenshot"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Take a screenshot of a rendered web page. Uses WKWebView to load and render the page, then captures a full-page screenshot saved to a temporary file.\n\nUse this tool when you need to visually inspect a web page or when text-based fetching (web_fetch) is insufficient (e.g., JavaScript-heavy pages, SPAs, pages that require login cookies).\n\nReturns the file path of the saved screenshot image (PNG format)."
+        case .english:
+            return     """
 Take a screenshot of a rendered web page. Uses WKWebView to load and render the page, then captures a full-page screenshot saved to a temporary file.
 
 Use this tool when you need to visually inspect a web page or when text-based fetching (web_fetch) is insufficient (e.g., JavaScript-heavy pages, SPAs, pages that require login cookies).
 
 Returns the file path of the saved screenshot image (PNG format).
 """
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

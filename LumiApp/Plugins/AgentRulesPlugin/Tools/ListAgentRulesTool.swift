@@ -5,9 +5,16 @@ import Foundation
 /// 返回指定项目 .agent/rules 目录中所有规则文档的列表
 struct ListAgentRulesTool: SuperAgentTool {
     let name: String = "list_agent_rules"
-    let description: String = String(localized: "List all rule documents in the .agent/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document.", table: "AgentRules")
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "列出项目 .agent/rules 目录中的所有规则文档。返回每个规则文档的元数据，包括文件名、标题、描述、文件大小和修改日期。"
+        case .english:
+            return "List all rule documents in the .agent/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

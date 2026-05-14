@@ -124,24 +124,27 @@ protocol SuperAgentTool: Sendable {
     /// 工具名称
     ///
     /// 唯一标识符，AI 通过名称选择要执行的工具。
-    /// 建议使用下划线命名法，如 "read_file", "run_command"
+    /// 建议使用下划线命名法，如 "read_file", "run_command"。
+    /// 注意：名称不翻译，始终为英文。
     var name: String { get }
-    
-    /// 工具描述
+
+    /// 工具描述（多语言）
     ///
     /// 详细描述工具的功能、用途和使用场景。
     /// AI 根据描述判断是否需要调用此工具。
-    /// 建议包含：
-    /// - 工具用途
-    /// - 输入参数含义
-    /// - 返回值说明
-    var description: String { get }
-    
-    /// 输入参数 JSON Schema
+    ///
+    /// 每个工具必须为 `LanguagePreference.allCases` 中的所有语言提供描述，
+    /// 使用 `switch language` 穷举，由编译器保证完整性。
+    func description(for language: LanguagePreference) -> String
+
+    /// 输入参数 JSON Schema（多语言）
     ///
     /// 定义工具接受的参数格式。
-    /// 使用 JSON Schema 格式，便于 AI 理解和生成正确参数。
-    var inputSchema: [String: Any] { get }
+    /// 参数的 `description` 字段应使用对应语言。
+    ///
+    /// 每个工具必须为 `LanguagePreference.allCases` 中的所有语言提供 schema，
+    /// 使用 `switch language` 穷举，由编译器保证完整性。
+    func inputSchema(for language: LanguagePreference) -> [String: Any]
     
     /// 执行工具
     ///

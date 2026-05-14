@@ -8,9 +8,16 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = true
     let name = "get_current_file"
-    let description = "Get the current selected file information, including file path and last selection time. Returns empty info if no file is selected."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Get the current selected file information, including file path and last selection time. Returns empty info if no file is selected."
+        case .english:
+            return "Get the current selected file information, including file path and last selection time. Returns empty info if no file is selected."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [:]

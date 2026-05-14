@@ -9,9 +9,17 @@ struct CaffeinateStatusTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = true
 
     let name = "caffeinate_status"
-    let description = "Query the current caffeinate status. Returns whether caffeinate is active, the current mode, duration, elapsed time, and remaining time."
 
-    var inputSchema: [String: Any] {
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "查询当前 caffeinate 状态。返回是否激活、当前模式、持续时间、已用时间和剩余时间。"
+        case .english:
+            return "Query the current caffeinate status. Returns whether caffeinate is active, the current mode, duration, elapsed time, and remaining time."
+        }
+    }
+
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [:],

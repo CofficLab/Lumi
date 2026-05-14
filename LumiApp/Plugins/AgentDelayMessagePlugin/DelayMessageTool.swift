@@ -24,9 +24,16 @@ struct DelayMessageTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "⏳"
     nonisolated static let verbose: Bool = false
     let name = "delay_message"
-    let description = "Send a delayed user message to a conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives. Use get_current_conversation first to obtain the conversation ID."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Send a delayed user message to a conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives. Use get_current_conversation first to obtain the conversation ID."
+        case .english:
+            return "Send a delayed user message to a conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives. Use get_current_conversation first to obtain the conversation ID."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

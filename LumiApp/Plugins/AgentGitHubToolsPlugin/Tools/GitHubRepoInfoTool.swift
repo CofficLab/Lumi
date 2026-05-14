@@ -6,9 +6,16 @@ struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📦"
     nonisolated static let verbose: Bool = false
     let name = "github_repo_info"
-    let description = "获取 GitHub 仓库的基本信息，包括 star 数、forks、描述、主要语言等。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取 GitHub 仓库的基本信息，包括 star 数、forks、描述、主要语言等。"
+        case .english:
+            return "获取 GitHub 仓库的基本信息，包括 star 数、forks、描述、主要语言等。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

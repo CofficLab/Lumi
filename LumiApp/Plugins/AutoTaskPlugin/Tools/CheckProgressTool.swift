@@ -10,12 +10,19 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "check_progress"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Check the current task progress for the conversation. Returns a list of all tasks with their \\nstatuses and overall completion percentage. Use this to review what's been done and what's next."
+        case .english:
+            return     """
     Check the current task progress for the conversation. Returns a list of all tasks with their \
     statuses and overall completion percentage. Use this to review what's been done and what's next.
     """
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

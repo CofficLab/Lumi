@@ -6,9 +6,16 @@ struct GitHubFileContentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = false
     let name = "github_file_content"
-    let description = "获取 GitHub 仓库中指定文件的内容。支持读取 README、源代码文件等。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取 GitHub 仓库中指定文件的内容。支持读取 README、源代码文件等。"
+        case .english:
+            return "获取 GitHub 仓库中指定文件的内容。支持读取 README、源代码文件等。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

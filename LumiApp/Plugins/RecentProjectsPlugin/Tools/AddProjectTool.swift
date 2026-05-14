@@ -6,9 +6,16 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
     let name = "add_recent_project"
-    let description = "Add the specified project to the recent projects list. Updates the projectVM's recent projects after adding."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Add the specified project to the recent projects list. Updates the projectVM's recent projects after adding."
+        case .english:
+            return "Add the specified project to the recent projects list. Updates the projectVM's recent projects after adding."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

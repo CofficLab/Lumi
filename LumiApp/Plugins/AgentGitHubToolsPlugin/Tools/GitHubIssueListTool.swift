@@ -6,9 +6,16 @@ struct GitHubIssueListTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = false
     let name = "github_issues"
-    let description = "获取 GitHub 仓库的 Issue 列表，支持按状态（open/closed/all）筛选。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取 GitHub 仓库的 Issue 列表，支持按状态（open/closed/all）筛选。"
+        case .english:
+            return "获取 GitHub 仓库的 Issue 列表，支持按状态（open/closed/all）筛选。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

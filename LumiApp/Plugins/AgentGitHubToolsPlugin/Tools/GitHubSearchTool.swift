@@ -6,9 +6,16 @@ struct GitHubSearchTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
     nonisolated static let verbose: Bool = false
     let name = "github_search"
-    let description = "在 GitHub 上搜索仓库和代码。支持关键词、语言、stars 等条件筛选。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在 GitHub 上搜索仓库和代码。支持关键词、语言、stars 等条件筛选。"
+        case .english:
+            return "在 GitHub 上搜索仓库和代码。支持关键词、语言、stars 等条件筛选。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

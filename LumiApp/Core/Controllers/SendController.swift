@@ -44,7 +44,8 @@ final class SendController: ObservableObject, SuperLog {
             agentSessionConfig: container.agentSessionConfig,
             toolService: container.toolService,
             pluginVM: container.pluginVM,
-            statusVM: container.conversationSendStatusVM
+            statusVM: container.conversationSendStatusVM,
+            projectVM: container.projectVM
         )
         let toolCallExecutor = ToolCallExecutor(
             toolExecutionService: container.toolExecutionService,

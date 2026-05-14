@@ -17,9 +17,16 @@ struct ReadFileTool: SuperAgentTool, SuperLog {
     ]
 
     let name = "read_file"
-    let description = "Read the contents of a file at the given path. Use this to examine code, configuration files, or image files. For PNG, JPEG, GIF, and WebP images, the image is returned as visual input to compatible multimodal models."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Read the contents of a file at the given path. Use this to examine code, configuration files, or image files. For PNG, JPEG, GIF, and WebP images, the image is returned as visual input to compatible multimodal models."
+        case .english:
+            return "Read the contents of a file at the given path. Use this to examine code, configuration files, or image files. For PNG, JPEG, GIF, and WebP images, the image is returned as visual input to compatible multimodal models."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         return [
             "type": "object",
             "properties": [

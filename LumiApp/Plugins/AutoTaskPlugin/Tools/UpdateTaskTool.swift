@@ -10,14 +10,21 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let name = "update_task"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Update the status of a task. Use this when you have started or completed a task. \\nMark a task as 'in_progress' when you begin working on it, and 'completed' when done. \\nYou can also 'skip' a task if it's not needed. \\nAfter completing a task, check the remaining tasks and continue with the next one automatically."
+        case .english:
+            return     """
     Update the status of a task. Use this when you have started or completed a task. \
     Mark a task as 'in_progress' when you begin working on it, and 'completed' when done. \
     You can also 'skip' a task if it's not needed. \
     After completing a task, check the remaining tasks and continue with the next one automatically.
     """
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

@@ -6,9 +6,16 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
     let name = "set_current_project"
-    let description = "Set the current selected project. Requires a project path."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Set the current selected project. Requires a project path."
+        case .english:
+            return "Set the current selected project. Requires a project path."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

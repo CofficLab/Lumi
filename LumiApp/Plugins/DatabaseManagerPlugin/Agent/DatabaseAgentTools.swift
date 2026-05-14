@@ -15,9 +15,16 @@ private enum DatabaseToolArguments {
 
 struct DatabaseListConnectionsTool: SuperAgentTool {
     let name = "database_list_connections"
-    let description = "List database connections that are available to Agent database tools. Passwords and secrets are never returned."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "List database connections that are available to Agent database tools. Passwords and secrets are never returned."
+        case .english:
+            return "List database connections that are available to Agent database tools. Passwords and secrets are never returned."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [:],
@@ -35,9 +42,16 @@ struct DatabaseListConnectionsTool: SuperAgentTool {
 
 struct DatabaseDescribeSchemaTool: SuperAgentTool {
     let name = "database_describe_schema"
-    let description = "Describe tables, columns, or key samples for an Agent-accessible database connection. Use this before writing a read-only query."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Describe tables, columns, or key samples for an Agent-accessible database connection. Use this before writing a read-only query."
+        case .english:
+            return "Describe tables, columns, or key samples for an Agent-accessible database connection. Use this before writing a read-only query."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [
@@ -67,9 +81,16 @@ struct DatabaseDescribeSchemaTool: SuperAgentTool {
 
 struct DatabaseReadonlyQueryTool: SuperAgentTool {
     let name = "database_query_readonly"
-    let description = "Run a read-only SQL query against an Agent-accessible SQL database. Only SELECT, schema inspection, and explain-style statements are accepted. Results are limited and truncated."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Run a read-only SQL query against an Agent-accessible SQL database. Only SELECT, schema inspection, and explain-style statements are accepted. Results are limited and truncated."
+        case .english:
+            return "Run a read-only SQL query against an Agent-accessible SQL database. Only SELECT, schema inspection, and explain-style statements are accepted. Results are limited and truncated."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [
@@ -104,9 +125,16 @@ struct DatabaseReadonlyQueryTool: SuperAgentTool {
 
 struct DatabaseSampleTableTool: SuperAgentTool {
     let name = "database_sample_table"
-    let description = "Return a small sample from a table using safe identifier quoting. Prefer this over writing SELECT * by hand."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Return a small sample from a table using safe identifier quoting. Prefer this over writing SELECT * by hand."
+        case .english:
+            return "Return a small sample from a table using safe identifier quoting. Prefer this over writing SELECT * by hand."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

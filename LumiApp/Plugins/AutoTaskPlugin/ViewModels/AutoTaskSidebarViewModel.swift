@@ -8,7 +8,10 @@ import SwiftUI
 /// 通过观察 ConversationVM 的变化来切换显示的任务，
 /// 并监听任务变更通知自动刷新 UI。
 @MainActor
-final class AutoTaskSidebarViewModel: ObservableObject {
+final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
+    nonisolated static let emoji = "📋"
+    nonisolated static let verbose = false
+
     @Published var tasks: [TaskDisplayItem] = []
     @Published var summary: TaskProgressSummary?
     @Published var isLoading: Bool = false
@@ -27,7 +30,10 @@ final class AutoTaskSidebarViewModel: ObservableObject {
 
     /// 刷新当前会话的任务列表
     func refresh(conversationId: UUID?) async {
+        AutoTaskPlugin.logger.warning("📝[refresh] ENTERED, conversationId=\(conversationId?.uuidString.prefix(8) ?? "nil")")
+
         guard let conversationId else {
+            AutoTaskPlugin.logger.warning("📝[refresh] conversationId is nil, clearing data")
             tasks = []
             summary = nil
             currentConversationId = nil
@@ -40,14 +46,17 @@ final class AutoTaskSidebarViewModel: ObservableObject {
 
         // 首次绑定通知（仅一次）
         if notificationObserver == nil {
+            AutoTaskPlugin.logger.info("\(Self.t)Registering autoTaskDidChange observer")
             notificationObserver = NotificationCenter.default.addObserver(
                 forName: .autoTaskDidChange,
                 object: nil,
                 queue: .main
             ) { [weak self] notification in
                 let changedCid = notification.userInfo?["conversationId"] as? String
+                AutoTaskPlugin.logger.info("📋 Received autoTaskDidChange notification, changedCid=\(changedCid?.prefix(8) ?? "nil")")
                 Task { @MainActor [weak self] in
                     guard let self else { return }
+                    AutoTaskPlugin.logger.info("\(Self.t)Notification callback: currentCid=\(self.currentConversationId?.prefix(8) ?? "nil"), changedCid=\(changedCid?.prefix(8) ?? "nil")")
                     if let changedCid, changedCid == self.currentConversationId {
                         await self.reloadFromDB()
                     }
@@ -73,10 +82,15 @@ final class AutoTaskSidebarViewModel: ObservableObject {
     // MARK: - Private
 
     private func reloadFromDB() async {
-        guard let cid = currentConversationId else { return }
+        guard let cid = currentConversationId else {
+            AutoTaskPlugin.logger.warning("\(Self.t)reloadFromDB: currentConversationId is nil, skip")
+            return
+        }
         let manager = TaskStateManager.shared
         let fetchedTasks = await manager.fetchTasks(conversationId: cid)
         let fetchedSummary = await manager.getProgressSummary(conversationId: cid)
+
+        AutoTaskPlugin.logger.info("\(Self.t)reloadFromDB: cid=\(cid.prefix(8)), tasks=\(fetchedTasks.count), summary=\(fetchedSummary.total) total, isEmpty=\(fetchedSummary.isEmpty), isAllDone=\(fetchedSummary.isAllDone)")
 
         tasks = fetchedTasks.map { TaskDisplayItem(from: $0) }
         summary = fetchedSummary

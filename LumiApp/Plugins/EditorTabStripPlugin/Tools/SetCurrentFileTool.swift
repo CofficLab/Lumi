@@ -8,9 +8,16 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = true
     let name = "set_current_file"
-    let description = "Set the current selected file. Requires a file path. This will open the file in the editor tab strip and switch the UI to display it, making it the active tab visible to the user."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Set the current selected file. Requires a file path. This will open the file in the editor tab strip and switch the UI to display it, making it the active tab visible to the user."
+        case .english:
+            return "Set the current selected file. Requires a file path. This will open the file in the editor tab strip and switch the UI to display it, making it the active tab visible to the user."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

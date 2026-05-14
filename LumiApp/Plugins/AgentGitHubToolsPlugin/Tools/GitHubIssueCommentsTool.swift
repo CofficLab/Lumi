@@ -6,9 +6,16 @@ struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose: Bool = false
     let name = "github_issue_comments"
-    let description = "获取 GitHub Issue 的评论列表。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取 GitHub Issue 的评论列表。"
+        case .english:
+            return "获取 GitHub Issue 的评论列表。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

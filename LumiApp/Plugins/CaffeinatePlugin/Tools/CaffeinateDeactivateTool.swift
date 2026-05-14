@@ -9,9 +9,16 @@ struct CaffeinateDeactivateTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = true
 
     let name = "caffeinate_deactivate"
-    let description = "Deactivate caffeinate and restore normal system sleep behavior. Releases all IOKit power assertions."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "Deactivate caffeinate and restore normal system sleep behavior. Releases all IOKit power assertions."
+        case .english:
+            return "Deactivate caffeinate and restore normal system sleep behavior. Releases all IOKit power assertions."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [:],

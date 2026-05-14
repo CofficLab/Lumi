@@ -6,9 +6,16 @@ struct GitHubCloseIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔒"
     nonisolated static let verbose: Bool = false
     let name = "github_close_issue"
-    let description = "关闭指定的 GitHub Issue。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "关闭指定的 GitHub Issue。"
+        case .english:
+            return "关闭指定的 GitHub Issue。"
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [
