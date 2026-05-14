@@ -65,6 +65,13 @@ struct EditorPreviewContentView: View {
                 onWindowFrameChanged: {
                     EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
                 },
+                onWindowVisibilityChanged: { isVisible in
+                    if isVisible {
+                        viewModel.previewWindowDidBecomeActive()
+                    } else {
+                        viewModel.previewWindowDidBecomeInactive()
+                    }
+                },
                 onWindowInteraction: {
                     viewModel.previewWindowDidBecomeActive()
                 }
@@ -83,7 +90,7 @@ struct EditorPreviewContentView: View {
             viewModel.sourceDidChange(sourceText: sourceText, fileURL: currentFileURL)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
-            viewModel.lumiWindowDidResignKey()
+            EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             viewModel.lumiWindowDidBecomeKey()

@@ -30,10 +30,6 @@ struct HotPreviewToolbar: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
 
-            Text(toolbarTitle)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
-
             if let currentFileURL {
                 Text(currentFileURL.lastPathComponent)
                     .font(.system(size: 11))

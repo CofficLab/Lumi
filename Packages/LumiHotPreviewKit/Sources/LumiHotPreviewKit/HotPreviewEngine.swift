@@ -171,6 +171,18 @@ public extension LumiHotPreviewPackage {
             let variant: PreviewEntryVariant
         }
 
+        public struct PrewarmEntryResult: Sendable {
+            public let discoveryID: String
+            public let succeeded: Bool
+            public let errorDescription: String?
+
+            public init(discoveryID: String, succeeded: Bool, errorDescription: String?) {
+                self.discoveryID = discoveryID
+                self.succeeded = succeeded
+                self.errorDescription = errorDescription
+            }
+        }
+
         private struct ImportAttemptContext {
             let importPlan: ModuleImportPlan
             let fallbackKey: ImportEntryFallbackCache.CacheKey
@@ -299,6 +311,70 @@ public extension LumiHotPreviewPackage {
             }
 
             return session
+        }
+
+        public func prewarmPreviewEntry(
+            _ discovery: LumiPreviewPackage.PreviewDiscovery,
+            configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
+        ) async throws {
+            let session = HotPreviewSession(discovery: discovery, configuration: configuration)
+            try await syntaxPreflight(discovery)
+            let plannedStrategy = try await plannedBuildStrategy(for: session, discovery: discovery)
+            if await cachedPreviewEntryURL(
+                discovery: discovery,
+                configuration: configuration,
+                buildStrategy: plannedStrategy
+            ) != nil {
+                return
+            }
+            try await rebuild(session)
+
+            let buildStrategy = await session.buildStrategy()
+            if await cachedPreviewEntryURL(
+                discovery: discovery,
+                configuration: configuration,
+                buildStrategy: buildStrategy
+            ) != nil {
+                return
+            }
+
+            let built = try await buildPreviewEntry(
+                discovery: discovery,
+                configuration: configuration,
+                buildStrategy: buildStrategy
+            )
+            let builtCacheKey = await entryCacheManager.makeCacheKey(
+                discovery: discovery,
+                configuration: configuration,
+                buildStrategy: buildStrategy,
+                entryVariant: built.variant.rawValue
+            )
+            await entryCacheManager.storeEntryURL(built.url, for: builtCacheKey)
+        }
+
+        public func prewarmPreviewEntries(
+            _ discoveries: [LumiPreviewPackage.PreviewDiscovery],
+            configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
+        ) async -> [PrewarmEntryResult] {
+            var results: [PrewarmEntryResult] = []
+            for discovery in discoveries {
+                guard !Task.isCancelled else { break }
+                do {
+                    try await prewarmPreviewEntry(discovery, configuration: configuration)
+                    results.append(
+                        PrewarmEntryResult(discoveryID: discovery.id, succeeded: true, errorDescription: nil)
+                    )
+                } catch {
+                    results.append(
+                        PrewarmEntryResult(
+                            discoveryID: discovery.id,
+                            succeeded: false,
+                            errorDescription: error.localizedDescription
+                        )
+                    )
+                }
+            }
+            return results
         }
 
         public func refreshPreview(
@@ -520,15 +596,7 @@ public extension LumiHotPreviewPackage {
 
         private func rebuild(_ session: HotPreviewSession) async throws {
             let discovery = await session.discovery
-            let baseStrategy: LumiPreviewPackage.BuildStrategy
-            if let existingStrategy = await session.buildStrategy() {
-                baseStrategy = existingStrategy
-            } else if let plannedStrategy = buildPlanner.plan(for: discovery.sourceFileURL) {
-                baseStrategy = plannedStrategy
-                await session.setBuildStrategy(plannedStrategy)
-            } else {
-                throw LumiPreviewPackage.PreviewError.targetNotFound(file: discovery.sourceFileURL.path)
-            }
+            let baseStrategy = try await plannedBuildStrategy(for: session, discovery: discovery)
 
             let effectiveStrategy = await preferredBuildStrategy(
                 for: discovery,
@@ -547,6 +615,39 @@ public extension LumiHotPreviewPackage {
                     cachePopulationStrategy: baseStrategy
                 )
             }
+        }
+
+        private func plannedBuildStrategy(
+            for session: HotPreviewSession,
+            discovery: LumiPreviewPackage.PreviewDiscovery
+        ) async throws -> LumiPreviewPackage.BuildStrategy {
+            if let existingStrategy = await session.buildStrategy() {
+                return existingStrategy
+            }
+            guard let plannedStrategy = buildPlanner.plan(for: discovery.sourceFileURL) else {
+                throw LumiPreviewPackage.PreviewError.targetNotFound(file: discovery.sourceFileURL.path)
+            }
+            await session.setBuildStrategy(plannedStrategy)
+            return plannedStrategy
+        }
+
+        private func cachedPreviewEntryURL(
+            discovery: LumiPreviewPackage.PreviewDiscovery,
+            configuration: LumiPreviewPackage.PreviewRenderConfiguration,
+            buildStrategy: LumiPreviewPackage.BuildStrategy?
+        ) async -> URL? {
+            let preferredVariant = await preferredEntryVariant(
+                discovery: discovery,
+                configuration: configuration,
+                buildStrategy: buildStrategy
+            )
+            let cacheKey = await entryCacheManager.makeCacheKey(
+                discovery: discovery,
+                configuration: configuration,
+                buildStrategy: buildStrategy,
+                entryVariant: preferredVariant.rawValue
+            )
+            return await entryCacheManager.cachedEntryURL(for: cacheKey)
         }
 
         private func runningHostConnection(for session: HotPreviewSession) async throws -> HotHostConnection {

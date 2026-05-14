@@ -13,12 +13,8 @@ struct EditorRemoteHotPreviewDetailView: View {
         editorVM.service.currentFileURL
     }
 
-    private var refreshSignal: LumiPreviewPackage.EditorPreviewRefreshSignal {
-        LumiPreviewPackage.EditorPreviewRefreshSignal(
-            fileURL: currentFileURL,
-            contentRevision: editorVM.service.contentRevision,
-            saveRevision: editorVM.service.saveRevision
-        )
+    private var projectRootPath: String? {
+        editorVM.service.projectRootPath
     }
 
     var body: some View {
@@ -44,6 +40,13 @@ struct EditorRemoteHotPreviewDetailView: View {
                 onWindowFrameChanged: {
                     EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
                 },
+                onWindowVisibilityChanged: { isVisible in
+                    if isVisible {
+                        viewModel.previewWindowDidBecomeActive()
+                    } else {
+                        viewModel.previewWindowDidBecomeInactive()
+                    }
+                },
                 onWindowInteraction: {
                     viewModel.previewWindowDidReceiveInteraction()
                 }
@@ -59,14 +62,21 @@ struct EditorRemoteHotPreviewDetailView: View {
         .onChange(of: currentFileURL) { _, _ in
             refreshScanAndStartIfNeeded()
         }
-        .onChange(of: refreshSignal) { _, _ in
+        .onChange(of: editorVM.service.saveRevision) { _, _ in
+            // Reload preview only when the user saves the file (Cmd+S),
+            // matching the behavior of Xcode and other major editors.
             refreshScanAndReloadIfNeeded()
+        }
+        .onChange(of: editorVM.service.contentRevision) { _, _ in
+            // Keep the in-memory source text in sync while editing,
+            // but do NOT trigger a preview reload until save.
+            viewModel.update(sourceText: sourceText, fileURL: currentFileURL, projectRootPath: projectRootPath)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             viewModel.previewWindowDidBecomeActive()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
-            viewModel.previewWindowDidBecomeInactive()
+            EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
         }
     }
 
@@ -94,7 +104,7 @@ struct EditorRemoteHotPreviewDetailView: View {
                     color: .orange
                 )
             }
-        } else if viewModel.previews.count == 1 {
+        } else if viewModel.previews.count <= 1 {
             HotPreviewCanvas(viewModel: viewModel)
         } else {
             HStack(spacing: 0) {
@@ -107,7 +117,7 @@ struct EditorRemoteHotPreviewDetailView: View {
     }
 
     private func refreshScanAndStartIfNeeded() {
-        viewModel.update(sourceText: sourceText, fileURL: currentFileURL)
+        viewModel.update(sourceText: sourceText, fileURL: currentFileURL, projectRootPath: projectRootPath)
         guard !viewModel.isImageMode, !viewModel.isMarkdownMode else { return }
         if viewModel.hostState == .idle || viewModel.hostState == .failed {
             viewModel.startHost()
@@ -115,7 +125,7 @@ struct EditorRemoteHotPreviewDetailView: View {
     }
 
     private func refreshScanAndReloadIfNeeded() {
-        viewModel.update(sourceText: sourceText, fileURL: currentFileURL)
+        viewModel.update(sourceText: sourceText, fileURL: currentFileURL, projectRootPath: projectRootPath)
         guard !viewModel.isImageMode, !viewModel.isMarkdownMode else { return }
         if viewModel.hostState == .connected || viewModel.hostState == .rendering {
             viewModel.scheduleRenderFrame(reason: "editor refresh signal changed")

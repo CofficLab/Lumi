@@ -34,6 +34,8 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
     var canSwitchToLive: Bool { service.canSwitchToLive }
     var canSwitchToImage: Bool { service.canSwitchToImage }
     var liveUnavailableReason: String? { service.liveUnavailableReason }
+    var projectPreviewIndexSummary: String { service.projectPreviewIndexSummary }
+    var prewarmSummary: String { service.prewarmSummary }
 
     var selectedPreviewID: String? {
         get { service.selectedPreviewID }
@@ -57,8 +59,8 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func update(sourceText: String?, fileURL: URL?) {
-        service.update(sourceText: sourceText, fileURL: fileURL)
+    func update(sourceText: String?, fileURL: URL?, projectRootPath: String?) {
+        service.update(sourceText: sourceText, fileURL: fileURL, projectRootPath: projectRootPath)
     }
 
     func viewDidAppear() {

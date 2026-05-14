@@ -65,7 +65,7 @@ final class HotLivePreviewWindow: NSPanel {
         contentView.wantsLayer = true
         contentView.layer?.cornerRadius = Self.previewCornerRadius
         contentView.layer?.masksToBounds = true
-        contentView.layer?.backgroundColor = NSColor.white.cgColor
+        contentView.layer?.backgroundColor = NSColor.clear.cgColor
     }
 
     private func normalizeAuxiliaryWindows() {

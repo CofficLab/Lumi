@@ -160,6 +160,7 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
     let onWindowMiniaturized: () -> Void
     let onWindowDeminiaturized: () -> Void
     let onWindowFrameChanged: () -> Void
+    let onWindowVisibilityChanged: (Bool) -> Void
     let onWindowInteraction: () -> Void
 
     func makeNSView(context: Context) -> ReportingView {
@@ -169,6 +170,7 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         view.onWindowMiniaturized = onWindowMiniaturized
         view.onWindowDeminiaturized = onWindowDeminiaturized
         view.onWindowFrameChanged = onWindowFrameChanged
+        view.onWindowVisibilityChanged = onWindowVisibilityChanged
         view.onWindowInteraction = onWindowInteraction
         return view
     }
@@ -179,6 +181,7 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         nsView.onWindowMiniaturized = onWindowMiniaturized
         nsView.onWindowDeminiaturized = onWindowDeminiaturized
         nsView.onWindowFrameChanged = onWindowFrameChanged
+        nsView.onWindowVisibilityChanged = onWindowVisibilityChanged
         nsView.onWindowInteraction = onWindowInteraction
         nsView.attachToCurrentWindow()
     }
@@ -189,6 +192,7 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         var onWindowMiniaturized: (() -> Void)?
         var onWindowDeminiaturized: (() -> Void)?
         var onWindowFrameChanged: (() -> Void)?
+        var onWindowVisibilityChanged: ((Bool) -> Void)?
         var onWindowInteraction: (() -> Void)?
 
         private weak var observedWindow: NSWindow?
@@ -210,17 +214,12 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
                 return
             }
 
-            if window.isMiniaturized {
-                onWindowBecameInactive?()
-            } else if window.isVisible {
-                onWindowBecameActive?()
-            } else {
-                onWindowBecameInactive?()
-            }
+            notifyWindowVisibilityChanged()
 
             let center = NotificationCenter.default
             center.addObserver(self, selector: #selector(windowDidBecomeKey), name: NSWindow.didBecomeKeyNotification, object: window)
             center.addObserver(self, selector: #selector(windowDidResignKey), name: NSWindow.didResignKeyNotification, object: window)
+            center.addObserver(self, selector: #selector(windowOcclusionStateChanged), name: NSWindow.didChangeOcclusionStateNotification, object: window)
             center.addObserver(self, selector: #selector(windowDidMiniaturize), name: NSWindow.didMiniaturizeNotification, object: window)
             center.addObserver(self, selector: #selector(windowWillClose), name: NSWindow.willCloseNotification, object: window)
             center.addObserver(self, selector: #selector(windowDidDeminiaturize), name: NSWindow.didDeminiaturizeNotification, object: window)
@@ -231,6 +230,8 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
             center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didEnterFullScreenNotification, object: window)
             center.addObserver(self, selector: #selector(windowFrameChanged), name: NSWindow.didExitFullScreenNotification, object: window)
             center.addObserver(self, selector: #selector(screenParametersChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+            center.addObserver(self, selector: #selector(applicationActiveStateChanged), name: NSApplication.didBecomeActiveNotification, object: nil)
+            center.addObserver(self, selector: #selector(applicationActiveStateChanged), name: NSApplication.didResignActiveNotification, object: nil)
 
             localMouseMonitor = NSEvent.addLocalMonitorForEvents(
                 matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
@@ -249,22 +250,23 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
         }
 
         @objc private func windowDidResignKey() {
+            scheduleWindowVisibilityRefresh()
             onWindowFrameChanged?()
         }
 
         @objc private func windowDidMiniaturize() {
             onWindowBecameInactive?()
+            onWindowVisibilityChanged?(false)
             onWindowMiniaturized?()
         }
 
         @objc private func windowWillClose() {
             onWindowBecameInactive?()
+            onWindowVisibilityChanged?(false)
         }
 
         @objc private func windowDidDeminiaturize() {
-            if observedWindow?.isVisible == true {
-                onWindowBecameActive?()
-            }
+            notifyWindowVisibilityChanged()
             onWindowDeminiaturized?()
             onWindowFrameChanged?()
         }
@@ -275,6 +277,33 @@ struct EditorPreviewWindowLifecycleReporter: NSViewRepresentable {
 
         @objc private func screenParametersChanged() {
             onWindowFrameChanged?()
+            scheduleWindowVisibilityRefresh()
+        }
+
+        @objc private func windowOcclusionStateChanged() {
+            notifyWindowVisibilityChanged()
+            onWindowFrameChanged?()
+        }
+
+        @objc private func applicationActiveStateChanged() {
+            scheduleWindowVisibilityRefresh()
+        }
+
+        private var isObservedWindowVisible: Bool {
+            guard let window = observedWindow else { return false }
+            return window.isVisible
+                && !window.isMiniaturized
+                && window.occlusionState.contains(.visible)
+        }
+
+        private func notifyWindowVisibilityChanged() {
+            onWindowVisibilityChanged?(isObservedWindowVisible)
+        }
+
+        private func scheduleWindowVisibilityRefresh() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+                self?.notifyWindowVisibilityChanged()
+            }
         }
 
         deinit {

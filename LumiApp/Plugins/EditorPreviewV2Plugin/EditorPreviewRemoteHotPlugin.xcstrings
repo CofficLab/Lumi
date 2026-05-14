@@ -47,7 +47,26 @@
       }
     },
     "Diagnostics" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostics"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "诊断"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "診斷"
+          }
+        }
+      }
     },
     "Experimental hot preview powered by LumiHotPreviewKit" : {
       "extractionState" : "stale",
@@ -95,6 +114,7 @@
       }
     },
     "Hot live preview active" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -536,6 +556,28 @@
         }
       }
     },
+    "Preview V2" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview V2"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览 V2"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽 V2"
+          }
+        }
+      }
+    },
     "Rebuilding hot preview. Showing the previous frame." : {
       "localizations" : {
         "en" : {
@@ -581,7 +623,26 @@
       }
     },
     "Refresh hot preview" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh hot preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新热预览"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新整理熱預覽"
+          }
+        }
+      }
     },
     "Refreshing Preview" : {
       "localizations" : {
@@ -628,7 +689,27 @@
       }
     },
     "Showing image fallback preview" : {
-
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing image fallback preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示图片回退预览"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示圖片回退預覽"
+          }
+        }
+      }
     },
     "Showing the previous frame because no fresh frame is available yet." : {
       "localizations" : {
@@ -851,7 +932,26 @@
       }
     },
     "Toggle diagnostics info" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggle diagnostics info"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换诊断信息"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換診斷資訊"
+          }
+        }
+      }
     },
     "Transport: %@" : {
       "extractionState" : "stale",

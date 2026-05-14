@@ -127,7 +127,7 @@ public struct AppImageThumbnail: View {
             systemImage: "heart.fill",
             tint: .white,
             backgroundTint: .blue,
-            size: 56
+            size: 36
         )
     }
     .padding()
