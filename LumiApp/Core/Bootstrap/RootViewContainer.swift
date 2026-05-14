@@ -1,5 +1,4 @@
 import CodeEditTextView
-import Combine
 import EditorService
 import Foundation
 import MagicKit
@@ -19,8 +18,6 @@ final class RootViewContainer: ObservableObject, SuperLog {
 
     /// 共享实例
     static let shared = RootViewContainer()
-
-    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - 服务
 
@@ -282,34 +279,5 @@ final class RootViewContainer: ObservableObject, SuperLog {
             AppSettingStore.savePendingEditorSettingsSearchQuery(searchQuery)
             NotificationCenter.postOpenSettings()
         }
-        messageQueueVM.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-
-        inputQueueVM.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-
-        taskCancellationVM.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-
-        conversationCreationVM.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-
-        conversationSendStatusVM.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
     }
 }

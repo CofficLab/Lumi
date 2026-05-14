@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import MagicAlert
 import MagicKit
 import SwiftData
@@ -70,11 +71,21 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.editorVM)
             .modelContainer(container.modelContainer)
             .onAppear(perform: onAppear)
-            .onChange(of: container.messageQueueVM.queueVersion, onQueueChanged)
-            .onChange(of: container.inputQueueVM.pendingRequest?.id, onInputQueueRequested)
-            .onChange(of: container.conversationCreationVM.pendingRequest, onConversationCreationRequested)
-            .onChange(of: container.taskCancellationVM.conversationIdToCancel, onTaskCancellationRequested)
-            .onChange(of: container.projectContextRequestVM.request, onProjectContextRequestChanged)
+            .onReceive(container.messageQueueVM.$queueVersion.dropFirst()) { _ in
+                onQueueChanged()
+            }
+            .onReceive(container.inputQueueVM.$pendingRequest.compactMap { $0?.id }) { _ in
+                onInputQueueRequested()
+            }
+            .onReceive(container.conversationCreationVM.$pendingRequest.compactMap { $0 }) { _ in
+                onConversationCreationRequested()
+            }
+            .onReceive(container.taskCancellationVM.$conversationIdToCancel.compactMap { $0 }) { _ in
+                onTaskCancellationRequested()
+            }
+            .onReceive(container.projectContextRequestVM.$request.compactMap { $0 }) { _ in
+                onProjectContextRequestChanged()
+            }
             .onResumeSendAfterToolPermission(perform: onResumeSendAfterToolPermission)
             .onAgentConversationSendTurnFinished(perform: onAgentConversationSendTurnFinished)
     }

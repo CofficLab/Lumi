@@ -102,8 +102,9 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - [ ] `ModelPreferencePlugin`
   - [ ] `LLMAvailabilityPlugin`
 - [ ] Verify root overlays do not trigger repeated restoration, file reads, or network/model checks.
-- [ ] Inspect `RootViewContainer.swift` object-change forwarding.
+- [x] Inspect `RootViewContainer.swift` object-change forwarding.
   - Risk: forwarding many child VM changes may broaden SwiftUI invalidation.
+  - Fixed: removed broad child `objectWillChange` forwarding from `RootViewContainer`; `RootView` now subscribes only to the concrete event publishers it needs.
 
 ## Priority 7: File/System Scans Triggered By UI
 
@@ -133,3 +134,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Moved CPU and memory sampling off the main actor; verified `Packages/DeviceMonitorKit` with `swift test`.
 - [x] 2026-05-14: Added bounded actor caches for Markdown parsing and code highlighting; verified `Packages/MarkdownKit` with `swift test`.
 - [x] 2026-05-14: Removed Markdown subtree force-rebuild id and reduced streaming auto-scroll animation churn.
+- [x] 2026-05-14: Removed broad `RootViewContainer` object-change forwarding and replaced it with narrow `RootView` event subscriptions.
