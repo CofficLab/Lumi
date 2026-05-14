@@ -19,6 +19,7 @@ struct InputView: View, SuperLog {
 
     /// 是否允许输入/发送（必须先选中会话）
     @EnvironmentObject var ConversationVM: ConversationVM
+    @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
 
     private var canChat: Bool {
         ConversationVM.selectedConversationId != nil
@@ -43,6 +44,11 @@ struct InputView: View, SuperLog {
         // 监听「添加到聊天」事件：将文件选区信息插入输入框
         .onAddToChat { text in
             inputViewModel.append(text)
+            isInputFocused = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .screenshotCaptured)) { notification in
+            guard let data = notification.userInfo?["data"] as? Data else { return }
+            agentAttachmentsVM.handleScreenshotData(data)
             isInputFocused = true
         }
     }

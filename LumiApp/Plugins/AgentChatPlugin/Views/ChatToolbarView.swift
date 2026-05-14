@@ -25,6 +25,8 @@ struct ChatToolbarView: View, SuperLog {
     /// 消息队列状态（用于判断是否真的在处理）
     @EnvironmentObject private var messageQueueVM: MessageQueueVM
 
+    @StateObject private var screenshotState = ScreenshotState.shared
+
     /// 输入框本地状态 ViewModel
     @ObservedObject var inputViewModel: InputViewModel
 
@@ -42,6 +44,9 @@ struct ChatToolbarView: View, SuperLog {
 
                 // 图片上传按钮
                 imageUploadButton
+
+                // 截图按钮
+                screenshotButton
 
                 Spacer()
 
@@ -226,6 +231,26 @@ extension ChatToolbarView {
         .help(String(localized: "Upload Image", table: "AgentChat"))
         .accessibilityLabel(String(localized: "Upload Image", table: "AgentChat"))
         .accessibilityHint(String(localized: "Upload Image Hint", table: "AgentChat"))
+    }
+
+    /// 区域截图按钮视图
+    private var screenshotButton: some View {
+        Button(action: {
+            screenshotState.startCapture()
+        }) {
+            Image(systemName: "crop")
+                .font(.system(size: 14))
+                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                .frame(width: 28, height: 28)
+                .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.06))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(screenshotState.isCapturing)
+        .help(String(localized: "Screenshot Region", table: "AgentChat"))
+        .keyboardShortcut("S", modifiers: [.command, .shift])
+        .accessibilityLabel(String(localized: "Screenshot Region", table: "AgentChat"))
+        .accessibilityHint(String(localized: "Screenshot Region Hint", table: "AgentChat"))
     }
 
     /// 选择图片文件
