@@ -17,8 +17,9 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 
 - [x] Inspect `LumiApp/Core/Services/ChatHistoryService/ChatHistoryService.swift`.
   - Risk: whole service is `@MainActor`; fetch/save work runs on the UI thread.
-- [ ] Profile `saveMessage(_:toConversationId:)` in `ChatHistoryMessages.swift`.
+- [x] Profile `saveMessage(_:toConversationId:)` in `ChatHistoryMessages.swift`.
   - Risk: every save does conversation fetch, duplicate-message fetch, relationship sync, and `context.save()`.
+  - Fixed: single-row conversation/message/image attachment lookups now set `fetchLimit = 1`, reducing unnecessary SwiftData result work on the main actor during saves/updates.
 - [x] Profile `getMessageCount(forConversationId:)`.
   - Risk: fetches message entities, converts all to `ChatMessage`, then filters in memory.
   - Fixed: replaced full fetch + conversion with SwiftData `fetchCount` filtered by conversation id and visible roles.
@@ -156,3 +157,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Moved RecentProjects root restore file reads off the main actor.
 - [x] 2026-05-14: Moved ModelPreference project preference reads off the main actor.
 - [x] 2026-05-14: Narrowed ChatHistory tool-output lookup queries to requested tool call IDs.
+- [x] 2026-05-14: Bounded ChatHistory single-row fetches used by message save/update paths.

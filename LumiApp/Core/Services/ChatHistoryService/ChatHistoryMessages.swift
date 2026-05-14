@@ -28,9 +28,10 @@ extension ChatHistoryService {
     @discardableResult
     func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) -> ChatMessage? {
         let context = self.getContext()
-        let descriptor = FetchDescriptor<Conversation>(
+        var descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == conversationId }
         )
+        descriptor.fetchLimit = 1
 
         guard let fetchedConversation = try? context.fetch(descriptor).first else {
             AppLogger.core.error("\(Self.t)❌ 无法找到对话")
@@ -38,9 +39,10 @@ extension ChatHistoryService {
         }
 
         // 去重检查：如果相同 ID 的消息已存在，执行更新而非插入
-        let existingDescriptor = FetchDescriptor<ChatMessageEntity>(
+        var existingDescriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { $0.id == message.id }
         )
+        existingDescriptor.fetchLimit = 1
 
         if let existingEntity = try? context.fetch(existingDescriptor).first {
             AppLogger.core.warning("\(Self.t)⚠️ 检测到相同 ID 的消息已存在: \(message.id)")
@@ -91,9 +93,10 @@ extension ChatHistoryService {
     /// 按消息 ID 更新已存在的消息（同 `id` 覆盖字段，不插入新行）
     func updateMessageAsync(_ message: ChatMessage, conversationId: UUID) async -> ChatMessage? {
         let context = self.getContext()
-        let descriptor = FetchDescriptor<ChatMessageEntity>(
+        var descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { $0.id == message.id }
         )
+        descriptor.fetchLimit = 1
 
         guard let entity = try? context.fetch(descriptor).first else {
             return nil
@@ -418,9 +421,10 @@ extension ChatHistoryService {
 
         let imageEntities = message.images.map { attachment in
             // 检查是否已存在（按 id 去重）
-            let descriptor = FetchDescriptor<ImageAttachmentEntity>(
+            var descriptor = FetchDescriptor<ImageAttachmentEntity>(
                 predicate: #Predicate<ImageAttachmentEntity> { $0.id == attachment.id }
             )
+            descriptor.fetchLimit = 1
             if let existing = try? context.fetch(descriptor).first {
                 return existing
             }
