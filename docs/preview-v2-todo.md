@@ -38,12 +38,12 @@ Further optimization should avoid blind tuning. The next work should make the re
 
 ## Priority 3: Host Lifecycle Policy
 
-- [ ] Define a clear V2 host lifecycle:
+- [x] Define a clear V2 host lifecycle:
   - keep one warm host while Lumi is active
   - do not destroy the host when switching to files without previews
   - release host on project close, memory pressure, or long idle timeout
-- [ ] Add an idle timeout policy for warm hosts.
-- [ ] Add diagnostics for host state:
+- [x] Add an idle timeout policy for warm hosts.
+- [x] Add diagnostics for host state:
   - cold
   - warming
   - idle

@@ -19,6 +19,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private static let maxBackgroundPrewarmCount = 4
     private static let minimumEditorIdleIntervalBeforePrewarm: TimeInterval = 1.5
     private static let maximumPrewarmResourceDeferral: TimeInterval = 4.0
+    private static let hostIdleShutdownDelay: TimeInterval = 600
 
     private enum PrewarmResourceAction: Equatable {
         case run
@@ -65,6 +66,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     @Published private(set) var prewarmStatsSummary = "prewarm stats: 0/0"
     @Published private(set) var prewarmResourceSummary = "prewarm resources: ready"
     @Published private(set) var startupTimingSummary = "startup: idle"
+    @Published private(set) var hostLifecycleSummary = "host lifecycle: cold"
 
     private let scanner = LumiPreviewPackage.PreviewScanner()
     private let imageLoader = LumiHotPreviewPackage.ImageFileLoader()
@@ -75,6 +77,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private var commandTask: Task<Void, Never>?
     private var scheduledRefreshTask: Task<Void, Never>?
     private var scheduledPrewarmTask: Task<Void, Never>?
+    private var scheduledHostIdleShutdownTask: Task<Void, Never>?
     private var isExecutingCommand = false
     private var pendingReloadReason: String?
     private var activeFileURL: URL?
@@ -108,6 +111,11 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         commandTask?.cancel()
         scheduledRefreshTask?.cancel()
         scheduledPrewarmTask?.cancel()
+        scheduledHostIdleShutdownTask?.cancel()
+        let engine = previewEngine
+        Task {
+            await engine?.shutdownHosts()
+        }
     }
 
     func update(
@@ -465,6 +473,8 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
     private func startSession(reason: String) async {
         EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Starting hot preview: \(reason, privacy: .public)")
+        scheduledHostIdleShutdownTask?.cancel()
+        scheduledHostIdleShutdownTask = nil
         scheduledRefreshTask?.cancel()
         scheduledRefreshTask = nil
         scheduledPrewarmTask?.cancel()
@@ -504,6 +514,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
         let engine = previewEngine ?? LumiHotPreviewPackage.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
         previewEngine = engine
+        hostLifecycleSummary = "host lifecycle: acquired"
 
         do {
             let session = try await engine.startPreview(selectedPreview)
@@ -601,6 +612,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         await engine.stopPreview(session)
         guard !Task.isCancelled else { return }
         handle(.sessionStopped(reason: reason))
+        scheduleHostIdleShutdown(reason: reason)
     }
 
     private func handle(_ event: EditorRemoteHotPreviewEvent) {
@@ -735,7 +747,6 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
     private func resetRenderState() {
         previewSession = nil
-        previewEngine = nil
         lastFrame = nil
         renderImage = nil
         renderMessage = nil
@@ -758,6 +769,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         modeStatusMessage = nil
         prewarmSummary = "prewarm: idle"
         startupTimingSummary = "startup: idle"
+        hostLifecycleSummary = previewEngine == nil ? "host lifecycle: cold" : "host lifecycle: idle"
         lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
         refreshDiagnosticSummary()
     }
@@ -781,15 +793,17 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private func teardownPreviewSessionForExternalModeChange() {
         guard let session = previewSession, let engine = previewEngine else {
             previewSession = nil
-            previewEngine = nil
+            scheduleHostIdleShutdown(reason: "no active preview session")
             return
         }
 
         previewSession = nil
-        previewEngine = nil
-        Task {
+        Task { [weak self] in
             try? await engine.stopLivePreview(session)
             await engine.stopPreview(session)
+            await MainActor.run {
+                self?.scheduleHostIdleShutdown(reason: "preview session became unavailable")
+            }
         }
     }
 
@@ -812,21 +826,59 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
     private func warmupHostIfPossible() {
         guard let hostExecutableURL = LumiHotPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
+            hostLifecycleSummary = "host lifecycle: cold"
             return
         }
 
+        scheduledHostIdleShutdownTask?.cancel()
+        scheduledHostIdleShutdownTask = nil
         if previewEngine == nil {
             previewEngine = LumiHotPreviewPackage.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
         }
+        hostLifecycleSummary = "host lifecycle: warming"
+        refreshDiagnosticSummary()
 
         Task { [weak self] in
             _ = LumiHotPreviewPackage.ImageFileLoader.removeExpiredFrames()
             _ = LumiHotPreviewPackage.SharedMemoryFrameChannel.removeExpiredFrames()
             do {
                 try await self?.previewEngine?.warmupHost()
+                await MainActor.run {
+                    self?.hostLifecycleSummary = "host lifecycle: idle"
+                    self?.refreshDiagnosticSummary()
+                }
             } catch {
                 EditorRemoteHotPreviewPlugin.logger.debug(
                     "\(Self.t)Hot preview warmup skipped: \(error.localizedDescription, privacy: .public)"
+                )
+                await MainActor.run {
+                    self?.hostLifecycleSummary = "host lifecycle: cold"
+                    self?.refreshDiagnosticSummary()
+                }
+            }
+        }
+    }
+
+    private func scheduleHostIdleShutdown(reason: String) {
+        scheduledHostIdleShutdownTask?.cancel()
+        guard previewSession == nil, let engine = previewEngine else {
+            return
+        }
+
+        hostLifecycleSummary = "host lifecycle: idle"
+        refreshDiagnosticSummary()
+        scheduledHostIdleShutdownTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.hostIdleShutdownDelay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await engine.shutdownHosts()
+            await MainActor.run {
+                guard self?.previewSession == nil else { return }
+                self?.previewEngine = nil
+                self?.hostLifecycleSummary = "host lifecycle: recycled"
+                self?.scheduledHostIdleShutdownTask = nil
+                self?.refreshDiagnosticSummary()
+                EditorRemoteHotPreviewPlugin.logger.info(
+                    "\(Self.t)Recycled idle hot preview host after \(reason, privacy: .public)"
                 )
             }
         }
@@ -1539,6 +1591,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             prewarmStatsSummary,
             prewarmResourceSummary,
             startupTimingSummary,
+            hostLifecycleSummary,
             "pid: \(livePreviewInfo.hostProcessID.map(String.init) ?? "-")",
             "window: \(livePreviewInfo.hostWindowNumber.map(String.init) ?? "-")",
             String(format: "frame: %.1f, %.1f, %.1f x %.1f", rect.origin.x, rect.origin.y, rect.width, rect.height)
