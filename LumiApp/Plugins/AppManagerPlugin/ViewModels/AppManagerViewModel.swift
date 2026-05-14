@@ -23,6 +23,7 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     @Published var showUninstallConfirmation = false
     
     private var scanTask: Task<Void, Never>?
+    private var relatedFilesTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
     init() {
@@ -153,17 +154,30 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     /// 扫描关联文件
     func scanRelatedFiles(for app: AppModel) {
         AppManagerPlugin.logger.info("\(self.t)开始扫描关联文件：\(app.displayName)")
-        Task {
-            await MainActor.run {
-                isScanningFiles = true
-            }
+        relatedFilesTask?.cancel()
+
+        let appPath = app.bundleURL.path
+        let appName = app.displayName
+        isScanningFiles = true
+        relatedFiles = []
+        selectedFileIds = []
+
+        relatedFilesTask = Task { [app, appService] in
             let files = await appService.scanRelatedFiles(for: app)
+            guard !Task.isCancelled else { return }
+
             AppManagerPlugin.logger.info("\(self.t)关联文件扫描完成：\(app.displayName)，\(files.count) 个")
             await MainActor.run {
+                guard !Task.isCancelled, self.selectedApp?.bundleURL.path == appPath else {
+                    AppManagerPlugin.logger.info("\(self.t)忽略过期关联文件扫描结果：\(appName)")
+                    return
+                }
+
                 self.relatedFiles = files
                 // 默认全选
                 self.selectedFileIds = Set(files.map { $0.id })
                 self.isScanningFiles = false
+                self.relatedFilesTask = nil
             }
         }
     }
@@ -239,8 +253,22 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
     /// 取消选择
     func cancelSelection() {
+        clearRelatedFiles()
         selectedApp = nil
         showUninstallConfirmation = false
+    }
+
+    func clearRelatedFiles() {
+        relatedFilesTask?.cancel()
+        relatedFilesTask = nil
+        relatedFiles = []
+        selectedFileIds = []
+        isScanningFiles = false
+    }
+
+    deinit {
+        scanTask?.cancel()
+        relatedFilesTask?.cancel()
     }
 }
 

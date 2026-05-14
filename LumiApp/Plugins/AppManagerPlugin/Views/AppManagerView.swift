@@ -38,8 +38,7 @@ struct AppManagerView: View {
             if let app = newApp {
                 viewModel.scanRelatedFiles(for: app)
             } else {
-                viewModel.relatedFiles = []
-                viewModel.selectedFileIds = []
+                viewModel.clearRelatedFiles()
             }
         }
         .onAppear {
