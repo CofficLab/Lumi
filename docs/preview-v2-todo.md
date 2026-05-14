@@ -21,7 +21,7 @@ Further optimization should avoid blind tuning. The next work should make the re
 - [x] Store the latest timing breakdown on the preview session.
 - [x] Surface the timing breakdown in V2 diagnostics.
 - [x] Add logs that include preview id, source file, cache hit flags, and stage durations.
-- [ ] Use these timings to identify whether the bottleneck is build, entry generation, host startup, host load, or live window sync.
+- [x] Use these timings to identify whether the bottleneck is build, entry generation, host startup, host load, or live window sync.
 
 ## Priority 2: Direct Prewarm Result Reuse
 

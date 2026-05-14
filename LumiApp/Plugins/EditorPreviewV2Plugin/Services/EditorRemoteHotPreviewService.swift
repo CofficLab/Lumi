@@ -1151,7 +1151,44 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             let detail = timing.detail.map { " \($0)" } ?? ""
             return "\(timing.stage) \(formatTimingDuration(timing.duration))\(detail)"
         }
-        return "startup: " + parts.joined(separator: ", ")
+        return "startup: " + parts.joined(separator: ", ") + startupBottleneckSummary(for: timings)
+    }
+
+    private static func startupBottleneckSummary(
+        for timings: [LumiHotPreviewPackage.HotPreviewStartupTiming]
+    ) -> String {
+        let measuredTimings = timings.filter { timing in
+            !timing.stage.hasPrefix("total ") && timing.duration > 0
+        }
+        guard let slowest = measuredTimings.max(by: { $0.duration < $1.duration }) else {
+            return " | bottleneck: none"
+        }
+
+        let totalDuration = timings
+            .filter { $0.stage.hasPrefix("total ") }
+            .map(\.duration)
+            .max() ?? measuredTimings.reduce(0) { $0 + $1.duration }
+        let percentage = totalDuration > 0 ? Int(((slowest.duration / totalDuration) * 100).rounded()) : 0
+        return " | bottleneck: \(bottleneckCategory(for: slowest.stage)) \(formatTimingDuration(slowest.duration)) \(percentage)%"
+    }
+
+    private static func bottleneckCategory(for stage: String) -> String {
+        switch stage {
+        case "syntax preflight":
+            return "syntax"
+        case "build planning", "build":
+            return "build"
+        case "entry cache lookup", "entry generation":
+            return "entry"
+        case "host acquire":
+            return "host startup"
+        case "host entry load":
+            return "host load"
+        case "live start", "live window sync":
+            return "live sync"
+        default:
+            return stage
+        }
     }
 
     private static func formatTimingDuration(_ duration: TimeInterval) -> String {
