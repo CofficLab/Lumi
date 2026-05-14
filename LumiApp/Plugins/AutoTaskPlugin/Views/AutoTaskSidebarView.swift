@@ -11,34 +11,27 @@ struct AutoTaskSidebarView: View {
 
     /// 是否有正在进行的任务（需要显示 UI）
     private var hasVisibleTasks: Bool {
-        guard let summary = viewModel.summary, !summary.isEmpty else {
-            AutoTaskPlugin.logger.debug("📋 hasVisibleTasks=false (summary=\(viewModel.summary == nil ? "nil" : "empty"))")
-            return false
-        }
-        let result = !summary.isAllDone
-        AutoTaskPlugin.logger.debug("📋 hasVisibleTasks=\(result) (total=\(summary.total), isAllDone=\(summary.isAllDone))")
-        return result
+        guard let summary = viewModel.summary, !summary.isEmpty else { return false }
+        return !summary.isAllDone
     }
 
     var body: some View {
-        Group {
+        VStack(spacing: 0) {
             if hasVisibleTasks {
-                VStack(spacing: 0) {
-                    headerView
+                headerView
 
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .controlSize(.small)
-                            .padding(.vertical, 8)
-                    } else {
-                        taskListView
-                    }
+                if viewModel.isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.vertical, 8)
+                } else {
+                    taskListView
                 }
-                .frame(maxHeight: 200)
-                .frame(minWidth: 240, idealWidth: 320)
-                .background(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.6))
             }
         }
+        .frame(maxHeight: hasVisibleTasks ? 200 : nil)
+        .frame(minWidth: hasVisibleTasks ? 240 : 0, idealWidth: hasVisibleTasks ? 320 : 0)
+        .background(hasVisibleTasks ? themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.6) : nil)
         .task(id: conversationVM.selectedConversationId) {
             await viewModel.refresh(conversationId: conversationVM.selectedConversationId)
         }

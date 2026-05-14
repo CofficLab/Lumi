@@ -60,7 +60,6 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        AutoTaskPlugin.logger.warning("📝[CreateTaskTool] execute called")
         guard let conversationId = arguments["conversation_id"]?.value as? String else {
             return "Error: conversation_id is required"
         }

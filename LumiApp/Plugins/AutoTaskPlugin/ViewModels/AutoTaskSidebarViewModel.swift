@@ -30,10 +30,7 @@ final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {
 
     /// 刷新当前会话的任务列表
     func refresh(conversationId: UUID?) async {
-        AutoTaskPlugin.logger.warning("📝[refresh] ENTERED, conversationId=\(conversationId?.uuidString.prefix(8) ?? "nil")")
-
         guard let conversationId else {
-            AutoTaskPlugin.logger.warning("📝[refresh] conversationId is nil, clearing data")
             tasks = []
             summary = nil
             currentConversationId = nil
