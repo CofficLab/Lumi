@@ -94,6 +94,8 @@ struct EditorRemoteHotPreviewDetailView: View {
                     color: .orange
                 )
             }
+        } else if viewModel.previews.count == 1 {
+            HotPreviewCanvas(viewModel: viewModel)
         } else {
             HStack(spacing: 0) {
                 HotPreviewList(viewModel: viewModel)

@@ -104,6 +104,8 @@ struct EditorPreviewContentView: View {
             markdownContent
         } else if viewModel.previews.isEmpty {
             EditorPreviewEmptyStateView()
+        } else if viewModel.previews.count == 1 {
+            previewDetail
         } else {
             HStack(spacing: 0) {
                 EditorPreviewListView(
