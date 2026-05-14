@@ -168,6 +168,17 @@ protocol SuperAgentTool: Sendable {
 }
 
 extension SuperAgentTool {
+    /// 默认描述（英文），供 Provider formatTool 直接读取。
+    /// 避免将方法引用误当作值放入 JSON 字典导致 `__SwiftValue` 崩溃。
+    var description: String {
+        description(for: .english)
+    }
+
+    /// 默认 inputSchema（英文），供 Provider formatTool 直接读取。
+    var inputSchema: [String: Any] {
+        inputSchema(for: .english)
+    }
+
     func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
         try context.checkCancellation()
         let result = try await execute(arguments: arguments)
