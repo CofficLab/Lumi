@@ -118,6 +118,9 @@ final class FileSearchService: ObservableObject, SuperLog {
         isLoading = true
 
         Task.detached(priority: .userInitiated) {
+            let signpostID = UIPerformanceSignpost.begin("QuickFileSearch.rebuildIndex")
+            defer { UIPerformanceSignpost.end("QuickFileSearch.rebuildIndex", signpostID) }
+
             let startTime = Date()
             let files = FileSearchHelpers.scanProjectFiles(at: path)
 
@@ -159,6 +162,9 @@ final class FileSearchService: ObservableObject, SuperLog {
 
     /// 执行搜索
     private func performSearch(query: String) async {
+        let signpostID = UIPerformanceSignpost.begin("QuickFileSearch.performSearch")
+        defer { UIPerformanceSignpost.end("QuickFileSearch.performSearch", signpostID) }
+
         let startTime = Date()
         let lowercaseQuery = query.lowercased()
 

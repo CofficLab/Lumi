@@ -11,7 +11,8 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - [ ] Send a message and observe streaming/tool status updates.
   - [ ] Open menu bar popover while DeviceInfo/Network plugins are active.
 - [ ] Record Main Thread Checker and SwiftUI body update hot spots.
-- [ ] Add temporary signposts around high-risk paths before deeper changes.
+- [x] Add temporary signposts around high-risk paths before deeper changes.
+  - Added `ui-performance` signposts around chat history save/page/tool-output fetches, QuickFileSearch indexing/search, and RAG auto-index trigger work.
 
 ## Priority 1: Main-Thread Database Work
 
@@ -171,3 +172,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Verified chat row creation remains bounded by paging and the 80-message render window.
 - [x] 2026-05-14: Deferred broad SwiftData actor and plugin descriptor migrations after narrowing current hot paths.
 - [x] 2026-05-14: Verified `Packages/DeviceMonitorKit` with `swift test` (52 tests) and `Packages/MarkdownKit` with `swift test` (84 tests).
+- [x] 2026-05-14: Added Instruments signposts for current UI jank hot paths.

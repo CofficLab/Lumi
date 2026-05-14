@@ -27,6 +27,9 @@ extension ChatHistoryService {
     /// - Returns: 保存后的消息
     @discardableResult
     func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) -> ChatMessage? {
+        let signpostID = UIPerformanceSignpost.begin("ChatHistory.saveMessage")
+        defer { UIPerformanceSignpost.end("ChatHistory.saveMessage", signpostID) }
+
         let context = self.getContext()
         var descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == conversationId }
@@ -220,6 +223,9 @@ extension ChatHistoryService {
         limit: Int,
         beforeTimestamp: Date? = nil
     ) async -> (messages: [ChatMessage], hasMore: Bool) {
+        let signpostID = UIPerformanceSignpost.begin("ChatHistory.loadMessagesPage")
+        defer { UIPerformanceSignpost.end("ChatHistory.loadMessagesPage", signpostID) }
+
         let context = self.getContext()
 
         guard limit > 0 else {
@@ -333,6 +339,9 @@ extension ChatHistoryService {
         forConversationId conversationId: UUID,
         toolCallIDs: [String]
     ) async -> [ChatMessage] {
+        let signpostID = UIPerformanceSignpost.begin("ChatHistory.loadToolOutputMessages")
+        defer { UIPerformanceSignpost.end("ChatHistory.loadToolOutputMessages", signpostID) }
+
         let normalizedIDs = Array(Set(toolCallIDs.filter { !$0.isEmpty }))
         guard !normalizedIDs.isEmpty else { return [] }
 

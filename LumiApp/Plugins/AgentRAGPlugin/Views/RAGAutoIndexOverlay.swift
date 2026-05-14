@@ -39,6 +39,9 @@ extension RAGAutoIndexOverlay {
         autoEnsureTask?.cancel()
 
         autoEnsureTask = Task { [currentPath, recentProjectsStore] in
+            let signpostID = UIPerformanceSignpost.begin("RAG.autoEnsureIndex")
+            defer { UIPerformanceSignpost.end("RAG.autoEnsureIndex", signpostID) }
+
             let candidatePaths = await Task.detached(priority: .utility) {
                 let recentPaths = recentProjectsStore.loadProjects().map(\.path)
                 return Self.uniqueNonEmptyPaths([currentPath] + recentPaths)
