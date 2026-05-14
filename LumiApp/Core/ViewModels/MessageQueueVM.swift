@@ -5,10 +5,9 @@ import MagicKit
 @MainActor
 final class MessageQueueVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose: Bool = false
-    // MARK: - 队列状态
+    nonisolated static let verbose: Bool = true
 
-    /// 所有队列中的消息（包含 pending 和 processing 状态）
+    /// 所有队列中的消息
     @Published private(set) var messages: [ChatMessage] = []
     
     /// 队列版本号，每次队列变化时递增，用于外部监听

@@ -5,9 +5,12 @@ import MagicKit
 @MainActor
 final class InputQueueVM: ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔄" }
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
 
     @Published private(set) var pendingRequest: InputEnqueueRequest?
+    
+    /// 输入入队请求版本号，每次发布新请求时递增，用于外部监听
+    @Published private(set) var queueVersion: Int = 0
 
     struct InputEnqueueRequest: Identifiable, Equatable {
         let id: UUID
@@ -18,16 +21,20 @@ final class InputQueueVM: ObservableObject, SuperLog {
     /// 发布输入入队请求
     func enqueueText(_ text: String, images: [ImageAttachment] = []) {
         if Self.verbose {
-            AppLogger.core.info("\(self.t) 用户输入入队: \(text.max(50))")
+            AppLogger.core.info("\(self.t)用户输入入队: \(text.max(50))")
         }
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty || !images.isEmpty else { return }
+        guard !trimmed.isEmpty || !images.isEmpty else {
+            AppLogger.core.info("\(self.t) 用户提供的消息文字和图片都是空，什么都不做")
+            return
+        }
         pendingRequest = InputEnqueueRequest(
             id: UUID(),
             text: trimmed,
             images: images
         )
+        queueVersion += 1
         NotificationCenter.postUserDidSendMessage()
     }
 
