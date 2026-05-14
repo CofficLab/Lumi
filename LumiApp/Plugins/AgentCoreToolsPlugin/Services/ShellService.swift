@@ -1,7 +1,7 @@
 import Foundation
 import Combine
-import Darwin
 import MagicKit
+import ShellKit
 
 /// Shell 服务：负责执行 Shell 命令
 ///
@@ -15,32 +15,6 @@ import MagicKit
 class ShellService: SuperLog {
     private enum Constants {
         static let defaultCommandTimeout: TimeInterval = 600
-    }
-
-    private struct CommandTimeoutError: LocalizedError {
-        let seconds: TimeInterval
-
-        var errorDescription: String? {
-            "Command timed out after \(Int(seconds))s"
-        }
-    }
-
-    private final class LockedDataBuffer: @unchecked Sendable {
-        private let lock = NSLock()
-        private var data = Data()
-
-        func append(_ chunk: Data) {
-            lock.lock()
-            data.append(chunk)
-            lock.unlock()
-        }
-
-        func snapshot() -> Data {
-            lock.lock()
-            let copy = data
-            lock.unlock()
-            return copy
-        }
     }
 
     private final class LockedExecutionProgress: @unchecked Sendable {
@@ -188,121 +162,41 @@ class ShellService: SuperLog {
         await activeProgressStore.set(progress: executionProgress, startedAt: startedAt)
 
         let result: String
-        let commandTask = Task.detached(priority: .userInitiated) {
-            let process = Process()
-            let stdoutPipe = Pipe()
-            let stderrPipe = Pipe()
-
-            process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-            process.arguments = ["-c", command]
-            process.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
-
-            var env = ProcessInfo.processInfo.environment
-            env["TERM"] = "xterm-256color"
-            env["LANG"] = "en_US.UTF-8"
-            env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-            process.environment = env
-
-            process.standardOutput = stdoutPipe
-            process.standardError = stderrPipe
-
-            let stdoutBuffer = LockedDataBuffer()
-            let stderrBuffer = LockedDataBuffer()
-
-            let stdoutHandle = stdoutPipe.fileHandleForReading
-            let stderrHandle = stderrPipe.fileHandleForReading
-
-            // 持续 drain stdout/stderr，避免 readDataToEndOfFile + 双 pipe 死锁
-            stdoutHandle.readabilityHandler = { handle in
-                let chunk = handle.availableData
-                if !chunk.isEmpty {
-                    stdoutBuffer.append(chunk)
+        do {
+            let shellResult = try await Shell.executeStreaming(
+                command,
+                options: ShellOptions(
+                    shellExecutable: "/bin/zsh",
+                    workingDirectory: workingDirectory,
+                    environment: [
+                        "TERM": "xterm-256color",
+                        "LANG": "en_US.UTF-8",
+                        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+                    ],
+                    timeout: Constants.defaultCommandTimeout
+                ),
+                onOutput: { _ in },
+                onError: { _ in },
+                onOutputData: { chunk in
                     executionProgress.append(chunk)
                     if Self.verbose {
                         AgentCoreToolsPlugin.logger.info("\(self.t) stdout +\(chunk.count) bytes")
                     }
-                }
-            }
-            stderrHandle.readabilityHandler = { handle in
-                let chunk = handle.availableData
-                if !chunk.isEmpty {
-                    stderrBuffer.append(chunk)
+                },
+                onErrorData: { chunk in
                     executionProgress.append(chunk)
                     if Self.verbose {
                         AgentCoreToolsPlugin.logger.info("\(self.t) stderr +\(chunk.count) bytes")
                     }
                 }
-            }
-
-            try process.run()
-            if Self.verbose {
-                AgentCoreToolsPlugin.logger.info("\(self.t) process started pid=\(process.processIdentifier)")
-            }
-
-            try await withTaskCancellationHandler {
-                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                    process.terminationHandler = { _ in
-                        continuation.resume()
-                    }
-                }
-            } onCancel: {
-                Self.terminateProcessTree(process)
-            }
-
-            // 清理 handler，确保不再回调
-            stdoutHandle.readabilityHandler = nil
-            stderrHandle.readabilityHandler = nil
-
-            // 读取最后残留的数据（若有）
-            let finalStdout = stdoutHandle.availableData
-            if !finalStdout.isEmpty {
-                stdoutBuffer.append(finalStdout)
-                executionProgress.append(finalStdout)
-                if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t) stdout(final) +\(finalStdout.count) bytes")
-                }
-            }
-            let finalStderr = stderrHandle.availableData
-            if !finalStderr.isEmpty {
-                stderrBuffer.append(finalStderr)
-                executionProgress.append(finalStderr)
-                if Self.verbose {
-                    AgentCoreToolsPlugin.logger.info("\(self.t) stderr(final) +\(finalStderr.count) bytes")
-                }
-            }
-
-            let stdoutData = stdoutBuffer.snapshot()
-            let stderrData = stderrBuffer.snapshot()
-            let output = String(data: stdoutData, encoding: .utf8) ?? ""
-            let errorOutput = String(data: stderrData, encoding: .utf8) ?? ""
-
-            if Task.isCancelled {
-                throw CancellationError()
-            }
-
+            )
             if Self.verbose {
                 let duration = Date().timeIntervalSince(startedAt)
-                AgentCoreToolsPlugin.logger.info("\(self.t) exitCode=\(process.terminationStatus) signal=\(process.terminationReason.rawValue) duration=\(String(format: "%.3f", duration))s")
-                AgentCoreToolsPlugin.logger.info("\(self.t) stdout=\(stdoutData.count) bytes stderr=\(stderrData.count) bytes")
-
-                let outputPreview = output.count > 400 ? String(output.prefix(400)) + "…" : output
-                let errorPreview = errorOutput.count > 400 ? String(errorOutput.prefix(400)) + "…" : errorOutput
-                AgentCoreToolsPlugin.logger.info("\(self.t) stdout preview:\n\(outputPreview)")
-                if !errorOutput.isEmpty {
-                    AgentCoreToolsPlugin.logger.info("\(self.t) stderr preview:\n\(errorPreview)")
-                }
+                AgentCoreToolsPlugin.logger.info("\(self.t) exitCode=\(shellResult.exitCode) duration=\(String(format: "%.3f", duration))s")
+                AgentCoreToolsPlugin.logger.info("\(self.t) stdout=\(shellResult.stdout.count) chars stderr=\(shellResult.stderr.count) chars")
             }
-
-            return output + (errorOutput.isEmpty ? "" : "\nError:\n\(errorOutput)")
-        }
-
-        do {
-            result = try await Self.value(
-                of: commandTask,
-                timeout: Constants.defaultCommandTimeout
-            )
+            result = shellResult.stdout + (shellResult.stderr.isEmpty ? "" : "\nError:\n\(shellResult.stderr)")
         } catch {
-            commandTask.cancel()
             await activeProgressStore.clear()
             throw error
         }
@@ -313,57 +207,6 @@ class ShellService: SuperLog {
             outputPublisher.send(result)
         }
         return result
-    }
-
-    private static func value<T>(
-        of task: Task<T, Error>,
-        timeout: TimeInterval
-    ) async throws -> T {
-        try await withThrowingTaskGroup(of: T.self) { group in
-            group.addTask {
-                try await task.value
-            }
-            group.addTask {
-                let nanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
-                try await Task.sleep(nanoseconds: nanoseconds)
-                task.cancel()
-                throw CommandTimeoutError(seconds: timeout)
-            }
-
-            defer {
-                group.cancelAll()
-            }
-            guard let value = try await group.next() else {
-                throw CancellationError()
-            }
-            return value
-        }
-    }
-
-    private static func terminateProcessTree(_ process: Process) {
-        let pid = process.processIdentifier
-        guard pid > 0 else { return }
-
-        terminateChildren(of: pid, signal: SIGTERM)
-        if process.isRunning {
-            process.terminate()
-        }
-
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 2) {
-            terminateChildren(of: pid, signal: SIGKILL)
-            if process.isRunning {
-                kill(pid, SIGKILL)
-            }
-        }
-    }
-
-    private static func terminateChildren(of pid: Int32, signal: Int32) {
-        let pkill = Process()
-        pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-        pkill.arguments = ["-\(signal)", "-P", "\(pid)"]
-        pkill.standardOutput = Pipe()
-        pkill.standardError = Pipe()
-        try? pkill.run()
     }
 }
 

@@ -1,4 +1,5 @@
 import Testing
+import Darwin
 import Foundation
 @testable import ShellKit
 
@@ -43,6 +44,17 @@ struct ShellExecutorTests {
 
         #expect(result.isSuccess)
         #expect(result.stdout == "explicit test")
+    }
+
+    @Test("Command-string execution can use zsh")
+    func testShellExecutableOptionUsesZsh() async throws {
+        let result = try await ShellExecutor.execute(
+            "echo ${ZSH_VERSION:+zsh}",
+            options: .init(shellExecutable: "/bin/zsh")
+        )
+
+        #expect(result.isSuccess)
+        #expect(result.stdout == "zsh")
     }
 
     // MARK: - Working Directory Tests
@@ -157,7 +169,6 @@ struct ShellExecutorTests {
 
     @Test("Timeout terminates long-running command")
     func testTimeout() async throws {
-        // Sleep command that would run for 10 seconds
         do {
             _ = try await ShellExecutor.execute(
                 "sleep 10",
@@ -168,10 +179,53 @@ struct ShellExecutorTests {
             if case .timeout(_, let seconds) = error {
                 #expect(seconds == 0.5)
             } else {
-                // Could also be command failed since process was terminated
-                #expect(true) // Accept either timeout or command failed
+                Issue.record("Wrong error type: \(error)")
             }
         }
+    }
+
+    @Test("Timeout still throws when throwsOnError is false")
+    func testTimeoutIgnoresThrowsOnErrorFalse() async throws {
+        do {
+            _ = try await ShellExecutor.execute(
+                "sleep 10",
+                options: .init(timeout: 0.5, throwsOnError: false)
+            )
+            Issue.record("Should have thrown timeout error")
+        } catch let error as ShellError {
+            if case .timeout = error {
+                // Expected
+            } else {
+                Issue.record("Wrong error type: \(error)")
+            }
+        }
+    }
+
+    @Test("Timeout terminates child processes")
+    func testTimeoutTerminatesChildProcess() async throws {
+        let tempDir = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let pidFile = tempDir.appendingPathComponent("child.pid")
+        let command = "sleep 20 & echo $! > '\(pidFile.path)'; wait"
+
+        do {
+            _ = try await ShellExecutor.execute(
+                command,
+                options: .init(shellExecutable: "/bin/zsh", timeout: 0.5)
+            )
+            Issue.record("Should have thrown timeout error")
+        } catch let error as ShellError {
+            if case .timeout = error {
+                // Expected
+            } else {
+                Issue.record("Wrong error type: \(error)")
+            }
+        }
+
+        let pid = try readPID(from: pidFile)
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        #expect(!isProcessRunning(pid))
     }
 
     @Test("Quick command completes before timeout")
@@ -190,7 +244,7 @@ struct ShellExecutorTests {
 
     @Test("Streaming captures output incrementally")
     func testStreamingOutput() async throws {
-        var receivedChunks: [String] = []
+        let receivedChunks = LockedArray<String>()
 
         let result = try await ShellExecutor.executeStreaming(
             "echo 'line1'; echo 'line2'; echo 'line3'",
@@ -206,21 +260,76 @@ struct ShellExecutorTests {
         #expect(result.stdout.contains("line3"))
     }
 
-    @Test("Streaming captures stderr")
-    func testStreamingStderr() async throws {
-        var stderrOutput = ""
+    @Test("Streaming exposes raw output data")
+    func testStreamingOutputData() async throws {
+        let byteCount = LockedCounter()
 
         let result = try await ShellExecutor.executeStreaming(
-            "ls /nonexistent_dir_stream_test 2>&1 || true",
-            options: .init(throwsOnError: false),
+            "printf 'abc'",
             onOutput: { _ in },
-            onError: { chunk in
-                stderrOutput += chunk
+            onOutputData: { data in
+                byteCount.add(data.count)
             }
         )
 
-        // Some error output should be captured (might be in stdout for 2>&1)
-        #expect(!result.isSuccess || result.stdout.contains("No such file") || stderrOutput.contains("No such file"))
+        #expect(result.isSuccess)
+        #expect(result.stdout == "abc")
+        #expect(byteCount.value == 3)
+    }
+
+    @Test("Streaming captures stderr")
+    func testStreamingStderr() async throws {
+        let stderrOutput = LockedString()
+        let stderrBytes = LockedCounter()
+
+        let result = try await ShellExecutor.executeStreaming(
+            "ls /nonexistent_dir_stream_test",
+            options: .init(throwsOnError: false),
+            onOutput: { _ in },
+            onError: { chunk in
+                stderrOutput.append(chunk)
+            },
+            onErrorData: { data in
+                stderrBytes.add(data.count)
+            }
+        )
+
+        #expect(!result.isSuccess)
+        #expect(stderrOutput.value.contains("No such file"))
+        #expect(stderrBytes.value > 0)
+    }
+
+    @Test("Cancellation terminates child processes")
+    func testCancellationTerminatesChildProcess() async throws {
+        let tempDir = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let pidFile = tempDir.appendingPathComponent("cancelled-child.pid")
+        let command = "sleep 20 & echo $! > '\(pidFile.path)'; wait"
+        let task = Task {
+            try await ShellExecutor.execute(
+                command,
+                options: .init(shellExecutable: "/bin/zsh")
+            )
+        }
+
+        try await waitForFile(pidFile)
+        let pid = try readPID(from: pidFile)
+        task.cancel()
+
+        do {
+            _ = try await task.value
+            Issue.record("Should have thrown cancellation error")
+        } catch let error as ShellError {
+            if case .cancelled = error {
+                // Expected
+            } else {
+                Issue.record("Wrong error type: \(error)")
+            }
+        }
+
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        #expect(!isProcessRunning(pid))
     }
 
     // MARK: - Command Lookup Tests
@@ -271,28 +380,37 @@ struct ShellExecutorTests {
     func testDefaultOptions() {
         let options = ShellOptions.defaultOptions
 
+        #expect(options.shellExecutable == "/bin/bash")
         #expect(options.workingDirectory == nil)
         #expect(options.environment.isEmpty)
         #expect(options.timeout == nil)
         #expect(options.qos == .userInitiated)
         #expect(options.throwsOnError == true)
+        #expect(options.terminatesProcessTree == true)
+        #expect(options.terminationGracePeriod == 2.0)
     }
 
     @Test("ShellOptions custom initialization")
     func testCustomOptions() {
         let options = ShellOptions(
+            shellExecutable: "/bin/zsh",
             workingDirectory: "/tmp",
             environment: ["KEY": "VALUE"],
             timeout: 30.0,
             qos: .background,
-            throwsOnError: false
+            throwsOnError: false,
+            terminatesProcessTree: false,
+            terminationGracePeriod: 0.25
         )
 
+        #expect(options.shellExecutable == "/bin/zsh")
         #expect(options.workingDirectory == "/tmp")
         #expect(options.environment["KEY"] == "VALUE")
         #expect(options.timeout == 30.0)
         #expect(options.qos == .background)
         #expect(options.throwsOnError == false)
+        #expect(options.terminatesProcessTree == false)
+        #expect(options.terminationGracePeriod == 0.25)
     }
 
     // MARK: - Convenience Alias Tests
@@ -302,6 +420,93 @@ struct ShellExecutorTests {
         let result = try await Shell.execute("echo 'alias test'")
         #expect(result.isSuccess)
         #expect(result.stdout == "alias test")
+    }
+}
+
+private func makeTemporaryDirectory() throws -> URL {
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ShellKitTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    return url
+}
+
+private func waitForFile(_ url: URL, timeout: TimeInterval = 2.0) async throws {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+        if FileManager.default.fileExists(atPath: url.path) {
+            return
+        }
+        try await Task.sleep(nanoseconds: 50_000_000)
+    }
+    Issue.record("Timed out waiting for file: \(url.path)")
+}
+
+private func readPID(from url: URL) throws -> Int32 {
+    let raw = try String(contentsOf: url, encoding: .utf8)
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let pid = Int32(raw) else {
+        Issue.record("Invalid pid: \(raw)")
+        return -1
+    }
+    return pid
+}
+
+private func isProcessRunning(_ pid: Int32) -> Bool {
+    guard pid > 0 else { return false }
+    return kill(pid, 0) == 0
+}
+
+private final class LockedArray<Element>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [Element] = []
+
+    var count: Int {
+        lock.lock()
+        let result = values.count
+        lock.unlock()
+        return result
+    }
+
+    func append(_ value: Element) {
+        lock.lock()
+        values.append(value)
+        lock.unlock()
+    }
+}
+
+private final class LockedString: @unchecked Sendable {
+    private let lock = NSLock()
+    private var text = ""
+
+    var value: String {
+        lock.lock()
+        let result = text
+        lock.unlock()
+        return result
+    }
+
+    func append(_ value: String) {
+        lock.lock()
+        text += value
+        lock.unlock()
+    }
+}
+
+private final class LockedCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+
+    var value: Int {
+        lock.lock()
+        let result = count
+        lock.unlock()
+        return result
+    }
+
+    func add(_ value: Int) {
+        lock.lock()
+        count += value
+        lock.unlock()
     }
 }
 
