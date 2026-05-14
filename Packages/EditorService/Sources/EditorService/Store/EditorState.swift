@@ -1848,10 +1848,12 @@ public final class EditorState: ObservableObject, SuperLog {
         )
     }
 
-    func applyScrollObservation(viewportOrigin: CGPoint) {
-        applyInteractionUpdate(
-            .scroll(EditorScrollState(viewportOrigin: viewportOrigin))
-        )
+    func persistScrollObservation(viewportOrigin: CGPoint) {
+        let scrollState = EditorScrollState(viewportOrigin: viewportOrigin)
+        guard activeSession.scrollState != scrollState else { return }
+
+        activeSession.scrollState = scrollState
+        onActiveSessionChanged?(activeSession)
     }
 
     func applyViewportObservation(startLine: Int, endLine: Int, totalLines: Int) {
@@ -1867,8 +1869,12 @@ public final class EditorState: ObservableObject, SuperLog {
                 self?.inlayHintProvider.clear()
             }
         )
-        viewportVisibleLineRange = observation.visibleLineRange
-        viewportRenderLineRange = observation.renderLineRange
+        if viewportVisibleLineRange != observation.visibleLineRange {
+            viewportVisibleLineRange = observation.visibleLineRange
+        }
+        if viewportRenderLineRange != observation.renderLineRange {
+            viewportRenderLineRange = observation.renderLineRange
+        }
     }
 
     /// 对可见区域发起 inlay hint 请求（由 LSPViewportScheduler 调度后调用）
@@ -1884,8 +1890,12 @@ public final class EditorState: ObservableObject, SuperLog {
 
     func resetViewportObservation(totalLines: Int = 0) {
         let observation = runtimeModeController.resetViewportObservation(totalLines: totalLines)
-        viewportVisibleLineRange = observation.visibleLineRange
-        viewportRenderLineRange = observation.renderLineRange
+        if viewportVisibleLineRange != observation.visibleLineRange {
+            viewportVisibleLineRange = observation.visibleLineRange
+        }
+        if viewportRenderLineRange != observation.renderLineRange {
+            viewportRenderLineRange = observation.renderLineRange
+        }
     }
 
     private func applyInteractionUpdate(_ update: EditorInteractionUpdate) {

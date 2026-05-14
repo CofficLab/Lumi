@@ -7,6 +7,18 @@ public final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
     private weak var state: EditorState?
     private var boundsObserver: NSObjectProtocol?
     private var frameObserver: NSObjectProtocol?
+    private var scrollPersistenceTask: Task<Void, Never>?
+    private var lastViewportObservation: ViewportObservation?
+    private var lastPersistedScrollOrigin: CGPoint?
+
+    private static let scrollPersistenceDelayNs: UInt64 = 160_000_000
+    private static let scrollOriginTolerance: CGFloat = 0.5
+
+    private struct ViewportObservation: Equatable {
+        let startLine: Int
+        let endLine: Int
+        let totalLines: Int
+    }
 
     public init(state: EditorState) {
         self.state = state
@@ -21,6 +33,8 @@ public final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
     public nonisolated func destroy() {
         MainActor.assumeIsolated {
             removeObservers()
+            scrollPersistenceTask?.cancel()
+            scrollPersistenceTask = nil
             state = nil
         }
     }
@@ -35,14 +49,13 @@ public final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
         clipView.postsBoundsChangedNotifications = true
         clipView.postsFrameChangedNotifications = true
 
-        let state = self.state
         boundsObserver = NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification,
             object: clipView,
             queue: .main
-        ) { _ in
+        ) { [weak self] _ in
             MainActor.assumeIsolated {
-                Self.publishViewportObservation(from: textView, clipView: clipView, state: state)
+                self?.handleScrollEvent(from: textView, clipView: clipView)
             }
         }
 
@@ -50,13 +63,13 @@ public final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
             forName: NSView.frameDidChangeNotification,
             object: clipView,
             queue: .main
-        ) { _ in
+        ) { [weak self] _ in
             MainActor.assumeIsolated {
-                Self.publishViewportObservation(from: textView, clipView: clipView, state: state)
+                self?.handleScrollEvent(from: textView, clipView: clipView)
             }
         }
 
-        Self.publishViewportObservation(from: textView, clipView: clipView, state: state)
+        handleScrollEvent(from: textView, clipView: clipView, persistImmediately: true)
     }
 
     private func removeObservers() {
@@ -68,18 +81,65 @@ public final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
             NotificationCenter.default.removeObserver(frameObserver)
             self.frameObserver = nil
         }
+        scrollPersistenceTask?.cancel()
+        scrollPersistenceTask = nil
+        lastViewportObservation = nil
+        lastPersistedScrollOrigin = nil
     }
 
     @MainActor
-    private static func publishViewportObservation(from textView: TextView, clipView: NSClipView, state: EditorState?) {
-        state?.applyScrollObservation(viewportOrigin: clipView.bounds.origin)
+    private func handleScrollEvent(
+        from textView: TextView,
+        clipView: NSClipView,
+        persistImmediately: Bool = false
+    ) {
+        let origin = clipView.bounds.origin
+        if persistImmediately {
+            persistScrollOrigin(origin)
+        } else {
+            scheduleScrollPersistence(origin)
+        }
 
+        publishViewportObservation(from: textView)
+    }
+
+    @MainActor
+    private func scheduleScrollPersistence(_ origin: CGPoint) {
+        guard shouldPersistScrollOrigin(origin) else { return }
+
+        scrollPersistenceTask?.cancel()
+        scrollPersistenceTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: Self.scrollPersistenceDelayNs)
+            guard !Task.isCancelled else { return }
+            self?.persistScrollOrigin(origin)
+        }
+    }
+
+    @MainActor
+    private func persistScrollOrigin(_ origin: CGPoint) {
+        guard shouldPersistScrollOrigin(origin) else { return }
+        lastPersistedScrollOrigin = origin
+        state?.persistScrollObservation(viewportOrigin: origin)
+    }
+
+    @MainActor
+    private func shouldPersistScrollOrigin(_ origin: CGPoint) -> Bool {
+        guard let lastPersistedScrollOrigin else { return true }
+        return abs(lastPersistedScrollOrigin.x - origin.x) >= Self.scrollOriginTolerance
+            || abs(lastPersistedScrollOrigin.y - origin.y) >= Self.scrollOriginTolerance
+    }
+
+    @MainActor
+    private func publishViewportObservation(from textView: TextView) {
         guard let layoutManager = textView.layoutManager else {
-            state?.resetViewportObservation()
+            publishViewportObservation(ViewportObservation(startLine: 0, endLine: 0, totalLines: 0), reset: true)
             return
         }
         guard let visibleTextRange = textView.visibleTextRange else {
-            state?.resetViewportObservation(totalLines: layoutManager.lineCount)
+            publishViewportObservation(
+                ViewportObservation(startLine: 0, endLine: 0, totalLines: layoutManager.lineCount),
+                reset: true
+            )
             return
         }
 
@@ -87,10 +147,28 @@ public final class ScrollCoordinator: TextViewCoordinator, @unchecked Sendable {
         let startLine = layoutManager.textLineForOffset(visibleTextRange.location)?.index ?? 0
         let endOffset = max(visibleTextRange.location, visibleTextRange.max - 1)
         let endLine = layoutManager.textLineForOffset(endOffset)?.index ?? startLine
-        state?.applyViewportObservation(
-            startLine: startLine,
-            endLine: min(totalLines, endLine + 1),
-            totalLines: totalLines
+        publishViewportObservation(
+            ViewportObservation(
+                startLine: startLine,
+                endLine: min(totalLines, endLine + 1),
+                totalLines: totalLines
+            )
         )
+    }
+
+    @MainActor
+    private func publishViewportObservation(_ observation: ViewportObservation, reset: Bool = false) {
+        guard observation != lastViewportObservation else { return }
+        lastViewportObservation = observation
+
+        if reset {
+            state?.resetViewportObservation(totalLines: observation.totalLines)
+        } else {
+            state?.applyViewportObservation(
+                startLine: observation.startLine,
+                endLine: observation.endLine,
+                totalLines: observation.totalLines
+            )
+        }
     }
 }

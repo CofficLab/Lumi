@@ -49,18 +49,6 @@ extension SourceEditor {
                 name: TextView.textDidChangeNotification,
                 object: controller.textView
             )
-
-            // Needs to be put on the main runloop or SwiftUI gets mad about updating state during view updates.
-            NotificationCenter.default
-                .publisher(
-                    for: TextViewController.scrollPositionDidUpdateNotification,
-                    object: controller
-                )
-                .receive(on: RunLoop.main)
-                .sink { [weak self] notification in
-                    self?.textControllerScrollDidChange(notification)
-                }
-                .store(in: &cancellables)
         }
 
         /// Listen to the cursor publisher on the text view controller.
@@ -134,16 +122,6 @@ extension SourceEditor {
                 return
             }
             updateState { $0.cursorPositions = controller.cursorPositions }
-        }
-
-        func textControllerScrollDidChange(_ notification: Notification) {
-            guard let controller = notification.object as? TextViewController else {
-                return
-            }
-            let currentPosition = controller.scrollView.contentView.bounds.origin
-            if editorState.scrollPosition != currentPosition {
-                updateState { $0.scrollPosition = currentPosition }
-            }
         }
 
         func textControllerFindTextDidChange(_ notification: Notification) {

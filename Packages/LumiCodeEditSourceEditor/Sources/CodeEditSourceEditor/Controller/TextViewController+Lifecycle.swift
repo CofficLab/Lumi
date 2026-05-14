@@ -119,7 +119,6 @@ extension TextViewController {
             guard let clipView = notification.object as? NSClipView else { return }
             self?.gutterView.needsDisplay = true
             self?.minimapXConstraint?.constant = clipView.bounds.origin.x
-            NotificationCenter.default.post(name: Self.scrollPositionDidUpdateNotification, object: self)
         }
     }
 
@@ -132,7 +131,6 @@ extension TextViewController {
             self?.gutterView.needsDisplay = true
             self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
             self?.updateTextInsets()
-            NotificationCenter.default.post(name: Self.scrollPositionDidUpdateNotification, object: self)
         }
     }
 
