@@ -42,7 +42,7 @@
 ## P5 - Driver behavior consistency
 
 - [x] Wait for MySQL connection close before shutting down its event loop group.
-- [ ] Return PostgreSQL column metadata for empty query results without relying on `PostgresNIO` internal APIs.
+- [x] Return PostgreSQL column metadata for empty query results without relying on `PostgresNIO` internal APIs.
 - [x] Add opt-in PostgreSQL integration coverage for empty result columns.
 
 ## P6 - Pool ownership safety

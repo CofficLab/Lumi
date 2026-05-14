@@ -178,6 +178,14 @@ struct PostgreSQLDriverTests {
     }
 
     @Test
+    func postgresqlColumnProbeOnlyAcceptsSingleSelectStatements() {
+        #expect(PGConnection.normalizedSelectForColumnProbe("SELECT id FROM users;") == "SELECT id FROM users")
+        #expect(PGConnection.normalizedSelectForColumnProbe("  select $1::TEXT AS name  ") == "select $1::TEXT AS name")
+        #expect(PGConnection.normalizedSelectForColumnProbe("UPDATE users SET name = $1") == nil)
+        #expect(PGConnection.normalizedSelectForColumnProbe("SELECT 1; SELECT 2") == nil)
+    }
+
+    @Test
     func postgresqlIntegrationExecutesParameterizedCRUDWhenConfigured() async throws {
         guard let config = DatabaseKitIntegrationConfig.postgresql else {
             return

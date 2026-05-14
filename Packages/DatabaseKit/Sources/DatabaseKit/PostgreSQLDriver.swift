@@ -101,6 +101,10 @@ public actor PGConnection: DatabaseConnection {
             resultRows.append(values)
         }
 
+        if columns.isEmpty, let probeSQL = Self.normalizedSelectForColumnProbe(sql) {
+            columns = try await queryColumnNames(for: probeSQL, params: params ?? [])
+        }
+
         return QueryResult(columns: columns, rows: resultRows, rowsAffected: resultRows.count)
     }
 
@@ -136,6 +140,58 @@ public actor PGConnection: DatabaseConnection {
         var bindings = PostgresBindings(capacity: params.count)
         toPostgresData(params).forEach { bindings.append($0) }
         return bindings
+    }
+
+    static func normalizedSelectForColumnProbe(_ sql: String) -> String? {
+        var trimmed = sql.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasSuffix(";") {
+            trimmed.removeLast()
+            trimmed = trimmed.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        guard !trimmed.contains(";") else { return nil }
+        guard trimmed.range(of: #"^\s*select\b"#, options: [.regularExpression, .caseInsensitive]) != nil else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private func queryColumnNames(for sql: String, params: [DatabaseValue]) async throws -> [String] {
+        let tableName = "databasekit_column_probe_\(UUID().uuidString.replacingOccurrences(of: "-", with: "_"))"
+        let tableIdentifier = quoteIdentifier(tableName)
+        let createSQL = "CREATE TEMPORARY TABLE \(tableIdentifier) ON COMMIT DROP AS \(sql) WITH NO DATA"
+        let createQuery = PostgresQuery(unsafeSQL: createSQL, binds: toPostgresBindings(params))
+
+        do {
+            _ = try await conn.query(createQuery, logger: Logger(label: "com.lumi.postgres.columns")).get()
+            let result = try await conn.query(
+                """
+                SELECT attname
+                FROM pg_attribute
+                WHERE attrelid = $1::regclass
+                    AND attnum > 0
+                    AND NOT attisdropped
+                ORDER BY attnum
+                """,
+                [PostgresData(string: tableName)]
+            ).get()
+            try await dropTemporaryTable(tableIdentifier)
+            return result.rows.compactMap { row in
+                row.first.flatMap { try? $0.decode(String.self) }
+            }
+        } catch {
+            try? await dropTemporaryTable(tableIdentifier)
+            throw error
+        }
+    }
+
+    private func dropTemporaryTable(_ tableIdentifier: String) async throws {
+        let query = PostgresQuery(unsafeSQL: "DROP TABLE IF EXISTS \(tableIdentifier)")
+        _ = try await conn.query(query, logger: Logger(label: "com.lumi.postgres.columns")).get()
+    }
+
+    private func quoteIdentifier(_ identifier: String) -> String {
+        "\"\(identifier.replacingOccurrences(of: "\"", with: "\"\""))\""
     }
 }
 
