@@ -63,7 +63,7 @@ extension HotPreviewRenderer {
             return LumiPreviewPackage.RenderResponse(success: false, message: "No live preview content to show.")
         }
 
-        liveWindow.orderFrontRegardless()
+        liveWindow.orderFront(nil)
 
         return LumiPreviewPackage.RenderResponse(
             success: true,
@@ -128,7 +128,7 @@ extension HotPreviewRenderer {
                     liveWindow?.setFrame(liveFrame, display: true)
                 }
                 if wasVisible {
-                    liveWindow?.orderFrontRegardless()
+                    liveWindow?.orderFront(nil)
                 }
 
                 return LumiPreviewPackage.RenderResponse(
