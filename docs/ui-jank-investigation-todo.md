@@ -77,7 +77,8 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - Fixed: scroll metric callbacks now emit only when bottom/user-scroll state changes, reducing layout-change churn during streaming.
 - [x] Verify whether programmatic scroll animations occur too often while streaming.
   - Fixed: same-row streaming content updates now follow the bottom without animation; new rows can still animate.
-- [ ] Measure row creation cost for the 80-message window.
+- [x] Measure row creation cost for the 80-message window.
+  - Verified: initial conversation load is 10 rows, manual load-more adds 10 at a time, and the visible history window is capped at 80 rows by default. Row assembly is bounded; only messages with tool calls read already-loaded tool outputs from an in-memory dictionary.
 
 ## Priority 5: Markdown And Code Highlighting
 
@@ -161,3 +162,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Narrowed ChatHistory tool-output lookup queries to requested tool call IDs.
 - [x] 2026-05-14: Bounded ChatHistory single-row fetches used by message save/update paths.
 - [x] 2026-05-14: Stopped DeviceInfo menu bar content from starting top-process monitoring.
+- [x] 2026-05-14: Verified chat row creation remains bounded by paging and the 80-message render window.
