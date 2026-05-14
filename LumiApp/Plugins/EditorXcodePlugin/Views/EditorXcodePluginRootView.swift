@@ -35,10 +35,10 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
                 }
                 hasTriggeredPreload = true
                 if XcodePluginLog.verbose {
-                    XcodePluginLog.logger.info("\(Self.t)准备延迟 1 秒后预加载最近 Xcode 项目")
+                    XcodePluginLog.logger.info("\(Self.t)准备延迟 3 秒后预加载最近 Xcode 项目")
                 }
                 Task {
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
                     await preloadRecentXcodeProjects()
                 }
             }
@@ -75,7 +75,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
 
         await withTaskGroup(of: (project: Project, success: Bool).self) { group in
             var activeTasks = 0
-            let maxConcurrentTasks = 2
+            let maxConcurrentTasks = 1
 
             for project in projectsToPreload {
                 while activeTasks >= maxConcurrentTasks {
@@ -89,7 +89,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
                 if XcodePluginLog.verbose {
                     XcodePluginLog.logger.info("\(Self.t)添加预加载任务：\(project.name)")
                 }
-                group.addTask {
+                group.addTask(priority: .background) {
                     let store = XcodeBuildServerStore(storageRootURL: AppConfig.getDBFolderURL())
                     let success = await EditorXcodeProjectPreloader.preloadProject(project, store: store)
                     return (project, success)

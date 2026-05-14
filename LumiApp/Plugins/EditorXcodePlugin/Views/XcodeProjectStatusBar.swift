@@ -6,7 +6,7 @@ import MagicKit
 struct XcodeProjectStatusBar: View, SuperLog {
     nonisolated static let emoji = "🔨"
 
-    @StateObject private var viewModel = XcodeProjectStatusBarViewModel()
+    @StateObject private var viewModel = XcodeProjectStatusBarViewModel.shared
 
     var body: some View {
         Group {

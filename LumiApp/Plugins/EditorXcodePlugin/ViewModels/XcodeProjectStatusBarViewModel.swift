@@ -8,6 +8,8 @@ import os
 
 @MainActor
 final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
+    static let shared = XcodeProjectStatusBarViewModel()
+
     @Published var isXcodeProject = false
     @Published var activeScheme: String?
     @Published var schemes: [String] = []
@@ -30,9 +32,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         semanticRefreshTask?.cancel()
     }
 
-    init() {
+    private init() {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) 初始化开始")
+            XcodePluginLog.logger.info("\(Self.t) 初始化开始（单例）")
         }
         setup()
     }
