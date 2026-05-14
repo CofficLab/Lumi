@@ -116,7 +116,8 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - Fixed: related-file scans are now cancelable and only publish results for the still-selected app, avoiding stale scan work and UI result churn during rapid selection changes.
 - [x] Inspect `DiskManagerPlugin` views and scan view models.
   - Fixed: Xcode, cache, and project cleaner views now only auto-scan once on first appearance; manual scan controls still force a rescan.
-- [ ] Inspect `AgentRAGPlugin` auto-index overlay.
+- [x] Inspect `AgentRAGPlugin` auto-index overlay.
+  - Fixed: auto-index overlay now loads recent projects off the main actor, cancels superseded trigger tasks, dedupes unchanged candidate sets, and stops work when the overlay disappears.
 - [ ] Confirm scans run off main and are not triggered repeatedly by view appearance.
 
 ## Deliverables
@@ -142,3 +143,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Prevented repeated DiskManager auto-scans on view reappearance.
 - [x] 2026-05-14: Moved QuickFileSearch project indexing/search matching out of synchronous main-actor paths.
 - [x] 2026-05-14: Added cancellation and stale-result guards for AppManager related-file scans.
+- [x] 2026-05-14: Reduced repeated RAG auto-index trigger work from root overlay appearances/project changes.

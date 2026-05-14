@@ -9,6 +9,9 @@ struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { false }
 
     @EnvironmentObject private var projectVM: ProjectVM
+    @State private var autoEnsureTask: Task<Void, Never>?
+    @State private var lastAutoEnsureKey = ""
+
     private let recentProjectsStore = RecentProjectsStore()
 
     let content: Content
@@ -20,6 +23,10 @@ struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
         .onAppear {
             triggerAutoEnsureIndexForRecentProjects(source: "onAppear")
         }
+        .onDisappear {
+            autoEnsureTask?.cancel()
+            autoEnsureTask = nil
+        }
         .onChange(of: projectVM.currentProjectPath) { _, _ in
             triggerAutoEnsureIndexForRecentProjects(source: "projectChanged")
         }
@@ -28,16 +35,30 @@ struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
 
 extension RAGAutoIndexOverlay {
     private func triggerAutoEnsureIndexForRecentProjects(source: String) {
-        let recentPaths = recentProjectsStore.loadProjects().map(\.path)
         let currentPath = projectVM.currentProjectPath
-        let candidatePaths = uniqueNonEmptyPaths([currentPath] + recentPaths)
-        guard !candidatePaths.isEmpty else { return }
+        autoEnsureTask?.cancel()
 
-        Task {
+        autoEnsureTask = Task { [currentPath, recentProjectsStore] in
+            let candidatePaths = await Task.detached(priority: .utility) {
+                let recentPaths = recentProjectsStore.loadProjects().map(\.path)
+                return Self.uniqueNonEmptyPaths([currentPath] + recentPaths)
+                    .filter { Self.isExistingDirectory(path: $0) }
+            }.value
+
+            guard !Task.isCancelled, !candidatePaths.isEmpty else { return }
+
+            let candidateKey = candidatePaths.joined(separator: "\n")
+            let shouldTrigger = await MainActor.run {
+                guard lastAutoEnsureKey != candidateKey else { return false }
+                lastAutoEnsureKey = candidateKey
+                return true
+            }
+            guard shouldTrigger else { return }
+
             let service = RAGPlugin.getService()
             // 服务已在 onEnable 时初始化，无需再次初始化
             for path in candidatePaths {
-                guard isExistingDirectory(path: path) else { continue }
+                guard !Task.isCancelled else { return }
                 await service.ensureIndexedBackground(projectPath: path)
             }
             if Self.verbose {
@@ -46,7 +67,7 @@ extension RAGAutoIndexOverlay {
         }
     }
 
-    private func uniqueNonEmptyPaths(_ paths: [String]) -> [String] {
+    private static func uniqueNonEmptyPaths(_ paths: [String]) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
         for rawPath in paths {
@@ -60,7 +81,7 @@ extension RAGAutoIndexOverlay {
         return result
     }
 
-    private func isExistingDirectory(path: String) -> Bool {
+    private static func isExistingDirectory(path: String) -> Bool {
         var isDirectory: ObjCBool = false
         return FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
