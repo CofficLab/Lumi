@@ -47,7 +47,9 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
   - Fixed: these entry points now observe a shared VM, so Wi-Fi, ping, local IP, and public IP refresh work no longer multiplies per view.
 - [x] Move network interface counter sampling off the main actor.
   - Fixed: `NetworkService` now reads interface counters in a detached utility task and publishes compact speed totals on the main actor.
-- [ ] Verify whether menu bar content starts monitoring even when no popover is open.
+- [x] Verify whether menu bar content starts monitoring even when no popover is open.
+  - Verified: menu bar content is live while visible. Fixed DeviceInfo so the menu bar CPU glyph starts only CPU sampling, not top-process scanning; process monitoring remains enabled for the popup/detail views that display it.
+  - Verified: Network menu bar content intentionally keeps network counter sampling active to display live up/down speed.
 - [x] Prototype moving system sampling to background tasks and publishing only compact snapshots on main.
   - Done for `ProcessService`; CPU, memory, and network sampling remain to be measured before changing.
 
@@ -158,3 +160,4 @@ Goal: identify and verify code paths that may cause UI stalls, dropped frames, o
 - [x] 2026-05-14: Moved ModelPreference project preference reads off the main actor.
 - [x] 2026-05-14: Narrowed ChatHistory tool-output lookup queries to requested tool call IDs.
 - [x] 2026-05-14: Bounded ChatHistory single-row fetches used by message save/update paths.
+- [x] 2026-05-14: Stopped DeviceInfo menu bar content from starting top-process monitoring.

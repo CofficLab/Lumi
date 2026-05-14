@@ -15,17 +15,22 @@ class CPUManagerViewModel: ObservableObject {
     @Published var topProcesses: [ProcessMetric] = []
     
     private var cancellables = Set<AnyCancellable>()
+    private let monitorsProcesses: Bool
     
     // MARK: - Initialization
     
-    init() {
+    init(monitorsProcesses: Bool = true) {
+        self.monitorsProcesses = monitorsProcesses
         startMonitoring()
     }
 
     deinit {
+        let monitorsProcesses = monitorsProcesses
         Task { @MainActor in
             CPUService.shared.stopMonitoring()
-            ProcessService.shared.stopMonitoring()
+            if monitorsProcesses {
+                ProcessService.shared.stopMonitoring()
+            }
         }
     }
     
@@ -33,7 +38,9 @@ class CPUManagerViewModel: ObservableObject {
     
     func startMonitoring() {
         CPUService.shared.startMonitoring()
-        ProcessService.shared.startMonitoring()
+        if monitorsProcesses {
+            ProcessService.shared.startMonitoring()
+        }
 
         Publishers.CombineLatest3(
             CPUService.shared.$cpuUsage,
@@ -48,9 +55,11 @@ class CPUManagerViewModel: ObservableObject {
         }
         .store(in: &cancellables)
 
-        ProcessService.shared.$topProcesses
-            .receive(on: DispatchQueue.main)
-            .assign(to: &$topProcesses)
+        if monitorsProcesses {
+            ProcessService.shared.$topProcesses
+                .receive(on: DispatchQueue.main)
+                .assign(to: &$topProcesses)
+        }
     }
     
     // MARK: - Computed Properties
