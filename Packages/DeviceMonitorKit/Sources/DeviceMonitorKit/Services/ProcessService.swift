@@ -13,7 +13,7 @@ public final class ProcessService: ObservableObject, SuperLog {
 
     // MARK: - Constants
 
-    private static let processLimit = 5
+    private nonisolated static let processLimit = 5
 
     // MARK: - Published Properties
 
@@ -22,6 +22,7 @@ public final class ProcessService: ObservableObject, SuperLog {
     // MARK: - Private Properties
 
     private var monitoringTimer: Timer?
+    private var samplingTask: Task<Void, Never>?
     private var subscribersCount = 0
 
     /// Sampling snapshot: [pid: (userTime, systemTime)] in nanoseconds
@@ -53,6 +54,8 @@ public final class ProcessService: ObservableObject, SuperLog {
             Self.logger.info("\(self.t)停止进程监控")
             monitoringTimer?.invalidate()
             monitoringTimer = nil
+            samplingTask?.cancel()
+            samplingTask = nil
             previousSnapshot.removeAll()
             topProcesses = []
         }
@@ -61,24 +64,81 @@ public final class ProcessService: ObservableObject, SuperLog {
     // MARK: - Internal Methods
 
     func sampleProcessesInternal() -> [ProcessMetric] {
+        let appBundlePaths = Self.runningApplicationBundlePaths()
+        let result = Self.sampleProcesses(
+            previousSnapshot: previousSnapshot,
+            previousTimestamp: previousTimestamp,
+            appBundlePaths: appBundlePaths
+        )
+        previousSnapshot = result.snapshot
+        previousTimestamp = result.timestamp
+        return result.metrics
+    }
+
+    // MARK: - Private Methods
+
+    private func sampleProcesses() {
+        guard samplingTask == nil else { return }
+
+        let previousSnapshot = previousSnapshot
+        let previousTimestamp = previousTimestamp
+        let appBundlePaths = Self.runningApplicationBundlePaths()
+
+        samplingTask = Task.detached(priority: .utility) { [previousSnapshot, previousTimestamp, appBundlePaths] in
+            let result = Self.sampleProcesses(
+                previousSnapshot: previousSnapshot,
+                previousTimestamp: previousTimestamp,
+                appBundlePaths: appBundlePaths
+            )
+
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.samplingTask = nil
+                guard self.subscribersCount > 0 else { return }
+                self.previousSnapshot = result.snapshot
+                self.previousTimestamp = result.timestamp
+                self.topProcesses = result.metrics
+            }
+        }
+    }
+
+    private static func runningApplicationBundlePaths() -> [Int32: String] {
+        Dictionary(
+            uniqueKeysWithValues: NSWorkspace.shared.runningApplications.compactMap { app in
+                guard let path = app.bundleURL?.path else { return nil }
+                return (app.processIdentifier, path)
+            }
+        )
+    }
+
+    private nonisolated static func sampleProcesses(
+        previousSnapshot: [Int32: (user: UInt64, system: UInt64)],
+        previousTimestamp: TimeInterval,
+        appBundlePaths: [Int32: String]
+    ) -> (
+        metrics: [ProcessMetric],
+        snapshot: [Int32: (user: UInt64, system: UInt64)],
+        timestamp: TimeInterval
+    ) {
         let now = Date().timeIntervalSince1970
         let deltaTime = now - previousTimestamp
-        guard deltaTime > 0 else { return [] }
+        guard deltaTime > 0 else { return ([], previousSnapshot, now) }
 
         var bufferSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, nil, 0)
-        guard bufferSize > 0 else { return [] }
+        guard bufferSize > 0 else { return ([], previousSnapshot, now) }
 
         let maxCount = Int(bufferSize) / MemoryLayout<pid_t>.size
         var pids = [pid_t](repeating: 0, count: maxCount)
 
         bufferSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, &pids, Int32(bufferSize))
         let actualCount = Int(bufferSize) / MemoryLayout<pid_t>.size
-        guard actualCount > 0 else { return [] }
+        guard actualCount > 0 else { return ([], previousSnapshot, now) }
 
         var currentSnapshot: [Int32: (user: UInt64, system: UInt64)] = [:]
         var results: [ProcessMetric] = []
 
         for i in 0..<actualCount {
+            if Task.isCancelled { break }
             let pid = pids[i]
             guard pid > 0 else { continue }
 
@@ -102,7 +162,7 @@ public final class ProcessService: ObservableObject, SuperLog {
 
                 if cpuPercent > 0.1 {
                     let name = getProcessName(pid: pid)
-                    let icon = getProcessBundlePath(pid: pid)
+                    let icon = appBundlePaths[pid]
 
                     results.append(ProcessMetric(
                         id: pid,
@@ -115,20 +175,14 @@ public final class ProcessService: ObservableObject, SuperLog {
             }
         }
 
-        previousSnapshot = currentSnapshot
-        previousTimestamp = now
-
-        return results.sorted { $0.cpuUsage > $1.cpuUsage }.prefix(Self.processLimit).map { $0 }
+        return (
+            results.sorted { $0.cpuUsage > $1.cpuUsage }.prefix(Self.processLimit).map { $0 },
+            currentSnapshot,
+            now
+        )
     }
 
-    // MARK: - Private Methods
-
-    private func sampleProcesses() {
-        let results = sampleProcessesInternal()
-        topProcesses = results
-    }
-
-    private func getProcessName(pid: Int32) -> String {
+    private nonisolated static func getProcessName(pid: Int32) -> String {
         let bufferSize = 1024
         var nameBuffer = [CChar](repeating: 0, count: bufferSize)
         let result = proc_name(pid, &nameBuffer, UInt32(bufferSize))
@@ -140,12 +194,5 @@ public final class ProcessService: ObservableObject, SuperLog {
             }
         }
         return "PID \(pid)"
-    }
-
-    private func getProcessBundlePath(pid: Int32) -> String? {
-        NSWorkspace.shared.runningApplications
-            .first { $0.processIdentifier == pid }?
-            .bundleURL?
-            .path
     }
 }

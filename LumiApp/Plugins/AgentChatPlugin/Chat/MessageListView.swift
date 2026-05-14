@@ -424,6 +424,8 @@ private struct ScrollPositionObserver: NSViewRepresentable {
         private weak var documentView: NSView?
         private var observers: [NSObjectProtocol] = []
         private var isLiveScrolling = false
+        private var lastAtBottom: Bool?
+        private var lastUserInitiated: Bool?
 
         init(onMetricsChanged: @escaping (_ atBottom: Bool, _ userInitiated: Bool) -> Void) {
             self.onMetricsChanged = onMetricsChanged
@@ -547,6 +549,11 @@ private struct ScrollPositionObserver: NSViewRepresentable {
             let contentHeight = documentView.bounds.height
             let distanceToBottom = contentHeight - visibleBottom
             let atBottom = distanceToBottom <= Self.bottomEpsilon
+            guard lastAtBottom != atBottom || lastUserInitiated != userInitiated else {
+                return
+            }
+            lastAtBottom = atBottom
+            lastUserInitiated = userInitiated
             onMetricsChanged(atBottom, userInitiated)
         }
 
@@ -558,6 +565,8 @@ private struct ScrollPositionObserver: NSViewRepresentable {
             documentView = nil
             scrollView = nil
             isLiveScrolling = false
+            lastAtBottom = nil
+            lastUserInitiated = nil
         }
     }
 }

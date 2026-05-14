@@ -361,25 +361,20 @@ extension ChatHistoryService {
     func getMessageCount(forConversationId conversationId: UUID) async -> Int {
         let context = self.getContext()
 
-        // 直接查询 ChatMessageEntity 表计数，与 loadMessagesPage 使用相同的查询方式
+        // 直接让 SwiftData 计数可展示角色，避免把大对话全量 fetch 到主线程再转换过滤。
         let descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { msg in
-                msg.conversation?.id == conversationId
+                msg.conversation?.id == conversationId &&
+                    (
+                        msg._role == "user" ||
+                        msg._role == "assistant" ||
+                        msg._role == "status" ||
+                        msg._role == "error"
+                    )
             }
         )
 
-        guard let entities = try? context.fetch(descriptor) else {
-            return 0
-        }
-
-        // 统一可见性规则：仅统计应在聊天列表中展示的消息数量，
-        // 与分页加载 `loadMessagesPage` 使用相同的过滤条件（shouldDisplayInChatList）。
-        let visibleCount = entities
-            .compactMap { $0.toChatMessage() }
-            .filter { $0.shouldDisplayInChatList() }
-            .count
-
-        return visibleCount
+        return (try? context.fetchCount(descriptor)) ?? 0
     }
 
     /// 加载对话的消息
