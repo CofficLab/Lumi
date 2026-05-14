@@ -174,11 +174,18 @@ public extension LumiHotPreviewPackage {
         public struct PrewarmEntryResult: Sendable {
             public let discoveryID: String
             public let succeeded: Bool
+            public let usedCachedEntry: Bool
             public let errorDescription: String?
 
-            public init(discoveryID: String, succeeded: Bool, errorDescription: String?) {
+            public init(
+                discoveryID: String,
+                succeeded: Bool,
+                usedCachedEntry: Bool = false,
+                errorDescription: String?
+            ) {
                 self.discoveryID = discoveryID
                 self.succeeded = succeeded
+                self.usedCachedEntry = usedCachedEntry
                 self.errorDescription = errorDescription
             }
         }
@@ -313,10 +320,11 @@ public extension LumiHotPreviewPackage {
             return session
         }
 
+        @discardableResult
         public func prewarmPreviewEntry(
             _ discovery: LumiPreviewPackage.PreviewDiscovery,
             configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
-        ) async throws {
+        ) async throws -> Bool {
             let session = HotPreviewSession(discovery: discovery, configuration: configuration)
             try await syntaxPreflight(discovery)
             let plannedStrategy = try await plannedBuildStrategy(for: session, discovery: discovery)
@@ -325,7 +333,7 @@ public extension LumiHotPreviewPackage {
                 configuration: configuration,
                 buildStrategy: plannedStrategy
             ) != nil {
-                return
+                return true
             }
             try await rebuild(session)
 
@@ -335,7 +343,7 @@ public extension LumiHotPreviewPackage {
                 configuration: configuration,
                 buildStrategy: buildStrategy
             ) != nil {
-                return
+                return true
             }
 
             let built = try await buildPreviewEntry(
@@ -350,6 +358,7 @@ public extension LumiHotPreviewPackage {
                 entryVariant: built.variant.rawValue
             )
             await entryCacheManager.storeEntryURL(built.url, for: builtCacheKey)
+            return false
         }
 
         public func prewarmPreviewEntries(
@@ -360,9 +369,14 @@ public extension LumiHotPreviewPackage {
             for discovery in discoveries {
                 guard !Task.isCancelled else { break }
                 do {
-                    try await prewarmPreviewEntry(discovery, configuration: configuration)
+                    let usedCache = try await prewarmPreviewEntry(discovery, configuration: configuration)
                     results.append(
-                        PrewarmEntryResult(discoveryID: discovery.id, succeeded: true, errorDescription: nil)
+                        PrewarmEntryResult(
+                            discoveryID: discovery.id,
+                            succeeded: true,
+                            usedCachedEntry: usedCache,
+                            errorDescription: nil
+                        )
                     )
                 } catch {
                     results.append(

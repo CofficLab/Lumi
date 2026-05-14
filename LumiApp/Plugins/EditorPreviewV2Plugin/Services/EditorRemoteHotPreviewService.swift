@@ -77,6 +77,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private var prewarmAttemptCount = 0
     private var prewarmSuccessCount = 0
     private var prewarmFailureCount = 0
+    private var prewarmCachedEntryCount = 0
     private var previewStartCount = 0
     private var prewarmHitCount = 0
     private var totalSuccessfulPrewarmDuration: TimeInterval = 0
@@ -997,17 +998,29 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         let fingerprintByID = Dictionary(uniqueKeysWithValues: candidates.map { ($0.preview.id, $0.fingerprint) })
         var successfulCount = 0
         var failedCount = 0
+        var cachedCount = 0
         for result in results {
             if result.succeeded {
                 successfulCount += 1
+                if result.usedCachedEntry {
+                    cachedCount += 1
+                }
                 if let fingerprint = fingerprintByID[result.discoveryID] {
                     lastPrewarmedPreviewFingerprint = fingerprint
                     prewarmedPreviewFingerprints.insert(fingerprint)
                 }
-                recordPrewarmResult(success: true, duration: duration / Double(max(results.count, 1)))
+                recordPrewarmResult(
+                    success: true,
+                    usedCachedEntry: result.usedCachedEntry,
+                    duration: duration / Double(max(results.count, 1))
+                )
             } else {
                 failedCount += 1
-                recordPrewarmResult(success: false, duration: duration / Double(max(results.count, 1)))
+                recordPrewarmResult(
+                    success: false,
+                    usedCachedEntry: false,
+                    duration: duration / Double(max(results.count, 1))
+                )
                 if let errorDescription = result.errorDescription {
                     EditorRemoteHotPreviewPlugin.logger.debug(
                         "\(self.t)Hot preview prewarm failed: \(errorDescription, privacy: .public)"
@@ -1024,21 +1037,24 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             scheduledPrewarmTask = nil
         }
         if failedCount == 0 {
-            prewarmSummary = "prewarm: ready"
+            prewarmSummary = cachedCount > 0 ? "prewarm: ready cached \(cachedCount)/\(results.count)" : "prewarm: ready"
         } else if successfulCount == 0 {
             prewarmSummary = "prewarm: failed"
         } else {
             prewarmSummary = "prewarm: partial \(successfulCount)/\(results.count)"
         }
         EditorRemoteHotPreviewPlugin.logger.info(
-            "\(self.t)Prewarmed hot preview entries: \(successfulCount, privacy: .public)/\(results.count, privacy: .public) \(reason, privacy: .public)"
+            "\(self.t)Prewarmed hot preview entries: \(successfulCount, privacy: .public)/\(results.count, privacy: .public), cached \(cachedCount, privacy: .public) \(reason, privacy: .public)"
         )
         refreshDiagnosticSummary()
     }
 
-    private func recordPrewarmResult(success: Bool, duration: TimeInterval) {
+    private func recordPrewarmResult(success: Bool, usedCachedEntry: Bool = false, duration: TimeInterval) {
         if success {
             prewarmSuccessCount += 1
+            if usedCachedEntry {
+                prewarmCachedEntryCount += 1
+            }
             totalSuccessfulPrewarmDuration += duration
         } else {
             prewarmFailureCount += 1
@@ -1062,9 +1078,10 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             averageDuration = 0
         }
         prewarmStatsSummary = String(
-            format: "prewarm stats: %d/%d ok, %d failed, %d hits/%d starts, %.2fs avg",
+            format: "prewarm stats: %d/%d ok, %d cached, %d failed, %d hits/%d starts, %.2fs avg",
             prewarmSuccessCount,
             prewarmAttemptCount,
+            prewarmCachedEntryCount,
             prewarmFailureCount,
             prewarmHitCount,
             previewStartCount,
