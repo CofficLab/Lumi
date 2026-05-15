@@ -4,9 +4,10 @@ import SwiftUI
 struct AvailableToolsListDetailView: View {
     @EnvironmentObject var conversationTurnServices: ConversationTurnServices
     @State private var query = ""
+    @State private var selectedLanguage: LanguagePreference = .english
 
     private var tools: [SuperAgentTool] {
-        conversationTurnServices.toolService.tools
+        conversationTurnServices.toolService.allTools
     }
 
     var body: some View {
@@ -14,6 +15,9 @@ struct AvailableToolsListDetailView: View {
             header
             Divider()
             content
+        }
+        .onAppear {
+            selectedLanguage = conversationTurnServices.toolService.languagePreference
         }
     }
 }
@@ -25,6 +29,7 @@ extension AvailableToolsListDetailView {
         HStack(spacing: 12) {
             headerTitle
             Spacer()
+            languagePicker
             searchField
         }
         .padding(.horizontal, 16)
@@ -54,6 +59,17 @@ extension AvailableToolsListDetailView {
         TextField(String(localized: "Search tools", table: "AgentAvailableToolsPlugin"), text: $query)
             .textFieldStyle(.roundedBorder)
             .frame(width: 200)
+    }
+
+    private var languagePicker: some View {
+        Picker(String(localized: "Language", table: "AgentAvailableToolsPlugin"), selection: $selectedLanguage) {
+            ForEach(LanguagePreference.allCases) { language in
+                Text(language.displayName).tag(language)
+            }
+        }
+        .pickerStyle(.menu)
+        .labelsHidden()
+        .frame(width: 128)
     }
 
     private var content: some View {
@@ -96,8 +112,8 @@ extension AvailableToolsListDetailView {
                 Spacer()
             }
 
-            if !tool.description(for: .english).isEmpty {
-                Text(tool.description(for: .english))
+            if !tool.description(for: selectedLanguage).isEmpty {
+                Text(tool.description(for: selectedLanguage))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .textSelection(.enabled)
@@ -115,7 +131,10 @@ extension AvailableToolsListDetailView {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return tools.sorted { $0.name < $1.name } }
         return tools
-            .filter { $0.name.localizedCaseInsensitiveContains(q) || $0.description(for: .english).localizedCaseInsensitiveContains(q) }
+            .filter {
+                $0.name.localizedCaseInsensitiveContains(q)
+                    || $0.description(for: selectedLanguage).localizedCaseInsensitiveContains(q)
+            }
             .sorted { $0.name < $1.name }
     }
 }

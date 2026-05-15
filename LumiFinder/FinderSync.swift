@@ -5,7 +5,7 @@ import MagicKit
 
 class FinderSync: FIFinderSync, SuperLog {
     static let emoji = "🧩"
-    static let verbose = true
+    static let verbose: Bool = true
 
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "finder")
 

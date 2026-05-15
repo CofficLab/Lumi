@@ -17,7 +17,7 @@ private typealias _MLXModels = MLXModels
 /// 使用 Combine 发布事件，UI 可以订阅变化。
 public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
     nonisolated public static let emoji = "⬇️"
-    nonisolated public static let verbose = false
+    nonisolated public static let verbose: Bool = false
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.mlx")
 

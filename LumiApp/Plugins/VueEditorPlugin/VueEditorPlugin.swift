@@ -19,7 +19,7 @@ import os
 actor VueEditorPlugin: SuperPlugin, SuperLog {
     static let shared = VueEditorPlugin()
     nonisolated static let emoji = "💚"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.vue-editor"

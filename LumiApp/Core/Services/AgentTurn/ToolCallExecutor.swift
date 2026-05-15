@@ -8,7 +8,7 @@ import MagicKit
 @MainActor
 final class ToolCallExecutor: SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
 
     private let toolExecutionService: ToolExecutionService
     private let toolService: ToolService

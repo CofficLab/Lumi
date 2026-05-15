@@ -9,7 +9,7 @@ import os
 /// 使用 Actor 模式确保线程安全，参考 `CacheManager` 模板。
 actor TaskStateManager: SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
 
     // MARK: - Singleton
 

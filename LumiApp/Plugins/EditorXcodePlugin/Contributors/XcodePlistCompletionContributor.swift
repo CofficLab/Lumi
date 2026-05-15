@@ -6,7 +6,7 @@ import os
 @MainActor
 final class XcodePlistCompletionContributor: SuperEditorCompletionContributor, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated(unsafe) static var verbose = false
+    nonisolated(unsafe) static var verbose: Bool = false
 
     let id = "builtin.xcode.plist-completion"
 
