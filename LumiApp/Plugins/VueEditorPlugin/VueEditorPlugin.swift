@@ -69,7 +69,7 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
     // MARK: - UI Contributions
 
     @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
-        guard activeIcon == iconName else { return [] }
+        guard activeIcon == Self.iconName else { return [] }
         return [
             RailTab(
                 id: "vue-outline",
@@ -81,7 +81,7 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {
-        guard tabId == "vue-outline", activeIcon == iconName else { return nil }
+        guard tabId == "vue-outline", activeIcon == Self.iconName else { return nil }
 
         if outlineViewModel == nil {
             outlineViewModel = VueOutlineViewModel()

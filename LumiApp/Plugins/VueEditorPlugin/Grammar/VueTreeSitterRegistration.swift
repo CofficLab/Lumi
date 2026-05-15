@@ -1,4 +1,5 @@
 import Foundation
+import LanguageServerProtocol
 import os
 
 /// Vue Tree-Sitter 语法注册
@@ -97,9 +98,9 @@ struct VueTreeSitterRegistration: Sendable {
         blocks.map { block in
             FoldingRange(
                 startLine: block.startLine,
-                startUTF16CharOffset: nil,
+                startCharacter: nil,
                 endLine: block.endLine,
-                endUTF16CharOffset: nil,
+                endCharacter: nil,
                 kind: foldingKind(for: block.type)
             )
         }

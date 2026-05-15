@@ -121,10 +121,10 @@ struct VueProjectScanner: Sendable {
         return relPath
     }
 
-    // MARK: - 私有方法
+    // MARK: - 辅助方法
 
     /// 将文件名转换为 PascalCase 组件名
-    private static func fileNameToComponentName(_ name: String) -> String {
+    static func fileNameToComponentName(_ name: String) -> String {
         // 处理 kebab-case: my-button -> MyButton
         if name.contains("-") {
             return name.split(separator: "-")

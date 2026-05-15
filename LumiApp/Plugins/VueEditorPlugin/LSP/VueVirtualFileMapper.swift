@@ -120,7 +120,7 @@ struct VueVirtualFileMapper: Sendable {
     // MARK: - 缓存
 
     /// 文件映射缓存（uri → FileMapping）
-    private static var cache: [String: FileMapping] = [:]
+    nonisolated(unsafe) private static var cache: [String: FileMapping] = [:]
     private static let cacheLock = NSLock()
 
     // MARK: - 公开方法

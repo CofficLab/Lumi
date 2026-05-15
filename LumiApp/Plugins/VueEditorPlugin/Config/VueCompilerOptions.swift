@@ -19,7 +19,7 @@ struct VueCompilerOptions: Sendable {
     // MARK: - 选项模型
 
     /// Vue 编译器选项集合
-    struct Options: Sendable {
+    struct Options {
         /// 目标版本
         let target: VueVersionDetector.VueVersion
 
@@ -46,7 +46,7 @@ struct VueCompilerOptions: Sendable {
     }
 
     /// 默认选项
-    static let defaults = Options(
+    nonisolated(unsafe) static let defaults = Options(
         target: .unknown,
         strictTemplates: false,
         isCustomElement: [],
@@ -114,7 +114,7 @@ struct VueCompilerOptions: Sendable {
         options = options.with(sourceDescription: sources.isEmpty ? "defaults" : sources.joined(separator: " + "))
 
         if VueEditorPlugin.verbose {
-            logger.info("\(emoji) Vue 编译器选项: target=\(options.target), strict=\(options.strictTemplates), jsx=\(options.jsxEnabled), customElements=\(options.isCustomElement.count), source=\(options.sourceDescription)")
+            logger.info("\(emoji) Vue 编译器选项: target=\(options.target.rawValue), strict=\(options.strictTemplates), jsx=\(options.jsxEnabled), customElements=\(options.isCustomElement.count), source=\(options.sourceDescription)")
         }
 
         return options

@@ -17,7 +17,7 @@ struct TSConfigVueExtender: Sendable {
     // MARK: - 解析结果
 
     /// tsconfig 解析结果
-    struct TSConfigInfo: Sendable {
+    struct TSConfigInfo {
         /// 配置文件路径
         let configPath: String
 
@@ -140,9 +140,10 @@ struct TSConfigVueExtender: Sendable {
                     let suffix = String(aliasPath.dropFirst(prefix.count + 1))
                     for target in targets {
                         let targetPrefix = String(target.dropLast(2)) // "src/*" -> "src"
-                        let resolved = (projectPath as NSString)
+                        let resolved = URL(fileURLWithPath: projectPath)
                             .appendingPathComponent(targetPrefix)
                             .appendingPathComponent(suffix)
+                            .path
                         return resolved
                     }
                 }
@@ -198,7 +199,7 @@ struct TSConfigVueExtender: Sendable {
 
     // MARK: - 缓存
 
-    private static var cache: [String: TSConfigInfo] = [:]
+    nonisolated(unsafe) private static var cache: [String: TSConfigInfo] = [:]
     private static let cacheLock = NSLock()
 
     /// 获取缓存的配置（带自动解析）

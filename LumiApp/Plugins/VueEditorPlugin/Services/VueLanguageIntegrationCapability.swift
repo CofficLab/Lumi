@@ -82,7 +82,7 @@ final class VueLanguageIntegrationCapability: SuperEditorLanguageIntegrationCapa
         // 尝试从 VolarServiceManager 获取完整配置
         if let config = VolarServiceManager.serverConfig(projectPath: projectPath) {
             if VueEditorPlugin.verbose {
-                Self.logger.info("\(Self.emoji) 使用 VolarServiceManager 配置: vue=\(config.vueVersion), hybrid=\(config.hybridMode)")
+                Self.logger.info("\(Self.emoji) 使用 VolarServiceManager 配置: vue=\(config.vueVersion.rawValue), hybrid=\(config.hybridMode)")
             }
             return config.initializationOptions
         }

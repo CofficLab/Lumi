@@ -142,7 +142,7 @@ final class TemplateAttributeCompleter: SuperEditorCompletionContributor {
         guard parts.count >= 2 else { return [] }
 
         // 基础修饰符
-        VueKnowledgeBase.eventModifierSuggestions(prefix: "." + String(parts.last ?? ""))
+        return VueKnowledgeBase.eventModifierSuggestions(prefix: "." + String(parts.last ?? ""))
     }
 
     // MARK: - 插槽补全

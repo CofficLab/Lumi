@@ -44,7 +44,7 @@ final class SFCBlockHighlighter {
     }
 
     /// 预设的区块样式
-    static let blockStyles: [SFCBlockType: BlockStyle] = [
+    nonisolated(unsafe) static let blockStyles: [SFCBlockType: BlockStyle] = [
         .template: BlockStyle(
             blockType: .template,
             backgroundColor: (light: "#E8F5E9", dark: "#1B3A1D"),

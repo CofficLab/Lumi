@@ -74,7 +74,7 @@ struct CSSModulesTypeGenerator: Sendable {
                 // 收集属性
                 let propLine = trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "{};"))
                 if !propLine.isEmpty && propLine.contains(":") {
-                    currentProperties.append(propLine.trimmingCharacters(in: "; "))
+                    currentProperties.append(propLine.trimmingCharacters(in: CharacterSet(charactersIn: "; ")))
                 }
 
                 if braceDepth <= 0 {

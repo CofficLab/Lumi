@@ -97,16 +97,18 @@ struct AutoImportRegistry: Sendable {
 
         // 3. 尝试 src/ 子目录（某些项目结构）
         if components.isEmpty && apis.isEmpty {
-            let srcComponentsPath = (projectPath as NSString)
+            let srcComponentsPath = URL(fileURLWithPath: projectPath)
                 .appendingPathComponent("src")
                 .appendingPathComponent(componentsFileName)
+                .path
             if let content = try? String(contentsOfFile: srcComponentsPath, encoding: .utf8) {
                 components = parseComponentsDTS(content)
             }
 
-            let srcAutoImportsPath = (projectPath as NSString)
+            let srcAutoImportsPath = URL(fileURLWithPath: projectPath)
                 .appendingPathComponent("src")
                 .appendingPathComponent(autoImportsFileName)
+                .path
             if let content = try? String(contentsOfFile: srcAutoImportsPath, encoding: .utf8) {
                 apis = parseAutoImportsDTS(content)
             }
@@ -191,7 +193,6 @@ struct AutoImportRegistry: Sendable {
             if let fromRange = Range(match.range(at: 2), in: content),
                let exportRange = Range(match.range(at: 3), in: content) {
                 let importFrom = String(content[fromRange])
-                let exportName = String(content[exportRange])
 
                 apis[name] = APIEntry(
                     name: name,
@@ -207,7 +208,7 @@ struct AutoImportRegistry: Sendable {
 
     // MARK: - 缓存
 
-    private static var cache: [String: Registry] = [:]
+    nonisolated(unsafe) private static var cache: [String: Registry] = [:]
     private static let cacheLock = NSLock()
 
     /// 获取缓存的注册信息
