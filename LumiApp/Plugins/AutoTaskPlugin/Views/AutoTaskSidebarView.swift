@@ -8,6 +8,10 @@ struct AutoTaskSidebarView: View {
     @EnvironmentObject var conversationVM: ConversationVM
     @EnvironmentObject private var themeVM: ThemeVM
     @StateObject private var viewModel = AutoTaskSidebarViewModel()
+    @State private var taskListContentHeight: CGFloat = Self.maxTaskListHeight
+
+    private static let maxSidebarHeight: CGFloat = 200
+    private static let maxTaskListHeight: CGFloat = 160
 
     /// 是否有正在进行的任务（需要显示 UI）
     private var hasVisibleTasks: Bool {
@@ -29,7 +33,8 @@ struct AutoTaskSidebarView: View {
                 }
             }
         }
-        .frame(maxHeight: hasVisibleTasks ? 200 : nil)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxHeight: hasVisibleTasks ? Self.maxSidebarHeight : nil)
         .frame(minWidth: hasVisibleTasks ? 240 : 0, idealWidth: hasVisibleTasks ? 320 : 0)
         .background(hasVisibleTasks ? themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.6) : nil)
         .task(id: conversationVM.selectedConversationId) {
@@ -78,7 +83,27 @@ struct AutoTaskSidebarView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: TaskListContentHeightKey.self,
+                        value: proxy.size.height
+                    )
+                }
+            }
         }
+        .frame(height: min(taskListContentHeight, Self.maxTaskListHeight))
+        .onPreferenceChange(TaskListContentHeightKey.self) { height in
+            taskListContentHeight = max(0, height)
+        }
+    }
+}
+
+private struct TaskListContentHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
