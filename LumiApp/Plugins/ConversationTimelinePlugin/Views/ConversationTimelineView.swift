@@ -12,6 +12,7 @@ struct ConversationTimelineView: View, SuperLog {
     @EnvironmentObject private var llmVM: LLMVM
     @State private var messageCount: Int = 0
     @State private var currentContextTokens: Int = 0
+    private let timelineService = ConversationTimelineService()
 
     var body: some View {
         Group {
@@ -66,21 +67,18 @@ struct ConversationTimelineView: View, SuperLog {
     private var contextTokenLabel: String {
         let limit = currentModelContextLimit
         if limit > 0 {
-            return "\(formatToken(currentContextTokens))/\(formatToken(limit))"
+            return "\(timelineService.formatToken(currentContextTokens))/\(timelineService.formatToken(limit))"
         }
-        return formatToken(currentContextTokens)
+        return timelineService.formatToken(currentContextTokens)
     }
 
     /// 获取当前模型的上下文窗口大小
     private var currentModelContextLimit: Int {
-        let providerId = llmVM.selectedProviderId
-        let model = llmVM.currentModel
-        let providers = llmVM.availableProviders
-        
-        guard let provider = providers.first(where: { $0.id == providerId }) else {
-            return 0
-        }
-        return provider.contextWindowSizes[model] ?? 0
+        timelineService.contextLimit(
+            providerId: llmVM.selectedProviderId,
+            model: llmVM.currentModel,
+            providers: llmVM.availableProviders
+        )
     }
 
     /// 刷新消息数量和当前上下文 token 数
@@ -91,35 +89,9 @@ struct ConversationTimelineView: View, SuperLog {
             return
         }
         if let messages = chatHistoryVM.loadMessagesAsync(forConversationId: conversationId) {
-            messageCount = messages.count
-            
-            // 计算当前上下文窗口使用量
-            // 1. 找到最后一条 assistant 消息
-            let lastAssistant = messages.last(where: { $0.role == .assistant })
-            
-            // 2. 获取其 inputTokens 作为基础上下文
-            let baseContext = lastAssistant?.inputTokens ?? 0
-            
-            // 3. 找出最后一条 assistant 之后的用户消息（尚未回复的新消息）
-            let lastAssistantIndex = messages.firstIndex {
-                $0.id == lastAssistant?.id
-            } ?? -1
-            
-            let newMessagesAfterLastResponse: [ChatMessage]
-            if lastAssistantIndex >= 0 && lastAssistantIndex < messages.count - 1 {
-                newMessagesAfterLastResponse = Array(messages[(lastAssistantIndex + 1)...])
-                    .filter { $0.role == .user }
-            } else {
-                newMessagesAfterLastResponse = []
-            }
-            
-            // 4. 估算新增消息的 tokens（简单按字符/4 计算）
-            let newTokens = newMessagesAfterLastResponse.reduce(0) {
-                $0 + $1.content.count / 4
-            }
-            
-            // 5. 当前上下文 = 最后一条 inputTokens + 新增用户消息
-            currentContextTokens = baseContext + newTokens
+            let summary = timelineService.summary(from: messages)
+            messageCount = summary.messageCount
+            currentContextTokens = summary.currentContextTokens
         } else {
             messageCount = 0
             currentContextTokens = 0

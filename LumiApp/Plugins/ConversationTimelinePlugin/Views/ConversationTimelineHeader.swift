@@ -1,21 +1,13 @@
 import MagicKit
 import SwiftUI
 
-/// 格式化 token 数字（超过 1000 时显示 K）
-func formatToken(_ value: Int) -> String {
-    if value >= 1000 {
-        let k = Double(value) / 1000.0
-        return String(format: "%.1fk", k)
-    }
-    return "\(value)"
-}
-
 /// 对话时间线标题栏
 struct ConversationTimelineHeader: View {
     let itemCount: Int
     let currentContextTokens: Int
     let contextLimit: Int
     let onRefresh: () -> Void
+    private let timelineService = ConversationTimelineService()
 
     var body: some View {
         HStack {
@@ -34,11 +26,13 @@ struct ConversationTimelineHeader: View {
                         HStack(spacing: 4) {
                             Image(systemName: "chart.bar.xaxis")
                                 .font(.system(size: 9))
+                            let currentText = timelineService.formatToken(currentContextTokens)
                             if contextLimit > 0 {
-                                Text("上下文 \(formatToken(currentContextTokens))/\(formatToken(contextLimit))")
+                                let limitText = timelineService.formatToken(contextLimit)
+                                Text("上下文 \(currentText)/\(limitText)")
                                     .font(.system(size: 11))
                             } else {
-                                Text("上下文 \(formatToken(currentContextTokens))")
+                                Text("上下文 \(currentText)")
                                     .font(.system(size: 11))
                             }
                         }

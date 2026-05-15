@@ -7,6 +7,7 @@ import SwiftUI
 struct MessageTimelineRow: View {
     let item: MessageTimelineItem
     @State private var isHovered = false
+    private let timelineService = ConversationTimelineService()
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
@@ -107,15 +108,15 @@ struct MessageTimelineRow: View {
                 if hasTokenInfo {
                     HStack(spacing: 4) {
                         if let input = item.inputTokens {
-                            Label("\(formatToken(input))", systemImage: "arrow.down.circle.fill")
+                            Label("\(timelineService.formatToken(input))", systemImage: "arrow.down.circle.fill")
                                 .font(.system(size: 10))
                         }
                         if let output = item.outputTokens {
-                            Label("\(formatToken(output))", systemImage: "arrow.up.circle.fill")
+                            Label("\(timelineService.formatToken(output))", systemImage: "arrow.up.circle.fill")
                                 .font(.system(size: 10))
                         }
                         if totalTokens > 0 {
-                            Text("总计 \(formatToken(totalTokens))")
+                            Text("总计 \(timelineService.formatToken(totalTokens))")
                                 .font(.system(size: 10))
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
