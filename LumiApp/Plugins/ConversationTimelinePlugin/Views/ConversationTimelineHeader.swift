@@ -12,7 +12,7 @@ struct ConversationTimelineHeader: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("对话时间线")
+                Text(String(localized: "对话时间线", table: "ConversationTimeline"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -50,7 +50,7 @@ struct ConversationTimelineHeader: View {
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .buttonStyle(.plain)
-            .help("刷新")
+            .help(String(localized: "刷新", table: "ConversationTimeline"))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

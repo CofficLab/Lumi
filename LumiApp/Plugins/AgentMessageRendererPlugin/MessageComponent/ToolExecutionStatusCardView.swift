@@ -22,7 +22,7 @@ struct ToolExecutionStatusCardView: View {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    Text("工具执行")
+                    Text(String(localized: "工具执行", table: "CoreMessageRenderer"))
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     Text(snapshot.summary)

@@ -71,11 +71,11 @@ extension GitHubPluginSettingsView {
                 )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("GitHub Tools")
+                Text(String(localized: "GitHub Tools", table: "GitHubTools"))
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text("提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）")
+                Text(String(localized: "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）", table: "GitHubTools"))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
@@ -96,7 +96,7 @@ extension GitHubPluginSettingsView {
     /// Token 配置区域 - 提供文本输入框供用户输入 GitHub Token
     private var tokenSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Personal Access Token")
+            Text(String(localized: "Personal Access Token", table: "GitHubTools"))
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -122,7 +122,7 @@ extension GitHubPluginSettingsView {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(Color(hex: "30D158"))
                             .font(.caption)
-                        Text("已保存")
+                        Text(String(localized: "已保存", table: "GitHubTools"))
                             .font(.caption)
                             .foregroundColor(Color(hex: "30D158"))
                     }
@@ -147,7 +147,7 @@ extension GitHubPluginSettingsView {
                     .foregroundColor(Color(hex: "0A84FF"))
                     .font(.system(size: 15, weight: .medium))
 
-                Text("API 限制")
+                Text(String(localized: "API 限制", table: "GitHubTools"))
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             }
@@ -156,10 +156,10 @@ extension GitHubPluginSettingsView {
                 // 未认证限制
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("未认证用户")
+                        Text(String(localized: "未认证用户", table: "GitHubTools"))
                             .font(.system(size: 12, weight: .regular))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        Text("60 次/小时")
+                        Text(String(localized: "60 次/小时", table: "GitHubTools"))
                             .font(.system(size: 15, weight: .regular))
                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                             .fontWeight(.medium)
@@ -184,10 +184,10 @@ extension GitHubPluginSettingsView {
                 // 已认证限制
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("已认证用户")
+                        Text(String(localized: "已认证用户", table: "GitHubTools"))
                             .font(.system(size: 12, weight: .regular))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        Text("5,000 次/小时")
+                        Text(String(localized: "5,000 次/小时", table: "GitHubTools"))
                             .font(.system(size: 15, weight: .regular))
                             .foregroundColor(Color(hex: "30D158"))
                             .fontWeight(.medium)
@@ -210,7 +210,7 @@ extension GitHubPluginSettingsView {
                 )
             }
 
-            Text("Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。")
+            Text(String(localized: "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。", table: "GitHubTools"))
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(Color(hex: "98989E"))
                 .lineLimit(2)

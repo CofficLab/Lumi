@@ -1,6 +1,72 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "5,000 次/小时": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5,000 次/小时"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5,000 次/小时"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5,000 次/小時"
+          }
+        }
+      }
+    },
+    "60 次/小时": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 次/小时"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 次/小时"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 次/小時"
+          }
+        }
+      }
+    },
+    "API 限制": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 限制"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 限制"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 限制"
+          }
+        }
+      }
+    },
     "GitHub Tools": {
       "extractionState": "manual",
       "localizations": {
@@ -24,6 +90,116 @@
         }
       }
     },
+    "Personal Access Token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "个人访问令牌"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "個人訪問令牌"
+          }
+        }
+      }
+    },
+    "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Access Token 將儲存在本地，用於訪問私有倉庫和提高 API 限額。"
+          }
+        }
+      }
+    },
+    "已保存": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已儲存"
+          }
+        }
+      }
+    },
+    "已认证用户": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已认证用户"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已认证用户"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已認證使用者"
+          }
+        }
+      }
+    },
+    "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/檔案/搜索/Issue 管理）"
+          }
+        }
+      }
+    },
     "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）。": {
       "extractionState": "manual",
       "localizations": {
@@ -43,6 +219,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "提供訪問 GitHub API 的 Agent 工具（倉庫/文件/搜索/Issue 管理）。"
+          }
+        }
+      }
+    },
+    "未认证用户": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未认证用户"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未认证用户"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未認證使用者"
           }
         }
       }

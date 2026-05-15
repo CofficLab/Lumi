@@ -201,7 +201,7 @@ private struct ToolResultSectionView: View {
             HStack(spacing: 8) {
                 ProgressView()
                     .controlSize(.small)
-                Text("查询结果中…")
+                Text(String(localized: "查询结果中…", table: "CoreMessageRenderer"))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
@@ -213,7 +213,7 @@ private struct ToolResultSectionView: View {
             HStack(spacing: 8) {
                 Image(systemName: "info.circle")
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                Text("点击结果后会在这里显示工具输出")
+                Text(String(localized: "点击结果后会在这里显示工具输出", table: "CoreMessageRenderer"))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
