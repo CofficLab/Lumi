@@ -119,6 +119,10 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
         service.previewWindowDidBecomeInactive()
     }
 
+    func previewWindowVisibilityDidChange(_ isVisible: Bool) {
+        service.previewWindowVisibilityDidChange(isVisible)
+    }
+
     func previewAppDidBecomeActive() {
         service.previewAppDidBecomeActive()
     }

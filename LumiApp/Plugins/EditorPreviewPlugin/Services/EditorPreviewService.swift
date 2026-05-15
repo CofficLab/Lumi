@@ -111,8 +111,8 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private var lastSourceUpdateAt: Date?
     private var shouldRestorePreferredLiveMode = true
     private var isDetailViewVisible = false
+    private var isPreviewWindowVisible = false
     private var isLivePreviewShown = false
-    private var isPreviewAppActive = NSApplication.shared.isActive
 
     init() {
         bindLiveCanvasService()
@@ -363,6 +363,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
     func detailViewDidDisappear() {
         isDetailViewVisible = false
+        isPreviewWindowVisible = false
         liveCanvasService.canvasDidDisappear()
         Task { [weak self] in
             await self?.hideLivePreviewIfNeeded(reason: "hot preview panel disappeared")
@@ -402,11 +403,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     func previewWindowDidBecomeActive() {
-        guard isPreviewAppActive else {
-            refreshDiagnosticSummary()
-            return
-        }
-
+        isPreviewWindowVisible = true
         Task { [weak self] in
             await self?.restoreLivePreviewIfNeeded(reason: "preview window became active")
             await self?.showLivePreviewIfNeeded(reason: "preview window became active", forceOrderFront: true)
@@ -417,8 +414,23 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         refreshDiagnosticSummary()
     }
 
+    func previewWindowVisibilityDidChange(_ isVisible: Bool) {
+        isPreviewWindowVisible = isVisible
+        if isVisible {
+            Task { [weak self] in
+                await self?.restoreLivePreviewIfNeeded(reason: "preview window became visible")
+                await self?.showLivePreviewIfNeeded(reason: "preview window became visible", forceOrderFront: true)
+            }
+        } else {
+            liveCanvasService.cancelPendingFrameSync()
+            Task { [weak self] in
+                await self?.hideLivePreviewIfNeeded(reason: "preview window became hidden")
+            }
+        }
+        refreshDiagnosticSummary()
+    }
+
     func previewAppDidBecomeActive() {
-        isPreviewAppActive = true
         Task { [weak self] in
             await self?.restoreLivePreviewIfNeeded(reason: "preview app became active")
             await self?.showLivePreviewIfNeeded(reason: "preview app became active", forceOrderFront: true)
@@ -426,19 +438,12 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     func previewAppDidResignActive() {
-        isPreviewAppActive = false
         liveCanvasService.cancelPendingFrameSync()
-        Task { [weak self] in
-            await self?.hideLivePreviewIfNeeded(reason: "preview app resigned active")
-        }
+        refreshDiagnosticSummary()
     }
 
     func previewWindowDidReceiveInteraction() {
-        guard isPreviewAppActive else {
-            refreshDiagnosticSummary()
-            return
-        }
-
+        isPreviewWindowVisible = true
         Task { [weak self] in
             await self?.restoreLivePreviewIfNeeded(reason: "preview window received interaction")
             await self?.showLivePreviewIfNeeded(reason: "preview window received interaction", forceOrderFront: true)
@@ -1536,9 +1541,8 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     private func restoreLivePreviewIfNeeded(reason: String) async {
-        guard isPreviewAppActive,
-              NSApplication.shared.isActive,
-              isDetailViewVisible,
+        guard isDetailViewVisible,
+              isPreviewWindowVisible,
               preferredDisplayMode == .live,
               shouldRestorePreferredLiveMode,
               let session = previewSession,
@@ -1598,9 +1602,8 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     private func showLivePreviewIfNeeded(reason: String, forceOrderFront: Bool = false) async {
-        guard isPreviewAppActive,
-              NSApplication.shared.isActive,
-              isDetailViewVisible,
+        guard isDetailViewVisible,
+              isPreviewWindowVisible,
               preferredDisplayMode == .live,
               shouldRestorePreferredLiveMode,
               liveCanvasService.canSyncFrame,

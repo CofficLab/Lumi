@@ -41,11 +41,7 @@ struct EditorRemoteHotPreviewDetailView: View {
                     EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
                 },
                 onWindowVisibilityChanged: { isVisible in
-                    if isVisible {
-                        viewModel.previewWindowDidBecomeActive()
-                    } else {
-                        viewModel.previewWindowDidBecomeInactive()
-                    }
+                    viewModel.previewWindowVisibilityDidChange(isVisible)
                 },
                 onWindowInteraction: {
                     viewModel.previewWindowDidReceiveInteraction()
