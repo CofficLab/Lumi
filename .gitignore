@@ -68,6 +68,6 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
-Build
+/Build
 /DerivedData
 /buildServer.json
