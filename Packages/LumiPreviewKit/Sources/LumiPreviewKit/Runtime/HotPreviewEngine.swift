@@ -772,6 +772,10 @@ public extension LumiPreviewFacade {
                     cachePopulationStrategy: baseStrategy
                 )
             } catch where effectiveStrategy != baseStrategy {
+                await removeCompileCommandCacheIfNeeded(
+                    for: effectiveStrategy,
+                    baseStrategy: baseStrategy
+                )
                 try await build(
                     baseStrategy,
                     session: session,
@@ -1120,6 +1124,20 @@ public extension LumiPreviewFacade {
                 return
             }
             await compileCommandCache.store(commands: commands, for: buildStrategy)
+        }
+
+        private func removeCompileCommandCacheIfNeeded(
+            for failedStrategy: LumiPreviewFacade.BuildStrategy,
+            baseStrategy: LumiPreviewFacade.BuildStrategy
+        ) async {
+            guard case .incremental(let fileURL, _) = failedStrategy else {
+                return
+            }
+            let key = await compileCommandCache.makeCacheKey(
+                for: fileURL,
+                buildStrategy: baseStrategy
+            )
+            await compileCommandCache.removeCommand(for: key)
         }
 
         private func canUseModuleImportEntry(
