@@ -39,6 +39,9 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
         // 基础补全：Vue 指令、内置组件、宏、修饰符
         registry.registerCompletionContributor(VueCompletionContributor())
 
+        // 模板指令上下文感知补全：v-for 片段、事件、修饰符、插槽
+        registry.registerCompletionContributor(TemplateAttributeCompleter())
+
         // 悬浮提示：Vue 指令、组件、宏、Scoped CSS
         registry.registerHoverContributor(VueHoverContributor())
 
@@ -51,7 +54,7 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
         // Vite 开发服务器命令：启动/构建/预览
         registry.registerCommandContributor(VueDevCommandContributor())
 
-        // LSP 集成：Volar 配置注入
+        // LSP 集成：Volar 配置注入（含健康检查和版本检测）
         registry.registerLanguageIntegrationCapability(
             VueLanguageIntegrationCapability()
         )
