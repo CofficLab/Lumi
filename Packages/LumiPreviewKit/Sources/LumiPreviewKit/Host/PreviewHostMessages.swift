@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// 预览宿主支持的命令类型。
 enum PreviewHostCommand: String, Codable, Sendable {
     /// 根据源码发现结果渲染一个预览。

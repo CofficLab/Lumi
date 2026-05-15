@@ -9,7 +9,7 @@ struct EntryCacheManagerTests {
     func reusesSameKeyForUnchangedInputs() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let manager = LumiPreviewPackage.EntryCacheManager(
+        let manager = LumiPreviewFacade.EntryCacheManager(
             cacheRootDirectory: directory,
             maximumEntryCount: 4
         )
@@ -33,12 +33,12 @@ struct EntryCacheManagerTests {
     func usesDifferentCacheKeysForDifferentEntryVariants() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let manager = LumiPreviewPackage.EntryCacheManager(
+        let manager = LumiPreviewFacade.EntryCacheManager(
             cacheRootDirectory: directory,
             maximumEntryCount: 4
         )
         let discovery = makeDiscovery(bodySource: "Text(\"Hello\")")
-        let strategy = LumiPreviewPackage.BuildStrategy.xcode(
+        let strategy = LumiPreviewFacade.BuildStrategy.xcode(
             projectURL: URL(fileURLWithPath: "/tmp/Demo.xcodeproj"),
             scheme: "Demo",
             configuration: "Debug"
@@ -64,7 +64,7 @@ struct EntryCacheManagerTests {
     func returnsStoredEntryWhenDylibExists() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let manager = LumiPreviewPackage.EntryCacheManager(
+        let manager = LumiPreviewFacade.EntryCacheManager(
             cacheRootDirectory: directory,
             maximumEntryCount: 4
         )
@@ -84,7 +84,7 @@ struct EntryCacheManagerTests {
     func evictsLeastRecentlyUsedEntries() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let manager = LumiPreviewPackage.EntryCacheManager(
+        let manager = LumiPreviewFacade.EntryCacheManager(
             cacheRootDirectory: directory,
             maximumEntryCount: 2
         )
@@ -127,8 +127,8 @@ struct EntryCacheManagerTests {
     private func makeDiscovery(
         id: String = "preview-id",
         bodySource: String
-    ) -> LumiPreviewPackage.PreviewDiscovery {
-        LumiPreviewPackage.PreviewDiscovery(
+    ) -> LumiPreviewFacade.PreviewDiscovery {
+        LumiPreviewFacade.PreviewDiscovery(
             id: id,
             title: "Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),

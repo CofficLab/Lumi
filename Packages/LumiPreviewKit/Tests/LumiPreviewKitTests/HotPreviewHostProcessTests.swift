@@ -12,7 +12,7 @@ struct HotPreviewHostProcessTests {
     @Test("launches hot host and interposes a live preview dylib")
     func interposesLivePreviewDylib() async throws {
         let executableURL = try buildHotHostExecutable()
-        let connection = try await LumiPreviewPackage.HotPreviewHostProcess().launch(executableURL: executableURL)
+        let connection = try await LumiPreviewFacade.HotPreviewHostProcess().launch(executableURL: executableURL)
         defer {
             Task {
                 await connection.terminate()
@@ -36,7 +36,7 @@ struct HotPreviewHostProcessTests {
 
         let loadResponse = try await connection.requestLoadPreviewEntry(
             at: initialDylibURL,
-            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
+            symbolName: LumiPreviewFacade.PreviewEntryBuilder.symbolName
         )
         #expect(loadResponse.success)
         #expect(loadResponse.imageFilePath == nil)
@@ -54,7 +54,7 @@ struct HotPreviewHostProcessTests {
 
         let interposeResponse = try await connection.requestInterposeDylib(
             at: interposedDylibURL,
-            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
+            symbolName: LumiPreviewFacade.PreviewEntryBuilder.symbolName
         )
         #expect(interposeResponse.success)
         #expect(interposeResponse.imageFilePath == nil)
@@ -92,11 +92,11 @@ struct HotPreviewHostProcessTests {
             .appendingPathComponent("LumiHotPreviewHostApp-build-\(UUID().uuidString)", isDirectory: true)
         let result = try runSwiftBuild(packageDirectory: packageDirectory, scratchPath: scratchPath)
         guard result.status == 0 else {
-            throw LumiPreviewPackage.PreviewError.compilationFailed(message: result.output)
+            throw LumiPreviewFacade.PreviewError.compilationFailed(message: result.output)
         }
 
         guard let executableURL = findHostExecutable(in: scratchPath) else {
-            throw LumiPreviewPackage.PreviewError.buildProductNotFound
+            throw LumiPreviewFacade.PreviewError.buildProductNotFound
         }
 
         return executableURL
@@ -203,7 +203,7 @@ struct HotPreviewHostProcessTests {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try source.write(to: sourceFile, atomically: true, encoding: .utf8)
 
-        let compiler = LumiPreviewPackage.IncrementalCompiler()
+        let compiler = LumiPreviewFacade.IncrementalCompiler()
         let compiledObject = try await compiler.compile(
             fileURL: sourceFile,
             compileCommand: "/usr/bin/env swiftc -c \(shellQuoted(sourceFile.path)) -o \(shellQuoted(objectFile.path))"
@@ -213,12 +213,12 @@ struct HotPreviewHostProcessTests {
         return dylibURL
     }
 
-    private func frameBytes(from response: LumiPreviewPackage.HotRenderResponse) throws -> Data {
+    private func frameBytes(from response: LumiPreviewFacade.HotRenderResponse) throws -> Data {
         if let tag = response.sharedMemoryTag,
            let width = response.frameWidth,
            let height = response.frameHeight,
            let bytesPerRow = response.bytesPerRow {
-            let channel = LumiPreviewPackage.SharedMemoryFrameChannel()
+            let channel = LumiPreviewFacade.SharedMemoryFrameChannel()
             let mapped = try channel.mapFrame(
                 tag: tag,
                 width: width,

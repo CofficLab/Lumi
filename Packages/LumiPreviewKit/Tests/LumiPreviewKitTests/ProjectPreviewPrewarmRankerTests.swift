@@ -70,8 +70,8 @@ struct ProjectPreviewPrewarmRankerTests {
         #expect(ranked.map(\.preview.id) == [earlierPath.id, earlierLine.id, laterLine.id])
     }
 
-    private func makeDiscovery(path: String, line: Int) -> LumiPreviewPackage.PreviewDiscovery {
-        LumiPreviewPackage.PreviewDiscovery(
+    private func makeDiscovery(path: String, line: Int) -> LumiPreviewFacade.PreviewDiscovery {
+        LumiPreviewFacade.PreviewDiscovery(
             id: "\(path):\(line)",
             title: "Preview",
             sourceFileURL: URL(fileURLWithPath: path),

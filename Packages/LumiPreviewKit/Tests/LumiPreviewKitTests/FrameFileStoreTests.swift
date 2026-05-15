@@ -8,7 +8,7 @@ struct FrameFileStoreTests {
     func writesDecodedPNGDataToFile() throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = LumiPreviewPackage.FrameFileStore(directory: directory)
+        let store = LumiPreviewFacade.FrameFileStore(directory: directory)
         let expected = Data([0x89, 0x50, 0x4E, 0x47])
 
         let fileURL = try store.writePNG(
@@ -25,7 +25,7 @@ struct FrameFileStoreTests {
     func rejectsInvalidBase64Payloads() throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = LumiPreviewPackage.FrameFileStore(directory: directory)
+        let store = LumiPreviewFacade.FrameFileStore(directory: directory)
 
         #expect(throws: Error.self) {
             _ = try store.writePNG(base64EncodedPNG: "%%%")

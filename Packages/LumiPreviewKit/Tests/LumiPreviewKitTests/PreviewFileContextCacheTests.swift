@@ -16,16 +16,16 @@ struct PreviewFileContextCacheTests {
         try FileManager.default.createSymbolicLink(at: symlink, withDestinationURL: realFile)
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let key = LumiPreviewPackage.PreviewFileContextCache<String>.key(for: symlink)
+        let key = LumiPreviewFacade.PreviewFileContextCache<String>.key(for: symlink)
 
         #expect(key == realFile.standardizedFileURL.resolvingSymlinksInPath().path)
     }
 
     @Test("store 和 remove 支持 URL 与 key")
     func storeAndRemoveByURLAndKey() {
-        var cache = LumiPreviewPackage.PreviewFileContextCache<String>(maximumCount: 2)
+        var cache = LumiPreviewFacade.PreviewFileContextCache<String>(maximumCount: 2)
         let fileURL = URL(fileURLWithPath: "/tmp/Preview.swift")
-        let key = LumiPreviewPackage.PreviewFileContextCache<String>.key(for: fileURL)
+        let key = LumiPreviewFacade.PreviewFileContextCache<String>.key(for: fileURL)
 
         #expect(cache.store("first", for: fileURL).isEmpty)
         #expect(cache.value(forKey: key) == "first")
@@ -42,7 +42,7 @@ struct PreviewFileContextCacheTests {
 
     @Test("超过 maximumCount 时淘汰最久未使用的 context")
     func storeEvictsLeastRecentlyUsedContext() {
-        var cache = LumiPreviewPackage.PreviewFileContextCache<Int>(maximumCount: 2)
+        var cache = LumiPreviewFacade.PreviewFileContextCache<Int>(maximumCount: 2)
 
         #expect(cache.store(1, forKey: "a").isEmpty)
         #expect(cache.store(2, forKey: "b").isEmpty)
@@ -59,7 +59,7 @@ struct PreviewFileContextCacheTests {
 
     @Test("重新 store 已有 key 会刷新最近使用顺序")
     func storingExistingKeyRefreshesRecency() {
-        var cache = LumiPreviewPackage.PreviewFileContextCache<Int>(maximumCount: 2)
+        var cache = LumiPreviewFacade.PreviewFileContextCache<Int>(maximumCount: 2)
 
         cache.store(1, forKey: "a")
         cache.store(2, forKey: "b")
@@ -76,7 +76,7 @@ struct PreviewFileContextCacheTests {
 
     @Test("markRecentlyUsed 手动刷新 LRU 顺序")
     func markRecentlyUsedRefreshesRecency() {
-        var cache = LumiPreviewPackage.PreviewFileContextCache<Int>(maximumCount: 2)
+        var cache = LumiPreviewFacade.PreviewFileContextCache<Int>(maximumCount: 2)
 
         cache.store(1, forKey: "a")
         cache.store(2, forKey: "b")
@@ -89,7 +89,7 @@ struct PreviewFileContextCacheTests {
 
     @Test("removeAll 清空缓存并按最久未使用顺序返回 context")
     func removeAllClearsCacheInLeastRecentOrder() {
-        var cache = LumiPreviewPackage.PreviewFileContextCache<Int>(maximumCount: 3)
+        var cache = LumiPreviewFacade.PreviewFileContextCache<Int>(maximumCount: 3)
 
         cache.store(1, forKey: "a")
         cache.store(2, forKey: "b")
@@ -106,7 +106,7 @@ struct PreviewFileContextCacheTests {
 
     @Test("removeAll 在禁用缓存时返回空")
     func removeAllReturnsEmptyWhenCachingDisabled() {
-        var cache = LumiPreviewPackage.PreviewFileContextCache<Int>(maximumCount: 0)
+        var cache = LumiPreviewFacade.PreviewFileContextCache<Int>(maximumCount: 0)
 
         cache.store(1, forKey: "a")
 
@@ -116,13 +116,13 @@ struct PreviewFileContextCacheTests {
 
     @Test("maximumCount 为 0 时不缓存并返回被移除 context")
     func zeroMaximumCountDisablesCaching() {
-        var cache = LumiPreviewPackage.PreviewFileContextCache<Int>(maximumCount: 0)
+        var cache = LumiPreviewFacade.PreviewFileContextCache<Int>(maximumCount: 0)
 
         let firstEviction = cache.store(1, forKey: "a")
         #expect(firstEviction.isEmpty)
         #expect(cache.count == 0)
 
-        var oneItemCache = LumiPreviewPackage.PreviewFileContextCache<Int>(maximumCount: 1)
+        var oneItemCache = LumiPreviewFacade.PreviewFileContextCache<Int>(maximumCount: 1)
         oneItemCache.store(1, forKey: "a")
         let removed = oneItemCache.removeValue(forKey: "a")
         #expect(removed == 1)

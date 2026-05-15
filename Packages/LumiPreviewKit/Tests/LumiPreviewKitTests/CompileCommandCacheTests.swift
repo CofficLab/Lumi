@@ -11,16 +11,16 @@ struct CompileCommandCacheTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let fileURL = directory.appendingPathComponent("Preview.swift")
         try Data().write(to: fileURL)
-        let buildStrategy = LumiPreviewPackage.BuildStrategy.spm(
+        let buildStrategy = LumiPreviewFacade.BuildStrategy.spm(
             packageDirectory: directory,
             targetName: "Demo"
         )
 
-        let cache = LumiPreviewPackage.CompileCommandCache(cacheDirectory: directory)
+        let cache = LumiPreviewFacade.CompileCommandCache(cacheDirectory: directory)
         let key = await cache.makeCacheKey(for: fileURL, buildStrategy: buildStrategy)
         await cache.store(command: "swift-frontend Demo", for: fileURL, key: key)
 
-        let reloaded = LumiPreviewPackage.CompileCommandCache(cacheDirectory: directory)
+        let reloaded = LumiPreviewFacade.CompileCommandCache(cacheDirectory: directory)
         let reloadedKey = await reloaded.makeCacheKey(for: fileURL, buildStrategy: buildStrategy)
 
         #expect(await reloaded.command(for: reloadedKey) == "swift-frontend Demo")

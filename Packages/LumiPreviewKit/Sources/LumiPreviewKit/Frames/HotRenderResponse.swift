@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     struct HotFrameSize: Codable, Sendable, Equatable {
         public let width: Int
         public let height: Int
@@ -144,7 +144,7 @@ public extension LumiPreviewPackage {
             try container.encodeIfPresent(liveWindowNumber, forKey: .liveWindowNumber)
         }
 
-        public init(_ response: LumiPreviewPackage.RenderResponse) {
+        public init(_ response: LumiPreviewFacade.RenderResponse) {
             self.init(
                 success: response.success,
                 previewID: response.previewID,

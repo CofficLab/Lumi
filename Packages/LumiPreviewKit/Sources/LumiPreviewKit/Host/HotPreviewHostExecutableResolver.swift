@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     /// Resolves the `LumiHotPreviewHostApp` executable.
     enum HotPreviewHostExecutableResolver {
         public static let environmentOverrideKey = "LUMI_HOT_PREVIEW_HOST_EXECUTABLE"

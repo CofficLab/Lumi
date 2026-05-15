@@ -13,15 +13,15 @@ final class HotPreviewRenderer {
     var previewView: NSView?
     var renderWindow: NSWindow?
     var liveWindow: HotLivePreviewWindow?
-    var currentDiscovery: LumiPreviewPackage.PreviewDiscovery?
-    var currentConfiguration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
+    var currentDiscovery: LumiPreviewFacade.PreviewDiscovery?
+    var currentConfiguration: LumiPreviewFacade.PreviewRenderConfiguration = .empty
     var loadedHandles: [UnsafeMutableRawPointer] = []
     var currentDynamicPreviewTitle: String?
     var isLivePreviewEnabled = false
     var recentSurfaces: [IOSurfaceRef] = []
     let recentSurfaceLimit = 4
 
-    private let interposingLoader = LumiPreviewPackage.InterposingDylibLoader()
+    private let interposingLoader = LumiPreviewFacade.InterposingDylibLoader()
 
     init() {
         NSApplication.shared.setActivationPolicy(.accessory)
@@ -29,9 +29,9 @@ final class HotPreviewRenderer {
     }
 
     func render(
-        discovery: LumiPreviewPackage.PreviewDiscovery,
-        configuration: LumiPreviewPackage.PreviewRenderConfiguration
-    ) -> LumiPreviewPackage.RenderResponse {
+        discovery: LumiPreviewFacade.PreviewDiscovery,
+        configuration: LumiPreviewFacade.PreviewRenderConfiguration
+    ) -> LumiPreviewFacade.RenderResponse {
         let previewView = AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 Text(discovery.title)
@@ -58,7 +58,7 @@ final class HotPreviewRenderer {
         self.currentConfiguration = configuration
         let snapshot = snapshotFrame(includePNG: true, includeSurface: true)
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             previewID: discovery.id,
             message: Self.renderedMessage(discovery: discovery, configuration: configuration),
@@ -67,11 +67,11 @@ final class HotPreviewRenderer {
         )
     }
 
-    func refresh() -> LumiPreviewPackage.RenderResponse {
+    func refresh() -> LumiPreviewFacade.RenderResponse {
         previewView?.needsLayout = true
         let snapshot = snapshotFrame(includePNG: true, includeSurface: true)
         if let currentDiscovery {
-            return LumiPreviewPackage.RenderResponse(
+            return LumiPreviewFacade.RenderResponse(
                 success: true,
                 previewID: currentDiscovery.id,
                 message: "Refreshed \(currentDiscovery.title)",
@@ -81,7 +81,7 @@ final class HotPreviewRenderer {
         }
 
         if let currentDynamicPreviewTitle {
-            return LumiPreviewPackage.RenderResponse(
+            return LumiPreviewFacade.RenderResponse(
                 success: true,
                 previewID: currentDynamicPreviewTitle,
                 message: "Refreshed \(currentDynamicPreviewTitle)",
@@ -90,15 +90,15 @@ final class HotPreviewRenderer {
             )
         }
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: false,
             message: "No preview has been rendered."
         )
     }
 
-    func captureFrame(includeImageFallback: Bool = true) -> LumiPreviewPackage.RenderResponse {
+    func captureFrame(includeImageFallback: Bool = true) -> LumiPreviewFacade.RenderResponse {
         guard previewView != nil else {
-            return LumiPreviewPackage.RenderResponse(
+            return LumiPreviewFacade.RenderResponse(
                 success: false,
                 message: "No preview has been rendered."
             )
@@ -106,7 +106,7 @@ final class HotPreviewRenderer {
 
         let snapshot = snapshotFrame(includePNG: includeImageFallback, includeSurface: true)
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             previewID: currentDiscovery?.id ?? currentDynamicPreviewTitle,
             message: "Captured current preview frame.",
@@ -117,14 +117,14 @@ final class HotPreviewRenderer {
         )
     }
 
-    func loadDylib(atPath path: String, previewEntrySymbol: String?) -> LumiPreviewPackage.RenderResponse {
+    func loadDylib(atPath path: String, previewEntrySymbol: String?) -> LumiPreviewFacade.RenderResponse {
         guard FileManager.default.fileExists(atPath: path) else {
-            return LumiPreviewPackage.RenderResponse(success: false, message: "Dylib does not exist: \(path)")
+            return LumiPreviewFacade.RenderResponse(success: false, message: "Dylib does not exist: \(path)")
         }
 
         guard let handle = dlopen(path, RTLD_NOW | RTLD_LOCAL) else {
             let errorMessage = dlerror().map { String(cString: $0) } ?? "Unknown dlopen error."
-            return LumiPreviewPackage.RenderResponse(success: false, message: errorMessage)
+            return LumiPreviewFacade.RenderResponse(success: false, message: errorMessage)
         }
 
         loadedHandles.append(handle)
@@ -133,7 +133,7 @@ final class HotPreviewRenderer {
             return renderPreviewEntry(symbolName: previewEntrySymbol, from: handle)
         }
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             message: "Loaded \(URL(fileURLWithPath: path).lastPathComponent)"
         )
@@ -142,7 +142,7 @@ final class HotPreviewRenderer {
     func interposeDylib(
         atPath path: String,
         previewEntrySymbol: String?
-    ) async -> LumiPreviewPackage.RenderResponse {
+    ) async -> LumiPreviewFacade.RenderResponse {
         do {
             _ = try await interposingLoader.load(
                 dylibPath: path,
@@ -150,7 +150,7 @@ final class HotPreviewRenderer {
                 mode: RTLD_NOW | RTLD_GLOBAL
             )
         } catch {
-            return LumiPreviewPackage.RenderResponse(
+            return LumiPreviewFacade.RenderResponse(
                 success: false,
                 previewID: currentDiscovery?.id ?? currentDynamicPreviewTitle,
                 message: error.localizedDescription
@@ -163,7 +163,7 @@ final class HotPreviewRenderer {
         liveWindow?.contentView?.needsDisplay = true
 
         let snapshot = snapshotFrame(includePNG: true, includeSurface: true)
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             previewID: currentDiscovery?.id ?? currentDynamicPreviewTitle ?? previewEntrySymbol,
             message: "Interposed preview dylib.",
@@ -175,8 +175,8 @@ final class HotPreviewRenderer {
     }
 
     private static func renderedMessage(
-        discovery: LumiPreviewPackage.PreviewDiscovery,
-        configuration: LumiPreviewPackage.PreviewRenderConfiguration
+        discovery: LumiPreviewFacade.PreviewDiscovery,
+        configuration: LumiPreviewFacade.PreviewRenderConfiguration
     ) -> String {
         guard configuration.hasEnvironmentInjections else {
             return "Rendered \(discovery.title)"

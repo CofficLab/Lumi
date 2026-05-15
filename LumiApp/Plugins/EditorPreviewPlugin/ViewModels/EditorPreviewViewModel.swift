@@ -12,7 +12,7 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
 
     var hostState: EditorRemoteHotPreviewHostState { service.hostState }
     var lastFrameSummary: String { service.lastFrameSummary }
-    var previews: [LumiPreviewPackage.PreviewDiscovery] { service.previews }
+    var previews: [LumiPreviewFacade.PreviewDiscovery] { service.previews }
     var renderImage: NSImage? { service.renderImage }
     var renderMessage: String? { service.renderMessage }
     var diagnostics: String? { service.diagnostics }
@@ -21,10 +21,10 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
     var failureMessage: String? { service.failureMessage }
     var updatePhase: EditorRemoteHotPreviewUpdatePhase { service.updatePhase }
     var diagnosticSummary: String { service.diagnosticSummary }
-    var livePreviewInfo: LumiPreviewPackage.LivePreviewInfo { service.livePreviewInfo }
+    var livePreviewInfo: LumiPreviewFacade.LivePreviewInfo { service.livePreviewInfo }
     var isLiveLoading: Bool { service.isLiveLoading }
-    var effectiveDisplayMode: LumiPreviewPackage.PreviewDisplayMode { service.effectiveDisplayMode }
-    var preferredDisplayMode: LumiPreviewPackage.PreviewDisplayMode { service.preferredDisplayMode }
+    var effectiveDisplayMode: LumiPreviewFacade.PreviewDisplayMode { service.effectiveDisplayMode }
+    var preferredDisplayMode: LumiPreviewFacade.PreviewDisplayMode { service.preferredDisplayMode }
     var modeStatusMessage: String? { service.modeStatusMessage }
     var isShowingStaleFrame: Bool { service.isShowingStaleFrame }
     var isMarkdownMode: Bool { service.isMarkdownMode }

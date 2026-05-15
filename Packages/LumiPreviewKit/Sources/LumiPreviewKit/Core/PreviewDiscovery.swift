@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// 预览发现结果：从源码中检测到的单个 #Preview 宏信息。
 struct PreviewDiscovery: Identifiable, Codable, Sendable {
     /// 稳定标识符，用于在 UI 和宿主请求之间关联同一个预览。
@@ -59,6 +59,25 @@ struct PreviewDiscovery: Identifiable, Codable, Sendable {
         self.bodySource = bodySource
         self.sourceText = sourceText
     }
+
+    public func strippingSourceText() -> Self {
+        Self(
+            id: id,
+            title: title,
+            sourceFileURL: sourceFileURL,
+            lineNumber: lineNumber,
+            endLineNumber: endLineNumber,
+            primaryTypeName: primaryTypeName,
+            bodySource: bodySource,
+            sourceText: nil
+        )
+    }
 }
 
+}
+
+public extension Array where Element == LumiPreviewFacade.PreviewDiscovery {
+    func strippingSourceText() -> [LumiPreviewFacade.PreviewDiscovery] {
+        map { $0.strippingSourceText() }
+    }
 }

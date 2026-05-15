@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     struct ProjectPreviewPrewarmRanker: Sendable {
         public struct Context: Sendable {
             public let activeFileURL: URL?
@@ -22,12 +22,12 @@ public extension LumiPreviewPackage {
         }
 
         public struct RankedPreview: Sendable {
-            public let preview: LumiPreviewPackage.PreviewDiscovery
+            public let preview: LumiPreviewFacade.PreviewDiscovery
             public let score: Int
             public let reasons: [String]
 
             public init(
-                preview: LumiPreviewPackage.PreviewDiscovery,
+                preview: LumiPreviewFacade.PreviewDiscovery,
                 score: Int,
                 reasons: [String]
             ) {
@@ -40,7 +40,7 @@ public extension LumiPreviewPackage {
         public init() {}
 
         public func rank(
-            _ previews: [LumiPreviewPackage.PreviewDiscovery],
+            _ previews: [LumiPreviewFacade.PreviewDiscovery],
             context: Context
         ) -> [RankedPreview] {
             previews
@@ -66,7 +66,7 @@ public extension LumiPreviewPackage {
         }
 
         public func score(
-            _ preview: LumiPreviewPackage.PreviewDiscovery,
+            _ preview: LumiPreviewFacade.PreviewDiscovery,
             context: Context
         ) -> (score: Int, reasons: [String]) {
             let path = preview.sourceFileURL.standardizedFileURL.path
@@ -104,4 +104,4 @@ public extension LumiPreviewPackage {
     }
 }
 
-public typealias ProjectPreviewPrewarmRanker = LumiPreviewPackage.ProjectPreviewPrewarmRanker
+public typealias ProjectPreviewPrewarmRanker = LumiPreviewFacade.ProjectPreviewPrewarmRanker

@@ -7,7 +7,7 @@ import LumiPreviewKit
 extension HotPreviewRenderer {
     struct SnapshotFrame {
         let pngBase64: String?
-        let surfaceFrame: LumiPreviewPackage.PreviewSurfaceFrame?
+        let surfaceFrame: LumiPreviewFacade.PreviewSurfaceFrame?
     }
 
     private static let bgraPixelFormat: UInt32 =
@@ -70,7 +70,7 @@ extension HotPreviewRenderer {
         return (bitmap, image, bounds.size)
     }
 
-    private func snapshotSurfaceFrame(for image: CGImage, pointsSize: CGSize) -> LumiPreviewPackage.PreviewSurfaceFrame? {
+    private func snapshotSurfaceFrame(for image: CGImage, pointsSize: CGSize) -> LumiPreviewFacade.PreviewSurfaceFrame? {
         let width = image.width
         let height = image.height
         guard width > 0, height > 0 else { return nil }
@@ -112,7 +112,7 @@ extension HotPreviewRenderer {
 
         retainRecentSurface(surface)
         let scale = pointsSize.width > 0 ? Double(width) / Double(pointsSize.width) : 1
-        return LumiPreviewPackage.PreviewSurfaceFrame(
+        return LumiPreviewFacade.PreviewSurfaceFrame(
             surfaceID: UInt32(IOSurfaceGetID(surface)),
             width: width,
             height: height,

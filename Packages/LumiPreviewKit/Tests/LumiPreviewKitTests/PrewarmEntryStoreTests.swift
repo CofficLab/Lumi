@@ -7,7 +7,7 @@ import Testing
 struct PrewarmEntryStoreTests {
     @Test("reuses stored entry when source fingerprint is unchanged")
     func reusesStoredEntryWhenSourceFingerprintIsUnchanged() async throws {
-        let store = LumiPreviewPackage.HotPreviewEngine.PrewarmEntryStore()
+        let store = LumiPreviewFacade.HotPreviewEngine.PrewarmEntryStore()
         let directory = try makeTemporaryDirectory()
         let sourceURL = directory.appendingPathComponent("Preview.swift")
         let entryURL = directory.appendingPathComponent("PreviewEntry.dylib")
@@ -35,7 +35,7 @@ struct PrewarmEntryStoreTests {
 
     @Test("invalidates stored entry when source file changes")
     func invalidatesStoredEntryWhenSourceFileChanges() async throws {
-        let store = LumiPreviewPackage.HotPreviewEngine.PrewarmEntryStore()
+        let store = LumiPreviewFacade.HotPreviewEngine.PrewarmEntryStore()
         let directory = try makeTemporaryDirectory()
         let sourceURL = directory.appendingPathComponent("Preview.swift")
         let entryURL = directory.appendingPathComponent("PreviewEntry.dylib")
@@ -63,7 +63,7 @@ struct PrewarmEntryStoreTests {
 
     @Test("invalidates stored entry when entry file is missing")
     func invalidatesStoredEntryWhenEntryFileIsMissing() async throws {
-        let store = LumiPreviewPackage.HotPreviewEngine.PrewarmEntryStore()
+        let store = LumiPreviewFacade.HotPreviewEngine.PrewarmEntryStore()
         let directory = try makeTemporaryDirectory()
         let sourceURL = directory.appendingPathComponent("Preview.swift")
         let entryURL = directory.appendingPathComponent("PreviewEntry.dylib")
@@ -89,8 +89,8 @@ struct PrewarmEntryStoreTests {
         #expect(entry == nil)
     }
 
-    private func makeDiscovery(sourceFileURL: URL) -> LumiPreviewPackage.PreviewDiscovery {
-        LumiPreviewPackage.PreviewDiscovery(
+    private func makeDiscovery(sourceFileURL: URL) -> LumiPreviewFacade.PreviewDiscovery {
+        LumiPreviewFacade.PreviewDiscovery(
             id: "preview-id",
             title: "Preview",
             sourceFileURL: sourceFileURL,

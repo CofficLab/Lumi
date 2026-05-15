@@ -7,7 +7,7 @@ struct SyntaxCheckerTests {
     @Test("returns valid when swiftc exits successfully")
     func returnsValidWhenCommandSucceeds() async {
         let runner = FakeCommandRunner(result: .init(exitCode: 0))
-        let checker = LumiPreviewPackage.SyntaxChecker(swiftcPath: "/fake/swiftc", runner: runner)
+        let checker = LumiPreviewFacade.SyntaxChecker(swiftcPath: "/fake/swiftc", runner: runner)
 
         let result = await checker.check(fileURL: URL(fileURLWithPath: "/tmp/View.swift"))
 
@@ -18,7 +18,7 @@ struct SyntaxCheckerTests {
     @Test("includes extra arguments before file path")
     func includesExtraArgumentsBeforeFilePath() async {
         let runner = FakeCommandRunner(result: .init(exitCode: 0))
-        let checker = LumiPreviewPackage.SyntaxChecker(swiftcPath: "/fake/swiftc", runner: runner)
+        let checker = LumiPreviewFacade.SyntaxChecker(swiftcPath: "/fake/swiftc", runner: runner)
 
         _ = await checker.check(
             fileURL: URL(fileURLWithPath: "/tmp/View.swift"),
@@ -34,7 +34,7 @@ struct SyntaxCheckerTests {
             exitCode: 1,
             standardError: "/tmp/View.swift:1:1: error: expected expression\n/tmp/View.swift:2:1: note: in expansion"
         ))
-        let checker = LumiPreviewPackage.SyntaxChecker(runner: runner)
+        let checker = LumiPreviewFacade.SyntaxChecker(runner: runner)
 
         let result = await checker.check(fileURL: URL(fileURLWithPath: "/tmp/View.swift"))
         guard case .invalid(let issues) = result else {
@@ -50,7 +50,7 @@ struct SyntaxCheckerTests {
     @Test("returns thrown runner errors as invalid diagnostics")
     func returnsThrownRunnerErrorsAsInvalidDiagnostics() async {
         let runner = FakeCommandRunner(error: TestError.failed)
-        let checker = LumiPreviewPackage.SyntaxChecker(runner: runner)
+        let checker = LumiPreviewFacade.SyntaxChecker(runner: runner)
 
         let result = await checker.check(fileURL: URL(fileURLWithPath: "/tmp/View.swift"))
         guard case .invalid(let issues) = result else {
@@ -67,12 +67,12 @@ private enum TestError: Error {
     case failed
 }
 
-private actor FakeCommandRunner: LumiPreviewPackage.CommandRunning {
-    private let result: LumiPreviewPackage.CommandResult?
+private actor FakeCommandRunner: LumiPreviewFacade.CommandRunning {
+    private let result: LumiPreviewFacade.CommandResult?
     private let error: Error?
     private(set) var commands: [[String]] = []
 
-    init(result: LumiPreviewPackage.CommandResult) {
+    init(result: LumiPreviewFacade.CommandResult) {
         self.result = result
         self.error = nil
     }
@@ -82,7 +82,7 @@ private actor FakeCommandRunner: LumiPreviewPackage.CommandRunning {
         self.error = error
     }
 
-    func run(_ command: [String]) async throws -> LumiPreviewPackage.CommandResult {
+    func run(_ command: [String]) async throws -> LumiPreviewFacade.CommandResult {
         commands.append(command)
         if let error {
             throw error

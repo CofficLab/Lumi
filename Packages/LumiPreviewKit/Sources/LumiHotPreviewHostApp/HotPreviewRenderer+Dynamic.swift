@@ -8,11 +8,11 @@ extension HotPreviewRenderer {
     func renderPreviewEntry(
         symbolName: String,
         from handle: UnsafeMutableRawPointer
-    ) -> LumiPreviewPackage.RenderResponse {
+    ) -> LumiPreviewFacade.RenderResponse {
         let descriptor = previewEntryDescriptor(symbolName: symbolName, from: handle)
         if let response = renderPreviewViewEntry(
             descriptor: descriptor,
-            symbolName: LumiPreviewPackage.PreviewEntryBuilder.viewSymbolName,
+            symbolName: LumiPreviewFacade.PreviewEntryBuilder.viewSymbolName,
             from: handle
         ) {
             return response
@@ -20,13 +20,13 @@ extension HotPreviewRenderer {
 
         guard let symbol = dlsym(handle, symbolName) else {
             let errorMessage = dlerror().map { String(cString: $0) } ?? "Preview entry symbol not found."
-            return LumiPreviewPackage.RenderResponse(success: false, message: errorMessage)
+            return LumiPreviewFacade.RenderResponse(success: false, message: errorMessage)
         }
 
         typealias PreviewEntryFunction = @convention(c) () -> UnsafePointer<CChar>?
         let entryFunction = unsafeBitCast(symbol, to: PreviewEntryFunction.self)
         guard let payloadPointer = entryFunction() else {
-            return LumiPreviewPackage.RenderResponse(success: false, message: "Preview entry returned nil.")
+            return LumiPreviewFacade.RenderResponse(success: false, message: "Preview entry returned nil.")
         }
 
         let payload = String(cString: payloadPointer)
@@ -38,9 +38,9 @@ extension HotPreviewRenderer {
     }
 
     func renderPreviewEntry(
-        descriptor: LumiPreviewPackage.PreviewEntryDescriptor,
+        descriptor: LumiPreviewFacade.PreviewEntryDescriptor,
         symbolName: String
-    ) -> LumiPreviewPackage.RenderResponse {
+    ) -> LumiPreviewFacade.RenderResponse {
         let previewView = AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 Text(descriptor.title)
@@ -66,7 +66,7 @@ extension HotPreviewRenderer {
         self.currentDiscovery = nil
         self.currentDynamicPreviewTitle = descriptor.title
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             previewID: symbolName,
             message: "Loaded preview entry \(descriptor.title)",
@@ -77,10 +77,10 @@ extension HotPreviewRenderer {
     }
 
     func renderPreviewViewEntry(
-        descriptor: LumiPreviewPackage.PreviewEntryDescriptor?,
+        descriptor: LumiPreviewFacade.PreviewEntryDescriptor?,
         symbolName: String,
         from handle: UnsafeMutableRawPointer
-    ) -> LumiPreviewPackage.RenderResponse? {
+    ) -> LumiPreviewFacade.RenderResponse? {
         guard let symbol = dlsym(handle, symbolName) else {
             return nil
         }
@@ -88,7 +88,7 @@ extension HotPreviewRenderer {
         typealias PreviewNSViewFunction = @convention(c) () -> UnsafeMutableRawPointer?
         let viewFunction = unsafeBitCast(symbol, to: PreviewNSViewFunction.self)
         guard let viewPointer = viewFunction() else {
-            return LumiPreviewPackage.RenderResponse(success: false, message: "Preview view entry returned nil.")
+            return LumiPreviewFacade.RenderResponse(success: false, message: "Preview view entry returned nil.")
         }
 
         let view = Unmanaged<NSView>.fromOpaque(viewPointer).takeRetainedValue()
@@ -102,7 +102,7 @@ extension HotPreviewRenderer {
         let title = descriptor?.title ?? symbolName
         currentDynamicPreviewTitle = title
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             previewID: symbolName,
             message: "Loaded preview view entry \(title)",
@@ -111,9 +111,9 @@ extension HotPreviewRenderer {
         )
     }
 
-    func renderLegacyPreviewEntry(title: String, symbolName: String) -> LumiPreviewPackage.RenderResponse {
+    func renderLegacyPreviewEntry(title: String, symbolName: String) -> LumiPreviewFacade.RenderResponse {
         renderPreviewEntry(
-            descriptor: LumiPreviewPackage.PreviewEntryDescriptor(
+            descriptor: LumiPreviewFacade.PreviewEntryDescriptor(
                 title: title,
                 subtitle: "Dynamic dylib preview"
             ),
@@ -121,18 +121,18 @@ extension HotPreviewRenderer {
         )
     }
 
-    static func previewEntryDescriptor(from payload: String) -> LumiPreviewPackage.PreviewEntryDescriptor? {
+    static func previewEntryDescriptor(from payload: String) -> LumiPreviewFacade.PreviewEntryDescriptor? {
         guard let data = payload.data(using: .utf8) else {
             return nil
         }
 
-        return try? JSONDecoder().decode(LumiPreviewPackage.PreviewEntryDescriptor.self, from: data)
+        return try? JSONDecoder().decode(LumiPreviewFacade.PreviewEntryDescriptor.self, from: data)
     }
 
     func previewEntryDescriptor(
         symbolName: String,
         from handle: UnsafeMutableRawPointer
-    ) -> LumiPreviewPackage.PreviewEntryDescriptor? {
+    ) -> LumiPreviewFacade.PreviewEntryDescriptor? {
         guard let symbol = dlsym(handle, symbolName) else {
             return nil
         }

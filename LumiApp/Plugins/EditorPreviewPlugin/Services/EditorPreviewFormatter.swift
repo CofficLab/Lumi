@@ -12,8 +12,8 @@ enum EditorPreviewFormatter {
 
     // MARK: - 公开方法
 
-    /// 将 LumiPreviewPackage.PreviewError 转换为用户友好的本地化错误消息。
-    static func message(for error: LumiPreviewPackage.PreviewError) -> String {
+    /// 将 LumiPreviewFacade.PreviewError 转换为用户友好的本地化错误消息。
+    static func message(for error: LumiPreviewFacade.PreviewError) -> String {
         switch error {
         case .targetNotFound(let file):
             String(
@@ -47,7 +47,7 @@ enum EditorPreviewFormatter {
     ///
     /// 返回类似 "Build 1.23s cached | Refresh 0.45s" 的格式，
     /// 无指标时返回 nil。
-    static func performanceSummary(for metrics: LumiPreviewPackage.PreviewPerformanceMetrics) -> String? {
+    static func performanceSummary(for metrics: LumiPreviewFacade.PreviewPerformanceMetrics) -> String? {
         var parts: [String] = []
         if let compileDuration = metrics.lastCompileDuration {
             let cacheSuffix = metrics.lastCompileUsedCache
@@ -85,7 +85,7 @@ enum EditorPreviewFormatter {
     /// 从渲染响应中解码预览图片。
     ///
     /// 优先从跨进程 IOSurface 读取，失败时回退到 Base64 编码 PNG。
-    static func image(from response: LumiPreviewPackage.RenderResponse) -> NSImage? {
+    static func image(from response: LumiPreviewFacade.RenderResponse) -> NSImage? {
         if let image = image(from: response.surfaceFrame) {
             return image
         }
@@ -103,7 +103,7 @@ enum EditorPreviewFormatter {
         String(format: "%.2fs", seconds)
     }
 
-    private static func image(from surfaceFrame: LumiPreviewPackage.PreviewSurfaceFrame?) -> NSImage? {
+    private static func image(from surfaceFrame: LumiPreviewFacade.PreviewSurfaceFrame?) -> NSImage? {
         guard let surfaceFrame,
               let surface = surface(from: surfaceFrame) else {
             return nil
@@ -136,7 +136,7 @@ enum EditorPreviewFormatter {
         return NSImage(cgImage: cgImage, size: size)
     }
 
-    private static func surface(from surfaceFrame: LumiPreviewPackage.PreviewSurfaceFrame) -> IOSurfaceRef? {
+    private static func surface(from surfaceFrame: LumiPreviewFacade.PreviewSurfaceFrame) -> IOSurfaceRef? {
         guard surfaceFrame.pixelFormat == "BGRA",
               let surfaceID = surfaceFrame.globalIOSurfaceID else {
             return nil

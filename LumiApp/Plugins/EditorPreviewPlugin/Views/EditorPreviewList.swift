@@ -30,7 +30,7 @@ struct HotPreviewList: View {
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.04))
     }
 
-    private func previewRow(_ preview: LumiPreviewPackage.PreviewDiscovery) -> some View {
+    private func previewRow(_ preview: LumiPreviewFacade.PreviewDiscovery) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(preview.title)
                 .font(.system(size: 12, weight: .semibold))

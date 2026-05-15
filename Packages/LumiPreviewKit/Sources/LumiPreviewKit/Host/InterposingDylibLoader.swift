@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     actor InterposingDylibLoader {
         public struct LoadedImage: Sendable, Equatable {
             public let path: String

@@ -12,7 +12,7 @@ struct ImageFileLoaderTests {
         let imageURL = directory.appendingPathComponent("frame.png")
         try writePNG(at: imageURL, color: .systemRed)
 
-        let loader = LumiPreviewPackage.ImageFileLoader(cacheLimit: 4)
+        let loader = LumiPreviewFacade.ImageFileLoader(cacheLimit: 4)
 
         let first = try #require(loader.loadImage(at: imageURL))
         let second = try #require(loader.loadImage(at: imageURL))
@@ -28,7 +28,7 @@ struct ImageFileLoaderTests {
         let invalidURL = directory.appendingPathComponent("frame.png")
         try Data("not a png".utf8).write(to: invalidURL)
 
-        let loader = LumiPreviewPackage.ImageFileLoader()
+        let loader = LumiPreviewFacade.ImageFileLoader()
 
         #expect(loader.loadImage(at: directory.appendingPathComponent("missing.png")) == nil)
         #expect(loader.loadImage(at: invalidURL) == nil)
@@ -43,7 +43,7 @@ struct ImageFileLoaderTests {
         try writePNG(at: firstURL, color: .systemRed)
         try writePNG(at: secondURL, color: .systemBlue)
 
-        let loader = LumiPreviewPackage.ImageFileLoader(cacheLimit: 1)
+        let loader = LumiPreviewFacade.ImageFileLoader(cacheLimit: 1)
 
         let first = try #require(loader.loadImage(at: firstURL))
         _ = try #require(loader.loadImage(at: secondURL))
@@ -57,11 +57,11 @@ struct ImageFileLoaderTests {
     func loadsSharedMemoryImagesAndCachesThem() throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let channel = LumiPreviewPackage.SharedMemoryFrameChannel(
+        let channel = LumiPreviewFacade.SharedMemoryFrameChannel(
             namePrefix: "lumi-hot-preview-loader-test-",
             directory: directory
         )
-        let loader = LumiPreviewPackage.ImageFileLoader(
+        let loader = LumiPreviewFacade.ImageFileLoader(
             cacheLimit: 4,
             sharedMemoryFrameChannel: channel
         )
@@ -114,7 +114,7 @@ struct ImageFileLoaderTests {
             ofItemAtPath: newURL.path
         )
 
-        let removed = LumiPreviewPackage.ImageFileLoader.removeExpiredFrames(
+        let removed = LumiPreviewFacade.ImageFileLoader.removeExpiredFrames(
             in: directory,
             olderThan: 3_600,
             now: now

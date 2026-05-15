@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// Xcode 编译器：使用 xcodebuild 编译 Xcode 项目中的预览。
 final class XcodeCompiler: Sendable {
     /// 创建 Xcode 编译器。

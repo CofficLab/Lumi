@@ -6,9 +6,9 @@ import Testing
 struct InterposingDylibLoaderTests {
     @Test("returns missing dylib error for nonexistent path")
     func returnsMissingDylibErrorForNonexistentPath() async {
-        let loader = LumiPreviewPackage.InterposingDylibLoader()
+        let loader = LumiPreviewFacade.InterposingDylibLoader()
 
-        await #expect(throws: LumiPreviewPackage.InterposingDylibLoader.LoaderError.missingDylib(
+        await #expect(throws: LumiPreviewFacade.InterposingDylibLoader.LoaderError.missingDylib(
             path: "/tmp/DefinitelyMissing.dylib"
         )) {
             try await loader.load(dylibPath: "/tmp/DefinitelyMissing.dylib")
@@ -17,7 +17,7 @@ struct InterposingDylibLoaderTests {
 
     @Test("resolves a known symbol from a system dylib")
     func resolvesKnownSymbolFromSystemDylib() async throws {
-        let loader = LumiPreviewPackage.InterposingDylibLoader()
+        let loader = LumiPreviewFacade.InterposingDylibLoader()
         let dylibPath = "/usr/lib/libobjc-trampolines.dylib"
 
         let loaded = try await loader.load(dylibPath: dylibPath)

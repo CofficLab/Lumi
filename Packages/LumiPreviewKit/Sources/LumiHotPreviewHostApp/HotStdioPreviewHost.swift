@@ -7,8 +7,8 @@ final class HotStdioPreviewHost {
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
     private let renderer = HotPreviewRenderer()
-    private let frameStore = LumiPreviewPackage.FrameFileStore()
-    private let sharedMemoryFrameChannel = LumiPreviewPackage.SharedMemoryFrameChannel()
+    private let frameStore = LumiPreviewFacade.FrameFileStore()
+    private let sharedMemoryFrameChannel = LumiPreviewFacade.SharedMemoryFrameChannel()
     private var requestReader: HotHostRequestReader?
 
     func run() {
@@ -20,22 +20,22 @@ final class HotStdioPreviewHost {
 
     func handleLine(_ line: String) async -> Data {
         guard let data = line.data(using: .utf8) else {
-            return encoded(LumiPreviewPackage.ErrorResponse(message: "Request is not valid UTF-8."))
+            return encoded(LumiPreviewFacade.ErrorResponse(message: "Request is not valid UTF-8."))
         }
 
         do {
-            let request = try decoder.decode(LumiPreviewPackage.HotHostRequest.self, from: data)
+            let request = try decoder.decode(LumiPreviewFacade.HotHostRequest.self, from: data)
             return encoded(await handle(request))
         } catch {
-            return encoded(LumiPreviewPackage.ErrorResponse(message: "Invalid request: \(error.localizedDescription)"))
+            return encoded(LumiPreviewFacade.ErrorResponse(message: "Invalid request: \(error.localizedDescription)"))
         }
     }
 
-    private func handle(_ request: LumiPreviewPackage.HotHostRequest) async -> LumiPreviewPackage.HotRenderResponse {
+    private func handle(_ request: LumiPreviewFacade.HotHostRequest) async -> LumiPreviewFacade.HotRenderResponse {
         switch request.command {
         case .render:
             guard let discovery = request.discovery else {
-                return LumiPreviewPackage.HotRenderResponse(success: false, message: "Render request is missing discovery.")
+                return LumiPreviewFacade.HotRenderResponse(success: false, message: "Render request is missing discovery.")
             }
             return makeHotResponse(
                 from: renderer.render(discovery: discovery, configuration: request.configuration)
@@ -48,7 +48,7 @@ final class HotStdioPreviewHost {
             ))
         case .loadDylib:
             guard let dylibPath = request.dylibPath else {
-                return LumiPreviewPackage.HotRenderResponse(success: false, message: "Dylib load request is missing dylibPath.")
+                return LumiPreviewFacade.HotRenderResponse(success: false, message: "Dylib load request is missing dylibPath.")
             }
             let response = renderer.loadDylib(
                 atPath: dylibPath,
@@ -57,7 +57,7 @@ final class HotStdioPreviewHost {
             return makeHotResponse(from: response)
         case .interposeDylib:
             guard let dylibPath = request.dylibPath else {
-                return LumiPreviewPackage.HotRenderResponse(success: false, message: "Interpose request is missing dylibPath.")
+                return LumiPreviewFacade.HotRenderResponse(success: false, message: "Interpose request is missing dylibPath.")
             }
             let response = await renderer.interposeDylib(
                 atPath: dylibPath,
@@ -68,7 +68,7 @@ final class HotStdioPreviewHost {
             return makeHotResponse(from: renderer.startLivePreview())
         case .updateLiveFrame:
             guard let liveFrame = request.liveFrame else {
-                return LumiPreviewPackage.HotRenderResponse(success: false, message: "Update live frame request is missing liveFrame.")
+                return LumiPreviewFacade.HotRenderResponse(success: false, message: "Update live frame request is missing liveFrame.")
             }
             return makeHotResponse(from: renderer.updateLiveFrame(
                 x: liveFrame.x,
@@ -83,7 +83,7 @@ final class HotStdioPreviewHost {
             return makeHotResponse(from: renderer.hideLivePreview())
         case .reloadLivePreview:
             guard let dylibPath = request.dylibPath else {
-                return LumiPreviewPackage.HotRenderResponse(success: false, message: "Reload live preview request is missing dylibPath.")
+                return LumiPreviewFacade.HotRenderResponse(success: false, message: "Reload live preview request is missing dylibPath.")
             }
             return makeHotResponse(from: renderer.reloadLivePreview(
                 dylibPath: dylibPath,
@@ -95,11 +95,11 @@ final class HotStdioPreviewHost {
     }
 
     private func makeHotResponse(
-        from response: LumiPreviewPackage.RenderResponse
-    ) -> LumiPreviewPackage.HotRenderResponse {
+        from response: LumiPreviewFacade.RenderResponse
+    ) -> LumiPreviewFacade.HotRenderResponse {
         let sharedFrame = renderer.snapshotToSharedMemory(using: sharedMemoryFrameChannel)
         if let sharedFrame {
-            return LumiPreviewPackage.HotRenderResponse(
+            return LumiPreviewFacade.HotRenderResponse(
                 success: response.success,
                 previewID: response.previewID,
                 message: response.message,
@@ -116,7 +116,7 @@ final class HotStdioPreviewHost {
 
         if let base64 = response.previewImagePNGBase64,
            let fileURL = try? frameStore.writePNG(base64EncodedPNG: base64, previewID: response.previewID) {
-            return LumiPreviewPackage.HotRenderResponse(
+            return LumiPreviewFacade.HotRenderResponse(
                 success: response.success,
                 previewID: response.previewID,
                 message: response.message,
@@ -128,7 +128,7 @@ final class HotStdioPreviewHost {
             )
         }
 
-        return LumiPreviewPackage.HotRenderResponse(
+        return LumiPreviewFacade.HotRenderResponse(
             success: response.success,
             previewID: response.previewID,
             message: response.message,

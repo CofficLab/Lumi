@@ -9,7 +9,7 @@ struct PreviewScannerTests {
 
     @Test("单个 #Preview 能被检测到，返回正确的 title、lineNumber、endLineNumber")
     func scanSinglePreview() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         import SwiftUI
 
@@ -36,7 +36,7 @@ struct PreviewScannerTests {
 
     @Test("无 #Preview 的源码返回空数组")
     func scanNoPreview() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = "import SwiftUI\nstruct MyView: View { var body: some View { Text(\"Hi\") } }"
         let results = scanner.scan(
             fileURL: URL(fileURLWithPath: "/tmp/MyView.swift"),
@@ -49,7 +49,7 @@ struct PreviewScannerTests {
 
     @Test("多个 #Preview 全部被检测到")
     func scanMultiplePreviews() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         #Preview("Dirty") {
             GitBranchDetailView(branchName: "main", isDirty: true)
@@ -76,7 +76,7 @@ struct PreviewScannerTests {
 
     @Test("#Preview(\"Title\") 的 title 被正确提取")
     func scanExtractsTitle() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         #Preview("Detail View") {
             GitBranchDetailView(branchName: "main", isDirty: true)
@@ -93,7 +93,7 @@ struct PreviewScannerTests {
 
     @Test("多行签名的 title 被正确提取")
     func scanExtractsMultilineTitle() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         #Preview(
             "Multiline Title"
@@ -113,7 +113,7 @@ struct PreviewScannerTests {
 
     @Test("无标题的 #Preview 获得默认序号标题")
     func scanUntitledPreview() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         #Preview {
             EmptyView()
@@ -131,7 +131,7 @@ struct PreviewScannerTests {
 
     @Test("单行注释中的 #Preview 不被误检")
     func scanIgnoresLineComment() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         // #Preview("Ignored") { EmptyView() }
         """
@@ -144,7 +144,7 @@ struct PreviewScannerTests {
 
     @Test("多行注释中的 #Preview 不被误检")
     func scanIgnoresBlockComment() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         /*
         #Preview("Ignored Block Comment") {
@@ -161,7 +161,7 @@ struct PreviewScannerTests {
 
     @Test("字符串中的 #Preview 不被误检")
     func scanIgnoresStringLiteral() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         let marker = "#Preview(\"Ignored String\") { EmptyView() }"
         """
@@ -174,7 +174,7 @@ struct PreviewScannerTests {
 
     @Test("多行字符串中的 #Preview 不被误检")
     func scanIgnoresMultilineStringLiteral() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = #"""
         let multiline = """
         #Preview("Ignored Multiline String") {
@@ -198,7 +198,7 @@ struct PreviewScannerTests {
 
     @Test("注释和字符串混合场景下只检测真正的 #Preview")
     func scanIgnoresAllCommentAndStringMarkers() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = #"""
         // #Preview("Ignored Line Comment") { EmptyView() }
         let marker = "#Preview(\"Ignored String\") { EmptyView() }"
@@ -233,7 +233,7 @@ struct PreviewScannerTests {
 
     @Test("嵌套花括号正确匹配，endLineNumber 准确")
     func scanBalancedBraces() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         #Preview {
             VStack {
@@ -256,7 +256,7 @@ struct PreviewScannerTests {
 
     @Test("primaryTypeName 被正确提取（如 MyView）")
     func scanExtractsPrimaryTypeName() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         #Preview("Detail View") {
             GitBranchDetailView(branchName: "main", isDirty: true)
@@ -273,7 +273,7 @@ struct PreviewScannerTests {
 
     @Test("以点开头的闭包体不提取 primaryTypeName")
     func scanPrimaryTypeNameDotPrefix() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         #Preview {
             .someView
@@ -291,7 +291,7 @@ struct PreviewScannerTests {
 
     @Test("bodySource 闭包体被正确提取")
     func scanExtractsBodySource() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         #Preview("Detail View") {
             GitBranchDetailView(branchName: "main", isDirty: true)
@@ -313,7 +313,7 @@ struct PreviewScannerTests {
 
     @Test("id 包含行号和序号信息")
     func scanStableId() {
-        let scanner = LumiPreviewPackage.PreviewScanner()
+        let scanner = LumiPreviewFacade.PreviewScanner()
         let source = """
         #Preview {
             EmptyView()

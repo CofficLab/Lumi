@@ -4,8 +4,8 @@ import LumiPreviewKit
 
 extension HotPreviewRenderer {
     func snapshotToSharedMemory(
-        using channel: LumiPreviewPackage.SharedMemoryFrameChannel
-    ) -> LumiPreviewPackage.SharedMemoryFrameChannel.FrameDescriptor? {
+        using channel: LumiPreviewFacade.SharedMemoryFrameChannel
+    ) -> LumiPreviewFacade.SharedMemoryFrameChannel.FrameDescriptor? {
         guard let previewView,
               let snapshot = snapshotBitmap(for: previewView),
               let sharedBytes = bgraFrameBytes(for: snapshot.image) else {

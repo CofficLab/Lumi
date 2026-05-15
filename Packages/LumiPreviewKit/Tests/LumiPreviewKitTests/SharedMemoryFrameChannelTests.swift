@@ -7,7 +7,7 @@ import Testing
 struct SharedMemoryFrameChannelTests {
     @Test("writes and maps frame bytes through shared memory")
     func writesAndMapsFrameBytes() throws {
-        let channel = LumiPreviewPackage.SharedMemoryFrameChannel(
+        let channel = LumiPreviewFacade.SharedMemoryFrameChannel(
             namePrefix: "/lumi-hot-preview-test-"
         )
         #expect(channel.preferredBackend == .automatic)
@@ -46,7 +46,7 @@ struct SharedMemoryFrameChannelTests {
 
     @Test("mach backend preference uses shared memory backend")
     func machPreferenceUsesMachBackend() {
-        let channel = LumiPreviewPackage.SharedMemoryFrameChannel(
+        let channel = LumiPreviewFacade.SharedMemoryFrameChannel(
             namePrefix: "/lumi-hot-preview-test-",
             preferredBackend: .mach
         )
@@ -65,18 +65,18 @@ struct SharedMemoryFrameChannelTests {
     @Test("reports mach backend availability state")
     func reportsMachBackendAvailabilityState() {
         #expect(
-            LumiPreviewPackage.SharedMemoryFrameChannel.machBackendAvailability ==
+            LumiPreviewFacade.SharedMemoryFrameChannel.machBackendAvailability ==
             .available
         )
     }
 
     @Test("environment override selects backend preference")
     func environmentOverrideSelectsBackendPreference() {
-        let channel = LumiPreviewPackage.SharedMemoryFrameChannel(
+        let channel = LumiPreviewFacade.SharedMemoryFrameChannel(
             namePrefix: "/lumi-hot-preview-test-",
             preferredBackend: .automatic,
             environment: [
-                LumiPreviewPackage.SharedMemoryFrameChannel.backendOverrideEnvironmentKey: "mappedfile"
+                LumiPreviewFacade.SharedMemoryFrameChannel.backendOverrideEnvironmentKey: "mappedfile"
             ]
         )
 
@@ -93,7 +93,7 @@ struct SharedMemoryFrameChannelTests {
 
     @Test("creates an image from mapped BGRA frame bytes")
     func createsImageFromMappedFrame() throws {
-        let channel = LumiPreviewPackage.SharedMemoryFrameChannel(
+        let channel = LumiPreviewFacade.SharedMemoryFrameChannel(
             namePrefix: "/lumi-hot-preview-test-"
         )
         let tag = "image-\(UUID().uuidString)"
@@ -123,11 +123,11 @@ struct SharedMemoryFrameChannelTests {
 
     @Test("rejects invalid frame dimensions")
     func rejectsInvalidDimensions() {
-        let channel = LumiPreviewPackage.SharedMemoryFrameChannel(
+        let channel = LumiPreviewFacade.SharedMemoryFrameChannel(
             namePrefix: "/lumi-hot-preview-test-"
         )
 
-        #expect(throws: LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.invalidDimensions) {
+        #expect(throws: LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.invalidDimensions) {
             try channel.writeFrame(
                 tag: "invalid",
                 bytes: Data([0x00]),
@@ -158,7 +158,7 @@ struct SharedMemoryFrameChannelTests {
             ofItemAtPath: newURL.path
         )
 
-        let removed = LumiPreviewPackage.SharedMemoryFrameChannel.removeExpiredFrames(
+        let removed = LumiPreviewFacade.SharedMemoryFrameChannel.removeExpiredFrames(
             in: directory,
             olderThan: 3_600,
             now: now

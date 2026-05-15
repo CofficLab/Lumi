@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// 增量编译器：重编译单个文件，并将产物链接成可由宿主进程加载的 dylib。
 final class IncrementalCompiler: Sendable {
     /// 创建增量编译器。

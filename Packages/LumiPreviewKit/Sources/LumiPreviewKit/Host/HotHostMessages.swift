@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     enum HotHostCommand: String, Codable, Sendable {
         case render
         case refresh
@@ -17,21 +17,21 @@ public extension LumiPreviewPackage {
 
     struct HotHostRequest: Codable, Sendable {
         public let command: HotHostCommand
-        public let discovery: LumiPreviewPackage.PreviewDiscovery?
+        public let discovery: LumiPreviewFacade.PreviewDiscovery?
         public let dylibPath: String?
         public let previewEntrySymbol: String?
-        public let configuration: LumiPreviewPackage.PreviewRenderConfiguration
-        public let liveFrame: LumiPreviewPackage.LiveFrameRequest?
-        public let captureFrame: LumiPreviewPackage.CaptureFrameRequest?
+        public let configuration: LumiPreviewFacade.PreviewRenderConfiguration
+        public let liveFrame: LumiPreviewFacade.LiveFrameRequest?
+        public let captureFrame: LumiPreviewFacade.CaptureFrameRequest?
 
         public init(
             command: HotHostCommand,
-            discovery: LumiPreviewPackage.PreviewDiscovery? = nil,
+            discovery: LumiPreviewFacade.PreviewDiscovery? = nil,
             dylibPath: String? = nil,
             previewEntrySymbol: String? = nil,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty,
-            liveFrame: LumiPreviewPackage.LiveFrameRequest? = nil,
-            captureFrame: LumiPreviewPackage.CaptureFrameRequest? = nil
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration = .empty,
+            liveFrame: LumiPreviewFacade.LiveFrameRequest? = nil,
+            captureFrame: LumiPreviewFacade.CaptureFrameRequest? = nil
         ) {
             self.command = command
             self.discovery = discovery

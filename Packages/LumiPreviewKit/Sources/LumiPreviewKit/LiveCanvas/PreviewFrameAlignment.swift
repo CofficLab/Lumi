@@ -1,6 +1,6 @@
 import AppKit
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 enum PreviewFrameAlignment {
     public static func pixelAlignedFrame(_ frame: NSRect, scale: Double) -> NSRect {
         let scale = max(scale, 1)

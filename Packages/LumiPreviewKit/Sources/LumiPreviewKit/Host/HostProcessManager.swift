@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     /// Manages a small pool of warm host connections.
     actor HostProcessManager<Connection: Sendable> {
         public typealias Launcher = @Sendable (URL) async throws -> Connection

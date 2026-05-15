@@ -7,9 +7,9 @@ import Testing
 struct ImportEntryFallbackCacheTests {
     @Test("records failures per preview fingerprint")
     func recordsFailuresPerPreviewFingerprint() async {
-        let cache = LumiPreviewPackage.ImportEntryFallbackCache()
+        let cache = LumiPreviewFacade.ImportEntryFallbackCache()
         let discovery = makeDiscovery(bodySource: "DemoView()")
-        let strategy = LumiPreviewPackage.BuildStrategy.xcode(
+        let strategy = LumiPreviewFacade.BuildStrategy.xcode(
             projectURL: URL(fileURLWithPath: "/tmp/Demo.xcodeproj"),
             scheme: "Demo",
             configuration: "Debug"
@@ -30,8 +30,8 @@ struct ImportEntryFallbackCacheTests {
 
     @Test("changes to preview body produce a different key")
     func changesToPreviewBodyProduceDifferentKey() async {
-        let cache = LumiPreviewPackage.ImportEntryFallbackCache()
-        let strategy = LumiPreviewPackage.BuildStrategy.spm(
+        let cache = LumiPreviewFacade.ImportEntryFallbackCache()
+        let strategy = LumiPreviewFacade.BuildStrategy.spm(
             packageDirectory: URL(fileURLWithPath: "/tmp/Demo"),
             targetName: "DemoModule"
         )
@@ -52,8 +52,8 @@ struct ImportEntryFallbackCacheTests {
 
     @Test("changes to module artifact fingerprint produce a different key")
     func changesToModuleArtifactFingerprintProduceDifferentKey() async {
-        let cache = LumiPreviewPackage.ImportEntryFallbackCache()
-        let strategy = LumiPreviewPackage.BuildStrategy.xcode(
+        let cache = LumiPreviewFacade.ImportEntryFallbackCache()
+        let strategy = LumiPreviewFacade.BuildStrategy.xcode(
             projectURL: URL(fileURLWithPath: "/tmp/Demo.xcodeproj"),
             scheme: "Demo",
             configuration: "Debug"
@@ -76,8 +76,8 @@ struct ImportEntryFallbackCacheTests {
         #expect(firstKey != secondKey)
     }
 
-    private func makeDiscovery(bodySource: String) -> LumiPreviewPackage.PreviewDiscovery {
-        LumiPreviewPackage.PreviewDiscovery(
+    private func makeDiscovery(bodySource: String) -> LumiPreviewFacade.PreviewDiscovery {
+        LumiPreviewFacade.PreviewDiscovery(
             id: "preview-id",
             title: "Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),

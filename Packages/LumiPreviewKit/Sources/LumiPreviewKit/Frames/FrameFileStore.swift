@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     /// Persists PNG frame payloads so the UI can load them from disk instead of JSON Base64.
     struct FrameFileStore: @unchecked Sendable {
         private let fileManager: FileManager

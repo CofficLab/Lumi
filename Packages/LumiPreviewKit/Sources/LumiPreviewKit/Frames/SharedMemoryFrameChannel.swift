@@ -10,7 +10,7 @@ private func lumi_shm_open(
     _ mode: mode_t
 ) -> Int32
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     final class SharedMemoryFrameChannel: @unchecked Sendable {
         public enum BackendKind: String, Sendable, Equatable {
             case mappedFile
@@ -334,27 +334,27 @@ public extension LumiPreviewPackage {
 }
 
 private protocol FrameStorageBackend: Sendable {
-    var kind: LumiPreviewPackage.SharedMemoryFrameChannel.BackendKind { get }
+    var kind: LumiPreviewFacade.SharedMemoryFrameChannel.BackendKind { get }
 
     func writeFrame(
-        descriptor: LumiPreviewPackage.SharedMemoryFrameChannel.FrameDescriptor,
+        descriptor: LumiPreviewFacade.SharedMemoryFrameChannel.FrameDescriptor,
         bytes: Data,
         at fileURL: URL
     ) throws
 
     func mapFrame(
-        descriptor: LumiPreviewPackage.SharedMemoryFrameChannel.FrameDescriptor,
+        descriptor: LumiPreviewFacade.SharedMemoryFrameChannel.FrameDescriptor,
         at fileURL: URL
-    ) throws -> LumiPreviewPackage.SharedMemoryFrameChannel.MappedFrame
+    ) throws -> LumiPreviewFacade.SharedMemoryFrameChannel.MappedFrame
 
     func removeFrame(at fileURL: URL) throws
 }
 
 private struct MappedFileFrameStorageBackend: FrameStorageBackend {
-    var kind: LumiPreviewPackage.SharedMemoryFrameChannel.BackendKind { .mappedFile }
+    var kind: LumiPreviewFacade.SharedMemoryFrameChannel.BackendKind { .mappedFile }
 
     func writeFrame(
-        descriptor: LumiPreviewPackage.SharedMemoryFrameChannel.FrameDescriptor,
+        descriptor: LumiPreviewFacade.SharedMemoryFrameChannel.FrameDescriptor,
         bytes: Data,
         at fileURL: URL
     ) throws {
@@ -367,7 +367,7 @@ private struct MappedFileFrameStorageBackend: FrameStorageBackend {
         guard ftruncate(fileDescriptor, off_t(descriptor.byteCount)) == 0 else {
             let code = errno
             try? FileManager.default.removeItem(at: fileURL)
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.truncateFailed(
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.truncateFailed(
                 path: fileURL.path,
                 code: code
             )
@@ -383,7 +383,7 @@ private struct MappedFileFrameStorageBackend: FrameStorageBackend {
         ), baseAddress != MAP_FAILED else {
             let code = errno
             try? FileManager.default.removeItem(at: fileURL)
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.mapFailed(
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.mapFailed(
                 path: fileURL.path,
                 code: code
             )
@@ -400,14 +400,14 @@ private struct MappedFileFrameStorageBackend: FrameStorageBackend {
         }
         guard copied else {
             try? FileManager.default.removeItem(at: fileURL)
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.writeFailed
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.writeFailed
         }
     }
 
     func mapFrame(
-        descriptor: LumiPreviewPackage.SharedMemoryFrameChannel.FrameDescriptor,
+        descriptor: LumiPreviewFacade.SharedMemoryFrameChannel.FrameDescriptor,
         at fileURL: URL
-    ) throws -> LumiPreviewPackage.SharedMemoryFrameChannel.MappedFrame {
+    ) throws -> LumiPreviewFacade.SharedMemoryFrameChannel.MappedFrame {
         let fileDescriptor = try openFrameFile(path: fileURL.path, flags: O_RDONLY)
         guard let baseAddress = mmap(
             nil,
@@ -419,13 +419,13 @@ private struct MappedFileFrameStorageBackend: FrameStorageBackend {
         ), baseAddress != MAP_FAILED else {
             let code = errno
             close(fileDescriptor)
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.mapFailed(
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.mapFailed(
                 path: fileURL.path,
                 code: code
             )
         }
 
-        return LumiPreviewPackage.SharedMemoryFrameChannel.MappedFrame(
+        return LumiPreviewFacade.SharedMemoryFrameChannel.MappedFrame(
             descriptor: descriptor,
             fileDescriptor: fileDescriptor,
             baseAddress: baseAddress
@@ -435,7 +435,7 @@ private struct MappedFileFrameStorageBackend: FrameStorageBackend {
     func removeFrame(at fileURL: URL) throws {
         if FileManager.default.fileExists(atPath: fileURL.path) {
             guard unlink(fileURL.path) == 0 else {
-                throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.removeFailed(
+                throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.removeFailed(
                     path: fileURL.path,
                     code: errno
                 )
@@ -446,7 +446,7 @@ private struct MappedFileFrameStorageBackend: FrameStorageBackend {
     private func openFrameFile(path: String, flags: Int32) throws -> Int32 {
         let fileDescriptor = open(path, flags, S_IRUSR | S_IWUSR)
         guard fileDescriptor >= 0 else {
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.openFailed(
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.openFailed(
                 path: path,
                 code: errno
             )
@@ -456,10 +456,10 @@ private struct MappedFileFrameStorageBackend: FrameStorageBackend {
 }
 
 private struct MachFrameStorageBackend: FrameStorageBackend {
-    var kind: LumiPreviewPackage.SharedMemoryFrameChannel.BackendKind { .mach }
+    var kind: LumiPreviewFacade.SharedMemoryFrameChannel.BackendKind { .mach }
 
     func writeFrame(
-        descriptor: LumiPreviewPackage.SharedMemoryFrameChannel.FrameDescriptor,
+        descriptor: LumiPreviewFacade.SharedMemoryFrameChannel.FrameDescriptor,
         bytes: Data,
         at fileURL: URL
     ) throws {
@@ -473,7 +473,7 @@ private struct MachFrameStorageBackend: FrameStorageBackend {
         guard ftruncate(fileDescriptor, off_t(descriptor.byteCount)) == 0 else {
             let code = errno
             shm_unlink(sharedMemoryName)
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.truncateFailed(
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.truncateFailed(
                 path: sharedMemoryName,
                 code: code
             )
@@ -489,7 +489,7 @@ private struct MachFrameStorageBackend: FrameStorageBackend {
         ), baseAddress != MAP_FAILED else {
             let code = errno
             shm_unlink(sharedMemoryName)
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.mapFailed(
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.mapFailed(
                 path: sharedMemoryName,
                 code: code
             )
@@ -506,14 +506,14 @@ private struct MachFrameStorageBackend: FrameStorageBackend {
         }
         guard copied else {
             shm_unlink(sharedMemoryName)
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.writeFailed
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.writeFailed
         }
     }
 
     func mapFrame(
-        descriptor: LumiPreviewPackage.SharedMemoryFrameChannel.FrameDescriptor,
+        descriptor: LumiPreviewFacade.SharedMemoryFrameChannel.FrameDescriptor,
         at fileURL: URL
-    ) throws -> LumiPreviewPackage.SharedMemoryFrameChannel.MappedFrame {
+    ) throws -> LumiPreviewFacade.SharedMemoryFrameChannel.MappedFrame {
         let sharedMemoryName = sharedMemoryName(for: fileURL)
         let fileDescriptor = try openSharedMemoryObject(name: sharedMemoryName, flags: O_RDONLY)
         guard let baseAddress = mmap(
@@ -526,13 +526,13 @@ private struct MachFrameStorageBackend: FrameStorageBackend {
         ), baseAddress != MAP_FAILED else {
             let code = errno
             close(fileDescriptor)
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.mapFailed(
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.mapFailed(
                 path: sharedMemoryName,
                 code: code
             )
         }
 
-        return LumiPreviewPackage.SharedMemoryFrameChannel.MappedFrame(
+        return LumiPreviewFacade.SharedMemoryFrameChannel.MappedFrame(
             descriptor: descriptor,
             fileDescriptor: fileDescriptor,
             baseAddress: baseAddress
@@ -542,7 +542,7 @@ private struct MachFrameStorageBackend: FrameStorageBackend {
     func removeFrame(at fileURL: URL) throws {
         let sharedMemoryName = sharedMemoryName(for: fileURL)
         guard shm_unlink(sharedMemoryName) == 0 || errno == ENOENT else {
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.removeFailed(
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.removeFailed(
                 path: sharedMemoryName,
                 code: errno
             )
@@ -559,7 +559,7 @@ private struct MachFrameStorageBackend: FrameStorageBackend {
             lumi_shm_open(rawName, flags, S_IRUSR | S_IWUSR)
         }
         guard fileDescriptor >= 0 else {
-            throw LumiPreviewPackage.SharedMemoryFrameChannel.ChannelError.openFailed(
+            throw LumiPreviewFacade.SharedMemoryFrameChannel.ChannelError.openFailed(
                 path: name,
                 code: errno
             )

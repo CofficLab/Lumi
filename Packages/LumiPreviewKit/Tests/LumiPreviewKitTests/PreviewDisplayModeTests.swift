@@ -10,28 +10,28 @@ struct PreviewDisplayModeTests {
 
     @Test("PreviewDisplayMode 包含 image 和 live 两个值")
     func displayModeHasExpectedCases() {
-        #expect(LumiPreviewPackage.PreviewDisplayMode.allCases.count == 2)
-        #expect(LumiPreviewPackage.PreviewDisplayMode.image.rawValue == "image")
-        #expect(LumiPreviewPackage.PreviewDisplayMode.live.rawValue == "live")
+        #expect(LumiPreviewFacade.PreviewDisplayMode.allCases.count == 2)
+        #expect(LumiPreviewFacade.PreviewDisplayMode.image.rawValue == "image")
+        #expect(LumiPreviewFacade.PreviewDisplayMode.live.rawValue == "live")
     }
 
     @Test("LivePreviewState 包含所有预期状态")
     func livePreviewStateHasExpectedCases() {
-        let states: [LumiPreviewPackage.LivePreviewState] = [
+        let states: [LumiPreviewFacade.LivePreviewState] = [
             .unavailable, .available, .launching, .running, .failed, .stopped
         ]
         #expect(states.count == 6)
-        #expect(LumiPreviewPackage.LivePreviewState.unavailable.rawValue == "unavailable")
-        #expect(LumiPreviewPackage.LivePreviewState.available.rawValue == "available")
-        #expect(LumiPreviewPackage.LivePreviewState.launching.rawValue == "launching")
-        #expect(LumiPreviewPackage.LivePreviewState.running.rawValue == "running")
-        #expect(LumiPreviewPackage.LivePreviewState.failed.rawValue == "failed")
-        #expect(LumiPreviewPackage.LivePreviewState.stopped.rawValue == "stopped")
+        #expect(LumiPreviewFacade.LivePreviewState.unavailable.rawValue == "unavailable")
+        #expect(LumiPreviewFacade.LivePreviewState.available.rawValue == "available")
+        #expect(LumiPreviewFacade.LivePreviewState.launching.rawValue == "launching")
+        #expect(LumiPreviewFacade.LivePreviewState.running.rawValue == "running")
+        #expect(LumiPreviewFacade.LivePreviewState.failed.rawValue == "failed")
+        #expect(LumiPreviewFacade.LivePreviewState.stopped.rawValue == "stopped")
     }
 
     @Test("LivePreviewInfo 默认状态为 unavailable")
     func livePreviewInfoDefaults() {
-        let info = LumiPreviewPackage.LivePreviewInfo()
+        let info = LumiPreviewFacade.LivePreviewInfo()
         #expect(info.state == .unavailable)
         #expect(info.unavailableReason == nil)
         #expect(info.hostWindowNumber == nil)
@@ -40,14 +40,14 @@ struct PreviewDisplayModeTests {
 
     @Test("LivePreviewInfo 可编码和解码")
     func livePreviewInfoCoding() throws {
-        let info = LumiPreviewPackage.LivePreviewInfo(
+        let info = LumiPreviewFacade.LivePreviewInfo(
             state: .running,
             unavailableReason: nil,
             hostWindowNumber: 42,
             hostProcessID: 12345
         )
         let data = try JSONEncoder().encode(info)
-        let decoded = try JSONDecoder().decode(LumiPreviewPackage.LivePreviewInfo.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewFacade.LivePreviewInfo.self, from: data)
 
         #expect(decoded.state == .running)
         #expect(decoded.unavailableReason == nil)
@@ -57,17 +57,17 @@ struct PreviewDisplayModeTests {
 
     @Test("PreviewDisplayMode 可编码和解码")
     func displayModeCoding() throws {
-        for mode in LumiPreviewPackage.PreviewDisplayMode.allCases {
+        for mode in LumiPreviewFacade.PreviewDisplayMode.allCases {
             let data = try JSONEncoder().encode(mode)
-            let decoded = try JSONDecoder().decode(LumiPreviewPackage.PreviewDisplayMode.self, from: data)
+            let decoded = try JSONDecoder().decode(LumiPreviewFacade.PreviewDisplayMode.self, from: data)
             #expect(decoded == mode)
         }
     }
 
     @Test("PreviewPerformanceMetrics 记录 build、load 和 refresh 指标")
     func performanceMetricsRecordsBuildLoadAndRefresh() async {
-        let session = LumiPreviewPackage.HotPreviewSession(
-            discovery: LumiPreviewPackage.PreviewDiscovery(
+        let session = LumiPreviewFacade.HotPreviewSession(
+            discovery: LumiPreviewFacade.PreviewDiscovery(
                 id: "test-performance",
                 title: "Test",
                 sourceFileURL: URL(fileURLWithPath: "/tmp/Test.swift"),
@@ -91,8 +91,8 @@ struct PreviewDisplayModeTests {
 
     @Test("HotPreviewSession 默认显示模式为 image")
     func sessionDefaultDisplayModeIsImage() async {
-        let session = LumiPreviewPackage.HotPreviewSession(
-            discovery: LumiPreviewPackage.PreviewDiscovery(
+        let session = LumiPreviewFacade.HotPreviewSession(
+            discovery: LumiPreviewFacade.PreviewDiscovery(
                 id: "test-1",
                 title: "Test",
                 sourceFileURL: URL(fileURLWithPath: "/tmp/Test.swift"),
@@ -106,8 +106,8 @@ struct PreviewDisplayModeTests {
 
     @Test("切换显示模式后 session 状态正确变化")
     func switchDisplayModeChangesSessionState() async {
-        let session = LumiPreviewPackage.HotPreviewSession(
-            discovery: LumiPreviewPackage.PreviewDiscovery(
+        let session = LumiPreviewFacade.HotPreviewSession(
+            discovery: LumiPreviewFacade.PreviewDiscovery(
                 id: "test-2",
                 title: "Test",
                 sourceFileURL: URL(fileURLWithPath: "/tmp/Test.swift"),
@@ -130,8 +130,8 @@ struct PreviewDisplayModeTests {
 
     @Test("markLivePreviewAvailable 设置 live 状态为 available")
     func markLivePreviewAvailableSetsState() async {
-        let session = LumiPreviewPackage.HotPreviewSession(
-            discovery: LumiPreviewPackage.PreviewDiscovery(
+        let session = LumiPreviewFacade.HotPreviewSession(
+            discovery: LumiPreviewFacade.PreviewDiscovery(
                 id: "test-3",
                 title: "Test",
                 sourceFileURL: URL(fileURLWithPath: "/tmp/Test.swift"),
@@ -149,8 +149,8 @@ struct PreviewDisplayModeTests {
 
     @Test("fallbackToImageMode 降级到 image 并记录原因")
     func fallbackToImageModeDegradesCorrectly() async {
-        let session = LumiPreviewPackage.HotPreviewSession(
-            discovery: LumiPreviewPackage.PreviewDiscovery(
+        let session = LumiPreviewFacade.HotPreviewSession(
+            discovery: LumiPreviewFacade.PreviewDiscovery(
                 id: "test-4",
                 title: "Test",
                 sourceFileURL: URL(fileURLWithPath: "/tmp/Test.swift"),
@@ -174,8 +174,8 @@ struct PreviewDisplayModeTests {
 
     @Test("setLivePreviewInfo 更新完整信息")
     func setLivePreviewInfoUpdatesFullState() async {
-        let session = LumiPreviewPackage.HotPreviewSession(
-            discovery: LumiPreviewPackage.PreviewDiscovery(
+        let session = LumiPreviewFacade.HotPreviewSession(
+            discovery: LumiPreviewFacade.PreviewDiscovery(
                 id: "test-5",
                 title: "Test",
                 sourceFileURL: URL(fileURLWithPath: "/tmp/Test.swift"),
@@ -184,7 +184,7 @@ struct PreviewDisplayModeTests {
             )
         )
 
-        let info = LumiPreviewPackage.LivePreviewInfo(
+        let info = LumiPreviewFacade.LivePreviewInfo(
             state: .running,
             unavailableReason: nil,
             hostWindowNumber: 456,
@@ -198,8 +198,8 @@ struct PreviewDisplayModeTests {
 
     @Test("markLivePreviewRunning 设置 running 状态")
     func markLivePreviewRunningSetsState() async {
-        let session = LumiPreviewPackage.HotPreviewSession(
-            discovery: LumiPreviewPackage.PreviewDiscovery(
+        let session = LumiPreviewFacade.HotPreviewSession(
+            discovery: LumiPreviewFacade.PreviewDiscovery(
                 id: "test-running",
                 title: "Test",
                 sourceFileURL: URL(fileURLWithPath: "/tmp/Test.swift"),
@@ -236,7 +236,7 @@ struct PreviewDisplayModeTests {
             ofItemAtPath: newEntry.path
         )
 
-        LumiPreviewPackage.PreviewEntryBuilder.removeExpiredCacheEntries(
+        LumiPreviewFacade.PreviewEntryBuilder.removeExpiredCacheEntries(
             olderThan: 7 * 24 * 60 * 60,
             keepingNewest: 64,
             rootDirectory: root,
@@ -249,21 +249,21 @@ struct PreviewDisplayModeTests {
 
     @Test("updateDiscovery 替换会话中的预览发现结果")
     func updateDiscoveryReplacesSessionDiscovery() async {
-        let original = LumiPreviewPackage.PreviewDiscovery(
+        let original = LumiPreviewFacade.PreviewDiscovery(
             id: "original",
             title: "Original",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Original.swift"),
             lineNumber: 1,
             endLineNumber: 3
         )
-        let updated = LumiPreviewPackage.PreviewDiscovery(
+        let updated = LumiPreviewFacade.PreviewDiscovery(
             id: "updated",
             title: "Updated",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Updated.swift"),
             lineNumber: 4,
             endLineNumber: 6
         )
-        let session = LumiPreviewPackage.HotPreviewSession(discovery: original)
+        let session = LumiPreviewFacade.HotPreviewSession(discovery: original)
 
         await session.updateDiscovery(updated)
         let discovery = await session.discovery
@@ -275,11 +275,11 @@ struct PreviewDisplayModeTests {
         #expect(discovery.endLineNumber == updated.endLineNumber)
     }
 
-    // MARK: - LumiPreviewPackage.RenderResponse Live Fields
+    // MARK: - LumiPreviewFacade.RenderResponse Live Fields
 
     @Test("RenderResponse 新增 livePreviewEnabled 和 liveWindowNumber 字段")
     func renderResponseLiveFields() throws {
-        let response = LumiPreviewPackage.RenderResponse(
+        let response = LumiPreviewFacade.RenderResponse(
             success: true,
             message: "Loaded preview view entry Test",
             livePreviewEnabled: true,
@@ -287,7 +287,7 @@ struct PreviewDisplayModeTests {
         )
 
         let data = try JSONEncoder().encode(response)
-        let decoded = try JSONDecoder().decode(LumiPreviewPackage.RenderResponse.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewFacade.RenderResponse.self, from: data)
 
         #expect(decoded.livePreviewEnabled == true)
         #expect(decoded.liveWindowNumber == 789)
@@ -295,10 +295,10 @@ struct PreviewDisplayModeTests {
 
     @Test("RenderResponse 默认 livePreviewEnabled 为 false")
     func renderResponseDefaultLiveFields() throws {
-        let response = LumiPreviewPackage.RenderResponse(success: true)
+        let response = LumiPreviewFacade.RenderResponse(success: true)
 
         let data = try JSONEncoder().encode(response)
-        let decoded = try JSONDecoder().decode(LumiPreviewPackage.RenderResponse.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewFacade.RenderResponse.self, from: data)
 
         #expect(decoded.livePreviewEnabled == false)
         #expect(decoded.liveWindowNumber == nil)
@@ -310,20 +310,20 @@ struct PreviewDisplayModeTests {
         {"success":true,"message":"Loaded preview"}
         """
         let data = try XCTUnwrap(json.data(using: .utf8))
-        let decoded = try JSONDecoder().decode(LumiPreviewPackage.RenderResponse.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewFacade.RenderResponse.self, from: data)
 
         #expect(decoded.success == true)
         #expect(decoded.livePreviewEnabled == false)
         #expect(decoded.liveWindowNumber == nil)
     }
 
-    // MARK: - LumiPreviewPackage.LiveFrameRequest
+    // MARK: - LumiPreviewFacade.LiveFrameRequest
 
     @Test("LiveFrameRequest 可编码和解码")
     func liveFrameRequestCoding() throws {
-        let frame = LumiPreviewPackage.LiveFrameRequest(x: 100.0, y: 200.0, width: 320.0, height: 180.0, scale: 2)
+        let frame = LumiPreviewFacade.LiveFrameRequest(x: 100.0, y: 200.0, width: 320.0, height: 180.0, scale: 2)
         let data = try JSONEncoder().encode(frame)
-        let decoded = try JSONDecoder().decode(LumiPreviewPackage.LiveFrameRequest.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewFacade.LiveFrameRequest.self, from: data)
 
         #expect(decoded.x == 100.0)
         #expect(decoded.y == 200.0)
@@ -332,24 +332,24 @@ struct PreviewDisplayModeTests {
         #expect(decoded.scale == 2)
     }
 
-    @Test("旧格式 LumiPreviewPackage.LiveFrameRequest 解码时 scale 默认为 1")
+    @Test("旧格式 LumiPreviewFacade.LiveFrameRequest 解码时 scale 默认为 1")
     func liveFrameRequestLegacyCodingDefaultsScale() throws {
         let data = #"{"x":100,"y":200,"width":320,"height":180}"#.data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(LumiPreviewPackage.LiveFrameRequest.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewFacade.LiveFrameRequest.self, from: data)
 
         #expect(decoded.scale == 1)
     }
 
     @Test("RenderRequest 携带 liveFrame")
     func renderRequestWithLiveFrame() throws {
-        let frame = LumiPreviewPackage.LiveFrameRequest(x: 50, y: 100, width: 640, height: 480)
-        let request = LumiPreviewPackage.RenderRequest(
+        let frame = LumiPreviewFacade.LiveFrameRequest(x: 50, y: 100, width: 640, height: 480)
+        let request = LumiPreviewFacade.RenderRequest(
             command: .updateLiveFrame,
             liveFrame: frame
         )
 
         let data = try JSONEncoder().encode(request)
-        let decoded = try JSONDecoder().decode(LumiPreviewPackage.RenderRequest.self, from: data)
+        let decoded = try JSONDecoder().decode(LumiPreviewFacade.RenderRequest.self, from: data)
 
         #expect(decoded.command == .updateLiveFrame)
         #expect(decoded.liveFrame?.x == 50)
@@ -358,11 +358,11 @@ struct PreviewDisplayModeTests {
         #expect(decoded.liveFrame?.height == 480)
     }
 
-    // MARK: - LumiPreviewPackage.PreviewHostCommand Live Commands
+    // MARK: - LumiPreviewFacade.PreviewHostCommand Live Commands
 
     @Test("PreviewHostCommand 包含所有 Live 命令")
     func hostCommandIncludesLiveCommands() {
-        let liveCommands: [LumiPreviewPackage.PreviewHostCommand] = [
+        let liveCommands: [LumiPreviewFacade.PreviewHostCommand] = [
             .startLivePreview,
             .updateLiveFrame,
             .showLivePreview,
@@ -373,7 +373,7 @@ struct PreviewDisplayModeTests {
 
         for command in liveCommands {
             let rawValue = command.rawValue
-            let reconstructed = LumiPreviewPackage.PreviewHostCommand(rawValue: rawValue)
+            let reconstructed = LumiPreviewFacade.PreviewHostCommand(rawValue: rawValue)
             #expect(reconstructed == command)
         }
     }
@@ -474,7 +474,7 @@ struct PreviewDisplayModeTests {
 private extension PreviewDisplayModeTests {
     func XCTUnwrap(_ optional: Optional<Data>) throws -> Data {
         guard let value = optional else {
-            throw LumiPreviewPackage.PreviewError.runtimeCrashed(message: "Unexpected nil")
+            throw LumiPreviewFacade.PreviewError.runtimeCrashed(message: "Unexpected nil")
         }
         return value
     }

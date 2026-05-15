@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     struct HotPreviewStartupTiming: Sendable, Equatable {
         public let stage: String
         public let duration: TimeInterval
@@ -13,35 +13,35 @@ public extension LumiPreviewPackage {
         }
     }
 
-    actor HotPreviewSession: LumiPreviewPackage.PreviewSession {
+    actor HotPreviewSession: LumiPreviewFacade.PreviewSession {
         public nonisolated let id: String
 
-        private var currentDiscovery: LumiPreviewPackage.PreviewDiscovery
-        private var currentState: LumiPreviewPackage.PreviewSessionState
-        private var currentConfiguration: LumiPreviewPackage.PreviewRenderConfiguration
-        private var currentPerformanceMetrics = LumiPreviewPackage.PreviewPerformanceMetrics()
-        private var currentDisplayMode: LumiPreviewPackage.PreviewDisplayMode = .image
-        private var currentLivePreviewInfo = LumiPreviewPackage.LivePreviewInfo()
-        private var currentBuildStrategy: LumiPreviewPackage.BuildStrategy?
+        private var currentDiscovery: LumiPreviewFacade.PreviewDiscovery
+        private var currentState: LumiPreviewFacade.PreviewSessionState
+        private var currentConfiguration: LumiPreviewFacade.PreviewRenderConfiguration
+        private var currentPerformanceMetrics = LumiPreviewFacade.PreviewPerformanceMetrics()
+        private var currentDisplayMode: LumiPreviewFacade.PreviewDisplayMode = .image
+        private var currentLivePreviewInfo = LumiPreviewFacade.LivePreviewInfo()
+        private var currentBuildStrategy: LumiPreviewFacade.BuildStrategy?
         private var currentHostConnection: HotHostConnection?
         private var currentLastHotRenderResponse: HotRenderResponse?
         private var currentLoadedPreviewBodySource: String?
         private var currentStartupTimings: [HotPreviewStartupTiming] = []
 
-        public var state: LumiPreviewPackage.PreviewSessionState { currentState }
+        public var state: LumiPreviewFacade.PreviewSessionState { currentState }
         public var hostingView: (any Sendable)? { nil }
-        public var performanceMetrics: LumiPreviewPackage.PreviewPerformanceMetrics { currentPerformanceMetrics }
-        public var configuration: LumiPreviewPackage.PreviewRenderConfiguration { currentConfiguration }
-        public var displayMode: LumiPreviewPackage.PreviewDisplayMode { currentDisplayMode }
-        public var livePreviewInfo: LumiPreviewPackage.LivePreviewInfo { currentLivePreviewInfo }
+        public var performanceMetrics: LumiPreviewFacade.PreviewPerformanceMetrics { currentPerformanceMetrics }
+        public var configuration: LumiPreviewFacade.PreviewRenderConfiguration { currentConfiguration }
+        public var displayMode: LumiPreviewFacade.PreviewDisplayMode { currentDisplayMode }
+        public var livePreviewInfo: LumiPreviewFacade.LivePreviewInfo { currentLivePreviewInfo }
         public var lastHotRenderResponse: HotRenderResponse? { currentLastHotRenderResponse }
         public var startupTimings: [HotPreviewStartupTiming] { currentStartupTimings }
 
-        public var lastRenderResponse: LumiPreviewPackage.RenderResponse? {
+        public var lastRenderResponse: LumiPreviewFacade.RenderResponse? {
             guard let response = currentLastHotRenderResponse else {
                 return nil
             }
-            return LumiPreviewPackage.RenderResponse(
+            return LumiPreviewFacade.RenderResponse(
                 success: response.success,
                 previewID: response.previewID,
                 message: response.message,
@@ -55,9 +55,9 @@ public extension LumiPreviewPackage {
 
         public init(
             id: String = UUID().uuidString,
-            discovery: LumiPreviewPackage.PreviewDiscovery,
-            state: LumiPreviewPackage.PreviewSessionState = .planning,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
+            discovery: LumiPreviewFacade.PreviewDiscovery,
+            state: LumiPreviewFacade.PreviewSessionState = .planning,
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration = .empty
         ) {
             self.id = id
             self.currentDiscovery = discovery
@@ -65,21 +65,21 @@ public extension LumiPreviewPackage {
             self.currentConfiguration = configuration
         }
 
-        public var discovery: LumiPreviewPackage.PreviewDiscovery { currentDiscovery }
+        public var discovery: LumiPreviewFacade.PreviewDiscovery { currentDiscovery }
 
-        public func updateDiscovery(_ discovery: LumiPreviewPackage.PreviewDiscovery) {
+        public func updateDiscovery(_ discovery: LumiPreviewFacade.PreviewDiscovery) {
             currentDiscovery = discovery
         }
 
-        func setState(_ state: LumiPreviewPackage.PreviewSessionState) {
+        func setState(_ state: LumiPreviewFacade.PreviewSessionState) {
             currentState = state
         }
 
-        func setBuildStrategy(_ strategy: LumiPreviewPackage.BuildStrategy) {
+        func setBuildStrategy(_ strategy: LumiPreviewFacade.BuildStrategy) {
             currentBuildStrategy = strategy
         }
 
-        func buildStrategy() -> LumiPreviewPackage.BuildStrategy? {
+        func buildStrategy() -> LumiPreviewFacade.BuildStrategy? {
             currentBuildStrategy
         }
 
@@ -91,7 +91,7 @@ public extension LumiPreviewPackage {
             currentHostConnection
         }
 
-        func setConfiguration(_ configuration: LumiPreviewPackage.PreviewRenderConfiguration) {
+        func setConfiguration(_ configuration: LumiPreviewFacade.PreviewRenderConfiguration) {
             currentConfiguration = configuration
         }
 
@@ -107,11 +107,11 @@ public extension LumiPreviewPackage {
             currentLoadedPreviewBodySource
         }
 
-        func setDisplayMode(_ mode: LumiPreviewPackage.PreviewDisplayMode) {
+        func setDisplayMode(_ mode: LumiPreviewFacade.PreviewDisplayMode) {
             currentDisplayMode = mode
         }
 
-        func setLivePreviewInfo(_ info: LumiPreviewPackage.LivePreviewInfo) {
+        func setLivePreviewInfo(_ info: LumiPreviewFacade.LivePreviewInfo) {
             currentLivePreviewInfo = info
         }
 
@@ -120,8 +120,8 @@ public extension LumiPreviewPackage {
             hostProcessID: Int32? = nil,
             forceStopped: Bool = false
         ) {
-            let nextState: LumiPreviewPackage.LivePreviewState = forceStopped ? .stopped : .available
-            currentLivePreviewInfo = LumiPreviewPackage.LivePreviewInfo(
+            let nextState: LumiPreviewFacade.LivePreviewState = forceStopped ? .stopped : .available
+            currentLivePreviewInfo = LumiPreviewFacade.LivePreviewInfo(
                 state: nextState,
                 hostWindowNumber: windowNumber,
                 hostProcessID: hostProcessID ?? currentLivePreviewInfo.hostProcessID
@@ -129,7 +129,7 @@ public extension LumiPreviewPackage {
         }
 
         func markLivePreviewRunning(windowNumber: Int? = nil, hostProcessID: Int32? = nil) {
-            currentLivePreviewInfo = LumiPreviewPackage.LivePreviewInfo(
+            currentLivePreviewInfo = LumiPreviewFacade.LivePreviewInfo(
                 state: .running,
                 hostWindowNumber: windowNumber ?? currentLivePreviewInfo.hostWindowNumber,
                 hostProcessID: hostProcessID ?? currentLivePreviewInfo.hostProcessID
@@ -138,7 +138,7 @@ public extension LumiPreviewPackage {
 
         func fallbackToImageMode(reason: String) {
             currentDisplayMode = .image
-            currentLivePreviewInfo = LumiPreviewPackage.LivePreviewInfo(
+            currentLivePreviewInfo = LumiPreviewFacade.LivePreviewInfo(
                 state: .failed,
                 unavailableReason: reason
             )
@@ -192,13 +192,13 @@ public extension LumiPreviewPackage {
 
         private struct PrewarmEntryOutcome {
             let usedCachedEntry: Bool
-            let builtStrategy: LumiPreviewPackage.BuildStrategy?
+            let builtStrategy: LumiPreviewFacade.BuildStrategy?
         }
 
         actor PrewarmEntryStore {
             private struct Entry: Sendable {
                 let entryURL: URL
-                let buildStrategy: LumiPreviewPackage.BuildStrategy?
+                let buildStrategy: LumiPreviewFacade.BuildStrategy?
                 let entryVariant: PreviewEntryVariant
                 let sourceFingerprint: String
                 let configurationFingerprint: String
@@ -211,10 +211,10 @@ public extension LumiPreviewPackage {
 
             func store(
                 entryURL: URL,
-                buildStrategy: LumiPreviewPackage.BuildStrategy?,
+                buildStrategy: LumiPreviewFacade.BuildStrategy?,
                 entryVariant: PreviewEntryVariant,
-                discovery: LumiPreviewPackage.PreviewDiscovery,
-                configuration: LumiPreviewPackage.PreviewRenderConfiguration
+                discovery: LumiPreviewFacade.PreviewDiscovery,
+                configuration: LumiPreviewFacade.PreviewRenderConfiguration
             ) {
                 guard let sourceFingerprint = Self.sourceFingerprint(for: discovery.sourceFileURL) else {
                     return
@@ -237,9 +237,9 @@ public extension LumiPreviewPackage {
             }
 
             func entry(
-                discovery: LumiPreviewPackage.PreviewDiscovery,
-                configuration: LumiPreviewPackage.PreviewRenderConfiguration,
-                buildStrategy: LumiPreviewPackage.BuildStrategy?
+                discovery: LumiPreviewFacade.PreviewDiscovery,
+                configuration: LumiPreviewFacade.PreviewRenderConfiguration,
+                buildStrategy: LumiPreviewFacade.BuildStrategy?
             ) -> CachedPreviewEntry? {
                 let key = Self.key(
                     discovery: discovery,
@@ -274,9 +274,9 @@ public extension LumiPreviewPackage {
             }
 
             private static func key(
-                discovery: LumiPreviewPackage.PreviewDiscovery,
-                configuration: LumiPreviewPackage.PreviewRenderConfiguration,
-                buildStrategy: LumiPreviewPackage.BuildStrategy?
+                discovery: LumiPreviewFacade.PreviewDiscovery,
+                configuration: LumiPreviewFacade.PreviewRenderConfiguration,
+                buildStrategy: LumiPreviewFacade.BuildStrategy?
             ) -> String {
                 [
                     discovery.id,
@@ -302,7 +302,7 @@ public extension LumiPreviewPackage {
                 return "\(standardizedURL.path)|\(fileSize)|\(modifiedAt)"
             }
 
-            private static func configurationFingerprint(_ configuration: LumiPreviewPackage.PreviewRenderConfiguration) -> String {
+            private static func configurationFingerprint(_ configuration: LumiPreviewFacade.PreviewRenderConfiguration) -> String {
                 guard let data = try? JSONEncoder().encode(configuration),
                       let text = String(data: data, encoding: .utf8) else {
                     return String(describing: configuration)
@@ -335,10 +335,10 @@ public extension LumiPreviewPackage {
             let fallbackKey: ImportEntryFallbackCache.CacheKey
         }
 
-        private let buildPlanner: LumiPreviewPackage.BuildPlanner
-        private let spmCompiler: LumiPreviewPackage.SPMCompiler
-        private let xcodeCompiler: LumiPreviewPackage.XcodeCompiler
-        private let previewEntryBuilder: LumiPreviewPackage.PreviewEntryBuilder
+        private let buildPlanner: LumiPreviewFacade.BuildPlanner
+        private let spmCompiler: LumiPreviewFacade.SPMCompiler
+        private let xcodeCompiler: LumiPreviewFacade.XcodeCompiler
+        private let previewEntryBuilder: LumiPreviewFacade.PreviewEntryBuilder
         private let entryCacheManager: EntryCacheManager
         private let compileCommandCache: CompileCommandCache
         private let incrementalBuildPipeline: IncrementalBuildPipeline
@@ -354,10 +354,10 @@ public extension LumiPreviewPackage {
 
         public init(
             hostExecutableURL: URL,
-            buildPlanner: LumiPreviewPackage.BuildPlanner = .init(),
-            spmCompiler: LumiPreviewPackage.SPMCompiler = .init(),
-            xcodeCompiler: LumiPreviewPackage.XcodeCompiler = .init(),
-            previewEntryBuilder: LumiPreviewPackage.PreviewEntryBuilder = .init(),
+            buildPlanner: LumiPreviewFacade.BuildPlanner = .init(),
+            spmCompiler: LumiPreviewFacade.SPMCompiler = .init(),
+            xcodeCompiler: LumiPreviewFacade.XcodeCompiler = .init(),
+            previewEntryBuilder: LumiPreviewFacade.PreviewEntryBuilder = .init(),
             hotPreviewHostProcess: HotPreviewHostProcess = .init(),
             entryCacheManager: EntryCacheManager = .init(),
             compileCommandCache: CompileCommandCache = .init(),
@@ -395,7 +395,7 @@ public extension LumiPreviewPackage {
                     ObjectIdentifier(connection as AnyObject)
                 }
             )
-            LumiPreviewPackage.PreviewEntryBuilder.removeExpiredCacheEntries()
+            LumiPreviewFacade.PreviewEntryBuilder.removeExpiredCacheEntries()
         }
 
         public func warmupHost() async throws {
@@ -406,16 +406,16 @@ public extension LumiPreviewPackage {
             await hostProcessManager.shutdown()
         }
 
-        public func discoverPreviews(in fileURL: URL) async -> [LumiPreviewPackage.PreviewDiscovery] {
+        public func discoverPreviews(in fileURL: URL) async -> [LumiPreviewFacade.PreviewDiscovery] {
             guard let sourceText = try? String(contentsOf: fileURL, encoding: .utf8) else {
                 return []
             }
-            return LumiPreviewPackage.PreviewScanner().scan(fileURL: fileURL, sourceText: sourceText)
+            return LumiPreviewFacade.PreviewScanner().scan(fileURL: fileURL, sourceText: sourceText)
         }
 
         public func startPreview(
-            _ discovery: LumiPreviewPackage.PreviewDiscovery,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
+            _ discovery: LumiPreviewFacade.PreviewDiscovery,
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration = .empty
         ) async throws -> HotPreviewSession {
             let session = HotPreviewSession(discovery: discovery, configuration: configuration)
             let startedAt = Date()
@@ -429,11 +429,11 @@ public extension LumiPreviewPackage {
                     duration: Date().timeIntervalSince(startedAt),
                     detail: discovery.id
                 )
-            } catch let error as LumiPreviewPackage.PreviewError {
+            } catch let error as LumiPreviewFacade.PreviewError {
                 await session.setState(.failed(error))
                 throw error
             } catch {
-                let wrapped = LumiPreviewPackage.PreviewError.runtimeCrashed(message: error.localizedDescription)
+                let wrapped = LumiPreviewFacade.PreviewError.runtimeCrashed(message: error.localizedDescription)
                 await session.setState(.failed(wrapped))
                 throw wrapped
             }
@@ -443,8 +443,8 @@ public extension LumiPreviewPackage {
 
         @discardableResult
         public func prewarmPreviewEntry(
-            _ discovery: LumiPreviewPackage.PreviewDiscovery,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
+            _ discovery: LumiPreviewFacade.PreviewDiscovery,
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration = .empty
         ) async throws -> Bool {
             try await prewarmPreviewEntry(
                 discovery,
@@ -454,9 +454,9 @@ public extension LumiPreviewPackage {
         }
 
         private func prewarmPreviewEntry(
-            _ discovery: LumiPreviewPackage.PreviewDiscovery,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration,
-            alreadyBuiltStrategies: Set<LumiPreviewPackage.BuildStrategy>
+            _ discovery: LumiPreviewFacade.PreviewDiscovery,
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration,
+            alreadyBuiltStrategies: Set<LumiPreviewFacade.BuildStrategy>
         ) async throws -> PrewarmEntryOutcome {
             let session = HotPreviewSession(discovery: discovery, configuration: configuration)
             try await syntaxPreflight(discovery)
@@ -480,7 +480,7 @@ public extension LumiPreviewPackage {
                 for: discovery,
                 baseStrategy: plannedStrategy
             )
-            var rebuiltStrategy: LumiPreviewPackage.BuildStrategy?
+            var rebuiltStrategy: LumiPreviewFacade.BuildStrategy?
             if effectiveStrategy == plannedStrategy,
                alreadyBuiltStrategies.contains(plannedStrategy) {
                 await session.setBuildStrategy(plannedStrategy)
@@ -530,11 +530,11 @@ public extension LumiPreviewPackage {
         }
 
         public func prewarmPreviewEntries(
-            _ discoveries: [LumiPreviewPackage.PreviewDiscovery],
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration = .empty
+            _ discoveries: [LumiPreviewFacade.PreviewDiscovery],
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration = .empty
         ) async -> [PrewarmEntryResult] {
             var results: [PrewarmEntryResult] = []
-            var builtStrategies = Set<LumiPreviewPackage.BuildStrategy>()
+            var builtStrategies = Set<LumiPreviewFacade.BuildStrategy>()
             for discovery in discoveries {
                 guard !Task.isCancelled else { break }
                 do {
@@ -569,7 +569,7 @@ public extension LumiPreviewPackage {
 
         public func refreshPreview(
             _ session: HotPreviewSession,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration? = nil
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration? = nil
         ) async throws {
             await session.resetStartupTimings()
             if let configuration {
@@ -596,11 +596,11 @@ public extension LumiPreviewPackage {
                     detail: (await session.discovery).id
                 )
                 await session.setState(.running)
-            } catch let error as LumiPreviewPackage.PreviewError {
+            } catch let error as LumiPreviewFacade.PreviewError {
                 await session.setState(.failed(error))
                 throw error
             } catch {
-                let wrapped = LumiPreviewPackage.PreviewError.runtimeCrashed(message: error.localizedDescription)
+                let wrapped = LumiPreviewFacade.PreviewError.runtimeCrashed(message: error.localizedDescription)
                 await session.setState(.failed(wrapped))
                 throw wrapped
             }
@@ -616,7 +616,7 @@ public extension LumiPreviewPackage {
 
         public func capturePreviewFrame(_ session: HotPreviewSession) async throws -> HotRenderResponse {
             guard let connection = await session.hostConnection() else {
-                throw LumiPreviewPackage.PreviewError.runtimeCrashed(message: "No active hot preview session.")
+                throw LumiPreviewFacade.PreviewError.runtimeCrashed(message: "No active hot preview session.")
             }
             let response = try await connection.requestCaptureFrame()
             await session.setLastHotRenderResponse(response)
@@ -625,7 +625,7 @@ public extension LumiPreviewPackage {
 
         public func startLivePreview(_ session: HotPreviewSession) async throws {
             guard let connection = await session.hostConnection() else {
-                throw LumiPreviewPackage.PreviewError.runtimeCrashed(message: "No active hot preview session.")
+                throw LumiPreviewFacade.PreviewError.runtimeCrashed(message: "No active hot preview session.")
             }
             let startedAt = Date()
             let response = try await connection.requestStartLivePreview()
@@ -635,7 +635,7 @@ public extension LumiPreviewPackage {
                 detail: response.liveWindowNumber.map { "window \($0)" }
             )
             await session.setLivePreviewInfo(
-                LumiPreviewPackage.LivePreviewInfo(
+                LumiPreviewFacade.LivePreviewInfo(
                     state: .running,
                     hostWindowNumber: response.liveWindowNumber,
                     hostProcessID: await connection.processID
@@ -697,7 +697,7 @@ public extension LumiPreviewPackage {
         }
 
         private func syntaxPreflight(
-            _ discovery: LumiPreviewPackage.PreviewDiscovery,
+            _ discovery: LumiPreviewFacade.PreviewDiscovery,
             session: HotPreviewSession? = nil
         ) async throws {
             let startedAt = Date()
@@ -713,7 +713,7 @@ public extension LumiPreviewPackage {
             guard case .valid = result else {
                 if case .invalid(let issues) = result {
                     let message = issues.map(\.message).joined(separator: "\n")
-                    throw LumiPreviewPackage.PreviewError.compilationFailed(message: message)
+                    throw LumiPreviewFacade.PreviewError.compilationFailed(message: message)
                 }
                 return
             }
@@ -782,22 +782,22 @@ public extension LumiPreviewPackage {
 
         private func plannedBuildStrategy(
             for session: HotPreviewSession,
-            discovery: LumiPreviewPackage.PreviewDiscovery
-        ) async throws -> LumiPreviewPackage.BuildStrategy {
+            discovery: LumiPreviewFacade.PreviewDiscovery
+        ) async throws -> LumiPreviewFacade.BuildStrategy {
             if let existingStrategy = await session.buildStrategy() {
                 return existingStrategy
             }
             guard let plannedStrategy = buildPlanner.plan(for: discovery.sourceFileURL) else {
-                throw LumiPreviewPackage.PreviewError.targetNotFound(file: discovery.sourceFileURL.path)
+                throw LumiPreviewFacade.PreviewError.targetNotFound(file: discovery.sourceFileURL.path)
             }
             await session.setBuildStrategy(plannedStrategy)
             return plannedStrategy
         }
 
         private func cachedPreviewEntry(
-            discovery: LumiPreviewPackage.PreviewDiscovery,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration,
-            buildStrategy: LumiPreviewPackage.BuildStrategy?
+            discovery: LumiPreviewFacade.PreviewDiscovery,
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration,
+            buildStrategy: LumiPreviewFacade.BuildStrategy?
         ) async -> CachedPreviewEntry? {
             let preferredVariant = await preferredEntryVariant(
                 discovery: discovery,
@@ -854,9 +854,9 @@ public extension LumiPreviewPackage {
         }
 
         private func build(
-            _ strategy: LumiPreviewPackage.BuildStrategy,
+            _ strategy: LumiPreviewFacade.BuildStrategy,
             session: HotPreviewSession,
-            cachePopulationStrategy: LumiPreviewPackage.BuildStrategy? = nil
+            cachePopulationStrategy: LumiPreviewFacade.BuildStrategy? = nil
         ) async throws {
             await session.setState(.compiling(progress: 0))
             let discovery = await session.discovery
@@ -961,7 +961,7 @@ public extension LumiPreviewPackage {
                     detail: built.variant.rawValue
                 )
             }
-            LumiPreviewPackage.PreviewEntryBuilder.removeExpiredCacheEntries(
+            LumiPreviewFacade.PreviewEntryBuilder.removeExpiredCacheEntries(
                 keepingNewest: Self.previewEntryCacheLimit
             )
 
@@ -973,32 +973,32 @@ public extension LumiPreviewPackage {
                     do {
                         let interposed = try await connection.requestInterposeDylib(
                             at: entryURL,
-                            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
+                            symbolName: LumiPreviewFacade.PreviewEntryBuilder.symbolName
                         )
                         if interposed.success {
                             response = interposed
                         } else {
                             response = try await connection.requestReloadLivePreview(
                                 at: entryURL,
-                                symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
+                                symbolName: LumiPreviewFacade.PreviewEntryBuilder.symbolName
                             )
                         }
                     } catch {
                         response = try await connection.requestReloadLivePreview(
                             at: entryURL,
-                            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
+                            symbolName: LumiPreviewFacade.PreviewEntryBuilder.symbolName
                         )
                     }
                 } else {
                     response = try await connection.requestReloadLivePreview(
                         at: entryURL,
-                        symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
+                        symbolName: LumiPreviewFacade.PreviewEntryBuilder.symbolName
                     )
                 }
             } else {
                 response = try await connection.requestLoadPreviewEntry(
                     at: entryURL,
-                    symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
+                    symbolName: LumiPreviewFacade.PreviewEntryBuilder.symbolName
                 )
             }
             if response.success {
@@ -1023,9 +1023,9 @@ public extension LumiPreviewPackage {
         }
 
         private func buildPreviewEntry(
-            discovery: LumiPreviewPackage.PreviewDiscovery,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration,
-            buildStrategy: LumiPreviewPackage.BuildStrategy?
+            discovery: LumiPreviewFacade.PreviewDiscovery,
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration,
+            buildStrategy: LumiPreviewFacade.BuildStrategy?
         ) async throws -> BuiltPreviewEntry {
             if let buildStrategy,
                canUseModuleImportEntry(buildStrategy: buildStrategy),
@@ -1077,9 +1077,9 @@ public extension LumiPreviewPackage {
         }
 
         private func preferredBuildStrategy(
-            for discovery: LumiPreviewPackage.PreviewDiscovery,
-            baseStrategy: LumiPreviewPackage.BuildStrategy
-        ) async -> LumiPreviewPackage.BuildStrategy {
+            for discovery: LumiPreviewFacade.PreviewDiscovery,
+            baseStrategy: LumiPreviewFacade.BuildStrategy
+        ) async -> LumiPreviewFacade.BuildStrategy {
             guard case .xcode = baseStrategy else {
                 return baseStrategy
             }
@@ -1099,8 +1099,8 @@ public extension LumiPreviewPackage {
         }
 
         private func populateCompileCommandCacheIfPossible(
-            for buildStrategy: LumiPreviewPackage.BuildStrategy,
-            discovery: LumiPreviewPackage.PreviewDiscovery
+            for buildStrategy: LumiPreviewFacade.BuildStrategy,
+            discovery: LumiPreviewFacade.PreviewDiscovery
         ) async {
             guard case .xcode = buildStrategy else {
                 return
@@ -1123,7 +1123,7 @@ public extension LumiPreviewPackage {
         }
 
         private func canUseModuleImportEntry(
-            buildStrategy: LumiPreviewPackage.BuildStrategy
+            buildStrategy: LumiPreviewFacade.BuildStrategy
         ) -> Bool {
             switch buildStrategy {
             case .spm, .xcode:
@@ -1134,9 +1134,9 @@ public extension LumiPreviewPackage {
         }
 
         private func preferredEntryVariant(
-            discovery: LumiPreviewPackage.PreviewDiscovery,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration,
-            buildStrategy: LumiPreviewPackage.BuildStrategy?
+            discovery: LumiPreviewFacade.PreviewDiscovery,
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration,
+            buildStrategy: LumiPreviewFacade.BuildStrategy?
         ) async -> PreviewEntryVariant {
             guard let buildStrategy,
                   canUseModuleImportEntry(buildStrategy: buildStrategy) else {
@@ -1154,9 +1154,9 @@ public extension LumiPreviewPackage {
         }
 
         private func importAttemptContext(
-            discovery: LumiPreviewPackage.PreviewDiscovery,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration,
-            buildStrategy: LumiPreviewPackage.BuildStrategy
+            discovery: LumiPreviewFacade.PreviewDiscovery,
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration,
+            buildStrategy: LumiPreviewFacade.BuildStrategy
         ) async -> ImportAttemptContext? {
             let eligibilityKey = await moduleImportEligibilityCache.makeCacheKey(
                 discovery: discovery
@@ -1227,15 +1227,15 @@ private actor HotPreviewBuildCoordinator {
     }
 
     private struct InFlightKey: Hashable {
-        let strategy: LumiPreviewPackage.BuildStrategy
+        let strategy: LumiPreviewFacade.BuildStrategy
         let fingerprint: String
     }
 
-    private var fingerprints: [LumiPreviewPackage.BuildStrategy: String] = [:]
+    private var fingerprints: [LumiPreviewFacade.BuildStrategy: String] = [:]
     private var inFlightBuilds: [InFlightKey: Task<Void, Error>] = [:]
 
     func buildIfNeeded(
-        strategy: LumiPreviewPackage.BuildStrategy,
+        strategy: LumiPreviewFacade.BuildStrategy,
         fingerprint: String?,
         operation: @escaping @Sendable () async throws -> Void
     ) async throws -> Result {
@@ -1275,7 +1275,7 @@ private actor HotPreviewBuildCoordinator {
 
 actor HotSyntaxPreflightCache {
     struct LookupResult: Sendable {
-        let result: LumiPreviewPackage.SyntaxCheckResult
+        let result: LumiPreviewFacade.SyntaxCheckResult
         let usedCache: Bool
     }
 
@@ -1285,12 +1285,12 @@ actor HotSyntaxPreflightCache {
         let fileSize: Int
     }
 
-    private var resultsByPath: [String: (key: CacheKey, result: LumiPreviewPackage.SyntaxCheckResult)] = [:]
+    private var resultsByPath: [String: (key: CacheKey, result: LumiPreviewFacade.SyntaxCheckResult)] = [:]
     private let maximumCount = 64
 
     func result(
         for fileURL: URL,
-        check: @Sendable () async -> LumiPreviewPackage.SyntaxCheckResult
+        check: @Sendable () async -> LumiPreviewFacade.SyntaxCheckResult
     ) async -> LookupResult {
         guard let key = cacheKey(for: fileURL) else {
             return LookupResult(result: await check(), usedCache: false)
@@ -1329,7 +1329,7 @@ actor HotSyntaxPreflightCache {
 }
 
 private enum HotBuildFingerprint {
-    static func make(strategy: LumiPreviewPackage.BuildStrategy, previewFileURL: URL) -> String? {
+    static func make(strategy: LumiPreviewFacade.BuildStrategy, previewFileURL: URL) -> String? {
         let rootURL: URL
         switch strategy {
         case .spm(let packageDirectory, let targetName):

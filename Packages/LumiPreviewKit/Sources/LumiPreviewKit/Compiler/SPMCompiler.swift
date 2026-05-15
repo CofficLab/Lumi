@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// SPM 编译器：使用 swift build 编译 SPM Package 中的预览。
 final class SPMCompiler: Sendable {
     /// 创建 SPM 编译器。

@@ -8,7 +8,7 @@ struct HostProcessManagerTests {
     @Test("warmup creates a reusable idle connection")
     func warmupCreatesReusableIdleConnection() async throws {
         let tracker = LaunchTracker()
-        let manager = LumiPreviewPackage.HostProcessManager(
+        let manager = LumiPreviewFacade.HostProcessManager(
             executableURL: URL(fileURLWithPath: "/tmp/FakeHost"),
             launcher: tracker.launcher,
             isRunning: { await $0.isRunning },
@@ -35,7 +35,7 @@ struct HostProcessManagerTests {
     @Test("acquire launches when no idle connection is available")
     func acquireLaunchesWhenNoIdleConnectionExists() async throws {
         let tracker = LaunchTracker()
-        let manager = LumiPreviewPackage.HostProcessManager(
+        let manager = LumiPreviewFacade.HostProcessManager(
             executableURL: URL(fileURLWithPath: "/tmp/FakeHost"),
             launcher: tracker.launcher,
             isRunning: { await $0.isRunning },
@@ -53,7 +53,7 @@ struct HostProcessManagerTests {
     @Test("release trims excess idle connections")
     func releaseTrimsExcessIdleConnections() async throws {
         let tracker = LaunchTracker()
-        let manager = LumiPreviewPackage.HostProcessManager(
+        let manager = LumiPreviewFacade.HostProcessManager(
             executableURL: URL(fileURLWithPath: "/tmp/FakeHost"),
             maximumIdleConnections: 1,
             launcher: tracker.launcher,
@@ -77,7 +77,7 @@ struct HostProcessManagerTests {
     @Test("shutdown terminates every managed connection")
     func shutdownTerminatesEveryManagedConnection() async throws {
         let tracker = LaunchTracker()
-        let manager = LumiPreviewPackage.HostProcessManager(
+        let manager = LumiPreviewFacade.HostProcessManager(
             executableURL: URL(fileURLWithPath: "/tmp/FakeHost"),
             launcher: tracker.launcher,
             isRunning: { await $0.isRunning },
@@ -99,7 +99,7 @@ struct HostProcessManagerTests {
     @Test("stopped idle connections are pruned before acquire")
     func stoppedIdleConnectionsArePrunedBeforeAcquire() async throws {
         let tracker = LaunchTracker()
-        let manager = LumiPreviewPackage.HostProcessManager(
+        let manager = LumiPreviewFacade.HostProcessManager(
             executableURL: URL(fileURLWithPath: "/tmp/FakeHost"),
             launcher: tracker.launcher,
             isRunning: { await $0.isRunning },
@@ -121,7 +121,7 @@ struct HostProcessManagerTests {
     @Test("discard removes and terminates a broken connection")
     func discardRemovesAndTerminatesBrokenConnection() async throws {
         let tracker = LaunchTracker()
-        let manager = LumiPreviewPackage.HostProcessManager(
+        let manager = LumiPreviewFacade.HostProcessManager(
             executableURL: URL(fileURLWithPath: "/tmp/FakeHost"),
             launcher: tracker.launcher,
             isRunning: { await $0.isRunning },
@@ -144,7 +144,7 @@ private actor LaunchTracker {
     private var nextPID: Int32 = 100
     private(set) var connections: [FakeHostConnection] = []
 
-    func launcher(_ executableURL: URL) async throws -> LumiPreviewPackage.HotHostConnection {
+    func launcher(_ executableURL: URL) async throws -> LumiPreviewFacade.HotHostConnection {
         launchCount += 1
         nextPID += 1
         let connection = FakeHostConnection(processID: nextPID)
@@ -153,7 +153,7 @@ private actor LaunchTracker {
     }
 }
 
-private final class FakeHostConnection: LumiPreviewPackage.HotHostConnection, @unchecked Sendable {
+private final class FakeHostConnection: LumiPreviewFacade.HotHostConnection, @unchecked Sendable {
     private let lock = NSLock()
     private var running = true
     private var pid: Int32
@@ -186,50 +186,50 @@ private final class FakeHostConnection: LumiPreviewPackage.HotHostConnection, @u
     }
 
     func requestRender(
-        discovery: LumiPreviewPackage.PreviewDiscovery,
-        configuration: LumiPreviewPackage.PreviewRenderConfiguration
-    ) async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+        discovery: LumiPreviewFacade.PreviewDiscovery,
+        configuration: LumiPreviewFacade.PreviewRenderConfiguration
+    ) async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestRefresh() async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestRefresh() async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestCaptureFrame(includeImageFallback: Bool) async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestCaptureFrame(includeImageFallback: Bool) async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestInterposeDylib(at dylibURL: URL, symbolName: String?) async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestInterposeDylib(at dylibURL: URL, symbolName: String?) async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestStartLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestStartLivePreview() async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestShowLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestShowLivePreview() async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestHideLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestHideLivePreview() async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
-    func requestStopLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
-        LumiPreviewPackage.HotRenderResponse(success: true)
+    func requestStopLivePreview() async throws -> LumiPreviewFacade.HotRenderResponse {
+        LumiPreviewFacade.HotRenderResponse(success: true)
     }
 
     func terminate() async {

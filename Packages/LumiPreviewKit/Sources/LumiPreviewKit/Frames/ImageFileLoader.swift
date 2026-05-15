@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     /// Loads PNG preview frames written by the hot preview host.
     final class ImageFileLoader: @unchecked Sendable {
         private let fileManager: FileManager

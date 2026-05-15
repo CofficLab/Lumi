@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// Small LRU cache keyed by standardized source file paths.
 struct PreviewFileContextCache<Context> {
     private var contexts: [String: Context] = [:]

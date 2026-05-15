@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// 单个预览环境注入项。
 ///
 /// 当前阶段它作为宿主通信协议中的稳定描述，用于记录调用方希望注入的

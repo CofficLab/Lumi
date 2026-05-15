@@ -7,8 +7,8 @@ import Testing
 struct ModuleImportEligibilityCheckerTests {
     @Test("rejects module import when preview body references private symbols")
     func rejectsModuleImportForPrivateSymbols() {
-        let checker = LumiPreviewPackage.ModuleImportEligibilityChecker()
-        let discovery = LumiPreviewPackage.PreviewDiscovery(
+        let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.private",
             title: "Private Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),
@@ -32,8 +32,8 @@ struct ModuleImportEligibilityCheckerTests {
 
     @Test("allows module import when preview body references non-private symbols")
     func allowsModuleImportForNonPrivateSymbols() {
-        let checker = LumiPreviewPackage.ModuleImportEligibilityChecker()
-        let discovery = LumiPreviewPackage.PreviewDiscovery(
+        let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.internal",
             title: "Internal Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),
@@ -57,7 +57,7 @@ struct ModuleImportEligibilityCheckerTests {
 
     @Test("rejects construction of types with private initializer only for matching type")
     func rejectsConstructionOfTypesWithPrivateInitializerOnlyForMatchingType() {
-        let checker = LumiPreviewPackage.ModuleImportEligibilityChecker()
+        let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()
         let sourceText = """
         struct PublicPreviewView: View {
             var body: some View { Text("Visible") }
@@ -69,7 +69,7 @@ struct ModuleImportEligibilityCheckerTests {
         }
         """
 
-        let allowedDiscovery = LumiPreviewPackage.PreviewDiscovery(
+        let allowedDiscovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.public-init",
             title: "Public Init Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),
@@ -79,7 +79,7 @@ struct ModuleImportEligibilityCheckerTests {
             bodySource: "PublicPreviewView()",
             sourceText: sourceText
         )
-        let rejectedDiscovery = LumiPreviewPackage.PreviewDiscovery(
+        let rejectedDiscovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.private-init",
             title: "Private Init Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),
@@ -96,8 +96,8 @@ struct ModuleImportEligibilityCheckerTests {
 
     @Test("rejects module import when preview body references private extension members")
     func rejectsModuleImportForPrivateExtensionMembers() {
-        let checker = LumiPreviewPackage.ModuleImportEligibilityChecker()
-        let discovery = LumiPreviewPackage.PreviewDiscovery(
+        let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.private-extension",
             title: "Private Extension Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),
@@ -123,8 +123,8 @@ struct ModuleImportEligibilityCheckerTests {
 
     @Test("allows module import for non-private extension members")
     func allowsModuleImportForNonPrivateExtensionMembers() {
-        let checker = LumiPreviewPackage.ModuleImportEligibilityChecker()
-        let discovery = LumiPreviewPackage.PreviewDiscovery(
+        let checker = LumiPreviewFacade.ModuleImportEligibilityChecker()
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.public-extension",
             title: "Public Extension Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),

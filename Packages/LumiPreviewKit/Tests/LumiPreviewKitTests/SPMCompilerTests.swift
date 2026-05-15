@@ -21,7 +21,7 @@ struct SPMCompilerTests {
         )
         defer { try? FileManager.default.removeItem(at: packageDirectory) }
 
-        let productURL = try await LumiPreviewPackage.SPMCompiler().build(
+        let productURL = try await LumiPreviewFacade.SPMCompiler().build(
             packageDirectory: packageDirectory,
             targetName: "HelloTool"
         )
@@ -45,12 +45,12 @@ struct SPMCompilerTests {
         defer { try? FileManager.default.removeItem(at: packageDirectory) }
 
         do {
-            _ = try await LumiPreviewPackage.SPMCompiler().build(
+            _ = try await LumiPreviewFacade.SPMCompiler().build(
                 packageDirectory: packageDirectory,
                 targetName: "MissingTool"
             )
             Issue.record("Expected compilationFailed")
-        } catch LumiPreviewPackage.PreviewError.compilationFailed(let message) {
+        } catch LumiPreviewFacade.PreviewError.compilationFailed(let message) {
             #expect(message.localizedCaseInsensitiveContains("error"))
             #expect(message.localizedCaseInsensitiveContains("MissingTool"))
         } catch {
@@ -76,12 +76,12 @@ struct SPMCompilerTests {
         defer { try? FileManager.default.removeItem(at: packageDirectory) }
 
         do {
-            _ = try await LumiPreviewPackage.SPMCompiler().build(
+            _ = try await LumiPreviewFacade.SPMCompiler().build(
                 packageDirectory: packageDirectory,
                 targetName: "BrokenTool"
             )
             Issue.record("Expected compilationFailed")
-        } catch LumiPreviewPackage.PreviewError.compilationFailed(let message) {
+        } catch LumiPreviewFacade.PreviewError.compilationFailed(let message) {
             #expect(message.contains("Broken.swift"))
             #expect(message.contains(":5:"))
         } catch {
@@ -138,7 +138,7 @@ struct SPMCompilerTests {
             encoding: .utf8
         )
 
-        let arguments = LumiPreviewPackage.SPMCompiler().previewCompilerArguments(
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(
             packageDirectory: packageDirectory,
             targetName: "PreviewTarget"
         )
@@ -190,7 +190,7 @@ struct SPMCompilerTests {
         )
         """.write(to: checkoutDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
 
-        let arguments = LumiPreviewPackage.SPMCompiler().previewCompilerArguments(packageDirectory: packageDirectory)
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(packageDirectory: packageDirectory)
 
         #expect(arguments.contains("-lz"))
     }
@@ -220,7 +220,7 @@ struct SPMCompilerTests {
         FileManager.default.createFile(atPath: mainObject.path, contents: Data())
         FileManager.default.createFile(atPath: testObject.path, contents: Data())
 
-        let arguments = LumiPreviewPackage.SPMCompiler().previewCompilerArguments(
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(
             packageDirectory: packageDirectory,
             targetName: "PreviewTarget"
         )

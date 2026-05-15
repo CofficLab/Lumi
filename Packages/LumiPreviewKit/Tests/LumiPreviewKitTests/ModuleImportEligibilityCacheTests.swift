@@ -7,7 +7,7 @@ import Testing
 struct ModuleImportEligibilityCacheTests {
     @Test("reuses cache key for unchanged discovery inputs")
     func reusesCacheKeyForUnchangedDiscoveryInputs() async {
-        let cache = LumiPreviewPackage.ModuleImportEligibilityCache()
+        let cache = LumiPreviewFacade.ModuleImportEligibilityCache()
         let discovery = makeDiscovery(bodySource: "DemoView()", sourceText: "struct DemoView: View {}")
 
         let first = await cache.makeCacheKey(discovery: discovery)
@@ -18,7 +18,7 @@ struct ModuleImportEligibilityCacheTests {
 
     @Test("changes to source text produce a different key")
     func changesToSourceTextProduceDifferentKey() async {
-        let cache = LumiPreviewPackage.ModuleImportEligibilityCache()
+        let cache = LumiPreviewFacade.ModuleImportEligibilityCache()
 
         let first = await cache.makeCacheKey(
             discovery: makeDiscovery(
@@ -38,7 +38,7 @@ struct ModuleImportEligibilityCacheTests {
 
     @Test("stores and returns eligibility values")
     func storesAndReturnsEligibilityValues() async {
-        let cache = LumiPreviewPackage.ModuleImportEligibilityCache()
+        let cache = LumiPreviewFacade.ModuleImportEligibilityCache()
         let key = await cache.makeCacheKey(
             discovery: makeDiscovery(bodySource: "DemoView()", sourceText: "struct DemoView: View {}")
         )
@@ -51,8 +51,8 @@ struct ModuleImportEligibilityCacheTests {
     private func makeDiscovery(
         bodySource: String,
         sourceText: String
-    ) -> LumiPreviewPackage.PreviewDiscovery {
-        LumiPreviewPackage.PreviewDiscovery(
+    ) -> LumiPreviewFacade.PreviewDiscovery {
+        LumiPreviewFacade.PreviewDiscovery(
             id: "preview-id",
             title: "Preview",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),

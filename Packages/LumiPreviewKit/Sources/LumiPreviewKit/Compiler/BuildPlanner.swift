@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// 编译策略：根据项目类型选择不同的编译路径。
 enum BuildStrategy: Sendable, Equatable, Hashable {
     /// SPM Package：调用 `swift build --target`。

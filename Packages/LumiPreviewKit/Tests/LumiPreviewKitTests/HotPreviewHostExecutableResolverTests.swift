@@ -18,8 +18,8 @@ struct HotPreviewHostExecutableResolverTests {
         }
         try makeExecutable(at: bundledHost)
 
-        let resolved = LumiPreviewPackage.HotPreviewHostExecutableResolver.resolve(
-            environment: [LumiPreviewPackage.HotPreviewHostExecutableResolver.environmentOverrideKey: overrideHost.path],
+        let resolved = LumiPreviewFacade.HotPreviewHostExecutableResolver.resolve(
+            environment: [LumiPreviewFacade.HotPreviewHostExecutableResolver.environmentOverrideKey: overrideHost.path],
             bundle: bundle
         )
 
@@ -43,10 +43,10 @@ struct HotPreviewHostExecutableResolverTests {
 
         try makeExecutable(at: resourcesHost)
         try makeExecutable(at: macOSHost)
-        #expect(LumiPreviewPackage.HotPreviewHostExecutableResolver.resolve(environment: [:], bundle: bundle) == macOSHost)
+        #expect(LumiPreviewFacade.HotPreviewHostExecutableResolver.resolve(environment: [:], bundle: bundle) == macOSHost)
 
         try makeExecutable(at: helpersHost)
-        #expect(LumiPreviewPackage.HotPreviewHostExecutableResolver.resolve(environment: [:], bundle: bundle) == helpersHost)
+        #expect(LumiPreviewFacade.HotPreviewHostExecutableResolver.resolve(environment: [:], bundle: bundle) == helpersHost)
     }
 
     @Test("non executable override is ignored")
@@ -60,8 +60,8 @@ struct HotPreviewHostExecutableResolverTests {
         try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         FileManager.default.createFile(atPath: fileURL.path, contents: Data())
 
-        let resolved = LumiPreviewPackage.HotPreviewHostExecutableResolver.resolve(
-            environment: [LumiPreviewPackage.HotPreviewHostExecutableResolver.environmentOverrideKey: fileURL.path],
+        let resolved = LumiPreviewFacade.HotPreviewHostExecutableResolver.resolve(
+            environment: [LumiPreviewFacade.HotPreviewHostExecutableResolver.environmentOverrideKey: fileURL.path],
             bundle: bundle
         )
 

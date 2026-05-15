@@ -1,13 +1,13 @@
 import Foundation
 import Darwin
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
     final class HotPreviewHostProcess: Sendable {
         public init() {}
 
         public func launch(executableURL: URL) async throws -> HotHostConnection {
             guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
-                throw LumiPreviewPackage.PreviewError.hostLaunchFailed(
+                throw LumiPreviewFacade.PreviewError.hostLaunchFailed(
                     message: "Hot host executable is not executable: \(executableURL.path)"
                 )
             }
@@ -26,12 +26,12 @@ public extension LumiPreviewPackage {
             do {
                 try process.run()
             } catch {
-                throw LumiPreviewPackage.PreviewError.hostLaunchFailed(message: error.localizedDescription)
+                throw LumiPreviewFacade.PreviewError.hostLaunchFailed(message: error.localizedDescription)
             }
 
             guard process.isRunning else {
                 let stderr = String(data: stderrPipe.fileHandleForReading.availableData, encoding: .utf8) ?? ""
-                throw LumiPreviewPackage.PreviewError.hostLaunchFailed(
+                throw LumiPreviewFacade.PreviewError.hostLaunchFailed(
                     message: stderr.isEmpty ? "Hot host process exited immediately." : stderr
                 )
             }
@@ -50,8 +50,8 @@ public extension LumiPreviewPackage {
 
         @discardableResult
         func requestRender(
-            discovery: LumiPreviewPackage.PreviewDiscovery,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration
+            discovery: LumiPreviewFacade.PreviewDiscovery,
+            configuration: LumiPreviewFacade.PreviewRenderConfiguration
         ) async throws -> HotRenderResponse
 
         @discardableResult
@@ -88,14 +88,14 @@ public extension LumiPreviewPackage {
     }
 }
 
-public extension LumiPreviewPackage.HotHostConnection {
+public extension LumiPreviewFacade.HotHostConnection {
     @discardableResult
-    func requestCaptureFrame() async throws -> LumiPreviewPackage.HotRenderResponse {
+    func requestCaptureFrame() async throws -> LumiPreviewFacade.HotRenderResponse {
         try await requestCaptureFrame(includeImageFallback: true)
     }
 }
 
-private final class ProcessHotHostConnection: LumiPreviewPackage.HotHostConnection, @unchecked Sendable {
+private final class ProcessHotHostConnection: LumiPreviewFacade.HotHostConnection, @unchecked Sendable {
     private let process: Process
     private let stdin: FileHandle
     private let stdout: FileHandle
@@ -119,10 +119,10 @@ private final class ProcessHotHostConnection: LumiPreviewPackage.HotHostConnecti
 
     @discardableResult
     func requestRender(
-        discovery: LumiPreviewPackage.PreviewDiscovery,
-        configuration: LumiPreviewPackage.PreviewRenderConfiguration
-    ) async throws -> LumiPreviewPackage.HotRenderResponse {
-        let request = LumiPreviewPackage.HotHostRequest(
+        discovery: LumiPreviewFacade.PreviewDiscovery,
+        configuration: LumiPreviewFacade.PreviewRenderConfiguration
+    ) async throws -> LumiPreviewFacade.HotRenderResponse {
+        let request = LumiPreviewFacade.HotHostRequest(
             command: .render,
             discovery: discovery,
             configuration: configuration
@@ -131,22 +131,22 @@ private final class ProcessHotHostConnection: LumiPreviewPackage.HotHostConnecti
     }
 
     @discardableResult
-    func requestRefresh() async throws -> LumiPreviewPackage.HotRenderResponse {
-        try send(LumiPreviewPackage.HotHostRequest(command: .refresh))
+    func requestRefresh() async throws -> LumiPreviewFacade.HotRenderResponse {
+        try send(LumiPreviewFacade.HotHostRequest(command: .refresh))
     }
 
     @discardableResult
-    func requestCaptureFrame(includeImageFallback: Bool) async throws -> LumiPreviewPackage.HotRenderResponse {
-        let request = LumiPreviewPackage.HotHostRequest(
+    func requestCaptureFrame(includeImageFallback: Bool) async throws -> LumiPreviewFacade.HotRenderResponse {
+        let request = LumiPreviewFacade.HotHostRequest(
             command: .captureFrame,
-            captureFrame: LumiPreviewPackage.CaptureFrameRequest(includeImageFallback: includeImageFallback)
+            captureFrame: LumiPreviewFacade.CaptureFrameRequest(includeImageFallback: includeImageFallback)
         )
         return try send(request)
     }
 
     @discardableResult
-    func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.HotRenderResponse {
-        let request = LumiPreviewPackage.HotHostRequest(
+    func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewFacade.HotRenderResponse {
+        let request = LumiPreviewFacade.HotHostRequest(
             command: .loadDylib,
             dylibPath: dylibURL.path,
             previewEntrySymbol: symbolName
@@ -155,8 +155,8 @@ private final class ProcessHotHostConnection: LumiPreviewPackage.HotHostConnecti
     }
 
     @discardableResult
-    func requestInterposeDylib(at dylibURL: URL, symbolName: String?) async throws -> LumiPreviewPackage.HotRenderResponse {
-        let request = LumiPreviewPackage.HotHostRequest(
+    func requestInterposeDylib(at dylibURL: URL, symbolName: String?) async throws -> LumiPreviewFacade.HotRenderResponse {
+        let request = LumiPreviewFacade.HotHostRequest(
             command: .interposeDylib,
             dylibPath: dylibURL.path,
             previewEntrySymbol: symbolName
@@ -165,8 +165,8 @@ private final class ProcessHotHostConnection: LumiPreviewPackage.HotHostConnecti
     }
 
     @discardableResult
-    func requestStartLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
-        try send(LumiPreviewPackage.HotHostRequest(command: .startLivePreview))
+    func requestStartLivePreview() async throws -> LumiPreviewFacade.HotRenderResponse {
+        try send(LumiPreviewFacade.HotHostRequest(command: .startLivePreview))
     }
 
     @discardableResult
@@ -176,27 +176,27 @@ private final class ProcessHotHostConnection: LumiPreviewPackage.HotHostConnecti
         width: Double,
         height: Double,
         scale: Double
-    ) async throws -> LumiPreviewPackage.HotRenderResponse {
-        let request = LumiPreviewPackage.HotHostRequest(
+    ) async throws -> LumiPreviewFacade.HotRenderResponse {
+        let request = LumiPreviewFacade.HotHostRequest(
             command: .updateLiveFrame,
-            liveFrame: LumiPreviewPackage.LiveFrameRequest(x: x, y: y, width: width, height: height, scale: scale)
+            liveFrame: LumiPreviewFacade.LiveFrameRequest(x: x, y: y, width: width, height: height, scale: scale)
         )
         return try send(request)
     }
 
     @discardableResult
-    func requestShowLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
-        try send(LumiPreviewPackage.HotHostRequest(command: .showLivePreview))
+    func requestShowLivePreview() async throws -> LumiPreviewFacade.HotRenderResponse {
+        try send(LumiPreviewFacade.HotHostRequest(command: .showLivePreview))
     }
 
     @discardableResult
-    func requestHideLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
-        try send(LumiPreviewPackage.HotHostRequest(command: .hideLivePreview))
+    func requestHideLivePreview() async throws -> LumiPreviewFacade.HotRenderResponse {
+        try send(LumiPreviewFacade.HotHostRequest(command: .hideLivePreview))
     }
 
     @discardableResult
-    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.HotRenderResponse {
-        let request = LumiPreviewPackage.HotHostRequest(
+    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewFacade.HotRenderResponse {
+        let request = LumiPreviewFacade.HotHostRequest(
             command: .reloadLivePreview,
             dylibPath: dylibURL.path,
             previewEntrySymbol: symbolName
@@ -205,8 +205,8 @@ private final class ProcessHotHostConnection: LumiPreviewPackage.HotHostConnecti
     }
 
     @discardableResult
-    func requestStopLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
-        try send(LumiPreviewPackage.HotHostRequest(command: .stopLivePreview))
+    func requestStopLivePreview() async throws -> LumiPreviewFacade.HotRenderResponse {
+        try send(LumiPreviewFacade.HotHostRequest(command: .stopLivePreview))
     }
 
     func terminate() async {
@@ -234,12 +234,12 @@ private final class ProcessHotHostConnection: LumiPreviewPackage.HotHostConnecti
         }
     }
 
-    private func send(_ request: LumiPreviewPackage.HotHostRequest) throws -> LumiPreviewPackage.HotRenderResponse {
+    private func send(_ request: LumiPreviewFacade.HotHostRequest) throws -> LumiPreviewFacade.HotRenderResponse {
         lock.lock()
         defer { lock.unlock() }
 
         guard process.isRunning else {
-            throw LumiPreviewPackage.PreviewError.hostLaunchFailed(message: "Hot host process is not running.")
+            throw LumiPreviewFacade.PreviewError.hostLaunchFailed(message: "Hot host process is not running.")
         }
 
         var payload = try encoder.encode(request)
@@ -248,30 +248,30 @@ private final class ProcessHotHostConnection: LumiPreviewPackage.HotHostConnecti
         do {
             try stdin.write(contentsOf: payload)
         } catch {
-            throw LumiPreviewPackage.PreviewError.hostLaunchFailed(
+            throw LumiPreviewFacade.PreviewError.hostLaunchFailed(
                 message: "Failed to write to hot host stdin: \(error.localizedDescription)"
             )
         }
 
         guard let line = try readLineData() else {
-            throw LumiPreviewPackage.PreviewError.hostLaunchFailed(message: "Hot host process closed stdout.")
+            throw LumiPreviewFacade.PreviewError.hostLaunchFailed(message: "Hot host process closed stdout.")
         }
 
         do {
-            let response = try decoder.decode(LumiPreviewPackage.HotRenderResponse.self, from: line)
+            let response = try decoder.decode(LumiPreviewFacade.HotRenderResponse.self, from: line)
             guard response.success else {
-                throw LumiPreviewPackage.PreviewError.runtimeCrashed(
+                throw LumiPreviewFacade.PreviewError.runtimeCrashed(
                     message: response.message ?? "Hot preview host request failed."
                 )
             }
             return response
-        } catch let error as LumiPreviewPackage.PreviewError {
+        } catch let error as LumiPreviewFacade.PreviewError {
             throw error
         } catch {
-            if let errorResponse = try? decoder.decode(LumiPreviewPackage.ErrorResponse.self, from: line) {
-                throw LumiPreviewPackage.PreviewError.runtimeCrashed(message: errorResponse.message)
+            if let errorResponse = try? decoder.decode(LumiPreviewFacade.ErrorResponse.self, from: line) {
+                throw LumiPreviewFacade.PreviewError.runtimeCrashed(message: errorResponse.message)
             }
-            throw LumiPreviewPackage.PreviewError.runtimeCrashed(
+            throw LumiPreviewFacade.PreviewError.runtimeCrashed(
                 message: "Failed to decode hot host response: \(error.localizedDescription)"
             )
         }

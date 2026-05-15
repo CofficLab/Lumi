@@ -7,7 +7,7 @@ import Testing
 struct HotRenderResponseTests {
     @Test("wraps legacy render responses")
     func wrapsLegacyRenderResponse() {
-        let legacy = LumiPreviewPackage.RenderResponse(
+        let legacy = LumiPreviewFacade.RenderResponse(
             success: true,
             previewID: "preview-1",
             message: "ok",
@@ -18,7 +18,7 @@ struct HotRenderResponseTests {
             liveWindowNumber: 42
         )
 
-        let response = LumiPreviewPackage.HotRenderResponse(legacy)
+        let response = LumiPreviewFacade.HotRenderResponse(legacy)
 
         #expect(response.success)
         #expect(response.previewID == "preview-1")
@@ -33,10 +33,10 @@ struct HotRenderResponseTests {
 
     @Test("prefers shared memory over file and base64 transports")
     func preferredTransportPriority() {
-        #expect(LumiPreviewPackage.HotRenderResponse(success: true).preferredTransport == .none)
-        #expect(LumiPreviewPackage.HotRenderResponse(success: true, previewImagePNGBase64: "png").preferredTransport == .base64)
-        #expect(LumiPreviewPackage.HotRenderResponse(success: true, previewImagePNGBase64: "png", imageFilePath: "/tmp/frame.png").preferredTransport == .file)
-        #expect(LumiPreviewPackage.HotRenderResponse(success: true, previewImagePNGBase64: "png", imageFilePath: "/tmp/frame.png", sharedMemoryTag: "tag").preferredTransport == .sharedMemory)
+        #expect(LumiPreviewFacade.HotRenderResponse(success: true).preferredTransport == .none)
+        #expect(LumiPreviewFacade.HotRenderResponse(success: true, previewImagePNGBase64: "png").preferredTransport == .base64)
+        #expect(LumiPreviewFacade.HotRenderResponse(success: true, previewImagePNGBase64: "png", imageFilePath: "/tmp/frame.png").preferredTransport == .file)
+        #expect(LumiPreviewFacade.HotRenderResponse(success: true, previewImagePNGBase64: "png", imageFilePath: "/tmp/frame.png", sharedMemoryTag: "tag").preferredTransport == .sharedMemory)
     }
 
     @Test("decodes new host fields while old fields remain optional")
@@ -52,7 +52,7 @@ struct HotRenderResponseTests {
         }
         """.utf8)
 
-        let response = try JSONDecoder().decode(LumiPreviewPackage.HotRenderResponse.self, from: data)
+        let response = try JSONDecoder().decode(LumiPreviewFacade.HotRenderResponse.self, from: data)
 
         #expect(response.success)
         #expect(response.previewID == "preview-2")

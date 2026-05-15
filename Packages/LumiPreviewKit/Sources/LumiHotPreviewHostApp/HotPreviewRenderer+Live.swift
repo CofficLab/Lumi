@@ -4,16 +4,16 @@ import Foundation
 import LumiPreviewKit
 
 extension HotPreviewRenderer {
-    func startLivePreview() -> LumiPreviewPackage.RenderResponse {
+    func startLivePreview() -> LumiPreviewFacade.RenderResponse {
         guard isLivePreviewEnabled, let previewView else {
-            return LumiPreviewPackage.RenderResponse(
+            return LumiPreviewFacade.RenderResponse(
                 success: false,
                 message: "Live preview is not available: no real NSView entry loaded."
             )
         }
 
         if liveWindow != nil {
-            return LumiPreviewPackage.RenderResponse(
+            return LumiPreviewFacade.RenderResponse(
                 success: true,
                 message: "Live preview already running.",
                 livePreviewEnabled: true,
@@ -28,7 +28,7 @@ extension HotPreviewRenderer {
 
         liveWindow = window
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             message: "Live preview started.",
             livePreviewEnabled: true,
@@ -36,18 +36,18 @@ extension HotPreviewRenderer {
         )
     }
 
-    func updateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) -> LumiPreviewPackage.RenderResponse {
+    func updateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) -> LumiPreviewFacade.RenderResponse {
         guard let liveWindow else {
-            return LumiPreviewPackage.RenderResponse(success: false, message: "No live window to update.")
+            return LumiPreviewFacade.RenderResponse(success: false, message: "No live window to update.")
         }
 
-        let frame = LumiPreviewPackage.PreviewFrameAlignment.pixelAlignedFrame(
+        let frame = LumiPreviewFacade.PreviewFrameAlignment.pixelAlignedFrame(
             NSRect(x: x, y: y, width: width, height: height),
             scale: scale
         )
         liveWindow.setFrame(frame, display: true)
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             message: "Live frame updated to (\(x), \(y), \(width)x\(height)).",
             livePreviewEnabled: true,
@@ -55,17 +55,17 @@ extension HotPreviewRenderer {
         )
     }
 
-    func showLivePreview() -> LumiPreviewPackage.RenderResponse {
+    func showLivePreview() -> LumiPreviewFacade.RenderResponse {
         guard let liveWindow else {
-            return LumiPreviewPackage.RenderResponse(success: false, message: "No live window to show.")
+            return LumiPreviewFacade.RenderResponse(success: false, message: "No live window to show.")
         }
         guard liveWindow.contentView != nil else {
-            return LumiPreviewPackage.RenderResponse(success: false, message: "No live preview content to show.")
+            return LumiPreviewFacade.RenderResponse(success: false, message: "No live preview content to show.")
         }
 
         liveWindow.orderFront(nil)
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             message: "Live preview shown.",
             livePreviewEnabled: true,
@@ -73,14 +73,14 @@ extension HotPreviewRenderer {
         )
     }
 
-    func hideLivePreview() -> LumiPreviewPackage.RenderResponse {
+    func hideLivePreview() -> LumiPreviewFacade.RenderResponse {
         guard let liveWindow else {
-            return LumiPreviewPackage.RenderResponse(success: false, message: "No live window to hide.")
+            return LumiPreviewFacade.RenderResponse(success: false, message: "No live window to hide.")
         }
 
         hideLiveWindow(liveWindow)
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             message: "Live preview hidden.",
             livePreviewEnabled: true,
@@ -88,24 +88,24 @@ extension HotPreviewRenderer {
         )
     }
 
-    func reloadLivePreview(dylibPath: String, previewEntrySymbol: String?) -> LumiPreviewPackage.RenderResponse {
+    func reloadLivePreview(dylibPath: String, previewEntrySymbol: String?) -> LumiPreviewFacade.RenderResponse {
         guard FileManager.default.fileExists(atPath: dylibPath) else {
-            return LumiPreviewPackage.RenderResponse(success: false, message: "Dylib does not exist: \(dylibPath)")
+            return LumiPreviewFacade.RenderResponse(success: false, message: "Dylib does not exist: \(dylibPath)")
         }
 
         guard let handle = dlopen(dylibPath, RTLD_NOW | RTLD_LOCAL) else {
             let errorMessage = dlerror().map { String(cString: $0) } ?? "Unknown dlopen error."
-            return LumiPreviewPackage.RenderResponse(success: false, message: errorMessage)
+            return LumiPreviewFacade.RenderResponse(success: false, message: errorMessage)
         }
 
         loadedHandles.append(handle)
 
         guard let previewEntrySymbol else {
-            return LumiPreviewPackage.RenderResponse(success: false, message: "Reload requires previewEntrySymbol.")
+            return LumiPreviewFacade.RenderResponse(success: false, message: "Reload requires previewEntrySymbol.")
         }
 
         let descriptor = previewEntryDescriptor(symbolName: previewEntrySymbol, from: handle)
-        if let symbol = dlsym(handle, LumiPreviewPackage.PreviewEntryBuilder.viewSymbolName) {
+        if let symbol = dlsym(handle, LumiPreviewFacade.PreviewEntryBuilder.viewSymbolName) {
             typealias PreviewNSViewFunction = @convention(c) () -> UnsafeMutableRawPointer?
             let viewFunction = unsafeBitCast(symbol, to: PreviewNSViewFunction.self)
             if let viewPointer = viewFunction() {
@@ -131,7 +131,7 @@ extension HotPreviewRenderer {
                     liveWindow?.orderFront(nil)
                 }
 
-                return LumiPreviewPackage.RenderResponse(
+                return LumiPreviewFacade.RenderResponse(
                     success: true,
                     message: "Reloaded live preview view entry \(title)",
                     previewImagePNGBase64: snapshot.pngBase64,
@@ -142,13 +142,13 @@ extension HotPreviewRenderer {
             }
         }
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: false,
             message: "Reload failed: could not create NSView from new dylib."
         )
     }
 
-    func stopLivePreview() -> LumiPreviewPackage.RenderResponse {
+    func stopLivePreview() -> LumiPreviewFacade.RenderResponse {
         if let liveWindow {
             hideLiveWindow(liveWindow)
         }
@@ -156,7 +156,7 @@ extension HotPreviewRenderer {
         liveWindow?.close()
         liveWindow = nil
 
-        return LumiPreviewPackage.RenderResponse(
+        return LumiPreviewFacade.RenderResponse(
             success: true,
             message: "Live preview stopped."
         )

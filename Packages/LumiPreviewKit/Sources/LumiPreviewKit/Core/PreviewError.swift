@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// 预览相关错误。
 enum PreviewError: Error, Sendable, Equatable {
     /// 找不到文件所属的 target。

@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// 预览会话：代表一个正在运行或已完成的预览实例。
 protocol PreviewSession: AnyObject, Sendable {
     /// 唯一标识。

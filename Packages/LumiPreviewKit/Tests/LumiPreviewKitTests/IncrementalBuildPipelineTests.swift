@@ -19,7 +19,7 @@ actor InvocationCounter {
 struct IncrementalBuildPipelineTests {
     @Test("extracts xcode and swift build frontend commands for requested files")
     func extractsFrontendCommands() throws {
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline()
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline()
         let firstFileURL = URL(fileURLWithPath: "/tmp/First.swift")
         let secondFileURL = URL(fileURLWithPath: "/tmp/Second.swift")
         let buildLog = [
@@ -39,7 +39,7 @@ struct IncrementalBuildPipelineTests {
 
     @Test("ignores files that do not appear in the build log")
     func ignoresMissingFiles() {
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline()
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline()
         let fileURL = URL(fileURLWithPath: "/tmp/Missing.swift")
         let commands = pipeline.extractCommands(
             from: "/usr/bin/swift-frontend -c /tmp/Other.swift -o /tmp/Other.o",
@@ -51,7 +51,7 @@ struct IncrementalBuildPipelineTests {
 
     @Test("resolves unique module search paths from compiler arguments")
     func resolvesModuleSearchPaths() async throws {
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline(
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline(
             compilerArgumentResolver: { _ in
                 [
                     "-I", "/tmp/Build/Debug",
@@ -74,12 +74,12 @@ struct IncrementalBuildPipelineTests {
 
     @Test("generates import-based preview entry source")
     func generatesImportBasedEntrySource() async throws {
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline(
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline(
             compilerArgumentResolver: { _ in
                 ["-module-name", "DemoModule", "-I", "/tmp/Build/Debug"]
             }
         )
-        let discovery = LumiPreviewPackage.PreviewDiscovery(
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.demo",
             title: "Demo",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Demo.swift"),
@@ -97,16 +97,16 @@ struct IncrementalBuildPipelineTests {
             )
         )
 
-        #expect(source.contains(LumiPreviewPackage.PreviewEntryBuilder.symbolName))
+        #expect(source.contains(LumiPreviewFacade.PreviewEntryBuilder.symbolName))
         #expect(source.contains("import DemoModule"))
         #expect(source.contains("let rootView = AnyView({ DemoView() }())"))
-        #expect(source.contains(LumiPreviewPackage.PreviewEntryBuilder.viewSymbolName))
+        #expect(source.contains(LumiPreviewFacade.PreviewEntryBuilder.viewSymbolName))
         #expect(source.contains("\\\"title\\\":\\\"Demo\\\""))
     }
 
     @Test("prefers resolved xcode module name over scheme name")
     func prefersResolvedXcodeModuleName() async throws {
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline(
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline(
             compilerArgumentResolver: { _ in
                 ["-I", "/tmp/Build/Debug"]
             },
@@ -115,7 +115,7 @@ struct IncrementalBuildPipelineTests {
                 return "ActualModule"
             }
         )
-        let discovery = LumiPreviewPackage.PreviewDiscovery(
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.actual-module",
             title: "Demo",
             sourceFileURL: URL(fileURLWithPath: "/tmp/Demo.swift"),
@@ -141,7 +141,7 @@ struct IncrementalBuildPipelineTests {
     func cachesResolvedModuleImportPlansByBuildStrategy() async throws {
         let argumentCounter = InvocationCounter()
         let moduleCounter = InvocationCounter()
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline(
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline(
             compilerArgumentResolver: { _ in
                 await argumentCounter.increment()
                 return ["-I", "/tmp/Build/Debug"]
@@ -152,7 +152,7 @@ struct IncrementalBuildPipelineTests {
                 return "ActualModule"
             }
         )
-        let strategy = LumiPreviewPackage.BuildStrategy.xcode(
+        let strategy = LumiPreviewFacade.BuildStrategy.xcode(
             projectURL: URL(fileURLWithPath: "/tmp/Demo.xcodeproj"),
             scheme: "AppScheme",
             configuration: "Debug"
@@ -175,7 +175,7 @@ struct IncrementalBuildPipelineTests {
         let artifactURL = modulesDirectory.appendingPathComponent("ActualModule.swiftmodule")
         try Data().write(to: artifactURL)
 
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline(
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline(
             compilerArgumentResolver: { _ in
                 ["-I", directory.path]
             },
@@ -198,7 +198,7 @@ struct IncrementalBuildPipelineTests {
 
     @Test("marks module import plan unusable when module artifact is missing")
     func marksModuleImportPlanUnusableWhenModuleArtifactIsMissing() async throws {
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline(
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline(
             compilerArgumentResolver: { _ in
                 ["-I", "/tmp/DoesNotExist"]
             },
@@ -220,7 +220,7 @@ struct IncrementalBuildPipelineTests {
 
     @Test("emits interposable linker flags for preview entry dylibs")
     func emitsInterposableLinkerFlagsForPreviewEntryDylibs() {
-        let command = LumiPreviewPackage.IncrementalBuildPipeline.emitLibraryCommand(
+        let command = LumiPreviewFacade.IncrementalBuildPipeline.emitLibraryCommand(
             inputPaths: ["/tmp/PreviewEntry.o"],
             dylibOutputPath: "/tmp/PreviewEntry.dylib",
             additionalArguments: ["-module-name", "DemoPreview"],
@@ -235,8 +235,8 @@ struct IncrementalBuildPipelineTests {
 
     @Test("generates source-include entry source without target-wide source inclusion")
     func generatesSourceIncludeEntrySource() throws {
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline()
-        let discovery = LumiPreviewPackage.PreviewDiscovery(
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline()
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.source-include",
             title: "SourceInclude",
             sourceFileURL: URL(fileURLWithPath: "/tmp/SourceInclude.swift"),
@@ -250,8 +250,8 @@ struct IncrementalBuildPipelineTests {
             configuration: .empty
         )
 
-        #expect(source.contains(LumiPreviewPackage.PreviewEntryBuilder.symbolName))
-        #expect(source.contains(LumiPreviewPackage.PreviewEntryBuilder.viewSymbolName))
+        #expect(source.contains(LumiPreviewFacade.PreviewEntryBuilder.symbolName))
+        #expect(source.contains(LumiPreviewFacade.PreviewEntryBuilder.viewSymbolName))
         #expect(source.contains("let rootView = AnyView({"))
         #expect(source.contains("DemoView()"))
     }
@@ -288,10 +288,10 @@ struct IncrementalBuildPipelineTests {
         }
         """.write(to: sourceURL, atomically: true, encoding: .utf8)
 
-        let pipeline = LumiPreviewPackage.IncrementalBuildPipeline(
+        let pipeline = LumiPreviewFacade.IncrementalBuildPipeline(
             compilerArgumentResolver: { _ in [] }
         )
-        let discovery = LumiPreviewPackage.PreviewDiscovery(
+        let discovery = LumiPreviewFacade.PreviewDiscovery(
             id: "preview.sanitized",
             title: "Sanitized",
             sourceFileURL: sourceURL,

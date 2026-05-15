@@ -1,6 +1,6 @@
 import Foundation
 
-public extension LumiPreviewPackage {
+public extension LumiPreviewFacade {
 /// 预览显示模式。
 ///
 /// `image` 模式使用宿主进程返回的 PNG 截图在 Lumi 中渲染预览。
