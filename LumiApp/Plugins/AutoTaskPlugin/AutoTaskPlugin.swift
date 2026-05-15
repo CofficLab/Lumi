@@ -64,6 +64,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
 
     /// 右侧栏 Section 视图：任务列表
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
-        [AnyView(AutoTaskSidebarView())]
+        guard activeIcon == EditorPlugin.iconName else { return [] }
+        return [AnyView(AutoTaskSidebarView())]
     }
 }

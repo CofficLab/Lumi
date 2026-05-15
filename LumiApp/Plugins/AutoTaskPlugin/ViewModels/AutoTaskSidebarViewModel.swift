@@ -109,12 +109,21 @@ struct TaskDisplayItem: Identifiable, Equatable {
     let status: TaskItem.TaskStatus
     let order: Int
 
-    var statusIcon: String {
+    var statusSystemImage: String {
         switch status {
-        case .pending: "⬜"
-        case .inProgress: "🔄"
-        case .completed: "✅"
-        case .skipped: "⏭️"
+        case .pending: "circle"
+        case .inProgress: "arrow.triangle.2.circlepath"
+        case .completed: "checkmark.circle.fill"
+        case .skipped: "forward.circle"
+        }
+    }
+
+    var statusColor: Color {
+        switch status {
+        case .pending: .secondary
+        case .inProgress: .blue
+        case .completed: .green
+        case .skipped: .orange
         }
     }
 
