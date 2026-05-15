@@ -15,6 +15,7 @@ struct SkillStatusBarView: View, SuperLog {
 
     @EnvironmentObject private var projectVM: ProjectVM
     @State private var skills: [SkillMetadata] = []
+    @State private var refreshTask: Task<Void, Never>?
 
     var body: some View {
         Group {
@@ -46,6 +47,10 @@ struct SkillStatusBarView: View, SuperLog {
         .onApplicationDidBecomeActive {
             refreshSkills()
         }
+        .onDisappear {
+            refreshTask?.cancel()
+            refreshTask = nil
+        }
     }
 
     // MARK: - 私有方法
@@ -59,12 +64,19 @@ struct SkillStatusBarView: View, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(self.t)项目路径为空，清空 Skill 列表")
             }
+            refreshTask?.cancel()
+            refreshTask = nil
             skills = []
             return
         }
-        Task {
+
+        refreshTask?.cancel()
+        refreshTask = Task.detached(priority: .utility) {
             let loaded = await SkillService.shared.listSkills(projectPath: projectPath)
+            guard !Task.isCancelled else { return }
+
             await MainActor.run {
+                guard !Task.isCancelled else { return }
                 skills = loaded
             }
             if Self.verbose {

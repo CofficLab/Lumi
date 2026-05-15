@@ -40,24 +40,32 @@ final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
             return
         }
 
-        // 获取可用 Skill 列表
-        let skills = await SkillService.shared.listSkills(projectPath: projectPath)
+        let language = ctx.projectVM.languagePreference.skillPromptLanguage
+
+        // 获取可用 Skill 列表并构建 Prompt。发送管线本身运行在 MainActor，
+        // 这里显式放到后台任务中，避免缓存过期时的文件系统扫描和字符串构建占用 UI 线程。
+        let result = await Task.detached(priority: .userInitiated) {
+            let skills = await SkillService.shared.listSkills(projectPath: projectPath)
+            guard !skills.isEmpty else {
+                return (skills: skills, prompt: nil as String?)
+            }
+
+            let prompt = SkillPromptBuilder.buildPrompt(
+                skills: skills,
+                language: language
+            )
+            return (skills: skills, prompt: prompt)
+        }.value
 
         // 无 Skill 时跳过
-        guard !skills.isEmpty else {
+        guard let prompt = result.prompt else {
             await next(ctx)
             return
         }
-
-        // 构建 Prompt 并注入
-        let prompt = SkillPromptBuilder.buildPrompt(
-            skills: skills,
-            language: ctx.projectVM.languagePreference.skillPromptLanguage
-        )
         ctx.transientSystemPrompts.append(prompt)
 
         if Self.verbose {
-            SkillPlugin.logger.info("\(Self.t)✅ 已注入 \(skills.count) 个 Skill 摘要")
+            SkillPlugin.logger.info("\(Self.t)✅ 已注入 \(result.skills.count) 个 Skill 摘要")
         }
 
         await next(ctx)
