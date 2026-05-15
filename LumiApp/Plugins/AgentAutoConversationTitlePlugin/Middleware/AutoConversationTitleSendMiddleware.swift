@@ -33,26 +33,28 @@ struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
         chatHistoryService: ChatHistoryService,
         agentSessionConfig: LLMVM
     ) async {
-        guard role == .user else { return }
-        let trimmed = userText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
         guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
-        guard shouldAutoTitle(conversation.title) else { return }
 
-        let history = await chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
+        let newConversation = String(localized: "New Conversation", table: "AutoConversationTitlePlugin")
+        let newChat = String(localized: "New Chat", table: "AutoConversationTitlePlugin")
+        let policy = AutoConversationTitlePolicy()
+        let preflight = policy.preflight(
+            AutoConversationTitlePolicy.PreflightInput(
+                role: role,
+                userText: userText,
+                currentTitle: conversation.title,
+                newConversationTitle: newConversation,
+                newChatTitlePrefix: newChat
+            )
+        )
+        guard preflight.shouldGenerate, let trimmed = preflight.trimmedUserText else { return }
+
+        let history = chatHistoryService.loadMessages(forConversationId: conversationId) ?? []
         let userCount = history.filter { $0.role == .user }.count
         guard userCount == 1 else { return }
 
         let config = agentSessionConfig.getCurrentConfig()
         let title = await chatHistoryService.generateConversationTitle(from: trimmed, config: config)
         chatHistoryService.updateConversationTitle(conversation, newTitle: title)
-    }
-
-    /// 与创建会话时的占位标题一致时才自动替换。
-    private static func shouldAutoTitle(_ title: String) -> Bool {
-        let newConversation = String(localized: "New Conversation", table: "AutoConversationTitlePlugin")
-        let newChat = String(localized: "New Chat", table: "AutoConversationTitlePlugin")
-        return title == newConversation || title.hasPrefix(newChat)
     }
 }

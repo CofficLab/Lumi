@@ -51,65 +51,8 @@ extension ChatHistoryService {
     ///   - config: LLM 配置
     /// - Returns: 生成的标题（最多 20 个字符）
     func generateConversationTitle(from userMessage: String, config: LLMConfig) async -> String {
-        // 如果消息很短（≤15 字符），直接用作标题
-        let trimmedMessage = userMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedMessage.count <= 15 {
-            return String(trimmedMessage.prefix(20))
-        }
-
-        // API Key 无效时直接降级，避免触发无意义的 500 错误
-        guard !config.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return String(trimmedMessage.prefix(20))
-        }
-
-        // 否则使用 LLM 生成简洁标题
-        let titlePrompt = """
-        请为以下用户消息生成一个简洁的对话标题（最多 10 个中文字符或 15 个英文字符）：
-
-        用户消息：\(trimmedMessage)
-
-        要求：
-        - 标题要准确反映用户的核心需求
-        - 简洁明了
-        - 不要使用标点符号
-        - 直接返回标题，不要解释
-        """
-
-        do {
-            let titleConfig = LLMConfig(
-                apiKey: config.apiKey,
-                model: config.model,
-                providerId: config.providerId
-            )
-
-            // 使用简单的消息结构请求标题
-            let titleMessages: [ChatMessage] = [
-                ChatMessage(role: .user, conversationId: UUID(), content: titlePrompt),
-            ]
-
-            let response = try await llmService.sendMessage(
-                messages: titleMessages,
-                config: titleConfig,
-                tools: []
-            )
-
-            // 配置类问题会返回 `role: .system` 的占位消息，不能用作标题
-            guard response.role == .assistant else {
-                return String(trimmedMessage.prefix(20))
-            }
-
-            let generatedTitle = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            // 确保标题长度合适
-            if generatedTitle.count <= 20 {
-                return generatedTitle
-            } else {
-                return String(generatedTitle.prefix(20))
-            }
-        } catch {
-            AppLogger.core.error("\(Self.t)❌ 生成标题失败：\(error.localizedDescription)")
-            // 降级：使用消息的前 20 个字符作为标题
-            return String(trimmedMessage.prefix(20))
+        await ConversationTitleGenerator().generate(userMessage: userMessage, config: config) { [llmService] messages, config in
+            try await llmService.sendMessage(messages: messages, config: config, tools: [])
         }
     }
 
