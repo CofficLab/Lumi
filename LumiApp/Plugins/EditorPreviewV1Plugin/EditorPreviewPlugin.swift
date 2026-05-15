@@ -9,7 +9,7 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
         subsystem: "com.coffic.lumi", category: "plugin.editor-preview")
 
     nonisolated static let emoji = "PV"
-    nonisolated static let enable: Bool = true
+    nonisolated static let enable: Bool = false
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorPreview"
     static let displayName: String = "预览V1"

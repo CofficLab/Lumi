@@ -556,24 +556,24 @@
         }
       }
     },
-    "Preview V2" : {
+    "Preview" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preview V2"
+            "value" : "Preview"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "预览 V2"
+            "value" : "预览"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "預覽 V2"
+            "value" : "預覽"
           }
         }
       }
@@ -998,24 +998,24 @@
         }
       }
     },
-    "V2 preview powered by LumiHotPreviewKit" : {
+    "Preview powered by LumiHotPreviewKit" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "V2 preview powered by LumiHotPreviewKit"
+            "value" : "Preview powered by LumiHotPreviewKit"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 LumiHotPreviewKit 驱动的 V2 预览"
+            "value" : "由 LumiHotPreviewKit 驱动的预览"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 LumiHotPreviewKit 驅動的 V2 預覽"
+            "value" : "由 LumiHotPreviewKit 驅動的預覽"
           }
         }
       }
