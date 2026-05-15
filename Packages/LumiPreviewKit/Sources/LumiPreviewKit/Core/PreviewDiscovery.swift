@@ -76,7 +76,7 @@ struct PreviewDiscovery: Identifiable, Codable, Sendable {
 
 }
 
-public extension Array where Element == LumiPreviewFacade.PreviewDiscovery {
+extension Array where Element == LumiPreviewFacade.PreviewDiscovery {
     func strippingSourceText() -> [LumiPreviewFacade.PreviewDiscovery] {
         map { $0.strippingSourceText() }
     }

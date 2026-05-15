@@ -104,4 +104,4 @@ public extension LumiPreviewFacade {
     }
 }
 
-public typealias ProjectPreviewPrewarmRanker = LumiPreviewFacade.ProjectPreviewPrewarmRanker
+typealias ProjectPreviewPrewarmRanker = LumiPreviewFacade.ProjectPreviewPrewarmRanker

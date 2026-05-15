@@ -3,11 +3,11 @@ import LumiPreviewKit
 import Testing
 @testable import LumiPreviewKit
 
-@Suite("ProjectPreviewPrewarmRanker")
+@Suite("LumiPreviewFacade.ProjectPreviewPrewarmRanker")
 struct ProjectPreviewPrewarmRankerTests {
     @Test("prioritizes current file before history signals")
     func prioritizesCurrentFileBeforeHistorySignals() {
-        let ranker = ProjectPreviewPrewarmRanker()
+        let ranker = LumiPreviewFacade.ProjectPreviewPrewarmRanker()
         let current = makeDiscovery(path: "/tmp/App/Sources/Current.swift", line: 20)
         let frequent = makeDiscovery(path: "/tmp/App/Sources/Other.swift", line: 10)
         let frequentPath = frequent.sourceFileURL.standardizedFileURL.path
@@ -28,7 +28,7 @@ struct ProjectPreviewPrewarmRankerTests {
 
     @Test("combines same directory, recent, success, and start count signals")
     func combinesWeightedSignals() {
-        let ranker = ProjectPreviewPrewarmRanker()
+        let ranker = LumiPreviewFacade.ProjectPreviewPrewarmRanker()
         let activeURL = URL(fileURLWithPath: "/tmp/App/Sources/Active.swift")
         let weighted = makeDiscovery(path: "/tmp/App/Sources/Weighted.swift", line: 10)
         let indexed = makeDiscovery(path: "/tmp/App/Features/Indexed.swift", line: 10)
@@ -52,7 +52,7 @@ struct ProjectPreviewPrewarmRankerTests {
 
     @Test("uses path and line number as stable tie breakers")
     func usesStableTieBreakers() {
-        let ranker = ProjectPreviewPrewarmRanker()
+        let ranker = LumiPreviewFacade.ProjectPreviewPrewarmRanker()
         let laterLine = makeDiscovery(path: "/tmp/App/B.swift", line: 20)
         let earlierLine = makeDiscovery(path: "/tmp/App/B.swift", line: 5)
         let earlierPath = makeDiscovery(path: "/tmp/App/A.swift", line: 100)

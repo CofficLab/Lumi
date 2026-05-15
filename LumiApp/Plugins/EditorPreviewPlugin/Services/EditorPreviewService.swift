@@ -1050,10 +1050,10 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
     private func scoredProjectPrewarmPreviews(
         _ previews: [LumiPreviewFacade.PreviewDiscovery]
-    ) -> [ProjectPreviewPrewarmRanker.RankedPreview] {
-        ProjectPreviewPrewarmRanker().rank(
+    ) -> [LumiPreviewFacade.ProjectPreviewPrewarmRanker.RankedPreview] {
+        LumiPreviewFacade.ProjectPreviewPrewarmRanker().rank(
             previews,
-            context: ProjectPreviewPrewarmRanker.Context(
+            context: LumiPreviewFacade.ProjectPreviewPrewarmRanker.Context(
                 activeFileURL: activeFileURL,
                 recentFilePaths: recentPreviewFilePaths,
                 successfulFilePaths: successfulPreviewFilePaths,
