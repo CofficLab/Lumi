@@ -10,7 +10,7 @@ struct InstalledExtensionsView: View {
             VStack(spacing: 8) {
                 ProgressView()
                     .controlSize(.small)
-                Text("加载扩展列表...")
+                Text(String(localized: "加载扩展列表...", table: "CodeServer"))
                     .font(.system(size: 12))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
@@ -21,11 +21,11 @@ struct InstalledExtensionsView: View {
                     .font(.system(size: 24))
                     .foregroundColor(Color.adaptive(light: "BDBDBD", dark: "48484F"))
 
-                Text("未安装任何扩展")
+                Text(String(localized: "未安装任何扩展", table: "CodeServer"))
                     .font(.system(size: 12))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-                Text("点击上方「市场」标签搜索安装扩展")
+                Text(String(localized: "点击上方「市场」标签搜索安装扩展", table: "CodeServer"))
                     .font(.system(size: 11))
                     .foregroundColor(Color(hex: "98989E"))
             }
@@ -90,7 +90,7 @@ struct ExtensionRowView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "paintbrush.pointed")
                             .font(.system(size: 10))
-                        Text("应用")
+                        Text(String(localized: "应用", table: "CodeServer"))
                             .font(.system(size: 10, weight: .medium))
                     }
                     .padding(.horizontal, 8)
@@ -100,7 +100,7 @@ struct ExtensionRowView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(.blue)
-                .help("应用此图标主题")
+                .help(String(localized: "应用此图标主题", table: "CodeServer"))
             }
 
             // 颜色主题扩展显示「应用」按钮
@@ -111,7 +111,7 @@ struct ExtensionRowView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "circle.lefthalf.filled")
                             .font(.system(size: 10))
-                        Text("应用")
+                        Text(String(localized: "应用", table: "CodeServer"))
                             .font(.system(size: 10, weight: .medium))
                     }
                     .padding(.horizontal, 8)
@@ -121,7 +121,7 @@ struct ExtensionRowView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(.purple)
-                .help("应用此颜色主题")
+                .help(String(localized: "应用此颜色主题", table: "CodeServer"))
             }
 
             // 卸载按钮
@@ -139,7 +139,7 @@ struct ExtensionRowView: View {
             }
             .buttonStyle(.plain)
             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            .help("卸载扩展")
+            .help(String(localized: "卸载扩展", table: "CodeServer"))
             .disabled(isUninstalling)
         }
         .padding(.horizontal, 4)

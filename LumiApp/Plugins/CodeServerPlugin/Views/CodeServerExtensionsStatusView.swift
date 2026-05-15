@@ -39,13 +39,13 @@ struct CodeServerExtensionsStatusView: View {
                 Image(systemName: "puzzlepiece.extension")
                     .font(.system(size: 10))
 
-                Text("Extensions")
+                Text(String(localized: "Extensions", table: "CodeServer"))
                     .font(.system(size: 11))
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
         }
-        .help("code-server 未运行，扩展管理不可用")
+        .help(String(localized: "code-server 未运行，扩展管理不可用", table: "CodeServer"))
     }
 
     // MARK: - Active View
@@ -71,7 +71,7 @@ struct CodeServerExtensionsStatusView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
         }
-        .help("管理 code-server 扩展")
+        .help(String(localized: "管理 code-server 扩展", table: "CodeServer"))
     }
 }
 
@@ -86,14 +86,14 @@ struct ExtensionsInactiveDetailView: View {
                     .font(.system(size: 16))
                     .foregroundColor(Color(hex: "7C6FFF"))
 
-                Text("扩展管理")
+                Text(String(localized: "扩展管理", table: "CodeServer"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             }
 
             Divider()
 
-            Text("请先启动 code-server 以管理扩展")
+            Text(String(localized: "请先启动 code-server 以管理扩展", table: "CodeServer"))
                 .font(.system(size: 12))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .multilineTextAlignment(.center)
@@ -139,7 +139,7 @@ struct ExtensionsManagerDetailView: View {
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 }
                 .buttonStyle(.plain)
-                .help("刷新扩展列表")
+                .help(String(localized: "刷新扩展列表", table: "CodeServer"))
                 .disabled(manager.isLoadingExtensions)
             }
 

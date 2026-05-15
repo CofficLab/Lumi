@@ -12,7 +12,7 @@ struct CodeServerErrorView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 40))
                 .foregroundStyle(.orange)
-            Text("无法连接 code-server")
+            Text(String(localized: "无法连接 code-server", table: "CodeServer"))
                 .font(.headline)
             Text(errorMessage)
                 .font(.subheadline)
@@ -22,7 +22,7 @@ struct CodeServerErrorView: View {
 
             if let onRetry = onRetry {
                 Button(action: onRetry) {
-                    Label("重试", systemImage: "arrow.clockwise")
+                    Label(String(localized: "重试", table: "CodeServer"), systemImage: "arrow.clockwise")
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
