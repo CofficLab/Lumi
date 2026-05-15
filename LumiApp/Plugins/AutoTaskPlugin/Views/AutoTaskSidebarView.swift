@@ -8,8 +8,9 @@ struct AutoTaskSidebarView: View {
     @EnvironmentObject var conversationVM: ConversationVM
     @EnvironmentObject private var themeVM: ThemeVM
     @StateObject private var viewModel = AutoTaskSidebarViewModel()
+    @State private var isCollapsed = false
 
-    private static let maxSidebarHeight: CGFloat = 200
+    private static let headerHeight: CGFloat = 44
     private static let maxTaskListHeight: CGFloat = 160
     fileprivate static let rowHeight: CGFloat = 30
 
@@ -24,7 +25,9 @@ struct AutoTaskSidebarView: View {
             if hasVisibleTasks {
                 headerView
 
-                if viewModel.isLoading {
+                if isCollapsed {
+                    EmptyView()
+                } else if viewModel.isLoading {
                     ProgressView()
                         .controlSize(.small)
                         .padding(.vertical, 8)
@@ -34,10 +37,27 @@ struct AutoTaskSidebarView: View {
             }
         }
         .fixedSize(horizontal: false, vertical: true)
-        .frame(maxHeight: hasVisibleTasks ? Self.maxSidebarHeight : nil)
+        .frame(height: hasVisibleTasks ? sidebarHeight : 0)
         .frame(maxWidth: .infinity, alignment: .top)
         .frame(minWidth: hasVisibleTasks ? 240 : 0, idealWidth: hasVisibleTasks ? 320 : 0)
-        .background(hasVisibleTasks ? themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.6) : nil)
+        .background {
+            if hasVisibleTasks {
+                taskPanelBackground
+            }
+        }
+        .overlay {
+            if hasVisibleTasks {
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.orange.opacity(0.16))
+                        .frame(height: 1)
+                    Spacer(minLength: 0)
+                    Rectangle()
+                        .fill(Color.orange.opacity(0.12))
+                        .frame(height: 1)
+                }
+            }
+        }
         .task(id: conversationVM.selectedConversationId) {
             await viewModel.refresh(conversationId: conversationVM.selectedConversationId)
         }
@@ -60,17 +80,31 @@ struct AutoTaskSidebarView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Button(action: {
+            Button {
                 Task { await viewModel.forceRefresh() }
-            }) {
+            } label: {
                 Image(systemName: "arrow.clockwise")
                     .font(.caption)
             }
             .buttonStyle(.borderless)
             .help(String(localized: "Refresh", table: "AutoTask"))
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    isCollapsed.toggle()
+                }
+            } label: {
+                Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
+                    .font(.caption)
+            }
+            .buttonStyle(.borderless)
+            .help(isCollapsed
+                ? String(localized: "Expand", table: "AutoTask")
+                : String(localized: "Collapse", table: "AutoTask")
+            )
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .frame(height: Self.headerHeight)
     }
 
     // MARK: - Task List
@@ -95,6 +129,23 @@ struct AutoTaskSidebarView: View {
             + 8
         return min(contentHeight, Self.maxTaskListHeight)
     }
+
+    private var sidebarHeight: CGFloat {
+        guard hasVisibleTasks else { return 0 }
+        if isCollapsed {
+            return Self.headerHeight
+        }
+        if viewModel.isLoading {
+            return Self.headerHeight + 32
+        }
+        return Self.headerHeight + taskListHeight
+    }
+
+    private var taskPanelBackground: Color {
+        themeVM.activeAppTheme.workspaceBackgroundColor()
+            .mix(with: .orange, by: 0.06)
+            .opacity(0.82)
+    }
 }
 
 // MARK: - Task Row
@@ -118,7 +169,11 @@ private struct TaskRowView: View {
         }
         .padding(.horizontal, 8)
         .frame(height: AutoTaskSidebarView.rowHeight)
-        .background(Color.secondary.opacity(0.08))
+        .background(Color.orange.opacity(0.075))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.orange.opacity(0.12), lineWidth: 1)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }
