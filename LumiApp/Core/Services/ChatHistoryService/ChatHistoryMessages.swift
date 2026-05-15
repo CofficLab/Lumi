@@ -4,6 +4,11 @@ import SwiftData
 // MARK: - 消息操作扩展
 
 extension ChatHistoryService {
+    struct ConversationTimelineSummary {
+        let messageCount: Int
+        let currentContextTokens: Int
+    }
+
     // MARK: - 保存消息
 
     /// 保存消息到指定对话
@@ -210,6 +215,55 @@ extension ChatHistoryService {
             AppLogger.core.info("\(Self.t)✅ [\(conversationId)] 加载到 \(messages.count) 条消息")
         }
         return messages
+    }
+
+    /// 获取对话时间线状态栏所需的轻量统计信息。
+    ///
+    /// 避免状态栏为了展示消息数和上下文 token 而全量加载并转换当前会话消息。
+    func getConversationTimelineSummary(forConversationId conversationId: UUID) -> ConversationTimelineSummary {
+        let context = self.getContext()
+
+        let countDescriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { message in
+                message.conversation?.id == conversationId
+            }
+        )
+        let messageCount = (try? context.fetchCount(countDescriptor)) ?? 0
+
+        var lastAssistantDescriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { message in
+                message.conversation?.id == conversationId && message._role == "assistant"
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        lastAssistantDescriptor.fetchLimit = 1
+
+        guard let lastAssistant = try? context.fetch(lastAssistantDescriptor).first else {
+            return ConversationTimelineSummary(
+                messageCount: messageCount,
+                currentContextTokens: 0
+            )
+        }
+
+        let baseContext = lastAssistant.metrics?.inputTokens ?? 0
+        let lastAssistantTimestamp = lastAssistant.timestamp
+        let userAfterAssistantDescriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { message in
+                message.conversation?.id == conversationId &&
+                    message._role == "user" &&
+                    message.timestamp > lastAssistantTimestamp
+            }
+        )
+
+        let newTokens = ((try? context.fetch(userAfterAssistantDescriptor)) ?? [])
+            .reduce(0) { total, message in
+                total + message.content.count / 4
+            }
+
+        return ConversationTimelineSummary(
+            messageCount: messageCount,
+            currentContextTokens: baseContext + newTokens
+        )
     }
 
     /// 分页加载消息（从最新消息开始，按时间倒序；直接按消息分页，避免加载整会话）

@@ -12,6 +12,7 @@ struct ConversationTimelineView: View, SuperLog {
     @EnvironmentObject private var llmVM: LLMVM
     @State private var messageCount: Int = 0
     @State private var currentContextTokens: Int = 0
+    @State private var refreshTask: Task<Void, Never>?
     private let timelineService = ConversationTimelineService()
 
     var body: some View {
@@ -43,6 +44,10 @@ struct ConversationTimelineView: View, SuperLog {
         .onAppear {
             refreshMessageCount()
         }
+        .onDisappear {
+            refreshTask?.cancel()
+            refreshTask = nil
+        }
         .onChange(of: conversationVM.selectedConversationId) { _, _ in
             refreshMessageCount()
         }
@@ -55,7 +60,7 @@ struct ConversationTimelineView: View, SuperLog {
         .onMessageSaved { message, conversationId in
             // 只刷新当前选中对话的消息
             guard conversationId == conversationVM.selectedConversationId else { return }
-            refreshMessageCount()
+            scheduleMessageCountRefresh()
             
             if Self.verbose {
                 AppLogger.core.info("\(Self.t)📬 收到消息保存事件，刷新统计: conversationId=\(conversationId)")
@@ -83,18 +88,27 @@ struct ConversationTimelineView: View, SuperLog {
 
     /// 刷新消息数量和当前上下文 token 数
     private func refreshMessageCount() {
+        refreshTask?.cancel()
+        refreshTask = nil
+
         guard let conversationId = conversationVM.selectedConversationId else {
             messageCount = 0
             currentContextTokens = 0
             return
         }
-        if let messages = chatHistoryVM.loadMessagesAsync(forConversationId: conversationId) {
-            let summary = timelineService.summary(from: messages)
-            messageCount = summary.messageCount
-            currentContextTokens = summary.currentContextTokens
-        } else {
-            messageCount = 0
-            currentContextTokens = 0
+
+        let summary = chatHistoryVM.getConversationTimelineSummary(forConversationId: conversationId)
+        messageCount = summary.messageCount
+        currentContextTokens = summary.currentContextTokens
+    }
+
+    /// 合并高频消息保存事件，避免流式输出期间反复触发主线程数据库查询。
+    private func scheduleMessageCountRefresh() {
+        refreshTask?.cancel()
+        refreshTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard !Task.isCancelled else { return }
+            refreshMessageCount()
         }
     }
 }

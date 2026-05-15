@@ -57,6 +57,13 @@ final class ChatHistoryVM: ObservableObject {
         await chatHistoryService.getMessageCount(forConversationId: conversationId)
     }
 
+    /// 获取对话时间线状态栏所需的轻量统计信息。
+    func getConversationTimelineSummary(
+        forConversationId conversationId: UUID
+    ) -> ChatHistoryService.ConversationTimelineSummary {
+        chatHistoryService.getConversationTimelineSummary(forConversationId: conversationId)
+    }
+
     /// 异步加载对话消息
     func loadMessagesAsync(forConversationId conversationId: UUID) -> [ChatMessage]? {
         chatHistoryService.loadMessages(forConversationId: conversationId)
