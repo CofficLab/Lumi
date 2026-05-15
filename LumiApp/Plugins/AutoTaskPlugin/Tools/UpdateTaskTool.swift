@@ -64,12 +64,14 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
             return "Error: task not found (id: \(taskId))"
         }
 
+        let updatedTask = await manager.fetchTask(id: taskId)
+
         // 通知 UI 刷新
-        if let task = await manager.fetchTask(id: taskId) {
+        if let updatedTask {
             NotificationCenter.default.post(
                 name: .autoTaskDidChange,
                 object: nil,
-                userInfo: ["conversationId": task.conversationId]
+                userInfo: ["conversationId": updatedTask.conversationId]
             )
         }
 
@@ -84,8 +86,8 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
         var result = "\(statusEmoji) Task status updated to **\(status.rawValue)**."
 
         // 自动推进：完成任务后，将下一个 pending 任务标记为 inProgress
-        if status == .completed || status == .skipped, let task {
-            let allTasks = await manager.fetchTasks(conversationId: task.conversationId)
+        if (status == .completed || status == .skipped), let updatedTask {
+            let allTasks = await manager.fetchTasks(conversationId: updatedTask.conversationId)
             if let nextTask = allTasks.first(where: { $0.status == .pending }) {
                 _ = await manager.updateTaskStatus(id: nextTask.id, status: .inProgress)
 
@@ -93,7 +95,7 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
                 NotificationCenter.default.post(
                     name: .autoTaskDidChange,
                     object: nil,
-                    userInfo: ["conversationId": task.conversationId]
+                    userInfo: ["conversationId": updatedTask.conversationId]
                 )
 
                 result += "\n\n📌 **Next task auto-started:** \(nextTask.title) (id: `\(nextTask.id)`)"
