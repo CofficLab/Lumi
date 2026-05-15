@@ -27,7 +27,7 @@ struct ConversationTimelineView: View, SuperLog {
                         Image(systemName: "timeline.selection")
                             .font(.system(size: 10))
 
-                        Text("\(messageCount) 条")
+                        Text("\(messageCount)")
                             .font(.system(size: 11))
 
                         if currentContextTokens > 0 {

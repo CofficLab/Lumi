@@ -10,10 +10,10 @@ extension ChatHistoryService {
     func getModelLatencyStats() -> [(providerId: String, modelName: String, avgLatency: Double, sampleCount: Int)] {
         let context = getContext()
 
-        // 获取所有有 metrics 关系的消息
+        // SwiftData predicate 不稳定支持 optional relationship 判空；metrics 在循环中继续过滤。
         let descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate { msg in
-                msg.metrics != nil && msg.providerId != nil && msg.modelName != nil
+                msg.providerId != nil && msg.modelName != nil
             }
         )
 
@@ -69,10 +69,10 @@ extension ChatHistoryService {
     func getModelDetailedStats() -> [String: ModelPerformanceStats] {
         let context = getContext()
 
-        // 获取所有有性能数据的消息
+        // SwiftData predicate 不稳定支持 optional relationship 判空；metrics 在循环中继续过滤。
         let descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate { msg in
-                msg.metrics != nil && msg.providerId != nil && msg.modelName != nil
+                msg.providerId != nil && msg.modelName != nil
             }
         )
 
