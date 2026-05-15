@@ -16,8 +16,8 @@ final class HotLivePreviewWindow: NSPanel {
         backgroundColor = .clear
         ignoresMouseEvents = false
         hasShadow = false
-        level = .normal
-        isFloatingPanel = false
+        level = .floating
+        isFloatingPanel = true
         hidesOnDeactivate = false
         collectionBehavior = [.fullScreenAuxiliary]
         isOpaque = false
@@ -40,7 +40,7 @@ final class HotLivePreviewWindow: NSPanel {
 
     override func orderFront(_ sender: Any?) {
         normalizeAuxiliaryWindows()
-        super.orderFront(sender)
+        orderFrontRegardless()
     }
 
     override func orderOut(_ sender: Any?) {

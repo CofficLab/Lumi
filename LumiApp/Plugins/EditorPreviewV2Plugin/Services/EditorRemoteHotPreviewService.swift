@@ -404,6 +404,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     func previewWindowDidBecomeActive() {
         Task { [weak self] in
             await self?.restoreLivePreviewIfNeeded(reason: "preview window became active")
+            await self?.showLivePreviewIfNeeded(reason: "preview window became active", forceOrderFront: true)
         }
     }
 
@@ -414,6 +415,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     func previewWindowDidReceiveInteraction() {
         Task { [weak self] in
             await self?.restoreLivePreviewIfNeeded(reason: "preview window received interaction")
+            await self?.showLivePreviewIfNeeded(reason: "preview window received interaction", forceOrderFront: true)
         }
     }
 
@@ -1555,7 +1557,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         }
     }
 
-    private func showLivePreviewIfNeeded(reason: String) async {
+    private func showLivePreviewIfNeeded(reason: String, forceOrderFront: Bool = false) async {
         guard isDetailViewVisible,
               preferredDisplayMode == .live,
               shouldRestorePreferredLiveMode,
@@ -1564,7 +1566,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
               let engine = previewEngine else {
             return
         }
-        guard !isLivePreviewShown else {
+        guard forceOrderFront || !isLivePreviewShown else {
             EditorRemoteHotPreviewPlugin.logger.debug(
                 "\(self.t)Skipping hot live preview show because it is already shown: \(reason, privacy: .public)"
             )
