@@ -342,15 +342,15 @@ final class ContextMenuHelper: NSObject, SuperLog {
             categories: EditorCommandCategoryScope.editorContextMenu
         )
 
-        let commandCount = presentationModel.flattenedCommands.count
+        let commandCount = presentationModel.sections.reduce(0) { $0 + $1.commands.count }
         if Self.verbose {
             editorContextMenuLog.info("\(self.t)injectCustomItems: 命令数=\(commandCount), sections=\(presentationModel.sections.count)")
-            for cmd in presentationModel.flattenedCommands {
+            for cmd in presentationModel.sections.flatMap(\.commands) {
                 editorContextMenuLog.info("\(self.t)injectCustomItems: 命令 id=\(cmd.id), title=\(cmd.title), isEnabled=\(cmd.isEnabled), category=\(cmd.category ?? "nil")")
             }
         }
 
-        guard !presentationModel.flattenedCommands.isEmpty else {
+        guard !presentationModel.sections.isEmpty else {
             if Self.verbose { editorContextMenuLog.warning("\(self.t)injectCustomItems: 命令列表为空, 不注入菜单项") }
             return
         }
@@ -361,22 +361,6 @@ final class ContextMenuHelper: NSObject, SuperLog {
         menu.insertItem(topSeparator, at: 0)
 
         var insertIndex = 0
-
-        if !presentationModel.recentCommands.isEmpty {
-            menu.insertItem(buildSectionHeader(title: "Recently Used"), at: insertIndex)
-            insertIndex += 1
-            for command in presentationModel.recentCommands {
-                menu.insertItem(
-                    buildInjectedItem(for: command, state: state, invocationContext: invocationContext),
-                    at: insertIndex
-                )
-                insertIndex += 1
-            }
-            let separator = NSMenuItem.separator()
-            separator.tag = injectedSeparatorTag
-            menu.insertItem(separator, at: insertIndex)
-            insertIndex += 1
-        }
 
         for (sectionIndex, section) in presentationModel.sections.enumerated() {
             menu.insertItem(buildSectionHeader(title: section.title), at: insertIndex)
