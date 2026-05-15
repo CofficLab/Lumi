@@ -192,4 +192,56 @@ struct FileTreeStoreTests {
         #expect(store.expandedPaths(for: "/project-v2") == ["/b"])
         #expect(store.expandedPaths(for: "/project_v2") == ["/c"])
     }
+
+    // MARK: - Overwrite / Replace Branch
+
+    @Test("set overwrites existing value in same store instance")
+    func setOverwritesExistingValue() throws {
+        let store = try makeStore()
+        store.set("first", forKey: "key")
+        #expect(store.string(forKey: "key") == "first")
+
+        // 第二次写入同 key，覆盖旧值 → 内部走 replaceItemAt 分支
+        store.set("second", forKey: "key")
+        #expect(store.string(forKey: "key") == "second")
+    }
+
+    @Test("expandedPaths overwrites previous set for same project")
+    func expandedPathsOverwritesPrevious() throws {
+        let store = try makeStore()
+        store.setExpandedPaths(["/a", "/b"], for: "/project")
+        #expect(store.expandedPaths(for: "/project") == ["/a", "/b"])
+
+        // 覆盖写入 → 内部走 replaceItemAt 分支
+        store.setExpandedPaths(["/c"], for: "/project")
+        #expect(store.expandedPaths(for: "/project") == ["/c"])
+    }
+
+    // MARK: - Thread Safety
+
+    @Test("concurrent reads and writes do not crash")
+    func concurrentAccessSafety() async throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileTreeKitTest-Concurrent-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        let store = FileTreeStore(directory: tempDir)
+
+        await withTaskGroup(of: Void.self) { group in
+            for i in 0..<50 {
+                group.addTask {
+                    store.setExpandedPaths(["/path\(i)"], for: "/project\(i % 5)")
+                }
+                group.addTask {
+                    _ = store.expandedPaths(for: "/project\(i % 5)")
+                }
+                group.addTask {
+                    store.setLastProjectPath("/project\(i % 5)")
+                }
+            }
+        }
+
+        // 只要没崩溃就算通过
+        let paths = store.expandedPaths(for: "/project0")
+        #expect(!paths.isEmpty || store.lastProjectPath() != nil)
+    }
 }

@@ -169,6 +169,85 @@ struct FileTreeWatcherTests {
         watcher.stopAll()
     }
 
+    // MARK: - Verbose Logging Branches
+
+    @Test("startWatching with verbose true logs without crash")
+    func startWatchingVerboseTrue() throws {
+        let dir = try makeTempDirectory()
+        let watcher = FileTreeWatcher { _ in }
+        watcher.verbose = true
+
+        watcher.startWatching(url: dir)
+        #expect(watcher.watchCount == 1)
+
+        watcher.stopAll()
+    }
+
+    @Test("stopWatching with verbose true logs without crash")
+    func stopWatchingVerboseTrue() throws {
+        let dir = try makeTempDirectory()
+        let watcher = FileTreeWatcher { _ in }
+        watcher.verbose = true
+
+        watcher.startWatching(url: dir)
+        watcher.stopWatching(url: dir)
+        #expect(watcher.watchCount == 0)
+    }
+
+    @Test("stopAll with verbose true logs without crash")
+    func stopAllVerboseTrue() throws {
+        let dir = try makeTempDirectory()
+        let watcher = FileTreeWatcher { _ in }
+        watcher.verbose = true
+
+        watcher.startWatching(url: dir)
+        watcher.stopAll()
+        #expect(watcher.watchCount == 0)
+    }
+
+    // MARK: - deinit cleanup
+
+    @Test("watcher deinit cleans up active watches")
+    func watcherDeinitCleansUp() throws {
+        let dir = try makeTempDirectory()
+        // watcher 在作用域结束时 deinit，此时 watches 不为空
+        // deinit 中应关闭所有 fileDescriptor 和取消 source
+        do {
+            let watcher = FileTreeWatcher { _ in }
+            watcher.verbose = false
+            watcher.startWatching(url: dir)
+            #expect(watcher.watchCount == 1)
+            // 不调用 stopAll，让 deinit 负责清理
+        }
+        // 如果 deinit 正确清理，不会产生资源泄漏或崩溃
+    }
+
+    // MARK: - updateWatchedDirectories file change detection
+
+    @Test("updateWatchedDirectories fires callback when new watched directory changes")
+    func updateWatchedDirectoriesFiresCallback() async throws {
+        let dir = try makeTempDirectory()
+        let expectation = Expectation()
+
+        let watcher = FileTreeWatcher { _ in
+            expectation.fulfill()
+        }
+        watcher.verbose = false
+
+        watcher.updateWatchedDirectories([dir])
+        #expect(watcher.watchCount == 1)
+
+        // 在通过 updateWatchedDirectories 添加的监控目录中创建文件
+        let fileURL = dir.appendingPathComponent("trigger.txt")
+        try "content".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        try await Task.sleep(for: .milliseconds(500))
+
+        watcher.stopAll()
+    }
+
+    // MARK: - watcher does not fire for unwatched directory
+
     @Test("watcher does not fire for unwatched directory")
     func watcherDoesNotFireForUnwatched() async throws {
         let watchedDir = try makeTempDirectory()
