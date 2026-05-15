@@ -14,7 +14,6 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../EditorService"),
-        .package(path: "../EditorKernel"),
         .package(path: "../MarkdownKit"),
         .package(path: "../LumiUI"),
         .package(url: "https://github.com/CofficLab/MagicKit", from: "1.5.23"),
@@ -24,7 +23,6 @@ let package = Package(
             name: "EditorOverlayKit",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MagicKit", package: "MagicKit"),
