@@ -1,123 +1,7 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "'%@' belongs to multiple targets (%@), cannot uniquely determine semantic context": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' belongs to multiple targets (%@), cannot uniquely determine semantic context"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 属于多个目标（%@），无法唯一确定语义上下文"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 屬於多個目標（%@），無法唯一確定語義上下文"
-          }
-        }
-      }
-    },
-    "'%@' belongs to multiple targets (%@), current scheme '%@' cannot uniquely determine semantic context": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' belongs to multiple targets (%@), current scheme '%@' cannot uniquely determine semantic context"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 属于多个目标（%@），当前 scheme '%@' 无法唯一确定语义上下文"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 屬於多個目標（%@），當前 scheme '%@' 無法唯一確定語義上下文"
-          }
-        }
-      }
-    },
-    "'%@' belongs to target (%@), but current active scheme does not include these targets": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' belongs to target (%@), but current active scheme does not include these targets"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 属于目标（%@），但当前活动 scheme 不包含这些目标"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 屬於目標（%@），但當前活動 scheme 不包含這些目標"
-          }
-        }
-      }
-    },
-    "'%@' belongs to target (%@), but current scheme '%@' does not include these targets": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' belongs to target (%@), but current scheme '%@' does not include these targets"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 属于目标（%@），但当前 scheme '%@' 不包含这些目标"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 屬於目標（%@），但當前 scheme '%@' 不包含這些目標"
-          }
-        }
-      }
-    },
-    "'%@' does not belong to any compilation target, please check if the file is in the project": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' does not belong to any compilation target, please check if the file is in the project"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 不属于任何编译目标，请检查文件是否在项目中"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 不屬於任何編譯目標，請檢查文件是否在項目中"
-          }
-        }
-      }
-    },
     "'%@' does not belong to any compilation target.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -140,7 +24,6 @@
       }
     },
     "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -162,123 +45,7 @@
         }
       }
     },
-    "Add the file to a target": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add the file to a target"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "将文件添加到目标"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "將文件添加到目標"
-          }
-        }
-      }
-    },
-    "App Groups - Shared app group": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App Groups - Shared app group"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App Groups - 共享应用组"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App Groups - 共享應用群組"
-          }
-        }
-      }
-    },
-    "App Transport Security - Network security": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App Transport Security - Network security"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App 传输安全 - 网络安全"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App 傳輸安全 - 網絡安全"
-          }
-        }
-      }
-    },
-    "Associated Domains": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Associated Domains"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "关联域名"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "關聯域名"
-          }
-        }
-      }
-    },
-    "Audio Input": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Audio Input"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "音频输入"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "音頻輸入"
-          }
-        }
-      }
-    },
     "Available": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -301,7 +68,6 @@
       }
     },
     "Available (scheme: %@)": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -319,29 +85,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "可用（scheme: %@）"
-          }
-        }
-      }
-    },
-    "Bluetooth Usage - Bluetooth access description": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bluetooth Usage - Bluetooth access description"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "蓝牙使用 - 蓝牙访问描述"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "藍牙使用 - 藍牙訪問描述"
           }
         }
       }
@@ -369,7 +112,6 @@
       }
     },
     "Build Context Needs Sync": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -391,31 +133,7 @@
         }
       }
     },
-    "Build context needs to be resynchronized": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context needs to be resynchronized"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "构建上下文需要重新同步"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "構建上下文需要重新同步"
-          }
-        }
-      }
-    },
     "Build Context Unavailable": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -433,190 +151,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "構建上下文不可用"
-          }
-        }
-      }
-    },
-    "Build context unavailable: %@": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context unavailable: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "构建上下文不可用：%@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "構建上下文不可用：%@"
-          }
-        }
-      }
-    },
-    "Bundle ID - Unique app identifier": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle ID - Unique app identifier"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle ID - 唯一应用标识符"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle ID - 唯一應用標識符"
-          }
-        }
-      }
-    },
-    "Bundle Name - Application name": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle Name - Application name"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle 名称 - 应用名称"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle 名稱 - 應用名稱"
-          }
-        }
-      }
-    },
-    "Bundle Signature": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle Signature"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle 签名"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle 簽名"
-          }
-        }
-      }
-    },
-    "Bundle Version - Build version number": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle Version - Build version number"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle 版本 - 构建版本号"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bundle 版本 - 構建版本號"
-          }
-        }
-      }
-    },
-    "Camera": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Camera"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相机"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相機"
-          }
-        }
-      }
-    },
-    "Camera Usage - Camera access description": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Camera Usage - Camera access description"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相机使用 - 相机访问描述"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "相機使用 - 相機訪問描述"
-          }
-        }
-      }
-    },
-    "Communication Notifications": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Communication Notifications"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通讯通知"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通訊通知"
           }
         }
       }
@@ -688,7 +222,6 @@
       }
     },
     "Current file belongs to %@, but current scheme cannot uniquely determine semantic context.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -710,31 +243,7 @@
         }
       }
     },
-    "Current file is not bound to a valid Xcode project context": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current file is not bound to a valid Xcode project context"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前文件未绑定到有效的 Xcode 项目上下文"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前文件未綁定到有效的 Xcode 項目上下文"
-          }
-        }
-      }
-    },
     "Current file matches multiple targets, currently resolving with '%@'.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -757,7 +266,6 @@
       }
     },
     "Current scheme '%@' does not include %@.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -802,7 +310,6 @@
       }
     },
     "Destination Undetermined": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -824,54 +331,7 @@
         }
       }
     },
-    "Display Name - Shown on Home screen": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Display Name - Shown on Home screen"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示名称 - 在主屏幕上显示"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示名稱 - 在主螢幕上顯示"
-          }
-        }
-      }
-    },
-    "Ensure .xcodeproj/.xcworkspace is in the project root directory": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ensure .xcodeproj/.xcworkspace is in the project root directory"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确保 .xcodeproj/.xcworkspace 在项目根目录中"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確保 .xcodeproj/.xcworkspace 在項目根目錄中"
-          }
-        }
-      }
-    },
     "Error": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -893,31 +353,7 @@
         }
       }
     },
-    "Failed to generate buildServer.json": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Failed to generate buildServer.json"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "生成 buildServer.json 失败"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "生成 buildServer.json 失敗"
-          }
-        }
-      }
-    },
     "File Not in Target": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -983,31 +419,7 @@
         }
       }
     },
-    "iCloud Containers": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud Containers"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud 容器"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud 容器"
-          }
-        }
-      }
-    },
     "Indexing %d%%": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1030,7 +442,6 @@
       }
     },
     "Indexing...": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1052,77 +463,7 @@
         }
       }
     },
-    "Keychain Access Groups": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keychain Access Groups"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "钥匙串访问组"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "鑰匙串訪問組"
-          }
-        }
-      }
-    },
-    "Launch Storyboard - Launch screen storyboard": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Launch Storyboard - Launch screen storyboard"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "启动 Storyboard - 启动屏幕 Storyboard"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "啟動 Storyboard - 啟動螢幕 Storyboard"
-          }
-        }
-      }
-    },
-    "Location Usage - Location access description": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location Usage - Location access description"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置使用 - 位置访问描述"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置使用 - 位置訪問描述"
-          }
-        }
-      }
-    },
     "LSP Not Initialized": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1140,98 +481,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "LSP 未初始化"
-          }
-        }
-      }
-    },
-    "LSP request timed out, please try again later": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP request timed out, please try again later"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 请求超时，请稍后再试"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 請求超時，請稍後再試"
-          }
-        }
-      }
-    },
-    "LSP server connection lost, attempting to reconnect...": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP server connection lost, attempting to reconnect..."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 服务器连接丢失，正在尝试重新连接..."
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 伺服器連接丟失，正在嘗試重新連接..."
-          }
-        }
-      }
-    },
-    "LSP server not started, unable to process request": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP server not started, unable to process request"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 服务器未启动，无法处理请求"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 伺服器未啟動，無法處理請求"
-          }
-        }
-      }
-    },
-    "Main Storyboard - Main storyboard file": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Main Storyboard - Main storyboard file"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "主 Storyboard - 主 Storyboard 文件"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "主 Storyboard - 主 Storyboard 文件"
           }
         }
       }
@@ -1258,100 +507,7 @@
         }
       }
     },
-    "Minimum System Version - Minimum OS version": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Minimum System Version - Minimum OS version"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最低系统版本 - 最低操作系统版本"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最低系統版本 - 最低操作系統版本"
-          }
-        }
-      }
-    },
-    "Missing CFBundleIdentifier": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Missing CFBundleIdentifier"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缺少 CFBundleIdentifier"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缺少 CFBundleIdentifier"
-          }
-        }
-      }
-    },
-    "Missing CFBundleShortVersionString": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Missing CFBundleShortVersionString"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缺少 CFBundleShortVersionString"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缺少 CFBundleShortVersionString"
-          }
-        }
-      }
-    },
-    "Missing CFBundleVersion": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Missing CFBundleVersion"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缺少 CFBundleVersion"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缺少 CFBundleVersion"
-          }
-        }
-      }
-    },
     "Multi-Target Ambiguity": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1374,7 +530,6 @@
       }
     },
     "Multi-Target File": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1397,7 +552,6 @@
       }
     },
     "Needs resync": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1420,7 +574,6 @@
       }
     },
     "Needs Sync": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1438,29 +591,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "需要同步"
-          }
-        }
-      }
-    },
-    "No .xcodeproj / .xcworkspace found": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No .xcodeproj / .xcworkspace found"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未找到 .xcodeproj / .xcworkspace"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未找到 .xcodeproj / .xcworkspace"
           }
         }
       }
@@ -1509,29 +639,6 @@
         }
       }
     },
-    "No matching symbol found": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No matching symbol found"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未找到匹配的符号"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未找到匹配的符號"
-          }
-        }
-      }
-    },
     "None": {
       "localizations": {
         "en": {
@@ -1555,7 +662,6 @@
       }
     },
     "Not Detected": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1578,7 +684,6 @@
       }
     },
     "Not Initialized": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1622,29 +727,6 @@
         }
       }
     },
-    "Not Started": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not Started"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未启动"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未啟動"
-          }
-        }
-      }
-    },
     "Open in Xcode": {
       "localizations": {
         "en": {
@@ -1663,52 +745,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 Xcode 中打開"
-          }
-        }
-      }
-    },
-    "Package Type - Bundle package type": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Package Type - Bundle package type"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "包类型 - Bundle 包类型"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "包類型 - Bundle 包類型"
-          }
-        }
-      }
-    },
-    "Photo Library Usage - Photo library access description": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photo Library Usage - Photo library access description"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "照片库使用 - 照片库访问描述"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "照片庫使用 - 照片庫訪問描述"
           }
         }
       }
@@ -1735,121 +771,6 @@
         }
       }
     },
-    "Preload completed: %lld succeeded": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preload completed: %lld succeeded"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "预加载完成：%lld 个成功"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "預加載完成：%lld 個成功"
-          }
-        }
-      }
-    },
-    "Preload completed: %lld succeeded, %lld failed": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preload completed: %lld succeeded, %lld failed"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "预加载完成：%lld 个成功，%lld 个失败"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "預加載完成：%lld 個成功，%lld 個失敗"
-          }
-        }
-      }
-    },
-    "Preloading %lld project(s)...": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preloading %lld project(s)..."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在预加载 %lld 个项目..."
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在預加載 %lld 個項目..."
-          }
-        }
-      }
-    },
-    "Principal Class": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Principal Class"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "主类"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "主類"
-          }
-        }
-      }
-    },
-    "Project is being indexed, semantic navigation may be incomplete": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Project is being indexed, semantic navigation may be incomplete"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "项目正在索引中，语义导航可能不完整"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "項目正在索引中，語義導航可能不完整"
-          }
-        }
-      }
-    },
     "Project Keys": {
       "localizations": {
         "en": {
@@ -1868,29 +789,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "項目配置項"
-          }
-        }
-      }
-    },
-    "Project path does not exist: %@": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Project path does not exist: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "项目路径不存在：%@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "項目路徑不存在：%@"
           }
         }
       }
@@ -1984,7 +882,6 @@
       }
     },
     "Ready": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2006,31 +903,7 @@
         }
       }
     },
-    "Required Capabilities - Required device capabilities": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Required Capabilities - Required device capabilities"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "必需功能 - 必需的设备功能"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "必需功能 - 必需的設備功能"
-          }
-        }
-      }
-    },
     "Resolving build context...": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2053,7 +926,6 @@
       }
     },
     "Resolving...": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2071,52 +943,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "解析中..."
-          }
-        }
-      }
-    },
-    "Run brew install xcode-build-server and reopen the project": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Run brew install xcode-build-server and reopen the project"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "运行 brew install xcode-build-server 并重新打开项目"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "運行 brew install xcode-build-server 並重新打開項目"
-          }
-        }
-      }
-    },
-    "Scene Manifest - Scene configuration": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scene Manifest - Scene configuration"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "场景清单 - 场景配置"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "場景清單 - 場景配置"
           }
         }
       }
@@ -2144,7 +970,6 @@
       }
     },
     "Scheme Does Not Cover File Target": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2210,123 +1035,7 @@
         }
       }
     },
-    "Short Version - Marketing version number": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Short Version - Marketing version number"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "短版本号 - 营销版本号"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "短版本號 - 營銷版本號"
-          }
-        }
-      }
-    },
-    "Sign in with Apple": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sign in with Apple"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通过 Apple 登录"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通過 Apple 登入"
-          }
-        }
-      }
-    },
-    "Suggested value for %@": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suggested value for %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 的建议值"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 的建議值"
-          }
-        }
-      }
-    },
-    "Suggested values:": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suggested values:"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "建议值："
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "建議值："
-          }
-        }
-      }
-    },
-    "Supported Orientations - Supported interface orientations": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supported Orientations - Supported interface orientations"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "支持的方向 - 支持的界面方向"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "支持的方向 - 支持的界面方向"
-          }
-        }
-      }
-    },
     "Swift semantic indexing in progress": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2344,52 +1053,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Swift 語義索引進行中"
-          }
-        }
-      }
-    },
-    "Switch to a more specific scheme, or keep only one target membership and retry": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Switch to a more specific scheme, or keep only one target membership and retry"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "切换到更具体的 scheme，或仅保留一个目标成员身份后重试"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "切換到更具體的 scheme，或僅保留一個目標成員身份後重試"
-          }
-        }
-      }
-    },
-    "Switch to a scheme that includes the file's target and retry": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Switch to a scheme that includes the file's target and retry"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "切换到包含该文件目标的 scheme 后重试"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "切換到包含該文件目標的 scheme 後重試"
           }
         }
       }
@@ -2416,31 +1079,7 @@
         }
       }
     },
-    "Team Identifier": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Team Identifier"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "团队标识符"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "團隊標識符"
-          }
-        }
-      }
-    },
     "The current build context has expired, workspace semantic results may be inaccurate.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2463,7 +1102,6 @@
       }
     },
     "The current target platform has not yet been resolved.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2486,7 +1124,6 @@
       }
     },
     "The current Xcode project context has not yet completed initialization.": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2508,123 +1145,7 @@
         }
       }
     },
-    "Try again": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Try again"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重试"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重試"
-          }
-        }
-      }
-    },
-    "Try reopening the file or restarting Lumi": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Try reopening the file or restarting Lumi"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请尝试重新打开文件或重启 Lumi"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請嘗試重新打開文件或重啟 Lumi"
-          }
-        }
-      }
-    },
-    "Unable to parse as valid plist": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unable to parse as valid plist"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法解析为有效的 plist"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法解析為有效的 plist"
-          }
-        }
-      }
-    },
-    "Unable to parse project": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unable to parse project"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法解析项目"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法解析項目"
-          }
-        }
-      }
-    },
-    "Unable to resolve symbol%@": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unable to resolve symbol%@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法解析符号%@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法解析符號%@"
-          }
-        }
-      }
-    },
     "Unavailable": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2647,7 +1168,6 @@
       }
     },
     "Unavailable: %@": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2692,7 +1212,6 @@
       }
     },
     "Unknown": {
-      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2710,98 +1229,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "未知"
-          }
-        }
-      }
-    },
-    "Wait for auto-reconnect, or manually switch files to trigger rebuild": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wait for auto-reconnect, or manually switch files to trigger rebuild"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "等待自动重连，或手动切换文件以触发重新构建"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "等待自動重連，或手動切換文件以觸發重新構建"
-          }
-        }
-      }
-    },
-    "Wait for indexing to complete and retry, or check sourcekit-lsp logs": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wait for indexing to complete and retry, or check sourcekit-lsp logs"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "等待索引完成后重试，或检查 sourcekit-lsp 日志"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "等待索引完成後重試，或檢查 sourcekit-lsp 日誌"
-          }
-        }
-      }
-    },
-    "Wait for indexing to complete and try again": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wait for indexing to complete and try again"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "等待索引完成后重试"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "等待索引完成後重試"
-          }
-        }
-      }
-    },
-    "WiFi Info": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WiFi Info"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WiFi 信息"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WiFi 資訊"
           }
         }
       }
@@ -2890,29 +1317,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xcode 項目編輯器"
-          }
-        }
-      }
-    },
-    "xcode-build-server not installed, please run: brew install xcode-build-server": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "xcode-build-server not installed, please run: brew install xcode-build-server"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未安装 xcode-build-server，请运行：brew install xcode-build-server"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未安裝 xcode-build-server，請運行：brew install xcode-build-server"
           }
         }
       }
