@@ -51,14 +51,14 @@ struct PortManagerView: View {
                     ContentUnavailableView(
                         LocalizedStringKey(String(localized: "No Listening Ports")),
                         systemImage: "network.slash",
-                        description: String(localized: "No listening ports found.", table: "PortManager")
+                        description: Text(String(localized: "No listening ports found.", table: "PortManager"))
                     )
                 } else {
                     VStack {
                         Image(systemName: "network.slash")
                             .font(.largeTitle)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        String(localized: "No Listening Ports", table: "PortManager")
+                        Text(String(localized: "No Listening Ports", table: "PortManager"))
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
@@ -83,7 +83,7 @@ struct PortManagerView: View {
         .alert(Text("Error"), isPresented: $showError, actions: {
             Button(role: .cancel) {
             } label: {
-                String(localized: "OK", table: "PortManager")
+                Text(String(localized: "OK", table: "PortManager"))
             }
         }, message: {
             Text(errorMessage ?? String(localized: "Unknown error"))
@@ -181,7 +181,7 @@ struct PortRowView: View {
                 }
                 Button(role: .cancel) {
                 } label: {
-                    String(localized: "Cancel", table: "PortManager")
+                    Text(String(localized: "Cancel", table: "PortManager"))
                 }
             } message: {
                 Text("This action will force terminate the process, which may lead to data loss.")
