@@ -108,7 +108,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         {
             let textDocumentCaps = TextDocumentClientCapabilities(
                 completion: CompletionClientCapabilities(
-                    dynamicRegistration: true,
+                    dynamicRegistration: false,
                     completionItem: CompletionClientCapabilities.CompletionItem(
                         snippetSupport: true,
                         commitCharactersSupport: true,
@@ -129,7 +129,7 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
                     completionList: nil
                 ),
                 codeAction: CodeActionClientCapabilities(
-                    dynamicRegistration: true,
+                    dynamicRegistration: false,
                     codeActionLiteralSupport: CodeActionClientCapabilities.CodeActionLiteralSupport(
                         codeActionKind: ValueSet(valueSet: [
                             CodeActionKind.Quickfix,
@@ -164,30 +164,26 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
             let workspaceCaps = ClientCapabilities.Workspace(
                 applyEdit: true,
                 workspaceEdit: nil,
-                didChangeConfiguration: DidChangeConfigurationClientCapabilities(dynamicRegistration: true),
-                didChangeWatchedFiles: DidChangeWatchedFilesClientCapabilities(dynamicRegistration: true),
+                didChangeConfiguration: DidChangeConfigurationClientCapabilities(dynamicRegistration: false),
+                didChangeWatchedFiles: DidChangeWatchedFilesClientCapabilities(dynamicRegistration: false),
                 symbol: WorkspaceSymbolClientCapabilities(
-                    dynamicRegistration: true,
+                    dynamicRegistration: false,
                     symbolKind: nil,
                     tagSupport: nil,
                     resolveSupport: []
                 ),
-                executeCommand: GenericDynamicRegistration(dynamicRegistration: true),
+                executeCommand: GenericDynamicRegistration(dynamicRegistration: false),
                 workspaceFolders: true,
-                configuration: true,
+                configuration: false,
                 semanticTokens: nil,
                 codeLens: nil,
                 fileOperations: nil
             )
             
             let windowCaps = WindowClientCapabilities(
-                workDoneProgress: true,
-                showMessage: ShowMessageRequestClientCapabilities(
-                    messageActionItem: ShowMessageRequestClientCapabilities.MessageActionItemCapabilities(
-                        additionalPropertiesSupport: true
-                    )
-                ),
-                showDocument: ShowDocumentClientCapabilities(support: true)
+                workDoneProgress: false,
+                showMessage: nil,
+                showDocument: nil
             )
             
             let capabilities = ClientCapabilities(
