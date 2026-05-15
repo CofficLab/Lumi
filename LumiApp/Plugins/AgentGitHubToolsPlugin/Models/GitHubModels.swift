@@ -45,6 +45,14 @@ struct GitHubRepository: Codable, Sendable {
     let forksCount: Int
     /// 开放 Issue 数量
     let openIssuesCount: Int?
+    /// 仓库 topics
+    let topics: [String]?
+    /// 最后 push 时间
+    let pushedAt: String?
+    /// 是否归档
+    let archived: Bool?
+    /// 是否 fork
+    let fork: Bool?
     /// 仓库所有者
     let owner: GitHubUser
     /// 创建时间
@@ -65,6 +73,10 @@ struct GitHubRepository: Codable, Sendable {
         case stargazersCount = "stargazers_count"
         case forksCount = "forks_count"
         case openIssuesCount = "open_issues_count"
+        case topics
+        case pushedAt = "pushed_at"
+        case archived
+        case fork
         case owner
         case createdAt = "created_at"
         case updatedAt = "updated_at"
