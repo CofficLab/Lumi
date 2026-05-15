@@ -236,11 +236,13 @@ final class PreviewEntryBuilder: Sendable {
         buildStrategy: BuildStrategy?
     ) throws -> [GeneratedSource] {
         let targetSourceURLs = sourceFiles(for: discovery, buildStrategy: buildStrategy)
+        let moduleNameToRemove = selfImportModuleName(for: buildStrategy)
         var generatedSources: [GeneratedSource] = []
         for (index, targetSourceURL) in targetSourceURLs.enumerated() {
             let sanitizedSource = try sanitizedSourceFile(
                 at: targetSourceURL,
-                currentDiscovery: discovery
+                currentDiscovery: discovery,
+                removingSelfImportModuleName: moduleNameToRemove
             )
             generatedSources.append(
                 GeneratedSource(
@@ -395,7 +397,8 @@ final class PreviewEntryBuilder: Sendable {
 
     private func sanitizedSourceFile(
         at sourceFileURL: URL,
-        currentDiscovery: PreviewDiscovery
+        currentDiscovery: PreviewDiscovery,
+        removingSelfImportModuleName moduleName: String?
     ) throws -> String {
         let normalizedSourceURL = sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
         let currentSourceURL = currentDiscovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
@@ -419,7 +422,29 @@ final class PreviewEntryBuilder: Sendable {
         }
 
         removeMainAttribute(from: &lines)
+        if let moduleName {
+            removeSelfImports(of: moduleName, from: &lines)
+        }
         return lines.joined(separator: "\n")
+    }
+
+    private func selfImportModuleName(for buildStrategy: BuildStrategy?) -> String? {
+        guard case .spm(_, let targetName) = buildStrategy else {
+            return nil
+        }
+        return targetName
+    }
+
+    private func removeSelfImports(of moduleName: String, from lines: inout [String]) {
+        guard !moduleName.isEmpty else { return }
+        let escapedModuleName = NSRegularExpression.escapedPattern(for: moduleName)
+        let pattern = #"^\s*(?:(?:@testable|@_exported)\s+)?import\s+\#(escapedModuleName)\s*(?://.*)?$"#
+
+        for index in lines.indices.reversed() {
+            if lines[index].range(of: pattern, options: .regularExpression) != nil {
+                lines.remove(at: index)
+            }
+        }
     }
 
     private func removeMainAttribute(from lines: inout [String]) {
@@ -486,4 +511,3 @@ private extension Array where Element == URL {
         return result
     }
 }
-
