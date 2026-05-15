@@ -54,7 +54,9 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
         self.service = service
         service.objectWillChange
             .sink { [weak self] _ in
-                self?.objectWillChange.send()
+                DispatchQueue.main.async {
+                    self?.objectWillChange.send()
+                }
             }
             .store(in: &cancellables)
     }

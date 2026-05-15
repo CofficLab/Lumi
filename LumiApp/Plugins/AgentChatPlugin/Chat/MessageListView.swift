@@ -441,7 +441,7 @@ private struct ScrollPositionObserver: NSViewRepresentable {
         }
     }
 
-    final class Coordinator {
+    final class Coordinator: @unchecked Sendable {
         private static let bottomEpsilon: CGFloat = 6
 
         var onMetricsChanged: (_ atBottom: Bool, _ userInitiated: Bool) -> Void
@@ -458,9 +458,12 @@ private struct ScrollPositionObserver: NSViewRepresentable {
         }
 
         deinit {
-            removeObservers()
+            MainActor.assumeIsolated {
+                removeObservers()
+            }
         }
 
+        @MainActor
         func attachIfNeeded(from probe: NSView) {
             guard let enclosing = findEnclosingScrollView(from: probe) else { return }
             guard scrollView !== enclosing else {
@@ -474,6 +477,7 @@ private struct ScrollPositionObserver: NSViewRepresentable {
             emitMetrics(userInitiated: false)
         }
 
+        @MainActor
         private func findEnclosingScrollView(from view: NSView) -> NSScrollView? {
             var node: NSView? = view
             while let current = node {
@@ -495,6 +499,7 @@ private struct ScrollPositionObserver: NSViewRepresentable {
             return nil
         }
 
+        @MainActor
         private func findFirstScrollView(in root: NSView) -> NSScrollView? {
             if let sv = root as? NSScrollView {
                 return sv
@@ -507,6 +512,7 @@ private struct ScrollPositionObserver: NSViewRepresentable {
             return nil
         }
 
+        @MainActor
         private func bindObservers(to scrollView: NSScrollView) {
             scrollView.contentView.postsBoundsChangedNotifications = true
             let boundsObs = NotificationCenter.default.addObserver(
@@ -514,8 +520,10 @@ private struct ScrollPositionObserver: NSViewRepresentable {
                 object: scrollView.contentView,
                 queue: .main
             ) { [weak self] _ in
-                guard let self else { return }
-                self.emitMetrics(userInitiated: self.isLikelyUserScroll())
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.emitMetrics(userInitiated: self.isLikelyUserScroll())
+                }
             }
             observers.append(boundsObs)
 
@@ -524,7 +532,9 @@ private struct ScrollPositionObserver: NSViewRepresentable {
                 object: scrollView,
                 queue: .main
             ) { [weak self] _ in
-                self?.isLiveScrolling = true
+                Task { @MainActor [weak self] in
+                    self?.isLiveScrolling = true
+                }
             }
             observers.append(startObs)
 
@@ -533,9 +543,11 @@ private struct ScrollPositionObserver: NSViewRepresentable {
                 object: scrollView,
                 queue: .main
             ) { [weak self] _ in
-                guard let self else { return }
-                self.isLiveScrolling = false
-                self.emitMetrics(userInitiated: true)
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.isLiveScrolling = false
+                    self.emitMetrics(userInitiated: true)
+                }
             }
             observers.append(endObs)
 
@@ -547,12 +559,15 @@ private struct ScrollPositionObserver: NSViewRepresentable {
                     object: doc,
                     queue: .main
                 ) { [weak self] _ in
-                    self?.emitMetrics(userInitiated: false)
+                    Task { @MainActor [weak self] in
+                        self?.emitMetrics(userInitiated: false)
+                    }
                 }
                 observers.append(frameObs)
             }
         }
 
+        @MainActor
         private func isLikelyUserScroll() -> Bool {
             guard isLiveScrolling || NSApp.currentEvent != nil else { return false }
             if isLiveScrolling {
@@ -567,6 +582,7 @@ private struct ScrollPositionObserver: NSViewRepresentable {
             }
         }
 
+        @MainActor
         private func emitMetrics(userInitiated: Bool) {
             guard let scrollView,
                   let documentView = scrollView.documentView else { return }
@@ -580,9 +596,13 @@ private struct ScrollPositionObserver: NSViewRepresentable {
             }
             lastAtBottom = atBottom
             lastUserInitiated = userInitiated
-            onMetricsChanged(atBottom, userInitiated)
+            let onMetricsChanged = onMetricsChanged
+            DispatchQueue.main.async {
+                onMetricsChanged(atBottom, userInitiated)
+            }
         }
 
+        @MainActor
         private func removeObservers() {
             observers.forEach { NotificationCenter.default.removeObserver($0) }
             observers.removeAll()
