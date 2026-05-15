@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// ```text
 /// Lumi App
-/// ├── Window (主窗口，单实例)
+/// ├── WindowGroup (主窗口，可多开)
 /// │   └── ContentLayout (主内容布局)
 /// └── SettingsWindow (设置窗口)
 ///     └── SettingView (设置视图)
@@ -55,12 +55,15 @@ struct CoreApp: App {
     private let updateController = UpdateController.shared
 
     var body: some Scene {
-        // 主窗口（单窗口，禁止再开第二个主窗口）
+        // 主窗口（可多开）
         //
         // 使用隐藏标题栏的窗口风格，提供现代简洁的外观。
         // 工具栏使用统一样式，不显示传统标题。
-        Window("Lumi", id: MainWindowID.main) {
-            ContentLayout()
+        WindowGroup("Lumi", id: MainWindowID.main, for: LumiWindowRoute.self) { route in
+            ContentLayout(
+                conversationId: route.wrappedValue?.conversationId,
+                projectPath: route.wrappedValue?.projectPath
+            )
                 .inRootView()
         }
         .windowStyle(.titleBar)
@@ -68,6 +71,7 @@ struct CoreApp: App {
         .commands {
             DebugCommand()
             SettingsCommand()
+            WindowCommand()
             ConfigCommand()
             EditorCommand()
 
