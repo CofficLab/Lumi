@@ -9,6 +9,7 @@ Lumi 内部的 Xcode String Catalog (`.xcstrings`) 解析工具包。
 - **条目展示数据**：保留 key、extraction state、string unit state 和本地化文本，供预览 UI 直接渲染。
 - **Variation 取值**：支持从 plural/device 等 variation 树里提取可展示的 string unit。
 - **占位符扫描**：识别 `%@`、`%1$@`、`%lld`、`%.2f` 等格式化占位符，供 UI 高亮。
+- **废弃条目清理**：删除 `extractionState == "stale"` 的字符串条目，并返回删除数量。
 
 ## 使用方式
 
@@ -38,6 +39,13 @@ let entries = catalog.entries
 
 ```swift
 let placeholders = StringCatalogPlaceholderScanner.placeholders(in: "Build %1$@ %2$@")
+```
+
+删除废弃条目：
+
+```swift
+let result = try StringCatalogCleaner.removingStaleEntries(from: source)
+print(result.removedCount)
 ```
 
 ## 运行测试

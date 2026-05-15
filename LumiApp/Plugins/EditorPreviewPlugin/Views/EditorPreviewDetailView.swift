@@ -20,7 +20,11 @@ struct EditorRemoteHotPreviewDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HotPreviewToolbar(viewModel: viewModel, currentFileURL: currentFileURL)
+            HotPreviewToolbar(
+                viewModel: viewModel,
+                currentFileURL: currentFileURL,
+                deleteStaleStringCatalogEntries: deleteStaleStringCatalogEntries
+            )
             content
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
@@ -138,6 +142,36 @@ struct EditorRemoteHotPreviewDetailView: View {
         guard !viewModel.isImageMode, !viewModel.isMarkdownMode, !viewModel.isStringCatalogMode else { return }
         if viewModel.hostState == .connected || viewModel.hostState == .rendering {
             viewModel.scheduleRenderFrame(reason: "editor refresh signal changed")
+        }
+    }
+
+    private func deleteStaleStringCatalogEntries() {
+        guard let sourceText,
+              viewModel.isStringCatalogMode else {
+            return
+        }
+
+        do {
+            let result = try StringCatalogCleaner.removingStaleEntries(from: sourceText)
+            guard result.removedCount > 0 else { return }
+            if editorVM.service.replaceCurrentDocumentText(
+                result.source,
+                reason: "string_catalog_delete_stale_entries"
+            ) {
+                viewModel.update(
+                    sourceText: result.source,
+                    fileURL: currentFileURL,
+                    projectRootPath: projectRootPath,
+                    reloadPolicy: .scanOnly
+                )
+            }
+        } catch {
+            viewModel.service.showExternalModeFailure(
+                String(
+                    format: String(localized: "Failed to delete stale string catalog entries: %@", table: "EditorPreview"),
+                    error.localizedDescription
+                )
+            )
         }
     }
 }

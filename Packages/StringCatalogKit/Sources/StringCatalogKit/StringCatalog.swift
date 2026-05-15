@@ -64,4 +64,8 @@ public struct StringCatalog: Equatable, Sendable {
         self.languages = languages
         self.entries = entries
     }
+
+    public var staleEntryCount: Int {
+        entries.filter { $0.extractionState == "stale" }.count
+    }
 }

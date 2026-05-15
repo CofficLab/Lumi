@@ -4,6 +4,7 @@ struct HotPreviewToolbar: View {
     @EnvironmentObject private var themeVM: ThemeVM
     @ObservedObject var viewModel: EditorRemoteHotPreviewViewModel
     let currentFileURL: URL?
+    let deleteStaleStringCatalogEntries: () -> Void
     @State private var showDiagnostics = false
 
     private var toolbarIcon: String {
@@ -11,6 +12,8 @@ struct HotPreviewToolbar: View {
             return "photo"
         } else if viewModel.isMarkdownMode {
             return "doc.richtext"
+        } else if viewModel.isStringCatalogMode {
+            return "character.book.closed"
         }
         return "bolt.horizontal"
     }
@@ -20,6 +23,8 @@ struct HotPreviewToolbar: View {
             return String(localized: "Image Preview", table: "EditorPreview")
         } else if viewModel.isMarkdownMode {
             return String(localized: "Markdown Preview", table: "EditorPreview")
+        } else if viewModel.isStringCatalogMode {
+            return String(localized: "String Catalog Preview", table: "EditorPreview")
         }
         return String(localized: "V2", table: "EditorPreview")
     }
@@ -39,7 +44,27 @@ struct HotPreviewToolbar: View {
 
             Spacer(minLength: 0)
 
-            if !viewModel.isImageMode, !viewModel.isMarkdownMode {
+            if viewModel.isStringCatalogMode {
+                Button {
+                    deleteStaleStringCatalogEntries()
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(viewModel.staleStringCatalogEntryCount > 0
+                            ? .orange
+                            : themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.6))
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.staleStringCatalogEntryCount == 0)
+                .help(
+                    viewModel.staleStringCatalogEntryCount > 0
+                        ? String(
+                            format: String(localized: "Delete %lld stale string catalog entries", table: "EditorPreview"),
+                            Int64(viewModel.staleStringCatalogEntryCount)
+                        )
+                        : String(localized: "No stale string catalog entries", table: "EditorPreview")
+                )
+            } else if !viewModel.isImageMode, !viewModel.isMarkdownMode {
                 if let updateTitle = viewModel.updatePhase.title {
                     updateBadge(updateTitle)
                 }

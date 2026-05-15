@@ -358,6 +358,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         run(.stop(reason: reason))
     }
 
+    func showExternalModeFailure(_ message: String) {
+        failureMessage = message
+        refreshDiagnosticSummary()
+    }
+
     var canSwitchToLive: Bool {
         guard previewSession != nil, hostState == .connected else { return false }
         switch livePreviewInfo.state {

@@ -34,6 +34,7 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
     var imageFileURL: URL? { service.imageFileURL }
     var isStringCatalogMode: Bool { service.isStringCatalogMode }
     var stringCatalog: StringCatalog? { service.stringCatalog }
+    var staleStringCatalogEntryCount: Int { service.stringCatalog?.staleEntryCount ?? 0 }
     var canSwitchToLive: Bool { service.canSwitchToLive }
     var canSwitchToImage: Bool { service.canSwitchToImage }
     var liveUnavailableReason: String? { service.liveUnavailableReason }

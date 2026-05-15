@@ -147,6 +147,22 @@
         }
       }
     },
+    "Delete %lld stale string catalog entries": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除 %lld 个废弃字符串目录条目"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除 %lld 個已棄用字串目錄項目"
+          }
+        }
+      }
+    },
     "Diagnostics": {
       "localizations": {
         "en": {
@@ -203,6 +219,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "失敗"
+          }
+        }
+      }
+    },
+    "Failed to delete stale string catalog entries: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除废弃字符串目录条目失败：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除已棄用字串目錄項目失敗：%@"
           }
         }
       }
@@ -773,6 +805,22 @@
         }
       }
     },
+    "No stale string catalog entries": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有废弃字符串目录条目"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有已棄用字串目錄項目"
+          }
+        }
+      }
+    },
     "Performance": {
       "localizations": {
         "zh-Hans": {
@@ -1135,6 +1183,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "已停止"
+          }
+        }
+      }
+    },
+    "String Catalog Preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "String Catalog Preview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字符串目录预览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字串目錄預覽"
           }
         }
       }

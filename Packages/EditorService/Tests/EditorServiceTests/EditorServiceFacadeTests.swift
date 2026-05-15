@@ -113,6 +113,29 @@ final class EditorServiceFacadeTests: XCTestCase {
         XCTAssertEqual(service.saveRevision, previousSaveRevision + 1)
     }
 
+    func testReplaceCurrentDocumentTextUpdatesContentAndDirtyState() async throws {
+        let service = makeService()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorServiceFacadeTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("Replace.swift")
+        try "struct ReplaceView {}\n".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        service.open(at: fileURL)
+        try await waitUntil("file loaded") {
+            service.currentFileURL == fileURL && service.content?.string == "struct ReplaceView {}\n"
+        }
+
+        let updated = "struct ReplaceView { let value = 1 }\n"
+        let didReplace = service.replaceCurrentDocumentText(updated, reason: "test_replace_document")
+
+        XCTAssertTrue(didReplace)
+        XCTAssertEqual(service.content?.string, updated)
+        XCTAssertTrue(service.hasUnsavedChanges)
+    }
+
     private func waitUntil(
         _ description: String,
         timeout: TimeInterval = 2,
