@@ -520,6 +520,16 @@
         }
       }
     },
+    "%lldP · %lldE · %lldS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lldP · %2$lldE · %3$lldS"
+          }
+        }
+      }
+    },
     "%llds" : {
 
     },
@@ -580,6 +590,9 @@
         }
       }
     },
+    "00" : {
+
+    },
     "5,000 次/小时" : {
       "localizations" : {
         "zh-Hans" : {
@@ -596,7 +609,19 @@
         }
       }
     },
+    "06" : {
+
+    },
     "12" : {
+
+    },
+    "18" : {
+
+    },
+    "24" : {
+
+    },
+    "24-hour activity" : {
 
     },
     "50 rows" : {
@@ -2621,7 +2646,13 @@
         }
       }
     },
+    "GitHub" : {
+
+    },
     "GitHub Desktop" : {
+
+    },
+    "GitHub Ecosystem KB" : {
 
     },
     "GitHub Tools" : {
@@ -2760,6 +2791,9 @@
       }
     },
     "How to Use" : {
+
+    },
+    "Idle Time" : {
 
     },
     "Image" : {
@@ -3112,6 +3146,9 @@
           }
         }
       }
+    },
+    "Lumi %@ 已下载完成" : {
+
     },
     "Lumi Agent" : {
 
@@ -3667,6 +3704,9 @@
         }
       }
     },
+    "Open a .vue file to see outline" : {
+
+    },
     "Open System Settings" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3920,6 +3960,9 @@
         }
       }
     },
+    "Profile: %@" : {
+
+    },
     "Project indexed" : {
 
     },
@@ -4107,6 +4150,9 @@
           }
         }
       }
+    },
+    "Relation" : {
+
     },
     "Remote Providers" : {
 
@@ -4779,6 +4825,9 @@
           }
         }
       }
+    },
+    "Sync Now" : {
+
     },
     "System" : {
       "extractionState" : "stale",
@@ -7672,6 +7721,9 @@
         }
       }
     },
+    "新版本已准备好" : {
+
+    },
     "无%@" : {
 
     },
@@ -7915,6 +7967,9 @@
           }
         }
       }
+    },
+    "更新" : {
+
     },
     "未发现可清理的项目" : {
       "localizations" : {
@@ -9420,6 +9475,9 @@
           }
         }
       }
+    },
+    "重启更新" : {
+
     },
     "重命名符号" : {
 
