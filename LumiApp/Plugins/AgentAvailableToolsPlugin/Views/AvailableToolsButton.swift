@@ -7,7 +7,7 @@ struct AvailableToolsButton: View {
     var body: some View {
         StatusBarHoverContainer(
             detailView: AvailableToolsListDetailView(),
-            popoverWidth: 480,
+            popoverWidth: 680,
             id: "available-tools-status"
         ) {
             HStack(spacing: 4) {

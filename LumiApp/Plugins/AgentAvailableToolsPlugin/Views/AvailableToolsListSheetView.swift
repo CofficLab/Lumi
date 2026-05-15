@@ -26,14 +26,14 @@ struct AvailableToolsListDetailView: View {
 
 extension AvailableToolsListDetailView {
     private var header: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .center, spacing: 14) {
             headerTitle
             Spacer()
             languagePicker
             searchField
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
     }
 
     private var headerTitle: some View {
@@ -41,11 +41,16 @@ extension AvailableToolsListDetailView {
             Text(String(localized: "Tools", table: "AgentAvailableToolsPlugin"))
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
 
             Text(toolsCountText)
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
+        .frame(minWidth: 150, alignment: .leading)
     }
 
     private var toolsCountText: String {
@@ -58,7 +63,7 @@ extension AvailableToolsListDetailView {
     private var searchField: some View {
         TextField(String(localized: "Search tools", table: "AgentAvailableToolsPlugin"), text: $query)
             .textFieldStyle(.roundedBorder)
-            .frame(width: 200)
+            .frame(width: 280)
     }
 
     private var languagePicker: some View {
@@ -69,23 +74,26 @@ extension AvailableToolsListDetailView {
         }
         .pickerStyle(.menu)
         .labelsHidden()
-        .frame(width: 128)
+        .frame(width: 136)
     }
 
     private var content: some View {
-        List {
-            if filteredTools.isEmpty {
-                emptyStateView
-            } else {
-                toolRows
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                if filteredTools.isEmpty {
+                    emptyStateView
+                } else {
+                    toolRows
+                }
             }
+            .padding(.vertical, 6)
         }
-        .listStyle(.inset)
-        .frame(minHeight: 300, maxHeight: 480)
+        .background(Color.adaptive(light: "FFFFFF", dark: "14141A").opacity(0.82))
+        .frame(minHeight: 340, maxHeight: 520)
     }
 
     private var emptyStateView: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "No tools found", table: "AgentAvailableToolsPlugin"))
                 .font(.system(size: 15, weight: .regular))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
@@ -93,20 +101,26 @@ extension AvailableToolsListDetailView {
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
-        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 18)
     }
 
     private var toolRows: some View {
         ForEach(Array(filteredTools.enumerated()), id: \.offset) { _, tool in
-            toolRow(tool)
+            VStack(spacing: 0) {
+                toolRow(tool)
+                Divider()
+                    .padding(.leading, 18)
+            }
         }
     }
 
     private func toolRow(_ tool: SuperAgentTool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text(tool.name)
-                    .font(.system(size: 15, weight: .regular))
+                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .textSelection(.enabled)
                 Spacer()
@@ -114,13 +128,16 @@ extension AvailableToolsListDetailView {
 
             if !tool.description(for: selectedLanguage).isEmpty {
                 Text(tool.description(for: selectedLanguage))
-                    .font(.system(size: 12, weight: .regular))
+                    .font(.system(size: 12.5, weight: .regular))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .textSelection(.enabled)
                     .lineLimit(3)
+                    .lineSpacing(2)
             }
         }
-        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
     }
 }
 
@@ -143,6 +160,6 @@ extension AvailableToolsListDetailView {
 
 #Preview {
     AvailableToolsListDetailView()
-        .frame(width: 480, height: 520)
+        .frame(width: 632, height: 600)
         .inRootView()
 }
