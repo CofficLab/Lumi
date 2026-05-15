@@ -11,7 +11,7 @@ struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "在 GitHub 仓库中创建新的 Issue。支持设置标题、描述、标签、指派人员和里程碑。"
         case .english:
-            return "在 GitHub 仓库中创建新的 Issue。支持设置标题、描述、标签、指派人员和里程碑。"
+            return "Create a new issue in a GitHub repository. Supports title, body, labels, assignees, and milestone."
         }
     }
 

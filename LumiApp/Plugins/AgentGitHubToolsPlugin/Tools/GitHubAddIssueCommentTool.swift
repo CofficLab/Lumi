@@ -11,7 +11,7 @@ struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "在 GitHub Issue 中添加评论，支持 Markdown 格式。"
         case .english:
-            return "在 GitHub Issue 中添加评论，支持 Markdown 格式。"
+            return "Add a comment to a GitHub issue. Markdown is supported."
         }
     }
 

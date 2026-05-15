@@ -11,7 +11,7 @@ struct GitHubSearchTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "在 GitHub 上搜索仓库和代码。支持关键词、语言、stars 等条件筛选。"
         case .english:
-            return "在 GitHub 上搜索仓库和代码。支持关键词、语言、stars 等条件筛选。"
+            return "Search repositories and code on GitHub. Supports filters such as keywords, language, and stars."
         }
     }
 

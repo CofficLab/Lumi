@@ -18,7 +18,7 @@ struct DatabaseListConnectionsTool: SuperAgentTool {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "List database connections that are available to Agent database tools. Passwords and secrets are never returned."
+            return "列出 Agent 数据库工具可用的数据库连接。不会返回密码或密钥。"
         case .english:
             return "List database connections that are available to Agent database tools. Passwords and secrets are never returned."
         }
@@ -45,7 +45,7 @@ struct DatabaseDescribeSchemaTool: SuperAgentTool {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Describe tables, columns, or key samples for an Agent-accessible database connection. Use this before writing a read-only query."
+            return "描述 Agent 可访问数据库连接中的表、列或关键样本。编写只读查询前应先使用此工具。"
         case .english:
             return "Describe tables, columns, or key samples for an Agent-accessible database connection. Use this before writing a read-only query."
         }
@@ -84,7 +84,7 @@ struct DatabaseReadonlyQueryTool: SuperAgentTool {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Run a read-only SQL query against an Agent-accessible SQL database. Only SELECT, schema inspection, and explain-style statements are accepted. Results are limited and truncated."
+            return "对 Agent 可访问的 SQL 数据库执行只读 SQL 查询。仅接受 SELECT、结构检查和 EXPLAIN 类语句。结果会限制数量并截断。"
         case .english:
             return "Run a read-only SQL query against an Agent-accessible SQL database. Only SELECT, schema inspection, and explain-style statements are accepted. Results are limited and truncated."
         }
@@ -128,7 +128,7 @@ struct DatabaseSampleTableTool: SuperAgentTool {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Return a small sample from a table using safe identifier quoting. Prefer this over writing SELECT * by hand."
+            return "使用安全的标识符引用从表中返回少量样本。优先使用此工具，而不是手写 SELECT *。"
         case .english:
             return "Return a small sample from a table using safe identifier quoting. Prefer this over writing SELECT * by hand."
         }

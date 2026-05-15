@@ -19,8 +19,10 @@ struct IdlePopoverView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Idle Time")
                     .font(.headline)
+                    .foregroundColor(primaryTextColor)
                 Text(windowText)
                     .font(.system(size: 28, weight: .semibold, design: .rounded))
+                    .foregroundColor(primaryTextColor)
                     .monospacedDigit()
             }
             Spacer()
@@ -48,8 +50,9 @@ struct IdlePopoverView: View {
     private func metricRow(_ title: String, _ value: String) -> some View {
         GridRow {
             Text(title)
-                .foregroundStyle(.secondary)
+                .foregroundColor(secondaryTextColor)
             Text(value)
+                .foregroundColor(primaryTextColor)
                 .monospacedDigit()
         }
     }
@@ -76,10 +79,10 @@ struct IdlePopoverView: View {
     }
 
     private var confidenceColor: Color {
-        guard let window = snapshot?.restWindow else { return .secondary }
+        guard let window = snapshot?.restWindow else { return secondaryTextColor }
         switch IdleConfidenceLabel.label(for: window.confidence, source: window.source) {
         case .learning:
-            return .secondary
+            return secondaryTextColor
         case .medium:
             return .orange
         case .high:
@@ -119,6 +122,14 @@ struct IdlePopoverView: View {
         let hour = minuteOfDay / 60
         let minute = minuteOfDay % 60
         return String(format: "%02d:%02d", hour, minute)
+    }
+
+    private var primaryTextColor: Color {
+        Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+    }
+
+    private var secondaryTextColor: Color {
+        Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
     }
 
     private static let relativeFormatter: RelativeDateTimeFormatter = {

@@ -13,7 +13,7 @@ struct GitHubCLICheckTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "检测用户系统是否安装了 GitHub CLI (gh) 命令行工具，返回安装状态、版本号和安装路径。"
         case .english:
-            return "检测用户系统是否安装了 GitHub CLI (gh) 命令行工具，返回安装状态、版本号和安装路径。"
+            return "Check whether GitHub CLI (gh) is installed on the user's system. Returns installation status, version, and executable path."
         }
     }
 

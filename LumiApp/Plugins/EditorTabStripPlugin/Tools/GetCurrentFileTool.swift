@@ -11,7 +11,7 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Get the current selected file information, including file path and last selection time. Returns empty info if no file is selected."
+            return "获取当前选中文件的信息，包括文件路径和最后选择时间。如果没有选中文件，则返回空信息。"
         case .english:
             return "Get the current selected file information, including file path and last selection time. Returns empty info if no file is selected."
         }

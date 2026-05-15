@@ -16,7 +16,12 @@ struct WebSearchTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Search the web for real-time information.\nUse this tool to find current information, news, or specific data from the internet.\n\nNote: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen)."
+            return """
+搜索网页以获取实时信息。
+使用此工具从互联网查找最新信息、新闻或特定数据。
+
+注意：某些 AI 模型（例如 Qwen）通常要求此工具与 web_fetch 或 web_extractor 配合使用。
+"""
         case .english:
             return     """
 Search the web for real-time information.

@@ -7,7 +7,7 @@ struct ActivityHeatStripView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("24-hour activity")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundColor(secondaryTextColor)
 
             HStack(spacing: 2) {
                 ForEach(0..<RestWindowInferencer.bucketsPerDay, id: \.self) { index in
@@ -29,7 +29,7 @@ struct ActivityHeatStripView: View {
                 Text("24")
             }
             .font(.caption2)
-            .foregroundStyle(.secondary)
+            .foregroundColor(secondaryTextColor)
         }
     }
 
@@ -44,8 +44,12 @@ struct ActivityHeatStripView: View {
 
     private func color(for normalized: Double) -> Color {
         if normalized <= 0 {
-            return Color.secondary.opacity(0.12)
+            return secondaryTextColor.opacity(0.12)
         }
         return Color.accentColor.opacity(0.18 + normalized * 0.72)
+    }
+
+    private var secondaryTextColor: Color {
+        Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
     }
 }

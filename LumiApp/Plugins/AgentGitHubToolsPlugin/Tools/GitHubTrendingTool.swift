@@ -11,7 +11,7 @@ struct GitHubTrendingTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "获取 GitHub 趋势项目列表，按时间范围（daily/weekly/monthly）筛选热门开源项目。"
         case .english:
-            return "获取 GitHub 趋势项目列表，按时间范围（daily/weekly/monthly）筛选热门开源项目。"
+            return "Get GitHub trending repositories. Supports time ranges such as daily, weekly, and monthly."
         }
     }
 

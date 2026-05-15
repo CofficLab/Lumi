@@ -27,7 +27,7 @@ struct DelayMessageTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Send a delayed user message to a conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives. Use get_current_conversation first to obtain the conversation ID."
+            return "在指定秒数后向某个对话发送延迟用户消息。当前回合会结束，消息送达时会开启新回合。请先使用 get_current_conversation 获取对话 ID。"
         case .english:
             return "Send a delayed user message to a conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives. Use get_current_conversation first to obtain the conversation ID."
         }

@@ -20,7 +20,7 @@ struct ReadFileTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Read the contents of a file at the given path. Use this to examine code, configuration files, or image files. For PNG, JPEG, GIF, and WebP images, the image is returned as visual input to compatible multimodal models."
+            return "读取指定路径的文件内容。可用于查看代码、配置文件或图片文件。对于 PNG、JPEG、GIF 和 WebP 图片，会将图片作为视觉输入返回给兼容的多模态模型。"
         case .english:
             return "Read the contents of a file at the given path. Use this to examine code, configuration files, or image files. For PNG, JPEG, GIF, and WebP images, the image is returned as visual input to compatible multimodal models."
         }

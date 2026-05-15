@@ -13,7 +13,7 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Update the status of a task. Use this when you have started or completed a task. \\nMark a task as 'in_progress' when you begin working on it, and 'completed' when done. \\nYou can also 'skip' a task if it's not needed. \\nAfter completing a task, check the remaining tasks and continue with the next one automatically."
+            return "更新任务状态。开始处理任务时将其标记为 'in_progress'，完成后标记为 'completed'。如果任务不再需要，也可以标记为 'skipped'。完成一个任务后，应检查剩余任务并自动继续下一个。"
         case .english:
             return     """
     Update the status of a task. Use this when you have started or completed a task. \

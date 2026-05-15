@@ -9,7 +9,7 @@ struct ListDirectoryTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "List files and directories at a given path. Useful for exploring the project structure."
+            return "列出指定路径下的文件和目录。适合用于探索项目结构。"
         case .english:
             return "List files and directories at a given path. Useful for exploring the project structure."
         }
@@ -122,4 +122,3 @@ struct ListDirectoryTool: SuperAgentTool, SuperLog {
         }
     }
 }
-

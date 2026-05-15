@@ -11,7 +11,7 @@ struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "重新打开已关闭的 GitHub Issue。"
         case .english:
-            return "重新打开已关闭的 GitHub Issue。"
+            return "Reopen a closed GitHub issue."
         }
     }
 

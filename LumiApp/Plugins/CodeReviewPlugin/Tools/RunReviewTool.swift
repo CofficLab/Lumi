@@ -11,7 +11,7 @@ struct RunReviewTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Review current Git changes using the active Lumi model. Supports staged, unstaged, or all uncommitted changes. Read-only."
+            return "使用当前激活的 Lumi 模型审查 Git 变更。支持暂存区、未暂存或全部未提交变更。只读操作。"
         case .english:
             return "Review current Git changes using the active Lumi model. Supports staged, unstaged, or all uncommitted changes. Read-only."
         }

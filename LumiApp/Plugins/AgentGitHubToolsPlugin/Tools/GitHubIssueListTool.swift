@@ -11,7 +11,7 @@ struct GitHubIssueListTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "获取 GitHub 仓库的 Issue 列表，支持按状态（open/closed/all）筛选。"
         case .english:
-            return "获取 GitHub 仓库的 Issue 列表，支持按状态（open/closed/all）筛选。"
+            return "List issues in a GitHub repository. Supports filtering by state: open, closed, or all."
         }
     }
 

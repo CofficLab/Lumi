@@ -11,7 +11,7 @@ struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "更新 GitHub Issue 的信息，包括标题、描述、状态、标签、指派人员和里程碑。"
         case .english:
-            return "更新 GitHub Issue 的信息，包括标题、描述、状态、标签、指派人员和里程碑。"
+            return "Update a GitHub issue, including title, body, state, labels, assignees, and milestone."
         }
     }
 

@@ -11,7 +11,7 @@ struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "获取 GitHub Issue 的详细信息，包括标题、描述、状态、标签、评论数等。"
         case .english:
-            return "获取 GitHub Issue 的详细信息，包括标题、描述、状态、标签、评论数等。"
+            return "Get detailed information for a GitHub issue, including title, body, state, labels, comment count, and more."
         }
     }
 

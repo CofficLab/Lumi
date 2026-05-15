@@ -9,7 +9,7 @@ struct ProjectOverviewTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Get a project overview: path, type, two-level directory structure, Git (branch, remote, clean/dirty), manifest files, README preview, key files. Use when you need to understand the project before diving in."
+            return "获取项目概览：路径、类型、两级目录结构、Git 信息（分支、远端、是否有变更）、清单文件、README 预览和关键文件。适合在深入处理项目前先了解整体情况。"
         case .english:
             return "Get a project overview: path, type, two-level directory structure, Git (branch, remote, clean/dirty), manifest files, README preview, key files. Use when you need to understand the project before diving in."
         }

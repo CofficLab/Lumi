@@ -11,7 +11,7 @@ struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "获取 GitHub 仓库的基本信息，包括 star 数、forks、描述、主要语言等。"
         case .english:
-            return "获取 GitHub 仓库的基本信息，包括 star 数、forks、描述、主要语言等。"
+            return "Get basic information for a GitHub repository, including stars, forks, description, primary language, and more."
         }
     }
 

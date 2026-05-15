@@ -16,7 +16,16 @@ struct EditFileTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Performs exact string replacements in files.\n\nUsage:\n- The file must have been read with `read_file` in this conversation before editing. This tool will error if you attempt an edit without reading the file.\n- When editing text from Read tool output, ensure you preserve the exact indentation (tabs/spaces) — everything after the line number prefix is the actual file content to match.\n- The edit will FAIL if `old_string` is not unique in the file. Either provide a larger string with more surrounding context to make it unique or use `replace_all` to change every instance of `old_string`.\n- Use `replace_all` for replacing and renaming strings across the file.\n- Use the smallest old_string that's clearly unique — usually 2-4 adjacent lines is sufficient."
+            return """
+在文件中执行精确字符串替换。
+
+用法：
+- 编辑前必须在当前对话中使用 `read_file` 读取过该文件。未读取就尝试编辑会报错。
+- 从 Read 工具输出中编辑文本时，必须保留精确缩进（tab/空格）；行号前缀之后的内容才是需要匹配的真实文件内容。
+- 如果 `old_string` 在文件中不唯一，编辑会失败。请提供更大的上下文让它唯一，或使用 `replace_all` 替换所有匹配项。
+- 跨文件内多处替换或重命名字符串时使用 `replace_all`。
+- 使用足够小但明确唯一的 old_string；通常 2-4 行相邻内容即可。
+"""
         case .english:
             return     """
 Performs exact string replacements in files.

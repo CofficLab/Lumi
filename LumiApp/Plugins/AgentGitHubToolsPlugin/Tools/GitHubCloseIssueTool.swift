@@ -11,7 +11,7 @@ struct GitHubCloseIssueTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "关闭指定的 GitHub Issue。"
         case .english:
-            return "关闭指定的 GitHub Issue。"
+            return "Close the specified GitHub issue."
         }
     }
 

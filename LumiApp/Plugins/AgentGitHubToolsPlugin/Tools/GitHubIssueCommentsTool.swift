@@ -11,7 +11,7 @@ struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "获取 GitHub Issue 的评论列表。"
         case .english:
-            return "获取 GitHub Issue 的评论列表。"
+            return "Get the comment list for a GitHub issue."
         }
     }
 

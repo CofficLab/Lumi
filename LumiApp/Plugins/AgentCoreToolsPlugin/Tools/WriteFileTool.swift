@@ -12,7 +12,7 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Create a new file or overwrite an existing file with the given content."
+            return "使用给定内容创建新文件，或覆盖已有文件。"
         case .english:
             return "Create a new file or overwrite an existing file with the given content."
         }
@@ -85,4 +85,3 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
         }
     }
 }
-

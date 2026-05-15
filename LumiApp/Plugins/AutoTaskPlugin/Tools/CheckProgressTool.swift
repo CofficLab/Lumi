@@ -13,7 +13,7 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Check the current task progress for the conversation. Returns a list of all tasks with their \\nstatuses and overall completion percentage. Use this to review what's been done and what's next."
+            return "检查当前对话的任务进度。返回所有任务及其状态和总体完成百分比。用于回顾已完成内容和下一步事项。"
         case .english:
             return     """
     Check the current task progress for the conversation. Returns a list of all tasks with their \

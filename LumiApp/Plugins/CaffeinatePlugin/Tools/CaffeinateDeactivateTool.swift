@@ -12,7 +12,7 @@ struct CaffeinateDeactivateTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Deactivate caffeinate and restore normal system sleep behavior. Releases all IOKit power assertions."
+            return "停用 caffeinate 并恢复正常的系统睡眠行为。会释放所有 IOKit 电源断言。"
         case .english:
             return "Deactivate caffeinate and restore normal system sleep behavior. Releases all IOKit power assertions."
         }

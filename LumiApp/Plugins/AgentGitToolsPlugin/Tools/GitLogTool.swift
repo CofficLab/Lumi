@@ -11,7 +11,7 @@ struct GitLogTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "查看 Git 提交历史。支持限制数量、查看特定分支或文件的日志。"
         case .english:
-            return "查看 Git 提交历史。支持限制数量、查看特定分支或文件的日志。"
+            return "View Git commit history. Supports limiting the number of commits and viewing logs for a specific branch or file."
         }
     }
 

@@ -15,7 +15,13 @@ struct BrowserScreenshotTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Take a screenshot of a rendered web page. Uses WKWebView to load and render the page, then captures a full-page screenshot saved to a temporary file.\n\nUse this tool when you need to visually inspect a web page or when text-based fetching (web_fetch) is insufficient (e.g., JavaScript-heavy pages, SPAs, pages that require login cookies).\n\nReturns the file path of the saved screenshot image (PNG format)."
+            return """
+截取渲染后网页的截图。使用 WKWebView 加载并渲染页面，然后截取整页截图并保存到临时文件。
+
+当需要视觉检查网页，或基于文本的抓取工具（web_fetch）不足以处理时使用此工具，例如 JavaScript 较重的页面、SPA、需要登录 Cookie 的页面。
+
+返回保存后的 PNG 截图文件路径。
+"""
         case .english:
             return     """
 Take a screenshot of a rendered web page. Uses WKWebView to load and render the page, then captures a full-page screenshot saved to a temporary file.

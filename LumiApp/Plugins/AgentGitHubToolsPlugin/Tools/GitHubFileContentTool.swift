@@ -11,7 +11,7 @@ struct GitHubFileContentTool: SuperAgentTool, SuperLog {
         case .chinese:
             return "获取 GitHub 仓库中指定文件的内容。支持读取 README、源代码文件等。"
         case .english:
-            return "获取 GitHub 仓库中指定文件的内容。支持读取 README、源代码文件等。"
+            return "Get the content of a specific file in a GitHub repository. Supports README files, source files, and similar text files."
         }
     }
 

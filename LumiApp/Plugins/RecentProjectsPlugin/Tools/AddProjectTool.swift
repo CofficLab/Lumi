@@ -9,7 +9,7 @@ struct AddProjectTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Add the specified project to the recent projects list. Updates the projectVM's recent projects after adding."
+            return "将指定项目添加到最近项目列表。添加后会更新 projectVM 中的最近项目数据。"
         case .english:
             return "Add the specified project to the recent projects list. Updates the projectVM's recent projects after adding."
         }

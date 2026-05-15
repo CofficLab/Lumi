@@ -14,7 +14,18 @@ struct WebFetchTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Fetch and extract content from a URL. Converts HTML to Markdown format automatically.\nUse this tool to retrieve web pages, documentation, or any publicly accessible HTTP content.\n\nNote: This tool does NOT work with authenticated/private URLs (requires login, cookies, etc.).\n\nSupported content types:\n- HTML pages → converted to Markdown\n- JSON → formatted as code block\n- Plain text → returned directly\n- Binary files (PDF, images) → returns file info and saves to temp directory"
+            return """
+从 URL 抓取并提取内容。会自动将 HTML 转换为 Markdown 格式。
+使用此工具获取网页、文档或任何公开可访问的 HTTP 内容。
+
+注意：此工具不适用于需要登录、Cookie 等认证信息的私有 URL。
+
+支持的内容类型：
+- HTML 页面 → 转换为 Markdown
+- JSON → 格式化为代码块
+- 纯文本 → 直接返回
+- 二进制文件（PDF、图片）→ 返回文件信息并保存到临时目录
+"""
         case .english:
             return     """
 Fetch and extract content from a URL. Converts HTML to Markdown format automatically.

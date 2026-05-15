@@ -9,7 +9,7 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
     func description(for language: LanguagePreference) -> String {
         switch language {
         case .chinese:
-            return "Set the current selected project. Requires a project path."
+            return "设置当前选中的项目。需要提供项目路径。"
         case .english:
             return "Set the current selected project. Requires a project path."
         }
