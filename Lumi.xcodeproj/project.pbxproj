@@ -43,6 +43,7 @@
 		A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4512F70000100AAA106 /* ShellKit */; };
 		B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */ = {isa = PBXBuildFile; productRef = B1C2D3512F80000200BBB201 /* XcodeKit */; };
 		C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C022FB3000000000001 /* WebFetchKit */; };
+		F1E2A3012FC2000100000001 /* FileTreeKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1E2A3022FC2000100000001 /* FileTreeKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
 		F5485E322F7A077B00566188 /* CodeEditor in Frameworks */ = {isa = PBXBuildFile; productRef = F5485E312F7A077B00566188 /* CodeEditor */; };
@@ -333,6 +334,7 @@
 				A1B2C4402F70000100AAA105 /* TerminalCoreKit in Frameworks */,
 				A1B2C4502F70000100AAA106 /* ShellKit in Frameworks */,
 				B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */,
+				F1E2A3012FC2000100000001 /* FileTreeKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -843,8 +845,9 @@
 				B1C2D3512F80000200BBB201 /* XcodeKit */,
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 				0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */,
+				F1E2A3022FC2000100000001 /* FileTreeKit */,
 			);
-			productName = "SwiftUI-Template";
+			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -938,6 +941,7 @@
 				A1B2C4522F70000100AAA106 /* XCLocalSwiftPackageReference "Packages/ShellKit" */,
 				B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */,
 				0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */,
+				F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1840,6 +1844,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/WebFetchKit;
 		};
+		F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FileTreeKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -2139,6 +2147,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C0FF1C032FB3000000000001 /* XCLocalSwiftPackageReference "Packages/WebFetchKit" */;
 			productName = WebFetchKit;
+		};
+		F1E2A3022FC2000100000001 /* FileTreeKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */;
+			productName = FileTreeKit;
 		};
 		F53C41592F1A3E6500929321 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

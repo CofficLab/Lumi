@@ -1,6 +1,7 @@
 import Foundation
 import os
 import MagicKit
+import FileTreeKit
 
 /// 弱引用盒子，用于解决 init 中闭包捕获 self 的顺序问题
 private final class WeakBox<T: AnyObject>: @unchecked Sendable {
@@ -10,7 +11,7 @@ private final class WeakBox<T: AnyObject>: @unchecked Sendable {
 
 /// Editor Rail 文件树刷新协调器
 ///
-/// 作为 EditorFileTreeWatcher 和 SwiftUI 视图之间的桥梁：
+/// 作为 FileTreeKit.FileTreeWatcher 和 SwiftUI 视图之间的桥梁：
 /// - 接收 watcher 的文件系统变化通知
 /// - 跟踪当前已展开的目录列表
 /// - 合并短时间内的文件系统事件
@@ -37,8 +38,8 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
     /// 当前已展开的目录相对路径集合
     private var expandedPaths: Set<String> = []
 
-    /// 文件系统监听器
-    private let watcher: EditorFileTreeWatcher
+    /// 文件系统监听器（来自 FileTreeKit）
+    private let watcher: FileTreeWatcher
 
     /// 防抖任务
     private var debounceTask: Task<Void, Never>?
@@ -52,7 +53,7 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
 
     init() {
         let weakBox = WeakBox<EditorFileTreeRefreshCoordinator>()
-        watcher = EditorFileTreeWatcher { changedURL in
+        watcher = FileTreeWatcher { changedURL in
             weakBox.value?.handleDirectoryChanged(url: changedURL)
         }
         weakBox.value = self

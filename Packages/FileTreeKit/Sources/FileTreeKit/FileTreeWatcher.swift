@@ -1,22 +1,21 @@
 import Foundation
 import os
-import MagicKit
 
-/// Editor Rail 文件树目录变化监听器
+/// 文件树目录变化监听器
 ///
-/// 使用 DispatchSource 监控已展开目录的文件系统变化，
-/// 检测到变化后通过回调通知上层进行刷新。
+/// 使用 DispatchSource 监控指定目录的文件系统变化，
+/// 检测到变化后通过回调通知上层。
 ///
 /// 设计原则：
-/// - 仅监听当前已展开的目录（懒监听，避免不必要的系统开销）
-/// - 文件系统事件会立即转发，由上层协调器合并高频刷新
-/// - 所有公开方法通过串行队列保护内部状态
-final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
+/// - 仅监听指定的目录集合（懒监听，避免不必要的系统开销）
+/// - 文件系统事件立即转发，由上层合并高频刷新
+/// - 所有公开方法通过串行队列保护内部状态，线程安全
+public final class FileTreeWatcher: @unchecked Sendable {
 
     // MARK: - Types
 
     /// 目录变化回调，参数为发生变化的目录 URL
-    typealias OnDirectoryChanged = @Sendable (URL) -> Void
+    public typealias OnDirectoryChanged = @Sendable (URL) -> Void
 
     /// 单个目录的监控状态
     private struct Watch {
@@ -26,9 +25,8 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
 
     // MARK: - Properties
 
-    nonisolated static let emoji = "🌳"
-    nonisolated static let verbose: Bool = true
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.watcher")
+    /// 日志记录器
+    private static let logger = Logger(subsystem: "com.coffic.filetreekit", category: "FileTreeWatcher")
 
     /// 当前活跃的监控，key 为标准化路径
     private var watches: [String: Watch] = [:]
@@ -37,18 +35,20 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
     private let onChange: OnDirectoryChanged
 
     /// 操作队列，确保 watches 字典的读写安全
-    private let queue = DispatchQueue(label: "EditorFileTreeWatcher.queue", qos: .utility)
+    private let queue = DispatchQueue(label: "FileTreeWatcher.queue", qos: .utility)
+
+    /// 是否启用日志
+    public var verbose: Bool = true
 
     // MARK: - Init
 
     /// 初始化监听器
     /// - Parameter onChange: 目录变化回调
-    init(onChange: @escaping @Sendable (URL) -> Void) {
+    public init(onChange: @escaping @Sendable (URL) -> Void) {
         self.onChange = onChange
     }
 
     deinit {
-        // 清理所有监控资源
         for (_, watch) in watches {
             watch.source.cancel()
             Darwin.close(watch.fileDescriptor)
@@ -58,15 +58,16 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
     // MARK: - Public
 
     /// 开始监控指定目录
-    func startWatching(url: URL) {
+    /// - Parameter url: 要监控的目录 URL
+    public func startWatching(url: URL) {
         queue.sync {
             let key = url.standardizedFileURL.path
             guard watches[key] == nil else { return }
 
             let fd = Darwin.open(key, O_EVTONLY)
             guard fd >= 0 else {
-                if Self.verbose {
-                    Self.logger.warning("\(Self.t)⚠️ 无法打开文件描述符监控目录：\(key)")
+                if verbose {
+                    Self.logger.warning("⚠️ 无法打开文件描述符监控目录：\(key)")
                 }
                 return
             }
@@ -88,28 +89,29 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
             source.resume()
             watches[key] = Watch(fileDescriptor: fd, source: source)
 
-            if Self.verbose {
-                Self.logger.info("\(Self.t)👁️ 开始监控目录：\(url.lastPathComponent)")
+            if verbose {
+                Self.logger.info("👁️ 开始监控目录：\(url.lastPathComponent)")
             }
         }
     }
 
     /// 停止监控指定目录
-    func stopWatching(url: URL) {
+    /// - Parameter url: 要停止监控的目录 URL
+    public func stopWatching(url: URL) {
         queue.sync {
             let key = url.standardizedFileURL.path
             guard let watch = watches.removeValue(forKey: key) else { return }
             watch.source.cancel()
             Darwin.close(watch.fileDescriptor)
 
-            if Self.verbose {
-                Self.logger.info("\(Self.t)🛑 停止监控目录：\(url.lastPathComponent)")
+            if verbose {
+                Self.logger.info("🛑 停止监控目录：\(url.lastPathComponent)")
             }
         }
     }
 
     /// 停止所有监控
-    func stopAll() {
+    public func stopAll() {
         queue.sync {
             for (_, watch) in watches {
                 watch.source.cancel()
@@ -117,8 +119,8 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
             }
             watches.removeAll()
 
-            if Self.verbose {
-                Self.logger.info("\(Self.t)🛑 已停止所有目录监控")
+            if verbose {
+                Self.logger.info("🛑 已停止所有目录监控")
             }
         }
     }
@@ -126,9 +128,8 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
     /// 更新监控列表
     ///
     /// 根据传入的目录 URL 集合，添加新的监控、移除不再需要的监控。
-    /// - Parameters:
-    ///   - directoryURLs: 需要监控的目录 URL 集合
-    func updateWatchedDirectories(_ directoryURLs: Set<URL>) {
+    /// - Parameter directoryURLs: 需要监控的目录 URL 集合
+    public func updateWatchedDirectories(_ directoryURLs: Set<URL>) {
         queue.sync {
             let desiredPaths = Set(directoryURLs.map { $0.standardizedFileURL.path })
             let currentPaths = Set(watches.keys)
@@ -171,7 +172,7 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
     // MARK: - Query
 
     /// 当前正在监控的目录数量
-    var watchCount: Int {
+    public var watchCount: Int {
         queue.sync { watches.count }
     }
 }
