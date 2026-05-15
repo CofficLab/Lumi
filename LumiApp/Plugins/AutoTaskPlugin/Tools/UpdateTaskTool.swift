@@ -81,10 +81,34 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
         case .pending: statusEmoji = "📋"
         }
 
+        var result = "\(statusEmoji) Task status updated to **\(status.rawValue)**."
+
+        // 自动推进：完成任务后，将下一个 pending 任务标记为 inProgress
+        if status == .completed || status == .skipped, let task {
+            let allTasks = await manager.fetchTasks(conversationId: task.conversationId)
+            if let nextTask = allTasks.first(where: { $0.status == .pending }) {
+                _ = await manager.updateTaskStatus(id: nextTask.id, status: .inProgress)
+
+                // 再次通知 UI 刷新（推进了下一个任务）
+                NotificationCenter.default.post(
+                    name: .autoTaskDidChange,
+                    object: nil,
+                    userInfo: ["conversationId": task.conversationId]
+                )
+
+                result += "\n\n📌 **Next task auto-started:** \(nextTask.title) (id: `\(nextTask.id)`)"
+                result += "\nContinue working on this task now."
+
+                if Self.verbose {
+                    AutoTaskPlugin.logger.info("\(Self.t)Auto-started next task: \(nextTask.title)")
+                }
+            }
+        }
+
         if Self.verbose {
             AutoTaskPlugin.logger.info("\(Self.t)Task \(taskId) → \(status.rawValue)")
         }
 
-        return "\(statusEmoji) Task status updated to **\(status.rawValue)**."
+        return result
     }
 }

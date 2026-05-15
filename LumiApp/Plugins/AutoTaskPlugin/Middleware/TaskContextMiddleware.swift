@@ -80,9 +80,22 @@ struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
             prompt += "\n"
         }
 
-        // 提醒指令
-        prompt += "**Important:** Focus on completing the current task. "
-        prompt += "When done, call `update_task` with status 'completed', then move to the next task.\n"
+        // 强提醒指令
+        prompt += "---\n"
+        prompt += "**⚠️ CRITICAL RULE:**\n"
+
+        if let current = inProgressTasks.first {
+            // 有进行中的任务：强调必须先完成并更新状态
+            prompt += "- Task **\"\(current.title)\"** (`\(current.id)`) is currently **in_progress**.\n"
+            prompt += "- When you finish this task, you MUST immediately call `update_task(task_id: \"\(current.id)\", status: \"completed\")` before doing anything else.\n"
+            prompt += "- Do NOT start the next task without calling `update_task` first.\n"
+        } else if !pendingTasks.isEmpty {
+            // 无进行中的任务但有待办：提示开始第一个
+            let next = pendingTasks.first!
+            prompt += "- Call `update_task(task_id: \"\(next.id)\", status: \"in_progress\")` to start the next task: **\(next.title)**\n"
+        }
+
+        prompt += "---\n"
 
         return prompt
     }
