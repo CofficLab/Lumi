@@ -32,7 +32,9 @@ actor GitHubInsightSyncService {
             }
             let entries = try await discoverer.discover(profile: profile)
             try await knowledgeBase.save(projectPath: normalizedPath, profile: profile, entries: entries)
-            NotificationCenter.default.post(name: .githubInsightDidSync, object: nil, userInfo: ["projectPath": normalizedPath])
+            await MainActor.run {
+                NotificationCenter.default.post(name: .githubInsightDidSync, object: nil, userInfo: ["projectPath": normalizedPath])
+            }
             return .ready(count: entries.count)
         } catch {
             if error.localizedDescription.localizedCaseInsensitiveContains("rate") {
