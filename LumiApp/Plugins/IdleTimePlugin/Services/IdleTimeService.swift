@@ -90,7 +90,9 @@ actor IdleTimeService {
             try await store.saveSnapshot(snapshot)
             cachedSnapshot = snapshot
             lastInferenceAt = now
-            NotificationCenter.default.post(name: .idleTimeSnapshotDidChange, object: nil)
+            await MainActor.run {
+                NotificationCenter.default.post(name: .idleTimeSnapshotDidChange, object: nil)
+            }
         } catch {
             AppLogger.core.error("IdleTimeService failed to refresh snapshot: \(error.localizedDescription)")
         }
