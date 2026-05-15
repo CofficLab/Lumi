@@ -10,6 +10,7 @@ final class EditorRemoteHotPreviewLiveCanvasService {
     private var frameSyncTask: Task<Void, Never>?
 
     var onSyncFrame: (@MainActor (_ reason: String) async -> Void)?
+    var onShowLivePreview: (@MainActor (_ reason: String) async -> Void)?
     var onHideLivePreview: (@MainActor (_ reason: String) async -> Void)?
 
     var canSyncFrame: Bool {
@@ -44,8 +45,7 @@ final class EditorRemoteHotPreviewLiveCanvasService {
         Task {
             if canSyncFrame {
                 await onSyncFrame?("hot live canvas appeared")
-            } else {
-                await onHideLivePreview?("hot live canvas appeared without a usable frame")
+                await onShowLivePreview?("hot live canvas appeared")
             }
         }
     }
@@ -71,8 +71,7 @@ final class EditorRemoteHotPreviewLiveCanvasService {
             guard !Task.isCancelled else { return }
             if canSyncFrame {
                 await onSyncFrame?(reason)
-            } else {
-                await onHideLivePreview?("hot live canvas frame changed without a usable frame")
+                await onShowLivePreview?(reason)
             }
         }
     }

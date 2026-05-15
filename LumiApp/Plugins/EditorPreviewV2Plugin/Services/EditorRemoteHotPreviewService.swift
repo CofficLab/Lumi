@@ -112,6 +112,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private var lastSourceUpdateAt: Date?
     private var shouldRestorePreferredLiveMode = true
     private var isDetailViewVisible = false
+    private var isLivePreviewShown = false
 
     init() {
         bindLiveCanvasService()
@@ -512,6 +513,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             try? await previousEngine.stopLivePreview(previousSession)
             await previousEngine.stopPreview(previousSession)
         }
+        isLivePreviewShown = false
 
         preserveCurrentFrameForRestart(message: String(localized: "Rebuilding hot preview. Showing the previous frame.", table: "EditorPreviewRemoteHotPlugin"))
         hostState = .launching
@@ -624,6 +626,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         try? await engine.stopLivePreview(session)
         await engine.stopPreview(session)
         guard !Task.isCancelled else { return }
+        isLivePreviewShown = false
         handle(.sessionStopped(reason: reason))
         scheduleHostIdleShutdown(reason: reason)
     }
@@ -775,6 +778,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         scheduledPrewarmFingerprints = []
         livePreviewInfo = LumiPreviewPackage.LivePreviewInfo()
         isLiveLoading = false
+        isLivePreviewShown = false
         effectiveDisplayMode = .image
         updatePhase = .idle
         hostState = .idle
@@ -1434,11 +1438,14 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
         do {
             try await engine.startLivePreview(session)
-            try await engine.showLivePreview(session)
+            isLivePreviewShown = false
             await syncLiveFrameFromEngine(reason: "hot live preview started")
+            await showLivePreviewIfNeeded(reason: "hot live preview started")
             await capturePreviewFrameIfNeeded(reason: "hot live preview started")
             await syncPreviewState(from: session)
             isLiveLoading = false
+            syncModeStatusMessage()
+            refreshDiagnosticSummary()
         } catch let error as LumiPreviewPackage.PreviewError {
             livePreviewInfo = LumiPreviewPackage.LivePreviewInfo(
                 state: .failed,
@@ -1467,6 +1474,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Stopping hot live preview: \(reason, privacy: .public)")
         do {
             try await engine.stopLivePreview(session)
+            isLivePreviewShown = false
             effectiveDisplayMode = .image
             await syncPreviewState(from: session)
         } catch let error as LumiPreviewPackage.PreviewError {
@@ -1492,7 +1500,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
               preferredDisplayMode == .live,
               shouldRestorePreferredLiveMode,
               let session = previewSession,
-              let engine = previewEngine else {
+              previewEngine != nil else {
             return
         }
 
@@ -1501,18 +1509,13 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             EditorRemoteHotPreviewPlugin.logger.info(
                 "\(self.t)Restoring hot live preview: \(reason, privacy: .public)"
             )
-            do {
-                try await engine.showLivePreview(session)
-                await syncLiveFrameFromEngine(reason: reason)
-                await capturePreviewFrameIfNeeded(reason: reason)
-                await syncPreviewState(from: session)
-            } catch {
-                EditorRemoteHotPreviewPlugin.logger.debug(
-                    "\(self.t)Failed to restore hot live preview: \(error.localizedDescription, privacy: .public)"
-                )
-            }
+            await syncLiveFrameFromEngine(reason: reason)
+            await showLivePreviewIfNeeded(reason: reason)
+            await capturePreviewFrameIfNeeded(reason: reason)
+            await syncPreviewState(from: session)
         case .running, .launching:
             await syncLiveFrameFromEngine(reason: reason)
+            await showLivePreviewIfNeeded(reason: reason)
             await capturePreviewFrameIfNeeded(reason: reason)
             await syncPreviewState(from: session)
         case .failed, .unavailable:
@@ -1523,13 +1526,14 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private func hideLivePreviewIfNeeded(reason: String) async {
         guard let session = previewSession,
               let engine = previewEngine,
-              livePreviewInfo.state == .running || livePreviewInfo.state == .launching else {
+              livePreviewInfo.state == .running || livePreviewInfo.state == .launching || isLivePreviewShown else {
             return
         }
 
         EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Hiding hot live preview: \(reason, privacy: .public)")
         do {
             try await engine.hideLivePreview(session)
+            isLivePreviewShown = false
             await syncPreviewState(from: session)
         } catch {
             EditorRemoteHotPreviewPlugin.logger.debug(
@@ -1543,8 +1547,39 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         liveCanvasService.onSyncFrame = { [weak self] reason in
             await self?.syncLiveFrameFromEngine(reason: reason)
         }
+        liveCanvasService.onShowLivePreview = { [weak self] reason in
+            await self?.showLivePreviewIfNeeded(reason: reason)
+        }
         liveCanvasService.onHideLivePreview = { [weak self] reason in
             await self?.hideLivePreviewIfNeeded(reason: reason)
+        }
+    }
+
+    private func showLivePreviewIfNeeded(reason: String) async {
+        guard isDetailViewVisible,
+              preferredDisplayMode == .live,
+              shouldRestorePreferredLiveMode,
+              liveCanvasService.canSyncFrame,
+              let session = previewSession,
+              let engine = previewEngine else {
+            return
+        }
+        guard !isLivePreviewShown else {
+            EditorRemoteHotPreviewPlugin.logger.debug(
+                "\(self.t)Skipping hot live preview show because it is already shown: \(reason, privacy: .public)"
+            )
+            return
+        }
+
+        EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Showing hot live preview: \(reason, privacy: .public)")
+        do {
+            try await engine.showLivePreview(session)
+            isLivePreviewShown = true
+            await syncPreviewState(from: session)
+        } catch {
+            EditorRemoteHotPreviewPlugin.logger.debug(
+                "\(self.t)Failed to show hot live preview: \(error.localizedDescription, privacy: .public)"
+            )
         }
     }
 
@@ -1661,6 +1696,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
         do {
             try await engine.stopLivePreview(session)
+            isLivePreviewShown = false
         } catch {
             EditorRemoteHotPreviewPlugin.logger.debug(
                 "\(self.t)Failed to stop hot live preview after refresh failure: \(error.localizedDescription, privacy: .public)"
