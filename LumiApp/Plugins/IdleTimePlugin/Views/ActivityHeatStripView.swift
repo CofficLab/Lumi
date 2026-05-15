@@ -5,7 +5,7 @@ struct ActivityHeatStripView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("24-hour activity")
+            Text(String(localized: "24-hour activity", table: "IdleTime"))
                 .font(.caption)
                 .foregroundColor(secondaryTextColor)
 

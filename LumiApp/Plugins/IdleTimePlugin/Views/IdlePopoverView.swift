@@ -17,7 +17,7 @@ struct IdlePopoverView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Idle Time")
+                Text(String(localized: "Idle Time", table: "IdleTime"))
                     .font(.headline)
                     .foregroundColor(primaryTextColor)
                 Text(windowText)
@@ -38,11 +38,11 @@ struct IdlePopoverView: View {
 
     private var metrics: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 18, verticalSpacing: 8) {
-            metricRow("Coverage", coverageText)
-            metricRow("Events", "\(snapshot?.eventCount ?? 0)")
-            metricRow("Last active", lastActiveText)
-            metricRow("Source", sourceText)
-            metricRow("Confidence", confidencePercentText)
+            metricRow(String(localized: "Coverage", table: "IdleTime"), coverageText)
+            metricRow(String(localized: "Events", table: "IdleTime"), "\(snapshot?.eventCount ?? 0)")
+            metricRow(String(localized: "Last active", table: "IdleTime"), lastActiveText)
+            metricRow(String(localized: "Source", table: "IdleTime"), sourceText)
+            metricRow(String(localized: "Confidence", table: "IdleTime"), confidencePercentText)
         }
         .font(.system(size: 12))
     }
@@ -58,23 +58,23 @@ struct IdlePopoverView: View {
     }
 
     private var windowText: String {
-        guard let window = snapshot?.restWindow else { return "Learning" }
+        guard let window = snapshot?.restWindow else { return String(localized: "Learning", table: "IdleTime") }
         let label = IdleConfidenceLabel.label(for: window.confidence, source: window.source)
         if label == .learning {
-            return "Learning"
+            return String(localized: "Learning", table: "IdleTime")
         }
         return "\(formatMinute(window.startMinuteOfDay)) - \(formatMinute(window.endMinuteOfDay))"
     }
 
     private var confidenceText: String {
-        guard let window = snapshot?.restWindow else { return "Learning" }
+        guard let window = snapshot?.restWindow else { return String(localized: "Learning", table: "IdleTime") }
         switch IdleConfidenceLabel.label(for: window.confidence, source: window.source) {
         case .learning:
-            return "Learning"
+            return String(localized: "Learning", table: "IdleTime")
         case .medium:
-            return "Medium"
+            return String(localized: "Medium", table: "IdleTime")
         case .high:
-            return "High"
+            return String(localized: "High", table: "IdleTime")
         }
     }
 
@@ -91,25 +91,26 @@ struct IdlePopoverView: View {
     }
 
     private var coverageText: String {
-        "\(snapshot?.observedDayCount ?? 0) / 28 days"
+        let count = snapshot?.observedDayCount ?? 0
+        return "\(count) / 28 \(String(localized: "days", table: "IdleTime"))"
     }
 
     private var lastActiveText: String {
-        guard let date = snapshot?.lastActivityAt else { return "None" }
+        guard let date = snapshot?.lastActivityAt else { return String(localized: "None", table: "IdleTime") }
         return Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
 
     private var sourceText: String {
-        guard let source = snapshot?.restWindow?.source else { return "Learning" }
+        guard let source = snapshot?.restWindow?.source else { return String(localized: "Learning", table: "IdleTime") }
         switch source {
         case .weekday:
-            return "Weekday model"
+            return String(localized: "Weekday model", table: "IdleTime")
         case .weekend:
-            return "Weekend model"
+            return String(localized: "Weekend model", table: "IdleTime")
         case .globalFallback:
-            return "Global model"
+            return String(localized: "Global model", table: "IdleTime")
         case .defaultFallback:
-            return "Default fallback"
+            return String(localized: "Default fallback", table: "IdleTime")
         }
     }
 

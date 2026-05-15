@@ -41,17 +41,17 @@ struct IdleStatusBarView: View {
 
     private var compactLabel: String {
         guard let window = snapshot?.restWindow else {
-            return "Idle learning"
+            return String(localized: "Idle learning", table: "IdleTime")
         }
 
         let label = IdleConfidenceLabel.label(for: window.confidence, source: window.source)
         switch label {
         case .learning:
-            return "Idle learning"
+            return String(localized: "Idle learning", table: "IdleTime")
         case .medium:
-            return "Idle ~\(formatWindow(window))"
+            return "\(String(localized: "Idle", table: "IdleTime")) ~\(formatWindow(window))"
         case .high:
-            return "Idle \(formatWindow(window))"
+            return "\(String(localized: "Idle", table: "IdleTime")) \(formatWindow(window))"
         }
     }
 
