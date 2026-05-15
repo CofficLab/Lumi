@@ -459,6 +459,115 @@ struct BuildPlannerTests {
         )
     }
 
+    // MARK: - resources 误匹配 sources 回归测试
+
+    @Test("target 同时声明 resources 时，sources 不会被误匹配为 resources 的内容")
+    func spmTargetWithResourcesDoesNotPolluteSources() throws {
+        // 复现：MagicKit 的 Package.swift 中 target 声明了 resources: [.process("Icons.xcassets")]
+        // parseTargets 的 sourcesPattern（/sources:\s*\[([^\]]*)\]/）错误匹配到 "reSOURCES"
+        // 导致 sources 被解析为 ["Icons.xcassets"]，进而使路径匹配失败
+        let packageDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-ResourcesRegression-\(UUID().uuidString)", isDirectory: true)
+        let sourceDirectory = packageDirectory
+            .appendingPathComponent("Sources", isDirectory: true)
+            .appendingPathComponent("MagicKit", isDirectory: true)
+        let buttonDirectory = sourceDirectory.appendingPathComponent("Button", isDirectory: true)
+        let previewFile = buttonDirectory.appendingPathComponent("P+Disabled.swift")
+
+        try FileManager.default.createDirectory(at: buttonDirectory, withIntermediateDirectories: true)
+        try """
+        import SwiftUI
+
+        #if DEBUG
+        struct DisabledWithReasonPreviews: View {
+            var body: some View {
+                Text("Hello")
+            }
+        }
+
+        #Preview("Button Disabled with Reason") {
+            DisabledWithReasonPreviews()
+        }
+        #endif
+        """.write(to: previewFile, atomically: true, encoding: .utf8)
+        try """
+        // swift-tools-version: 5.9
+        import PackageDescription
+
+        let package = Package(
+            name: "MagicKit",
+            platforms: [.macOS(.v14)],
+            products: [
+                .library(name: "MagicKit", targets: ["MagicKit"]),
+            ],
+            dependencies: [],
+            targets: [
+                .target(
+                    name: "MagicKit",
+                    dependencies: [],
+                    resources: [.process("Icons.xcassets")]
+                ),
+                .testTarget(
+                    name: "Tests",
+                    dependencies: ["MagicKit"]
+                )
+            ]
+        )
+        """.write(to: packageDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let result = LumiPreviewFacade.BuildPlanner().plan(for: previewFile)
+
+        guard case let .spm(_, targetName) = result else {
+            Issue.record("Expected .spm strategy for MagicKit file with resources, got \(String(describing: result))")
+            return
+        }
+
+        #expect(targetName == "MagicKit")
+    }
+
+    @Test("target 同时声明 resources 和 sources 时，两者都能被正确解析")
+    func spmTargetWithResourcesAndSourcesParsedCorrectly() throws {
+        let packageDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-ResourcesAndSources-\(UUID().uuidString)", isDirectory: true)
+        let targetDirectory = packageDirectory.appendingPathComponent("MyFeature", isDirectory: true)
+        let includedDirectory = targetDirectory.appendingPathComponent("Core", isDirectory: true)
+        let resourcesDirectory = targetDirectory.appendingPathComponent("Assets", isDirectory: true)
+        let includedFile = includedDirectory.appendingPathComponent("Feature.swift")
+        let resourceFile = resourcesDirectory.appendingPathComponent("data.json")
+
+        try FileManager.default.createDirectory(at: includedDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: resourcesDirectory, withIntermediateDirectories: true)
+        try "struct Feature {}\n".write(to: includedFile, atomically: true, encoding: .utf8)
+        try "{}\n".write(to: resourceFile, atomically: true, encoding: .utf8)
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "MixedPackage",
+            targets: [
+                .target(
+                    name: "FeatureTarget",
+                    path: "MyFeature",
+                    sources: ["Core"],
+                    resources: [.process("Assets")]
+                )
+            ]
+        )
+        """.write(to: packageDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let result = LumiPreviewFacade.BuildPlanner().plan(for: includedFile)
+
+        guard case let .spm(_, targetName) = result else {
+            Issue.record("Expected .spm strategy, got \(String(describing: result))")
+            return
+        }
+
+        #expect(targetName == "FeatureTarget")
+    }
+
     private func writeXcodeProject(
         at projectURL: URL,
         targetName: String,

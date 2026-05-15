@@ -308,7 +308,7 @@ final class BuildPlanner: Sendable {
 
         let namePattern = /name:\s*"([^"]+)"/
         let pathPattern = /path:\s*"([^"]+)"/
-        let sourcesPattern = /sources:\s*\[([^\]]*)\]/
+        let sourcesPattern = /(?:^|[^a-zA-Z])sources:\s*\[([^\]]*)\]/
         let characters = Array(content)
 
         for declaration in targetDeclarations(in: characters) {
