@@ -17,11 +17,11 @@ struct HotPreviewToolbar: View {
 
     private var toolbarTitle: String {
         if viewModel.isImageMode {
-            return String(localized: "Image Preview", table: "EditorPreviewRemoteHotPlugin")
+            return String(localized: "Image Preview", table: "EditorPreview")
         } else if viewModel.isMarkdownMode {
-            return String(localized: "Markdown Preview", table: "EditorPreviewRemoteHotPlugin")
+            return String(localized: "Markdown Preview", table: "EditorPreview")
         }
-        return String(localized: "V2", table: "EditorPreviewRemoteHotPlugin")
+        return String(localized: "V2", table: "EditorPreview")
     }
 
     var body: some View {
@@ -57,7 +57,7 @@ struct HotPreviewToolbar: View {
                             : themeVM.activeAppTheme.workspaceSecondaryTextColor())
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "Toggle diagnostics info", table: "EditorPreviewRemoteHotPlugin"))
+                .help(String(localized: "Toggle diagnostics info", table: "EditorPreview"))
                 .popover(isPresented: $showDiagnostics, arrowEdge: .bottom) {
                     HotPreviewDiagnosticsPanel(viewModel: viewModel)
                 }
@@ -70,7 +70,7 @@ struct HotPreviewToolbar: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!viewModel.canStart)
-                .help(String(localized: "Start hot preview", table: "EditorPreviewRemoteHotPlugin"))
+                .help(String(localized: "Start hot preview", table: "EditorPreview"))
 
                 Button {
                     viewModel.renderFrame()
@@ -80,7 +80,7 @@ struct HotPreviewToolbar: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(viewModel.hostState == .idle)
-                .help(String(localized: "Refresh hot preview", table: "EditorPreviewRemoteHotPlugin"))
+                .help(String(localized: "Refresh hot preview", table: "EditorPreview"))
 
                 Button {
                     viewModel.stopHost()
@@ -90,7 +90,7 @@ struct HotPreviewToolbar: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!viewModel.canStop)
-                .help(String(localized: "Stop hot preview", table: "EditorPreviewRemoteHotPlugin"))
+                .help(String(localized: "Stop hot preview", table: "EditorPreview"))
             }
         }
         .frame(maxWidth: .infinity, minHeight: 38, maxHeight: 38, alignment: .leading)
@@ -159,7 +159,7 @@ private struct HotPreviewDisplayModePickerView: View {
                 HStack(spacing: 3) {
                     Image(systemName: "photo")
                         .font(.system(size: 9, weight: .medium))
-                    Text(String(localized: "Image", table: "EditorPreviewRemoteHotPlugin"))
+                    Text(String(localized: "Image", table: "EditorPreview"))
                         .font(.system(size: 10, weight: .medium))
                 }
                 .padding(.horizontal, 8)
@@ -189,7 +189,7 @@ private struct HotPreviewDisplayModePickerView: View {
                 HStack(spacing: 3) {
                     Image(systemName: viewModel.preferredDisplayMode == .live ? "play.rectangle.fill" : "play.rectangle")
                         .font(.system(size: 9, weight: .medium))
-                    Text(String(localized: "Live", table: "EditorPreviewRemoteHotPlugin"))
+                    Text(String(localized: "Live", table: "EditorPreview"))
                         .font(.system(size: 10, weight: .medium))
                 }
                 .padding(.horizontal, 8)
@@ -203,7 +203,7 @@ private struct HotPreviewDisplayModePickerView: View {
             }
             .buttonStyle(.plain)
             .disabled(!viewModel.canSwitchToLive && viewModel.preferredDisplayMode != .live)
-            .help(viewModel.liveUnavailableReason ?? String(localized: "Switch to Live mode", table: "EditorPreviewRemoteHotPlugin"))
+            .help(viewModel.liveUnavailableReason ?? String(localized: "Switch to Live mode", table: "EditorPreview"))
         }
         .background(
             RoundedRectangle(cornerRadius: 4)

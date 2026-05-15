@@ -15,13 +15,13 @@ struct HotPreviewCanvas: View {
         if viewModel.previews.isEmpty {
             HotPreviewMessageView(
                 systemImage: "bolt.slash",
-                message: String(localized: "No #Preview in the current Swift file", table: "EditorPreviewRemoteHotPlugin"),
+                message: String(localized: "No #Preview in the current Swift file", table: "EditorPreview"),
                 color: .secondary
             )
         } else if viewModel.hostState == .idle && viewModel.renderImage == nil && viewModel.failureMessage == nil {
             HotPreviewMessageView(
                 systemImage: "play.rectangle",
-                message: String(localized: "Start hot preview to render a frame", table: "EditorPreviewRemoteHotPlugin"),
+                message: String(localized: "Start hot preview to render a frame", table: "EditorPreview"),
                 color: .secondary
             )
         } else if let failureMessage = viewModel.failureMessage, viewModel.renderImage == nil {
@@ -68,7 +68,7 @@ struct HotPreviewCanvas: View {
                 } else if viewModel.isLiveLoading {
                     HotPreviewMessageView(
                         systemImage: "bolt.fill",
-                        message: String(localized: "Starting hot live preview", table: "EditorPreviewRemoteHotPlugin"),
+                        message: String(localized: "Starting hot live preview", table: "EditorPreview"),
                         color: .orange
                     )
                 } else if viewModel.effectiveDisplayMode == .live {
@@ -105,7 +105,7 @@ struct HotPreviewCanvas: View {
         }
 
         return viewModel.livePreviewInfo.unavailableReason
-            ?? String(localized: "Live preview failed", table: "EditorPreviewRemoteHotPlugin")
+            ?? String(localized: "Live preview failed", table: "EditorPreview")
     }
 }
 

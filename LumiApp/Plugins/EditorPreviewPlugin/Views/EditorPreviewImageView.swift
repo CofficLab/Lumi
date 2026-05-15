@@ -69,7 +69,7 @@ struct EditorPreviewImageView: View {
         HStack(spacing: 16) {
             Label(
                 String(
-                    format: String(localized: "%g x %g pt", table: "EditorPreviewRemoteHotPlugin"),
+                    format: String(localized: "%g x %g pt", table: "EditorPreview"),
                     image.size.width,
                     image.size.height
                 ),
@@ -88,7 +88,7 @@ struct EditorPreviewImageView: View {
         VStack(spacing: 10) {
             ProgressView()
                 .scaleEffect(0.8)
-            Text(String(localized: "Loading image...", table: "EditorPreviewRemoteHotPlugin"))
+            Text(String(localized: "Loading image...", table: "EditorPreview"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
         }
@@ -140,7 +140,7 @@ struct EditorPreviewImageView: View {
         let fileManager = FileManager.default
         guard fileManager.fileExists(atPath: fileURL.path) else {
             loadError = String(
-                format: String(localized: "File not found: %@", table: "EditorPreviewRemoteHotPlugin"),
+                format: String(localized: "File not found: %@", table: "EditorPreview"),
                 fileURL.lastPathComponent
             )
             return
@@ -148,7 +148,7 @@ struct EditorPreviewImageView: View {
 
         guard let loadedImage = NSImage(contentsOf: fileURL) else {
             loadError = String(
-                format: String(localized: "Failed to load image: %@", table: "EditorPreviewRemoteHotPlugin"),
+                format: String(localized: "Failed to load image: %@", table: "EditorPreview"),
                 fileURL.lastPathComponent
             )
             return

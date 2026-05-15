@@ -56,7 +56,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     @Published private(set) var transportSummary = "-"
     @Published private(set) var failureMessage: String?
     @Published private(set) var updatePhase: EditorRemoteHotPreviewUpdatePhase = .idle
-    @Published private(set) var lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
+    @Published private(set) var lastFrameSummary = String(localized: "No Frame", table: "EditorPreview")
     @Published private(set) var diagnosticSummary = "host: idle | live: available | frame: 0, 0, 0 x 0"
     @Published private(set) var livePreviewInfo = LumiPreviewPackage.LivePreviewInfo()
     @Published private(set) var isLiveLoading = false
@@ -165,7 +165,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             isShowingStaleFrame = false
             modeStatusMessage = nil
             lastFrame = nil
-            lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
+            lastFrameSummary = String(localized: "No Frame", table: "EditorPreview")
             refreshDiagnosticSummary()
             return
         }
@@ -196,7 +196,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             isShowingStaleFrame = false
             modeStatusMessage = nil
             lastFrame = nil
-            lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
+            lastFrameSummary = String(localized: "No Frame", table: "EditorPreview")
             refreshDiagnosticSummary()
             return
         }
@@ -325,20 +325,20 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
     var liveUnavailableReason: String? {
         guard previewSession != nil else {
-            return String(localized: "Start a preview first", table: "EditorPreviewRemoteHotPlugin")
+            return String(localized: "Start a preview first", table: "EditorPreview")
         }
         switch livePreviewInfo.state {
         case .unavailable:
-            return String(localized: "Live requires a real SwiftUI view entry", table: "EditorPreviewRemoteHotPlugin")
+            return String(localized: "Live requires a real SwiftUI view entry", table: "EditorPreview")
         case .failed:
             return livePreviewInfo.unavailableReason
-                ?? String(localized: "Live preview failed", table: "EditorPreviewRemoteHotPlugin")
+                ?? String(localized: "Live preview failed", table: "EditorPreview")
         case .launching:
-            return String(localized: "Live preview is starting", table: "EditorPreviewRemoteHotPlugin")
+            return String(localized: "Live preview is starting", table: "EditorPreview")
         case .available, .running:
             return nil
         case .stopped:
-            return String(localized: "Live preview stopped", table: "EditorPreviewRemoteHotPlugin")
+            return String(localized: "Live preview stopped", table: "EditorPreview")
         }
     }
 
@@ -532,14 +532,14 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
         guard let selectedPreview else {
             resetRenderState()
-            lastFrameSummary = String(localized: "No Preview", table: "EditorPreviewRemoteHotPlugin")
+            lastFrameSummary = String(localized: "No Preview", table: "EditorPreview")
             return
         }
         let selectedFingerprint = previewFingerprint(for: selectedPreview)
         recordPreviewStart(fingerprint: selectedFingerprint, fileURL: selectedPreview.sourceFileURL)
 
         guard let hostExecutableURL = LumiPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
-            handle(.failed(message: String(localized: "Hot preview host executable was not found.", table: "EditorPreviewRemoteHotPlugin")))
+            handle(.failed(message: String(localized: "Hot preview host executable was not found.", table: "EditorPreview")))
             return
         }
         if let previousSession = previewSession, let previousEngine = previewEngine {
@@ -549,7 +549,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         isLivePreviewShown = false
 
         if isSelectedPreviewAlreadyRendered(selectedPreview) {
-            preserveCurrentFrameForRestart(message: String(localized: "Rebuilding hot preview. Showing the previous frame.", table: "EditorPreviewRemoteHotPlugin"))
+            preserveCurrentFrameForRestart(message: String(localized: "Rebuilding hot preview. Showing the previous frame.", table: "EditorPreview"))
         } else {
             clearRenderedFrameForPreviewChange()
         }
@@ -833,7 +833,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         prewarmCandidateSummary = "prewarm candidates: idle"
         startupTimingSummary = "startup: idle"
         hostLifecycleSummary = previewEngine == nil ? "host lifecycle: cold" : "host lifecycle: idle"
-        lastFrameSummary = String(localized: "No Frame", table: "EditorPreviewRemoteHotPlugin")
+        lastFrameSummary = String(localized: "No Frame", table: "EditorPreview")
         refreshDiagnosticSummary()
     }
 
@@ -1478,7 +1478,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         effectiveDisplayMode = .live
         isLiveLoading = true
         livePreviewInfo = LumiPreviewPackage.LivePreviewInfo(state: .launching)
-        modeStatusMessage = String(localized: "Starting live preview.", table: "EditorPreviewRemoteHotPlugin")
+        modeStatusMessage = String(localized: "Starting live preview.", table: "EditorPreview")
         refreshDiagnosticSummary()
 
         do {
@@ -1787,17 +1787,17 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         }
 
         if isLiveLoading {
-            modeStatusMessage = String(localized: "Starting live preview.", table: "EditorPreviewRemoteHotPlugin")
+            modeStatusMessage = String(localized: "Starting live preview.", table: "EditorPreview")
             return
         }
 
         if preferredDisplayMode == .live && effectiveDisplayMode == .image {
-            modeStatusMessage = String(localized: "Live mode is preferred, but the host is currently showing image preview.", table: "EditorPreviewRemoteHotPlugin")
+            modeStatusMessage = String(localized: "Live mode is preferred, but the host is currently showing image preview.", table: "EditorPreview")
             return
         }
 
         if isShowingStaleFrame {
-            modeStatusMessage = String(localized: "Showing the previous frame because no fresh frame is available yet.", table: "EditorPreviewRemoteHotPlugin")
+            modeStatusMessage = String(localized: "Showing the previous frame because no fresh frame is available yet.", table: "EditorPreview")
             return
         }
 

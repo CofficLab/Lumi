@@ -87,7 +87,7 @@ struct EditorRemoteHotPreviewDetailView: View {
             } else {
                 HotPreviewMessageView(
                     systemImage: "photo",
-                    message: String(localized: "The current image could not be loaded.", table: "EditorPreviewRemoteHotPlugin"),
+                    message: String(localized: "The current image could not be loaded.", table: "EditorPreview"),
                     color: .orange
                 )
             }
@@ -97,7 +97,7 @@ struct EditorRemoteHotPreviewDetailView: View {
             } else {
                 HotPreviewMessageView(
                     systemImage: "doc.richtext",
-                    message: String(localized: "The current Markdown content is unavailable.", table: "EditorPreviewRemoteHotPlugin"),
+                    message: String(localized: "The current Markdown content is unavailable.", table: "EditorPreview"),
                     color: .orange
                 )
             }

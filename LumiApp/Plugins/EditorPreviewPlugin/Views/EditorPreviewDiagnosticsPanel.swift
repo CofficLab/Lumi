@@ -6,7 +6,7 @@ struct HotPreviewDiagnosticsPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "Diagnostics", table: "EditorPreviewRemoteHotPlugin"))
+            Text(String(localized: "Diagnostics", table: "EditorPreview"))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
 

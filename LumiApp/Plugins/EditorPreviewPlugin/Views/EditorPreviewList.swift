@@ -8,7 +8,7 @@ struct HotPreviewList: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if viewModel.previews.isEmpty {
-                Text(String(localized: "No Preview", table: "EditorPreviewRemoteHotPlugin"))
+                Text(String(localized: "No Preview", table: "EditorPreview"))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                     .padding(14)
@@ -36,7 +36,7 @@ struct HotPreviewList: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
                 .lineLimit(1)
-            Text(String(localized: "Line \(preview.lineNumber)-\(preview.endLineNumber)", table: "EditorPreviewRemoteHotPlugin"))
+            Text(String(localized: "Line \(preview.lineNumber)-\(preview.endLineNumber)", table: "EditorPreview"))
                 .font(.system(size: 11))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                 .lineLimit(1)

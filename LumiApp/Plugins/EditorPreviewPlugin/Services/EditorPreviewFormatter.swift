@@ -17,25 +17,25 @@ enum EditorPreviewFormatter {
         switch error {
         case .targetNotFound(let file):
             String(
-                format: String(localized: "No build target found for %@", table: "EditorPreviewRemoteHotPlugin"),
+                format: String(localized: "No build target found for %@", table: "EditorPreview"),
                 URL(fileURLWithPath: file).lastPathComponent
             )
         case .unsupportedProjectType(let path):
             String(
-                format: String(localized: "Unsupported project type: %@", table: "EditorPreviewRemoteHotPlugin"),
+                format: String(localized: "Unsupported project type: %@", table: "EditorPreview"),
                 path
             )
         case .compilationFailed(let message):
             message
         case .buildProductNotFound:
-            String(localized: "Build product was not found.", table: "EditorPreviewRemoteHotPlugin")
+            String(localized: "Build product was not found.", table: "EditorPreview")
         case .hostLaunchFailed(let message):
             message
         case .runtimeCrashed(let message):
             message
         case .timedOut(let seconds):
             String(
-                format: String(localized: "Timed out after %lld seconds.", table: "EditorPreviewRemoteHotPlugin"),
+                format: String(localized: "Timed out after %lld seconds.", table: "EditorPreview"),
                 Int64(seconds)
             )
         case .missingDependency(let description):
@@ -51,10 +51,10 @@ enum EditorPreviewFormatter {
         var parts: [String] = []
         if let compileDuration = metrics.lastCompileDuration {
             let cacheSuffix = metrics.lastCompileUsedCache
-                ? String(localized: " cached", table: "EditorPreviewRemoteHotPlugin") : ""
+                ? String(localized: " cached", table: "EditorPreview") : ""
             parts.append(
                 String(
-                    format: String(localized: "Build %@%@", table: "EditorPreviewRemoteHotPlugin"),
+                    format: String(localized: "Build %@%@", table: "EditorPreview"),
                     format(seconds: compileDuration),
                     cacheSuffix
                 )
@@ -62,10 +62,10 @@ enum EditorPreviewFormatter {
         }
         if let loadDuration = metrics.lastLoadDuration {
             let cacheSuffix = metrics.lastEntryUsedCache
-                ? String(localized: " cached", table: "EditorPreviewRemoteHotPlugin") : ""
+                ? String(localized: " cached", table: "EditorPreview") : ""
             parts.append(
                 String(
-                    format: String(localized: "Load %@%@", table: "EditorPreviewRemoteHotPlugin"),
+                    format: String(localized: "Load %@%@", table: "EditorPreview"),
                     format(seconds: loadDuration),
                     cacheSuffix
                 )
@@ -74,7 +74,7 @@ enum EditorPreviewFormatter {
         if let refreshDuration = metrics.lastRefreshDuration {
             parts.append(
                 String(
-                    format: String(localized: "Refresh %@", table: "EditorPreviewRemoteHotPlugin"),
+                    format: String(localized: "Refresh %@", table: "EditorPreview"),
                     format(seconds: refreshDuration)
                 )
             )
