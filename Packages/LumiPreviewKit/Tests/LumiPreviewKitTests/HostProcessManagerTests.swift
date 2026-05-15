@@ -144,7 +144,7 @@ private actor LaunchTracker {
     private var nextPID: Int32 = 100
     private(set) var connections: [FakeHostConnection] = []
 
-    func launcher(_ executableURL: URL) async throws -> LumiPreviewPackage.HostConnection {
+    func launcher(_ executableURL: URL) async throws -> LumiPreviewPackage.HotHostConnection {
         launchCount += 1
         nextPID += 1
         let connection = FakeHostConnection(processID: nextPID)
@@ -153,7 +153,7 @@ private actor LaunchTracker {
     }
 }
 
-private final class FakeHostConnection: LumiPreviewPackage.HostConnection, @unchecked Sendable {
+private final class FakeHostConnection: LumiPreviewPackage.HotHostConnection, @unchecked Sendable {
     private let lock = NSLock()
     private var running = true
     private var pid: Int32
@@ -188,48 +188,48 @@ private final class FakeHostConnection: LumiPreviewPackage.HostConnection, @unch
     func requestRender(
         discovery: LumiPreviewPackage.PreviewDiscovery,
         configuration: LumiPreviewPackage.PreviewRenderConfiguration
-    ) async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    ) async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestRefresh() async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestRefresh() async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestCaptureFrame(includeImageFallback: Bool) async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestCaptureFrame(includeImageFallback: Bool) async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestLoadDylib(at dylibURL: URL) async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestInterposeDylib(at dylibURL: URL, symbolName: String?) async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestStartLivePreview() async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestStartLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestShowLivePreview() async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestShowLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestHideLivePreview() async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestHideLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
-    func requestStopLivePreview() async throws -> LumiPreviewPackage.RenderResponse {
-        LumiPreviewPackage.RenderResponse(success: true)
+    func requestStopLivePreview() async throws -> LumiPreviewPackage.HotRenderResponse {
+        LumiPreviewPackage.HotRenderResponse(success: true)
     }
 
     func terminate() async {

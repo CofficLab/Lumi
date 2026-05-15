@@ -3,12 +3,12 @@ import Testing
 @testable import LumiPreviewKit
 
 @MainActor
-@Suite("EditorPreviewLiveCanvasService")
-struct EditorPreviewLiveCanvasServiceTests {
+@Suite("LiveCanvasService")
+struct LiveCanvasServiceTests {
 
     @Test("应用失焦时保持显示，恢复时重新同步 frame")
     func resignAndBecomeKeyKeepVisibility() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         var events: [String] = []
 
         service.onShowLivePreview = { _ in
@@ -38,7 +38,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("连续焦点变化不会隐藏 Live 预览")
     func focusChangesKeepVisibility() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         var events: [String] = []
 
         service.onShowLivePreview = { _ in
@@ -65,7 +65,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("预览窗口 active 状态变化不隐藏 Live 预览")
     func previewWindowActiveStateChangesKeepVisibility() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         var events: [String] = []
 
         service.onShowLivePreview = { _ in
@@ -92,7 +92,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("短暂 frame unavailable 不隐藏 Live 预览")
     func transientFrameUnavailableKeepsVisibility() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         let frame = CGRect(x: 12, y: 24, width: 320, height: 180)
         var events: [String] = []
 
@@ -119,7 +119,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("相同 frame 不重复触发同步，显著变化才触发")
     func identicalFrameDoesNotResync() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         var syncCount = 0
 
         service.onSyncLiveFrameFromEngine = { _ in
@@ -141,7 +141,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("image 模式下可见性事件不驱动 live window")
     func imageModeSuppressesVisibilityCallbacks() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .image)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .image)
         var showCount = 0
         var hideCount = 0
 
@@ -165,7 +165,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("canvas 消失和窗口最小化都会隐藏 live window")
     func canvasDisappearAndMiniaturizeHideLiveWindow() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         var events: [String] = []
         var hideReasons: [String] = []
 
@@ -199,7 +199,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("切换 panel tab 后隐藏，画布恢复可见后再显示")
     func panelTabSwitchHidesUntilCanvasVisibleAgain() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         var events: [String] = []
 
         service.onShowLivePreview = { _ in
@@ -238,7 +238,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("重新激活前台时同步 frame 且保持显示")
     func appReactivationResyncsFrameWithoutHiding() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         var events: [String] = []
 
         service.onSyncLiveFrameFromEngine = { _ in
@@ -271,7 +271,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("重新激活前台时使用最新 frame 保持位置")
     func appReactivationUsesLatestFrame() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         let initialRect = CGRect(x: 10, y: 20, width: 320, height: 180)
         let movedRect = CGRect(x: 120, y: 80, width: 420, height: 240)
         var syncRects: [CGRect] = []
@@ -319,7 +319,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("连续 resize 时仅同步最后一个 frame")
     func rapidResizeCoalescesToLatestFrame() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         let initialRect = CGRect(x: 0, y: 0, width: 320, height: 180)
         let intermediateRect = CGRect(x: 0, y: 0, width: 480, height: 220)
         let finalRect = CGRect(x: 0, y: 0, width: 640, height: 300)
@@ -356,7 +356,7 @@ struct EditorPreviewLiveCanvasServiceTests {
 
     @Test("连续拖动主窗口时仅同步最后位置且不隐藏")
     func rapidMoveCoalescesToLatestFrameWithoutHiding() async throws {
-        let service = LumiPreviewPackage.EditorPreviewLiveCanvasService(displayMode: .live)
+        let service = LumiPreviewPackage.LiveCanvasService(displayMode: .live)
         let initialRect = CGRect(x: 40, y: 60, width: 320, height: 180)
         let movedRect1 = CGRect(x: 140, y: 120, width: 320, height: 180)
         let movedRect2 = CGRect(x: 260, y: 210, width: 320, height: 180)

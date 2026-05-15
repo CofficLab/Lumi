@@ -26,7 +26,6 @@ public extension LumiPreviewPackage {
         private var currentHostConnection: HotHostConnection?
         private var currentLastHotRenderResponse: HotRenderResponse?
         private var currentLoadedPreviewBodySource: String?
-        private var currentLegacySession: (any LumiPreviewPackage.PreviewSession)?
         private var currentStartupTimings: [HotPreviewStartupTiming] = []
 
         public var state: LumiPreviewPackage.PreviewSessionState { currentState }
@@ -108,14 +107,6 @@ public extension LumiPreviewPackage {
             currentLoadedPreviewBodySource
         }
 
-        func setLegacySession(_ session: (any LumiPreviewPackage.PreviewSession)?) {
-            currentLegacySession = session
-        }
-
-        func legacySession() -> (any LumiPreviewPackage.PreviewSession)? {
-            currentLegacySession
-        }
-
         func setDisplayMode(_ mode: LumiPreviewPackage.PreviewDisplayMode) {
             currentDisplayMode = mode
         }
@@ -180,7 +171,6 @@ public extension LumiPreviewPackage {
         func terminateHost() async {
             await currentHostConnection?.terminate()
             currentHostConnection = nil
-            currentLegacySession = nil
         }
     }
 
@@ -360,7 +350,6 @@ public extension LumiPreviewPackage {
         private let prewarmEntryStore = PrewarmEntryStore()
         private let buildCoordinator = HotPreviewBuildCoordinator()
         private let hostProcessManager: HostProcessManager<HotHostConnection>
-        private let fallbackEngine: LumiPreviewPackage.LivePreviewEngine?
         private static let previewEntryCacheLimit = 8
 
         public init(
@@ -390,17 +379,6 @@ public extension LumiPreviewPackage {
             self.moduleImportEligibilityChecker = moduleImportEligibilityChecker
             self.moduleImportEligibilityCache = moduleImportEligibilityCache
             self.syntaxChecker = syntaxChecker
-            if let legacyHostExecutableURL = LumiPreviewPackage.PreviewHostExecutableResolver.resolve() {
-                self.fallbackEngine = LumiPreviewPackage.LivePreviewEngine(
-                    hostExecutableURL: legacyHostExecutableURL,
-                    buildPlanner: buildPlanner,
-                    spmCompiler: spmCompiler,
-                    xcodeCompiler: xcodeCompiler,
-                    previewEntryBuilder: previewEntryBuilder
-                )
-            } else {
-                self.fallbackEngine = nil
-            }
             self.hostProcessManager = HostProcessManager(
                 executableURL: hostExecutableURL,
                 maximumIdleConnections: maximumIdleHosts,
@@ -452,26 +430,10 @@ public extension LumiPreviewPackage {
                     detail: discovery.id
                 )
             } catch let error as LumiPreviewPackage.PreviewError {
-                if try await startFallbackPreviewIfPossible(
-                    discovery: discovery,
-                    configuration: configuration,
-                    hotSession: session,
-                    hotError: error
-                ) {
-                    return session
-                }
                 await session.setState(.failed(error))
                 throw error
             } catch {
                 let wrapped = LumiPreviewPackage.PreviewError.runtimeCrashed(message: error.localizedDescription)
-                if try await startFallbackPreviewIfPossible(
-                    discovery: discovery,
-                    configuration: configuration,
-                    hotSession: session,
-                    hotError: wrapped
-                ) {
-                    return session
-                }
                 await session.setState(.failed(wrapped))
                 throw wrapped
             }
@@ -614,11 +576,6 @@ public extension LumiPreviewPackage {
                 await session.setConfiguration(configuration)
             }
 
-            if let legacySession = await session.legacySession() {
-                try await refreshFallbackPreview(session, legacySession: legacySession)
-                return
-            }
-
             do {
                 let refreshStart = Date()
                 try await syntaxPreflight(await session.discovery, session: session)
@@ -640,29 +597,16 @@ public extension LumiPreviewPackage {
                 )
                 await session.setState(.running)
             } catch let error as LumiPreviewPackage.PreviewError {
-                if let legacySession = try await migrateToFallbackIfPossible(session, hotError: error) {
-                    try await refreshFallbackPreview(session, legacySession: legacySession)
-                    return
-                }
                 await session.setState(.failed(error))
                 throw error
             } catch {
                 let wrapped = LumiPreviewPackage.PreviewError.runtimeCrashed(message: error.localizedDescription)
-                if let legacySession = try await migrateToFallbackIfPossible(session, hotError: wrapped) {
-                    try await refreshFallbackPreview(session, legacySession: legacySession)
-                    return
-                }
                 await session.setState(.failed(wrapped))
                 throw wrapped
             }
         }
 
         public func stopPreview(_ session: HotPreviewSession) async {
-            if let legacySession = await session.legacySession(),
-               let fallbackEngine {
-                await fallbackEngine.stopPreview(legacySession)
-                await session.setLegacySession(nil)
-            }
             if let connection = await session.hostConnection() {
                 await hostProcessManager.release(connection)
                 await session.setHostConnection(nil)
@@ -671,14 +615,6 @@ public extension LumiPreviewPackage {
         }
 
         public func capturePreviewFrame(_ session: HotPreviewSession) async throws -> HotRenderResponse {
-            if let legacySession = await session.legacySession(),
-               let fallbackEngine {
-                let response = try await fallbackEngine.capturePreviewFrame(legacySession)
-                await syncHotSession(session, from: legacySession)
-                let hotResponse = HotRenderResponse(response)
-                await session.setLastHotRenderResponse(hotResponse)
-                return hotResponse
-            }
             guard let connection = await session.hostConnection() else {
                 throw LumiPreviewPackage.PreviewError.runtimeCrashed(message: "No active hot preview session.")
             }
@@ -688,12 +624,6 @@ public extension LumiPreviewPackage {
         }
 
         public func startLivePreview(_ session: HotPreviewSession) async throws {
-            if let legacySession = await session.legacySession(),
-               let fallbackEngine {
-                try await fallbackEngine.startLivePreview(legacySession)
-                await syncHotSession(session, from: legacySession)
-                return
-            }
             guard let connection = await session.hostConnection() else {
                 throw LumiPreviewPackage.PreviewError.runtimeCrashed(message: "No active hot preview session.")
             }
@@ -723,30 +653,11 @@ public extension LumiPreviewPackage {
             height: Double,
             scale: Double = 1
         ) async throws {
-            if let legacySession = await session.legacySession(),
-               let fallbackEngine {
-                try await fallbackEngine.updateLiveFrame(
-                    legacySession,
-                    x: x,
-                    y: y,
-                    width: width,
-                    height: height,
-                    scale: scale
-                )
-                await syncHotSession(session, from: legacySession)
-                return
-            }
             guard let connection = await session.hostConnection() else { return }
             _ = try await connection.requestUpdateLiveFrame(x: x, y: y, width: width, height: height, scale: scale)
         }
 
         public func showLivePreview(_ session: HotPreviewSession) async throws {
-            if let legacySession = await session.legacySession(),
-               let fallbackEngine {
-                try await fallbackEngine.showLivePreview(legacySession)
-                await syncHotSession(session, from: legacySession)
-                return
-            }
             guard let connection = await session.hostConnection() else { return }
             let startedAt = Date()
             let response = try await connection.requestShowLivePreview()
@@ -764,12 +675,6 @@ public extension LumiPreviewPackage {
         }
 
         public func hideLivePreview(_ session: HotPreviewSession) async throws {
-            if let legacySession = await session.legacySession(),
-               let fallbackEngine {
-                try await fallbackEngine.hideLivePreview(legacySession)
-                await syncHotSession(session, from: legacySession)
-                return
-            }
             guard let connection = await session.hostConnection() else { return }
             let response = try await connection.requestHideLivePreview()
             await session.markLivePreviewAvailable(
@@ -781,12 +686,6 @@ public extension LumiPreviewPackage {
         }
 
         public func stopLivePreview(_ session: HotPreviewSession) async throws {
-            if let legacySession = await session.legacySession(),
-               let fallbackEngine {
-                try await fallbackEngine.stopLivePreview(legacySession)
-                await syncHotSession(session, from: legacySession)
-                return
-            }
             guard let connection = await session.hostConnection() else { return }
             _ = try await connection.requestStopLivePreview()
             await session.setDisplayMode(.image)
@@ -1175,83 +1074,6 @@ public extension LumiPreviewPackage {
                 ),
                 variant: .sourceInclude
             )
-        }
-
-        private func startFallbackPreviewIfPossible(
-            discovery: LumiPreviewPackage.PreviewDiscovery,
-            configuration: LumiPreviewPackage.PreviewRenderConfiguration,
-            hotSession: HotPreviewSession,
-            hotError: LumiPreviewPackage.PreviewError
-        ) async throws -> Bool {
-            guard let fallbackEngine else {
-                return false
-            }
-
-            let legacySession = try await fallbackEngine.startPreview(
-                discovery,
-                configuration: configuration
-            )
-            await hotSession.setLegacySession(legacySession)
-            await syncHotSession(hotSession, from: legacySession, fallbackReason: hotError.localizedDescription)
-            return true
-        }
-
-        private func migrateToFallbackIfPossible(
-            _ hotSession: HotPreviewSession,
-            hotError: LumiPreviewPackage.PreviewError
-        ) async throws -> (any LumiPreviewPackage.PreviewSession)? {
-            guard let fallbackEngine else {
-                return nil
-            }
-
-            if let legacySession = await hotSession.legacySession() {
-                await syncHotSession(hotSession, from: legacySession, fallbackReason: hotError.localizedDescription)
-                return legacySession
-            }
-
-            let discovery = await hotSession.discovery
-            let configuration = await hotSession.configuration
-            let legacySession = try await fallbackEngine.startPreview(
-                discovery,
-                configuration: configuration
-            )
-            if let connection = await hotSession.hostConnection() {
-                await hostProcessManager.discard(connection)
-                await hotSession.setHostConnection(nil)
-            }
-            await hotSession.setLegacySession(legacySession)
-            await syncHotSession(hotSession, from: legacySession, fallbackReason: hotError.localizedDescription)
-            return legacySession
-        }
-
-        private func refreshFallbackPreview(
-            _ hotSession: HotPreviewSession,
-            legacySession: any LumiPreviewPackage.PreviewSession
-        ) async throws {
-            guard let fallbackEngine else { return }
-            try await fallbackEngine.refreshPreview(legacySession)
-            await syncHotSession(hotSession, from: legacySession)
-        }
-
-        private func syncHotSession(
-            _ hotSession: HotPreviewSession,
-            from legacySession: any LumiPreviewPackage.PreviewSession,
-            fallbackReason: String? = nil
-        ) async {
-            await hotSession.setState(await legacySession.state)
-            await hotSession.setConfiguration(await legacySession.configuration)
-            await hotSession.setDisplayMode(await legacySession.displayMode)
-            await hotSession.setLivePreviewInfo(await legacySession.livePreviewInfo)
-            if let response = await legacySession.lastRenderResponse {
-                await hotSession.setLastHotRenderResponse(HotRenderResponse(response))
-            }
-            if let fallbackReason {
-                var info = await hotSession.livePreviewInfo
-                if info.state == .failed && (info.unavailableReason?.isEmpty ?? true) {
-                    info.unavailableReason = fallbackReason
-                    await hotSession.setLivePreviewInfo(info)
-                }
-            }
         }
 
         private func preferredBuildStrategy(

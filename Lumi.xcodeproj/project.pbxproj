@@ -788,7 +788,6 @@
 				F5A9DB4A2F7635F600A47D9C /* Embed Libraries */,
 				F5A9DB4E2F763C8700A47D9C /* CopyFiles */,
 				C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */,
-				C0D3E0112FB1000000A11002 /* Embed Editor Preview Host */,
 				D1A0B00330B1000100AAA201 /* Embed Editor Hot Preview Host */,
 			);
 			buildRules = (
@@ -1216,30 +1215,6 @@
 			shellPath = /bin/zsh;
 			shellScript = "\"$SRCROOT/scripts/embed-swiftui-preview-host.sh\"\n";
 		};
-		C0D3E0112FB1000000A11002 /* Embed Editor Preview Host */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Packages/LumiPreviewKit/Package.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/main.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewKit/Host/PreviewHostMessages.swift",
-				"$(SRCROOT)/scripts/embed-editor-preview-host.sh",
-			);
-			name = "Embed Editor Preview Host";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiPreviewHostApp",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/zsh;
-			shellScript = "\"$SRCROOT/scripts/embed-editor-preview-host.sh\"\n";
-		};
 		D1A0B00330B1000100AAA201 /* Embed Editor Hot Preview Host */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -1251,7 +1226,7 @@
 			inputPaths = (
 				"$(SRCROOT)/Packages/LumiPreviewKit/Package.swift",
 				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiHotPreviewHostApp/main.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewKit/HotPreview/HotRenderResponse.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewKit/Frames/HotRenderResponse.swift",
 				"$(SRCROOT)/scripts/embed-editor-hot-preview-host.sh",
 			);
 			name = "Embed Editor Hot Preview Host";

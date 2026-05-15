@@ -8,22 +8,29 @@ SwiftUI preview discovery, build planning, rendering, and host process support f
 
 - Products:
   - `LumiPreviewKit`
-  - `LumiPreviewHostApp`
+  - `LumiHotPreviewHostApp`
 - Platform: macOS 14+
 - Swift tools: 6.0
 
 ## Source Layout
 
-- `Sources/LumiPreviewKit`: preview discovery, build planning, compilers, host process management, refresh policies, session state, and display models.
-- `Sources/LumiPreviewHostApp`: executable host app that renders preview entries and communicates over stdio.
+- `Sources/LumiPreviewKit/Core`: shared preview models, errors, session protocol, and render configuration.
+- `Sources/LumiPreviewKit/Scanner`: Swift source scanning for `#Preview`.
+- `Sources/LumiPreviewKit/Compiler`: SwiftPM and Xcode compiler adapters plus build planning.
+- `Sources/LumiPreviewKit/Build`: preview entry generation, incremental build pipeline, syntax checks, and build caches.
+- `Sources/LumiPreviewKit/Host`: hot preview host process management and host protocol messages.
+- `Sources/LumiPreviewKit/Frames`: image loading, frame transport, and shared-memory frame storage.
+- `Sources/LumiPreviewKit/LiveCanvas`: live canvas window/frame coordination helpers.
+- `Sources/LumiPreviewKit/Runtime`: `HotPreviewEngine` runtime orchestration and prewarm ranking.
+- `Sources/LumiHotPreviewHostApp`: executable hot preview host app that renders preview entries and communicates over stdio.
 
 ## Main Concepts
 
 - `PreviewScanner`: finds `#Preview` declarations.
 - `BuildPlanner`: chooses SwiftPM or Xcode build strategy.
 - `SPMCompiler` and `XcodeCompiler`: compile preview artifacts.
-- `PreviewHostProcess`: manages the render host lifecycle.
-- `LivePreviewEngine`: coordinates discovery, compile, launch, refresh, capture, and live preview updates.
+- `HotPreviewHostProcess`: manages the hot preview host lifecycle.
+- `HotPreviewEngine`: coordinates discovery, compile, launch, refresh, capture, and live preview updates.
 
 ## Testing
 

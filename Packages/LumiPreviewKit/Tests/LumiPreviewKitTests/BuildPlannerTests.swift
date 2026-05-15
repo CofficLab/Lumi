@@ -55,21 +55,21 @@ struct BuildPlannerTests {
         #expect(targetName == "LumiUI")
     }
 
-    @Test("LumiPreviewHostApp 可执行 target 能被正确识别")
+    @Test("LumiHotPreviewHostApp 可执行 target 能被正确识别")
     func planHostAppTarget() {
         let planner = LumiPreviewPackage.BuildPlanner()
         let fileURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .appendingPathComponent("Sources/LumiPreviewHostApp/main.swift")
+            .appendingPathComponent("Sources/LumiHotPreviewHostApp/main.swift")
         let result = planner.plan(for: fileURL)
 
         guard case let .spm(_, targetName) = result else {
             Issue.record("Expected .spm strategy for HostApp file, got \(String(describing: result))")
             return
         }
-        #expect(targetName == "LumiPreviewHostApp")
+        #expect(targetName == "LumiHotPreviewHostApp")
     }
 
     @Test("Xcode 项目中的文件 → 返回 .xcode 策略")

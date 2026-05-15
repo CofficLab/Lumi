@@ -8,7 +8,7 @@ public extension LumiPreviewPackage {
 /// - Canvas 可见性和帧矩形跟踪
 /// - 根据综合条件决定是否显示/隐藏 Live 窗口
 @MainActor
-final class EditorPreviewLiveCanvasService {
+final class LiveCanvasService {
 
     /// Canvas 是否可见。
     public private(set) var isLiveCanvasVisible: Bool = false

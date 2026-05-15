@@ -66,7 +66,7 @@ struct PreviewDisplayModeTests {
 
     @Test("PreviewPerformanceMetrics 记录 build、load 和 refresh 指标")
     func performanceMetricsRecordsBuildLoadAndRefresh() async {
-        let session = LumiPreviewPackage.LivePreviewSession(
+        let session = LumiPreviewPackage.HotPreviewSession(
             discovery: LumiPreviewPackage.PreviewDiscovery(
                 id: "test-performance",
                 title: "Test",
@@ -89,9 +89,9 @@ struct PreviewDisplayModeTests {
 
     // MARK: - Session Display Mode
 
-    @Test("LivePreviewSession 默认显示模式为 image")
+    @Test("HotPreviewSession 默认显示模式为 image")
     func sessionDefaultDisplayModeIsImage() async {
-        let session = LumiPreviewPackage.LivePreviewSession(
+        let session = LumiPreviewPackage.HotPreviewSession(
             discovery: LumiPreviewPackage.PreviewDiscovery(
                 id: "test-1",
                 title: "Test",
@@ -106,7 +106,7 @@ struct PreviewDisplayModeTests {
 
     @Test("切换显示模式后 session 状态正确变化")
     func switchDisplayModeChangesSessionState() async {
-        let session = LumiPreviewPackage.LivePreviewSession(
+        let session = LumiPreviewPackage.HotPreviewSession(
             discovery: LumiPreviewPackage.PreviewDiscovery(
                 id: "test-2",
                 title: "Test",
@@ -130,7 +130,7 @@ struct PreviewDisplayModeTests {
 
     @Test("markLivePreviewAvailable 设置 live 状态为 available")
     func markLivePreviewAvailableSetsState() async {
-        let session = LumiPreviewPackage.LivePreviewSession(
+        let session = LumiPreviewPackage.HotPreviewSession(
             discovery: LumiPreviewPackage.PreviewDiscovery(
                 id: "test-3",
                 title: "Test",
@@ -149,7 +149,7 @@ struct PreviewDisplayModeTests {
 
     @Test("fallbackToImageMode 降级到 image 并记录原因")
     func fallbackToImageModeDegradesCorrectly() async {
-        let session = LumiPreviewPackage.LivePreviewSession(
+        let session = LumiPreviewPackage.HotPreviewSession(
             discovery: LumiPreviewPackage.PreviewDiscovery(
                 id: "test-4",
                 title: "Test",
@@ -174,7 +174,7 @@ struct PreviewDisplayModeTests {
 
     @Test("setLivePreviewInfo 更新完整信息")
     func setLivePreviewInfoUpdatesFullState() async {
-        let session = LumiPreviewPackage.LivePreviewSession(
+        let session = LumiPreviewPackage.HotPreviewSession(
             discovery: LumiPreviewPackage.PreviewDiscovery(
                 id: "test-5",
                 title: "Test",
@@ -196,9 +196,9 @@ struct PreviewDisplayModeTests {
         #expect(await session.livePreviewInfo.hostProcessID == 789)
     }
 
-    @Test("markLivePreviewAvailable 不会把 running 降级为 available")
-    func markLivePreviewAvailablePreservesRunningState() async {
-        let session = LumiPreviewPackage.LivePreviewSession(
+    @Test("markLivePreviewRunning 设置 running 状态")
+    func markLivePreviewRunningSetsState() async {
+        let session = LumiPreviewPackage.HotPreviewSession(
             discovery: LumiPreviewPackage.PreviewDiscovery(
                 id: "test-running",
                 title: "Test",
@@ -208,8 +208,7 @@ struct PreviewDisplayModeTests {
             )
         )
 
-        await session.setLivePreviewInfo(LumiPreviewPackage.LivePreviewInfo(state: .running, hostWindowNumber: 10, hostProcessID: 20))
-        await session.markLivePreviewAvailable(windowNumber: 11)
+        await session.markLivePreviewRunning(windowNumber: 11, hostProcessID: 20)
 
         #expect(await session.livePreviewInfo.state == .running)
         #expect(await session.livePreviewInfo.hostWindowNumber == 11)
@@ -264,7 +263,7 @@ struct PreviewDisplayModeTests {
             lineNumber: 4,
             endLineNumber: 6
         )
-        let session = LumiPreviewPackage.LivePreviewSession(discovery: original)
+        let session = LumiPreviewPackage.HotPreviewSession(discovery: original)
 
         await session.updateDiscovery(updated)
         let discovery = await session.discovery
@@ -470,368 +469,6 @@ struct PreviewDisplayModeTests {
         #expect(!child.isVisible)
     }
 
-    // MARK: - Integration: Live preview lifecycle through host process
-
-    @Test("完整的 loadDylib → startLive → show → hide → stop 管线")
-    func livePreviewLifecycle() async throws {
-        let executableURL = try buildHostExecutable()
-        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
-        defer {
-            Task { await connection.terminate() }
-        }
-
-        // 先加载一个带 NSView 的 dylib
-        let dylibURL = try await buildSignedDylib(
-            source: #"""
-            import AppKit
-            import Darwin
-            import SwiftUI
-
-            @_cdecl("lumi_preview_entry")
-            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
-                let json = #"{"title":"Lifecycle Test","subtitle":"NSHostingView"}"#
-                return strdup(json).map { UnsafePointer($0) }
-            }
-
-            @_cdecl("lumi_preview_make_nsview")
-            public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
-                let view = NSHostingView(rootView: AnyView(Text("Live Preview").padding()))
-                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
-                return Unmanaged.passRetained(view).toOpaque()
-            }
-            """#
-        )
-
-        let loadResponse = try await connection.requestLoadPreviewEntry(
-            at: dylibURL,
-            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
-        )
-        #expect(loadResponse.success)
-        #expect(loadResponse.livePreviewEnabled == true)
-
-        // startLivePreview
-        let startResponse = try await connection.requestStartLivePreview()
-        #expect(startResponse.success)
-        #expect(startResponse.livePreviewEnabled == true)
-        #expect(startResponse.liveWindowNumber != nil)
-
-        // updateLiveFrame
-        let frameResponse = try await connection.requestUpdateLiveFrame(
-            x: 100, y: 200, width: 400, height: 300, scale: 2
-        )
-        #expect(frameResponse.success)
-
-        // showLivePreview
-        let showResponse = try await connection.requestShowLivePreview()
-        #expect(showResponse.success)
-
-        // hideLivePreview
-        let hideResponse = try await connection.requestHideLivePreview()
-        #expect(hideResponse.success)
-
-        // stopLivePreview
-        let stopResponse = try await connection.requestStopLivePreview()
-        #expect(stopResponse.success)
-
-        await connection.terminate()
-    }
-
-    @Test("未加载 NSView entry 时 startLivePreview 返回失败")
-    func startLivePreviewFailsWithoutNSViewEntry() async throws {
-        let executableURL = try buildHostExecutable()
-        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
-        defer {
-            Task { await connection.terminate() }
-        }
-
-        // 只加载 descriptor entry（不包含 NSView）
-        let dylibURL = try await buildSignedDylib(
-            source: #"""
-            import Darwin
-
-            @_cdecl("lumi_preview_entry")
-            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
-                let json = #"{"title":"Descriptor Only"}"#
-                return strdup(json).map { UnsafePointer($0) }
-            }
-            """#
-        )
-
-        _ = try await connection.requestLoadPreviewEntry(
-            at: dylibURL,
-            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
-        )
-
-        // startLivePreview 应该失败
-        do {
-            _ = try await connection.requestStartLivePreview()
-            Issue.record("Expected startLivePreview to fail without NSView entry")
-        } catch {
-            // 预期失败
-        }
-
-        await connection.terminate()
-    }
-
-    @Test("reloadLivePreview 加载新 dylib 替换 root view")
-    func reloadLivePreviewReplacesRootView() async throws {
-        let executableURL = try buildHostExecutable()
-        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
-        defer {
-            Task { await connection.terminate() }
-        }
-
-        // 初始加载
-        let initialDylibURL = try await buildSignedDylib(
-            source: #"""
-            import AppKit
-            import Darwin
-            import SwiftUI
-
-            @_cdecl("lumi_preview_entry")
-            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
-                let json = #"{"title":"Initial View"}"#
-                return strdup(json).map { UnsafePointer($0) }
-            }
-
-            @_cdecl("lumi_preview_make_nsview")
-            public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
-                let view = NSHostingView(rootView: AnyView(Text("Initial").padding()))
-                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
-                return Unmanaged.passRetained(view).toOpaque()
-            }
-            """#
-        )
-
-        let initialResponse = try await connection.requestLoadPreviewEntry(
-            at: initialDylibURL,
-            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
-        )
-        #expect(initialResponse.livePreviewEnabled == true)
-
-        // 启动 live
-        let startResponse = try await connection.requestStartLivePreview()
-        #expect(startResponse.success)
-
-        // reload
-        let updatedDylibURL = try await buildSignedDylib(
-            source: #"""
-            import AppKit
-            import Darwin
-            import SwiftUI
-
-            @_cdecl("lumi_preview_entry")
-            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
-                let json = #"{"title":"Updated View"}"#
-                return strdup(json).map { UnsafePointer($0) }
-            }
-
-            @_cdecl("lumi_preview_make_nsview")
-            public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
-                let view = NSHostingView(rootView: AnyView(Text("Updated").padding()))
-                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
-                return Unmanaged.passRetained(view).toOpaque()
-            }
-            """#
-        )
-
-        let reloadResponse = try await connection.requestReloadLivePreview(
-            at: updatedDylibURL,
-            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
-        )
-        #expect(reloadResponse.success)
-        #expect(reloadResponse.livePreviewEnabled == true)
-        #expect(reloadResponse.message?.contains("Updated View") == true)
-        #expect(reloadResponse.liveWindowNumber == startResponse.liveWindowNumber)
-
-        let showAfterReloadResponse = try await connection.requestShowLivePreview()
-        #expect(showAfterReloadResponse.success)
-        #expect(showAfterReloadResponse.livePreviewEnabled == true)
-        #expect(showAfterReloadResponse.liveWindowNumber == startResponse.liveWindowNumber)
-
-        await connection.terminate()
-    }
-
-    @Test("hide 后再次 show 复用同一 live window 且仍可刷新")
-    func hideAndShowLivePreviewReusesWindow() async throws {
-        let executableURL = try buildHostExecutable()
-        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
-        defer {
-            Task { await connection.terminate() }
-        }
-
-        let dylibURL = try await buildSignedDylib(
-            source: #"""
-            import AppKit
-            import Darwin
-            import SwiftUI
-
-            @_cdecl("lumi_preview_entry")
-            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
-                let json = #"{"title":"Hide Show Reuse"}"#
-                return strdup(json).map { UnsafePointer($0) }
-            }
-
-            @_cdecl("lumi_preview_make_nsview")
-            public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
-                let view = NSHostingView(rootView: AnyView(Text("Reusable Live").padding()))
-                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
-                return Unmanaged.passRetained(view).toOpaque()
-            }
-            """#
-        )
-
-        let loadResponse = try await connection.requestLoadPreviewEntry(
-            at: dylibURL,
-            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
-        )
-        #expect(loadResponse.success)
-        #expect(loadResponse.livePreviewEnabled == true)
-
-        let startResponse = try await connection.requestStartLivePreview()
-        #expect(startResponse.success)
-        #expect(startResponse.liveWindowNumber != nil)
-
-        let firstShowResponse = try await connection.requestShowLivePreview()
-        #expect(firstShowResponse.success)
-        #expect(firstShowResponse.liveWindowNumber == startResponse.liveWindowNumber)
-
-        let hideResponse = try await connection.requestHideLivePreview()
-        #expect(hideResponse.success)
-        #expect(hideResponse.liveWindowNumber == startResponse.liveWindowNumber)
-
-        let secondShowResponse = try await connection.requestShowLivePreview()
-        #expect(secondShowResponse.success)
-        #expect(secondShowResponse.liveWindowNumber == startResponse.liveWindowNumber)
-
-        let refreshResponse = try await connection.requestRefresh()
-        #expect(refreshResponse.success)
-        #expect(refreshResponse.message == "Refreshed Hide Show Reuse")
-        #expect(refreshResponse.previewImagePNGBase64 != nil)
-    }
-
-    @Test("stopLivePreview 后旧 live window 不能再被 show 回来")
-    func stoppedLivePreviewCannotBeShownAgain() async throws {
-        let executableURL = try buildHostExecutable()
-        let connection = try await LumiPreviewPackage.PreviewHostProcess().launch(executableURL: executableURL)
-        defer {
-            Task { await connection.terminate() }
-        }
-
-        let dylibURL = try await buildSignedDylib(
-            source: #"""
-            import AppKit
-            import Darwin
-            import SwiftUI
-
-            @_cdecl("lumi_preview_entry")
-            public func lumiPreviewEntry() -> UnsafePointer<CChar>? {
-                let json = #"{"title":"Stop Removes Window"}"#
-                return strdup(json).map { UnsafePointer($0) }
-            }
-
-            @_cdecl("lumi_preview_make_nsview")
-            public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
-                let view = NSHostingView(rootView: AnyView(Text("Stop").padding()))
-                view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
-                return Unmanaged.passRetained(view).toOpaque()
-            }
-            """#
-        )
-
-        _ = try await connection.requestLoadPreviewEntry(
-            at: dylibURL,
-            symbolName: LumiPreviewPackage.PreviewEntryBuilder.symbolName
-        )
-        _ = try await connection.requestStartLivePreview()
-        _ = try await connection.requestShowLivePreview()
-
-        let stopResponse = try await connection.requestStopLivePreview()
-        #expect(stopResponse.success)
-
-        do {
-            _ = try await connection.requestShowLivePreview()
-            Issue.record("Expected showLivePreview to fail after stopLivePreview")
-        } catch LumiPreviewPackage.PreviewError.runtimeCrashed(let message) {
-            #expect(message.contains("No live window to show"))
-        } catch {
-            Issue.record("Expected runtimeCrashed after stopLivePreview, got \(error)")
-        }
-    }
-
-    // MARK: - Helpers
-
-    private func buildHostExecutable() throws -> URL {
-        let packageDirectory = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let scratchPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewDisplayMode-Host-\(UUID().uuidString)", isDirectory: true)
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = [
-            "swift", "build",
-            "--package-path", packageDirectory.path,
-            "--scratch-path", scratchPath.path,
-            "--product", "LumiPreviewHostApp"
-        ]
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        try process.run()
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            throw LumiPreviewPackage.PreviewError.compilationFailed(message: output)
-        }
-
-        guard let executableURL = findHostExecutable(in: scratchPath) else {
-            throw LumiPreviewPackage.PreviewError.buildProductNotFound
-        }
-
-        return executableURL
-    }
-
-    private func findHostExecutable(in scratchPath: URL) -> URL? {
-        guard let enumerator = FileManager.default.enumerator(
-            at: scratchPath,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return nil
-        }
-
-        for case let url as URL in enumerator where url.lastPathComponent == "LumiPreviewHostApp" {
-            if FileManager.default.isExecutableFile(atPath: url.path) {
-                return url
-            }
-        }
-
-        return nil
-    }
-
-    private func buildSignedDylib(source: String) async throws -> URL {
-        let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiDisplayModeTest-Dylib-\(UUID().uuidString)", isDirectory: true)
-        let sourceFile = directory.appendingPathComponent("PreviewPatch.swift")
-        let objectFile = directory.appendingPathComponent("PreviewPatch.o")
-
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try source.write(to: sourceFile, atomically: true, encoding: .utf8)
-
-        let compiler = LumiPreviewPackage.IncrementalCompiler()
-        let compiledObject = try await compiler.compile(
-            fileURL: sourceFile,
-            compileCommand: "/usr/bin/env swiftc -c '\(sourceFile.path)' -o '\(objectFile.path)'"
-        )
-        let dylibURL = try await compiler.link(objectFileURL: compiledObject)
-        try await compiler.codesign(dylibURL: dylibURL)
-
-        return dylibURL
-    }
 }
 
 private extension PreviewDisplayModeTests {

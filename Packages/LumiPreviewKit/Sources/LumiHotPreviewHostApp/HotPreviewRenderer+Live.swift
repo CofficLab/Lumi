@@ -41,7 +41,7 @@ extension HotPreviewRenderer {
             return LumiPreviewPackage.RenderResponse(success: false, message: "No live window to update.")
         }
 
-        let frame = LumiPreviewPackage.LivePreviewFrameAlignment.pixelAlignedFrame(
+        let frame = LumiPreviewPackage.PreviewFrameAlignment.pixelAlignedFrame(
             NSRect(x: x, y: y, width: width, height: height),
             scale: scale
         )
