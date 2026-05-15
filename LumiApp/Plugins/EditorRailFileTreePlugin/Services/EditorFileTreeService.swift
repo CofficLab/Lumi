@@ -3,7 +3,7 @@ import SwiftUI
 import MagicKit
 import AppKit
 
-/// AgentEditor 文件树文件服务
+/// Editor Rail 文件树文件服务
 /// 负责处理文件相关的无状态逻辑：图标、名称、过滤、排序等
 enum EditorFileTreeService {
     /// 过滤并排序目录内容

@@ -1,9 +1,9 @@
 import Foundation
 
-/// AgentEditor 文件树本地存储
+/// Editor Rail 文件树本地存储
 ///
-/// 负责持久化文件树的配置和设置项。
-/// 存储位置：AppConfig.getDBFolderURL()/AgentEditorFileTree/settings.plist
+/// 负责持久化文件树的展开状态和最近项目路径。
+/// 存储位置沿用旧目录：AppConfig.getDBFolderURL()/AgentEditorFileTree/settings.plist
 final class EditorFileTreeStore: @unchecked Sendable {
 
     // MARK: - Singleton

@@ -1,7 +1,7 @@
 import MagicKit
 import SwiftUI
 
-/// 文件树节点视图 - 完全独立实现，无外部依赖
+/// 文件树节点视图，负责单个文件或目录行的展示和交互
 struct EditorFileTreeNodeView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     let url: URL
@@ -27,6 +27,12 @@ struct EditorFileTreeNodeView: View {
 
     /// 本地子节点缓存
     @State private var children: [URL] = []
+
+    /// 当前目录是否正在加载子节点
+    @State private var isLoadingChildren: Bool = false
+
+    /// 当前目录是否已经完成过至少一次子节点加载
+    @State private var hasLoadedChildren: Bool = false
 
     /// 当前目录加载任务
     @State private var loadChildrenTask: Task<Void, Never>?
@@ -168,19 +174,26 @@ struct EditorFileTreeNodeView: View {
                 Button(String(localized: "Cancel", table: "EditorRailFileTree"), role: .cancel) {}
             } message: { Text(String(localized: "Enter the new name for this item.", table: "EditorRailFileTree")) }
 
-            // 子节点
-            if isDirectory && isExpanded && !children.isEmpty {
-                VStack(spacing: 2) {
-                    ForEach(children, id: \.self) { childURL in
-                        EditorFileTreeNodeView(
-                            url: childURL,
-                            depth: depth + 1,
-                            selectedURL: selectedURL,
-                            onSelect: onSelect,
-                            refreshToken: refreshToken,
-                            projectRootPath: projectRootPath,
-                            onExpansionChange: onExpansionChange
-                        )
+            if isDirectory && isExpanded {
+                if children.isEmpty {
+                    if isLoadingChildren {
+                        EditorFileTreeLoadingView(depth: depth + 1)
+                    } else if hasLoadedChildren {
+                        EditorFileTreeEmptyView(depth: depth + 1)
+                    }
+                } else {
+                    VStack(spacing: 2) {
+                        ForEach(children, id: \.self) { childURL in
+                            EditorFileTreeNodeView(
+                                url: childURL,
+                                depth: depth + 1,
+                                selectedURL: selectedURL,
+                                onSelect: onSelect,
+                                refreshToken: refreshToken,
+                                projectRootPath: projectRootPath,
+                                onExpansionChange: onExpansionChange
+                            )
+                        }
                     }
                 }
             }
@@ -329,9 +342,13 @@ private struct FileTreeIconMetadata {
 extension EditorFileTreeNodeView {
     // MARK: - Expansion Persistence
 
-    /// 当前节点相对于项目根目录的路径
+    /// 当前节点相对于项目根目录的路径，保留开头的 "/" 以兼容已持久化的展开状态。
     private var relativePath: String {
-        url.path.replacingOccurrences(of: projectRootPath, with: "")
+        guard !projectRootPath.isEmpty else { return "" }
+        let rootPath = URL(fileURLWithPath: projectRootPath).standardizedFileURL.path
+        let nodePath = url.standardizedFileURL.path
+        guard nodePath == rootPath || nodePath.hasPrefix(rootPath + "/") else { return nodePath }
+        return String(nodePath.dropFirst(rootPath.count))
     }
 
     /// 将当前展开/折叠状态持久化到 store
@@ -355,6 +372,7 @@ extension EditorFileTreeNodeView {
     private func loadChildren() {
         let currentURL = url
         loadChildrenTask?.cancel()
+        isLoadingChildren = true
         loadChildrenTask = Task { @MainActor in
             do {
                 let sorted = try await Task.detached(priority: .userInitiated) {
@@ -362,9 +380,13 @@ extension EditorFileTreeNodeView {
                 }.value
                 guard !Task.isCancelled else { return }
                 children = sorted
+                hasLoadedChildren = true
+                isLoadingChildren = false
             } catch {
                 guard !Task.isCancelled else { return }
                 children = []
+                hasLoadedChildren = true
+                isLoadingChildren = false
             }
         }
     }

@@ -14,3 +14,8 @@ struct EditorFileTreeNoProjectView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
+
+#Preview {
+    EditorFileTreeNoProjectView()
+        .frame(width: 200, height: 300)
+}

@@ -2,15 +2,15 @@ import Foundation
 import os
 import MagicKit
 
-/// AgentEditor 文件树目录变化监听器
+/// Editor Rail 文件树目录变化监听器
 ///
 /// 使用 DispatchSource 监控已展开目录的文件系统变化，
 /// 检测到变化后通过回调通知上层进行刷新。
 ///
 /// 设计原则：
 /// - 仅监听当前已展开的目录（懒监听，避免不必要的系统开销）
-/// - 同一目录短时间内多次事件会合并（防抖）
-/// - 所有公开方法线程安全
+/// - 文件系统事件会立即转发，由上层协调器合并高频刷新
+/// - 所有公开方法通过串行队列保护内部状态
 final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
 
     // MARK: - Types
@@ -36,23 +36,14 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
     /// 目录变化回调
     private let onChange: OnDirectoryChanged
 
-    /// 防抖任务：同一个目录短时间内可能触发多次回调，合并为一次
-    private var pendingRefreshes: [String: Task<Void, Never>] = [:]
-
-    /// 防抖间隔（秒）
-    private let debounceInterval: UInt64
-
     /// 操作队列，确保 watches 字典的读写安全
     private let queue = DispatchQueue(label: "EditorFileTreeWatcher.queue", qos: .utility)
 
     // MARK: - Init
 
     /// 初始化监听器
-    /// - Parameters:
-    ///   - debounceInterval: 防抖间隔（纳秒），默认 0.3 秒
-    ///   - onChange: 目录变化回调
-    init(debounceInterval: UInt64 = 300_000_000, onChange: @escaping @Sendable (URL) -> Void) {
-        self.debounceInterval = debounceInterval
+    /// - Parameter onChange: 目录变化回调
+    init(onChange: @escaping @Sendable (URL) -> Void) {
         self.onChange = onChange
     }
 
@@ -110,8 +101,6 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
             guard let watch = watches.removeValue(forKey: key) else { return }
             watch.source.cancel()
             Darwin.close(watch.fileDescriptor)
-            pendingRefreshes[key]?.cancel()
-            pendingRefreshes.removeValue(forKey: key)
 
             if Self.verbose {
                 Self.logger.info("\(Self.t)🛑 停止监控目录：\(url.lastPathComponent)")
@@ -127,10 +116,6 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
                 Darwin.close(watch.fileDescriptor)
             }
             watches.removeAll()
-            for (_, task) in pendingRefreshes {
-                task.cancel()
-            }
-            pendingRefreshes.removeAll()
 
             if Self.verbose {
                 Self.logger.info("\(Self.t)🛑 已停止所有目录监控")
@@ -154,8 +139,6 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
                     watch.source.cancel()
                     Darwin.close(watch.fileDescriptor)
                 }
-                pendingRefreshes[path]?.cancel()
-                pendingRefreshes.removeValue(forKey: path)
             }
 
             // 添加新的监控
@@ -182,23 +165,6 @@ final class EditorFileTreeWatcher: @unchecked Sendable, SuperLog {
                 source.resume()
                 watches[path] = Watch(fileDescriptor: fd, source: source)
             }
-        }
-    }
-
-    // MARK: - Debounce
-
-    /// 带防抖的刷新通知
-    ///
-    /// 同一个目录在短时间内可能触发多次文件系统事件，
-    /// 使用防抖机制合并为一次回调。
-    /// - Parameter url: 发生变化的目录 URL
-    func notifyChanged(url: URL) {
-        let key = url.standardizedFileURL.path
-        pendingRefreshes[key]?.cancel()
-
-        pendingRefreshes[key] = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: debounceInterval)
-            onChange(url)
         }
     }
 

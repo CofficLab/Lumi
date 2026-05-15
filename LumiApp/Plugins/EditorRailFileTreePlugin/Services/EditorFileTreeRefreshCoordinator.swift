@@ -8,11 +8,12 @@ private final class WeakBox<T: AnyObject>: @unchecked Sendable {
     init(_ value: T? = nil) { self.value = value }
 }
 
-/// AgentEditor 文件树刷新协调器
+/// Editor Rail 文件树刷新协调器
 ///
 /// 作为 EditorFileTreeWatcher 和 SwiftUI 视图之间的桥梁：
 /// - 接收 watcher 的文件系统变化通知
 /// - 跟踪当前已展开的目录列表
+/// - 合并短时间内的文件系统事件
 /// - 通过刷新令牌驱动 SwiftUI 视图重新加载数据
 ///
 /// 使用方式：
