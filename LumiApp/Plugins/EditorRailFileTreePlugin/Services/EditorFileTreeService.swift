@@ -46,52 +46,7 @@ enum EditorFileTreeService {
     /// - Parameter fileExtension: 文件扩展名
     /// - Returns: 图标 SF Symbol 名称
     static func getFileIcon(fileExtension: String) -> String {
-        let ext = fileExtension.lowercased()
-
-        switch ext {
-        // 源代码文件
-        case "swift":
-            return "swift"
-        case "m", "mm", "h":
-            return "c.circle"
-
-        // 配置文件
-        case "json":
-            return "curlybraces"
-        case "yaml", "yml":
-            return "list.bullet.indent"
-        case "xml":
-            return "chevron.left.forwardslash.chevron.right"
-        case "plist":
-            return "gearshape"
-        case "xcworkspacedata":
-            return "square.stack.3d.up"
-        case "xcodeproj":
-            return "hammer"
-
-        // 图片资源
-        case "png", "jpg", "jpeg", "gif", "webp", "svg", "icns", "ico":
-            return "photo"
-        case "pdf":
-            return "doc.richtext"
-
-        // 文档
-        case "md", "markdown":
-            return "doc.text"
-        case "txt":
-            return "doc.plaintext"
-        case "rtf":
-            return "doc.richtext"
-
-        // 其他
-        case "sh":
-            return "terminal"
-        case "gitignore":
-            return "arrow.triangle.branch"
-
-        default:
-            return "doc"
-        }
+        LumiDefaultFileIconThemeContributor.systemImageName(forFileExtension: fileExtension) ?? "doc"
     }
 
     /// 获取文件显示名称

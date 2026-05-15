@@ -20,6 +20,7 @@ actor ThemeAuroraPlugin: SuperPlugin {
                 appTheme: AuroraTheme(),
                 editorThemeId: "aurora",
                 editorThemeContributor: AuroraSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "aurora-file-icons", displayName: "Aurora File Icons"),
                 order: 20
             )
         ]

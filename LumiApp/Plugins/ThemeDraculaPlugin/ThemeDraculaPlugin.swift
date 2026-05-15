@@ -20,6 +20,7 @@ actor ThemeDraculaPlugin: SuperPlugin {
                 appTheme: DraculaTheme(),
                 editorThemeId: "dracula",
                 editorThemeContributor: DraculaSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "dracula-file-icons", displayName: "Dracula File Icons"),
                 order: 105
             )
         ]

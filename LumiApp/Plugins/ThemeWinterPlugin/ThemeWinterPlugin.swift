@@ -20,6 +20,7 @@ actor ThemeWinterPlugin: SuperPlugin {
                 appTheme: WinterTheme(),
                 editorThemeId: "winter",
                 editorThemeContributor: WinterSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "winter-file-icons", displayName: "Winter File Icons"),
                 order: 80
             )
         ]

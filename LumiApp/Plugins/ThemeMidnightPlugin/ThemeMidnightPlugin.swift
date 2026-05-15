@@ -20,6 +20,7 @@ actor ThemeMidnightPlugin: SuperPlugin {
                 appTheme: MidnightTheme(),
                 editorThemeId: "midnight",
                 editorThemeContributor: MidnightSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "midnight-file-icons", displayName: "Midnight File Icons"),
                 order: 10
             )
         ]

@@ -55,8 +55,8 @@ struct EditorFileTreeNodeView: View {
     /// 是否文件夹（启动时缓存，避免 body 求值时反复调 FileManager）
     private let isDirectory: Bool
 
-    /// 非目录文件图标（启动时缓存，避免 body 求值时反复调 FileManager）
-    private let fileIconName: String
+    /// 文件图标解析元数据（启动时缓存，避免 body 求值时反复调 FileManager）
+    private let iconMetadata: FileTreeIconMetadata
 
     /// 文件名（不含路径）
     private var fileName: String {
@@ -84,7 +84,11 @@ struct EditorFileTreeNodeView: View {
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
         self.isDirectory = EditorFileTreeService.isDirectory(url)
-        self.fileIconName = EditorFileTreeService.getFileIcon(fileExtension: url.pathExtension)
+        self.iconMetadata = FileTreeIconMetadata(
+            fileName: url.lastPathComponent,
+            fileExtension: url.pathExtension.lowercased(),
+            isDirectory: self.isDirectory
+        )
 
         // 从 store 恢复展开状态
         if !projectRootPath.isEmpty {
@@ -111,7 +115,7 @@ struct EditorFileTreeNodeView: View {
                     Color.clear.frame(width: 12)
                 }
 
-                Image(systemName: iconName)
+                fileIconView(resolvedIcon)
                     .font(.system(size: 12))
                     .foregroundColor(isDirectory ? theme.accentColors().primary : theme.workspaceSecondaryTextColor())
                     .frame(width: 16)
@@ -266,11 +270,35 @@ struct EditorFileTreeNodeView: View {
 
     // MARK: - View Helpers
 
-    private var iconName: String {
-        if isDirectory {
-            return isExpanded ? "folder.fill" : "folder"
+    private var resolvedIcon: LumiFileIcon {
+        let context = LumiFileIconContext(
+            url: url,
+            fileName: iconMetadata.fileName,
+            fileExtension: iconMetadata.fileExtension,
+            isDirectory: iconMetadata.isDirectory,
+            isExpanded: isExpanded,
+            projectRootPath: projectRootPath
+        )
+        let defaultContributor = LumiDefaultFileIconThemeContributor()
+        if let icon = themeVM.activeFileIconTheme?.icon(for: context) {
+            return icon
         }
-        return fileIconName
+        if let icon = defaultContributor.icon(for: context) {
+            return icon
+        }
+        return iconMetadata.isDirectory
+            ? defaultContributor.defaultFolderIcon(isExpanded: isExpanded)
+            : defaultContributor.defaultFileIcon()
+    }
+
+    @ViewBuilder
+    private func fileIconView(_ icon: LumiFileIcon) -> some View {
+        switch icon {
+        case .systemImage(let name):
+            Image(systemName: name)
+        case .assetImage(let name, let bundle):
+            Image(name, bundle: bundle)
+        }
     }
 
     fileprivate func rowBackground(isSelected: Bool) -> Color {
@@ -281,6 +309,12 @@ struct EditorFileTreeNodeView: View {
             return isHovering ? theme.workspaceTextColor().opacity(0.06) : Color.clear
         }
     }
+}
+
+private struct FileTreeIconMetadata {
+    let fileName: String
+    let fileExtension: String
+    let isDirectory: Bool
 }
 
 // MARK: - Actions

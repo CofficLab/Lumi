@@ -20,6 +20,7 @@ actor ThemeSpringPlugin: SuperPlugin {
                 appTheme: SpringTheme(),
                 editorThemeId: "spring",
                 editorThemeContributor: SpringSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "spring-file-icons", displayName: "Spring File Icons"),
                 order: 50
             )
         ]

@@ -20,6 +20,7 @@ actor ThemeAutumnPlugin: SuperPlugin {
                 appTheme: AutumnTheme(),
                 editorThemeId: "autumn",
                 editorThemeContributor: AutumnSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "autumn-file-icons", displayName: "Autumn File Icons"),
                 order: 70
             )
         ]
