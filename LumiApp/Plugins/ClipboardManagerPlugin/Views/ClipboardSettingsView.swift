@@ -26,7 +26,7 @@ struct ClipboardSettingsView: View {
                     Text("100").tag(100)
                     Text("500").tag(500)
                     Text("1000").tag(1000)
-                    Text("Unlimited").tag(Int.max)
+                    Text(String(localized: "Unlimited", table: "ClipboardManager")).tag(Int.max)
                 }
                 .onChange(of: historySize) { _, newValue in
                     store.set(newValue, forKey: historySizeKey)
@@ -34,14 +34,14 @@ struct ClipboardSettingsView: View {
             }
             
             Section("Data") {
-                Button("Clear All History") {
+                Button(String(localized: "Clear All History", table: "ClipboardManager")) {
                     Task {
                         await ClipboardStorage.shared.clear()
                     }
                 }
                 .foregroundColor(Color(hex: "FF453A"))
                 
-                Text("All data is stored locally in SwiftData database and will not be uploaded to any server.")
+                Text(String(localized: "All data is stored locally in SwiftData database and will not be uploaded to any server.", table: "ClipboardManager"))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }

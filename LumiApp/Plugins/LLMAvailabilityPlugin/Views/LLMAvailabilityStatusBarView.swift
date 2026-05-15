@@ -40,7 +40,7 @@ struct LLMAvailabilityStatusBarView: View {
 
                 if totalModelCount > 0 {
                     if isChecking {
-                        Text("Checking...")
+                        Text(String(localized: "Checking...", table: "LLMAvailability"))
                             .font(.system(size: 11))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     } else {
@@ -49,7 +49,7 @@ struct LLMAvailabilityStatusBarView: View {
                             .foregroundColor(iconColor)
                     }
                 } else {
-                    Text("No LLM")
+                    Text(String(localized: "No LLM", table: "LLMAvailability"))
                         .font(.system(size: 11))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }

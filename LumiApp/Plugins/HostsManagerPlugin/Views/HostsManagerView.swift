@@ -12,7 +12,7 @@ struct HostsManagerView: View {
             HStack {
                 // Group Filter
                 Picker("Group", selection: $viewModel.selectedGroup) {
-                    Text("All").tag(String?.none)
+                    Text(String(localized: "All", table: "HostsManager")).tag(String?.none)
                     ForEach(viewModel.groups, id: \.self) { group in
                         Text(group).tag(String?.some(group))
                     }
@@ -36,14 +36,14 @@ struct HostsManagerView: View {
                 .frame(width: 100)
                 
                 Menu {
-                    Button("Refresh") {
+                    Button(String(localized: "Refresh", table: "HostsManager")) {
                         Task { await viewModel.loadHosts() }
                     }
                     GlassDivider()
-                    Button("Export Backup...") {
+                    Button(String(localized: "Export Backup...", table: "HostsManager")) {
                         exportHosts()
                     }
-                    Button("Import Backup...") {
+                    Button(String(localized: "Import Backup...", table: "HostsManager")) {
                         importHosts()
                     }
                 } label: {
@@ -198,7 +198,7 @@ struct HostAddView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Add Host Entry")
+            Text(String(localized: "Add Host Entry", table: "HostsManager"))
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             

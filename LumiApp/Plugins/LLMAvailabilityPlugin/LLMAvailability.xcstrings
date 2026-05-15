@@ -45,6 +45,28 @@
         }
       }
     },
+    "Checking...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查中..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查中..."
+          }
+        }
+      }
+    },
     "Detect available LLM providers and models via health checks": {
       "localizations": {
         "en": {
@@ -107,6 +129,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在加載供應商信息…"
+          }
+        }
+      }
+    },
+    "No LLM": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No LLM"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无 LLM"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無 LLM"
           }
         }
       }
