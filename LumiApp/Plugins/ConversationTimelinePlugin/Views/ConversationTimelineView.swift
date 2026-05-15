@@ -5,7 +5,7 @@ import Foundation
 /// 对话时间线状态栏视图
 struct ConversationTimelineView: View, SuperLog {
     nonisolated static let emoji = "📅"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     @EnvironmentObject private var conversationVM: ConversationVM
     @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
@@ -60,11 +60,7 @@ struct ConversationTimelineView: View, SuperLog {
         .onMessageSaved { message, conversationId in
             // 只刷新当前选中对话的消息
             guard conversationId == conversationVM.selectedConversationId else { return }
-            scheduleMessageCountRefresh()
-            
-            if Self.verbose {
-                AppLogger.core.info("\(Self.t)📬 收到消息保存事件，刷新统计: conversationId=\(conversationId)")
-            }
+            scheduleMessageCountRefresh(for: conversationId)
         }
     }
 
@@ -103,12 +99,18 @@ struct ConversationTimelineView: View, SuperLog {
     }
 
     /// 合并高频消息保存事件，避免流式输出期间反复触发主线程数据库查询。
-    private func scheduleMessageCountRefresh() {
+    private func scheduleMessageCountRefresh(for conversationId: UUID) {
         refreshTask?.cancel()
-        refreshTask = Task { @MainActor in
+        refreshTask = Task {
             try? await Task.sleep(nanoseconds: 250_000_000)
             guard !Task.isCancelled else { return }
-            refreshMessageCount()
+            await MainActor.run {
+                guard conversationVM.selectedConversationId == conversationId else { return }
+                if Self.verbose {
+                    AppLogger.core.info("\(Self.t)📬 刷新统计")
+                }
+                refreshMessageCount()
+            }
         }
     }
 }
