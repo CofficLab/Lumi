@@ -1,6 +1,19 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    " cached" : {
+
+    },
+    "%g x %g pt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$g x %2$g pt"
+          }
+        }
+      }
+    },
     "Active: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -23,6 +36,19 @@
           }
         }
       }
+    },
+    "Build %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Build %1$@%2$@"
+          }
+        }
+      }
+    },
+    "Build product was not found." : {
+
     },
     "Connected" : {
       "localizations" : {
@@ -112,6 +138,12 @@
           }
         }
       }
+    },
+    "Failed to load image: %@" : {
+
+    },
+    "File not found: %@" : {
+
     },
     "Hot live preview active" : {
       "extractionState" : "stale",
@@ -468,6 +500,19 @@
         }
       }
     },
+    "Load %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Load %1$@%2$@"
+          }
+        }
+      }
+    },
+    "Loading image..." : {
+
+    },
     "Markdown Preview" : {
       "localizations" : {
         "en" : {
@@ -511,6 +556,9 @@
           }
         }
       }
+    },
+    "No build target found for %@" : {
+
     },
     "No Frame" : {
       "localizations" : {
@@ -578,6 +626,28 @@
         }
       }
     },
+    "Preview powered by LumiHotPreviewKit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview powered by LumiHotPreviewKit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由 LumiHotPreviewKit 驱动的预览"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由 LumiHotPreviewKit 驅動的預覽"
+          }
+        }
+      }
+    },
     "Rebuilding hot preview. Showing the previous frame." : {
       "localizations" : {
         "en" : {
@@ -599,6 +669,9 @@
           }
         }
       }
+    },
+    "Refresh %@" : {
+
     },
     "Refresh failed. Showing the previous frame." : {
       "localizations" : {
@@ -931,6 +1004,9 @@
         }
       }
     },
+    "Timed out after %lld seconds." : {
+
+    },
     "Toggle diagnostics info" : {
       "localizations" : {
         "en" : {
@@ -976,6 +1052,9 @@
         }
       }
     },
+    "Unsupported project type: %@" : {
+
+    },
     "V2" : {
       "localizations" : {
         "en" : {
@@ -994,28 +1073,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "V2"
-          }
-        }
-      }
-    },
-    "Preview powered by LumiHotPreviewKit" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preview powered by LumiHotPreviewKit"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "由 LumiHotPreviewKit 驱动的预览"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "由 LumiHotPreviewKit 驅動的預覽"
           }
         }
       }
