@@ -80,7 +80,7 @@ struct OpenInAntigravityStatusBarView: View {
                 .resizable()
                 .frame(width: 10, height: 10)
 
-            Text("Antigravity")
+            Text(String(localized: "Antigravity", table: "OpenInAntigravityPlugin"))
                 .font(.system(size: 11))
         }
         .padding(.horizontal, 8)
@@ -110,7 +110,7 @@ struct OpenInAntigravityDetailView: View {
                     .resizable()
                     .frame(width: 16, height: 16)
 
-                Text("Antigravity")
+                Text(String(localized: "Antigravity", table: "OpenInAntigravityPlugin"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -121,7 +121,7 @@ struct OpenInAntigravityDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text("打开")
+                        Text(String(localized: "打开", table: "OpenInAntigravityPlugin"))
                     }
                     .font(.system(size: 12))
                 }
@@ -132,7 +132,7 @@ struct OpenInAntigravityDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text("项目")
+                Text(String(localized: "项目", table: "OpenInAntigravityPlugin"))
                     .font(.system(size: 12))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 50, alignment: .leading)
@@ -153,7 +153,7 @@ struct OpenInAntigravityDetailView: View {
                         .font(.system(size: 12))
                 }
                 .buttonStyle(.plain)
-                .help("复制路径")
+                .help(String(localized: "复制路径", table: "OpenInAntigravityPlugin"))
             }
         }
         .padding()

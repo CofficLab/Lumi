@@ -1,75 +1,163 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Open current project in GitOK" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open current project in GitOK"
+  "sourceLanguage": "en",
+  "strings": {
+    "GitOK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitOK"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitOK 中打开当前项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitOK"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitOK 中打開當前項目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitOK"
           }
         }
       }
     },
-    "Open in GitOK" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open in GitOK"
+    "Open current project in GitOK": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open current project in GitOK"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitOK 中打开"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitOK 中打开当前项目"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitOK 中打開"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitOK 中打開當前項目"
           }
         }
       }
     },
-    "在 GitOK 中打开当前项目" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open current project in GitOK"
+    "Open in GitOK": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in GitOK"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitOK 中打开当前项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitOK 中打开"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 GitOK 中打開當前項目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitOK 中打開"
+          }
+        }
+      }
+    },
+    "在 GitOK 中打开当前项目": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open current project in GitOK"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitOK 中打开当前项目"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitOK 中打開當前項目"
+          }
+        }
+      }
+    },
+    "复制路径": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制路径"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制路径"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製路徑"
+          }
+        }
+      }
+    },
+    "打开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開"
+          }
+        }
+      }
+    },
+    "项目": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
