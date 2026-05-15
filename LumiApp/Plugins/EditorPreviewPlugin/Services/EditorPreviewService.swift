@@ -4,7 +4,7 @@ import Foundation
 import LumiPreviewKit
 
 @MainActor
-final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
+final class EditorPreviewService: ObservableObject, SuperLog {
     enum UpdateReloadPolicy {
         case scanOnly
         case reloadOnFingerprintChange

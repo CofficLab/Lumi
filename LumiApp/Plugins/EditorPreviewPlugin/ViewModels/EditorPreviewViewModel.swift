@@ -5,9 +5,9 @@ import LumiPreviewKit
 
 @MainActor
 final class EditorRemoteHotPreviewViewModel: ObservableObject {
-    private static let sharedService = EditorRemoteHotPreviewService()
+    private static let sharedService = EditorPreviewService()
 
-    let service: EditorRemoteHotPreviewService
+    let service: EditorPreviewService
     private var cancellables: Set<AnyCancellable> = []
 
     var hostState: EditorRemoteHotPreviewHostState { service.hostState }
@@ -50,7 +50,7 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
         hostState != .idle
     }
 
-    init(service: EditorRemoteHotPreviewService = EditorRemoteHotPreviewViewModel.sharedService) {
+    init(service: EditorPreviewService = EditorRemoteHotPreviewViewModel.sharedService) {
         self.service = service
         service.objectWillChange
             .sink { [weak self] _ in
@@ -61,7 +61,7 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func update(sourceText: String?, fileURL: URL?, projectRootPath: String?, reloadPolicy: EditorRemoteHotPreviewService.UpdateReloadPolicy = .reloadOnFingerprintChange) {
+    func update(sourceText: String?, fileURL: URL?, projectRootPath: String?, reloadPolicy: EditorPreviewService.UpdateReloadPolicy = .reloadOnFingerprintChange) {
         service.update(sourceText: sourceText, fileURL: fileURL, projectRootPath: projectRootPath, reloadPolicy: reloadPolicy)
     }
 
