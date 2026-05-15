@@ -20,7 +20,7 @@ actor ThemeVscodeLightPlugin: SuperPlugin {
                 appTheme: VscodeLightTheme(),
                 editorThemeId: "vscode-light",
                 editorThemeContributor: VscodeLightSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "vscode-light-file-icons", displayName: "VS Code Light File Icons"),
+                fileIconThemeContributor: LumiFileIconThemeCatalog.vscodeLight(),
                 order: 95
             )
         ]

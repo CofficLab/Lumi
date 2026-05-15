@@ -280,10 +280,17 @@ struct EditorFileTreeNodeView: View {
             projectRootPath: projectRootPath
         )
         let defaultContributor = LumiDefaultFileIconThemeContributor()
-        if let icon = themeVM.activeFileIconTheme?.icon(for: context) {
+        let activeContributor = themeVM.activeFileIconTheme
+        if let icon = activeContributor?.icon(for: context) {
             return icon
         }
         if let icon = defaultContributor.icon(for: context) {
+            return icon
+        }
+        if iconMetadata.isDirectory, let icon = activeContributor?.defaultFolderIcon(isExpanded: isExpanded) {
+            return icon
+        }
+        if !iconMetadata.isDirectory, let icon = activeContributor?.defaultFileIcon() {
             return icon
         }
         return iconMetadata.isDirectory

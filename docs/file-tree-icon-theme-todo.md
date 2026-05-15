@@ -155,7 +155,7 @@ Suggested first pass:
 - [x] Add one reusable base class or struct for common Lumi file icon mappings.
 - [x] Let each theme contributor customize only color-independent symbol choices initially.
 - [x] Use the same icon set for all themes in the first implementation if needed, but still wire each theme through `fileIconThemeContributor`.
-- [ ] Later, theme-specific variants can override mappings for product identity, such as VS Code, GitHub, Dracula, One Dark, or seasonal themes.
+- [x] Later, theme-specific variants can override mappings for product identity, such as VS Code, GitHub, Dracula, One Dark, or seasonal themes.
 
 ## Tests
 

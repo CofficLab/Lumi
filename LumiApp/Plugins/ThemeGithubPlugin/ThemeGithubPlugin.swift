@@ -20,7 +20,7 @@ actor ThemeGithubPlugin: SuperPlugin {
                 appTheme: GitHubTheme(),
                 editorThemeId: "github",
                 editorThemeContributor: GithubSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "github-file-icons", displayName: "GitHub File Icons"),
+                fileIconThemeContributor: LumiFileIconThemeCatalog.github(),
                 order: 85
             )
         ]

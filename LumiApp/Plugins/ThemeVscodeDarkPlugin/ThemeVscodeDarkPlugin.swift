@@ -20,7 +20,7 @@ actor ThemeVscodeDarkPlugin: SuperPlugin {
                 appTheme: VscodeDarkTheme(),
                 editorThemeId: "vscode-dark",
                 editorThemeContributor: VscodeDarkSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "vscode-dark-file-icons", displayName: "VS Code Dark File Icons"),
+                fileIconThemeContributor: LumiFileIconThemeCatalog.vscodeDark(),
                 order: 90
             )
         ]

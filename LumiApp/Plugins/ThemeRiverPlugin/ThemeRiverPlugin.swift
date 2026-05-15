@@ -20,7 +20,7 @@ actor ThemeRiverPlugin: SuperPlugin {
                 appTheme: RiverTheme(),
                 editorThemeId: "river",
                 editorThemeContributor: RiverSuperEditorThemeContributor(),
-                fileIconThemeContributor: LumiDefaultFileIconThemeContributor(id: "river-file-icons", displayName: "River File Icons"),
+                fileIconThemeContributor: LumiFileIconThemeCatalog.river(),
                 order: 110
             )
         ]
