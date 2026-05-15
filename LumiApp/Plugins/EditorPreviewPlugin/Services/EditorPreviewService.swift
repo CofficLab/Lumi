@@ -2,6 +2,7 @@ import AppKit
 import MagicKit
 import Foundation
 import LumiPreviewKit
+import StringCatalogKit
 
 @MainActor
 final class EditorPreviewService: ObservableObject, SuperLog {
@@ -15,6 +16,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         "svg", "icns", "ico", "heic", "heif"
     ]
     private static let markdownExtensions: Set<String> = ["md", "markdown"]
+    private static let stringCatalogExtensions: Set<String> = ["xcstrings"]
     private static let maxBackgroundPrewarmCount = 4
     private static let minimumEditorIdleIntervalBeforePrewarm: TimeInterval = 1.5
     private static let maximumPrewarmResourceDeferral: TimeInterval = 4.0
@@ -68,6 +70,8 @@ final class EditorPreviewService: ObservableObject, SuperLog {
     @Published private(set) var markdownSource: String?
     @Published private(set) var isImageMode = false
     @Published private(set) var imageFileURL: URL?
+    @Published private(set) var isStringCatalogMode = false
+    @Published private(set) var stringCatalog: StringCatalog?
     @Published private(set) var projectPreviewIndexSummary = "index: idle"
     @Published private(set) var prewarmSummary = "prewarm: idle"
     @Published private(set) var prewarmStatsSummary = "prewarm stats: 0/0"
@@ -150,6 +154,8 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             markdownSource = nil
             isImageMode = true
             imageFileURL = fileURL
+            isStringCatalogMode = false
+            stringCatalog = nil
             previews = []
             selectedPreviewID = nil
             renderImage = nil
@@ -181,6 +187,8 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             markdownSource = sourceText
             isImageMode = false
             imageFileURL = nil
+            isStringCatalogMode = false
+            stringCatalog = nil
             previews = []
             selectedPreviewID = nil
             renderImage = nil
@@ -203,6 +211,47 @@ final class EditorPreviewService: ObservableObject, SuperLog {
 
         isMarkdownMode = false
         markdownSource = nil
+
+        if let sourceText,
+           let fileURL,
+           Self.stringCatalogExtensions.contains(fileURL.pathExtension.lowercased()) {
+            teardownPreviewSessionForExternalModeChange()
+            isMarkdownMode = false
+            markdownSource = nil
+            isImageMode = false
+            imageFileURL = nil
+            isStringCatalogMode = true
+            do {
+                stringCatalog = try StringCatalogParser.parse(sourceText)
+                failureMessage = nil
+            } catch {
+                stringCatalog = nil
+                failureMessage = String(
+                    format: String(localized: "Failed to load string catalog: %@", table: "EditorPreview"),
+                    error.localizedDescription
+                )
+            }
+            previews = []
+            selectedPreviewID = nil
+            renderImage = nil
+            hostState = .idle
+            updatePhase = .idle
+            renderMessage = nil
+            diagnostics = nil
+            performanceSummary = nil
+            transportSummary = "-"
+            livePreviewInfo = LumiPreviewFacade.LivePreviewInfo()
+            effectiveDisplayMode = .image
+            isShowingStaleFrame = false
+            modeStatusMessage = nil
+            lastFrame = nil
+            lastFrameSummary = String(localized: "No Frame", table: "EditorPreview")
+            refreshDiagnosticSummary()
+            return
+        }
+
+        isStringCatalogMode = false
+        stringCatalog = nil
 
         guard let sourceText, let fileURL, fileURL.pathExtension == "swift" else {
             previews = []
@@ -567,7 +616,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         performanceSummary = nil
         transportSummary = "-"
         lastFrame = nil
-        lastFrameSummary = "Waiting for Host"  // non-user-facing diagnostic label
+        lastFrameSummary = String(localized: "Waiting for Host", table: "EditorPreview")
 
         let engine = previewEngine ?? LumiPreviewFacade.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
         previewEngine = engine
@@ -615,7 +664,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         hostState = .rendering
         updatePhase = .refreshing
         failureMessage = nil
-        lastFrameSummary = "Frame Pending"  // non-user-facing diagnostic label
+        lastFrameSummary = String(localized: "Frame Pending", table: "EditorPreview")
         let isReloadingRenderedPreview = selectedPreview.map(isSelectedPreviewAlreadyRendered) ?? false
         if !isReloadingRenderedPreview {
             clearRenderedFrameForPreviewChange()

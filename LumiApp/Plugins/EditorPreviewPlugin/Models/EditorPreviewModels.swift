@@ -41,7 +41,13 @@ struct EditorRemoteHotPreviewFrame: Equatable, Sendable {
     let renderedAt: Date
 
     var summary: String {
-        "Frame \(frameID) - \(Int(size.width))x\(Int(size.height)) @\(String(format: "%.1f", scale))x"
+        String(
+            format: String(localized: "Frame %lld - %lldx%lld @%@x", table: "EditorPreview"),
+            Int64(frameID),
+            Int64(size.width),
+            Int64(size.height),
+            String(format: "%.1f", scale)
+        )
     }
 }
 

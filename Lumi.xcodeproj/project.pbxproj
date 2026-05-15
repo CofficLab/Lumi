@@ -31,6 +31,7 @@
 		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
 		A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3DC2F70000100AAA101 /* FilePreviewKit */; };
 		A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E12F70000100AAA101 /* MarkdownKit */; };
+		A1B2C3E62F70000100AAA101 /* StringCatalogKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3E82F70000100AAA101 /* StringCatalogKit */; };
 		A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3EF2F70000100AAA101 /* DatabaseKit */; };
 		A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4132F70000100AAA101 /* LumiUI */; };
 		A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C4162F70000100AAA101 /* DeviceMonitorKit */; };
@@ -297,6 +298,7 @@
 				0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */,
 				0B1A4F812F662D8500F15618 /* MLXFFT in Frameworks */,
 				A1B2C3DA2F70000100AAA101 /* FilePreviewKit in Frameworks */,
+				A1B2C3E62F70000100AAA101 /* StringCatalogKit in Frameworks */,
 				A1B2C3EC2F70000100AAA101 /* DatabaseKit in Frameworks */,
 				A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */,
 				A1B2C4112F70000100AAA101 /* LumiUI in Frameworks */,
@@ -824,6 +826,7 @@
 				0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */,
 				223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */,
 				A1B2C3DC2F70000100AAA101 /* FilePreviewKit */,
+				A1B2C3E82F70000100AAA101 /* StringCatalogKit */,
 				A1B2C3E12F70000100AAA101 /* MarkdownKit */,
 				A1B2C3D62F70000100AAA101 /* MarkdownKitCore */,
 				A1B2C3EF2F70000100AAA101 /* DatabaseKit */,
@@ -920,6 +923,7 @@
 				0BC2F1DC2F8A94CE00B45F10 /* XCRemoteSwiftPackageReference "Libgit2swift" */,
 				F5DF6D162FA3461A00673F72 /* XCRemoteSwiftPackageReference "XcodeProj" */,
 				A1B2C3DB2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/FilePreviewKit" */,
+				A1B2C3E72F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/StringCatalogKit" */,
 				A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */,
 				A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */,
 				A1B2C4122F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/LumiUI" */,
@@ -1788,6 +1792,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FilePreviewKit;
 		};
+		A1B2C3E72F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/StringCatalogKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/StringCatalogKit;
+		};
 		A1B2C3EE2F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DatabaseKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/DatabaseKit;
@@ -2071,6 +2079,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C3D52F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/MarkdownKit" */;
 			productName = MarkdownKit;
+		};
+		A1B2C3E82F70000100AAA101 /* StringCatalogKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3E72F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/StringCatalogKit" */;
+			productName = StringCatalogKit;
 		};
 		A1B2C3EF2F70000100AAA101 /* DatabaseKit */ = {
 			isa = XCSwiftPackageProductDependency;

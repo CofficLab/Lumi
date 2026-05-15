@@ -36,7 +36,13 @@ struct HotPreviewList: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(themeVM.activeAppTheme.workspaceTextColor())
                 .lineLimit(1)
-            Text(String(localized: "Line \(preview.lineNumber)-\(preview.endLineNumber)", table: "EditorPreview"))
+            Text(
+                String(
+                    format: String(localized: "Line %lld-%lld", table: "EditorPreview"),
+                    Int64(preview.lineNumber),
+                    Int64(preview.endLineNumber)
+                )
+            )
                 .font(.system(size: 11))
                 .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
                 .lineLimit(1)

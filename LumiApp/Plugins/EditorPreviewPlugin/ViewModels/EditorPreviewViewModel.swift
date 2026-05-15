@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import LumiPreviewKit
+import StringCatalogKit
 
 @MainActor
 final class EditorRemoteHotPreviewViewModel: ObservableObject {
@@ -31,6 +32,8 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
     var markdownSource: String? { service.markdownSource }
     var isImageMode: Bool { service.isImageMode }
     var imageFileURL: URL? { service.imageFileURL }
+    var isStringCatalogMode: Bool { service.isStringCatalogMode }
+    var stringCatalog: StringCatalog? { service.stringCatalog }
     var canSwitchToLive: Bool { service.canSwitchToLive }
     var canSwitchToImage: Bool { service.canSwitchToImage }
     var liveUnavailableReason: String? { service.liveUnavailableReason }

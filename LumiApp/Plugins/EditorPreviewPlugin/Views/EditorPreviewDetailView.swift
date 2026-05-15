@@ -1,4 +1,5 @@
 import LumiPreviewKit
+import StringCatalogKit
 import SwiftUI
 
 struct EditorRemoteHotPreviewDetailView: View {
@@ -101,6 +102,17 @@ struct EditorRemoteHotPreviewDetailView: View {
                     color: .orange
                 )
             }
+        } else if viewModel.isStringCatalogMode {
+            if let stringCatalog = viewModel.stringCatalog {
+                EditorPreviewStringCatalogView(catalog: stringCatalog)
+            } else {
+                HotPreviewMessageView(
+                    systemImage: "character.book.closed",
+                    message: viewModel.failureMessage
+                        ?? String(localized: "The current string catalog could not be loaded.", table: "EditorPreview"),
+                    color: .orange
+                )
+            }
         } else if viewModel.previews.count <= 1 {
             HotPreviewCanvas(viewModel: viewModel)
         } else {
@@ -115,7 +127,7 @@ struct EditorRemoteHotPreviewDetailView: View {
 
     private func refreshScanAndStartIfNeeded() {
         viewModel.update(sourceText: sourceText, fileURL: currentFileURL, projectRootPath: projectRootPath)
-        guard !viewModel.isImageMode, !viewModel.isMarkdownMode else { return }
+        guard !viewModel.isImageMode, !viewModel.isMarkdownMode, !viewModel.isStringCatalogMode else { return }
         if viewModel.hostState == .idle || viewModel.hostState == .failed {
             viewModel.startHost()
         }
@@ -123,7 +135,7 @@ struct EditorRemoteHotPreviewDetailView: View {
 
     private func refreshScanAndReloadIfNeeded() {
         viewModel.update(sourceText: sourceText, fileURL: currentFileURL, projectRootPath: projectRootPath)
-        guard !viewModel.isImageMode, !viewModel.isMarkdownMode else { return }
+        guard !viewModel.isImageMode, !viewModel.isMarkdownMode, !viewModel.isStringCatalogMode else { return }
         if viewModel.hostState == .connected || viewModel.hostState == .rendering {
             viewModel.scheduleRenderFrame(reason: "editor refresh signal changed")
         }

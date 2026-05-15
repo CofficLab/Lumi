@@ -1,1106 +1,1372 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    " cached" : {
-
-    },
-    "%g x %g pt" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$g x %2$g pt"
+  "sourceLanguage": "en",
+  "strings": {
+    " cached": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 已缓存"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 已快取"
           }
         }
       }
     },
-    "Active: %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Active: %@"
+    "%g x %g pt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$g x %2$g pt"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活跃: %@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%g x %g pt"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活躍: %@"
-          }
-        }
-      }
-    },
-    "Build %@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Build %1$@%2$@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%g x %g pt"
           }
         }
       }
     },
-    "Build product was not found." : {
-
-    },
-    "Connected" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connected"
+    "Available": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已连接"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已連接"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用"
           }
         }
       }
     },
-    "Diagnostics" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Diagnostics"
+    "Build %@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Build %1$@%2$@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "诊断"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建 %@%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "診斷"
-          }
-        }
-      }
-    },
-    "Experimental hot preview powered by LumiPreviewKit" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Experimental hot preview powered by LumiPreviewKit"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "由 LumiPreviewKit 驱动的实验性热预览"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "由 LumiPreviewKit 驅動的實驗性熱預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建置 %@%@"
           }
         }
       }
     },
-    "Failed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed"
+    "Build product was not found.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到构建产物。"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "失败"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "失敗"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到建置產物。"
           }
         }
       }
     },
-    "Failed to load image: %@" : {
-
-    },
-    "File not found: %@" : {
-
-    },
-    "Hot live preview active" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hot live preview active"
+    "Connected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "热实时预览已激活"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已连接"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "熱即時預覽已啟用"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已連接"
           }
         }
       }
     },
-    "Hot Preview" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hot Preview"
+    "Default Localization": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认本地化"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "热预览"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "熱預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設本地化"
           }
         }
       }
     },
-    "Hot preview host executable was not found." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hot preview host executable was not found."
+    "Default Localization (%@)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认本地化（%@）"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到热预览宿主程序。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到熱預覽宿主程式。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設本地化（%@）"
           }
         }
       }
     },
-    "Idle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Idle"
+    "Diagnostics": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostics"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空闲"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "诊断"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "閒置"
-          }
-        }
-      }
-    },
-    "Image" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Image"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图像"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖像"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "診斷"
           }
         }
       }
     },
-    "Image Preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Image Preview"
+    "Display": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图像预览"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖像預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示"
           }
         }
       }
     },
-    "Launching" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Launching"
+    "Failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启动中"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟動中"
-          }
-        }
-      }
-    },
-    "Line %lld-%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Line %lld-%lld"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第 %lld-%lld 行"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第 %lld-%lld 行"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失敗"
           }
         }
       }
     },
-    "Live" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live"
+    "Failed to load image: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载图片失败：%@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入圖片失敗：%@"
           }
         }
       }
     },
-    "Live mode is preferred, but the host is currently showing image preview." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live mode is preferred, but the host is currently showing image preview."
+    "Failed to load string catalog: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载字符串目录失败：%@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "首选实时模式，但宿主当前显示图片预览。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "首選即時模式，但宿主當前顯示圖片預覽。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入字串目錄失敗：%@"
           }
         }
       }
     },
-    "Live preview failed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live preview failed"
+    "Failure": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时预览失败"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時預覽失敗"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失敗"
           }
         }
       }
     },
-    "Live preview is starting" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live preview is starting"
+    "File not found: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件不存在：%@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时预览启动中"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時預覽啟動中"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到檔案：%@"
           }
         }
       }
     },
-    "Live preview is unavailable. Showing image preview. %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live preview is unavailable. Showing image preview. %@"
+    "Frame": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帧"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时预览不可用，显示图片预览。%@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時預覽不可用，顯示圖片預覽。%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影格"
           }
         }
       }
     },
-    "Live preview stopped" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live preview stopped"
+    "Frame %lld - %lldx%lld @%@x": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帧 %lld - %lldx%lld @%@x"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时预览已停止"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時預覽已停止"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影格 %lld - %lldx%lld @%@x"
           }
         }
       }
     },
-    "Live requires a real SwiftUI view entry" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live requires a real SwiftUI view entry"
+    "Frame Pending": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帧等待中"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时模式需要真实的 SwiftUI 视图入口"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時模式需要真實的 SwiftUI 視圖入口"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影格等待中"
           }
         }
       }
     },
-    "Live: %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live: %@"
+    "Hot preview host executable was not found.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hot preview host executable was not found."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时: %@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到热预览宿主程序。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時: %@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到熱預覽宿主程式。"
           }
         }
       }
     },
-    "Load %@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Load %1$@%2$@"
+    "Idle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idle"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空闲"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閒置"
           }
         }
       }
     },
-    "Loading image..." : {
-
-    },
-    "Markdown Preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Markdown Preview"
+    "Image": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Markdown 预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图像"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Markdown 預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖像"
           }
         }
       }
     },
-    "No #Preview in the current Swift file" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No #Preview in the current Swift file"
+    "Image Preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image Preview"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前 Swift 文件中没有 #Preview"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图像预览"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當前 Swift 檔案中沒有 #Preview"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖像預覽"
           }
         }
       }
     },
-    "No build target found for %@" : {
-
-    },
-    "No Frame" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Frame"
+    "Key": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "键"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无帧"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無幀"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵"
           }
         }
       }
     },
-    "No Preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Preview"
+    "Launching": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launching"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动中"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟動中"
           }
         }
       }
     },
-    "Preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preview"
+    "Line %lld-%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Line %lld-%lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld-%lld 行"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld-%lld 行"
           }
         }
       }
     },
-    "Preview powered by LumiPreviewKit" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preview powered by LumiPreviewKit"
+    "Live": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "由 LumiPreviewKit 驱动的预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "由 LumiPreviewKit 驅動的預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時"
           }
         }
       }
     },
-    "Rebuilding hot preview. Showing the previous frame." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rebuilding hot preview. Showing the previous frame."
+    "Live Error": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时错误"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在重新构建热预览，显示上一帧。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在重新構建熱預覽，顯示上一幀。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時錯誤"
           }
         }
       }
     },
-    "Refresh %@" : {
-
-    },
-    "Refresh failed. Showing the previous frame." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh failed. Showing the previous frame."
+    "Live mode is preferred, but the host is currently showing image preview.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live mode is preferred, but the host is currently showing image preview."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新失败，显示上一帧。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首选实时模式，但宿主当前显示图片预览。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理失敗，顯示上一幀。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首選即時模式，但宿主當前顯示圖片預覽。"
           }
         }
       }
     },
-    "Refresh hot preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh hot preview"
+    "Live preview failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live preview failed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新热预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时预览失败"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理熱預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時預覽失敗"
           }
         }
       }
     },
-    "Refreshing Preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refreshing Preview"
+    "Live preview is starting": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live preview is starting"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在刷新预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时预览启动中"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在重新整理預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時預覽啟動中"
           }
         }
       }
     },
-    "Rendering" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rendering"
+    "Live preview stopped": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live preview stopped"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "渲染中"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时预览已停止"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "算繪中"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時預覽已停止"
           }
         }
       }
     },
-    "Showing image fallback preview" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Showing image fallback preview"
+    "Live requires a real SwiftUI view entry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live requires a real SwiftUI view entry"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示图片回退预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时模式需要真实的 SwiftUI 视图入口"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示圖片回退預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時模式需要真實的 SwiftUI 視圖入口"
           }
         }
       }
     },
-    "Showing the previous frame because no fresh frame is available yet." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Showing the previous frame because no fresh frame is available yet."
+    "Load %@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Load %1$@%2$@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示上一帧，因为尚无新帧可用。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载 %@%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示上一幀，因為尚無新幀可用。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入 %@%@"
           }
         }
       }
     },
-    "Start a preview first" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start a preview first"
+    "Loading image...": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加载图片..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请先启动预览"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先啟動預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在載入圖片..."
           }
         }
       }
     },
-    "Start hot preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start hot preview"
+    "Markdown Preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown Preview"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启动热预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown 预览"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟動熱預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown 預覽"
           }
         }
       }
     },
-    "Start hot preview to render a frame" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start hot preview to render a frame"
+    "Mode": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模式"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启动热预览以渲染帧"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟動熱預覽以算繪幀"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模式"
           }
         }
       }
     },
-    "Starting hot live preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starting hot live preview"
+    "No #Preview in the current Swift file": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No #Preview in the current Swift file"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在启动热实时预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前 Swift 文件中没有 #Preview"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在啟動熱即時預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前 Swift 檔案中沒有 #Preview"
           }
         }
       }
     },
-    "Starting live preview." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starting live preview."
+    "No Frame": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Frame"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在启动实时预览。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无帧"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在啟動即時預覽。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無幀"
           }
         }
       }
     },
-    "Stop hot preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stop hot preview"
+    "No Preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Preview"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止热预览"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无预览"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止熱預覽"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無預覽"
           }
         }
       }
     },
-    "Switch to Live mode" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Switch to Live mode"
+    "No build target found for %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到 %@ 的构建目标"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切换到实时模式"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切換到即時模式"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到 %@ 的建置目標"
           }
         }
       }
     },
-    "The current image could not be loaded." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The current image could not be loaded."
+    "Performance": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "性能"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前图片无法加载。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前圖片無法載入。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "效能"
           }
         }
       }
     },
-    "The current Markdown content is unavailable." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The current Markdown content is unavailable."
+    "Preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前 Markdown 内容不可用。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预览"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前 Markdown 內容不可用。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預覽"
           }
         }
       }
     },
-    "Timed out after %lld seconds." : {
-
-    },
-    "Toggle diagnostics info" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toggle diagnostics info"
+    "Preview powered by LumiPreviewKit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview powered by LumiPreviewKit"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切换诊断信息"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由 LumiPreviewKit 驱动的预览"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切換診斷資訊"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由 LumiPreviewKit 驅動的預覽"
           }
         }
       }
     },
-    "Transport: %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transport: %@"
+    "Rebuilding hot preview. Showing the previous frame.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebuilding hot preview. Showing the previous frame."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "传输: %@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在重新构建热预览，显示上一帧。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "傳輸: %@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在重新構建熱預覽，顯示上一幀。"
           }
         }
       }
     },
-    "Unsupported project type: %@" : {
-
-    },
-    "V2" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "V2"
+    "Refresh %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新 %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "V2"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "V2"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理 %@"
           }
         }
       }
     },
-    "Waiting to Refresh" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting to Refresh"
+    "Refresh hot preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh hot preview"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "等待刷新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新热预览"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "等待重新整理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理熱預覽"
+          }
+        }
+      }
+    },
+    "Refreshing Preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refreshing Preview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在刷新预览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在重新整理預覽"
+          }
+        }
+      }
+    },
+    "Render": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "渲染"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "算繪"
+          }
+        }
+      }
+    },
+    "Rendering": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rendering"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "渲染中"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "算繪中"
+          }
+        }
+      }
+    },
+    "Running": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "运行中"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "執行中"
+          }
+        }
+      }
+    },
+    "Showing the previous frame because no fresh frame is available yet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing the previous frame because no fresh frame is available yet."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示上一帧，因为尚无新帧可用。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示上一幀，因為尚無新幀可用。"
+          }
+        }
+      }
+    },
+    "Start a preview first": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start a preview first"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先启动预览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請先啟動預覽"
+          }
+        }
+      }
+    },
+    "Start hot preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start hot preview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动热预览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟動熱預覽"
+          }
+        }
+      }
+    },
+    "Start hot preview to render a frame": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start hot preview to render a frame"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动热预览以渲染帧"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟動熱預覽以算繪幀"
+          }
+        }
+      }
+    },
+    "Starting hot live preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting hot live preview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在启动热实时预览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在啟動熱即時預覽"
+          }
+        }
+      }
+    },
+    "Starting live preview.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting live preview."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在启动实时预览。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在啟動即時預覽。"
+          }
+        }
+      }
+    },
+    "Stop hot preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop hot preview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止热预览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止熱預覽"
+          }
+        }
+      }
+    },
+    "Stopped": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已停止"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已停止"
+          }
+        }
+      }
+    },
+    "Switch to Live mode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch to Live mode"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换到实时模式"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切換到即時模式"
+          }
+        }
+      }
+    },
+    "The current Markdown content is unavailable.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current Markdown content is unavailable."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前 Markdown 内容不可用。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前 Markdown 內容不可用。"
+          }
+        }
+      }
+    },
+    "The current image could not be loaded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current image could not be loaded."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前图片无法加载。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前圖片無法載入。"
+          }
+        }
+      }
+    },
+    "The current string catalog could not be loaded.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前字符串目录无法加载。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前的字串目錄無法載入。"
+          }
+        }
+      }
+    },
+    "Timed out after %lld seconds.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 秒后超时。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 秒後逾時。"
+          }
+        }
+      }
+    },
+    "Toggle diagnostics info": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toggle diagnostics info"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换诊断信息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切換診斷資訊"
+          }
+        }
+      }
+    },
+    "Transport": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "传输"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "傳輸"
+          }
+        }
+      }
+    },
+    "Unavailable": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不可用"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不可用"
+          }
+        }
+      }
+    },
+    "Unsupported project type: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不支持的项目类型：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不支援的專案類型：%@"
+          }
+        }
+      }
+    },
+    "V2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V2"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V2"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V2"
+          }
+        }
+      }
+    },
+    "Waiting for Host": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待宿主"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待宿主"
+          }
+        }
+      }
+    },
+    "Waiting to Refresh": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting to Refresh"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待刷新"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待重新整理"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
