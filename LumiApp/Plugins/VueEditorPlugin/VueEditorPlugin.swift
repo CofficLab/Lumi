@@ -42,6 +42,9 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
         // 模板指令上下文感知补全：v-for 片段、事件、修饰符、插槽
         registry.registerCompletionContributor(TemplateAttributeCompleter())
 
+        // Script Setup 补全：宏、Composition API、生命周期钩子
+        registry.registerCompletionContributor(ScriptSetupCompleter())
+
         // 悬浮提示：Vue 指令、组件、宏、Scoped CSS
         registry.registerHoverContributor(VueHoverContributor())
 
