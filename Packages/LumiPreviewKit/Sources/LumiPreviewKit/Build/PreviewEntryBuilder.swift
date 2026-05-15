@@ -425,6 +425,7 @@ final class PreviewEntryBuilder: Sendable {
         if let moduleName {
             removeSelfImports(of: moduleName, from: &lines)
         }
+        Self.replaceBundleModuleReferences(in: &lines)
         return lines.joined(separator: "\n")
     }
 
@@ -455,6 +456,24 @@ final class PreviewEntryBuilder: Sendable {
             } else if trimmed.hasPrefix("@main "),
                       let range = lines[index].range(of: "@main") {
                 lines[index].removeSubrange(range)
+            }
+        }
+    }
+
+    /// Replaces `Bundle.module` with `Bundle.main` so preview entry dylibs compile
+    /// outside the original SPM target context.
+    ///
+    /// SwiftPM auto-generates a `resource_bundle_accessor.swift` that declares
+    /// `Bundle.module` as `internal`.  Preview entry dylibs are compiled in an
+    /// isolated context without that accessor, so any `Bundle.module` reference
+    /// produces "'module' is inaccessible due to 'internal' protection level".
+    private static func replaceBundleModuleReferences(in lines: inout [String]) {
+        for index in lines.indices {
+            if lines[index].contains("Bundle.module") {
+                lines[index] = lines[index].replacingOccurrences(
+                    of: "Bundle.module",
+                    with: "Bundle.main"
+                )
             }
         }
     }
