@@ -8,6 +8,33 @@ struct TopProcessesView: View {
 
     let processes: [ProcessMetric]
 
+    private var displayProcesses: [DisplayProcessMetric] {
+        let totalCPUUsage = processes.reduce(0.0) { $0 + max($1.cpuUsage, 0) }
+        guard totalCPUUsage > 0 else {
+            return processes.map { DisplayProcessMetric(process: $0, cpuShare: 0) }
+        }
+
+        let rawShares = processes.map { process in
+            max(process.cpuUsage, 0) / totalCPUUsage * 100.0
+        }
+        var integerShares = rawShares.map { Int($0.rounded(.down)) }
+        let remainder = max(0, 100 - integerShares.reduce(0, +))
+
+        rawShares
+            .enumerated()
+            .sorted { lhs, rhs in
+                let lhsFraction = lhs.element - floor(lhs.element)
+                let rhsFraction = rhs.element - floor(rhs.element)
+                return lhsFraction == rhsFraction ? lhs.offset < rhs.offset : lhsFraction > rhsFraction
+            }
+            .prefix(remainder)
+            .forEach { integerShares[$0.offset] += 1 }
+
+        return zip(processes, integerShares).map { process, cpuShare in
+            DisplayProcessMetric(process: process, cpuShare: cpuShare)
+        }
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -33,8 +60,8 @@ struct TopProcessesView: View {
                     .padding(.vertical, 4)
             } else {
                 VStack(spacing: 2) {
-                    ForEach(processes) { process in
-                        processRow(process)
+                    ForEach(displayProcesses) { displayProcess in
+                        processRow(displayProcess)
                     }
                 }
             }
@@ -45,8 +72,10 @@ struct TopProcessesView: View {
 
     // MARK: - 私有方法
 
-    private func processRow(_ process: ProcessMetric) -> some View {
-        HStack(spacing: 8) {
+    private func processRow(_ displayProcess: DisplayProcessMetric) -> some View {
+        let process = displayProcess.process
+
+        return HStack(spacing: 8) {
             // 进程图标
             iconForProcess(process)
                 .resizable()
@@ -60,7 +89,7 @@ struct TopProcessesView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             // CPU%
-            Text(String(format: "%.0f%%", process.cpuUsage))
+            Text("\(displayProcess.cpuShare)%")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundColor(Color(hex: "0A84FF"))
                 .frame(width: 36, alignment: .trailing)
@@ -73,7 +102,7 @@ struct TopProcessesView: View {
 
                     Capsule()
                         .fill(Color(hex: "0A84FF").opacity(0.7))
-                        .frame(width: geometry.size.width * min(process.cpuUsage / 100.0, 1.0))
+                        .frame(width: geometry.size.width * min(Double(displayProcess.cpuShare) / 100.0, 1.0))
                 }
             }
             .frame(width: 40, height: 4)
@@ -88,6 +117,13 @@ struct TopProcessesView: View {
         }
         return Image(systemName: "terminal")
     }
+}
+
+private struct DisplayProcessMetric: Identifiable {
+    let process: ProcessMetric
+    let cpuShare: Int
+
+    var id: Int32 { process.id }
 }
 
 // MARK: - 预览

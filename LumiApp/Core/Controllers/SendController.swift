@@ -28,14 +28,14 @@ final class SendController: ObservableObject, SuperLog {
     /// 0: 关闭日志
     /// 1: 基础日志
     /// 2: 详细日志（输出请求/响应的详细信息）
-    nonisolated static let verbose = 0
+    nonisolated static let verbose = 2
 
-    private let container: RootViewContainer
+    private let container: RootContainer
     private let agentTurnService: AgentTurnService
     private var activeSendTasksByConversation: [UUID: Task<Void, Never>] = [:]
     private var pendingTransientSystemPromptsByConversation: [UUID: [String]] = [:]
 
-    init(container: RootViewContainer) {
+    init(container: RootContainer) {
         self.container = container
 
         // 组装 AgentTurnService 的依赖
@@ -44,7 +44,8 @@ final class SendController: ObservableObject, SuperLog {
             agentSessionConfig: container.agentSessionConfig,
             toolService: container.toolService,
             pluginVM: container.pluginVM,
-            statusVM: container.conversationSendStatusVM
+            statusVM: container.conversationSendStatusVM,
+            projectVM: container.projectVM
         )
         let toolCallExecutor = ToolCallExecutor(
             toolExecutionService: container.toolExecutionService,

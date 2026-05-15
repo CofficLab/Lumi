@@ -22,7 +22,16 @@ struct HighlightedCodeView: View {
             }
         }
         .task(id: codeHighlightTaskId) {
-            attributedCode = highlightProvider?.highlight(code: code, language: language)
+            guard let highlightProvider else {
+                attributedCode = nil
+                return
+            }
+
+            attributedCode = await CodeHighlightCache.shared.highlight(
+                code: code,
+                language: language,
+                provider: highlightProvider
+            )
         }
     }
 
@@ -52,6 +61,45 @@ struct HighlightedCodeView: View {
 
     /// 唯一标识代码+语言组合，变化时重新触发高亮
     private var codeHighlightTaskId: String {
-        "\(language ?? ""):\(code)"
+        "\(highlightProvider?.cacheIdentifier ?? ""):\(language ?? ""):\(code)"
+    }
+}
+
+// MARK: - CodeHighlightCache
+
+private actor CodeHighlightCache {
+    static let shared = CodeHighlightCache()
+
+    private struct Entry: Sendable {
+        let value: AttributedString?
+    }
+
+    private let limit = 128
+    private var cache: [String: Entry] = [:]
+    private var keys: [String] = []
+
+    func highlight(
+        code: String,
+        language: String?,
+        provider: any CodeHighlightProviding
+    ) -> AttributedString? {
+        let key = "\(provider.cacheIdentifier):\(language ?? ""):\(code)"
+        if let cached = cache[key] {
+            return cached.value
+        }
+
+        let highlighted = provider.highlight(code: code, language: language)
+        cache[key] = Entry(value: highlighted)
+        keys.append(key)
+
+        if keys.count > limit {
+            let overflow = keys.count - limit
+            for key in keys.prefix(overflow) {
+                cache.removeValue(forKey: key)
+            }
+            keys.removeFirst(overflow)
+        }
+
+        return highlighted
     }
 }

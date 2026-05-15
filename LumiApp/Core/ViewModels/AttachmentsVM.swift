@@ -30,6 +30,12 @@ final class AttachmentsVM: ObservableObject, SuperLog {
         }
     }
 
+    func handleScreenshotData(_ data: Data) {
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let url = URL(fileURLWithPath: "/screenshot_\(timestamp).png")
+        add(.image(id: UUID(), data: data, mimeType: "image/png", url: url))
+    }
+
     /// 取出并清空待发送附件，生成发送流程所需的 `ImageAttachment`。
     func drainPendingImageAttachments() -> [ImageAttachment] {
         let drained = pendingAttachments

@@ -1,4 +1,4 @@
-import EditorKernelCore
+import EditorKernel
 import Foundation
 import CodeEditSourceEditor
 
@@ -16,7 +16,7 @@ struct ResolvedEditorNavigationRequest: Equatable {
 }
 
 extension EditorNavigationRequest {
-    var kernelValue: EditorKernelCore.EditorNavigationRequest {
+    var kernelValue: EditorKernel.EditorNavigationRequest {
         switch self {
         case let .reference(reference):
             return .reference(reference)
@@ -31,7 +31,7 @@ extension EditorNavigationRequest {
 }
 
 extension ResolvedEditorNavigationRequest {
-    init(kernelValue: EditorKernelCore.ResolvedEditorNavigationRequest) {
+    init(kernelValue: EditorKernel.ResolvedEditorNavigationRequest) {
         self.url = kernelValue.url
         self.target = .init(kernelValue: kernelValue.target)
         self.highlightLine = kernelValue.highlightLine

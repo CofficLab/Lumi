@@ -13,9 +13,8 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../EditorKernelCore"),
+        .package(path: "../EditorKernel"),
         .package(path: "../LumiCodeEditSourceEditor"),
-        .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
         .package(url: "https://github.com/CodeEditApp/CodeEditTextView", from: "0.12.1"),
         .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.20"),
         .package(url: "https://github.com/CofficLab/MagicKit", from: "1.5.23"),
@@ -26,8 +25,7 @@ let package = Package(
         .target(
             name: "EditorService",
             dependencies: [
-                .product(name: "EditorKernelCore", package: "EditorKernelCore"),
-                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
+                .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "CodeEditSourceEditor", package: "LumiCodeEditSourceEditor"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
                 .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
@@ -40,9 +38,8 @@ let package = Package(
             name: "EditorServiceTests",
             dependencies: [
                 "EditorService",
-                .product(name: "EditorKernelCore", package: "EditorKernelCore"),
+                .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "CodeEditTextView", package: "CodeEditTextView"),
-                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
             ],
             path: "Tests/EditorServiceTests"
         ),

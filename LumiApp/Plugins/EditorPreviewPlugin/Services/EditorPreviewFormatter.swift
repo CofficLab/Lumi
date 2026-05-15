@@ -1,6 +1,7 @@
-#if canImport(LumiPreviewKit)
 import AppKit
+import CoreGraphics
 import Foundation
+import IOSurface
 import LumiPreviewKit
 
 /// 编辑器预览格式化工具。
@@ -11,8 +12,8 @@ enum EditorPreviewFormatter {
 
     // MARK: - 公开方法
 
-    /// 将 PreviewError 转换为用户友好的本地化错误消息。
-    static func message(for error: PreviewError) -> String {
+    /// 将 LumiPreviewFacade.PreviewError 转换为用户友好的本地化错误消息。
+    static func message(for error: LumiPreviewFacade.PreviewError) -> String {
         switch error {
         case .targetNotFound(let file):
             String(
@@ -46,7 +47,7 @@ enum EditorPreviewFormatter {
     ///
     /// 返回类似 "Build 1.23s cached | Refresh 0.45s" 的格式，
     /// 无指标时返回 nil。
-    static func performanceSummary(for metrics: PreviewPerformanceMetrics) -> String? {
+    static func performanceSummary(for metrics: LumiPreviewFacade.PreviewPerformanceMetrics) -> String? {
         var parts: [String] = []
         if let compileDuration = metrics.lastCompileDuration {
             let cacheSuffix = metrics.lastCompileUsedCache
@@ -60,10 +61,13 @@ enum EditorPreviewFormatter {
             )
         }
         if let loadDuration = metrics.lastLoadDuration {
+            let cacheSuffix = metrics.lastEntryUsedCache
+                ? String(localized: " cached", table: "EditorPreview") : ""
             parts.append(
                 String(
-                    format: String(localized: "Load %@", table: "EditorPreview"),
-                    format(seconds: loadDuration)
+                    format: String(localized: "Load %@%@", table: "EditorPreview"),
+                    format(seconds: loadDuration),
+                    cacheSuffix
                 )
             )
         }
@@ -80,8 +84,12 @@ enum EditorPreviewFormatter {
 
     /// 从渲染响应中解码预览图片。
     ///
-    /// 尝试从 Base64 编码的 PNG 数据解码为 NSImage，失败时返回 nil。
-    static func image(from response: RenderResponse) -> NSImage? {
+    /// 优先从跨进程 IOSurface 读取，失败时回退到 Base64 编码 PNG。
+    static func image(from response: LumiPreviewFacade.RenderResponse) -> NSImage? {
+        if let image = image(from: response.surfaceFrame) {
+            return image
+        }
+
         guard let previewImagePNGBase64 = response.previewImagePNGBase64,
               let data = Data(base64Encoded: previewImagePNGBase64) else {
             return nil
@@ -94,5 +102,45 @@ enum EditorPreviewFormatter {
     private static func format(seconds: TimeInterval) -> String {
         String(format: "%.2fs", seconds)
     }
+
+    private static func image(from surfaceFrame: LumiPreviewFacade.PreviewSurfaceFrame?) -> NSImage? {
+        guard let surfaceFrame,
+              let surface = surface(from: surfaceFrame) else {
+            return nil
+        }
+
+        var seed: UInt32 = 0
+        let baseAddress = IOSurfaceGetBaseAddress(surface)
+        guard IOSurfaceLock(surface, .readOnly, &seed) == KERN_SUCCESS,
+              let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(
+                data: baseAddress,
+                width: surfaceFrame.width,
+                height: surfaceFrame.height,
+                bitsPerComponent: 8,
+                bytesPerRow: surfaceFrame.bytesPerRow,
+                space: colorSpace,
+                bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
+              ),
+              let cgImage = context.makeImage() else {
+            _ = IOSurfaceUnlock(surface, .readOnly, &seed)
+            return nil
+        }
+
+        _ = IOSurfaceUnlock(surface, .readOnly, &seed)
+        let scale = surfaceFrame.scale > 0 ? surfaceFrame.scale : 1
+        let size = NSSize(
+            width: Double(surfaceFrame.width) / scale,
+            height: Double(surfaceFrame.height) / scale
+        )
+        return NSImage(cgImage: cgImage, size: size)
+    }
+
+    private static func surface(from surfaceFrame: LumiPreviewFacade.PreviewSurfaceFrame) -> IOSurfaceRef? {
+        guard surfaceFrame.pixelFormat == "BGRA",
+              let surfaceID = surfaceFrame.globalIOSurfaceID else {
+            return nil
+        }
+        return IOSurfaceLookup(IOSurfaceID(surfaceID))
+    }
 }
-#endif

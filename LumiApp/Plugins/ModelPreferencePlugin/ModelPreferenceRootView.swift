@@ -34,6 +34,8 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     @State private var hasAppeared = false
     // 标记是否正在加载配置，避免加载时触发保存
     @State private var isLoadingConfig = false
+    @State private var preferenceLoadTask: Task<Void, Never>?
+    @State private var preferenceLoadToken: UUID?
 
     var body: some View {
         content
@@ -55,6 +57,12 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
                 // 首次加载：按优先级恢复配置
                 restoreConfigOnStartup()
             }
+            .onDisappear {
+                preferenceLoadTask?.cancel()
+                preferenceLoadTask = nil
+                preferenceLoadToken = nil
+                isLoadingConfig = false
+            }
     }
 
     // MARK: - 启动恢复
@@ -62,19 +70,22 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     /// 首次启动时按优先级恢复配置
     private func restoreConfigOnStartup() {
         isLoadingConfig = true
-        defer { isLoadingConfig = false }
 
         // 优先级 1：当前对话的偏好
         if let conversationPref = conversationVM.getModelPreference() {
             applyConfig(provider: conversationPref.providerId, model: conversationPref.model, source: "对话")
+            isLoadingConfig = false
             return
         }
 
         // 优先级 2：当前项目的偏好
         let projectPath = projectVM.currentProjectPath
-        if !projectPath.isEmpty,
-           let projectPref = ModelPreferenceStore.shared.getPreference(forProject: projectPath) {
-            applyConfig(provider: projectPref.provider, model: projectPref.model, source: "项目")
+        if !projectPath.isEmpty {
+            loadProjectPreference(for: projectPath, source: "项目") {
+                if Self.verbose {
+                    Self.logger.info("\(self.t)🔄 启动时无对话/项目偏好，保持 LLMVM 默认值")
+                }
+            }
             return
         }
 
@@ -82,6 +93,7 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         if Self.verbose {
             Self.logger.info("\(self.t)🔄 启动时无对话/项目偏好，保持 LLMVM 默认值")
         }
+        isLoadingConfig = false
     }
 
     // MARK: - 模型变化处理
@@ -138,7 +150,6 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     /// 处理对话切换
     private func handleConversationChange(oldId: UUID?, newId: UUID?) {
         isLoadingConfig = true
-        defer { isLoadingConfig = false }
 
         // 清除上次保存的记录，确保新对话可以正常保存
         lastSavedProjectPath = ""
@@ -149,14 +160,21 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
            let providerId = conversation.providerId,
            let model = conversation.model {
             applyConfig(provider: providerId, model: model, source: "对话[\(conversation.title)]")
+            isLoadingConfig = false
             return
         }
 
         // 优先级 2：当前项目的偏好
         let projectPath = projectVM.currentProjectPath
-        if !projectPath.isEmpty,
-           let projectPref = ModelPreferenceStore.shared.getPreference(forProject: projectPath) {
-            applyConfig(provider: projectPref.provider, model: projectPref.model, source: "项目[\(projectVM.currentProjectName)]")
+        if !projectPath.isEmpty {
+            let projectName = projectVM.currentProjectName
+            loadProjectPreference(for: projectPath, source: "项目[\(projectName)]") {
+                if Self.verbose {
+                    Self.logger.info("\(self.t)🔄 切换对话时无对话/项目偏好，保持 LLMVM 当前值")
+                }
+                lastSavedProvider = llmVM.selectedProviderId
+                lastSavedModel = llmVM.currentModel
+            }
             return
         }
 
@@ -168,6 +186,7 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
         // 更新 lastSaved 状态，避免触发不必要的保存
         lastSavedProvider = llmVM.selectedProviderId
         lastSavedModel = llmVM.currentModel
+        isLoadingConfig = false
     }
 
     // MARK: - 项目切换处理
@@ -175,7 +194,6 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
     /// 处理项目切换
     private func handleProjectChange(oldPath: String, newPath: String) {
         isLoadingConfig = true
-        defer { isLoadingConfig = false }
 
         // 清除上次保存的项目路径记录
         lastSavedProjectPath = ""
@@ -189,6 +207,7 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(self.t)📁 已清除项目，不加载模型偏好")
             }
+            isLoadingConfig = false
             return
         }
 
@@ -200,21 +219,20 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
             lastSavedProvider = conversationPref.providerId
             lastSavedModel = conversationPref.model
             lastSavedProjectPath = newPath
+            isLoadingConfig = false
             return
         }
 
         // 优先级 2：新项目的偏好
-        if let projectPref = ModelPreferenceStore.shared.getPreference(forProject: newPath) {
-            applyConfig(provider: projectPref.provider, model: projectPref.model, source: "项目[\(projectVM.currentProjectName)]")
-            return
+        let projectName = projectVM.currentProjectName
+        loadProjectPreference(for: newPath, source: "项目[\(projectName)]") {
+            // 优先级 3：保持 LLMVM 当前值
+            if Self.verbose {
+                Self.logger.info("\(self.t)📂 项目 '\(projectName)' 没有保存的模型偏好，保持当前值")
+            }
+            lastSavedProvider = llmVM.selectedProviderId
+            lastSavedModel = llmVM.currentModel
         }
-
-        // 优先级 3：保持 LLMVM 当前值
-        if Self.verbose {
-            Self.logger.info("\(self.t)📂 项目 '\(projectVM.currentProjectName)' 没有保存的模型偏好，保持当前值")
-        }
-        lastSavedProvider = llmVM.selectedProviderId
-        lastSavedModel = llmVM.currentModel
     }
 
     // MARK: - 辅助方法
@@ -231,6 +249,40 @@ struct ModelPreferenceRootView<Content: View>: View, SuperLog {
 
         if Self.verbose {
             Self.logger.info("\(self.t)📂 已加载 \(source) 的模型偏好：\(provider) - \(model)")
+        }
+    }
+
+    private func loadProjectPreference(
+        for projectPath: String,
+        source: String,
+        onMissing: @escaping @MainActor () -> Void
+    ) {
+        preferenceLoadTask?.cancel()
+        let token = UUID()
+        preferenceLoadToken = token
+        isLoadingConfig = true
+
+        preferenceLoadTask = Task { @MainActor in
+            let preference = await Task.detached(priority: .utility) {
+                ModelPreferenceStore.shared.getPreference(forProject: projectPath)
+            }.value
+
+            guard preferenceLoadToken == token else { return }
+            defer {
+                if preferenceLoadToken == token {
+                    preferenceLoadToken = nil
+                    preferenceLoadTask = nil
+                    isLoadingConfig = false
+                }
+            }
+
+            guard !Task.isCancelled, projectVM.currentProjectPath == projectPath else { return }
+
+            if let preference {
+                applyConfig(provider: preference.provider, model: preference.model, source: source)
+            } else {
+                onMissing()
+            }
         }
     }
 }

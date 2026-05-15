@@ -1,7 +1,51 @@
 {
   "sourceLanguage": "en",
-  "version": "1.0",
   "strings": {
+    "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 编辑增强：标签补全、悬浮文档、自动闭合和标签匹配。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 編輯增強：標籤補全、懸浮文件、自動閉合和標籤匹配。"
+          }
+        }
+      }
+    },
+    "HTML editing enhancements: tag completion, hover docs, auto-closing, tag matching, and Emmet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML editing enhancements: tag completion, hover docs, auto-closing, tag matching, and Emmet."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 编辑增强：标签补全、悬停文档、自动闭合、标签匹配和 Emmet。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML 編輯增強：標籤補全、懸停文檔、自動閉合、標籤匹配和 Emmet。"
+          }
+        }
+      }
+    },
     "HTML Editor": {
       "localizations": {
         "en": {
@@ -23,28 +67,7 @@
           }
         }
       }
-    },
-    "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTML editing enhancements: tag completion, hover docs, auto-closing, and tag matching."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTML 编辑增强：标签补全、悬浮文档、自动闭合和标签匹配。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTML 編輯增強：標籤補全、懸浮文件、自動閉合和標籤匹配。"
-          }
-        }
-      }
     }
-  }
+  },
+  "version": "1.0"
 }

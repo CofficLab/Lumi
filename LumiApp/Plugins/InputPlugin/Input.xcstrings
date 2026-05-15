@@ -44,6 +44,50 @@
           }
         }
       }
+    },
+    "暂无输入源切换规则": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无输入源切换规则"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无输入源切换规则"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無輸入源切換規則"
+          }
+        }
+      }
+    },
+    "添加应用和对应的输入源，切换应用时自动切换输入法": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加应用和对应的输入源，切换应用时自动切换输入法"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加应用和对应的输入源，切换应用时自动切换输入法"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加應用和對應的輸入源，切換應用時自動切換輸入法"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

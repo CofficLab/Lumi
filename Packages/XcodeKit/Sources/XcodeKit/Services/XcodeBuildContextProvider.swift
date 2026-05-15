@@ -12,9 +12,9 @@ import MagicKit
 final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     nonisolated public static let emoji = "🏗️"
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
 
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.buildcontext")
+    nonisolated private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.buildcontext")
 
     // MARK: - Published State
 
@@ -31,6 +31,9 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     /// build settings 缓存: cacheKey → settings
     private var buildSettingsCache: [String: [[String: String]]] = [:]
+
+    /// file path → matching targets cache.
+    private var targetMatchCache: [String: [XcodeTargetContext]] = [:]
 
     /// xcode-build-server 路径缓存
     private var xcodeBuildServerPath: String?
@@ -96,7 +99,12 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     ) {
         self.resolver = resolver
         self.store = store
-        locateXcodeBuildServer()
+        Task { [weak self] in
+            let path = await Self.locateXcodeBuildServerPath()
+            await MainActor.run {
+                self?.xcodeBuildServerPath = path
+            }
+        }
     }
 
     // MARK: - 核心方法
@@ -108,7 +116,12 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             return
         }
 
-        let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL)
+        let workspaceURL: URL?
+        if projectURL.pathExtension == "xcodeproj" || projectURL.pathExtension == "xcworkspace" {
+            workspaceURL = projectURL
+        } else {
+            workspaceURL = await XcodeProjectBackgroundQuery.findWorkspace(in: projectURL.path)
+        }
         guard let workspaceURL else {
             buildContextStatus = .unavailable("No .xcodeproj / .xcworkspace found")
             return
@@ -123,6 +136,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         }
 
         currentWorkspace = workspaceContext
+        targetMatchCache.removeAll()
         if currentWorkspace?.activeDestination == nil {
             currentWorkspace?.activeDestination = Self.defaultDestination()
         }
@@ -234,6 +248,9 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         guard let workspace = currentWorkspace else { return [] }
 
         let filePath = fileURL.path
+        if let cached = targetMatchCache[filePath] {
+            return cached
+        }
         var matches: [XcodeTargetContext] = []
         for project in workspace.projects {
             for target in project.targets {
@@ -242,6 +259,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
                 }
             }
         }
+        targetMatchCache[filePath] = matches
         return matches
     }
 
@@ -316,6 +334,7 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     /// 使所有缓存失效
     public func invalidateAllContexts() {
         buildSettingsCache.removeAll()
+        targetMatchCache.removeAll()
         buildContextStatus = .needsResync
         if Self.verbose { Self.logger.info("\(Self.t)所有 build context 已失效") }
     }
@@ -428,25 +447,41 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
     // MARK: - 工具方法
 
     /// 查找 xcode-build-server 路径
-    private func locateXcodeBuildServer() {
-        let paths = [
-            "/opt/homebrew/bin/xcode-build-server",
-            "/usr/local/bin/xcode-build-server",
-        ]
+    private nonisolated static func locateXcodeBuildServerPath() async -> String? {
+        await Task.detached(priority: .utility) {
+            let paths = [
+                "/opt/homebrew/bin/xcode-build-server",
+                "/usr/local/bin/xcode-build-server",
+            ]
 
-        for path in paths {
-            if FileManager.default.fileExists(atPath: path) {
-                xcodeBuildServerPath = path
-                if Self.verbose { Self.logger.info("\(Self.t)找到 xcode-build-server: \(path, privacy: .public)") }
-                return
+            for path in paths {
+                if FileManager.default.fileExists(atPath: path) {
+                    if Self.verbose { Self.logger.info("\(Self.t)找到 xcode-build-server: \(path, privacy: .public)") }
+                    return path
+                }
             }
-        }
 
-        // 尝试 PATH
-        if let path = try? runShellCommand("which", args: ["xcode-build-server"])?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !path.isEmpty {
-            xcodeBuildServerPath = path
-        }
+            // 尝试 PATH。该调用可能阻塞，必须保持在后台任务中执行。
+            guard let path = try? runShellCommand("/usr/bin/which", args: ["xcode-build-server"])?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+                !path.isEmpty else {
+                return nil
+            }
+            if Self.verbose { Self.logger.info("\(Self.t)通过 which 找到 xcode-build-server: \(path, privacy: .public)") }
+            return path
+        }.value
+    }
+
+    private nonisolated static func runShellCommand(_ path: String, args: [String]) throws -> String? {
+        let process = Process()
+        process.executableURL = URL(filePath: path)
+        process.arguments = args
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        try process.run()
+        process.waitUntilExit()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8)
     }
 
     /// 执行命令
@@ -474,17 +509,6 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
         }
     }
 
-    private func runShellCommand(_ path: String, args: [String]) throws -> String? {
-        let process = Process()
-        process.executableURL = URL(filePath: path)
-        process.arguments = args
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        try process.run()
-        process.waitUntilExit()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8)
-    }
 
     private func updateActiveDestination(using settings: [String: String]) {
         let derived = deriveDestination(from: settings)

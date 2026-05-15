@@ -6,6 +6,10 @@
 	<string>VRFIJExvMCeneBRzxR6mu2zPN9ggOUr0LNlcKYOb27o=</string>
 	<key>SUFeedURL</key>
 	<string>https://raw.githubusercontent.com/CofficLab/Lumi/main/appcast.xml</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
 	<key>SUEnableInstallerLauncherService</key>
 	<true/>
 </dict>

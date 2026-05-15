@@ -61,22 +61,25 @@ public actor PGConnection: DatabaseConnection {
     }
 
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
-        let query = PostgresQuery(unsafeSQL: sql)
-        _ = try await conn.query(query, logger: Logger(label: "com.lumi.postgres.exec")).get()
-        return 1
+        let result = try await conn.query(sql, toPostgresData(params ?? [])).get()
+        return result.metadata.rows ?? result.rows.count
     }
 
     public func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
-        let query = PostgresQuery(unsafeSQL: sql)
-        let rows = try await conn.query(query, logger: Logger(label: "com.lumi.postgres.query")).get()
+        let rowSequence = try await conn.query(
+            PostgresQuery(unsafeSQL: sql, binds: toPostgresBindings(params ?? [])),
+            logger: Logger(label: "com.lumi.postgres.query")
+        )
 
         var columns: [String] = []
         var resultRows: [[DatabaseValue]] = []
 
-        for row in rows {
+        for try await row in rowSequence {
             var values: [DatabaseValue] = []
-            var index = 0
             for cell in row {
+                if resultRows.isEmpty {
+                    columns.append(cell.columnName)
+                }
                 if let s = try? cell.decode(String.self) {
                     values.append(.string(s))
                 } else if let i = try? cell.decode(Int.self) {
@@ -94,16 +97,15 @@ public actor PGConnection: DatabaseConnection {
                 } else {
                     values.append(.null)
                 }
-
-                if resultRows.isEmpty {
-                    columns.append(row.rowDescription.fields[index].name)
-                }
-                index += 1
             }
             resultRows.append(values)
         }
 
-        return QueryResult(columns: columns, rows: resultRows, rowsAffected: 0)
+        if columns.isEmpty, let probeSQL = Self.normalizedSelectForColumnProbe(sql) {
+            columns = try await queryColumnNames(for: probeSQL, params: params ?? [])
+        }
+
+        return QueryResult(columns: columns, rows: resultRows, rowsAffected: resultRows.count)
     }
 
     public func beginTransaction() async throws -> any DatabaseTransaction {
@@ -119,6 +121,77 @@ public actor PGConnection: DatabaseConnection {
 
     public func isAlive() async -> Bool {
         !conn.isClosed
+    }
+
+    private func toPostgresData(_ params: [DatabaseValue]) -> [PostgresData] {
+        params.map { value in
+            switch value {
+            case .integer(let int): return PostgresData(int: int)
+            case .double(let double): return PostgresData(double: double)
+            case .string(let string): return PostgresData(string: string)
+            case .bool(let bool): return PostgresData(bool: bool)
+            case .data(let data): return PostgresData(bytes: data)
+            case .null: return .null
+            }
+        }
+    }
+
+    private func toPostgresBindings(_ params: [DatabaseValue]) -> PostgresBindings {
+        var bindings = PostgresBindings(capacity: params.count)
+        toPostgresData(params).forEach { bindings.append($0) }
+        return bindings
+    }
+
+    static func normalizedSelectForColumnProbe(_ sql: String) -> String? {
+        var trimmed = sql.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasSuffix(";") {
+            trimmed.removeLast()
+            trimmed = trimmed.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        guard !trimmed.contains(";") else { return nil }
+        guard trimmed.range(of: #"^\s*select\b"#, options: [.regularExpression, .caseInsensitive]) != nil else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private func queryColumnNames(for sql: String, params: [DatabaseValue]) async throws -> [String] {
+        let tableName = "databasekit_column_probe_\(UUID().uuidString.replacingOccurrences(of: "-", with: "_"))"
+        let tableIdentifier = quoteIdentifier(tableName)
+        let createSQL = "CREATE TEMPORARY TABLE \(tableIdentifier) ON COMMIT DROP AS \(sql) WITH NO DATA"
+        let createQuery = PostgresQuery(unsafeSQL: createSQL, binds: toPostgresBindings(params))
+
+        do {
+            _ = try await conn.query(createQuery, logger: Logger(label: "com.lumi.postgres.columns")).get()
+            let result = try await conn.query(
+                """
+                SELECT attname
+                FROM pg_attribute
+                WHERE attrelid = $1::regclass
+                    AND attnum > 0
+                    AND NOT attisdropped
+                ORDER BY attnum
+                """,
+                [PostgresData(string: tableName)]
+            ).get()
+            try await dropTemporaryTable(tableIdentifier)
+            return result.rows.compactMap { row in
+                row.first.flatMap { try? $0.decode(String.self) }
+            }
+        } catch {
+            try? await dropTemporaryTable(tableIdentifier)
+            throw error
+        }
+    }
+
+    private func dropTemporaryTable(_ tableIdentifier: String) async throws {
+        let query = PostgresQuery(unsafeSQL: "DROP TABLE IF EXISTS \(tableIdentifier)")
+        _ = try await conn.query(query, logger: Logger(label: "com.lumi.postgres.columns")).get()
+    }
+
+    private func quoteIdentifier(_ identifier: String) -> String {
+        "\"\(identifier.replacingOccurrences(of: "\"", with: "\"\""))\""
     }
 }
 

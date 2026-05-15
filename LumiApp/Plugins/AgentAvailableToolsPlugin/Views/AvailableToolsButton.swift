@@ -7,18 +7,13 @@ struct AvailableToolsButton: View {
     var body: some View {
         StatusBarHoverContainer(
             detailView: AvailableToolsListDetailView(),
-            popoverWidth: 480,
+            popoverWidth: 680,
             id: "available-tools-status"
         ) {
-            HStack(spacing: 4) {
-                Image(systemName: "wrench.and.screwdriver")
-                    .font(.system(size: 10))
-                Text(String(localized: "Tools", table: "AgentAvailableToolsPlugin"))
-                    .font(.system(size: 11))
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            Image(systemName: "wrench.and.screwdriver")
+                .font(.system(size: 10))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
         }
     }
 }

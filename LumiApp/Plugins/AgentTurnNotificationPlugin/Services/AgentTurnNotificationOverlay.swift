@@ -27,7 +27,7 @@ struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
 @MainActor
 final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔔" }
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
 
     private let center = UNUserNotificationCenter.current()
 
@@ -38,9 +38,7 @@ final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
         // 只在首次设置，避免重复设置代理
         if !(center.delegate is AgentTurnNotificationHandler) {
             center.delegate = self
-            if Self.verbose {
-                AppLogger.core.info("已设置通知中心代理")
-            }
+            AppLogger.core.info("\(Self.t)✅ 已设置通知中心代理")
         }
     }
 
@@ -70,7 +68,7 @@ final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
                 await deliverNotification(conversationId: conversationId)
             }
         } catch {
-            AppLogger.core.error("请求通知权限失败: \(error)")
+            AppLogger.core.error("\(Self.t)❌ 请求通知权限失败: \(error)")
         }
     }
 
@@ -89,11 +87,9 @@ final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
 
         do {
             try await center.add(request)
-            if Self.verbose {
-                AppLogger.core.info("已发送 turn 结束通知: \(conversationId)")
-            }
+            AppLogger.core.info("\(Self.t)📤 已发送 turn 结束通知: \(conversationId)")
         } catch {
-            AppLogger.core.error("发送 turn 结束通知失败: \(error)")
+            AppLogger.core.error("\(Self.t)❌ 发送 turn 结束通知失败: \(error)")
         }
     }
 }
@@ -113,16 +109,12 @@ extension AgentTurnNotificationHandler: UNUserNotificationCenterDelegate {
         // 从 userInfo 中提取 conversationId
         guard let conversationIdString = userInfo["conversationId"] as? String,
               let conversationId = UUID(uuidString: conversationIdString) else {
-            if Self.verbose {
-                AppLogger.core.info("通知中未找到有效的 conversationId")
-            }
+            AppLogger.core.info("\(Self.t)⚠️ 通知中未找到有效的 conversationId")
             completionHandler()
             return
         }
 
-        if Self.verbose {
-            AppLogger.core.info("用户点击了通知，准备选中对话: \(conversationId)")
-        }
+        AppLogger.core.info("\(Self.t)🖱️ 用户点击了通知，准备选中对话: \(conversationId)")
 
         Task { @MainActor in
             // 1. 激活应用
@@ -134,11 +126,9 @@ extension AgentTurnNotificationHandler: UNUserNotificationCenterDelegate {
             }
 
             // 3. 选中对应的对话
-            RootViewContainer.shared.conversationVM.setSelectedConversation(conversationId)
+            RootContainer.shared.conversationVM.setSelectedConversation(conversationId)
 
-            if Self.verbose {
-                AppLogger.core.info("已选中对话: \(conversationId)")
-            }
+            AppLogger.core.info("\(Self.t)✅ 已选中对话: \(conversationId)")
         }
         completionHandler()
     }

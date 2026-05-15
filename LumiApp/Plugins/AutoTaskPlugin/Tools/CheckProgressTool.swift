@@ -7,15 +7,22 @@ import MagicKit
 /// Agent 可以在需要时主动查询进度，以确认下一步应该做什么。
 struct CheckProgressTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "check_progress"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "检查当前对话的任务进度。返回所有任务及其状态和总体完成百分比。用于回顾已完成内容和下一步事项。"
+        case .english:
+            return     """
     Check the current task progress for the conversation. Returns a list of all tasks with their \
     statuses and overall completion percentage. Use this to review what's been done and what's next.
     """
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [
@@ -56,7 +63,7 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
 
         for task in tasks {
             let icon = statusIcons[task.status] ?? "⬜"
-            result += "\(icon) **#\(task.order)** \(task.title)"
+            result += "\(icon) **#\(task.order)** `\(task.id)` \(task.title)"
             if let detail = task.detail {
                 result += "\n   _\(detail)_"
             }

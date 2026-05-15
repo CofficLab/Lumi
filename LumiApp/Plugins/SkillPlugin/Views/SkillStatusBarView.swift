@@ -1,4 +1,5 @@
 import MagicKit
+import os
 import SkillKit
 import SwiftUI
 
@@ -7,9 +8,14 @@ import SwiftUI
 /// 在 Agent 模式底部状态栏显示当前项目的可用 Skill 数量。
 /// 点击弹出 Skill 列表面板。
 /// 当 Skill 数量为 0 时自动隐藏。
-struct SkillStatusBarView: View {
+struct SkillStatusBarView: View, SuperLog {
+    nonisolated static let emoji = "✨"
+    nonisolated static var verbose: Bool { SkillPlugin.verbose }
+    nonisolated static var logger: Logger { SkillPlugin.logger }
+
     @EnvironmentObject private var projectVM: ProjectVM
     @State private var skills: [SkillMetadata] = []
+    @State private var refreshTask: Task<Void, Never>?
 
     var body: some View {
         Group {
@@ -41,31 +47,42 @@ struct SkillStatusBarView: View {
         .onApplicationDidBecomeActive {
             refreshSkills()
         }
+        .onDisappear {
+            refreshTask?.cancel()
+            refreshTask = nil
+        }
     }
 
     // MARK: - 私有方法
 
     private func refreshSkills() {
         let projectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        if SkillPlugin.verbose {
-            SkillPlugin.logger.info("\(SkillPlugin.emoji) refreshSkills: projectPath='\(projectPath)'")
+        if Self.verbose {
+            Self.logger.info("\(self.t)刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
         }
         guard !projectPath.isEmpty else {
-            if SkillPlugin.verbose {
-                SkillPlugin.logger.info("\(SkillPlugin.emoji) refreshSkills: empty project path, clearing skills")
+            if Self.verbose {
+                Self.logger.info("\(self.t)项目路径为空，清空 Skill 列表")
             }
+            refreshTask?.cancel()
+            refreshTask = nil
             skills = []
             return
         }
-        Task {
+
+        refreshTask?.cancel()
+        refreshTask = Task.detached(priority: .utility) {
             let loaded = await SkillService.shared.listSkills(projectPath: projectPath)
+            guard !Task.isCancelled else { return }
+
             await MainActor.run {
+                guard !Task.isCancelled else { return }
                 skills = loaded
             }
-            if SkillPlugin.verbose {
-                SkillPlugin.logger.info("\(SkillPlugin.emoji) refreshSkills: found \(loaded.count) skills")
+            if Self.verbose {
+                Self.logger.info("\(SkillStatusBarView.t)刷新完成，找到 \(loaded.count) 个 Skill")
                 for s in loaded {
-                    SkillPlugin.logger.info("\(SkillPlugin.emoji)   - \(s.name): \(s.title)")
+                    Self.logger.info("\(SkillStatusBarView.t)Skill：\(s.name) - \(s.title)")
                 }
             }
         }

@@ -21,7 +21,7 @@ struct SPMCompilerTests {
         )
         defer { try? FileManager.default.removeItem(at: packageDirectory) }
 
-        let productURL = try await SPMCompiler().build(
+        let productURL = try await LumiPreviewFacade.SPMCompiler().build(
             packageDirectory: packageDirectory,
             targetName: "HelloTool"
         )
@@ -45,12 +45,12 @@ struct SPMCompilerTests {
         defer { try? FileManager.default.removeItem(at: packageDirectory) }
 
         do {
-            _ = try await SPMCompiler().build(
+            _ = try await LumiPreviewFacade.SPMCompiler().build(
                 packageDirectory: packageDirectory,
                 targetName: "MissingTool"
             )
             Issue.record("Expected compilationFailed")
-        } catch PreviewError.compilationFailed(let message) {
+        } catch LumiPreviewFacade.PreviewError.compilationFailed(let message) {
             #expect(message.localizedCaseInsensitiveContains("error"))
             #expect(message.localizedCaseInsensitiveContains("MissingTool"))
         } catch {
@@ -76,12 +76,12 @@ struct SPMCompilerTests {
         defer { try? FileManager.default.removeItem(at: packageDirectory) }
 
         do {
-            _ = try await SPMCompiler().build(
+            _ = try await LumiPreviewFacade.SPMCompiler().build(
                 packageDirectory: packageDirectory,
                 targetName: "BrokenTool"
             )
             Issue.record("Expected compilationFailed")
-        } catch PreviewError.compilationFailed(let message) {
+        } catch LumiPreviewFacade.PreviewError.compilationFailed(let message) {
             #expect(message.contains("Broken.swift"))
             #expect(message.contains(":5:"))
         } catch {
@@ -138,7 +138,7 @@ struct SPMCompilerTests {
             encoding: .utf8
         )
 
-        let arguments = SPMCompiler().previewCompilerArguments(
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(
             packageDirectory: packageDirectory,
             targetName: "PreviewTarget"
         )
@@ -190,9 +190,44 @@ struct SPMCompilerTests {
         )
         """.write(to: checkoutDirectory.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
 
-        let arguments = SPMCompiler().previewCompilerArguments(packageDirectory: packageDirectory)
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(packageDirectory: packageDirectory)
 
         #expect(arguments.contains("-lz"))
+    }
+
+    @Test("previewCompilerArguments 排除测试 target 的对象文件")
+    func previewCompilerArgumentsExcludeTestTargetObjects() throws {
+        let packageDirectory = try makeTemporaryPackage(
+            targetName: "PreviewTarget",
+            sourceFileName: "main.swift",
+            source: """
+            @main
+            struct PreviewTarget {
+                static func main() {}
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let debugDirectory = packageDirectory
+            .appendingPathComponent(".build", isDirectory: true)
+            .appendingPathComponent("debug", isDirectory: true)
+        let mainObject = debugDirectory.appendingPathComponent("Helper.o")
+        let testBuildDirectory = debugDirectory.appendingPathComponent("LumiUITests.build", isDirectory: true)
+        let testObject = testBuildDirectory.appendingPathComponent("AppButtonTests.swift.o")
+
+        try FileManager.default.createDirectory(at: testBuildDirectory, withIntermediateDirectories: true)
+        FileManager.default.createFile(atPath: mainObject.path, contents: Data())
+        FileManager.default.createFile(atPath: testObject.path, contents: Data())
+
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(
+            packageDirectory: packageDirectory,
+            targetName: "PreviewTarget"
+        )
+        let normalizedArguments = arguments.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
+
+        #expect(normalizedArguments.contains(mainObject.standardizedFileURL.path))
+        #expect(!normalizedArguments.contains(testObject.standardizedFileURL.path))
     }
 
     private func makeTemporaryPackage(

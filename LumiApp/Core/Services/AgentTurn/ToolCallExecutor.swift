@@ -8,7 +8,7 @@ import MagicKit
 @MainActor
 final class ToolCallExecutor: SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
 
     private let toolExecutionService: ToolExecutionService
     private let toolService: ToolService
@@ -169,21 +169,39 @@ final class ToolCallExecutor: SuperLog {
             startedAt: startedAt,
             conversationId: conversationId
         )
+        let toolContext = ToolExecutionContext(
+            conversationId: conversationId,
+            toolCallId: toolCall.id,
+            toolName: toolCall.name
+        )
 
         let resultMsg: ChatMessage
         do {
             let result = try await withTaskCancellationHandler {
-                try await toolExecutionService.executeTool(toolCall)
+                try toolContext.checkCancellation()
+                return try await toolExecutionService.executeTool(toolCall, context: toolContext)
             } onCancel: {
                 progressTask.cancel()
+                toolContext.cancel()
             }
+            try toolContext.checkCancellation()
             progressTask.cancel()
-            resultMsg = ChatMessage(
-                role: .tool,
-                conversationId: conversationId,
-                content: result,
-                toolCallID: toolCall.id
-            )
+            if let decoded = ToolImageResultCodec.decode(result) {
+                resultMsg = ChatMessage(
+                    role: .tool,
+                    conversationId: conversationId,
+                    content: decoded.content,
+                    toolCallID: toolCall.id,
+                    images: decoded.images
+                )
+            } else {
+                resultMsg = ChatMessage(
+                    role: .tool,
+                    conversationId: conversationId,
+                    content: result,
+                    toolCallID: toolCall.id
+                )
+            }
             conversationSendStatusVM.applyToolProgressEvent(
                 conversationId: conversationId,
                 event: .completed(toolName: toolCall.name, current: step, total: total)

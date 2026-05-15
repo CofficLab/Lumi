@@ -1,251 +1,314 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Available" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Available"
+  "sourceLanguage": "en",
+  "strings": {
+    "Available": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用"
           }
         }
       }
     },
-    "Checking availability…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Checking availability…"
+    "Checking availability…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking availability…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在检测可用性…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在检测可用性…"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在檢測可用性…"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在檢測可用性…"
           }
         }
       }
     },
-    "Detect available LLM providers and models via health checks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detect available LLM providers and models via health checks"
+    "Checking...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过健康检查检测可用的 LLM 提供商和模型"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查中..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通過健康檢查檢測可用的 LLM 提供商和模型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查中..."
           }
         }
       }
     },
-    "LLM Availability" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LLM Availability"
+    "Detect available LLM providers and models via health checks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detect available LLM providers and models via health checks"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LLM 可用性检测"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过健康检查检测可用的 LLM 提供商和模型"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LLM 可用性檢測"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通過健康檢查檢測可用的 LLM 提供商和模型"
           }
         }
       }
     },
-    "Loading provider information…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading provider information…"
+    "LLM Availability": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM Availability"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在加载供应商信息…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM 可用性检测"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在加載供應商信息…"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM 可用性檢測"
           }
         }
       }
     },
-    "No LLM providers configured" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No LLM providers configured"
+    "Loading provider information…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading provider information…"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未配置 LLM 供应商"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加载供应商信息…"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未配置 LLM 供應商"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加載供應商信息…"
           }
         }
       }
     },
-    "No providers found" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No providers found"
+    "No LLM": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No LLM"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到供应商"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无 LLM"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到供應商"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無 LLM"
           }
         }
       }
     },
-    "Please add LLM providers in Settings to enable AI features." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please add LLM providers in Settings to enable AI features."
+    "No LLM providers configured": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No LLM providers configured"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请在设置中添加 LLM 供应商以启用 AI 功能。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未配置 LLM 供应商"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請在設置中添加 LLM 供應商以啟用 AI 功能。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未配置 LLM 供應商"
           }
         }
       }
     },
-    "Recheck this provider" : {
-
-    },
-    "Refresh" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh"
+    "No providers found": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No providers found"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到供应商"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到供應商"
           }
         }
       }
     },
-    "Search providers or models…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search providers or models…"
+    "Please add LLM providers in Settings to enable AI features.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please add LLM providers in Settings to enable AI features."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索供应商或模型…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在设置中添加 LLM 供应商以启用 AI 功能。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索供應商或模型…"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請在設置中添加 LLM 供應商以啟用 AI 功能。"
           }
         }
       }
     },
-    "Total" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Total"
+    "Recheck this provider": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recheck this provider"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "总计"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新检查此供应商"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "總計"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新檢查此供應商"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新"
+          }
+        }
+      }
+    },
+    "Search providers or models…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search providers or models…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索供应商或模型…"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索供應商或模型…"
+          }
+        }
+      }
+    },
+    "Total": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "总计"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "總計"
           }
         }
       }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

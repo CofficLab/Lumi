@@ -105,7 +105,7 @@ public struct DiskMetrics: Equatable {
 
 // MARK: - Process Monitoring Models
 
-public struct ProcessMetric: Identifiable, Hashable {
+public struct ProcessMetric: Identifiable, Hashable, Sendable {
     public let id: Int32 // PID
     public let name: String
     public let icon: String? // Bundle path or similar

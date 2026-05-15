@@ -131,6 +131,16 @@ public final class EditorService: ObservableObject {
         state.saveNow()
     }
 
+    /// 替换当前文档全文，并走编辑器事务管线更新 dirty 状态、撤销栈和 LSP 文档。
+    @discardableResult
+    public func replaceCurrentDocumentText(_ text: String, reason: String) -> Bool {
+        state.applyFullTextEdit(
+            replacementText: text,
+            selectedRanges: [NSRange(location: 0, length: 0)],
+            reason: reason
+        )
+    }
+
     /// 当前文件是否可预览（代码编辑器可渲染）
     public var canPreview: Bool { state.canPreview }
 

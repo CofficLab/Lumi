@@ -24,11 +24,15 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
         return "mcp__\(safeServerName)__\(mcpTool.name)"
     }
 
-    var description: String {
+    /// MCP 工具的描述来自外部服务器，无法提供多语言版本。
+    /// 两种语言均返回原始描述。
+    func description(for language: LanguagePreference) -> String {
         mcpTool.description ?? ""
     }
 
-    var inputSchema: [String: Any] {
+    /// MCP 工具的 schema 来自外部服务器，无法提供多语言版本。
+    /// 两种语言均返回原始 schema。
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         guard let data = try? JSONEncoder().encode(mcpTool.inputSchema),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else {
@@ -38,6 +42,15 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await executeMCP(arguments: arguments, context: nil)
+    }
+
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        return try await executeMCP(arguments: arguments, context: context)
+    }
+
+    private func executeMCP(arguments: [String: ToolArgument], context: ToolExecutionContext?) async throws -> String {
         if AgentMCPToolsPlugin.verbose {
             AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 开始执行 MCP 工具: \(self.name)")
             AgentMCPToolsPlugin.logger.info("\(self.t)[MCP] 原始工具名: \(self.mcpTool.name)")
@@ -63,7 +76,13 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
         let startTime = Date()
 
         do {
-            let result = try await client.callTool(name: mcpTool.name, arguments: mcpArguments)
+            try context?.checkCancellation()
+            let result = try await withTaskCancellationHandler {
+                try await client.callTool(name: mcpTool.name, arguments: mcpArguments)
+            } onCancel: {
+                context?.cancel()
+            }
+            try context?.checkCancellation()
             let duration = Date().timeIntervalSince(startTime)
 
             if AgentMCPToolsPlugin.verbose {
@@ -115,4 +134,3 @@ final class MCPToolAdapter: SuperAgentTool, @unchecked Sendable, SuperLog {
         .high
     }
 }
-

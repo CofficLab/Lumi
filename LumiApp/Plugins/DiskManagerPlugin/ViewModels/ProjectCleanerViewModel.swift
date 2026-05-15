@@ -29,6 +29,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     private let service = ProjectCleanerService.shared
     private var scanTask: Task<Void, Never>?
     private var progressTask: Task<Void, Never>?
+    private var hasCompletedInitialScan = false
 
     init() {
         // Service 不再发布状态，所有状态由 ViewModel 管理
@@ -61,6 +62,7 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
                 await MainActor.run {
                     self.projects = result
                     self.isScanning = false
+                    self.hasCompletedInitialScan = true
                     self.scanProgress = ""
                     self.progressTask?.cancel()
 
@@ -77,6 +79,11 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
                 }
             }
         }
+    }
+
+    func scanProjectsIfNeeded() async {
+        guard !hasCompletedInitialScan else { return }
+        await scanProjects()
     }
 
     func stopScan() {

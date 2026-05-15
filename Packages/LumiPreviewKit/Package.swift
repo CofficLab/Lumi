@@ -12,8 +12,8 @@ let package = Package(
             targets: ["LumiPreviewKit"]
         ),
         .executable(
-            name: "LumiPreviewHostApp",
-            targets: ["LumiPreviewHostApp"]
+            name: "LumiHotPreviewHostApp",
+            targets: ["LumiHotPreviewHostApp"]
         )
     ],
     dependencies: [],
@@ -23,9 +23,9 @@ let package = Package(
             path: "Sources/LumiPreviewKit"
         ),
         .executableTarget(
-            name: "LumiPreviewHostApp",
+            name: "LumiHotPreviewHostApp",
             dependencies: ["LumiPreviewKit"],
-            path: "Sources/LumiPreviewHostApp"
+            path: "Sources/LumiHotPreviewHostApp"
         ),
         .testTarget(
             name: "LumiPreviewKitTests",

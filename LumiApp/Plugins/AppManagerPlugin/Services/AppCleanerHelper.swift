@@ -5,7 +5,7 @@ import MagicKit
 /// 应用清理助手，用于扫描和清理应用的关联文件
 class AppCleanerHelper: SuperLog {
     nonisolated static let emoji = "🗑️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     private let fileManager = FileManager.default
 
     // 常见的关联文件搜索路径

@@ -1,7 +1,7 @@
 import Foundation
 
 /// 文件搜索结果模型（Quick Open / 索引共用）
-public struct FileResult: Identifiable, Equatable, Hashable {
+public struct FileResult: Identifiable, Equatable, Hashable, Sendable {
     public let id: UUID
     public let name: String
     public let path: String
@@ -39,7 +39,7 @@ public struct FileResult: Identifiable, Equatable, Hashable {
 }
 
 /// 文件索引模型
-public struct FileIndex {
+public struct FileIndex: Sendable {
     public let projectPath: String
     public let files: [FileResult]
     public let lastUpdated: Date

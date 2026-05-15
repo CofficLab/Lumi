@@ -6,15 +6,30 @@ struct GitStatusTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📊"
     nonisolated static let verbose: Bool = true
     let name = "git_status"
-    let description = "获取 Git 仓库的当前状态，包括分支信息、文件变更等。返回结构化的 JSON 数据。"
 
-    var inputSchema: [String: Any] {
-        [
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取 Git 仓库的当前状态，包括分支信息、文件变更等。返回结构化的 JSON 数据。"
+        case .english:
+            return "Get the current status of a Git repository, including branch info and file changes. Returns structured JSON data."
+        }
+    }
+
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        let pathDesc: String
+        switch language {
+        case .chinese:
+            pathDesc = "Git 仓库路径，默认为当前工作目录"
+        case .english:
+            pathDesc = "Git repository path, defaults to current working directory"
+        }
+        return [
             "type": "object",
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "Git 仓库路径，默认为当前工作目录",
+                    "description": pathDesc,
                 ],
             ],
         ]

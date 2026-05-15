@@ -20,6 +20,7 @@ actor ThemeSummerPlugin: SuperPlugin {
                 appTheme: SummerTheme(),
                 editorThemeId: "summer",
                 editorThemeContributor: SummerSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiFileIconThemeCatalog.summer(),
                 order: 60
             )
         ]

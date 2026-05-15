@@ -3,15 +3,17 @@ import SwiftUI
 import os
 
 /// Agent 聊天插件
+///
+/// 负责右侧栏的消息列表 Section，显示当前会话的聊天消息时间线。
 actor AgentChatPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-chat")
 
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "AgentChat"
     static let displayName = String(localized: "Agent Chat", table: "AgentChat")
-    static let description = String(localized: "Agent chat messages and input area", table: "AgentChat")
+    static let description = String(localized: "Agent chat messages timeline", table: "AgentChat")
     static let iconName = "text.bubble.fill"
     static var order: Int { 82 }
     nonisolated static let enable: Bool = true
@@ -33,10 +35,10 @@ actor AgentChatPlugin: SuperPlugin, SuperLog {
 
     // MARK: - UI Contributions
 
-    /// 右侧栏视图：消息列表 + 输入区
-    @MainActor func addSidebarView(activeIcon: String?) -> AnyView? {
-        guard activeIcon == EditorPlugin.iconName else { return nil }
-        return AnyView(AgentChatSidebarView())
+    /// 右侧栏 Section：消息列表
+    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
+        guard activeIcon == EditorPlugin.iconName else { return [] }
+        return [AnyView(ChatMessagesView())]
     }
 }
 

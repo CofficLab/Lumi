@@ -4,11 +4,18 @@ import MagicKit
 /// GitHub Issue 详情工具
 struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_issue_detail"
-    let description = "获取 GitHub Issue 的详细信息，包括标题、描述、状态、标签、评论数等。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取 GitHub Issue 的详细信息，包括标题、描述、状态、标签、评论数等。"
+        case .english:
+            return "Get detailed information for a GitHub issue, including title, body, state, labels, comment count, and more."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

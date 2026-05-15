@@ -128,7 +128,7 @@ struct SearchLoadingView: View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.small)
-            Text("搜索中...")
+            Text(String(localized: "搜索中...", table: "CodeServer"))
                 .font(.system(size: 12))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -147,7 +147,7 @@ struct SearchErrorView: View {
                 .font(.system(size: 24))
                 .foregroundColor(Color(hex: "FF9F0A"))
 
-            Text("搜索失败")
+            Text(String(localized: "搜索失败", table: "CodeServer"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -169,7 +169,7 @@ struct SearchEmptyView: View {
                 .font(.system(size: 24))
                 .foregroundColor(Color.adaptive(light: "BDBDBD", dark: "48484F"))
 
-            Text("未找到相关扩展")
+            Text(String(localized: "未找到相关扩展", table: "CodeServer"))
                 .font(.system(size: 12))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -186,11 +186,11 @@ struct SearchPlaceholderView: View {
                 .font(.system(size: 32))
                 .foregroundColor(Color.adaptive(light: "BDBDBD", dark: "48484F"))
 
-            Text("Open VSX 扩展市场")
+            Text(String(localized: "Open VSX 扩展市场", table: "CodeServer"))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-            Text("搜索并安装来自 Open VSX 的扩展\n支持数千个开源扩展")
+            Text(String(localized: "搜索并安装来自 Open VSX 的扩展\n支持数千个开源扩展", table: "CodeServer"))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .multilineTextAlignment(.center)
@@ -199,7 +199,7 @@ struct SearchPlaceholderView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "globe")
                         .font(.system(size: 10))
-                    Text("访问 Open VSX 官网")
+                    Text(String(localized: "访问 Open VSX 官网", table: "CodeServer"))
                         .font(.system(size: 11))
                 }
                 .foregroundColor(Color(hex: "7C6FFF"))
@@ -217,7 +217,7 @@ struct PopularLoadingView: View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.small)
-            Text("正在加载热门扩展...")
+            Text(String(localized: "正在加载热门扩展...", table: "CodeServer"))
                 .font(.system(size: 12))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }
@@ -359,7 +359,7 @@ struct MarketExtensionRowView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle")
                                 .font(.system(size: 10))
-                            Text("应用")
+                            Text(String(localized: "应用", table: "CodeServer"))
                                 .font(.system(size: 10, weight: .medium))
                         }
                         .padding(.horizontal, 8)
@@ -368,9 +368,9 @@ struct MarketExtensionRowView: View {
                     .buttonStyle(.plain)
                     .foregroundColor(.blue)
                     .background(Color.blue.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
-                    .help("应用此图标主题")
+                    .help(String(localized: "应用此图标主题", table: "CodeServer"))
                 } else {
-                    Label("已安装", systemImage: "checkmark")
+                    Label(String(localized: "已安装", table: "CodeServer"), systemImage: "checkmark")
                         .font(.system(size: 10))
                         .foregroundColor(Color(hex: "30D158"))
                 }

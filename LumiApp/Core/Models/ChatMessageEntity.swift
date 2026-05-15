@@ -5,7 +5,7 @@ import SwiftData
 @Model
 final class ChatMessageEntity {
     @Attribute(.unique) var id: UUID
-    private var _role: String  // 内部存储为 String
+    var _role: String  // 内部存储为 String；查询层需要按原始角色过滤
     var content: String
     var timestamp: Date
     var isError: Bool

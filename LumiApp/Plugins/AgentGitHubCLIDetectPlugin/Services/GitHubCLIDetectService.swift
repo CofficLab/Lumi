@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import ShellKit
 
 /// GitHub CLI 检测服务
 ///
@@ -62,42 +63,21 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
             GitHubCLIDetectPlugin.logger.info("\(self.t)执行 which gh 命令...")
         }
 
-        let process = Process()
-        let pipe = Pipe()
-
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-c", "which gh"]
-        process.standardOutput = pipe
-        process.standardError = pipe
-
-        // 设置与 ShellService 相同的 PATH 环境变量
-        var env = ProcessInfo.processInfo.environment
-        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-        process.environment = env
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-
-            let terminationStatus = process.terminationStatus
+        let result = runGHCommand("which gh")
+        if let result {
             if Self.verbose {
-                GitHubCLIDetectPlugin.logger.info("\(self.t)which gh 终止状态：\(terminationStatus)")
+                GitHubCLIDetectPlugin.logger.info("\(self.t)which gh 终止状态：\(result.exitCode)")
             }
 
-            if terminationStatus == 0 {
+            if result.exitCode == 0 {
                 return true
-            } else {
-                // 读取错误输出
-                let errorData = pipe.fileHandleForReading.readDataToEndOfFile()
-                let errorOutput = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "无输出"
-                if Self.verbose {
-                    GitHubCLIDetectPlugin.logger.error("\(self.t)which gh 错误输出：\(errorOutput)")
-                }
             }
-        } catch {
+            let errorOutput = result.stderr.isEmpty ? result.stdout : result.stderr
             if Self.verbose {
-                GitHubCLIDetectPlugin.logger.error("\(self.t)检查 gh 安装失败：\(error.localizedDescription)")
+                GitHubCLIDetectPlugin.logger.error("\(self.t)which gh 错误输出：\(errorOutput.isEmpty ? "无输出" : errorOutput)")
             }
+        } else if Self.verbose {
+            GitHubCLIDetectPlugin.logger.error("\(self.t)检查 gh 安装失败")
         }
 
         return false
@@ -105,73 +85,65 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
 
     /// 获取 gh 路径
     private func findGHPath() -> String? {
-        let process = Process()
-        let pipe = Pipe()
-
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-c", "which gh"]
-        process.standardOutput = pipe
-
-        // 设置与 ShellService 相同的 PATH 环境变量
-        var env = ProcessInfo.processInfo.environment
-        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-        process.environment = env
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-
-            if process.terminationStatus == 0 {
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-        } catch {
-            if Self.verbose {
-                GitHubCLIDetectPlugin.logger.error("\(self.t)获取 gh 路径失败：\(error.localizedDescription)")
-            }
+        guard let result = runGHCommand("which gh") else {
+            if Self.verbose { GitHubCLIDetectPlugin.logger.error("\(self.t)获取 gh 路径失败") }
+            return nil
         }
-
-        return nil
+        return result.exitCode == 0 ? result.stdout.trimmingCharacters(in: .whitespacesAndNewlines) : nil
     }
 
     /// 获取 gh 版本
     private func getGHVersion() -> String? {
-        let process = Process()
-        let pipe = Pipe()
-
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-c", "gh --version"]
-        process.standardOutput = pipe
-        process.standardError = pipe
-
-        // 设置与 ShellService 相同的 PATH 环境变量
-        var env = ProcessInfo.processInfo.environment
-        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-        process.environment = env
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-
-            if process.terminationStatus == 0 {
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-
-                // 解析版本号，gh --version 输出格式：
-                // gh version 2.40.1 (2023-12-01)
-                // https://github.com/cli/cli/releases/tag/v2.40.1
-                if let firstLine = output?.split(separator: "\n").first {
-                    return String(firstLine)
-                }
-                return output
-            }
-        } catch {
-            if Self.verbose {
-                    GitHubCLIDetectPlugin.logger.error("\(self.t)获取 gh 版本失败：\(error.localizedDescription)")
-            }
+        guard let result = runGHCommand("gh --version") else {
+            if Self.verbose { GitHubCLIDetectPlugin.logger.error("\(self.t)获取 gh 版本失败") }
+            return nil
         }
 
-        return nil
+        guard result.exitCode == 0 else { return nil }
+        let output = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let firstLine = output.split(separator: "\n").first {
+            return String(firstLine)
+        }
+        return output
+    }
+
+    private func runGHCommand(_ command: String) -> ShellResult? {
+        let semaphore = DispatchSemaphore(value: 0)
+        let box = GitHubCLILockedResultBox()
+        Task {
+            let result = try? await Shell.execute(
+                command,
+                options: ShellOptions(
+                    shellExecutable: "/bin/zsh",
+                    environment: [
+                        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+                    ],
+                    throwsOnError: false
+                )
+            )
+            box.set(result)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return box.get()
+    }
+}
+
+private final class GitHubCLILockedResultBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: ShellResult?
+
+    func set(_ value: ShellResult?) {
+        lock.lock()
+        self.value = value
+        lock.unlock()
+    }
+
+    func get() -> ShellResult? {
+        lock.lock()
+        let result = value
+        lock.unlock()
+        return result
     }
 }
 

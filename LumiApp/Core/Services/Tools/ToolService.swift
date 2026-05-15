@@ -65,13 +65,16 @@ class ToolService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🧰"
     
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - Properties
 
-    /// 所有可用工具
+    /// 所有可用工具（原始，未本地化）
     ///
     /// 每次工具列表更新时都会重新计算。
     private(set) var allTools: [SuperAgentTool] = []
+
+    /// 当前语言偏好（由 LLMRequester 在每次请求前设置）
+    var languagePreference: LanguagePreference = .english
 
     /// 内置工具列表
     private var builtInTools: [SuperAgentTool] = []
@@ -160,11 +163,14 @@ class ToolService: SuperLog, @unchecked Sendable {
 
     // MARK: - 工具相关
 
-    /// 获取所有可用工具（只读）
+    /// 获取所有可用工具（已按语言偏好本地化）
     ///
-    /// 返回完整的工具列表，包括内置和 MCP 工具。
+    /// 返回经过 `LocalizedAgentTool` 包装的工具列表。
+    /// 包装器调用每个工具的 `description(for:)` / `inputSchema(for:)` 方法，
+    /// 使用 `languagePreference` 指定的语言。
+    /// Provider 层拿到的工具已经是特定语言的了，无需关心语言切换。
     var tools: [SuperAgentTool] {
-        return allTools
+        return allTools.map { LocalizedAgentTool(underlying: $0, language: languagePreference) }
     }
 
     /// 根据名称获取工具
@@ -198,7 +204,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///   - argumentsJSON: 工具参数（JSON 字符串格式）
     /// - Returns: 执行结果字符串
     /// - Throws: 如果工具不存在或执行失败则抛出错误
-    func executeTool(named name: String, argumentsJSON: String) async throws -> String {
+    func executeTool(named name: String, argumentsJSON: String, context: ToolExecutionContext? = nil) async throws -> String {
         // 解析 JSON 字符串
         let arguments: [String: Any]
         if let data = argumentsJSON.data(using: .utf8),
@@ -208,7 +214,7 @@ class ToolService: SuperLog, @unchecked Sendable {
             arguments = [:]
         }
         
-        return try await executeTool(named: name, arguments: arguments)
+        return try await executeTool(named: name, arguments: arguments, context: context)
     }
     
     /// 执行工具
@@ -226,7 +232,7 @@ class ToolService: SuperLog, @unchecked Sendable {
     ///   - arguments: 工具参数字典
     /// - Returns: 执行结果字符串
     /// - Throws: 如果工具不存在或执行失败则抛出错误
-    func executeTool(named name: String, arguments: [String: Any]) async throws -> String {
+    func executeTool(named name: String, arguments: [String: Any], context: ToolExecutionContext? = nil) async throws -> String {
         // 查找工具
         guard let tool = tool(named: name) else {
             throw ToolError.toolNotFound(name)
@@ -244,7 +250,14 @@ class ToolService: SuperLog, @unchecked Sendable {
             let toolArguments = arguments.mapValues { value in
                 ToolArgument(value)
             }
-            let result = try await tool.execute(arguments: toolArguments)
+            let result: String
+            if let context {
+                try context.checkCancellation()
+                result = try await tool.execute(arguments: toolArguments, context: context)
+                try context.checkCancellation()
+            } else {
+                result = try await tool.execute(arguments: toolArguments)
+            }
             let duration = Date().timeIntervalSince(startTime)
 
             if Self.verbose {

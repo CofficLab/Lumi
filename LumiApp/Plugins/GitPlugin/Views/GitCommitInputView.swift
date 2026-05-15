@@ -112,7 +112,7 @@ struct GitCommitInputView: View {
                             .fill(Color(hex: "7C6FFF").opacity(0.08))
                     )
             } else {
-                AppButton("AI", systemImage: "sparkles", style: .ghost, size: .small, fillsWidth: true) {
+                AppButton(String(localized: "AI", table: "GitPlugin"), systemImage: "sparkles", style: .ghost, size: .small, fillsWidth: true) {
                     Task { await generateAICommitMessage() }
                 }
                 .disabled(isGenerating || isCommitting)
@@ -134,7 +134,7 @@ struct GitCommitInputView: View {
                     )
                     .foregroundColor(.white)
             } else {
-                AppButton("Commit", systemImage: "checkmark.circle.fill", style: .primary, size: .small, fillsWidth: true) {
+                AppButton(String(localized: "Commit", table: "GitPlugin"), systemImage: "checkmark.circle.fill", style: .primary, size: .small, fillsWidth: true) {
                     Task { await performCommit() }
                 }
                 .disabled(!canCommit || isGenerating)
@@ -205,11 +205,11 @@ struct GitCommitInputView: View {
             let changes = try await GitCommitService.gatherChanges(at: path)
 
             // 2. 生成 commit message
-            let config = RootViewContainer.shared.agentSessionConfig.getCurrentConfig()
+            let config = RootContainer.shared.agentSessionConfig.getCurrentConfig()
             let message = try await GitCommitService.generateCommitMessage(
                 changes: changes,
                 language: .english,
-                llmService: RootViewContainer.shared.llmService,
+                llmService: RootContainer.shared.llmService,
                 config: config
             )
 

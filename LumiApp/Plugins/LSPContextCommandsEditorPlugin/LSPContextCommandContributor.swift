@@ -6,7 +6,7 @@ import os
 @MainActor
 final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLog {
     nonisolated static let emoji = "🔌"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
 
     let id: String = "builtin.lsp.context-commands"
 

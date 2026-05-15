@@ -6,7 +6,7 @@ import MagicKit
 struct XcodeProjectStatusBar: View, SuperLog {
     nonisolated static let emoji = "🔨"
 
-    @StateObject private var viewModel = XcodeProjectStatusBarViewModel()
+    @StateObject private var viewModel = XcodeProjectStatusBarViewModel.shared
 
     var body: some View {
         Group {
@@ -257,7 +257,15 @@ struct XcodeFileNotInTargetWarning: View {
                     .font(.headline)
             }
 
-            Text("\"\\(fileName)\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.")
+            Text(
+                String(
+                    format: String(
+                        localized: "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.",
+                        table: "EditorXcodePlugin"
+                    ),
+                    fileName
+                )
+            )
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 

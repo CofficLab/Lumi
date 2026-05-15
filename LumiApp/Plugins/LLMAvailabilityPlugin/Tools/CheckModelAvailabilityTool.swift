@@ -10,9 +10,16 @@ struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = true
 
     let name = "check_model_availability"
-    let description = "检测指定供应商的某个大模型是否可用。通过向目标模型发送轻量请求验证连通性。返回可用 ✅ 或不可用 ❌ 及原因。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "检测指定供应商的某个大模型是否可用。通过向目标模型发送轻量请求验证连通性。返回可用 ✅ 或不可用 ❌ 及原因。"
+        case .english:
+            return "Check if a specific LLM model from a given provider is available. Sends a lightweight request to verify connectivity. Returns available ✅ or unavailable ❌ with reason."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [
@@ -53,7 +60,7 @@ struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
             LLMAvailabilityPlugin.logger.info("\(self.t)🔍 开始检测：\(providerId) / \(modelId)")
         }
 
-        let llmService = RootViewContainer.shared.llmService
+        let llmService = RootContainer.shared.llmService
         let checker = LLMAvailabilityChecker(llmService: llmService)
         let result = await checker.checkModel(providerId: providerId, modelId: modelId)
 

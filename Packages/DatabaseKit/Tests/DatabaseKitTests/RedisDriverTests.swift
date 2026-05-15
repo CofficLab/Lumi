@@ -33,7 +33,7 @@ struct RedisDriverTests {
     func redisDriverUsesDefaultPort() async throws {
         let driver = RedisDriver()
         // Note: This would require a real Redis server, so we'll test the logic only
-        let config = DatabaseConfig(
+        _ = DatabaseConfig(
             name: "Default Port",
             type: .redis,
             host: "localhost",
@@ -44,6 +44,206 @@ struct RedisDriverTests {
         // We can't test actual connection without a Redis server,
         // but we can verify the driver was created correctly
         #expect(driver.type == .redis)
+    }
+
+    @Test
+    func redisIntegrationExecutesQuotedSetAndGetWhenConfigured() async throws {
+        guard let config = DatabaseKitIntegrationConfig.redis else {
+            return
+        }
+
+        let driver = RedisDriver()
+        let connection = try await driver.connect(config: config)
+
+        let key = "databasekit:redis:\(UUID().uuidString)"
+        let value = "hello world"
+
+        do {
+            let setResult = try await connection.execute("SET \(key) \"\(value)\"", params: nil)
+            let getResult = try await connection.query("GET \(key)", params: nil)
+
+            #expect(setResult == 1)
+            #expect(getResult.rows == [[.string(key), .string(value)]])
+        } catch {
+            _ = try? await connection.execute("DEL \(key)", params: nil)
+            await connection.close()
+            throw error
+        }
+
+        _ = try? await connection.execute("DEL \(key)", params: nil)
+        await connection.close()
+    }
+
+    @Test
+    func redisIntegrationAppendsParamsWhenConfigured() async throws {
+        guard let config = DatabaseKitIntegrationConfig.redis else {
+            return
+        }
+
+        let driver = RedisDriver()
+        let connection = try await driver.connect(config: config)
+
+        let key = "databasekit:redis:params:\(UUID().uuidString)"
+        let value = "hello params"
+
+        do {
+            let setResult = try await connection.execute("SET", params: [.string(key), .string(value)])
+            let getResult = try await connection.query("GET", params: [.string(key)])
+
+            #expect(setResult == 1)
+            #expect(getResult.rows == [[.string(key), .string(value)]])
+        } catch {
+            _ = try? await connection.execute("DEL", params: [.string(key)])
+            await connection.close()
+            throw error
+        }
+
+        _ = try? await connection.execute("DEL", params: [.string(key)])
+        await connection.close()
+    }
+
+    @Test
+    func redisIntegrationCommitsTransactionWhenConfigured() async throws {
+        guard let config = DatabaseKitIntegrationConfig.redis else {
+            return
+        }
+
+        let driver = RedisDriver()
+        let connection = try await driver.connect(config: config)
+        let key = "databasekit:redis:transaction:\(UUID().uuidString)"
+
+        do {
+            let transaction = try await connection.beginTransaction()
+            _ = try await transaction.execute("SET \(key) committed", params: nil)
+            try await transaction.commit()
+
+            let result = try await connection.query("GET \(key)", params: nil)
+            #expect(result.rows == [[.string(key), .string("committed")]])
+        } catch {
+            _ = try? await connection.execute("DEL \(key)", params: nil)
+            await connection.close()
+            throw error
+        }
+
+        _ = try? await connection.execute("DEL \(key)", params: nil)
+        await connection.close()
+    }
+
+    @Test
+    func redisIntegrationRollsBackTransactionWhenConfigured() async throws {
+        guard let config = DatabaseKitIntegrationConfig.redis else {
+            return
+        }
+
+        let driver = RedisDriver()
+        let connection = try await driver.connect(config: config)
+        let key = "databasekit:redis:rollback:\(UUID().uuidString)"
+
+        do {
+            let transaction = try await connection.beginTransaction()
+            _ = try await transaction.execute("SET \(key) rolled-back", params: nil)
+            try await transaction.rollback()
+
+            let result = try await connection.query("GET \(key)", params: nil)
+            #expect(result.rows == [[.string(key), .null]])
+        } catch {
+            _ = try? await connection.execute("DEL \(key)", params: nil)
+            await connection.close()
+            throw error
+        }
+
+        _ = try? await connection.execute("DEL \(key)", params: nil)
+        await connection.close()
+    }
+}
+
+struct RedisCommandParserTests {
+    @Test
+    func tokenizeSimpleCommand() throws {
+        let tokens = try RedisCommandParser.tokenize("SET key value")
+
+        #expect(tokens == ["SET", "key", "value"])
+    }
+
+    @Test
+    func tokenizeQuotedValuesWithSpaces() throws {
+        let tokens = try RedisCommandParser.tokenize("SET greeting \"hello world\"")
+
+        #expect(tokens == ["SET", "greeting", "hello world"])
+    }
+
+    @Test
+    func tokenizeSingleQuotedValuesWithSpaces() throws {
+        let tokens = try RedisCommandParser.tokenize("SET greeting 'hello world'")
+
+        #expect(tokens == ["SET", "greeting", "hello world"])
+    }
+
+    @Test
+    func tokenizeEscapedWhitespace() throws {
+        let tokens = try RedisCommandParser.tokenize("SET path hello\\ world")
+
+        #expect(tokens == ["SET", "path", "hello world"])
+    }
+
+    @Test
+    func tokenizeEmptyQuotedValue() throws {
+        let tokens = try RedisCommandParser.tokenize("SET empty \"\"")
+
+        #expect(tokens == ["SET", "empty", ""])
+    }
+
+    @Test
+    func tokenizeUnterminatedQuoteThrows() {
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisCommandParser.tokenize("SET key \"unterminated")
+        }
+    }
+
+    @Test
+    func composeAppendsDatabaseValueParams() throws {
+        let args = try RedisCommandArguments.compose(
+            command: "SET key",
+            params: [.string("hello world"), .integer(7), .double(1.5), .bool(true), .null]
+        )
+
+        #expect(args == ["SET", "key", "hello world", "7", "1.5", "true", "NULL"])
+    }
+
+    @Test
+    func composeAcceptsUTF8DataParams() throws {
+        let args = try RedisCommandArguments.compose(
+            command: "SET key",
+            params: [.data(Data("value".utf8))]
+        )
+
+        #expect(args == ["SET", "key", "value"])
+    }
+
+    @Test
+    func composeRejectsNonUTF8DataParams() {
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisCommandArguments.compose(command: "SET key", params: [.data(Data([0xFF]))])
+        }
+    }
+}
+
+struct RedisValueConverterTests {
+    @Test
+    func convertsNullBulkStringToDatabaseNull() {
+        #expect(RedisValueConverter.databaseValue(fromBulkString: nil) == .null)
+    }
+
+    @Test
+    func convertsUTF8BulkStringToDatabaseString() {
+        #expect(RedisValueConverter.databaseValue(fromBulkString: Data("hello".utf8)) == .string("hello"))
+    }
+
+    @Test
+    func convertsBinaryBulkStringToDatabaseData() {
+        let data = Data([0xFF, 0x00])
+
+        #expect(RedisValueConverter.databaseValue(fromBulkString: data) == .data(data))
     }
 }
 
@@ -118,6 +318,15 @@ struct RedisRESPCodecTests {
     }
 
     @Test
+    func parseMalformedIntegerThrows() throws {
+        let data = Data(":not-an-int\r\n".utf8)
+
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisRESPCodec.parse(data)
+        }
+    }
+
+    @Test
     func parseBulkString() throws {
         let data = Data("$5\r\nhello\r\n".utf8)
         let result = try RedisRESPCodec.parse(data)
@@ -131,6 +340,42 @@ struct RedisRESPCodecTests {
     }
 
     @Test
+    func parseCompleteReturnsNilForSegmentedBulkString() throws {
+        let partial = Data("$5\r\nhel".utf8)
+
+        let value = try RedisRESPCodec.parseComplete(partial)
+
+        #expect(value == nil)
+    }
+
+    @Test
+    func parseCompleteReturnsValueForCompleteBulkString() throws {
+        let complete = Data("$5\r\nhello\r\n".utf8)
+
+        let value = try RedisRESPCodec.parseComplete(complete)
+
+        #expect(value == .bulkString(Data("hello".utf8)))
+    }
+
+    @Test
+    func parseCompleteReturnsNilForSegmentedArray() throws {
+        let partial = Data("*2\r\n$3\r\nfoo\r\n$3\r\nba".utf8)
+
+        let value = try RedisRESPCodec.parseComplete(partial)
+
+        #expect(value == nil)
+    }
+
+    @Test
+    func parseRejectsTrailingData() {
+        let data = Data("+OK\r\n+PONG\r\n".utf8)
+
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisRESPCodec.parse(data)
+        }
+    }
+
+    @Test
     func parseNullBulkString() throws {
         let data = Data("$-1\r\n".utf8)
         let result = try RedisRESPCodec.parse(data)
@@ -139,6 +384,15 @@ struct RedisRESPCodecTests {
             // Success
         } else {
             Issue.record("Expected null bulk string")
+        }
+    }
+
+    @Test
+    func parseInvalidNegativeBulkStringLengthThrows() throws {
+        let data = Data("$-2\r\n".utf8)
+
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisRESPCodec.parse(data)
         }
     }
 
@@ -209,6 +463,15 @@ struct RedisRESPCodecTests {
             // Success
         } else {
             Issue.record("Expected null array")
+        }
+    }
+
+    @Test
+    func parseInvalidNegativeArrayLengthThrows() throws {
+        let data = Data("*-2\r\n".utf8)
+
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisRESPCodec.parse(data)
         }
     }
 

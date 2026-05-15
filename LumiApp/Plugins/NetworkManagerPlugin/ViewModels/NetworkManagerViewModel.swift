@@ -4,8 +4,10 @@ import MagicKit
 
 @MainActor
 class NetworkManagerViewModel: ObservableObject, SuperLog {
+    static let shared = NetworkManagerViewModel()
+
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
 
@@ -57,6 +59,7 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
     }
 
     private var timer: Timer?
+    private var isMonitoring = false
     private var cancellables = Set<AnyCancellable>()
 
     init() {
@@ -80,7 +83,9 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
     deinit {
         Task { @MainActor [weak self] in
             self?.timer?.invalidate()
-            NetworkService.shared.stopMonitoring()
+            if self?.isMonitoring == true {
+                NetworkService.shared.stopMonitoring()
+            }
         }
     }
     
@@ -97,6 +102,9 @@ class NetworkManagerViewModel: ObservableObject, SuperLog {
     }
 
     func startMonitoring() {
+        guard !isMonitoring else { return }
+        isMonitoring = true
+
         if Self.verbose {
             NetworkManagerPlugin.logger.info("\(self.t)Starting network monitoring")
         }

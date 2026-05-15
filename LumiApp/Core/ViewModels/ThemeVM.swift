@@ -34,6 +34,11 @@ final class ThemeVM: ObservableObject {
         currentTheme?.editorThemeId ?? "xcode-dark"
     }
 
+    /// 当前文件树图标主题
+    var activeFileIconTheme: (any LumiFileIconThemeContributor)? {
+        currentTheme?.fileIconThemeContributor as? any LumiFileIconThemeContributor
+    }
+
     // MARK: - 初始化
 
     /// 初始化主题 ViewModel，加载保存的主题

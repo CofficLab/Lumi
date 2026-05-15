@@ -12,10 +12,15 @@ let package = Package(
             targets: ["DockerKit"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(path: "../ShellKit")
+    ],
     targets: [
         .target(
             name: "DockerKit",
+            dependencies: [
+                .product(name: "ShellKit", package: "ShellKit")
+            ],
             path: "Sources/DockerKit"
         ),
         .testTarget(

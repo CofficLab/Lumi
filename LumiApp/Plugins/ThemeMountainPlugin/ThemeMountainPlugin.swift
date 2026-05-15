@@ -20,6 +20,7 @@ actor ThemeMountainPlugin: SuperPlugin {
                 appTheme: MountainTheme(),
                 editorThemeId: "mountain",
                 editorThemeContributor: MountainSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiFileIconThemeCatalog.mountain(),
                 order: 100
             )
         ]

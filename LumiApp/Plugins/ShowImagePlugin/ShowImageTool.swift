@@ -34,13 +34,20 @@ import os
 /// ```
 struct ShowImageTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🖼️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.show-image")
 
     let name = "show_image"
-    let description = "Display an image in the chat UI. Accepts a local file path or a remote URL. Supports PNG, JPEG, GIF, and other common image formats. The image will be shown inline in the conversation with an optional title and caption."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在聊天 UI 中显示图片。接受本地文件路径或远程 URL。支持 PNG、JPEG、GIF 等常见图片格式。图片将内联显示在对话中，可附带可选的标题和说明。"
+        case .english:
+            return "Display an image in the chat UI. Accepts a local file path or a remote URL. Supports PNG, JPEG, GIF, and other common image formats. The image will be shown inline in the conversation with an optional title and caption."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

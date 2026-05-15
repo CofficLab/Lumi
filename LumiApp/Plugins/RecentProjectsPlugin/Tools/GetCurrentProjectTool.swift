@@ -6,9 +6,16 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = true
     let name = "get_current_project"
-    let description = "Get the current selected project information, including project name and path. Returns empty info if no project is selected."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取当前选中项目的信息，包括项目名称和路径。如果没有选中项目，则返回空信息。"
+        case .english:
+            return "Get the current selected project information, including project name and path. Returns empty info if no project is selected."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [:]

@@ -9,6 +9,11 @@ enum RespValue: Equatable {
     case array([RespValue]?)
 }
 
+enum RedisRESPParseError: Error, Equatable {
+    case incomplete
+    case malformed(String)
+}
+
 enum RedisRESPCodec {
     static func encodeCommand(_ args: [String]) -> Data {
         var out = "*\(args.count)\r\n"
@@ -23,7 +28,32 @@ enum RedisRESPCodec {
 
     static func parse(_ data: Data) throws -> RespValue {
         var parser = Parser(data: data)
-        return try parser.parseValue()
+        do {
+            let value = try parser.parseValue()
+            guard parser.isAtEnd else {
+                throw RedisRESPParseError.malformed("Unexpected trailing RESP data")
+            }
+            return value
+        } catch RedisRESPParseError.incomplete {
+            throw DatabaseError.queryFailed("Incomplete RESP payload")
+        } catch RedisRESPParseError.malformed(let message) {
+            throw DatabaseError.queryFailed(message)
+        }
+    }
+
+    static func parseComplete(_ data: Data) throws -> RespValue? {
+        var parser = Parser(data: data)
+        do {
+            let value = try parser.parseValue()
+            guard parser.isAtEnd else {
+                throw RedisRESPParseError.malformed("Unexpected trailing RESP data")
+            }
+            return value
+        } catch RedisRESPParseError.incomplete {
+            return nil
+        } catch RedisRESPParseError.malformed(let message) {
+            throw DatabaseError.queryFailed(message)
+        }
     }
 
     private struct Parser {
@@ -35,9 +65,13 @@ enum RedisRESPCodec {
             self.offset = data.startIndex
         }
 
+        var isAtEnd: Bool {
+            offset == data.endIndex
+        }
+
         mutating func parseValue() throws -> RespValue {
             guard offset < data.endIndex else {
-                return .bulkString(nil)
+                throw RedisRESPParseError.incomplete
             }
 
             let prefix = data[offset]
@@ -49,15 +83,29 @@ enum RedisRESPCodec {
             case UInt8(ascii: "-"):
                 return .error(try readLine())
             case UInt8(ascii: ":"):
-                return .integer(Int(try readLine()) ?? 0)
+                let line = try readLine()
+                guard let integer = Int(line) else {
+                    throw RedisRESPParseError.malformed("Invalid RESP integer")
+                }
+                return .integer(integer)
             case UInt8(ascii: "$"):
-                let length = Int(try readLine()) ?? -1
+                guard let length = Int(try readLine()) else {
+                    throw RedisRESPParseError.malformed("Invalid RESP bulk string length")
+                }
+                guard length >= -1 else {
+                    throw RedisRESPParseError.malformed("Invalid RESP bulk string length")
+                }
                 guard length >= 0 else { return .bulkString(nil) }
                 let content = try readData(length: length)
                 try consumeCRLF()
                 return .bulkString(content)
             case UInt8(ascii: "*"):
-                let count = Int(try readLine()) ?? -1
+                guard let count = Int(try readLine()) else {
+                    throw RedisRESPParseError.malformed("Invalid RESP array length")
+                }
+                guard count >= -1 else {
+                    throw RedisRESPParseError.malformed("Invalid RESP array length")
+                }
                 guard count >= 0 else { return .array(nil) }
                 var values: [RespValue] = []
                 values.reserveCapacity(count)
@@ -76,7 +124,7 @@ enum RedisRESPCodec {
                 if data[offset] == UInt8(ascii: "\r") {
                     let next = data.index(after: offset)
                     guard next < data.endIndex, data[next] == UInt8(ascii: "\n") else {
-                        throw DatabaseError.queryFailed("Malformed RESP line ending")
+                        throw RedisRESPParseError.malformed("Malformed RESP line ending")
                     }
                     let lineData = data[start..<offset]
                     offset = data.index(after: next)
@@ -84,14 +132,14 @@ enum RedisRESPCodec {
                 }
                 offset = data.index(after: offset)
             }
-            throw DatabaseError.queryFailed("Unexpected end of RESP payload")
+            throw RedisRESPParseError.incomplete
         }
 
         private mutating func readData(length: Int) throws -> Data {
             guard length >= 0 else { return Data() }
             let end = data.index(offset, offsetBy: length, limitedBy: data.endIndex) ?? data.endIndex
             guard data.distance(from: offset, to: end) == length else {
-                throw DatabaseError.queryFailed("Incomplete RESP bulk string")
+                throw RedisRESPParseError.incomplete
             }
             let chunk = data[offset..<end]
             offset = end
@@ -100,14 +148,114 @@ enum RedisRESPCodec {
 
         private mutating func consumeCRLF() throws {
             guard offset < data.endIndex, data[offset] == UInt8(ascii: "\r") else {
-                throw DatabaseError.queryFailed("Missing RESP CRLF")
+                throw RedisRESPParseError.incomplete
             }
             let next = data.index(after: offset)
             guard next < data.endIndex, data[next] == UInt8(ascii: "\n") else {
-                throw DatabaseError.queryFailed("Missing RESP LF")
+                throw RedisRESPParseError.incomplete
             }
             offset = data.index(after: next)
         }
+    }
+}
+
+enum RedisCommandParser {
+    static func tokenize(_ command: String) throws -> [String] {
+        var tokens: [String] = []
+        var current = ""
+        var quote: Character?
+        var isEscaping = false
+        var hasTokenContent = false
+
+        for character in command {
+            if isEscaping {
+                current.append(character)
+                hasTokenContent = true
+                isEscaping = false
+                continue
+            }
+
+            if character == "\\" {
+                isEscaping = true
+                hasTokenContent = true
+                continue
+            }
+
+            if let activeQuote = quote {
+                if character == activeQuote {
+                    quote = nil
+                } else {
+                    current.append(character)
+                    hasTokenContent = true
+                }
+                continue
+            }
+
+            if character == "\"" || character == "'" {
+                quote = character
+                hasTokenContent = true
+                continue
+            }
+
+            if character.isWhitespace {
+                if hasTokenContent {
+                    tokens.append(current)
+                    current.removeAll(keepingCapacity: true)
+                    hasTokenContent = false
+                }
+                continue
+            }
+
+            current.append(character)
+            hasTokenContent = true
+        }
+
+        if isEscaping {
+            current.append("\\")
+        }
+
+        if quote != nil {
+            throw DatabaseError.invalidConfiguration("Redis command contains an unterminated quoted string")
+        }
+
+        if hasTokenContent {
+            tokens.append(current)
+        }
+
+        return tokens
+    }
+}
+
+enum RedisCommandArguments {
+    static func compose(command: String, params: [DatabaseValue]?) throws -> [String] {
+        let commandArgs = try RedisCommandParser.tokenize(command)
+        let paramArgs = try (params ?? []).map { try argumentString($0) }
+        return commandArgs + paramArgs
+    }
+
+    private static func argumentString(_ value: DatabaseValue) throws -> String {
+        switch value {
+        case .integer(let int): return String(int)
+        case .double(let double): return String(double)
+        case .string(let string): return string
+        case .bool(let bool): return bool ? "true" : "false"
+        case .null: return "NULL"
+        case .data(let data):
+            guard let string = String(data: data, encoding: .utf8) else {
+                throw DatabaseError.invalidConfiguration("Redis Data parameters must be valid UTF-8")
+            }
+            return string
+        }
+    }
+}
+
+enum RedisValueConverter {
+    static func databaseValue(fromBulkString data: Data?) -> DatabaseValue {
+        guard let data else { return .null }
+        if let string = String(data: data, encoding: .utf8) {
+            return .string(string)
+        }
+        return .data(data)
     }
 }
 
@@ -148,7 +296,7 @@ public actor RedisConnection: DatabaseConnection {
 
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
         guard alive else { throw DatabaseError.connectionFailed("Redis 连接未就绪") }
-        let response = try await send(tokenize(sql))
+        let response = try await send(RedisCommandArguments.compose(command: sql, params: params))
         switch response {
         case .simpleString(let value) where value.uppercased() == "OK":
             return 1
@@ -165,27 +313,27 @@ public actor RedisConnection: DatabaseConnection {
 
     public func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
         guard alive else { throw DatabaseError.connectionFailed("Redis 连接未就绪") }
-        let args = tokenize(sql)
+        let args = try RedisCommandArguments.compose(command: sql, params: params)
         let command = args.first?.uppercased() ?? ""
         let response = try await send(args)
 
         switch command {
         case "GET":
             let key = args.count > 1 ? args[1] : ""
-            let valueString: String
+            let value: DatabaseValue
             switch response {
             case .bulkString(let data):
-                valueString = data.flatMap { String(data: $0, encoding: .utf8) } ?? "NULL"
-            case .simpleString(let value):
-                valueString = value
-            case .integer(let value):
-                valueString = String(value)
+                value = RedisValueConverter.databaseValue(fromBulkString: data)
+            case .simpleString(let string):
+                value = .string(string)
+            case .integer(let integer):
+                value = .integer(integer)
             case .error(let error):
                 throw DatabaseError.queryFailed(error)
             default:
-                valueString = "\(response)"
+                value = .string("\(response)")
             }
-            return QueryResult(columns: ["Key", "Value"], rows: [[.string(key), .string(valueString)]], rowsAffected: 0)
+            return QueryResult(columns: ["Key", "Value"], rows: [[.string(key), value]], rowsAffected: 0)
 
         case "SCAN":
             var keys: [String] = []
@@ -206,12 +354,15 @@ public actor RedisConnection: DatabaseConnection {
             case .array(let values):
                 return QueryResult(
                     columns: ["Value"],
-                    rows: flattenArray(values ?? []).map { [.string($0)] },
+                    rows: flattenArray(values ?? []).map { [$0] },
                     rowsAffected: 0
                 )
             case .bulkString(let data):
-                let value = data.flatMap { String(data: $0, encoding: .utf8) } ?? "NULL"
-                return QueryResult(columns: ["Value"], rows: [[.string(value)]], rowsAffected: 0)
+                return QueryResult(
+                    columns: ["Value"],
+                    rows: [[RedisValueConverter.databaseValue(fromBulkString: data)]],
+                    rowsAffected: 0
+                )
             case .simpleString(let value):
                 return QueryResult(columns: ["Value"], rows: [[.string(value)]], rowsAffected: 0)
             case .integer(let value):
@@ -223,7 +374,11 @@ public actor RedisConnection: DatabaseConnection {
     }
 
     public func beginTransaction() async throws -> any DatabaseTransaction {
-        throw DatabaseError.notImplemented
+        let response = try await sendCommand(["MULTI"])
+        guard case .simpleString(let value) = response, value.uppercased() == "OK" else {
+            throw DatabaseError.transactionFailed("Redis failed to start transaction")
+        }
+        return RedisTransaction(connection: self)
     }
 
     public func close() async {
@@ -235,44 +390,53 @@ public actor RedisConnection: DatabaseConnection {
         alive
     }
 
-    private func waitForReady() async throws {
+    private func waitForReady(timeout: TimeInterval = 5) async throws {
+        let readyState = RedisReadyState()
+
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             connection.stateUpdateHandler = { state in
                 switch state {
                 case .ready:
-                    continuation.resume(returning: ())
+                    readyState.resume(continuation, with: .success(()))
                 case .failed(let error):
-                    continuation.resume(throwing: DatabaseError.connectionFailed(error.localizedDescription))
+                    readyState.resume(continuation, with: .failure(DatabaseError.connectionFailed(error.localizedDescription)))
+                case .cancelled:
+                    readyState.resume(continuation, with: .failure(DatabaseError.connectionFailed("Redis connection was cancelled")))
                 default:
                     break
                 }
             }
+
+            DispatchQueue.global().asyncAfter(deadline: .now() + timeout) {
+                readyState.resume(
+                    continuation,
+                    with: .failure(DatabaseError.connectionFailed("Redis connection timed out"))
+                )
+            }
         }
     }
 
-    private func tokenize(_ command: String) -> [String] {
-        command.split(whereSeparator: \.isWhitespace).map(String.init)
-    }
-
-    private func flattenArray(_ values: [RespValue]) -> [String] {
-        var flattened: [String] = []
+    private func flattenArray(_ values: [RespValue]) -> [DatabaseValue] {
+        var flattened: [DatabaseValue] = []
         for value in values {
             switch value {
             case .bulkString(let data):
-                if let data, let string = String(data: data, encoding: .utf8) {
-                    flattened.append(string)
-                }
+                flattened.append(RedisValueConverter.databaseValue(fromBulkString: data))
             case .simpleString(let string):
-                flattened.append(string)
+                flattened.append(.string(string))
             case .integer(let integer):
-                flattened.append(String(integer))
+                flattened.append(.integer(integer))
             case .array(let nested):
                 flattened.append(contentsOf: flattenArray(nested ?? []))
             case .error(let error):
-                flattened.append("ERR: \(error)")
+                flattened.append(.string("ERR: \(error)"))
             }
         }
         return flattened
+    }
+
+    func sendCommand(_ args: [String]) async throws -> RespValue {
+        try await send(args)
     }
 
     private func send(_ args: [String]) async throws -> RespValue {
@@ -288,23 +452,114 @@ public actor RedisConnection: DatabaseConnection {
             })
         }
 
-        let received = try await receiveOnce()
-        return try RedisRESPCodec.parse(received)
+        return try await receiveRESPValue()
     }
 
-    private func receiveOnce() async throws -> Data {
+    private func receiveRESPValue() async throws -> RespValue {
+        var buffer = Data()
+
+        while true {
+            let received = try await receiveChunk()
+            buffer.append(received)
+
+            if let value = try RedisRESPCodec.parseComplete(buffer) {
+                return value
+            }
+        }
+    }
+
+    private func receiveChunk() async throws -> Data {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 64 * 1024) { data, _, _, error in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 16 * 1024) { data, _, isComplete, error in
                 if let error {
                     continuation.resume(throwing: DatabaseError.queryFailed(error.localizedDescription))
                     return
                 }
-                guard let data else {
+
+                guard let data, !data.isEmpty else {
+                    if isComplete {
+                        continuation.resume(throwing: DatabaseError.connectionFailed("Redis connection closed"))
+                        return
+                    }
                     continuation.resume(throwing: DatabaseError.queryFailed("空响应"))
                     return
                 }
+
                 continuation.resume(returning: data)
             }
+        }
+    }
+}
+
+public final actor RedisTransaction: DatabaseTransaction {
+    private let connection: RedisConnection
+    private var completed = false
+
+    init(connection: RedisConnection) {
+        self.connection = connection
+    }
+
+    public func commit() async throws {
+        guard !completed else {
+            throw DatabaseError.transactionFailed("Transaction already completed")
+        }
+
+        let response = try await connection.sendCommand(["EXEC"])
+        if case .error(let error) = response {
+            throw DatabaseError.transactionFailed(error)
+        }
+
+        completed = true
+    }
+
+    public func rollback() async throws {
+        guard !completed else {
+            throw DatabaseError.transactionFailed("Transaction already completed")
+        }
+
+        let response = try await connection.sendCommand(["DISCARD"])
+        guard case .simpleString(let value) = response, value.uppercased() == "OK" else {
+            throw DatabaseError.transactionFailed("Redis failed to discard transaction")
+        }
+
+        completed = true
+    }
+
+    public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
+        guard !completed else {
+            throw DatabaseError.transactionFailed("Transaction already completed")
+        }
+
+        let response = try await connection.sendCommand(RedisCommandArguments.compose(command: sql, params: params))
+        switch response {
+        case .simpleString(let value) where value.uppercased() == "QUEUED":
+            return 0
+        case .error(let error):
+            throw DatabaseError.transactionFailed(error)
+        default:
+            throw DatabaseError.transactionFailed("Redis command was not queued")
+        }
+    }
+}
+
+private final class RedisReadyState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var didResume = false
+
+    func resume(_ continuation: CheckedContinuation<Void, Error>, with result: Result<Void, Error>) {
+        lock.lock()
+        guard !didResume else {
+            lock.unlock()
+            return
+        }
+        didResume = true
+        lock.unlock()
+
+        switch result {
+        case .success:
+            continuation.resume(returning: ())
+        case .failure(let error):
+            continuation.resume(throwing: error)
         }
     }
 }

@@ -1,5 +1,5 @@
 #if canImport(XCTest)
-import EditorKernelCore
+import EditorKernel
 import XCTest
 
 final class EditorBufferTests: XCTestCase {

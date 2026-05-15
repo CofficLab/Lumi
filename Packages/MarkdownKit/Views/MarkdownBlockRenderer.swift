@@ -39,7 +39,7 @@ public struct MarkdownBlockRenderer: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(theme.textColor ?? .primary)
         .task(id: markdown) {
-            blocks = MarkdownParser.parse(markdown)
+            blocks = await MarkdownParseCache.shared.blocks(for: markdown)
         }
     }
 
@@ -216,16 +216,62 @@ public struct MarkdownBlockRenderer: View {
     }
 }
 
+// MARK: - MarkdownParseCache
+
+private actor MarkdownParseCache {
+    static let shared = MarkdownParseCache()
+
+    private let limit = 128
+    private var cache: [String: [MarkdownBlock]] = [:]
+    private var keys: [String] = []
+
+    func blocks(for markdown: String) -> [MarkdownBlock] {
+        if let cached = cache[markdown] {
+            return cached
+        }
+
+        let parsed = MarkdownParser.parse(markdown)
+        cache[markdown] = parsed
+        keys.append(markdown)
+
+        if keys.count > limit {
+            let overflow = keys.count - limit
+            for key in keys.prefix(overflow) {
+                cache.removeValue(forKey: key)
+            }
+            keys.removeFirst(overflow)
+        }
+
+        return parsed
+    }
+}
+
 // MARK: - HorizontalScrollView
 
 /// 仅支持水平滚动的 NSScrollView 包装。
 /// 垂直方向的滚轮事件会被转发给视图层级中的外层 NSScrollView（即聊天列表），
 /// 从而实现：代码块水平可滚动、垂直滚动由外层列表接管。
+///
+/// 关键设计：使用 `sizeThatFits` 让 SwiftUI 布局系统感知到内容的真实高度，
+/// 避免 NSScrollView 作为 documentView 时高度被外层 List 行高估算截断。
 struct HorizontalScrollView<Content: View>: NSViewRepresentable {
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
+    }
+
+    func sizeThatFits(
+        _ proposal: ProposedViewSize,
+        nsView: HorizontalOnlyScrollView,
+        context: Context
+    ) -> CGSize? {
+        guard let hostingView = nsView.documentView as? NSHostingView<Content> else {
+            return nil
+        }
+        // 让 NSHostingView 根据内容计算自身所需尺寸
+        let size = hostingView.fittingSize
+        return CGSize(width: proposal.width ?? size.width, height: size.height)
     }
 
     func makeNSView(context: Context) -> HorizontalOnlyScrollView {
@@ -239,14 +285,18 @@ struct HorizontalScrollView<Content: View>: NSViewRepresentable {
 
         let hostingView = NSHostingView(rootView: content)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
-        // 宽度不跟随 clip view，让内容自然撑开以触发水平滚动
-        hostingView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // 让内容按 intrinsic content size 自然撑开，以触发水平滚动
+        hostingView.setContentHuggingPriority(.required, for: .horizontal)
+        hostingView.setContentCompressionResistancePriority(.required, for: .horizontal)
         scrollView.documentView = hostingView
 
-        // hostingView 宽度自由拉伸，高度紧贴 clip view
+        // hostingView 顶部和左侧锚定 clip view；
+        // 宽度至少等于可见区域（更宽时自然撑开触发水平滚动）；
+        // 高度由内容自适应（不锁定），确保多行代码完整显示。
         NSLayoutConstraint.activate([
             hostingView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
-            hostingView.heightAnchor.constraint(equalTo: scrollView.contentView.heightAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
+            hostingView.widthAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.widthAnchor),
         ])
 
         return scrollView

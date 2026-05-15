@@ -8,8 +8,8 @@ struct EditorPreviewRefreshSignalTests {
     @Test("contentRevision 变化时信号变化")
     func contentRevisionChangeProducesDifferentSignal() {
         let url = URL(fileURLWithPath: "/tmp/Preview.swift")
-        let before = EditorPreviewRefreshSignal(fileURL: url, contentRevision: 1, saveRevision: 0)
-        let after = EditorPreviewRefreshSignal(fileURL: url, contentRevision: 2, saveRevision: 0)
+        let before = LumiPreviewFacade.EditorPreviewRefreshSignal(fileURL: url, contentRevision: 1, saveRevision: 0)
+        let after = LumiPreviewFacade.EditorPreviewRefreshSignal(fileURL: url, contentRevision: 2, saveRevision: 0)
 
         #expect(before != after)
     }
@@ -17,20 +17,20 @@ struct EditorPreviewRefreshSignalTests {
     @Test("saveRevision 变化时信号变化")
     func saveRevisionChangeProducesDifferentSignal() {
         let url = URL(fileURLWithPath: "/tmp/Preview.swift")
-        let before = EditorPreviewRefreshSignal(fileURL: url, contentRevision: 7, saveRevision: 1)
-        let after = EditorPreviewRefreshSignal(fileURL: url, contentRevision: 7, saveRevision: 2)
+        let before = LumiPreviewFacade.EditorPreviewRefreshSignal(fileURL: url, contentRevision: 7, saveRevision: 1)
+        let after = LumiPreviewFacade.EditorPreviewRefreshSignal(fileURL: url, contentRevision: 7, saveRevision: 2)
 
         #expect(before != after)
     }
 
     @Test("仅保存成功也会触发 refresh signal")
     func saveRevisionOnlyChangeTriggersRefresh() {
-        let before = EditorPreviewRefreshSignal(
+        let before = LumiPreviewFacade.EditorPreviewRefreshSignal(
             fileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),
             contentRevision: 7,
             saveRevision: 1
         )
-        let after = EditorPreviewRefreshSignal(
+        let after = LumiPreviewFacade.EditorPreviewRefreshSignal(
             fileURL: URL(fileURLWithPath: "/tmp/Preview.swift"),
             contentRevision: 7,
             saveRevision: 2
@@ -41,12 +41,12 @@ struct EditorPreviewRefreshSignalTests {
 
     @Test("标准化后的相同文件 URL 视为同一信号来源")
     func standardizedFileURLsCompareEqual() {
-        let first = EditorPreviewRefreshSignal(
+        let first = LumiPreviewFacade.EditorPreviewRefreshSignal(
             fileURL: URL(fileURLWithPath: "/tmp/demo/../demo/Preview.swift"),
             contentRevision: 3,
             saveRevision: 1
         )
-        let second = EditorPreviewRefreshSignal(
+        let second = LumiPreviewFacade.EditorPreviewRefreshSignal(
             fileURL: URL(fileURLWithPath: "/tmp/demo/Preview.swift"),
             contentRevision: 3,
             saveRevision: 1

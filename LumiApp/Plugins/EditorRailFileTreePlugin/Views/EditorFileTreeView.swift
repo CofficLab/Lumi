@@ -1,15 +1,17 @@
+import MagicKit
 import os
 import SwiftUI
 
-/// AgentEditor 主体系内的文件树视图
-struct EditorFileTreeView: View {
+/// Editor Rail 文件树根视图
+struct EditorFileTreeView: View, SuperLog {
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject var editorVM: EditorVM
 
     // MARK: - Logging Configuration
 
     /// 日志详细程度控制
-    nonisolated static let verbose: Bool = false
+    nonisolated static let emoji = "🌳"
+    nonisolated static let verbose: Bool = true
     /// 使用插件的 logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.view")
 
@@ -72,7 +74,7 @@ struct EditorFileTreeView: View {
         coordinator.setProjectRootPath(projectVM.currentProjectPath)
         rootRefreshToken += 1
         if Self.verbose {
-            Self.logger.info("🌳 项目路径变化，更新协调器并递增刷新令牌")
+            Self.logger.info("\(Self.t)项目路径变化，更新协调器并递增刷新令牌")
         }
     }
 
@@ -82,7 +84,7 @@ struct EditorFileTreeView: View {
             coordinator.setProjectRootPath(projectVM.currentProjectPath)
             rootRefreshToken += 1
             if Self.verbose {
-                Self.logger.info("🌳 视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
+                Self.logger.info("\(Self.t)视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
             }
         }
     }
@@ -94,7 +96,7 @@ struct EditorFileTreeView: View {
     private func onDisappear() {
         coordinator.stop()
         if Self.verbose {
-            Self.logger.info("🌳 视图消失，停止协调器监听")
+            Self.logger.info("\(Self.t)视图消失，停止协调器监听")
         }
     }
 
@@ -103,7 +105,7 @@ struct EditorFileTreeView: View {
         guard newToken > 0 else { return }
         rootRefreshToken += 1
         if Self.verbose {
-            Self.logger.info("🌳 协调器驱动刷新，令牌：\(rootRefreshToken)")
+            Self.logger.info("\(Self.t)协调器驱动刷新，令牌：\(rootRefreshToken)")
         }
     }
 
@@ -112,12 +114,12 @@ struct EditorFileTreeView: View {
         if isExpanded {
             coordinator.addExpandedPath(relativePath)
             if Self.verbose {
-                Self.logger.info("🌳 节点展开：\(relativePath)")
+                Self.logger.info("\(Self.t)节点展开：\(relativePath)")
             }
         } else {
             coordinator.removeExpandedPath(relativePath)
             if Self.verbose {
-                Self.logger.info("🌳 节点折叠：\(relativePath)")
+                Self.logger.info("\(Self.t)节点折叠：\(relativePath)")
             }
         }
     }

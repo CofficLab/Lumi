@@ -24,7 +24,15 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
             }
             return false
         }
+        if let cachedState = bridge.cachedState, cachedState.projectPath == path {
+            XcodeProjectCapabilityCache.set(cachedState.isXcodeProject, for: path)
+            return cachedState.isXcodeProject
+        }
+        if let cached = XcodeProjectCapabilityCache.value(for: path) {
+            return cached
+        }
         let canHandle = XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: path))
+        XcodeProjectCapabilityCache.set(canHandle, for: path)
         if XcodePluginLog.verbose {
             XcodePluginLog.logger.info("\(self.t)canHandleProject: \(path) -> \(canHandle)")
         }
@@ -36,6 +44,7 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
             XcodePluginLog.logger.info("\(self.t)projectOpened 开始: \(path)")
         }
         await bridge.projectOpened(at: path)
+        XcodeProjectCapabilityCache.set(bridge.isXcodeProject, for: path)
         if XcodePluginLog.verbose {
             XcodePluginLog.logger.info("\(self.t)projectOpened 完成: \(path)")
         }
@@ -177,7 +186,15 @@ final class XcodeLanguageIntegrationCapabilityAdapter: SuperEditorLanguageIntegr
             }
             return false
         }
+        if let cachedState = bridge.cachedState, cachedState.projectPath == projectPath {
+            XcodeProjectCapabilityCache.set(cachedState.isXcodeProject, for: projectPath)
+            return cachedState.isXcodeProject
+        }
+        if let cached = XcodeProjectCapabilityCache.value(for: projectPath) {
+            return cached
+        }
         let supported = XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: projectPath))
+        XcodeProjectCapabilityCache.set(supported, for: projectPath)
         if XcodePluginLog.verbose {
             XcodePluginLog.logger.info("\(self.t)supports: language=\(languageId), project=\(projectPath) -> \(supported)")
         }
@@ -251,7 +268,18 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
         if XcodePluginLog.verbose {
             XcodePluginLog.logger.info("\(self.t)inspectCurrentFileContext: \(uri ?? "nil")")
         }
-        let report = XcodeSemanticAvailability.inspectCurrentFileContext(uri: uri, contextProvider: XcodeProjectContextBridge.shared)
+        let bridge = XcodeProjectContextBridge.shared
+        let snapshot = bridge.latestEditorSnapshot
+        let report: XcodeSemanticAvailability.Report
+        if snapshot?.currentFilePath.flatMap({ URL(filePath: $0).absoluteString }) == uri {
+            report = XcodeSemanticAvailability.inspectCurrentFileContext(
+                snapshot: snapshot,
+                cachedState: bridge.cachedState,
+                buildContextStatus: bridge.buildContextProvider?.buildContextStatus ?? .unknown
+            )
+        } else {
+            report = XcodeSemanticAvailability.inspectCurrentFileContext(uri: uri, contextProvider: bridge)
+        }
         if XcodePluginLog.verbose {
             XcodePluginLog.logger.info("\(self.t)inspectCurrentFileContext 完成，reasons: \(report.reasons.count)")
         }
@@ -353,5 +381,22 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
         case .error:
             return .error
         }
+    }
+}
+
+@MainActor
+private enum XcodeProjectCapabilityCache {
+    private static var values: [String: Bool] = [:]
+
+    static func value(for path: String) -> Bool? {
+        values[standardizedPath(path)]
+    }
+
+    static func set(_ value: Bool, for path: String) {
+        values[standardizedPath(path)] = value
+    }
+
+    private static func standardizedPath(_ path: String) -> String {
+        URL(filePath: path).standardizedFileURL.path
     }
 }

@@ -21,15 +21,15 @@ struct XcodeEmptyStateView: View {
             }
 
             VStack(spacing: 10) {
-                Text("Xcode 环境很干净！")
+                Text(String(localized: "Xcode 环境很干净！", table: "DiskManager"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text("没有发现可清理的缓存文件")
+                Text(String(localized: "没有发现可清理的缓存文件", table: "DiskManager"))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-                AppButton("重新扫描", systemImage: "arrow.clockwise", style: .primary, action: { Task { await viewModel.scanAll() } })
+                AppButton(String(localized: "重新扫描", table: "DiskManager"), systemImage: "arrow.clockwise", style: .primary, action: { Task { await viewModel.scanAll() } })
             }
         }
         .padding(24)

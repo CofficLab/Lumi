@@ -47,6 +47,72 @@
         }
       }
     },
+    "下一步操作": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步操作"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步操作"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步操作"
+          }
+        }
+      }
+    },
+    "工具执行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具执行"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具执行"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具執行"
+          }
+        }
+      }
+    },
+    "思考过程": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "思考过程"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "思考过程"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "思考過程"
+          }
+        }
+      }
+    },
     "提供内置消息类型的渲染支持": {
       "localizations": {
         "en": {
@@ -69,6 +135,28 @@
         }
       }
     },
+    "查询结果中…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查询结果中…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查询结果中…"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查詢結果中…"
+          }
+        }
+      }
+    },
     "核心消息渲染器": {
       "localizations": {
         "en": {
@@ -87,6 +175,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "核心訊息渲染器"
+          }
+        }
+      }
+    },
+    "点击结果后会在这里显示工具输出": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击结果后会在这里显示工具输出"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击结果后会在这里显示工具输出"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊結果後會在這裡顯示工具輸出"
+          }
+        }
+      }
+    },
+    "重新发送该消息": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新发送该消息"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新发送该消息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新發送該訊息"
           }
         }
       }

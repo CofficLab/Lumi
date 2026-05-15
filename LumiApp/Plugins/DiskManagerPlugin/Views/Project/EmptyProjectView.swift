@@ -21,16 +21,16 @@ struct EmptyProjectView: View {
             }
 
             VStack(spacing: 10) {
-                Text("未发现可清理的项目")
+                Text(String(localized: "未发现可清理的项目", table: "DiskManager"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text("已扫描：Code、Projects、Developer 等目录")
+                Text(String(localized: "已扫描：Code、Projects、Developer 等目录", table: "DiskManager"))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 Button(action: { Task { await viewModel.scanProjects() } }, label: {
-                    Label(title: { Text("重新扫描") }, icon: { Image(systemName: "arrow.clockwise") })
+                    Label(title: { Text(String(localized: "重新扫描", table: "DiskManager")) }, icon: { Image(systemName: "arrow.clockwise") })
                         .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)

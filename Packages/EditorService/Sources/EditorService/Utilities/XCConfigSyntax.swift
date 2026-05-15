@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import EditorKernelCore
+import EditorKernel
 
 /// XCConfig 语法高亮和编辑支持
 public enum XCConfigSyntax {

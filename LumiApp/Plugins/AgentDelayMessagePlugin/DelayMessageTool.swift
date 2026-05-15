@@ -22,11 +22,18 @@ import MagicKit
 /// - 不依赖 `RootViewContainer.shared`
 struct DelayMessageTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "⏳"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "delay_message"
-    let description = "Send a delayed user message to a conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives. Use get_current_conversation first to obtain the conversation ID."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在指定秒数后向某个对话发送延迟用户消息。当前回合会结束，消息送达时会开启新回合。请先使用 get_current_conversation 获取对话 ID。"
+        case .english:
+            return "Send a delayed user message to a conversation after a specified number of seconds. The current turn will end, and a new turn will start when the message arrives. Use get_current_conversation first to obtain the conversation ID."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

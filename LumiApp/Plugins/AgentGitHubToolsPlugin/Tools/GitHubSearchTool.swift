@@ -4,11 +4,18 @@ import MagicKit
 /// GitHub 搜索工具
 struct GitHubSearchTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_search"
-    let description = "在 GitHub 上搜索仓库和代码。支持关键词、语言、stars 等条件筛选。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在 GitHub 上搜索仓库和代码。支持关键词、语言、stars 等条件筛选。"
+        case .english:
+            return "Search repositories and code on GitHub. Supports filters such as keywords, language, and stars."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

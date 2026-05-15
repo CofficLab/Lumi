@@ -1,4 +1,5 @@
 import Foundation
+import ShellKit
 
 public enum BrewError: Error, Sendable, Equatable {
     case notInstalled
@@ -25,24 +26,6 @@ public enum BrewError: Error, Sendable, Equatable {
 
 public actor BrewService {
     public static let shared = BrewService()
-
-    private final class LockedDataBuffer: @unchecked Sendable {
-        private let lock = NSLock()
-        private var data = Data()
-
-        func append(_ chunk: Data) {
-            lock.lock()
-            data.append(chunk)
-            lock.unlock()
-        }
-
-        func snapshot() -> Data {
-            lock.lock()
-            let copy = data
-            lock.unlock()
-            return copy
-        }
-    }
 
     private var brewPath: String?
 
@@ -235,53 +218,23 @@ public actor BrewService {
             throw BrewError.notInstalled
         }
 
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: brewPath)
-        task.arguments = args
+        let currentPath = ProcessInfo.processInfo.environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        let result = try await Shell.execute(
+            executable: brewPath,
+            arguments: args,
+            options: ShellOptions(
+                environment: [
+                    "HOMEBREW_NO_AUTO_UPDATE": "1",
+                    "HOMEBREW_NO_INSTALL_CLEANUP": "1",
+                    "PATH": currentPath + ":/opt/homebrew/bin:/usr/local/bin"
+                ],
+                throwsOnError: false
+            )
+        )
 
-        var env = ProcessInfo.processInfo.environment
-        env["HOMEBREW_NO_AUTO_UPDATE"] = "1"
-        env["HOMEBREW_NO_INSTALL_CLEANUP"] = "1"
-        if let path = env["PATH"] {
-            env["PATH"] = path + ":/opt/homebrew/bin:/usr/local/bin"
-        } else {
-            env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        if result.exitCode == 0 {
+            return result.stdout
         }
-        task.environment = env
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = pipe
-
-        let buffer = LockedDataBuffer()
-        let handle = pipe.fileHandleForReading
-        handle.readabilityHandler = { h in
-            let chunk = h.availableData
-            if !chunk.isEmpty { buffer.append(chunk) }
-        }
-
-        do {
-            try task.run()
-        } catch {
-            handle.readabilityHandler = nil
-            throw error
-        }
-
-        await withCheckedContinuation { continuation in
-            task.terminationHandler = { _ in
-                continuation.resume()
-            }
-        }
-
-        handle.readabilityHandler = nil
-        let final = handle.availableData
-        if !final.isEmpty { buffer.append(final) }
-
-        let output = String(data: buffer.snapshot(), encoding: .utf8) ?? ""
-        if task.terminationStatus == 0 {
-            return output
-        } else {
-            throw BrewError.commandFailed(output)
-        }
+        throw BrewError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr)
     }
 }

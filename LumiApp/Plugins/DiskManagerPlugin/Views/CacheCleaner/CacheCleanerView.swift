@@ -38,28 +38,26 @@ struct CacheCleanerView: View {
             }
         }
         .onAppear {
-            if viewModel.categories.isEmpty {
-                viewModel.scan()
-            }
+            viewModel.scanIfNeeded()
         }
-        .alert(Text("Confirm Cleanup"), isPresented: $showCleanConfirmation) {
+        .alert(Text(String(localized: "Confirm Cleanup", table: "DiskManager")), isPresented: $showCleanConfirmation) {
             Button(role: .destructive) {
                 viewModel.cleanSelected()
             } label: {
-                Text("Clean")
+                Text(String(localized: "Clean", table: "DiskManager"))
             }
             Button(role: .cancel) {} label: {
-                Text("Cancel")
+                Text(String(localized: "Cancel", table: "DiskManager"))
             }
         } message: {
-            Text("Are you sure you want to clean the selected \(viewModel.formatBytes(viewModel.totalSelectedSize)) files? This action cannot be undone.")
+            Text(String(format: String(localized: "Are you sure you want to clean the selected %@ files? This action cannot be undone.", table: "DiskManager"), viewModel.formatBytes(viewModel.totalSelectedSize)))
         }
-        .alert(Text("Cleanup Complete"), isPresented: $viewModel.showCleanupComplete) {
+        .alert(Text(String(localized: "Cleanup Complete", table: "DiskManager")), isPresented: $viewModel.showCleanupComplete) {
             Button(role: .cancel) {} label: {
-                Text("OK")
+                Text(String(localized: "OK", table: "DiskManager"))
             }
         } message: {
-            Text("Successfully freed \(viewModel.formatBytes(viewModel.lastFreedSpace)) space.")
+            Text(String(format: String(localized: "Successfully freed %@ space.", table: "DiskManager"), viewModel.formatBytes(viewModel.lastFreedSpace)))
         }
     }
 }

@@ -23,6 +23,10 @@ final class TreeSitterCodeHighlightProvider: CodeHighlightProviding, @unchecked 
 
     // MARK: - CodeHighlightProviding
 
+    var cacheIdentifier: String {
+        "tree-sitter:\(String(describing: editorTheme))"
+    }
+
     func highlight(code: String, language: String?) -> AttributedString? {
         guard let codeLanguage = resolveCodeLanguage(language) else {
             return nil

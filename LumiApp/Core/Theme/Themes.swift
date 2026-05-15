@@ -226,29 +226,6 @@ extension View {
     .mystiqueGlow(intensity: 0.2)
 }
 
-#Preview("脉冲光晕") {
-    ZStack {
-        Color(hex: "050508").ignoresSafeArea()
-
-        VStack(spacing: 32) {
-            Circle()
-                .fill(Themes.Colors.glow.intense)
-                .frame(width: 100, height: 100)
-                .opacity(0.8)
-
-            Circle()
-                .fill(Color(hex: "30D158"))
-                .frame(width: 80, height: 80)
-                .opacity(0.8)
-
-            Circle()
-                .fill(Color(hex: "FF453A"))
-                .frame(width: 60, height: 60)
-                .opacity(0.8)
-        }
-    }
-}
-
 #Preview("主题变体") {
     ScrollView(.vertical) {
         VStack(spacing: 24) {

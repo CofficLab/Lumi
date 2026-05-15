@@ -4,11 +4,18 @@ import MagicKit
 /// GitHub 重新打开 Issue 工具
 struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔓"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_reopen_issue"
-    let description = "重新打开已关闭的 GitHub Issue。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "重新打开已关闭的 GitHub Issue。"
+        case .english:
+            return "Reopen a closed GitHub issue."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

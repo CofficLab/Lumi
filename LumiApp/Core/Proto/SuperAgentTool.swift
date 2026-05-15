@@ -1,5 +1,78 @@
 import Foundation
 
+/// 单次工具调用的取消上下文。
+///
+/// 和 Swift `Task.cancel()` 不同，这个上下文会显式传入工具内部，让工具可以把取消
+/// 转发给底层资源（如 `Process.terminate()`、`WKWebView.stopLoading()` 或外部 SDK）。
+final class ToolExecutionContext: @unchecked Sendable {
+    typealias CancellationHandler = @Sendable () -> Void
+
+    let conversationId: UUID
+    let toolCallId: String
+    let toolName: String
+
+    private let lock = NSLock()
+    private var cancelled = false
+    private var handlers: [UUID: CancellationHandler] = [:]
+
+    init(conversationId: UUID, toolCallId: String, toolName: String) {
+        self.conversationId = conversationId
+        self.toolCallId = toolCallId
+        self.toolName = toolName
+    }
+
+    var isCancelled: Bool {
+        lock.lock()
+        let value = cancelled
+        lock.unlock()
+        return value || Task.isCancelled
+    }
+
+    func checkCancellation() throws {
+        if isCancelled {
+            throw CancellationError()
+        }
+    }
+
+    @discardableResult
+    func onCancel(_ handler: @escaping CancellationHandler) -> UUID? {
+        lock.lock()
+        if cancelled {
+            lock.unlock()
+            handler()
+            return nil
+        }
+        let id = UUID()
+        handlers[id] = handler
+        lock.unlock()
+        return id
+    }
+
+    func removeCancellationHandler(_ id: UUID?) {
+        guard let id else { return }
+        lock.lock()
+        handlers[id] = nil
+        lock.unlock()
+    }
+
+    func cancel() {
+        let handlersToRun: [CancellationHandler]
+        lock.lock()
+        guard !cancelled else {
+            lock.unlock()
+            return
+        }
+        cancelled = true
+        handlersToRun = Array(handlers.values)
+        handlers.removeAll()
+        lock.unlock()
+
+        for handler in handlersToRun {
+            handler()
+        }
+    }
+}
+
 /// 工具风险等级元数据由插件定义，内核只消费结果。
 
 /// 代理工具协议
@@ -51,24 +124,27 @@ protocol SuperAgentTool: Sendable {
     /// 工具名称
     ///
     /// 唯一标识符，AI 通过名称选择要执行的工具。
-    /// 建议使用下划线命名法，如 "read_file", "run_command"
+    /// 建议使用下划线命名法，如 "read_file", "run_command"。
+    /// 注意：名称不翻译，始终为英文。
     var name: String { get }
-    
-    /// 工具描述
+
+    /// 工具描述（多语言）
     ///
     /// 详细描述工具的功能、用途和使用场景。
     /// AI 根据描述判断是否需要调用此工具。
-    /// 建议包含：
-    /// - 工具用途
-    /// - 输入参数含义
-    /// - 返回值说明
-    var description: String { get }
-    
-    /// 输入参数 JSON Schema
+    ///
+    /// 每个工具必须为 `LanguagePreference.allCases` 中的所有语言提供描述，
+    /// 使用 `switch language` 穷举，由编译器保证完整性。
+    func description(for language: LanguagePreference) -> String
+
+    /// 输入参数 JSON Schema（多语言）
     ///
     /// 定义工具接受的参数格式。
-    /// 使用 JSON Schema 格式，便于 AI 理解和生成正确参数。
-    var inputSchema: [String: Any] { get }
+    /// 参数的 `description` 字段应使用对应语言。
+    ///
+    /// 每个工具必须为 `LanguagePreference.allCases` 中的所有语言提供 schema，
+    /// 使用 `switch language` 穷举，由编译器保证完整性。
+    func inputSchema(for language: LanguagePreference) -> [String: Any]
     
     /// 执行工具
     ///
@@ -81,6 +157,32 @@ protocol SuperAgentTool: Sendable {
     /// - Throws: 执行过程中可能抛出的错误
     func execute(arguments: [String: ToolArgument]) async throws -> String
 
+    /// 带取消上下文的执行入口。
+    ///
+    /// 新工具应优先实现这个方法，把 `context` 传给底层长耗时操作。旧工具可以继续只实现
+    /// `execute(arguments:)`；默认实现会在调用前后检查取消。
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String
+
     /// 工具自行评估当前调用的风险等级（必填，禁止省略）。
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel
+}
+
+extension SuperAgentTool {
+    /// 默认描述（英文），供 Provider formatTool 直接读取。
+    /// 避免将方法引用误当作值放入 JSON 字典导致 `__SwiftValue` 崩溃。
+    var description: String {
+        description(for: .english)
+    }
+
+    /// 默认 inputSchema（英文），供 Provider formatTool 直接读取。
+    var inputSchema: [String: Any] {
+        inputSchema(for: .english)
+    }
+
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        let result = try await execute(arguments: arguments)
+        try context.checkCancellation()
+        return result
+    }
 }

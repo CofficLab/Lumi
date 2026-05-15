@@ -8,7 +8,7 @@ import os
 final class FeifeimiaoProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.feifeimiao")
     nonisolated static let emoji = "🐦"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - 基础信息
 
     static let id = "feifeimiao"
@@ -24,6 +24,10 @@ final class FeifeimiaoProvider: NSObject, SuperLLMProvider, @unchecked Sendable 
 
     static let modelCatalog: [LLMModelCatalogItem] = [
         .init(id: "gpt-5.5", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.4-mini", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.3", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
+        .init(id: "gpt-5.2", spec: .init(contextWindowSize: 272_000, supportsVision: false, supportsTools: true)),
     ]
 
     // MARK: - 启用状态配置

@@ -19,7 +19,7 @@ struct IncrementalCompilerTests {
         let objectURL = fixture.directory.appendingPathComponent("PreviewSnippet.o")
         let command = "/usr/bin/env swiftc -c \(shellQuoted(fixture.file.path)) -o \(shellQuoted(objectURL.path))"
 
-        let compiledObjectURL = try await IncrementalCompiler().compile(
+        let compiledObjectURL = try await LumiPreviewFacade.IncrementalCompiler().compile(
             fileURL: fixture.file,
             compileCommand: command
         )
@@ -41,7 +41,7 @@ struct IncrementalCompilerTests {
 
         let objectURL = fixture.directory.appendingPathComponent("PreviewSnippet.o")
         let command = "/usr/bin/env swiftc -c \(shellQuoted(fixture.file.path)) -o \(shellQuoted(objectURL.path))"
-        let compiler = IncrementalCompiler()
+        let compiler = LumiPreviewFacade.IncrementalCompiler()
         let compiledObjectURL = try await compiler.compile(
             fileURL: fixture.file,
             compileCommand: command
@@ -66,7 +66,7 @@ struct IncrementalCompilerTests {
 
         let objectURL = fixture.directory.appendingPathComponent("PreviewSnippet.o")
         let command = "/usr/bin/env swiftc -c \(shellQuoted(fixture.file.path)) -o \(shellQuoted(objectURL.path))"
-        let compiler = IncrementalCompiler()
+        let compiler = LumiPreviewFacade.IncrementalCompiler()
         let compiledObjectURL = try await compiler.compile(
             fileURL: fixture.file,
             compileCommand: command
@@ -93,12 +93,12 @@ struct IncrementalCompilerTests {
         let command = "/usr/bin/env swiftc -c \(shellQuoted(fixture.file.path))"
 
         do {
-            _ = try await IncrementalCompiler().compile(
+            _ = try await LumiPreviewFacade.IncrementalCompiler().compile(
                 fileURL: fixture.file,
                 compileCommand: command
             )
             Issue.record("Expected compilationFailed")
-        } catch PreviewError.compilationFailed(let message) {
+        } catch LumiPreviewFacade.PreviewError.compilationFailed(let message) {
             #expect(message.contains("PreviewSnippet.swift"))
             #expect(message.localizedCaseInsensitiveContains("error"))
         } catch {
@@ -141,7 +141,7 @@ struct IncrementalCompilerTests {
                 "-o \(shellQuoted(moduleObjectURL.path))"
         )
 
-        let compiledDylibURL = try await IncrementalCompiler().compileLibrary(
+        let compiledDylibURL = try await LumiPreviewFacade.IncrementalCompiler().compileLibrary(
             sourceURLs: [previewSource],
             dylibURL: dylibURL,
             compilerArguments: ["-I", directory.path, moduleObjectURL.path]
@@ -163,7 +163,7 @@ struct IncrementalCompilerTests {
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
 
         let dylibURL = fixture.directory.appendingPathComponent("PreviewEntry.dylib")
-        let compiledDylibURL = try await IncrementalCompiler().compileLibrary(
+        let compiledDylibURL = try await LumiPreviewFacade.IncrementalCompiler().compileLibrary(
             sourceURLs: [fixture.file],
             dylibURL: dylibURL,
             compilerArguments: ["-module-name", "OldPreviewEntry"],
@@ -176,7 +176,7 @@ struct IncrementalCompilerTests {
 
     private func makeTemporarySwiftFile(source: String) throws -> (directory: URL, file: URL) {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-IncrementalCompiler-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("LumiPreviewKit-LumiPreviewFacade.IncrementalCompiler-\(UUID().uuidString)", isDirectory: true)
         let file = directory.appendingPathComponent("PreviewSnippet.swift")
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

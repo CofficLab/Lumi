@@ -25,7 +25,7 @@ import MagicKit
 /// ```
 final class ToolExecutionService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "⚙️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - 依赖
 
     /// 工具服务
@@ -86,8 +86,9 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
     /// - Parameter toolCall: 工具调用信息
     /// - Returns: 工具执行结果
     /// - Throws: 执行过程中的错误
-    func executeTool(_ toolCall: ToolCall) async throws -> String {
+    func executeTool(_ toolCall: ToolCall, context: ToolExecutionContext? = nil) async throws -> String {
         let startTime = Date()
+        try context?.checkCancellation()
 
         // 检查工具是否存在
         let hasTool = toolService.hasTool(named: toolCall.name)
@@ -99,8 +100,10 @@ final class ToolExecutionService: SuperLog, @unchecked Sendable {
         // 执行工具
         let result = try await toolService.executeTool(
             named: toolCall.name,
-            argumentsJSON: toolCall.arguments
+            argumentsJSON: toolCall.arguments,
+            context: context
         )
+        try context?.checkCancellation()
 
         let duration = Date().timeIntervalSince(startTime)
 
@@ -165,5 +168,59 @@ enum ToolExecutionError: Error, LocalizedError {
         case .permissionDenied(let toolName):
             return "Permission denied for '\(toolName)'"
         }
+    }
+}
+
+enum ToolImageResultCodec {
+    private static let markerPrefix = "__LUMI_TOOL_IMAGE_RESULT__:"
+
+    struct Payload: Codable {
+        let content: String
+        let images: [Image]
+
+        struct Image: Codable {
+            let dataBase64: String
+            let mimeType: String
+        }
+    }
+
+    static func encode(content: String, images: [ImageAttachment]) -> String {
+        let payload = Payload(
+            content: content,
+            images: images.map {
+                Payload.Image(
+                    dataBase64: $0.data.base64EncodedString(),
+                    mimeType: $0.mimeType
+                )
+            }
+        )
+
+        guard let data = try? JSONEncoder().encode(payload),
+              let json = String(data: data, encoding: .utf8) else {
+            return content
+        }
+
+        return markerPrefix + json
+    }
+
+    static func decode(_ result: String) -> (content: String, images: [ImageAttachment])? {
+        guard result.hasPrefix(markerPrefix) else {
+            return nil
+        }
+
+        let json = String(result.dropFirst(markerPrefix.count))
+        guard let data = json.data(using: .utf8),
+              let payload = try? JSONDecoder().decode(Payload.self, from: data) else {
+            return nil
+        }
+
+        let images = payload.images.compactMap { image -> ImageAttachment? in
+            guard let data = Data(base64Encoded: image.dataBase64) else {
+                return nil
+            }
+            return ImageAttachment(data: data, mimeType: image.mimeType)
+        }
+
+        return (payload.content, images)
     }
 }

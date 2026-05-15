@@ -11,9 +11,23 @@ import MagicKit
 /// - 详细的 diff 输出
 struct EditFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "edit_file"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return """
+在文件中执行精确字符串替换。
+
+用法：
+- 编辑前必须在当前对话中使用 `read_file` 读取过该文件。未读取就尝试编辑会报错。
+- 从 Read 工具输出中编辑文本时，必须保留精确缩进（tab/空格）；行号前缀之后的内容才是需要匹配的真实文件内容。
+- 如果 `old_string` 在文件中不唯一，编辑会失败。请提供更大的上下文让它唯一，或使用 `replace_all` 替换所有匹配项。
+- 跨文件内多处替换或重命名字符串时使用 `replace_all`。
+- 使用足够小但明确唯一的 old_string；通常 2-4 行相邻内容即可。
+"""
+        case .english:
+            return     """
 Performs exact string replacements in files.
 
 Usage:
@@ -23,8 +37,10 @@ Usage:
 - Use `replace_all` for replacing and renaming strings across the file.
 - Use the smallest old_string that's clearly unique — usually 2-4 adjacent lines is sufficient.
 """
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         return [
             "type": "object",
             "properties": [

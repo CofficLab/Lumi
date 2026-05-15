@@ -68,6 +68,7 @@ final class FileLogCoordinator: @unchecked Sendable {
     private var currentFileHandle: FileHandle?
     private var currentFilePath: URL?
     private var isRunning = false
+    private var isFileLoggingDisabled = false
     private var lastPolledDate = Date.distantPast
     private var pollTimer: Timer?
 
@@ -116,6 +117,7 @@ final class FileLogCoordinator: @unchecked Sendable {
         queue.async { [self] in
             guard !isRunning else { return }
             isRunning = true
+            isFileLoggingDisabled = false
             purgeExpiredLogs()
             rotateLogFile()
             schedulePollTimer()
@@ -140,12 +142,22 @@ final class FileLogCoordinator: @unchecked Sendable {
 
     private func rotateLogFile() {
         closeCurrentFile()
+        guard !isFileLoggingDisabled else { return }
 
         let filename = logDateFormatter.string(from: Date()) + ".log"
         let filePath = logsDirectory.appendingPathComponent(filename)
 
-        FileManager.default.createFile(atPath: filePath.path, contents: nil)
-        currentFileHandle = try? FileHandle(forWritingTo: filePath)
+        guard FileManager.default.createFile(atPath: filePath.path, contents: nil) else {
+            handleFileWriteFailure(CocoaError(.fileWriteUnknown))
+            return
+        }
+
+        do {
+            currentFileHandle = try FileHandle(forWritingTo: filePath)
+        } catch {
+            handleFileWriteFailure(error)
+            return
+        }
         currentFilePath = filePath
 
         // 写入 header
@@ -171,22 +183,38 @@ final class FileLogCoordinator: @unchecked Sendable {
         ===
 
         """
-        currentFileHandle?.write(Data(header.utf8))
+        writeData(Data(header.utf8))
     }
 
     private func closeCurrentFile() {
         guard let handle = currentFileHandle else { return }
-        handle.synchronizeFile()
-        handle.closeFile()
         currentFileHandle = nil
+        currentFilePath = nil
+        var closeError: Error?
+        do {
+            try handle.synchronize()
+        } catch {
+            closeError = error
+        }
+
+        do {
+            try handle.close()
+        } catch {
+            closeError = closeError ?? error
+        }
+
+        if let closeError {
+            handleFileWriteFailure(closeError)
+        }
     }
 
     // MARK: - Polling
 
     private func schedulePollTimer() {
         let timer = Timer(timeInterval: pollInterval, repeats: true) { [weak self] _ in
-            self?.queue.async {
-                self?.pollOnce()
+            guard let coordinator = self else { return }
+            coordinator.queue.async { [weak coordinator] in
+                coordinator?.pollOnce()
             }
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -194,7 +222,7 @@ final class FileLogCoordinator: @unchecked Sendable {
     }
 
     private func pollOnce() {
-        guard isRunning else { return }
+        guard isRunning, !isFileLoggingDisabled else { return }
 
         let store: OSLogStore
         do {
@@ -219,8 +247,10 @@ final class FileLogCoordinator: @unchecked Sendable {
         }
 
         if hasNewEntries {
-            currentFileHandle?.synchronizeFile()
-            checkFileSize()
+            flushCurrentFile()
+            if !isFileLoggingDisabled {
+                checkFileSize()
+            }
         }
     }
 
@@ -236,7 +266,38 @@ final class FileLogCoordinator: @unchecked Sendable {
             let time = entryTimeFormatter.string(from: entry.date)
             line = "[\(time)] \(entry.composedMessage)\n"
         }
-        currentFileHandle?.write(Data(line.utf8))
+        writeData(Data(line.utf8))
+    }
+
+    private func writeData(_ data: Data) {
+        guard let handle = currentFileHandle, !isFileLoggingDisabled else { return }
+        do {
+            try handle.write(contentsOf: data)
+        } catch {
+            handleFileWriteFailure(error)
+        }
+    }
+
+    private func flushCurrentFile() {
+        guard let handle = currentFileHandle, !isFileLoggingDisabled else { return }
+        do {
+            try handle.synchronize()
+        } catch {
+            handleFileWriteFailure(error)
+        }
+    }
+
+    private func handleFileWriteFailure(_: Error) {
+        guard !isFileLoggingDisabled else { return }
+        isFileLoggingDisabled = true
+        isRunning = false
+        pollTimer?.invalidate()
+        pollTimer = nil
+
+        let handle = currentFileHandle
+        currentFileHandle = nil
+        currentFilePath = nil
+        try? handle?.close()
     }
 
     private func checkFileSize() {

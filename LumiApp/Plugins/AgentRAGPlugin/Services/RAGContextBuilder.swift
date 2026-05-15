@@ -3,7 +3,21 @@ import Foundation
 enum RAGContextBuilder {
     private static let maxContextChars = 9000
 
-    static func buildPrompt(query: String, results: [RAGSearchResult], projectPath: String?) -> String {
+    static func buildPrompt(
+        query: String,
+        results: [RAGSearchResult],
+        projectPath: String?,
+        languagePreference: LanguagePreference = .chinese
+    ) -> String {
+        switch languagePreference {
+        case .chinese:
+            return buildChinesePrompt(query: query, results: results, projectPath: projectPath)
+        case .english:
+            return buildEnglishPrompt(query: query, results: results, projectPath: projectPath)
+        }
+    }
+
+    private static func buildChinesePrompt(query: String, results: [RAGSearchResult], projectPath: String?) -> String {
         var prompt = "以下上下文仅供参考，可能存在不准确的情况。\n\n"
         if let projectPath, !projectPath.isEmpty {
             prompt += "项目路径：\(projectPath)\n\n"
@@ -26,6 +40,33 @@ enum RAGContextBuilder {
 
         if includedCount < results.count {
             prompt += "\n[说明] 由于上下文预算限制，已截断部分片段。\n"
+        }
+        return prompt
+    }
+
+    private static func buildEnglishPrompt(query: String, results: [RAGSearchResult], projectPath: String?) -> String {
+        var prompt = "The following context is for reference only and may contain inaccuracies.\n\n"
+        if let projectPath, !projectPath.isEmpty {
+            prompt += "Project path: \(projectPath)\n\n"
+        }
+        prompt += "---\nRelevant snippets:\n"
+
+        var usedChars = 0
+        var includedCount = 0
+        for (index, result) in results.enumerated() {
+            let budget = max(maxContextChars - usedChars, 0)
+            if budget == 0 { break }
+            let clipped = clip(result.content, maxChars: min(3000, budget))
+            if clipped.isEmpty { continue }
+
+            prompt += "\n[Snippet \(index + 1)] Source: \(result.source)\n"
+            prompt += "\(clipped)\n"
+            usedChars += clipped.count
+            includedCount += 1
+        }
+
+        if includedCount < results.count {
+            prompt += "\n[Note] Some snippets were truncated due to the context budget.\n"
         }
         return prompt
     }

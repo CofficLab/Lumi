@@ -10,9 +10,16 @@ struct CaffeinateActivateTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = true
 
     let name = "caffeinate_activate"
-    let description = "Activate caffeinate to prevent the system from sleeping. Supports two modes: 'systemAndDisplay' (prevent both system and display sleep, keep screen on) and 'systemOnly' (prevent system sleep but allow display to turn off). Supports timed duration or indefinite activation."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "激活 caffeinate 以防止系统睡眠。支持两种模式：'systemAndDisplay'（同时防止系统和显示器睡眠，保持屏幕亮起）和 'systemOnly'（防止系统睡眠但允许显示器关闭）。支持指定时长或无限期激活。"
+        case .english:
+            return "Activate caffeinate to prevent the system from sleeping. Supports two modes: 'systemAndDisplay' (prevent both system and display sleep, keep screen on) and 'systemOnly' (prevent system sleep but allow display to turn off). Supports timed duration or indefinite activation."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

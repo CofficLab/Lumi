@@ -1,3 +1,3 @@
-import EditorKernelCore
+import EditorKernel
 
-typealias EditorPanelCommandController = EditorKernelCore.EditorPanelCommandController
+typealias EditorPanelCommandController = EditorKernel.EditorPanelCommandController

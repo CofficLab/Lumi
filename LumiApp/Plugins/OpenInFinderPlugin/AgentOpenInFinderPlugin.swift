@@ -7,7 +7,7 @@ import SwiftUI
 /// 在 Agent 模式的状态栏左侧添加图标，点击后在 Finder 中打开当前项目目录。
 actor AgentOpenInFinderPlugin: SuperPlugin {
     nonisolated static let emoji = "📂"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "AgentOpenInFinder"
     static let displayName = String(localized: "Open in Finder", table: "AgentOpenInFinder")
     static let description = String(localized: "Open current project in Finder", table: "AgentOpenInFinder")
@@ -77,7 +77,7 @@ struct OpenInFinderStatusBarView: View {
             Image(systemName: "folder.fill")
                 .font(.system(size: 10))
 
-            Text("Finder")
+            Text(String(localized: "Finder", table: "OpenInFinderPlugin"))
                 .font(.system(size: 11))
         }
         .padding(.horizontal, 8)
@@ -106,7 +106,7 @@ struct OpenInFinderDetailView: View {
                 Image(systemName: "folder.fill")
                     .font(.system(size: 16))
 
-                Text("Finder")
+                Text(String(localized: "Finder", table: "OpenInFinderPlugin"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -117,7 +117,7 @@ struct OpenInFinderDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text("打开")
+                        Text(String(localized: "打开", table: "OpenInFinderPlugin"))
                     }
                     .font(.system(size: 12))
                 }
@@ -128,7 +128,7 @@ struct OpenInFinderDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text("项目")
+                Text(String(localized: "项目", table: "OpenInFinderPlugin"))
                     .font(.system(size: 12))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 50, alignment: .leading)
@@ -149,7 +149,7 @@ struct OpenInFinderDetailView: View {
                         .font(.system(size: 12))
                 }
                 .buttonStyle(.plain)
-                .help("复制路径")
+                .help(String(localized: "复制路径", table: "OpenInFinderPlugin"))
             }
         }
         .padding()

@@ -13,7 +13,7 @@ actor RecentProjectsPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "📋"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id: String = "RecentProjects"
     static let displayName: String = String(localized: "Recent Projects", table: "RecentProjects")
     static let description: String = String(localized: "Manage recent projects and current project state", table: "RecentProjects")

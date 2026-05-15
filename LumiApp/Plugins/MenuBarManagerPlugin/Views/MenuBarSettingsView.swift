@@ -14,16 +14,16 @@ struct MenuBarSettingsView: View {
                         .font(.largeTitle)
                         .foregroundStyle(.blue)
                     VStack(alignment: .leading) {
-                        Text("Menu Bar Manager")
+                        Text(String(localized: "Menu Bar Manager", table: "MenuBarManager"))
                             .font(.system(size: 15, weight: .medium))
-                        Text("Manage your menu bar items")
+                        Text(String(localized: "Manage your menu bar items", table: "MenuBarManager"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
                     
                     if !service.isPermissionGranted {
-                        Button("Grant Permission") {
+                        Button(String(localized: "Grant Permission", table: "MenuBarManager")) {
                             service.requestPermission()
                         }
                         .buttonStyle(.borderedProminent)
@@ -47,7 +47,7 @@ struct MenuBarSettingsView: View {
                     
                     HStack {
                         Spacer()
-                        Button("Refresh") {
+                        Button(String(localized: "Refresh", table: "MenuBarManager")) {
                             service.refreshMenuBarItems()
                         }
                     }
@@ -55,7 +55,7 @@ struct MenuBarSettingsView: View {
                     ContentUnavailableView(
                         "Permission Required",
                         systemImage: "lock.fill",
-                        description: Text("Accessibility permission is required to manage menu bar items.")
+                        description: Text(String(localized: "Accessibility permission is required to manage menu bar items.", table: "MenuBarManager"))
                     )
                 }
             }

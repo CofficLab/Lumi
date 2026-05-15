@@ -10,7 +10,7 @@ import os
 @MainActor
 final class FileSearchService: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let shared = FileSearchService()
 
     // MARK: - Published Properties
@@ -31,6 +31,7 @@ final class FileSearchService: ObservableObject, SuperLog {
 
     private var indexStore = FileIndexStore(projectPath: "")
     private var searchTask: Task<Void, Never>?
+    private var indexingProjectPath: String?
 
     // MARK: - Initialization
 
@@ -98,7 +99,7 @@ final class FileSearchService: ObservableObject, SuperLog {
         }
 
         if indexStore.files.isEmpty || indexStore.needsReindex() {
-            indexStore.update(FileSearchHelpers.scanProjectFiles(at: normalizedProjectPath))
+            rebuildIndex(for: normalizedProjectPath)
         }
 
         return Array(
@@ -112,15 +113,23 @@ final class FileSearchService: ObservableObject, SuperLog {
 
     /// 重建文件索引
     private func rebuildIndex(for path: String) {
+        guard indexingProjectPath != path else { return }
+        indexingProjectPath = path
         isLoading = true
 
         Task.detached(priority: .userInitiated) {
+            let signpostID = UIPerformanceSignpost.begin("QuickFileSearch.rebuildIndex")
+            defer { UIPerformanceSignpost.end("QuickFileSearch.rebuildIndex", signpostID) }
+
             let startTime = Date()
             let files = FileSearchHelpers.scanProjectFiles(at: path)
 
             await MainActor.run { [weak self] in
                 guard let self else { return }
+                guard self.indexingProjectPath == path else { return }
+                self.indexingProjectPath = nil
                 self.isLoading = false
+                guard self.currentProjectPath == path else { return }
                 self.indexStore.update(files)
 
                 let duration = Date().timeIntervalSince(startTime)
@@ -153,20 +162,22 @@ final class FileSearchService: ObservableObject, SuperLog {
 
     /// 执行搜索
     private func performSearch(query: String) async {
+        let signpostID = UIPerformanceSignpost.begin("QuickFileSearch.performSearch")
+        defer { UIPerformanceSignpost.end("QuickFileSearch.performSearch", signpostID) }
+
         let startTime = Date()
         let lowercaseQuery = query.lowercased()
 
         // 在访问 self.indexStore 之前先捕获文件列表
         let files = indexStore.files
 
-        // 在后台线程执行搜索
-        let results = FileSearchHelpers.searchInFiles(files, query: lowercaseQuery)
-
-        // 检查任务是否被取消
-        guard !Task.isCancelled else { return }
+        let results = await Task.detached(priority: .userInitiated) {
+            FileSearchHelpers.searchInFiles(files, query: lowercaseQuery)
+        }.value
 
         await MainActor.run { [weak self] in
             guard let self else { return }
+            guard !Task.isCancelled else { return }
             self.searchResults = results
 
             let duration = Date().timeIntervalSince(startTime)

@@ -23,7 +23,7 @@ class NetworkPopoverController {
         popover.behavior = .transient
 
         // Create ViewModel
-        let viewModel = NetworkManagerViewModel()
+        let viewModel = NetworkManagerViewModel.shared
         self.viewModel = viewModel
 
         // Create Hosting View

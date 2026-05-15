@@ -7,7 +7,7 @@ struct DeviceInfoMenuBarContentView: View {
 
     // MARK: - Properties
 
-    @StateObject private var cpuViewModel = CPUManagerViewModel()
+    @StateObject private var cpuViewModel = CPUManagerViewModel(monitorsProcesses: false)
     @StateObject private var memoryViewModel = MemoryManagerViewModel()
 
     // MARK: - Body

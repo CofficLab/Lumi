@@ -1,29 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Are you sure you want to delete this message? This action cannot be undone.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Are you sure you want to delete this message? This action cannot be undone."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确定要删除这条消息吗？此操作无法撤销。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確定要刪除這則訊息嗎？此操作無法撤銷。"
-          }
-        }
-      }
-    },
     "Agent Chat": {
       "extractionState": "manual",
       "localizations": {
@@ -70,6 +47,28 @@
         }
       }
     },
+    "Agent chat messages timeline": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent chat messages timeline"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 聊天消息时间线"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 聊天訊息時間線"
+          }
+        }
+      }
+    },
     "All": {
       "extractionState": "manual",
       "localizations": {
@@ -89,6 +88,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "全部"
+          }
+        }
+      }
+    },
+    "Are you sure you want to delete this message? This action cannot be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to delete this message? This action cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要删除这条消息吗？此操作无法撤销。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定要刪除這則訊息嗎？此操作無法撤銷。"
+          }
+        }
+      }
+    },
+    "Build Mode Description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build mode: can execute tools and modify code"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建模式：可执行工具和修改代码"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "構建模式：可執行工具和修改代碼"
           }
         }
       }
@@ -116,25 +161,46 @@
         }
       }
     },
-    "Build Mode Description": {
-      "extractionState": "manual",
+    "Chat Input": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Build mode: can execute tools and modify code"
+            "value": "Chat Input"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "构建模式：可执行工具和修改代码"
+            "value": "聊天输入"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "構建模式：可執行工具和修改代碼"
+            "value": "聊天輸入"
+          }
+        }
+      }
+    },
+    "Chat input area with editor, toolbar and model selector": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat input area with editor, toolbar and model selector"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包含编辑器、工具栏和模型选择器的聊天输入区域"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包含編輯器、工具欄和模型選擇器的聊天輸入區域"
           }
         }
       }
@@ -411,6 +477,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "刪除訊息"
+          }
+        }
+      }
+    },
+    "Drag to select a screenshot region. Press ESC to cancel.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to select a screenshot region. Press ESC to cancel."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖拽选择截图区域，按 ESC 取消。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖拽選擇截圖區域，按 ESC 取消。"
           }
         }
       }
@@ -1197,6 +1286,29 @@
         }
       }
     },
+    "OK": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確定"
+          }
+        }
+      }
+    },
     "Onboarding Guide": {
       "extractionState": "manual",
       "localizations": {
@@ -1239,6 +1351,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "打開首次使用說明"
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系统设置"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開系統設定"
           }
         }
       }
@@ -1308,6 +1443,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "請先建立或選擇對話"
+          }
+        }
+      }
+    },
+    "Preparing Screenshot": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing screenshot"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在准备截图"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在準備截圖"
           }
         }
       }
@@ -1446,6 +1604,190 @@
           "stringUnit": {
             "state": "translated",
             "value": "響應時間表示從第一個 token 到響應完成的時間"
+          }
+        }
+      }
+    },
+    "Screen Recording Permission Required": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen recording permission is required"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要屏幕录制权限"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要螢幕錄製權限"
+          }
+        }
+      }
+    },
+    "Screen Recording Permission Required Hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Lumi in System Settings > Privacy & Security > Screen Recording, then try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在“系统设置 > 隐私与安全性 > 屏幕录制”中允许 Lumi，然后重试。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請在「系統設定 > 私隱與安全性 > 螢幕錄製」中允許 Lumi，然後重試。"
+          }
+        }
+      }
+    },
+    "Screenshot Failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截图失败"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截圖失敗"
+          }
+        }
+      }
+    },
+    "Screenshot Failed Generic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi could not capture the screen. Try again, or check Screen Recording permission in System Settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 无法捕获屏幕。请重试，或在系统设置中检查屏幕录制权限。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 無法擷取螢幕。請重試，或在系統設定中檢查螢幕錄製權限。"
+          }
+        }
+      }
+    },
+    "Screenshot Failed No Image": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The system did not return screenshot data. Try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统没有返回截图数据，请重试。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統沒有返回截圖資料，請重試。"
+          }
+        }
+      }
+    },
+    "Screenshot Failed No Screens": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active screen was found."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有找到可用屏幕。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有找到可用螢幕。"
+          }
+        }
+      }
+    },
+    "Screenshot Region": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot region"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "区域截图"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "區域截圖"
+          }
+        }
+      }
+    },
+    "Screenshot Region Hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a screen region as an image attachment"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择屏幕区域作为图片附件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇螢幕區域作為圖片附件"
           }
         }
       }
@@ -1634,29 +1976,6 @@
         }
       }
     },
-    "TTFT Help": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TTFT represents the time from sending the request to receiving the first token"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TTFT 表示从发送请求到收到第一个 token 的时间"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TTFT 表示從傳送請求到收到第一個 token 的時間"
-          }
-        }
-      }
-    },
     "Text": {
       "extractionState": "manual",
       "localizations": {
@@ -1699,6 +2018,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "工具"
+          }
+        }
+      }
+    },
+    "TTFT Help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TTFT represents the time from sending the request to receiving the first token"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TTFT 表示从发送请求到收到第一个 token 的时间"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TTFT 表示從傳送請求到收到第一個 token 的時間"
           }
         }
       }

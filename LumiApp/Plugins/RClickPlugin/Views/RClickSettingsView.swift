@@ -9,7 +9,7 @@ struct RClickSettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 20) {
-                Text("Preview")
+                Text(String(localized: "Preview", table: "RClick"))
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -34,10 +34,10 @@ struct RClickSettingsView: View {
                                     .foregroundColor(Color(hex: "7C6FFF"))
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Enable Finder Extension")
+                                    Text(String(localized: "Enable Finder Extension", table: "RClick"))
                                         .font(.system(size: 20, weight: .semibold))
                                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                                    Text("The right-click menu functionality requires the Finder extension to be enabled in System Settings.")
+                                    Text(String(localized: "The right-click menu functionality requires the Finder extension to be enabled in System Settings.", table: "RClick"))
                                         .font(.system(size: 12, weight: .regular))
                                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 }
@@ -53,7 +53,7 @@ struct RClickSettingsView: View {
 
                                 Spacer()
 
-                                Text("System Settings → Privacy & Security → Extensions → Added Extensions")
+                                Text(String(localized: "System Settings → Privacy & Security → Extensions → Added Extensions", table: "RClick"))
                                     .font(.system(size: 11, weight: .regular))
                                     .foregroundColor(Color(hex: "98989E"))
                             }
@@ -62,7 +62,7 @@ struct RClickSettingsView: View {
 
                     GlassCard {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("General Actions")
+                            Text(String(localized: "General Actions", table: "RClick"))
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -93,7 +93,7 @@ struct RClickSettingsView: View {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("New File Menu")
+                                Text(String(localized: "New File Menu", table: "RClick"))
                                     .font(.system(size: 20, weight: .semibold))
                                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                 Spacer()
@@ -109,7 +109,7 @@ struct RClickSettingsView: View {
                                         Image(systemName: newFileItem.type.iconName)
                                             .frame(width: 20)
                                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                                        Text("Enable 'New File' Submenu")
+                                        Text(String(localized: "Enable 'New File' Submenu", table: "RClick"))
                                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                         Spacer()
                                         Toggle("", isOn: Binding(
@@ -151,7 +151,7 @@ struct RClickSettingsView: View {
 
                     GlassCard {
                         HStack {
-                            Text("Reset to Defaults")
+                            Text(String(localized: "Reset to Defaults", table: "RClick"))
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(Color.adaptive(light: "FF3B30", dark: "FF453A"))
                             Spacer()

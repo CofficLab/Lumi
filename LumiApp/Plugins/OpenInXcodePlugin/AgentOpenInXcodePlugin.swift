@@ -11,7 +11,7 @@ actor AgentOpenInXcodePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "💻"
 
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "AgentOpenInXcode"
     static let displayName: String = String(localized: "Open in Xcode", table: "AgentOpenInXcode")
@@ -78,7 +78,7 @@ struct OpenInXcodeStatusBarView: View {
             Image(systemName: "hammer.fill")
                 .font(.system(size: 10))
 
-            Text("Xcode")
+            Text(String(localized: "Xcode", table: "OpenInXcodePlugin"))
                 .font(.system(size: 11))
         }
         .padding(.horizontal, 8)
@@ -107,7 +107,7 @@ struct OpenInXcodeDetailView: View {
                 Image(systemName: "hammer.fill")
                     .font(.system(size: 16))
 
-                Text("Xcode")
+                Text(String(localized: "Xcode", table: "OpenInXcodePlugin"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -118,7 +118,7 @@ struct OpenInXcodeDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text("打开")
+                        Text(String(localized: "打开", table: "OpenInXcodePlugin"))
                     }
                     .font(.system(size: 12))
                 }
@@ -129,7 +129,7 @@ struct OpenInXcodeDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text("项目")
+                Text(String(localized: "项目", table: "OpenInXcodePlugin"))
                     .font(.system(size: 12))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 50, alignment: .leading)
@@ -150,7 +150,7 @@ struct OpenInXcodeDetailView: View {
                         .font(.system(size: 12))
                 }
                 .buttonStyle(.plain)
-                .help("复制路径")
+                .help(String(localized: "复制路径", table: "OpenInXcodePlugin"))
             }
         }
         .padding()

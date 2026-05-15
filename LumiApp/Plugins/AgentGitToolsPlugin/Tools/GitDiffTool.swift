@@ -7,9 +7,16 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
     nonisolated static let verbose: Bool = true
     let name = "git_diff"
-    let description = "查看 Git 仓库的代码变更。支持查看工作区变更或暂存区变更。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "查看 Git 仓库的代码变更。支持查看工作区变更或暂存区变更。"
+        case .english:
+            return "View code changes in a Git repository. Supports working tree changes and staged changes."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

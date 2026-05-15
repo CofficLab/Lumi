@@ -20,6 +20,7 @@ actor ThemeNebulaPlugin: SuperPlugin {
                 appTheme: NebulaTheme(),
                 editorThemeId: "nebula",
                 editorThemeContributor: NebulaSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiFileIconThemeCatalog.nebula(),
                 order: 30
             )
         ]

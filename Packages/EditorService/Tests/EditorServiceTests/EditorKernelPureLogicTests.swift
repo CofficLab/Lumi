@@ -1,5 +1,5 @@
 #if canImport(XCTest)
-import EditorKernelCore
+import EditorKernel
 import Foundation
 import LanguageServerProtocol
 import XCTest
@@ -447,7 +447,7 @@ final class EditorKernelPureLogicTests: XCTestCase {
     }
 
     func testMultiCursorEditEngineOutdentRemovesLeadingSpacesAndShiftsSelections() {
-        // Use the same stable scenario as EditorKernelCore tests to avoid diverging expectations.
+        // Use the same stable scenario as EditorKernel tests to avoid diverging expectations.
         let result = MultiCursorEditEngine.apply(
             text: "    one\n    two",
             selections: [

@@ -1,6 +1,7 @@
 import Foundation
 import LibGit2Swift
 import MagicKit
+import ShellKit
 
 /// Git Commit 服务
 ///
@@ -8,7 +9,7 @@ import MagicKit
 /// 使用非流式 HTTP 请求，无需 SSE。
 enum GitCommitService: SuperLog {
     nonisolated static let emoji = "📝"
-    nonisolated static let verbose = false
+    nonisolated static let verbose: Bool = false
 
     /// Commit 语言偏好
     enum Language {
@@ -172,39 +173,43 @@ enum GitCommitService: SuperLog {
     ///   - path: 项目路径
     /// - Returns: commit hash
     static func executeCommit(message: String, at path: String) async throws -> String {
-        try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    let result = try Self.runCommitProcess(message: message, at: path)
-                    continuation.resume(returning: result)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+        try await runCommitProcess(message: message, at: path)
     }
 
-    /// 在后台队列执行 git commit Process
-    private nonisolated static func runCommitProcess(message: String, at path: String) throws -> String {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/bin/bash")
-        task.arguments = ["-c", "cd \(path) && git add -A && git commit -m '\(message.replacingOccurrences(of: "'", with: "\\'"))' 2>&1 && git rev-parse --short HEAD"]
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = pipe
+    /// 在后台执行 git commit
+    private nonisolated static func runCommitProcess(message: String, at path: String) async throws -> String {
+        let result = try await Shell.execute(
+            executable: "/usr/bin/env",
+            arguments: ["git", "-C", path, "add", "-A"],
+            options: ShellOptions(throwsOnError: false)
+        )
+        guard result.exitCode == 0 else {
+            let output = result.stderr.isEmpty ? result.stdout : result.stderr
+            throw GitCommitError.commitFailed(output)
+        }
 
-        try task.run()
-        task.waitUntilExit()
+        let commit = try await Shell.execute(
+            executable: "/usr/bin/env",
+            arguments: ["git", "-C", path, "commit", "-m", message],
+            options: ShellOptions(throwsOnError: false)
+        )
+        guard commit.exitCode == 0 else {
+            let output = commit.stderr.isEmpty ? commit.stdout : commit.stderr
+            throw GitCommitError.commitFailed(output)
+        }
 
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8) ?? ""
-
-        guard task.terminationStatus == 0 else {
+        let hashResult = try await Shell.execute(
+            executable: "/usr/bin/env",
+            arguments: ["git", "-C", path, "rev-parse", "--short", "HEAD"],
+            options: ShellOptions(throwsOnError: false)
+        )
+        guard hashResult.exitCode == 0 else {
+            let output = hashResult.stderr.isEmpty ? hashResult.stdout : hashResult.stderr
             throw GitCommitError.commitFailed(output)
         }
 
         // 最后一行是 commit hash
-        let lines = output.components(separatedBy: CharacterSet.newlines).filter { !$0.isEmpty }
+        let lines = hashResult.stdout.components(separatedBy: CharacterSet.newlines).filter { !$0.isEmpty }
         guard let hash = lines.last, !hash.isEmpty else {
             throw GitCommitError.commitFailed("无法获取 commit hash")
         }

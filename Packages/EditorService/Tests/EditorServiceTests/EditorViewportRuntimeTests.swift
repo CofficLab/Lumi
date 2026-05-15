@@ -1,6 +1,6 @@
 #if canImport(XCTest)
 import CodeEditTextView
-import EditorKernelCore
+import EditorKernel
 import LanguageServerProtocol
 import XCTest
 @testable import EditorService

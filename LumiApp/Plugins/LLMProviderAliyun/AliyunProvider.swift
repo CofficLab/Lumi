@@ -12,7 +12,7 @@ import os
 final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.aliyun")
     nonisolated static let emoji = "🔵"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - 基础信息
 
     static let id = "aliyun"
@@ -281,12 +281,7 @@ final class AliyunProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
 extension AliyunProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
         if let toolCallID = message.toolCallID {
-            return [
-                "role": "user",
-                "content": [
-                    ["type": "tool_result", "tool_use_id": toolCallID, "content": message.content],
-                ],
-            ]
+            return AnthropicToolResultContentBuilder.message(for: message, toolCallID: toolCallID)
         }
 
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {

@@ -21,16 +21,16 @@ struct EmptyCacheView: View {
             }
 
             VStack(spacing: 10) {
-                Text("准备就绪")
+                Text(String(localized: "准备就绪", table: "DiskManager"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text("点击开始扫描，分析系统缓存并可一键清理。")
+                Text(String(localized: "点击开始扫描，分析系统缓存并可一键清理。", table: "DiskManager"))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 Button(action: { viewModel.scan() }, label: {
-                    Label(title: { Text("开始扫描") }, icon: { Image(systemName: "doc.badge.gearshape") })
+                    Label(title: { Text(String(localized: "开始扫描", table: "DiskManager")) }, icon: { Image(systemName: "doc.badge.gearshape") })
                         .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)

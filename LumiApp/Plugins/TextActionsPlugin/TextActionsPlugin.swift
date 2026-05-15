@@ -5,7 +5,7 @@ import os
 actor TextActionsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.text-actions")
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "TextActions"
     static let navigationId = "text_actions"

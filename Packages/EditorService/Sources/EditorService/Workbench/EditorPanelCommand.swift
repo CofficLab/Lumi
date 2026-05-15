@@ -1,4 +1,4 @@
-import EditorKernelCore
+import EditorKernel
 
-public typealias EditorPanelCommand = EditorKernelCore.EditorPanelCommand
-public typealias EditorPanelSnapshot = EditorKernelCore.EditorPanelSnapshot
+public typealias EditorPanelCommand = EditorKernel.EditorPanelCommand
+public typealias EditorPanelSnapshot = EditorKernel.EditorPanelSnapshot

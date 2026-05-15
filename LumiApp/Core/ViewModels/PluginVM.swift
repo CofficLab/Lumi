@@ -63,7 +63,7 @@ final class PluginVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"
 
     /// 是否启用详细日志输出
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     /// 已加载的插件列表
     ///
     /// 包含所有成功注册的插件实例。
@@ -94,9 +94,21 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 存储所有 Combine 订阅，用于在 deinit 时取消。
     /// 防止内存泄漏。
     private var cancellables = Set<AnyCancellable>()
-    private var sidebarViewsCache: [AnyView]?
-    private var sidebarViewsCacheKey: String?
-    private var rightSidebarViewsCache: [AnyView]?
+    private var toolbarLeadingViewsCache: (key: String, views: [AnyView])?
+    private var toolbarCenterViewsCache: (key: String, views: [AnyView])?
+    private var toolbarTrailingViewsCache: (key: String, views: [AnyView])?
+    private var panelIconItemsCache: [PanelIconItem]?
+    private var activePanelItemCache: (key: String, item: PanelItem?)?
+    private var activePanelHeaderViewsCache: (key: String, views: [AnyView])?
+    private var bottomPanelTabsCache: (key: String, tabs: [BottomPanelTab])?
+    private var bottomPanelContentViewCache: [String: AnyView] = [:]
+    private var railTabsCache: (key: String, tabs: [RailTab])?
+    private var railContentViewCache: [String: AnyView] = [:]
+    private var sidebarSectionsCache: (key: String, sections: [AnyView])?
+    private var menuBarContentViewsCache: [AnyView]?
+    private var statusBarLeadingViewsCache: (key: String, views: [AnyView])?
+    private var statusBarCenterViewsCache: (key: String, views: [AnyView])?
+    private var statusBarTrailingViewsCache: (key: String, views: [AnyView])?
 
     // MARK: - Tools Cache
 
@@ -129,9 +141,7 @@ final class PluginVM: ObservableObject, SuperLog {
         // 订阅设置变化，当设置改变时触发 UI 更新
         settingsStore.$settings
             .sink { [weak self] _ in
-                self?.sidebarViewsCache = nil
-                self?.sidebarViewsCacheKey = nil
-                self?.rightSidebarViewsCache = nil
+                self?.clearUICaches()
                 self?.cachedAgentTools = nil
                 self?.cachedAgentToolFactories = nil
                 self?.cachedSuperSendMiddlewares = nil
@@ -139,6 +149,28 @@ final class PluginVM: ObservableObject, SuperLog {
             }
             .store(in: &cancellables)
 
+    }
+
+    private func clearUICaches() {
+        toolbarLeadingViewsCache = nil
+        toolbarCenterViewsCache = nil
+        toolbarTrailingViewsCache = nil
+        panelIconItemsCache = nil
+        activePanelItemCache = nil
+        activePanelHeaderViewsCache = nil
+        bottomPanelTabsCache = nil
+        bottomPanelContentViewCache.removeAll()
+        railTabsCache = nil
+        railContentViewCache.removeAll()
+        sidebarSectionsCache = nil
+        menuBarContentViewsCache = nil
+        statusBarLeadingViewsCache = nil
+        statusBarCenterViewsCache = nil
+        statusBarTrailingViewsCache = nil
+    }
+
+    private func activeIconCacheKey(_ suffix: String = "") -> String {
+        "\(activePanelIcon ?? "<nil>")|\(plugins.count)|\(suffix)"
     }
 
     // MARK: - Agent Tools Aggregation
@@ -237,9 +269,7 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 扫描完成后会发送 `PluginsDidLoad` 通知。
     private func autoDiscoverAndRegisterPlugins() {
         // 插件列表将被重建，相关缓存一并清空
-        sidebarViewsCache = nil
-        sidebarViewsCacheKey = nil
-        rightSidebarViewsCache = nil
+        clearUICaches()
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
         cachedSuperSendMiddlewares = nil
@@ -386,9 +416,15 @@ final class PluginVM: ObservableObject, SuperLog {
     /// - Returns: 工具栏前导视图数组
     func getToolbarLeadingViews() -> [AnyView] {
         let activeIcon = activePanelIcon
-        return plugins
+        let key = activeIconCacheKey()
+        if let cached = toolbarLeadingViewsCache, cached.key == key {
+            return cached.views
+        }
+        let views = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addToolBarLeadingView(activeIcon: activeIcon) }
+        toolbarLeadingViewsCache = (key, views)
+        return views
     }
 
     /// 获取所有插件的工具栏中间视图
@@ -399,9 +435,15 @@ final class PluginVM: ObservableObject, SuperLog {
     /// - Returns: 工具栏中间视图数组
     func getToolbarCenterViews() -> [AnyView] {
         let activeIcon = activePanelIcon
-        return plugins
+        let key = activeIconCacheKey()
+        if let cached = toolbarCenterViewsCache, cached.key == key {
+            return cached.views
+        }
+        let views = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addToolBarCenterView(activeIcon: activeIcon) }
+        toolbarCenterViewsCache = (key, views)
+        return views
     }
 
     /// 获取所有插件的工具栏右侧视图
@@ -412,9 +454,15 @@ final class PluginVM: ObservableObject, SuperLog {
     /// - Returns: 工具栏右侧视图数组
     func getToolbarTrailingViews() -> [AnyView] {
         let activeIcon = activePanelIcon
-        return plugins
+        let key = activeIconCacheKey()
+        if let cached = toolbarTrailingViewsCache, cached.key == key {
+            return cached.views
+        }
+        let views = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addToolBarTrailingView(activeIcon: activeIcon) }
+        toolbarTrailingViewsCache = (key, views)
+        return views
     }
 
     /// 获取所有面板图标项（用于左侧活动栏）
@@ -424,6 +472,9 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 如果发现两个插件提供了相同的 icon，会触发 fatalError。
     func getPanelIconItems() -> [PanelIconItem] {
+        if let panelIconItemsCache {
+            return panelIconItemsCache
+        }
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
         var items: [PanelIconItem] = []
         var seenIcons: [String: String] = [:]  // icon -> plugin id
@@ -447,6 +498,7 @@ final class PluginVM: ObservableObject, SuperLog {
                 icon: icon
             ))
         }
+        panelIconItemsCache = items
         return items
     }
 
@@ -456,6 +508,10 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 只会有一个插件匹配并返回面板视图。
     func getActivePanelItem() -> PanelItem? {
         guard let activeIcon = activePanelIcon else { return nil }
+        let key = activeIconCacheKey()
+        if let cached = activePanelItemCache, cached.key == key {
+            return cached.item
+        }
         
         for plugin in plugins where isPluginEnabled(plugin) {
             guard let pluginIcon = plugin.addPanelIcon() else { continue }
@@ -463,13 +519,16 @@ final class PluginVM: ObservableObject, SuperLog {
             
             guard let view = plugin.addPanelView(activeIcon: activeIcon) else { continue }
             let pluginType = type(of: plugin)
-            return PanelItem(
+            let item = PanelItem(
                 id: plugin.instanceLabel,
                 title: pluginType.displayName,
                 icon: pluginIcon,
                 view: view
             )
+            activePanelItemCache = (key, item)
+            return item
         }
+        activePanelItemCache = (key, nil)
         return nil
     }
 
@@ -481,9 +540,15 @@ final class PluginVM: ObservableObject, SuperLog {
     /// - Returns: Panel Header 视图数组
     func getActivePanelHeaderViews() -> [AnyView] {
         let activeIcon = activePanelIcon
-        return plugins
+        let key = activeIconCacheKey()
+        if let cached = activePanelHeaderViewsCache, cached.key == key {
+            return cached.views
+        }
+        let views = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addPanelHeaderView(activeIcon: activeIcon) }
+        activePanelHeaderViewsCache = (key, views)
+        return views
     }
 
     /// 获取所有插件提供的底部面板标签页
@@ -492,19 +557,33 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 按 priority 升序排列。
     func getBottomPanelTabs() -> [BottomPanelTab] {
         let activeIcon = activePanelIcon
-        return plugins
+        let key = activeIconCacheKey()
+        if let cached = bottomPanelTabsCache, cached.key == key {
+            return cached.tabs
+        }
+        let tabs = plugins
             .filter { isPluginEnabled($0) }
             .flatMap { $0.addBottomPanelTabs(activeIcon: activeIcon) }
             .sorted { $0.priority < $1.priority }
+        bottomPanelTabsCache = (key, tabs)
+        return tabs
     }
 
     /// 获取指定底部面板 Tab 对应的内容视图
     func getBottomPanelContentView(tabId: String) -> AnyView? {
         let activeIcon = activePanelIcon
-        return plugins
+        let key = activeIconCacheKey(tabId)
+        if let cached = bottomPanelContentViewCache[key] {
+            return cached
+        }
+        let view = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addBottomPanelContentView(tabId: tabId, activeIcon: activeIcon) }
             .first
+        if let view {
+            bottomPanelContentViewCache[key] = view
+        }
+        return view
     }
 
     /// 当前是否有底部面板标签页
@@ -530,19 +609,33 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 按 priority 升序排列。
     func getRailTabs() -> [RailTab] {
         let activeIcon = activePanelIcon
-        return plugins
+        let key = activeIconCacheKey()
+        if let cached = railTabsCache, cached.key == key {
+            return cached.tabs
+        }
+        let tabs = plugins
             .filter { isPluginEnabled($0) }
             .flatMap { $0.addRailTabs(activeIcon: activeIcon) }
             .sorted { $0.priority < $1.priority }
+        railTabsCache = (key, tabs)
+        return tabs
     }
 
     /// 获取指定 Rail tab 对应的内容视图
     func getRailContentView(tabId: String) -> AnyView? {
         let activeIcon = activePanelIcon
-        return plugins
+        let key = activeIconCacheKey(tabId)
+        if let cached = railContentViewCache[key] {
+            return cached
+        }
+        let view = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addRailContentView(tabId: tabId, activeIcon: activeIcon) }
             .first
+        if let view {
+            railContentViewCache[key] = view
+        }
+        return view
     }
 
     /// 当前是否有 Rail 标签页
@@ -550,25 +643,29 @@ final class PluginVM: ObservableObject, SuperLog {
         !getRailTabs().isEmpty
     }
 
-    /// 获取所有插件提供的右侧栏视图
+    /// 获取所有插件提供的右侧栏 Section 视图
     ///
-    /// 收集所有启用插件提供的右侧栏视图。
-    /// 多个右侧栏会水平堆叠，按插件 order 升序排列。
+    /// 收集所有启用插件通过 `addSidebarSections()` 提供的 Section 视图，
+    /// 按插件 `order` 升序扁平化排列（order 小的在上，大的在下）。
+    /// 内核将这些 Section 使用 VStack 垂直堆叠在右侧栏中。
     ///
-    /// - Returns: 右侧栏视图数组
-    func getSidebarViews() -> [AnyView] {
+    /// - Returns: 右侧栏 Section 视图数组
+    func getSidebarSections() -> [AnyView] {
         let activeIcon = activePanelIcon
-        return plugins
+        let key = activeIconCacheKey()
+        if let cached = sidebarSectionsCache, cached.key == key {
+            return cached.sections
+        }
+        let sections = plugins
             .filter { isPluginEnabled($0) }
-            .compactMap { $0.addSidebarView(activeIcon: activeIcon) }
+            .flatMap { $0.addSidebarSections(activeIcon: activeIcon) }
+        sidebarSectionsCache = (key, sections)
+        return sections
     }
 
-    /// 当前是否有右侧栏视图
+    /// 当前是否有右侧栏 Section 视图
     func hasSidebars() -> Bool {
-        let activeIcon = activePanelIcon
-        return plugins
-            .filter { isPluginEnabled($0) }
-            .contains { $0.addSidebarView(activeIcon: activeIcon) != nil }
+        !getSidebarSections().isEmpty
     }
 
     /// 获取所有插件提供的菜单栏弹窗视图
@@ -591,9 +688,14 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// - Returns: 菜单栏内容视图数组
     func getMenuBarContentViews() -> [AnyView] {
-        plugins
+        if let menuBarContentViewsCache {
+            return menuBarContentViewsCache
+        }
+        let views = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addMenuBarContentView() }
+        menuBarContentViewsCache = views
+        return views
     }
 
     /// 获取所有插件提供的状态栏左侧视图（用于 Agent 模式底部状态栏）
@@ -605,6 +707,10 @@ final class PluginVM: ObservableObject, SuperLog {
     /// - Returns: 状态栏左侧视图数组
     func getStatusBarLeadingViews() -> [AnyView] {
         let activeIcon = activePanelIcon
+        let key = activeIconCacheKey()
+        if let cached = statusBarLeadingViewsCache, cached.key == key {
+            return cached.views
+        }
         let views = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarLeadingView(activeIcon: activeIcon) }
@@ -615,6 +721,7 @@ final class PluginVM: ObservableObject, SuperLog {
             AppLogger.core.info("\(self.t) getStatusBarLeadingViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏左侧视图数量=\(views.count)")
         }
 
+        statusBarLeadingViewsCache = (key, views)
         return views
     }
 
@@ -627,6 +734,10 @@ final class PluginVM: ObservableObject, SuperLog {
     /// - Returns: 状态栏中间视图数组
     func getStatusBarCenterViews() -> [AnyView] {
         let activeIcon = activePanelIcon
+        let key = activeIconCacheKey()
+        if let cached = statusBarCenterViewsCache, cached.key == key {
+            return cached.views
+        }
         let views = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarCenterView(activeIcon: activeIcon) }
@@ -637,6 +748,7 @@ final class PluginVM: ObservableObject, SuperLog {
             AppLogger.core.info("\(self.t) getStatusBarCenterViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏中间视图数量=\(views.count)")
         }
 
+        statusBarCenterViewsCache = (key, views)
         return views
     }
 
@@ -649,6 +761,10 @@ final class PluginVM: ObservableObject, SuperLog {
     /// - Returns: 状态栏右侧视图数组
     func getStatusBarTrailingViews() -> [AnyView] {
         let activeIcon = activePanelIcon
+        let key = activeIconCacheKey()
+        if let cached = statusBarTrailingViewsCache, cached.key == key {
+            return cached.views
+        }
         let views = plugins
             .filter { isPluginEnabled($0) }
             .compactMap { $0.addStatusBarTrailingView(activeIcon: activeIcon) }
@@ -659,6 +775,7 @@ final class PluginVM: ObservableObject, SuperLog {
             AppLogger.core.info("\(self.t) getStatusBarTrailingViews: 所有插件=\(pluginNames), 启用的插件=\(enabledNames), 状态栏右侧视图数量=\(views.count)")
         }
 
+        statusBarTrailingViewsCache = (key, views)
         return views
     }
 

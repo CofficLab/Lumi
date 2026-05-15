@@ -1,5 +1,5 @@
-import EditorKernelCore
+import EditorKernel
 
-public typealias RequestGeneration = EditorKernelCore.RequestGeneration
-public typealias CancellationContext = EditorKernelCore.CancellationContext
-public typealias LSPRequestLifecycle = EditorKernelCore.LSPRequestLifecycle
+public typealias RequestGeneration = EditorKernel.RequestGeneration
+public typealias CancellationContext = EditorKernel.CancellationContext
+public typealias LSPRequestLifecycle = EditorKernel.LSPRequestLifecycle

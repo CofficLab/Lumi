@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewFacade {
 /// Xcode 编译器：使用 xcodebuild 编译 Xcode 项目中的预览。
-public final class XcodeCompiler: Sendable {
+final class XcodeCompiler: Sendable {
     /// 创建 Xcode 编译器。
     public init() {}
 
@@ -260,6 +261,15 @@ public final class XcodeCompiler: Sendable {
             arguments.append("-profile-generate")
         }
 
+        // For SPM packages embedded in Xcode projects, collect .o files from
+        // DerivedData's Build/Products directory and Intermediates.
+        // Xcode produces a merged .o per package target (e.g. LumiUI.o) which
+        // contains all symbols — these MUST be linked even if the name matches
+        // a product name, because they're the actual implementations.
+        arguments.append(contentsOf: spmPackageObjectFileArguments(from: settings))
+
+        // Also collect dependency .o files from the build products directory,
+        // but exclude the main app's own .o file.
         arguments.append(
             contentsOf: linkInputArguments(
                 in: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
@@ -273,6 +283,81 @@ public final class XcodeCompiler: Sendable {
         }
 
         return arguments
+    }
+
+    /// Collects .o files for SPM package targets built by Xcode.
+    ///
+    /// Xcode compiles each SPM package target into a single merged .o file
+    /// (e.g. `LumiUI.o`) in `Build/Products/`. These contain all symbols
+    /// including types used by previews and must be linked into the preview dylib.
+    private static func spmPackageObjectFileArguments(from settings: [String: String]) -> [String] {
+        let productDirectories = [
+            settings["BUILT_PRODUCTS_DIR"],
+            settings["TARGET_BUILD_DIR"],
+            settings["CONFIGURATION_BUILD_DIR"]
+        ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+
+        var objectFiles: [String] = []
+        let mainTargetName = settings["TARGET_NAME"] ?? ""
+        let productName = settings["PRODUCT_NAME"] ?? ""
+
+        for directory in productDirectories {
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+
+            for entry in entries where entry.pathExtension == "o" {
+                let baseName = entry.deletingPathExtension().lastPathComponent
+                // Only include .o files that are NOT the main app's own object file.
+                // SPM package targets produce separate .o files (e.g. LumiUI.o).
+                guard baseName != mainTargetName && baseName != productName else { continue }
+                objectFiles.append(entry.path)
+            }
+        }
+
+        // Also search for individual .o files in the Intermediates build directory.
+        // These are produced for the main target and its dependencies.
+        let intermediatesDirectories = productDirectories
+            .map { dir -> URL in
+                dir.deletingLastPathComponent()
+                    .deletingLastPathComponent()
+                    .appendingPathComponent("Intermediates.noindex", isDirectory: true)
+            }
+            .first { FileManager.default.fileExists(atPath: $0.path) }
+
+        if let intermediatesDir = intermediatesDirectories {
+            collectObjectFilesRecursively(
+                from: intermediatesDir,
+                excludingProductNames: Set([mainTargetName, productName].filter { !$0.isEmpty }),
+                into: &objectFiles
+            )
+        }
+
+        return objectFiles.sorted().uniqued()
+    }
+
+    /// Recursively collects .o files from a directory tree, excluding specific product names.
+    private static func collectObjectFilesRecursively(
+        from directory: URL,
+        excludingProductNames: Set<String>,
+        into files: inout [String]
+    ) {
+        guard let enumerator = FileManager.default.enumerator(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else { return }
+
+        for case let entry as URL in enumerator where entry.pathExtension == "o" {
+            let baseName = entry.deletingPathExtension().lastPathComponent
+            guard !excludingProductNames.contains(baseName) else { continue }
+            files.append(entry.path)
+        }
     }
 
     private static func splitBuildSettingList(_ value: String) -> [String] {
@@ -351,10 +436,99 @@ public final class XcodeCompiler: Sendable {
     }
 
     private static func packageLinkedLibraryArguments(from settings: [String: String]) -> [String] {
-        sourcePackageCheckoutDirectories(from: settings)
-            .flatMap(packageLinkedLibraries(in:))
-            .uniqued()
-            .map { "-l\($0)" }
+        let productDirectories = [
+            settings["BUILT_PRODUCTS_DIR"],
+            settings["TARGET_BUILD_DIR"],
+            settings["CONFIGURATION_BUILD_DIR"]
+        ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+
+        var arguments: [String] = []
+
+        // First, try to find SPM package object files from Xcode's DerivedData
+        let spmObjectFiles = productDirectories.flatMap { productDirectory -> [String] in
+            let derivedDataDirectory = productDirectory
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+            return collectSPMPackageObjectFiles(from: derivedDataDirectory)
+        }
+        .uniqued()
+
+        if !spmObjectFiles.isEmpty {
+            arguments.append(contentsOf: spmObjectFiles)
+        } else {
+            // Fallback to -l arguments from Package.swift linkedLibrary declarations
+            let libraryNames = sourcePackageCheckoutDirectories(from: settings)
+                .flatMap(packageLinkedLibraries(in:))
+                .uniqued()
+            arguments.append(contentsOf: libraryNames.map { "-l\($0)" })
+        }
+
+        return arguments
+    }
+
+    /// Collects .o files from SPM packages built by Xcode in DerivedData.
+    ///
+    /// Xcode compiles SPM dependencies to:
+    /// {DerivedData}/SourcePackages/artifacts/{arch}-apple-macosx/{TargetName}.build/*.o
+    private static func collectSPMPackageObjectFiles(from derivedDataDir: URL) -> [String] {
+        let fileManager = FileManager.default
+        let artifactsBaseDir = derivedDataDir
+            .appendingPathComponent("SourcePackages", isDirectory: true)
+            .appendingPathComponent("artifacts", isDirectory: true)
+
+        guard fileManager.fileExists(atPath: artifactsBaseDir.path) else {
+            return []
+        }
+
+        var objectFiles: [String] = []
+
+        // Search for architecture-specific build directories
+        let archDirs = ["arm64-apple-macosx", "x86_64-apple-macosx"]
+        for archDir in archDirs {
+            let archPath = artifactsBaseDir.appendingPathComponent(archDir, isDirectory: true)
+            guard let targetDirs = try? fileManager.contentsOfDirectory(
+                at: archPath,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+
+            for targetDir in targetDirs {
+                let buildDir = targetDir.appendingPathComponent("\(targetDir.lastPathComponent).build", isDirectory: true)
+                if !fileManager.fileExists(atPath: buildDir.path) {
+                    // Try direct child as build dir
+                    if let entries = try? fileManager.contentsOfDirectory(
+                        at: targetDir,
+                        includingPropertiesForKeys: [.isDirectoryKey],
+                        options: [.skipsHiddenFiles]
+                    ) {
+                        for entry in entries where entry.pathExtension == "build" {
+                            collectObjectFiles(from: entry, into: &objectFiles)
+                        }
+                    }
+                } else {
+                    collectObjectFiles(from: buildDir, into: &objectFiles)
+                }
+            }
+        }
+
+        return objectFiles
+    }
+
+    private static func collectObjectFiles(from directory: URL, into files: inout [String]) {
+        let fileManager = FileManager.default
+        guard let entries = try? fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else { return }
+
+        for entry in entries where entry.pathExtension == "o" {
+            files.append(entry.path)
+        }
     }
 
     private static func sourcePackageCheckoutDirectories(from settings: [String: String]) -> [URL] {
@@ -447,6 +621,8 @@ public final class XcodeCompiler: Sendable {
     }
 }
 
+}
+
 private extension Array where Element == String {
     func uniqued() -> [String] {
         var seen: Set<String> = []
@@ -457,3 +633,4 @@ private extension Array where Element == String {
         return result
     }
 }
+

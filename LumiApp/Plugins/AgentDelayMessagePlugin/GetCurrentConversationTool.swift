@@ -16,9 +16,16 @@ import MagicKit
 /// ```
 struct GetCurrentConversationTool: SuperAgentTool {
     let name = "get_current_conversation"
-    let description = "Get the current active conversation ID. Use this before calling delay_message to ensure the delayed message is sent to the correct conversation."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取当前活动对话 ID。调用 delay_message 前先使用此工具，确保延迟消息发送到正确的对话。"
+        case .english:
+            return "Get the current active conversation ID. Use this before calling delay_message to ensure the delayed message is sent to the correct conversation."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [:] as [String: Any],

@@ -290,12 +290,7 @@ final class ZhipuProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Send
 extension ZhipuProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
         if let toolCallID = message.toolCallID {
-            return [
-                "role": "user",
-                "content": [
-                    ["type": "tool_result", "tool_use_id": toolCallID, "content": message.content],
-                ],
-            ]
+            return AnthropicToolResultContentBuilder.message(for: message, toolCallID: toolCallID)
         }
 
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {

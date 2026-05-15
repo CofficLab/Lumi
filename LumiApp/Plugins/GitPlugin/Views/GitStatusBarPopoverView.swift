@@ -76,8 +76,8 @@ struct GitPluginPopoverView: View {
         }
         .alert("Create New Branch", isPresented: $showCreateBranchAlert) {
             TextField("Branch name", text: $createBranchName)
-            Button("Cancel", role: .cancel) {}
-            Button("Create") {
+            Button(String(localized: "Cancel", table: "GitPlugin"), role: .cancel) {}
+            Button(String(localized: "Create", table: "GitPlugin")) {
                 let branchName = createBranchName.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !branchName.isEmpty else { return }
                 Task { await createBranch(named: branchName) }
@@ -123,12 +123,12 @@ struct GitPluginPopoverView: View {
     private var leftPanel: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Branches")
+                Text(String(localized: "Branches", table: "GitPlugin"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.secondary)
                 branchList
                 Divider().padding(.vertical, 4)
-                Text("Commit History")
+                Text(String(localized: "Commit History", table: "GitPlugin"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.secondary)
                 commitList

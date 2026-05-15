@@ -68,6 +68,7 @@
       }
     },
     "... (+ %lld more)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -162,9 +163,6 @@
           }
         }
       }
-    },
-    "\"\\(fileName)\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable." : {
-
     },
     "(%@)" : {
 
@@ -314,6 +312,16 @@
         }
       }
     },
+    "%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -389,6 +397,7 @@
 
     },
     "%lld 个项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -420,9 +429,6 @@
           }
         }
       }
-    },
-    "%lld 条" : {
-
     },
     "%lld 条消息" : {
 
@@ -494,6 +500,16 @@
         }
       }
     },
+    "%lld/%lld (%lld%%)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld (%3$lld%%)"
+          }
+        }
+      }
+    },
     "%lld%%" : {
       "localizations" : {
         "zh-Hans" : {
@@ -506,6 +522,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld%%"
+          }
+        }
+      }
+    },
+    "%lldP · %lldE · %lldS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lldP · %2$lldE · %3$lldS"
           }
         }
       }
@@ -570,7 +596,11 @@
         }
       }
     },
+    "00" : {
+
+    },
     "5,000 次/小时" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -586,16 +616,23 @@
         }
       }
     },
+    "06" : {
+
+    },
     "12" : {
+
+    },
+    "18" : {
+
+    },
+    "24" : {
 
     },
     "50 rows" : {
 
     },
-    "50%" : {
-
-    },
     "60 次/小时" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -614,9 +651,6 @@
     "68%" : {
 
     },
-    "75%" : {
-
-    },
     "100" : {
       "localizations" : {
         "zh-Hans" : {
@@ -632,9 +666,6 @@
           }
         }
       }
-    },
-    "100%" : {
-
     },
     "127.0.0.1" : {
       "localizations" : {
@@ -756,6 +787,7 @@
       }
     },
     "Accessibility permission is required to detect text selection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -772,6 +804,7 @@
       }
     },
     "Accessibility permission is required to manage menu bar items." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -836,6 +869,7 @@
       }
     },
     "Add Host Entry" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -868,6 +902,7 @@
       }
     },
     "Add New Template" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -954,9 +989,6 @@
         }
       }
     },
-    "All data is stored locally in SwiftData database and will not be uploaded to any server." : {
-
-    },
     "Allow" : {
       "localizations" : {
         "zh-Hans" : {
@@ -989,9 +1021,6 @@
         }
       }
     },
-    "Antigravity" : {
-
-    },
     "API Key" : {
 
     },
@@ -1012,6 +1041,7 @@
       }
     },
     "API 限制" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1145,6 +1175,7 @@
       }
     },
     "Apps" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1178,6 +1209,7 @@
       }
     },
     "Are you sure you want to clean the selected %@ files? This action cannot be undone." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1306,9 +1338,6 @@
     "Branch name" : {
 
     },
-    "Branches" : {
-
-    },
     "Browser Cache" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1374,13 +1403,11 @@
         }
       }
     },
-    "Checking..." : {
-
-    },
     "Choose a cloud provider and set your default model." : {
 
     },
     "Clean" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1400,6 +1427,7 @@
 
     },
     "Cleanup Complete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1480,6 +1508,7 @@
       }
     },
     "Clear All History" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1513,6 +1542,7 @@
       }
     },
     "Clear History" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1596,16 +1626,7 @@
         }
       }
     },
-    "Close Tab" : {
-
-    },
     "Cloud LLM Providers" : {
-
-    },
-    "Code Actions" : {
-
-    },
-    "code-server 未运行，扩展管理不可用" : {
 
     },
     "Collecting data..." : {
@@ -1657,10 +1678,8 @@
         }
       }
     },
-    "Commit History" : {
-
-    },
     "Configuration" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1693,6 +1712,7 @@
       }
     },
     "Confirm Cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1709,6 +1729,7 @@
       }
     },
     "Confirm Delete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1760,6 +1781,7 @@
       }
     },
     "Copy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1826,13 +1848,11 @@
         }
       }
     },
-    "Create" : {
-
-    },
     "Create New Branch" : {
 
     },
     "Created" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1864,9 +1884,6 @@
         }
       }
     },
-    "Current Status" : {
-
-    },
     "Current version is the latest stable version" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1883,9 +1900,6 @@
           }
         }
       }
-    },
-    "Cursor" : {
-
     },
     "Data" : {
       "localizations" : {
@@ -1937,6 +1951,7 @@
       }
     },
     "Database Type" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1953,6 +1968,7 @@
       }
     },
     "Default Content" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2299,6 +2315,7 @@
       }
     },
     "Enable 'New File' Submenu" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2347,6 +2364,7 @@
       }
     },
     "Enable Finder Extension" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2363,6 +2381,7 @@
       }
     },
     "Enable Text Selection Menu" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2399,6 +2418,7 @@
       }
     },
     "ENV:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2437,6 +2457,7 @@
 
     },
     "Export Backup..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2453,6 +2474,7 @@
       }
     },
     "Export..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2483,9 +2505,6 @@
           }
         }
       }
-    },
-    "Extensions" : {
-
     },
     "Failed to kill process: \\(error.localizedDescription)" : {
       "extractionState" : "manual",
@@ -2521,9 +2540,6 @@
         }
       }
     },
-    "Fast file search with Cmd+P" : {
-
-    },
     "Fetching..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2539,12 +2555,6 @@
           }
         }
       }
-    },
-    "File indexing is automatic when switching projects" : {
-
-    },
-    "Finder" : {
-
     },
     "General" : {
       "localizations" : {
@@ -2563,6 +2573,7 @@
       }
     },
     "General Actions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2579,6 +2590,7 @@
       }
     },
     "General Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2611,10 +2623,14 @@
         }
       }
     },
-    "GitHub Desktop" : {
+    "GitHub" : {
+
+    },
+    "GitHub Ecosystem KB" : {
 
     },
     "GitHub Tools" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2630,13 +2646,11 @@
         }
       }
     },
-    "GitOK" : {
-
-    },
     "GPT-5.5" : {
 
     },
     "Grant Permission" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2669,6 +2683,7 @@
       }
     },
     "History / Layers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2749,9 +2764,6 @@
         }
       }
     },
-    "How to Use" : {
-
-    },
     "Image" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2785,6 +2797,7 @@
       }
     },
     "Import Backup..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2933,6 +2946,7 @@
       }
     },
     "Keys" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3103,6 +3117,9 @@
         }
       }
     },
+    "Lumi %@ 已下载完成" : {
+
+    },
     "Lumi Agent" : {
 
     },
@@ -3127,6 +3144,7 @@
 
     },
     "Macintosh HD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3163,6 +3181,7 @@
       }
     },
     "Manage your menu bar items" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3247,6 +3266,7 @@
       }
     },
     "Menu Bar Manager" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3311,6 +3331,7 @@
       }
     },
     "Name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3343,6 +3364,7 @@
       }
     },
     "Netto Firewall" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3393,6 +3415,7 @@
       }
     },
     "New File Menu" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3474,6 +3497,7 @@
       }
     },
     "No clipboard records" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3506,6 +3530,7 @@
       }
     },
     "No listening ports found." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3521,10 +3546,8 @@
         }
       }
     },
-    "No LLM" : {
-
-    },
     "No open terminals" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3541,6 +3564,7 @@
       }
     },
     "No project selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3557,6 +3581,7 @@
       }
     },
     "No results" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3571,9 +3596,6 @@
           }
         }
       }
-    },
-    "No themes available" : {
-
     },
     "Node.js" : {
       "extractionState" : "stale",
@@ -3609,6 +3631,7 @@
       }
     },
     "OK" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3657,6 +3680,9 @@
         }
       }
     },
+    "Open a .vue file to see outline" : {
+
+    },
     "Open System Settings" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3672,9 +3698,6 @@
           }
         }
       }
-    },
-    "Open VSX 扩展市场" : {
-
     },
     "Optional" : {
       "localizations" : {
@@ -3728,6 +3751,7 @@
       }
     },
     "Personal Access Token" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3744,6 +3768,7 @@
       }
     },
     "Personal Access Token 将存储在本地，用于访问私有仓库和提高 API 限额。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3807,9 +3832,6 @@
         }
       }
     },
-    "Please select a project to enable file search" : {
-
-    },
     "Port" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3859,9 +3881,6 @@
         }
       }
     },
-    "Preferred" : {
-
-    },
     "Preview" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3910,7 +3929,7 @@
         }
       }
     },
-    "Project indexed" : {
+    "Profile: %@" : {
 
     },
     "Project Info" : {
@@ -3980,6 +3999,7 @@
       }
     },
     "Pull New Image" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4031,19 +4051,7 @@
     "Query" : {
 
     },
-    "Quick File Search" : {
-
-    },
     "RAG" : {
-
-    },
-    "RAG 服务将在插件启用时自动初始化" : {
-
-    },
-    "RAG 索引未初始化" : {
-
-    },
-    "RAG 索引状态" : {
 
     },
     "Ready" : {
@@ -4067,6 +4075,7 @@
       }
     },
     "Recent Events" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4098,6 +4107,9 @@
         }
       }
     },
+    "Relation" : {
+
+    },
     "Remote Providers" : {
 
     },
@@ -4118,6 +4130,7 @@
       }
     },
     "Reset to Defaults" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4355,6 +4368,7 @@
       }
     },
     "Security Scan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4387,6 +4401,7 @@
       }
     },
     "Select a database to connect" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4403,6 +4418,7 @@
       }
     },
     "Select an image to view details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4569,6 +4585,7 @@
       }
     },
     "Size" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4604,6 +4621,7 @@
       }
     },
     "Source: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4686,6 +4704,7 @@
       }
     },
     "Successfully freed %@ space." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4702,6 +4721,7 @@
       }
     },
     "Supported Actions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4770,6 +4790,9 @@
         }
       }
     },
+    "Sync Now" : {
+
+    },
     "System" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4805,6 +4828,7 @@
       }
     },
     "System Settings → Privacy & Security → Extensions → Added Extensions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4854,6 +4878,7 @@
       }
     },
     "Tag Image" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4870,6 +4895,7 @@
       }
     },
     "Tag..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4969,6 +4995,7 @@
       }
     },
     "The right-click menu functionality requires the Finder extension to be enabled in System Settings." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -4983,9 +5010,6 @@
           }
         }
       }
-    },
-    "Theme" : {
-
     },
     "This action will force terminate the process, which may lead to data loss." : {
       "localizations" : {
@@ -5169,6 +5193,7 @@
       }
     },
     "Unlimited" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5264,9 +5289,6 @@
           }
         }
       }
-    },
-    "URL" : {
-
     },
     "Usage" : {
       "extractionState" : "stale",
@@ -5408,10 +5430,8 @@
     "Working state (%lld)" : {
 
     },
-    "Xcode" : {
-
-    },
     "Xcode 环境很干净！" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5428,6 +5448,7 @@
       }
     },
     "上一步" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5490,6 +5511,7 @@
       }
     },
     "下一步操作" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5620,9 +5642,6 @@
         }
       }
     },
-    "会话列表" : {
-
-    },
     "体积 %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5640,6 +5659,7 @@
       }
     },
     "你可以扫描用户主目录，找到占用空间较大的文件。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5678,6 +5698,7 @@
 
     },
     "停止分析" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5714,6 +5735,7 @@
 
     },
     "停止扫描" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5755,9 +5777,6 @@
     "关于" : {
 
     },
-    "关闭" : {
-
-    },
     "内存 %lld GB" : {
       "localizations" : {
         "zh-Hans" : {
@@ -5773,12 +5792,6 @@
           }
         }
       }
-    },
-    "最新" : {
-
-    },
-    "最近索引" : {
-
     },
     "最近项目" : {
       "extractionState" : "stale",
@@ -5798,6 +5811,7 @@
       }
     },
     "准备就绪" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5814,6 +5828,7 @@
       }
     },
     "分析目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5830,6 +5845,7 @@
       }
     },
     "分类" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5880,6 +5896,7 @@
       }
     },
     "删除" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5913,6 +5930,7 @@
       }
     },
     "删除文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -5927,9 +5945,6 @@
           }
         }
       }
-    },
-    "刷新" : {
-
     },
     "刷新任务列表" : {
       "extractionState" : "stale",
@@ -5947,15 +5962,6 @@
           }
         }
       }
-    },
-    "刷新全部" : {
-
-    },
-    "刷新全部状态" : {
-
-    },
-    "刷新扩展列表" : {
-
     },
     "功能特性：" : {
       "localizations" : {
@@ -5990,6 +5996,7 @@
       }
     },
     "加载中..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6021,9 +6028,6 @@
         }
       }
     },
-    "加载扩展列表..." : {
-
-    },
     "加载更早消息" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6040,9 +6044,6 @@
           }
         }
       }
-    },
-    "加载调用层级中..." : {
-
     },
     "包含模式、模型、附件和发送操作" : {
       "extractionState" : "stale",
@@ -6093,9 +6094,6 @@
           }
         }
       }
-    },
-    "卸载扩展" : {
-
     },
     "双击切换 LLM 供应商" : {
       "localizations" : {
@@ -6214,6 +6212,7 @@
       }
     },
     "取消" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6247,6 +6246,7 @@
       }
     },
     "可用：%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6447,6 +6447,7 @@
       }
     },
     "在访达中显示" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6479,9 +6480,6 @@
         }
       }
     },
-    "复制 URL" : {
-
-    },
     "复制消息内容" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6498,9 +6496,6 @@
           }
         }
       }
-    },
-    "复制路径" : {
-
     },
     "复制错误信息" : {
       "extractionState" : "stale",
@@ -6552,9 +6547,6 @@
         }
       }
     },
-    "对话时间线" : {
-
-    },
     "将模型加载到内存以进行推理" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6570,9 +6562,6 @@
           }
         }
       }
-    },
-    "尚未建立索引" : {
-
     },
     "展开" : {
       "extractionState" : "stale",
@@ -6631,9 +6620,6 @@
         }
       }
     },
-    "工具执行" : {
-
-    },
     "工具输出" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6668,6 +6654,7 @@
       }
     },
     "已保存" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6735,10 +6722,8 @@
         }
       }
     },
-    "已安装" : {
-
-    },
     "已扫描：Code、Projects、Developer 等目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6772,6 +6757,7 @@
       }
     },
     "已用" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6788,6 +6774,7 @@
       }
     },
     "已用：%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6804,6 +6791,7 @@
       }
     },
     "已认证用户" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6819,10 +6807,8 @@
         }
       }
     },
-    "已过期" : {
-
-    },
     "已选择：%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6839,6 +6825,7 @@
       }
     },
     "已选择清理" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6853,15 +6840,6 @@
           }
         }
       }
-    },
-    "应用" : {
-
-    },
-    "应用此图标主题" : {
-
-    },
-    "应用此颜色主题" : {
-
     },
     "开启新会话" : {
       "extractionState" : "stale",
@@ -6897,6 +6875,7 @@
       }
     },
     "开始分析" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6913,6 +6892,7 @@
       }
     },
     "开始扫描" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -6927,9 +6907,6 @@
           }
         }
       }
-    },
-    "当前文件" : {
-
     },
     "当前没有任何 LLM 供应商插件已注册。\n请安装并启用至少一个提供 LLM 供应商的插件后重试。" : {
       "localizations" : {
@@ -6970,9 +6947,6 @@
         }
       }
     },
-    "当前项目没有远程仓库" : {
-
-    },
     "当插件标记为可配置时，会在此处显示" : {
       "localizations" : {
         "zh-Hans" : {
@@ -6999,6 +6973,7 @@
 
     },
     "思考过程" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7035,6 +7010,7 @@
 
     },
     "总计：%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7054,9 +7030,6 @@
 
     },
     "恢复默认" : {
-
-    },
-    "打开" : {
 
     },
     "打开App Support目录" : {
@@ -7157,6 +7130,7 @@
       }
     },
     "打开系统设置" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7173,9 +7147,6 @@
       }
     },
     "打开编辑项" : {
-
-    },
-    "打开设置" : {
 
     },
     "打开首次使用说明" : {
@@ -7212,10 +7183,8 @@
         }
       }
     },
-    "扩展管理" : {
-
-    },
     "扫描 Xcode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7232,6 +7201,7 @@
       }
     },
     "扫描大文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7248,6 +7218,7 @@
       }
     },
     "扫描目录：用户主目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7264,6 +7235,7 @@
       }
     },
     "扫描缓存" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7280,6 +7252,7 @@
       }
     },
     "扫描范围：Code、Projects、Developer 等目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7296,6 +7269,7 @@
       }
     },
     "扫描范围：Xcode 相关缓存目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7312,6 +7286,7 @@
       }
     },
     "扫描范围：用户主目录" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7328,6 +7303,7 @@
       }
     },
     "扫描项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7431,6 +7407,7 @@
 
     },
     "提供访问 GitHub API 的 Agent 工具（仓库/文件/搜索/Issue 管理）" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7513,15 +7490,6 @@
     "搜索 editor settings" : {
 
     },
-    "搜索中..." : {
-
-    },
-    "搜索失败" : {
-
-    },
-    "搜索并安装来自 Open VSX 的扩展\n支持数千个开源扩展" : {
-
-    },
     "搜索快捷键或命令…" : {
 
     },
@@ -7558,6 +7526,7 @@
       }
     },
     "收集数据中..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7588,9 +7557,6 @@
           }
         }
       }
-    },
-    "文件数" : {
-
     },
     "文件树" : {
       "extractionState" : "stale",
@@ -7626,9 +7592,6 @@
         }
       }
     },
-    "新建会话" : {
-
-    },
     "新建对话" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7646,7 +7609,11 @@
         }
       }
     },
+    "新建窗口" : {
+
+    },
     "新手引导" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7662,13 +7629,7 @@
         }
       }
     },
-    "无%@" : {
-
-    },
-    "无法连接 code-server" : {
-
-    },
-    "无远程仓库" : {
+    "新版本已准备好" : {
 
     },
     "显示上一个窗口" : {
@@ -7807,6 +7768,7 @@
       }
     },
     "暂无大文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7859,6 +7821,7 @@
 
     },
     "暂无目录数据" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7875,6 +7838,7 @@
       }
     },
     "暂无输入源切换规则" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7891,6 +7855,7 @@
       }
     },
     "暂无项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7906,7 +7871,11 @@
         }
       }
     },
+    "更新" : {
+
+    },
     "未发现可清理的项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7922,22 +7891,11 @@
         }
       }
     },
-    "未安装任何扩展" : {
-
-    },
-    "未找到匹配文件" : {
-
-    },
     "未找到匹配的符号" : {
 
     },
-    "未找到相关扩展" : {
-
-    },
-    "未找到调用层级信息" : {
-
-    },
     "未认证用户" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8083,6 +8041,7 @@
       }
     },
     "查询结果中…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8168,6 +8127,7 @@
       }
     },
     "正在分析目录结构" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8216,13 +8176,11 @@
         }
       }
     },
-    "正在加载热门扩展..." : {
-
-    },
     "正在启动 code-server…" : {
 
     },
     "正在扫描 Xcode 缓存" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8239,6 +8197,7 @@
       }
     },
     "正在扫描大文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8255,6 +8214,7 @@
       }
     },
     "正在扫描系统缓存" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8271,6 +8231,7 @@
       }
     },
     "正在扫描项目" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8289,15 +8250,6 @@
     "正在查找 code-server…" : {
 
     },
-    "正在检查索引状态..." : {
-
-    },
-    "正在索引..." : {
-
-    },
-    "正在索引文件..." : {
-
-    },
     "没有匹配的快捷键" : {
 
     },
@@ -8305,6 +8257,7 @@
 
     },
     "没有发现可清理的缓存文件" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8405,6 +8358,7 @@
       }
     },
     "添加应用和对应的输入源，切换应用时自动切换输入法" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8421,6 +8375,7 @@
       }
     },
     "清理中..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8453,10 +8408,8 @@
         }
       }
     },
-    "点击上方「市场」标签搜索安装扩展" : {
-
-    },
     "点击开始分析，查看目录占用与结构。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8473,6 +8426,7 @@
       }
     },
     "点击开始扫描，分析系统缓存并可一键清理。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8488,10 +8442,8 @@
         }
       }
     },
-    "点击放大预览" : {
-
-    },
     "点击结果后会在这里显示工具输出" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8506,9 +8458,6 @@
           }
         }
       }
-    },
-    "片段数" : {
-
     },
     "版本 %@" : {
       "localizations" : {
@@ -8525,9 +8474,6 @@
           }
         }
       }
-    },
-    "状态" : {
-
     },
     "生成中" : {
       "extractionState" : "stale",
@@ -8696,6 +8642,7 @@
       }
     },
     "立即清理" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -8745,9 +8692,6 @@
         }
       }
     },
-    "管理 code-server 扩展" : {
-
-    },
     "管理应用启动行为" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8764,9 +8708,6 @@
           }
         }
       }
-    },
-    "索引已过期，建议重新索引" : {
-
     },
     "结果" : {
       "extractionState" : "stale",
@@ -8862,9 +8803,6 @@
     "自定义" : {
 
     },
-    "获取索引状态失败" : {
-
-    },
     "设置" : {
       "localizations" : {
         "zh-Hans" : {
@@ -8896,9 +8834,6 @@
           }
         }
       }
-    },
-    "访问 Open VSX 官网" : {
-
     },
     "试试搜索命令名、命令 ID，或者像 `⌘⇧P` 这样的快捷键。" : {
 
@@ -8935,12 +8870,6 @@
           }
         }
       }
-    },
-    "请先启动 code-server 以管理扩展" : {
-
-    },
-    "请先选择或添加项目，RAG 才能建立与展示索引。" : {
-
     },
     "请在左侧文件树中选择一个文件\n查看其内容" : {
       "extractionState" : "stale",
@@ -9025,9 +8954,6 @@
         }
       }
     },
-    "读取中…" : {
-
-    },
     "调用层级" : {
 
     },
@@ -9048,6 +8974,7 @@
       }
     },
     "跳过" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -9156,9 +9083,6 @@
         }
       }
     },
-    "运行时" : {
-
-    },
     "这是主题效果的示例" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9185,9 +9109,6 @@
           }
         }
       }
-    },
-    "远程仓库" : {
-
     },
     "远程供应商" : {
       "extractionState" : "stale",
@@ -9411,19 +9332,14 @@
         }
       }
     },
+    "重启更新" : {
+
+    },
     "重命名符号" : {
 
     },
-    "重建" : {
-
-    },
-    "重建全部" : {
-
-    },
-    "重建全部索引" : {
-
-    },
     "重新发送该消息" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -9440,6 +9356,7 @@
       }
     },
     "重新扫描" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -9470,12 +9387,6 @@
           }
         }
       }
-    },
-    "重新解析" : {
-
-    },
-    "重试" : {
-
     },
     "错误信息" : {
       "extractionState" : "stale",
@@ -9527,9 +9438,6 @@
           }
         }
       }
-    },
-    "项目" : {
-
     },
     "项目文件" : {
       "extractionState" : "stale",

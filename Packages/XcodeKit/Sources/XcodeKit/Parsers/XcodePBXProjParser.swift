@@ -5,7 +5,7 @@ import XcodeProj
 /// 基于 XcodeProj 的 pbxproj membership 解析适配层。
 public enum XcodePBXProjParser {
 
-    public struct MembershipGraph {
+    public struct MembershipGraph: Sendable {
         public let targetRoots: [String: [TargetRoot]]
 
         public init(targetRoots: [String: [TargetRoot]]) {
@@ -13,7 +13,7 @@ public enum XcodePBXProjParser {
         }
     }
 
-    public struct TargetRoot {
+    public struct TargetRoot: Sendable {
         public let rootPath: String
         public let excludedRelativePaths: Set<String>
 

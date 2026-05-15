@@ -10,9 +10,16 @@ struct CaffeinateTurnOffDisplayTool: SuperAgentTool, SuperLog {
     nonisolated static let verbose: Bool = true
 
     let name = "caffeinate_turn_off_display"
-    let description = "Prevent system sleep and immediately turn off the display. Useful for background tasks like downloads that need the system awake but don't require the screen. The system will stay awake while the display turns off to save power."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "防止系统睡眠并立即关闭显示器。适用于下载等需要系统保持唤醒但不需要屏幕的后台任务。系统会保持唤醒，同时关闭显示器以节省电量。"
+        case .english:
+            return "Prevent system sleep and immediately turn off the display. Useful for background tasks like downloads that need the system awake but don't require the screen. The system will stay awake while the display turns off to save power."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

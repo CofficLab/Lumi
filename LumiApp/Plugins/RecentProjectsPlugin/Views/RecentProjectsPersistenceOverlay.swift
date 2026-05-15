@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// 当前文件（Editor active tab）的持久化由 EditorTabStripPlugin 负责。
 struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "📋" }
 
     @EnvironmentObject private var projectVM: ProjectVM
@@ -18,6 +18,7 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
 
     @State private var restored = false
     @State private var isFileImporterPresented = false
+    @State private var restoreTask: Task<Void, Never>?
 
     private let store = RecentProjectsStore()
 
@@ -51,6 +52,10 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
         .onCurrentProjectDidChange { name, path in
             handleCurrentProjectDidChange(name: name, path: path)
         }
+        .onDisappear {
+            restoreTask?.cancel()
+            restoreTask = nil
+        }
     }
 }
 
@@ -60,16 +65,26 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
 
 extension RecentProjectsPersistenceOverlay {
     private func restoreIfNeeded() {
-        guard !restored else { return }
-        setRestored(true)
+        guard !restored, restoreTask == nil else { return }
 
-        // 恢复最近项目列表到 projectVM
-        let projects = store.loadProjects()
-        projectVM.setRecentProjects(projects)
+        restoreTask = Task { @MainActor [store] in
+            let snapshot = await Task.detached(priority: .utility) {
+                (
+                    projects: store.loadProjects(),
+                    currentProject: store.getCurrentProject()
+                )
+            }.value
 
-        // 恢复当前项目到 projectVM
-        if let currentProject = store.getCurrentProject() {
-            projectVM.switchProject(to: currentProject)
+            guard !Task.isCancelled else { return }
+
+            projectVM.setRecentProjects(snapshot.projects)
+
+            if let currentProject = snapshot.currentProject {
+                projectVM.switchProject(to: currentProject)
+            }
+
+            setRestored(true)
+            restoreTask = nil
         }
     }
 }
@@ -110,14 +125,18 @@ extension RecentProjectsPersistenceOverlay {
         // 如果路径与当前项目相同，无需切换
         guard projectVM.currentProjectPath != path else { return }
 
-        // 同步到 ProjectVM：优先从最近项目列表中找到匹配 Project
-        let projects = store.loadProjects()
-        if let matched = projects.first(where: { $0.path == path }) {
-            projectVM.switchProject(to: matched)
-        }
+        Task { @MainActor [store, path] in
+            // 同步到 ProjectVM：优先从最近项目列表中找到匹配 Project
+            let projects = await Task.detached(priority: .utility) {
+                store.loadProjects()
+            }.value
+            if let matched = projects.first(where: { $0.path == path }) {
+                projectVM.switchProject(to: matched)
+            }
 
-        // Agent 工具触发项目切换 → 同样联动对话
-        switchConversationForProject(path)
+            // Agent 工具触发项目切换 → 同样联动对话
+            switchConversationForProject(path)
+        }
     }
 }
 
@@ -132,7 +151,9 @@ extension RecentProjectsPersistenceOverlay {
             lastUsed: Date()
         )
         store.addProject(name: project.name, path: project.path)
-        projectVM.setRecentProjects(store.loadProjects())
+        var projects = projectVM.recentProjects.filter { $0.path != project.path }
+        projects.insert(project, at: 0)
+        projectVM.setRecentProjects(projects)
         projectVM.switchProject(to: project)
     }
 }

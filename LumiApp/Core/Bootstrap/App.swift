@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// ```text
 /// Lumi App
-/// ├── Window (主窗口，单实例)
+/// ├── WindowGroup (主窗口，可多开)
 /// │   └── ContentLayout (主内容布局)
 /// └── SettingsWindow (设置窗口)
 ///     └── SettingView (设置视图)
@@ -51,13 +51,19 @@ struct CoreApp: App {
     /// - 通知分发
     @NSApplicationDelegateAdaptor private var appDelegate: MacAgent
 
+    /// 应用更新控制器
+    private let updateController = UpdateController.shared
+
     var body: some Scene {
-        // 主窗口（单窗口，禁止再开第二个主窗口）
+        // 主窗口（可多开）
         //
         // 使用隐藏标题栏的窗口风格，提供现代简洁的外观。
         // 工具栏使用统一样式，不显示传统标题。
-        Window("Lumi", id: MainWindowID.main) {
-            ContentLayout()
+        WindowGroup("Lumi", id: MainWindowID.main, for: LumiWindowRoute.self) { route in
+            ContentLayout(
+                conversationId: route.wrappedValue?.conversationId,
+                projectPath: route.wrappedValue?.projectPath
+            )
                 .inRootView()
         }
         .windowStyle(.titleBar)
@@ -65,13 +71,14 @@ struct CoreApp: App {
         .commands {
             DebugCommand()
             SettingsCommand()
+            WindowCommand()
             ConfigCommand()
             EditorCommand()
 
             // 添加检查更新菜单项
             // 位于应用信息菜单之后
             CommandGroup(after: .appInfo) {
-                CheckForUpdatesView(updater: updaterController.updater)
+                CheckForUpdatesView(updater: updateController.updater)
             }
         }
 
@@ -88,15 +95,6 @@ struct CoreApp: App {
         .defaultSize(width: 780, height: 600)
     }
 
-    /// Sparkle 更新控制器
-    ///
-    /// 负责检查应用更新。
-    /// 会在应用启动时自动初始化，并开始监听更新。
-    private let updaterController = SPUStandardUpdaterController(
-        startingUpdater: true,
-        updaterDelegate: nil,
-        userDriverDelegate: nil
-    )
 }
 
 /// 检查更新视图

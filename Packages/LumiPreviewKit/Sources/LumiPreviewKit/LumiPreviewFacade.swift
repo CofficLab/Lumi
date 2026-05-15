@@ -1,0 +1,39 @@
+/// Unified public namespace for LumiPreviewKit.
+public enum LumiPreviewFacade {}
+
+typealias PreviewSession = LumiPreviewFacade.PreviewSession
+typealias PreviewPerformanceMetrics = LumiPreviewFacade.PreviewPerformanceMetrics
+typealias PreviewSessionState = LumiPreviewFacade.PreviewSessionState
+typealias PreviewDiscovery = LumiPreviewFacade.PreviewDiscovery
+typealias PreviewError = LumiPreviewFacade.PreviewError
+typealias PreviewScanner = LumiPreviewFacade.PreviewScanner
+typealias PreviewDisplayMode = LumiPreviewFacade.PreviewDisplayMode
+typealias LivePreviewState = LumiPreviewFacade.LivePreviewState
+typealias LivePreviewInfo = LumiPreviewFacade.LivePreviewInfo
+typealias PreviewFileContextCache = LumiPreviewFacade.PreviewFileContextCache
+typealias PreviewEntryBuilder = LumiPreviewFacade.PreviewEntryBuilder
+typealias PreviewHostCommand = LumiPreviewFacade.PreviewHostCommand
+typealias RenderRequest = LumiPreviewFacade.RenderRequest
+typealias LiveFrameRequest = LumiPreviewFacade.LiveFrameRequest
+typealias RenderResponse = LumiPreviewFacade.RenderResponse
+typealias PreviewEntryDescriptor = LumiPreviewFacade.PreviewEntryDescriptor
+typealias ErrorResponse = LumiPreviewFacade.ErrorResponse
+typealias BuildStrategy = LumiPreviewFacade.BuildStrategy
+typealias BuildPlanner = LumiPreviewFacade.BuildPlanner
+typealias PreviewFrameAlignment = LumiPreviewFacade.PreviewFrameAlignment
+typealias LivePreviewFrameAlignment = LumiPreviewFacade.LivePreviewFrameAlignment
+typealias XcodeCompiler = LumiPreviewFacade.XcodeCompiler
+typealias SPMCompiler = LumiPreviewFacade.SPMCompiler
+typealias EditorPreviewRefreshSignal = LumiPreviewFacade.EditorPreviewRefreshSignal
+typealias IncrementalCompiler = LumiPreviewFacade.IncrementalCompiler
+typealias LiveCanvasService = LumiPreviewFacade.LiveCanvasService
+typealias EditorPreviewLiveCanvasService = LumiPreviewFacade.EditorPreviewLiveCanvasService
+typealias ProjectPreviewIndexService = LumiPreviewFacade.ProjectPreviewIndexService
+typealias PreviewEnvironmentInjection = LumiPreviewFacade.PreviewEnvironmentInjection
+typealias PreviewRenderConfiguration = LumiPreviewFacade.PreviewRenderConfiguration
+typealias EditorPreviewRefreshPolicy = LumiPreviewFacade.EditorPreviewRefreshPolicy
+
+public extension LumiPreviewFacade {
+    typealias LivePreviewFrameAlignment = PreviewFrameAlignment
+    typealias EditorPreviewLiveCanvasService = LiveCanvasService
+}

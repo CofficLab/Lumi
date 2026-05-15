@@ -6,7 +6,7 @@ import MCP
 /// A Transport that communicates via Server-Sent Events (SSE)
 actor SSEClientTransport: Transport, SuperLog {
     nonisolated static let emoji = "📡"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated let logger: Logging.Logger
     let url: URL
     let headers: [String: String]

@@ -16,7 +16,7 @@ import os
 actor LSPContextCommandsEditorPlugin: SuperPlugin, SuperLog {
     static let shared = LSPContextCommandsEditorPlugin()
     nonisolated static let emoji = "🔌"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id = "LSPContextCommandsEditor"
     static let displayName = String(localized: "LSP Context Commands", table: "LSPContextCommandsEditor")

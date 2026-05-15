@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewFacade {
 /// 增量编译器：重编译单个文件，并将产物链接成可由宿主进程加载的 dylib。
-public final class IncrementalCompiler: Sendable {
+final class IncrementalCompiler: Sendable {
     /// 创建增量编译器。
     public init() {}
 
@@ -253,4 +254,6 @@ public final class IncrementalCompiler: Sendable {
     private static func shellQuoted(_ value: String) -> String {
         "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
     }
+}
+
 }

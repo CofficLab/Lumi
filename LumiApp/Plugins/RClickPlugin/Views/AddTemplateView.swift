@@ -10,7 +10,7 @@ struct AddTemplateView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Add New Template")
+            Text(String(localized: "Add New Template", table: "RClick"))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -18,7 +18,7 @@ struct AddTemplateView: View {
                 TextField(LocalizedStringKey(String(localized: "Name (e.g. Python Script)")), text: $name)
                 TextField(LocalizedStringKey(String(localized: "Extension (e.g. py)")), text: $ext)
 
-                Section(header: Text("Default Content")) {
+                Section(header: Text(String(localized: "Default Content", table: "RClick"))) {
                     TextEditor(text: $content)
                         .frame(height: 100)
                         .font(.monospaced(.body)())

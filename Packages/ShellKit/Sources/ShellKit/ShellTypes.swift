@@ -36,6 +36,9 @@ public struct ShellResult: Sendable {
 
 /// Shell command execution options
 public struct ShellOptions: Sendable {
+    /// Shell executable used by command-string APIs
+    public let shellExecutable: String
+
     /// Working directory for the command
     public let workingDirectory: String?
 
@@ -51,19 +54,31 @@ public struct ShellOptions: Sendable {
     /// Whether to throw on non-zero exit code
     public let throwsOnError: Bool
 
+    /// Whether timeout/cancellation should terminate child processes too
+    public let terminatesProcessTree: Bool
+
+    /// Delay before force-killing a cancelled or timed-out process tree
+    public let terminationGracePeriod: TimeInterval
+
     /// Creates new ShellOptions
     public init(
+        shellExecutable: String = "/bin/bash",
         workingDirectory: String? = nil,
         environment: [String: String] = [:],
         timeout: TimeInterval? = nil,
         qos: DispatchQoS.QoSClass = .userInitiated,
-        throwsOnError: Bool = true
+        throwsOnError: Bool = true,
+        terminatesProcessTree: Bool = true,
+        terminationGracePeriod: TimeInterval = 2.0
     ) {
+        self.shellExecutable = shellExecutable
         self.workingDirectory = workingDirectory
         self.environment = environment
         self.timeout = timeout
         self.qos = qos
         self.throwsOnError = throwsOnError
+        self.terminatesProcessTree = terminatesProcessTree
+        self.terminationGracePeriod = terminationGracePeriod
     }
 
     /// Default options

@@ -10,7 +10,7 @@ actor AgentRulesPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-rules")
 
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - 插件基本信息
 
     static let id = "AgentRules"

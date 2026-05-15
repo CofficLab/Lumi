@@ -1,7 +1,7 @@
 import MagicKit
 import SwiftUI
 
-/// 文件树节点视图 - 完全独立实现，无外部依赖
+/// 文件树节点视图，负责单个文件或目录行的展示和交互
 struct EditorFileTreeNodeView: View {
     @EnvironmentObject private var themeVM: ThemeVM
     let url: URL
@@ -28,6 +28,15 @@ struct EditorFileTreeNodeView: View {
     /// 本地子节点缓存
     @State private var children: [URL] = []
 
+    /// 当前目录是否正在加载子节点
+    @State private var isLoadingChildren: Bool = false
+
+    /// 当前目录是否已经完成过至少一次子节点加载
+    @State private var hasLoadedChildren: Bool = false
+
+    /// 当前目录加载任务
+    @State private var loadChildrenTask: Task<Void, Never>?
+
     /// 是否处于 hover 状态（用于高亮当前行）
     @State private var isHovering: Bool = false
 
@@ -51,6 +60,9 @@ struct EditorFileTreeNodeView: View {
 
     /// 是否文件夹（启动时缓存，避免 body 求值时反复调 FileManager）
     private let isDirectory: Bool
+
+    /// 文件图标解析元数据（启动时缓存，避免 body 求值时反复调 FileManager）
+    private let iconMetadata: FileTreeIconMetadata
 
     /// 文件名（不含路径）
     private var fileName: String {
@@ -78,6 +90,11 @@ struct EditorFileTreeNodeView: View {
 
         // 在 init 时一次性缓存 isDirectory，避免 body 求值时反复做文件系统 I/O
         self.isDirectory = EditorFileTreeService.isDirectory(url)
+        self.iconMetadata = FileTreeIconMetadata(
+            fileName: url.lastPathComponent,
+            fileExtension: url.pathExtension.lowercased(),
+            isDirectory: self.isDirectory
+        )
 
         // 从 store 恢复展开状态
         if !projectRootPath.isEmpty {
@@ -104,7 +121,7 @@ struct EditorFileTreeNodeView: View {
                     Color.clear.frame(width: 12)
                 }
 
-                Image(systemName: iconName)
+                fileIconView(resolvedIcon)
                     .font(.system(size: 12))
                     .foregroundColor(isDirectory ? theme.accentColors().primary : theme.workspaceSecondaryTextColor())
                     .frame(width: 16)
@@ -157,19 +174,26 @@ struct EditorFileTreeNodeView: View {
                 Button(String(localized: "Cancel", table: "EditorRailFileTree"), role: .cancel) {}
             } message: { Text(String(localized: "Enter the new name for this item.", table: "EditorRailFileTree")) }
 
-            // 子节点
-            if isDirectory && isExpanded && !children.isEmpty {
-                VStack(spacing: 2) {
-                    ForEach(children, id: \.self) { childURL in
-                        EditorFileTreeNodeView(
-                            url: childURL,
-                            depth: depth + 1,
-                            selectedURL: selectedURL,
-                            onSelect: onSelect,
-                            refreshToken: refreshToken,
-                            projectRootPath: projectRootPath,
-                            onExpansionChange: onExpansionChange
-                        )
+            if isDirectory && isExpanded {
+                if children.isEmpty {
+                    if isLoadingChildren {
+                        EditorFileTreeLoadingView(depth: depth + 1)
+                    } else if hasLoadedChildren {
+                        EditorFileTreeEmptyView(depth: depth + 1)
+                    }
+                } else {
+                    VStack(spacing: 2) {
+                        ForEach(children, id: \.self) { childURL in
+                            EditorFileTreeNodeView(
+                                url: childURL,
+                                depth: depth + 1,
+                                selectedURL: selectedURL,
+                                onSelect: onSelect,
+                                refreshToken: refreshToken,
+                                projectRootPath: projectRootPath,
+                                onExpansionChange: onExpansionChange
+                            )
+                        }
                     }
                 }
             }
@@ -186,6 +210,10 @@ struct EditorFileTreeNodeView: View {
         }
         .onChange(of: refreshToken) { _, newValue in
             handleRefreshTokenChange(newValue)
+        }
+        .onDisappear {
+            loadChildrenTask?.cancel()
+            loadChildrenTask = nil
         }
     }
 
@@ -255,11 +283,42 @@ struct EditorFileTreeNodeView: View {
 
     // MARK: - View Helpers
 
-    private var iconName: String {
-        if isDirectory {
-            return isExpanded ? "folder.fill" : "folder"
+    private var resolvedIcon: LumiFileIcon {
+        let context = LumiFileIconContext(
+            url: url,
+            fileName: iconMetadata.fileName,
+            fileExtension: iconMetadata.fileExtension,
+            isDirectory: iconMetadata.isDirectory,
+            isExpanded: isExpanded,
+            projectRootPath: projectRootPath
+        )
+        let defaultContributor = LumiDefaultFileIconThemeContributor()
+        let activeContributor = themeVM.activeFileIconTheme
+        if let icon = activeContributor?.icon(for: context) {
+            return icon
         }
-        return EditorFileTreeService.getFileIcon(for: url)
+        if let icon = defaultContributor.icon(for: context) {
+            return icon
+        }
+        if iconMetadata.isDirectory, let icon = activeContributor?.defaultFolderIcon(isExpanded: isExpanded) {
+            return icon
+        }
+        if !iconMetadata.isDirectory, let icon = activeContributor?.defaultFileIcon() {
+            return icon
+        }
+        return iconMetadata.isDirectory
+            ? defaultContributor.defaultFolderIcon(isExpanded: isExpanded)
+            : defaultContributor.defaultFileIcon()
+    }
+
+    @ViewBuilder
+    private func fileIconView(_ icon: LumiFileIcon) -> some View {
+        switch icon {
+        case .systemImage(let name):
+            Image(systemName: name)
+        case .assetImage(let name, let bundle):
+            Image(name, bundle: bundle)
+        }
     }
 
     fileprivate func rowBackground(isSelected: Bool) -> Color {
@@ -272,14 +331,24 @@ struct EditorFileTreeNodeView: View {
     }
 }
 
+private struct FileTreeIconMetadata {
+    let fileName: String
+    let fileExtension: String
+    let isDirectory: Bool
+}
+
 // MARK: - Actions
 
 extension EditorFileTreeNodeView {
     // MARK: - Expansion Persistence
 
-    /// 当前节点相对于项目根目录的路径
+    /// 当前节点相对于项目根目录的路径，保留开头的 "/" 以兼容已持久化的展开状态。
     private var relativePath: String {
-        url.path.replacingOccurrences(of: projectRootPath, with: "")
+        guard !projectRootPath.isEmpty else { return "" }
+        let rootPath = URL(fileURLWithPath: projectRootPath).standardizedFileURL.path
+        let nodePath = url.standardizedFileURL.path
+        guard nodePath == rootPath || nodePath.hasPrefix(rootPath + "/") else { return nodePath }
+        return String(nodePath.dropFirst(rootPath.count))
     }
 
     /// 将当前展开/折叠状态持久化到 store
@@ -302,16 +371,22 @@ extension EditorFileTreeNodeView {
     // MARK: - Data Loading
     private func loadChildren() {
         let currentURL = url
-        Task.detached(priority: .userInitiated) { [self] in
+        loadChildrenTask?.cancel()
+        isLoadingChildren = true
+        loadChildrenTask = Task { @MainActor in
             do {
-                let sorted = try EditorFileTreeService.loadContents(of: currentURL)
-                await MainActor.run { [self] in
-                    self.children = sorted
-                }
+                let sorted = try await Task.detached(priority: .userInitiated) {
+                    try EditorFileTreeService.loadContents(of: currentURL)
+                }.value
+                guard !Task.isCancelled else { return }
+                children = sorted
+                hasLoadedChildren = true
+                isLoadingChildren = false
             } catch {
-                await MainActor.run { [self] in
-                    self.children = []
-                }
+                guard !Task.isCancelled else { return }
+                children = []
+                hasLoadedChildren = true
+                isLoadingChildren = false
             }
         }
     }

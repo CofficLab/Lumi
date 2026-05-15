@@ -1,5 +1,5 @@
 import CodeEditSourceEditor
-import EditorKernelCore
+import EditorKernel
 
 extension EditorFindReplaceStateController {
     static func apply(

@@ -11,7 +11,7 @@ import MagicKit
 final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     nonisolated public static let emoji = "🔗"
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
     public static let shared = XcodeProjectContextBridge()
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.bridge")
@@ -22,6 +22,8 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     /// 项目根路径
     private var currentProjectPath: String?
+    private var currentWorkspaceURL: URL?
+    private var cachedWorkspaceFolders: [[String: String]]?
 
     /// 是否已初始化
     public var isInitialized: Bool = false
@@ -114,14 +116,16 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         defer { isInitializingInProgress = false }
 
         currentProjectPath = path
-        let projectURL = URL(filePath: path)
-        let isXcodeProject = XcodeProjectResolver.isXcodeProjectRoot(projectURL)
-        self.isXcodeProject = isXcodeProject
+        let provider = _buildContextProvider as? XcodeBuildContextProvider
+        let inspection = await XcodeProjectBackgroundQuery.inspectProject(path: path, store: provider?.store)
+        self.isXcodeProject = inspection.isXcodeProject
+        currentWorkspaceURL = inspection.workspaceURL
+        cachedWorkspaceFolders = Self.makeWorkspaceFolders(workspaceURL: inspection.workspaceURL)
 
-        Self.logger.info("\(Self.t)项目已打开: \(path, privacy: .public), 是 Xcode 项目: \(isXcodeProject)")
+        Self.logger.info("\(Self.t)项目已打开: \(path, privacy: .public), 是 Xcode 项目: \(inspection.isXcodeProject)")
 
-        if isXcodeProject {
-            await initializeXcodeBuildContext(at: path)
+        if inspection.isXcodeProject {
+            await initializeXcodeBuildContext(projectPath: path, inspection: inspection)
         }
 
         isInitialized = true
@@ -130,6 +134,8 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     public func projectClosed() {
         currentProjectPath = nil
+        currentWorkspaceURL = nil
+        cachedWorkspaceFolders = nil
         isXcodeProject = false
         isInitialized = false
 
@@ -148,7 +154,11 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
         Self.logger.info("\(Self.t)手动触发 build context 重解析: \(currentProjectPath, privacy: .public)")
         provider.invalidateAllContexts()
-        await initializeXcodeBuildContext(at: currentProjectPath)
+        let inspection = await XcodeProjectBackgroundQuery.inspectProject(path: currentProjectPath, store: provider.store)
+        isXcodeProject = inspection.isXcodeProject
+        currentWorkspaceURL = inspection.workspaceURL
+        cachedWorkspaceFolders = Self.makeWorkspaceFolders(workspaceURL: inspection.workspaceURL)
+        await initializeXcodeBuildContext(projectPath: currentProjectPath, inspection: inspection)
         isInitialized = true
         updateCacheNow()
     }
@@ -198,28 +208,27 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
     // MARK: - Build Context 初始化
 
-    private func initializeXcodeBuildContext(at path: String) async {
+    private func initializeXcodeBuildContext(
+        projectPath path: String,
+        inspection: XcodeProjectBackgroundQuery.ProjectInspection
+    ) async {
         guard let provider = _buildContextProvider as? XcodeBuildContextProvider else {
             Self.logger.warning("\(Self.t)BuildContextProvider 未注册，跳过初始化")
             return
         }
 
-        let projectURL = URL(filePath: path)
-        if isBuildServerValid(at: path) {
-            if let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL) {
-                await provider.openProject(at: workspaceURL)
-                Self.logger.info("\(Self.t)使用已有的 buildServer.json")
-            }
+        if inspection.validBuildServerConfig != nil, let workspaceURL = inspection.workspaceURL {
+            await provider.openProject(at: workspaceURL)
+            Self.logger.info("\(Self.t)使用已有的 buildServer.json")
             return
         }
-        await provider.openProject(at: projectURL)
+        await provider.openProject(at: URL(fileURLWithPath: path))
     }
 
-    private func isBuildServerValid(at path: String) -> Bool {
-        let projectURL = URL(filePath: path)
-        guard let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL),
-              let provider = _buildContextProvider as? XcodeBuildContextProvider else { return false }
-        return provider.store.validate(forWorkspace: workspaceURL.path) != nil
+    private static func makeWorkspaceFolders(workspaceURL: URL?) -> [[String: String]]? {
+        guard let workspaceURL else { return nil }
+        let rootURL = workspaceURL.deletingLastPathComponent()
+        return [["uri": "file://" + rootURL.path, "name": workspaceURL.deletingPathExtension().lastPathComponent]]
     }
 
     // MARK: - LSP 参数生成
@@ -230,11 +239,8 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
     }
 
     private func makeWorkspaceFoldersInternal() -> [[String: String]]? {
-        guard isXcodeProject, let projectPath = currentProjectPath else { return nil }
-        let projectURL = URL(filePath: projectPath)
-        guard let workspaceURL = XcodeProjectResolver.findWorkspace(in: projectURL) else { return nil }
-        let rootURL = workspaceURL.deletingLastPathComponent()
-        return [["uri": "file://" + rootURL.path, "name": workspaceURL.deletingPathExtension().lastPathComponent]]
+        guard isXcodeProject else { return nil }
+        return cachedWorkspaceFolders
     }
 
     public func getBuildServerPath() -> String? { cachedState?.buildServerPath }

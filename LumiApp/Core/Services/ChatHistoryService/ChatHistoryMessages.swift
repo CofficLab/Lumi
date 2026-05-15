@@ -4,6 +4,11 @@ import SwiftData
 // MARK: - 消息操作扩展
 
 extension ChatHistoryService {
+    struct ConversationTimelineSummary {
+        let messageCount: Int
+        let currentContextTokens: Int
+    }
+
     // MARK: - 保存消息
 
     /// 保存消息到指定对话
@@ -27,10 +32,14 @@ extension ChatHistoryService {
     /// - Returns: 保存后的消息
     @discardableResult
     func saveMessage(_ message: ChatMessage, toConversationId conversationId: UUID) -> ChatMessage? {
+        let signpostID = UIPerformanceSignpost.begin("ChatHistory.saveMessage")
+        defer { UIPerformanceSignpost.end("ChatHistory.saveMessage", signpostID) }
+
         let context = self.getContext()
-        let descriptor = FetchDescriptor<Conversation>(
+        var descriptor = FetchDescriptor<Conversation>(
             predicate: #Predicate { $0.id == conversationId }
         )
+        descriptor.fetchLimit = 1
 
         guard let fetchedConversation = try? context.fetch(descriptor).first else {
             AppLogger.core.error("\(Self.t)❌ 无法找到对话")
@@ -38,9 +47,10 @@ extension ChatHistoryService {
         }
 
         // 去重检查：如果相同 ID 的消息已存在，执行更新而非插入
-        let existingDescriptor = FetchDescriptor<ChatMessageEntity>(
+        var existingDescriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { $0.id == message.id }
         )
+        existingDescriptor.fetchLimit = 1
 
         if let existingEntity = try? context.fetch(existingDescriptor).first {
             AppLogger.core.warning("\(Self.t)⚠️ 检测到相同 ID 的消息已存在: \(message.id)")
@@ -91,9 +101,10 @@ extension ChatHistoryService {
     /// 按消息 ID 更新已存在的消息（同 `id` 覆盖字段，不插入新行）
     func updateMessageAsync(_ message: ChatMessage, conversationId: UUID) async -> ChatMessage? {
         let context = self.getContext()
-        let descriptor = FetchDescriptor<ChatMessageEntity>(
+        var descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { $0.id == message.id }
         )
+        descriptor.fetchLimit = 1
 
         guard let entity = try? context.fetch(descriptor).first else {
             return nil
@@ -206,6 +217,55 @@ extension ChatHistoryService {
         return messages
     }
 
+    /// 获取对话时间线状态栏所需的轻量统计信息。
+    ///
+    /// 避免状态栏为了展示消息数和上下文 token 而全量加载并转换当前会话消息。
+    func getConversationTimelineSummary(forConversationId conversationId: UUID) -> ConversationTimelineSummary {
+        let context = self.getContext()
+
+        let countDescriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { message in
+                message.conversation?.id == conversationId
+            }
+        )
+        let messageCount = (try? context.fetchCount(countDescriptor)) ?? 0
+
+        var lastAssistantDescriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { message in
+                message.conversation?.id == conversationId && message._role == "assistant"
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        lastAssistantDescriptor.fetchLimit = 1
+
+        guard let lastAssistant = try? context.fetch(lastAssistantDescriptor).first else {
+            return ConversationTimelineSummary(
+                messageCount: messageCount,
+                currentContextTokens: 0
+            )
+        }
+
+        let baseContext = lastAssistant.metrics?.inputTokens ?? 0
+        let lastAssistantTimestamp = lastAssistant.timestamp
+        let userAfterAssistantDescriptor = FetchDescriptor<ChatMessageEntity>(
+            predicate: #Predicate<ChatMessageEntity> { message in
+                message.conversation?.id == conversationId &&
+                    message._role == "user" &&
+                    message.timestamp > lastAssistantTimestamp
+            }
+        )
+
+        let newTokens = ((try? context.fetch(userAfterAssistantDescriptor)) ?? [])
+            .reduce(0) { total, message in
+                total + message.content.count / 4
+            }
+
+        return ConversationTimelineSummary(
+            messageCount: messageCount,
+            currentContextTokens: baseContext + newTokens
+        )
+    }
+
     /// 分页加载消息（从最新消息开始，按时间倒序；直接按消息分页，避免加载整会话）
     /// - Parameters:
     ///   - conversationId: 对话 ID
@@ -217,6 +277,9 @@ extension ChatHistoryService {
         limit: Int,
         beforeTimestamp: Date? = nil
     ) async -> (messages: [ChatMessage], hasMore: Bool) {
+        let signpostID = UIPerformanceSignpost.begin("ChatHistory.loadMessagesPage")
+        defer { UIPerformanceSignpost.end("ChatHistory.loadMessagesPage", signpostID) }
+
         let context = self.getContext()
 
         guard limit > 0 else {
@@ -330,29 +393,30 @@ extension ChatHistoryService {
         forConversationId conversationId: UUID,
         toolCallIDs: [String]
     ) async -> [ChatMessage] {
+        let signpostID = UIPerformanceSignpost.begin("ChatHistory.loadToolOutputMessages")
+        defer { UIPerformanceSignpost.end("ChatHistory.loadToolOutputMessages", signpostID) }
+
         let normalizedIDs = Array(Set(toolCallIDs.filter { !$0.isEmpty }))
         guard !normalizedIDs.isEmpty else { return [] }
 
         let context = self.getContext()
-        let descriptor = FetchDescriptor<ChatMessageEntity>(
-            predicate: #Predicate<ChatMessageEntity> { msg in
-                msg.conversation?.id == conversationId && msg.toolCallID != nil
-            },
-            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-        )
+        var messages: [ChatMessage] = []
 
-        guard let fetched = try? context.fetch(descriptor) else {
-            return []
+        for toolCallID in normalizedIDs {
+            let descriptor = FetchDescriptor<ChatMessageEntity>(
+                predicate: #Predicate<ChatMessageEntity> { msg in
+                    msg.conversation?.id == conversationId && msg.toolCallID == toolCallID
+                },
+                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+            )
+
+            guard let fetched = try? context.fetch(descriptor) else {
+                continue
+            }
+            messages.append(contentsOf: fetched.compactMap { $0.toChatMessage() })
         }
 
-        let toolCallIDSet = Set(normalizedIDs)
-        let messages = fetched.compactMap { entity -> ChatMessage? in
-            guard let toolCallID = entity.toolCallID,
-                  toolCallIDSet.contains(toolCallID) else { return nil }
-            return entity.toChatMessage()
-        }
-
-        return messages
+        return messages.sorted { $0.timestamp < $1.timestamp }
     }
 
     /// 获取会话消息总数
@@ -361,25 +425,20 @@ extension ChatHistoryService {
     func getMessageCount(forConversationId conversationId: UUID) async -> Int {
         let context = self.getContext()
 
-        // 直接查询 ChatMessageEntity 表计数，与 loadMessagesPage 使用相同的查询方式
+        // 直接让 SwiftData 计数可展示角色，避免把大对话全量 fetch 到主线程再转换过滤。
         let descriptor = FetchDescriptor<ChatMessageEntity>(
             predicate: #Predicate<ChatMessageEntity> { msg in
-                msg.conversation?.id == conversationId
+                msg.conversation?.id == conversationId &&
+                    (
+                        msg._role == "user" ||
+                        msg._role == "assistant" ||
+                        msg._role == "status" ||
+                        msg._role == "error"
+                    )
             }
         )
 
-        guard let entities = try? context.fetch(descriptor) else {
-            return 0
-        }
-
-        // 统一可见性规则：仅统计应在聊天列表中展示的消息数量，
-        // 与分页加载 `loadMessagesPage` 使用相同的过滤条件（shouldDisplayInChatList）。
-        let visibleCount = entities
-            .compactMap { $0.toChatMessage() }
-            .filter { $0.shouldDisplayInChatList() }
-            .count
-
-        return visibleCount
+        return (try? context.fetchCount(descriptor)) ?? 0
     }
 
     /// 加载对话的消息
@@ -425,9 +484,10 @@ extension ChatHistoryService {
 
         let imageEntities = message.images.map { attachment in
             // 检查是否已存在（按 id 去重）
-            let descriptor = FetchDescriptor<ImageAttachmentEntity>(
+            var descriptor = FetchDescriptor<ImageAttachmentEntity>(
                 predicate: #Predicate<ImageAttachmentEntity> { $0.id == attachment.id }
             )
+            descriptor.fetchLimit = 1
             if let existing = try? context.fetch(descriptor).first {
                 return existing
             }

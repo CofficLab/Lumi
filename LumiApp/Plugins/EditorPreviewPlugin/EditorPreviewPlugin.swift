@@ -3,54 +3,39 @@ import MagicKit
 import SwiftUI
 import os
 
-/// Editor bottom panel plugin backed by LumiPreviewKit.
-actor EditorPreviewPlugin: SuperPlugin, SuperLog {
+actor EditorRemoteHotPreviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
-        subsystem: "com.coffic.lumi", category: "plugin.editor-preview")
+        subsystem: "com.coffic.lumi",
+        category: "plugin.editor-remote-hot-preview"
+    )
 
-    nonisolated static let emoji = "PV"
+    nonisolated static let emoji = "HP"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
-    static let id: String = "EditorPreview"
-    static let displayName: String = String(localized: "Editor Preview", table: "EditorPreview")
-    static let description: String = String(localized: "Shows source-based SwiftUI previews for the active editor file", table: "EditorPreview")
-    static let iconName: String = "rectangle.on.rectangle"
+    nonisolated static let verbose: Bool = true
+    static let id: String = "EditorRemoteHotPreview"
+    static let displayName: String = String(localized: "Preview", table: "EditorPreview")
+    static let description: String = String(localized: "Preview powered by LumiPreviewKit", table: "EditorPreview")
+    static let iconName: String = "bolt.horizontal"
     static var isConfigurable: Bool { false }
-    static var order: Int { 81 }
+    static var order: Int { 83 }
 
     nonisolated var instanceLabel: String { Self.id }
-    static let shared = EditorPreviewPlugin()
+    static let shared = EditorRemoteHotPreviewPlugin()
 
     @MainActor func addBottomPanelTabs(activeIcon: String?) -> [BottomPanelTab] {
-#if canImport(LumiPreviewKit)
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
-            id: "editor-bottom-editor-preview",
+            id: "editor-bottom-hot-preview",
             title: String(localized: "Preview", table: "EditorPreview"),
-            systemImage: "rectangle.on.rectangle",
-            priority: 81
+            systemImage: "bolt.horizontal",
+            priority: 83
         )]
-#else
-        return []
-#endif
     }
 
     @MainActor func addBottomPanelContentView(tabId: String, activeIcon: String?) -> AnyView? {
-#if canImport(LumiPreviewKit)
-        guard tabId == "editor-bottom-editor-preview", activeIcon == EditorPlugin.iconName else {
+        guard tabId == "editor-bottom-hot-preview", activeIcon == EditorPlugin.iconName else {
             return nil
         }
-        return AnyView(
-            EditorPreviewContentView()
-                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-                    // Window became active — live preview can show
-                }
-                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
-                    // Window resigned active — live preview should hide
-                }
-        )
-#else
-        return nil
-#endif
+        return AnyView(EditorRemoteHotPreviewDetailView())
     }
 }

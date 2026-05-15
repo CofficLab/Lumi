@@ -1,5 +1,5 @@
 import Foundation
-import EditorKernelCore
+import EditorKernel
 
 @MainActor
 public protocol SuperEditorProjectContextCapability: AnyObject {
@@ -77,11 +77,11 @@ extension SuperEditorSemanticCapability {
     }
 }
 
-public typealias EditorProjectContextSnapshot = EditorKernelCore.EditorProjectContextSnapshot
-public typealias EditorProjectContextStatus = EditorKernelCore.EditorProjectContextStatus
-public typealias EditorWorkspaceFolder = EditorKernelCore.EditorWorkspaceFolder
-public typealias EditorSemanticPreflightStrength = EditorKernelCore.EditorSemanticPreflightStrength
-public typealias EditorSemanticAvailabilitySeverity = EditorKernelCore.EditorSemanticAvailabilitySeverity
-public typealias EditorSemanticAvailabilityReason = EditorKernelCore.EditorSemanticAvailabilityReason
-public typealias EditorSemanticAvailabilityReport = EditorKernelCore.EditorSemanticAvailabilityReport
-public typealias EditorLanguageFeatureError = EditorKernelCore.EditorLanguageFeatureError
+public typealias EditorProjectContextSnapshot = EditorKernel.EditorProjectContextSnapshot
+public typealias EditorProjectContextStatus = EditorKernel.EditorProjectContextStatus
+public typealias EditorWorkspaceFolder = EditorKernel.EditorWorkspaceFolder
+public typealias EditorSemanticPreflightStrength = EditorKernel.EditorSemanticPreflightStrength
+public typealias EditorSemanticAvailabilitySeverity = EditorKernel.EditorSemanticAvailabilitySeverity
+public typealias EditorSemanticAvailabilityReason = EditorKernel.EditorSemanticAvailabilityReason
+public typealias EditorSemanticAvailabilityReport = EditorKernel.EditorSemanticAvailabilityReport
+public typealias EditorLanguageFeatureError = EditorKernel.EditorLanguageFeatureError

@@ -4,11 +4,18 @@ import MagicKit
 /// GitHub 添加 Issue 评论工具
 struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_add_issue_comment"
-    let description = "在 GitHub Issue 中添加评论，支持 Markdown 格式。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在 GitHub Issue 中添加评论，支持 Markdown 格式。"
+        case .english:
+            return "Add a comment to a GitHub issue. Markdown is supported."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

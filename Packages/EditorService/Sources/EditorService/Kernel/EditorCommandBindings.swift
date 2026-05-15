@@ -1,4 +1,4 @@
-import EditorKernelCore
+import EditorKernel
 import SwiftUI
 
 public struct EditorCommandBinding: Sendable {

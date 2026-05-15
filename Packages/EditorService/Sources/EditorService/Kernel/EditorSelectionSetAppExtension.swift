@@ -1,4 +1,4 @@
-import EditorKernelCore
+import EditorKernel
 
 extension EditorSelectionSet {
     func toMultiCursorState() -> MultiCursorState {

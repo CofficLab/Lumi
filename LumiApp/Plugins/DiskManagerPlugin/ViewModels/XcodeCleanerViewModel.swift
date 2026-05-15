@@ -27,6 +27,7 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
     private let service = XcodeCleanService.shared
     private var scanTask: Task<Void, Never>?
     private var progressTask: Task<Void, Never>?
+    private var hasCompletedInitialScan = false
 
     init() {
         // Service 不再发布状态，所有状态由 ViewModel 管理
@@ -79,6 +80,7 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
                     self.itemsByCategory = processedResults
                     self.scanStats = stats
                     self.isScanning = false
+                    self.hasCompletedInitialScan = true
                     self.scanProgress = ""
                     self.progressTask?.cancel()
                 }
@@ -88,6 +90,11 @@ class XcodeCleanerViewModel: ObservableObject, SuperLog {
                 DiskManagerPlugin.logger.info("\(self.t)扫描完成，总计 \(ByteCountFormatter.string(fromByteCount: self.totalSize, countStyle: .file))")
             }
         }
+    }
+
+    func scanAllIfNeeded() async {
+        guard !hasCompletedInitialScan else { return }
+        await scanAll()
     }
 
     func stopScan() {

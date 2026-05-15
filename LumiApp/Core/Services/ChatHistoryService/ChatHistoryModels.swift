@@ -1,7 +1,7 @@
 import Foundation
 
 /// 模型性能统计数据
-public struct ModelPerformanceStats {
+public struct ModelPerformanceStats: Sendable {
     let providerId: String
     let modelName: String
     var sampleCount: Int = 0

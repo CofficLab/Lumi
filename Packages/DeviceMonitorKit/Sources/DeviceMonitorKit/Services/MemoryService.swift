@@ -27,6 +27,7 @@ public final class MemoryService: ObservableObject, SuperLog {
     // MARK: - Private Properties
 
     private var monitoringTimer: Timer?
+    private var samplingTask: Task<Void, Never>?
     private var subscribersCount = 0
 
     package init() {
@@ -57,6 +58,8 @@ public final class MemoryService: ObservableObject, SuperLog {
 
             monitoringTimer?.invalidate()
             monitoringTimer = nil
+            samplingTask?.cancel()
+            samplingTask = nil
         }
     }
 
@@ -64,6 +67,10 @@ public final class MemoryService: ObservableObject, SuperLog {
 
     /// Compute memory usage for testing purposes.
     func computeMemoryUsage() -> (used: UInt64, total: UInt64) {
+        Self.computeMemoryUsage(totalMemory: totalMemory)
+    }
+
+    private nonisolated static func computeMemoryUsage(totalMemory: UInt64) -> (used: UInt64, total: UInt64) {
         var vmStats = vm_statistics64()
         var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size)
 
@@ -86,16 +93,25 @@ public final class MemoryService: ObservableObject, SuperLog {
 
     // MARK: - Private Methods
 
-    private nonisolated func getKernelPageSize() -> UInt64 {
+    private nonisolated static func getKernelPageSize() -> UInt64 {
         var pageSize: vm_size_t = 0
         let result = host_page_size(mach_host_self(), &pageSize)
         return result == KERN_SUCCESS ? UInt64(pageSize) : 4096
     }
 
     private func updateMemoryUsage() {
-        let (used, total) = computeMemoryUsage()
+        guard samplingTask == nil else { return }
+        let totalMemory = totalMemory
 
-        usedMemory = used
-        memoryUsagePercentage = min(100.0, Double(used) / Double(total) * 100.0)
+        samplingTask = Task.detached(priority: .utility) { [totalMemory] in
+            let (used, total) = Self.computeMemoryUsage(totalMemory: totalMemory)
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.samplingTask = nil
+                guard self.subscribersCount > 0 else { return }
+                self.usedMemory = used
+                self.memoryUsagePercentage = min(100.0, Double(used) / Double(total) * 100.0)
+            }
+        }
     }
 }

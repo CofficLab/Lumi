@@ -15,7 +15,7 @@ struct XcodeCompilerTests {
         )
         defer { try? FileManager.default.removeItem(at: project.rootDirectory) }
 
-        let productURL = try await XcodeCompiler().build(
+        let productURL = try await LumiPreviewFacade.XcodeCompiler().build(
             projectURL: project.projectURL,
             scheme: "TinyTool",
             configuration: "Debug"
@@ -31,13 +31,13 @@ struct XcodeCompilerTests {
             .appendingPathComponent("Missing-\(UUID().uuidString).xcodeproj", isDirectory: true)
 
         do {
-            _ = try await XcodeCompiler().build(
+            _ = try await LumiPreviewFacade.XcodeCompiler().build(
                 projectURL: missingProjectURL,
                 scheme: "Missing",
                 configuration: "Debug"
             )
             Issue.record("Expected compilationFailed")
-        } catch PreviewError.compilationFailed(let message) {
+        } catch LumiPreviewFacade.PreviewError.compilationFailed(let message) {
             let includesUsefulDiagnostic = message.localizedCaseInsensitiveContains("xcodebuild")
                 || message.localizedCaseInsensitiveContains("error")
                 || message.localizedCaseInsensitiveContains("does not exist")
@@ -58,7 +58,7 @@ struct XcodeCompilerTests {
         \(expectedCommand)
         """
 
-        let command = XcodeCompiler().extractCompileCommand(for: fileURL, buildLog: buildLog)
+        let command = LumiPreviewFacade.XcodeCompiler().extractCompileCommand(for: fileURL, buildLog: buildLog)
 
         #expect(command == expectedCommand)
     }
@@ -68,7 +68,7 @@ struct XcodeCompilerTests {
         source: String
     ) throws -> (rootDirectory: URL, projectURL: URL) {
         let rootDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-XcodeCompiler-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("LumiPreviewKit-LumiPreviewFacade.XcodeCompiler-\(UUID().uuidString)", isDirectory: true)
         let projectURL = rootDirectory.appendingPathComponent("\(targetName).xcodeproj", isDirectory: true)
         let sourceDirectory = rootDirectory.appendingPathComponent("Sources", isDirectory: true)
 

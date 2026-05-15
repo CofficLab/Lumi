@@ -13,7 +13,7 @@ import MagicKit
 @MainActor
 class LSPCoordinator: ObservableObject, SuperLog, SuperEditorLSPClient {
     nonisolated static let emoji = "😊"
-    nonisolated static let verbose = true
+    nonisolated static let verbose: Bool = true
     
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "lsp.coordinator")
     private let lspService: LSPService
@@ -890,6 +890,7 @@ final class SemanticTokenHighlightProvider: HighlightProviding, SuperEditorSeman
     private var editDebounceTask: Task<Void, Never>?
     private var scrollBoundsObserver: NSObjectProtocol?
     private var scrollFrameObserver: NSObjectProtocol?
+    private var lastViewportRefreshLineRange: Range<Int>?
     private var isEnabled = true
     
     init(
@@ -931,6 +932,38 @@ final class SemanticTokenHighlightProvider: HighlightProviding, SuperEditorSeman
                 self?.refreshSemanticTokens()
             }
         }
+    }
+
+    private func scheduleViewportRefreshIfNeeded(for textView: TextView) {
+        guard isEnabled else { return }
+        guard let lineRange = visibleLineRange(in: textView) else {
+            scheduleViewportRefresh()
+            return
+        }
+
+        guard let previous = lastViewportRefreshLineRange else {
+            lastViewportRefreshLineRange = lineRange
+            scheduleViewportRefresh()
+            return
+        }
+
+        let startDelta = abs(lineRange.lowerBound - previous.lowerBound)
+        let endDelta = abs(lineRange.upperBound - previous.upperBound)
+        guard startDelta >= 5 || endDelta >= 5 else { return }
+        lastViewportRefreshLineRange = lineRange
+        scheduleViewportRefresh()
+    }
+
+    private func visibleLineRange(in textView: TextView) -> Range<Int>? {
+        guard let visibleTextRange = textView.visibleTextRange,
+              let layoutManager = textView.layoutManager else {
+            return nil
+        }
+        let totalLines = layoutManager.lineCount
+        let startLine = layoutManager.textLineForOffset(visibleTextRange.location)?.index ?? 0
+        let endOffset = max(visibleTextRange.location, visibleTextRange.max - 1)
+        let endLine = layoutManager.textLineForOffset(endOffset)?.index ?? startLine
+        return startLine..<min(totalLines, endLine + 1)
     }
     
     func applyEdit(
@@ -1101,6 +1134,7 @@ final class SemanticTokenHighlightProvider: HighlightProviding, SuperEditorSeman
         isRefreshing = false
         needsRefreshAgain = false
         pendingFallbackRange = nil
+        lastViewportRefreshLineRange = nil
         if let callback = pendingEditCallback {
             pendingEditCallback = nil
             callback(.success(IndexSet()))
@@ -1123,9 +1157,7 @@ final class SemanticTokenHighlightProvider: HighlightProviding, SuperEditorSeman
             object: clipView,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
-                self?.scheduleViewportRefresh()
-            }
+            self?.scheduleViewportRefreshIfNeeded(for: textView)
         }
         
         scrollFrameObserver = NotificationCenter.default.addObserver(
@@ -1133,9 +1165,7 @@ final class SemanticTokenHighlightProvider: HighlightProviding, SuperEditorSeman
             object: clipView,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
-                self?.scheduleViewportRefresh()
-            }
+            self?.scheduleViewportRefreshIfNeeded(for: textView)
         }
     }
     
@@ -1148,6 +1178,7 @@ final class SemanticTokenHighlightProvider: HighlightProviding, SuperEditorSeman
             NotificationCenter.default.removeObserver(observer)
             scrollFrameObserver = nil
         }
+        lastViewportRefreshLineRange = nil
     }
     
     deinit {

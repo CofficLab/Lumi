@@ -4,17 +4,25 @@ import Sparkle
 
 /// 更新控制器，负责应用的自动更新功能
 @MainActor
-class UpdateController: NSObject, SuperLog {
+final class UpdateController: NSObject, SuperLog, SPUUpdaterDelegate {
     nonisolated static let emoji = "✨"
     nonisolated static let verbose: Bool = true
     // MARK: - Properties
 
+    static let shared = UpdateController()
+
     /// Sparkle 更新控制器，提供应用自动更新功能
-    let updaterController = SPUStandardUpdaterController(
+    private lazy var updaterController = SPUStandardUpdaterController(
         startingUpdater: true,
-        updaterDelegate: nil,
+        updaterDelegate: self,
         userDriverDelegate: nil
     )
+
+    private var pendingImmediateInstallHandler: (() -> Void)?
+
+    var updater: SPUUpdater {
+        updaterController.updater
+    }
 
     // MARK: - Initialization
 
@@ -36,6 +44,23 @@ class UpdateController: NSObject, SuperLog {
         updaterController.checkForUpdates(nil)
     }
 
+    // MARK: - SPUUpdaterDelegate
+
+    func updater(
+        _ updater: SPUUpdater,
+        willInstallUpdateOnQuit item: SUAppcastItem,
+        immediateInstallationBlock immediateInstallHandler: @escaping () -> Void
+    ) -> Bool {
+        pendingImmediateInstallHandler = immediateInstallHandler
+        NotificationCenter.postAppUpdateReadyToInstall(version: item.displayVersionString)
+
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)更新已后台下载完成，等待用户安装: \(item.displayVersionString)")
+        }
+
+        return true
+    }
+
     // MARK: - Private Methods
 
     /// 设置通知监听
@@ -46,10 +71,33 @@ class UpdateController: NSObject, SuperLog {
             name: .checkForUpdates,
             object: nil
         )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleInstallPreparedAppUpdateRequest),
+            name: .installPreparedAppUpdate,
+            object: nil
+        )
     }
 
     /// 处理检查更新请求
     @objc private func handleCheckForUpdatesRequest() {
         checkForUpdates()
+    }
+
+    /// 处理安装已下载更新请求
+    @objc private func handleInstallPreparedAppUpdateRequest() {
+        guard let pendingImmediateInstallHandler else {
+            if Self.verbose {
+                AppLogger.core.warning("\(self.t)收到安装请求，但没有待安装更新")
+            }
+            return
+        }
+
+        if Self.verbose {
+            AppLogger.core.info("\(self.t)开始安装已下载更新")
+        }
+
+        pendingImmediateInstallHandler()
     }
 }

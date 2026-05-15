@@ -10,17 +10,29 @@ import MagicKit
 /// 当前为轻量级实现，仅返回提示信息，可根据需求后续接入真实搜索 API。
 struct WebSearchTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     
     let name = "web_search"
-    let description = """
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return """
+搜索网页以获取实时信息。
+使用此工具从互联网查找最新信息、新闻或特定数据。
+
+注意：某些 AI 模型（例如 Qwen）通常要求此工具与 web_fetch 或 web_extractor 配合使用。
+"""
+        case .english:
+            return     """
 Search the web for real-time information.
 Use this tool to find current information, news, or specific data from the internet.
 
 Note: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen).
 """
+        }
+    }
     
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

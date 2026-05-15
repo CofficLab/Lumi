@@ -41,16 +41,16 @@ struct XcodeCleanerView: View {
             }
         }
         .onAppear {
-            Task { await viewModel.scanAll() }
+            Task { await viewModel.scanAllIfNeeded() }
         }
-        .alert(Text("Confirm Cleanup"), isPresented: $showCleanConfirmation) {
+        .alert(Text(String(localized: "Confirm Cleanup", table: "DiskManager")), isPresented: $showCleanConfirmation) {
             Button(role: .cancel) {} label: {
-                Text("Cancel")
+                Text(String(localized: "Cancel", table: "DiskManager"))
             }
             Button(role: .destructive) {
                 Task { await viewModel.cleanSelected() }
             } label: {
-                Text("Clean")
+                Text(String(localized: "Clean", table: "DiskManager"))
             }
         } message: {
             let template = String(

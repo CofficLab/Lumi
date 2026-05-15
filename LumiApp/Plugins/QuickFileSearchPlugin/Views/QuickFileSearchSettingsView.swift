@@ -29,10 +29,10 @@ struct QuickFileSearchSettingsView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Quick File Search", systemImage: "magnifyingglass")
+            Label(String(localized: "Quick File Search", table: "QuickFileSearch"), systemImage: "magnifyingglass")
                 .font(.title2.bold())
 
-            Text("Fast file search with Cmd+P")
+            Text(String(localized: "Fast file search with Cmd+P", table: "QuickFileSearch"))
                 .font(.body)
                 .foregroundColor(.secondary)
         }
@@ -40,7 +40,7 @@ struct QuickFileSearchSettingsView: View {
 
     private var statusSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Current Status")
+            Text(String(localized: "Current Status", table: "QuickFileSearch"))
                 .font(.headline)
 
             HStack {
@@ -49,13 +49,13 @@ struct QuickFileSearchSettingsView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     if projectVM.currentProjectPath.isEmpty {
-                        Text("No project selected")
+                        Text(String(localized: "No project selected", table: "QuickFileSearch"))
                             .font(.body)
-                        Text("Please select a project to enable file search")
+                        Text(String(localized: "Please select a project to enable file search", table: "QuickFileSearch"))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     } else {
-                        Text("Project indexed")
+                        Text(String(localized: "Project indexed", table: "QuickFileSearch"))
                             .font(.body)
                         Text("\(projectVM.currentProjectName)")
                             .font(.caption)
@@ -74,7 +74,7 @@ struct QuickFileSearchSettingsView: View {
                 HStack {
                     Image(systemName: "info.circle")
                         .foregroundColor(.blue)
-                    Text("File indexing is automatic when switching projects")
+                    Text(String(localized: "File indexing is automatic when switching projects", table: "QuickFileSearch"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -84,7 +84,7 @@ struct QuickFileSearchSettingsView: View {
 
     private var instructionsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("How to Use")
+            Text(String(localized: "How to Use", table: "QuickFileSearch"))
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 8) {

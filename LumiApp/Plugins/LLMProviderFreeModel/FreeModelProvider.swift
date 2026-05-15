@@ -8,7 +8,7 @@ import os
 final class FreeModelProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.freemodel")
     nonisolated static let emoji = "⚡"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     // MARK: - 基础信息
 

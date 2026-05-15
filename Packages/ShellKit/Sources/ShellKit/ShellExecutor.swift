@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 /// Thread-safe buffer for collecting output data
@@ -87,7 +88,7 @@ public enum ShellExecutor {
         options: ShellOptions = .defaultOptions
     ) async throws -> ShellResult {
         try await execute(
-            executable: "/bin/bash",
+            executable: options.shellExecutable,
             arguments: ["-c", command],
             options: options
         )
@@ -117,6 +118,13 @@ public enum ShellExecutor {
             stdoutHandler: { stdoutBuffer.append($0) },
             stderrHandler: { stderrBuffer.append($0) }
         )
+        let command = commandDescription(executable: executable, arguments: arguments)
+        if result.timedOut {
+            throw ShellError.timeout(command: command, seconds: options.timeout ?? 0)
+        }
+        if result.wasCancelled {
+            throw ShellError.cancelled(command: command)
+        }
 
         let duration = Date().timeIntervalSince(startedAt)
         let stdout = stdoutBuffer.getString()
@@ -155,14 +163,18 @@ public enum ShellExecutor {
         _ command: String,
         options: ShellOptions = .defaultOptions,
         onOutput: @escaping @Sendable (String) -> Void,
-        onError: @escaping @Sendable (String) -> Void = { _ in }
+        onError: @escaping @Sendable (String) -> Void = { _ in },
+        onOutputData: @escaping @Sendable (Data) -> Void = { _ in },
+        onErrorData: @escaping @Sendable (Data) -> Void = { _ in }
     ) async throws -> ShellResult {
         try await executeStreaming(
-            executable: "/bin/bash",
+            executable: options.shellExecutable,
             arguments: ["-c", command],
             options: options,
             onOutput: onOutput,
-            onError: onError
+            onError: onError,
+            onOutputData: onOutputData,
+            onErrorData: onErrorData
         )
     }
 
@@ -172,7 +184,9 @@ public enum ShellExecutor {
         arguments: [String] = [],
         options: ShellOptions = .defaultOptions,
         onOutput: @escaping @Sendable (String) -> Void,
-        onError: @escaping @Sendable (String) -> Void = { _ in }
+        onError: @escaping @Sendable (String) -> Void = { _ in },
+        onOutputData: @escaping @Sendable (Data) -> Void = { _ in },
+        onErrorData: @escaping @Sendable (Data) -> Void = { _ in }
     ) async throws -> ShellResult {
         let startedAt = Date()
         let stdoutBuffer = ThreadSafeStringBuffer()
@@ -183,18 +197,27 @@ public enum ShellExecutor {
             arguments: arguments,
             options: options,
             stdoutHandler: { data in
+                onOutputData(data)
                 if let text = String(data: data, encoding: .utf8) {
                     stdoutBuffer.append(text)
                     onOutput(text)
                 }
             },
             stderrHandler: { data in
+                onErrorData(data)
                 if let text = String(data: data, encoding: .utf8) {
                     stderrBuffer.append(text)
                     onError(text)
                 }
             }
         )
+        let command = commandDescription(executable: executable, arguments: arguments)
+        if result.timedOut {
+            throw ShellError.timeout(command: command, seconds: options.timeout ?? 0)
+        }
+        if result.wasCancelled {
+            throw ShellError.cancelled(command: command)
+        }
 
         let duration = Date().timeIntervalSince(startedAt)
 
@@ -237,26 +260,16 @@ public enum ShellExecutor {
 
     /// Check if a command is available (synchronous version)
     public static func findCommandSync(_ command: String) -> String? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        process.arguments = [command]
+        let semaphore = DispatchSemaphore(value: 0)
+        let box = SyncResultBox()
 
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-
-            if process.terminationStatus == 0 {
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                return String(data: data, encoding: .utf8)?
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-        } catch {}
-
-        return nil
+        Task {
+            let result = await findCommand(command)
+            box.set(result)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return box.get()
     }
 
     // MARK: - Core Process Runner
@@ -264,6 +277,117 @@ public enum ShellExecutor {
     private struct ProcessResult: Sendable {
         let exitCode: Int32
         let wasCancelled: Bool
+        let timedOut: Bool
+    }
+
+    private final class SyncResultBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value: String?
+
+        func set(_ value: String?) {
+            lock.lock()
+            self.value = value
+            lock.unlock()
+        }
+
+        func get() -> String? {
+            lock.lock()
+            let result = value
+            lock.unlock()
+            return result
+        }
+    }
+
+    private final class ProcessExecutionState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<ProcessResult, Error>?
+        private var process: Process?
+        private var timeoutItem: DispatchWorkItem?
+        private var wasCancelled = false
+        private var timedOut = false
+
+        init(continuation: CheckedContinuation<ProcessResult, Error>) {
+            self.continuation = continuation
+        }
+
+        func setProcess(_ process: Process) {
+            lock.lock()
+            self.process = process
+            lock.unlock()
+        }
+
+        func setTimeoutItem(_ item: DispatchWorkItem?) {
+            lock.lock()
+            timeoutItem = item
+            lock.unlock()
+        }
+
+        func timeout(options: ShellOptions) {
+            let process: Process?
+            lock.lock()
+            timedOut = true
+            wasCancelled = true
+            process = self.process
+            lock.unlock()
+
+            if let process {
+                terminate(process: process, options: options)
+            }
+        }
+
+        func cancel(options: ShellOptions) {
+            let process: Process?
+            lock.lock()
+            wasCancelled = true
+            process = self.process
+            lock.unlock()
+
+            if let process {
+                terminate(process: process, options: options)
+            }
+        }
+
+        func complete(exitCode: Int32) {
+            let continuation: CheckedContinuation<ProcessResult, Error>?
+            let result: ProcessResult
+            lock.lock()
+            timeoutItem?.cancel()
+            continuation = self.continuation
+            self.continuation = nil
+            result = ProcessResult(exitCode: exitCode, wasCancelled: wasCancelled, timedOut: timedOut)
+            lock.unlock()
+
+            continuation?.resume(returning: result)
+        }
+
+        func fail(_ error: Error) {
+            let continuation: CheckedContinuation<ProcessResult, Error>?
+            lock.lock()
+            timeoutItem?.cancel()
+            continuation = self.continuation
+            self.continuation = nil
+            lock.unlock()
+
+            continuation?.resume(throwing: error)
+        }
+    }
+
+    private final class ProcessExecutionStateStore: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state: ProcessExecutionState?
+
+        func set(_ state: ProcessExecutionState) {
+            lock.lock()
+            self.state = state
+            lock.unlock()
+        }
+
+        func cancel(options: ShellOptions) {
+            lock.lock()
+            let state = self.state
+            lock.unlock()
+            state?.cancel(options: options)
+        }
     }
 
     private static func runProcess(
@@ -273,11 +397,16 @@ public enum ShellExecutor {
         stdoutHandler: @escaping @Sendable (Data) -> Void,
         stderrHandler: @escaping @Sendable (Data) -> Void
     ) async throws -> ProcessResult {
-        try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: options.qos).async {
+        let stateStore = ProcessExecutionStateStore()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                let state = ProcessExecutionState(continuation: continuation)
+                stateStore.set(state)
+                DispatchQueue.global(qos: options.qos).async {
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: executable)
                 process.arguments = arguments
+                state.setProcess(process)
 
                 // Set working directory
                 if let dir = options.workingDirectory {
@@ -297,15 +426,8 @@ public enum ShellExecutor {
                 process.standardOutput = stdoutPipe
                 process.standardError = stderrPipe
 
-                // Track cancellation
-                var wasCancelled = false
-                var timeoutItem: DispatchWorkItem?
-
                 // Set up termination handler
                 process.terminationHandler = { [stdoutPipe, stderrPipe] _ in
-                    // Clean up timeout if set
-                    timeoutItem?.cancel()
-
                     // Read final data
                     let finalStdout = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
                     let finalStderr = stderrPipe.fileHandleForReading.readDataToEndOfFile()
@@ -321,10 +443,7 @@ public enum ShellExecutor {
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil
                     stderrPipe.fileHandleForReading.readabilityHandler = nil
 
-                    continuation.resume(returning: ProcessResult(
-                        exitCode: process.terminationStatus,
-                        wasCancelled: wasCancelled
-                    ))
+                    state.complete(exitCode: process.terminationStatus)
                 }
 
                 // Set up streaming handlers
@@ -344,29 +463,62 @@ public enum ShellExecutor {
 
                 // Set up timeout if specified
                 if let timeout = options.timeout {
-                    timeoutItem = DispatchWorkItem {
-                        if process.isRunning {
-                            wasCancelled = true
-                            process.terminate()
-                        }
+                    let timeoutItem = DispatchWorkItem {
+                        state.timeout(options: options)
                     }
+                    state.setTimeoutItem(timeoutItem)
                     DispatchQueue.global(qos: options.qos)
-                        .asyncAfter(deadline: .now() + timeout, execute: timeoutItem!)
+                        .asyncAfter(deadline: .now() + timeout, execute: timeoutItem)
                 }
 
                 // Launch process
                 do {
                     try process.run()
                 } catch {
-                    timeoutItem?.cancel()
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil
                     stderrPipe.fileHandleForReading.readabilityHandler = nil
-                    continuation.resume(throwing: ShellError.launchFailed(
+                    state.fail(ShellError.launchFailed(
                         command: executable,
                         reason: error.localizedDescription
                     ))
                 }
             }
+            }
+        } onCancel: {
+            stateStore.cancel(options: options)
         }
+    }
+
+    private static func commandDescription(executable: String, arguments: [String]) -> String {
+        ([executable] + arguments).joined(separator: " ")
+    }
+
+    private static func terminate(process: Process, options: ShellOptions) {
+        let pid = process.processIdentifier
+        if options.terminatesProcessTree, pid > 0 {
+            terminateChildren(of: pid, signal: SIGTERM)
+        }
+        if process.isRunning {
+            process.terminate()
+        }
+
+        let gracePeriod = max(0, options.terminationGracePeriod)
+        DispatchQueue.global(qos: options.qos).asyncAfter(deadline: .now() + gracePeriod) {
+            if options.terminatesProcessTree, pid > 0 {
+                terminateChildren(of: pid, signal: SIGKILL)
+            }
+            if process.isRunning, pid > 0 {
+                kill(pid, SIGKILL)
+            }
+        }
+    }
+
+    private static func terminateChildren(of pid: Int32, signal: Int32) {
+        let pkill = Process()
+        pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        pkill.arguments = ["-\(signal)", "-P", "\(pid)"]
+        pkill.standardOutput = Pipe()
+        pkill.standardError = Pipe()
+        try? pkill.run()
     }
 }

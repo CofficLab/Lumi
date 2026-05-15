@@ -20,6 +20,7 @@ actor ThemeVoidPlugin: SuperPlugin {
                 appTheme: VoidTheme(),
                 editorThemeId: "void",
                 editorThemeContributor: VoidSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiFileIconThemeCatalog.void(),
                 order: 40
             )
         ]

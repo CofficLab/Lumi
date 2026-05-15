@@ -1,6 +1,29 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    " to see.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " to see."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以查看效果。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以查看效果。"
+          }
+        }
+      }
+    },
     "Accessibility permission is required to detect text selection": {
       "extractionState": "manual",
       "localizations": {
@@ -250,29 +273,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "文本操作"
-          }
-        }
-      }
-    },
-    " to see.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": " to see."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "以查看效果。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "以查看效果。"
           }
         }
       }

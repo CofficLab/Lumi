@@ -23,29 +23,6 @@
         }
       }
     },
-    "Are you sure you want to delete": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Are you sure you want to delete"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确定要删除"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確定要刪除"
-          }
-        }
-      }
-    },
     "Are you sure you want to delete \"%@\"?": {
       "localizations": {
         "en": {

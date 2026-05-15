@@ -17,7 +17,7 @@ import SwiftUI
 /// GitOK 必须已安装在系统中。如果未安装，按钮点击后会有错误日志输出。
 actor AgentOpenInGitOKPlugin: SuperPlugin {
     nonisolated static let emoji = "✅"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "AgentOpenInGitOK"
     static let displayName = String(localized: "Open in GitOK", table: "AgentOpenInGitOK")
     static let description = String(localized: "Open current project in GitOK", table: "AgentOpenInGitOK")
@@ -95,7 +95,7 @@ struct OpenInGitOKStatusBarView: View {
                 .resizable()
                 .frame(width: 10, height: 10)
 
-            Text("GitOK")
+            Text(String(localized: "GitOK", table: "OpenInGitOKPlugin"))
                 .font(.system(size: 11))
         }
         .padding(.horizontal, 8)
@@ -126,7 +126,7 @@ struct OpenInGitOKDetailView: View {
                     .resizable()
                     .frame(width: 16, height: 16)
 
-                Text("GitOK")
+                Text(String(localized: "GitOK", table: "OpenInGitOKPlugin"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -137,7 +137,7 @@ struct OpenInGitOKDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
-                        Text("打开")
+                        Text(String(localized: "打开", table: "OpenInGitOKPlugin"))
                     }
                     .font(.system(size: 12))
                 }
@@ -148,7 +148,7 @@ struct OpenInGitOKDetailView: View {
 
             // 项目路径显示
             HStack(spacing: 8) {
-                Text("项目")
+                Text(String(localized: "项目", table: "OpenInGitOKPlugin"))
                     .font(.system(size: 12))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     .frame(width: 50, alignment: .leading)
@@ -169,7 +169,7 @@ struct OpenInGitOKDetailView: View {
                         .font(.system(size: 12))
                 }
                 .buttonStyle(.plain)
-                .help("复制路径")
+                .help(String(localized: "复制路径", table: "OpenInGitOKPlugin"))
             }
         }
         .padding()

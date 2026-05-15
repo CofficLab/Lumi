@@ -40,7 +40,7 @@ struct CacheScanProgressView: View {
 
             // 进度信息
             VStack(spacing: 6) {
-                Text("正在扫描系统缓存")
+                Text(String(localized: "正在扫描系统缓存", table: "DiskManager"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -70,7 +70,7 @@ struct CacheScanProgressView: View {
                     }
 
                     Label {
-                        Text("分类")
+                        Text(String(localized: "分类", table: "DiskManager"))
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(Color(hex: "FF9F0A"))

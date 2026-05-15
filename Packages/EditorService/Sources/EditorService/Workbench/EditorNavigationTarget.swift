@@ -1,3 +1,3 @@
-import EditorKernelCore
+import EditorKernel
 
-typealias EditorNavigationTarget = EditorKernelCore.EditorNavigationTarget
+typealias EditorNavigationTarget = EditorKernel.EditorNavigationTarget

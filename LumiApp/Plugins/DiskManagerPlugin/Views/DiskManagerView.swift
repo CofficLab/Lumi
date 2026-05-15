@@ -57,15 +57,15 @@ struct DiskUsageInfoView: View {
 
                 if let usage = viewModel.diskUsage {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Macintosh HD")
+                        Text(String(localized: "Macintosh HD", table: "DiskManager"))
                             .font(.title2)
                             .fontWeight(.bold)
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("总计：\(formatBytes(usage.total))")
-                            Text("已用：\(formatBytes(usage.used))")
+                            Text("\(String(localized: "总计：", table: "DiskManager"))\(formatBytes(usage.total))")
+                            Text("\(String(localized: "已用：", table: "DiskManager"))\(formatBytes(usage.used))")
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                            Text("可用：\(formatBytes(usage.available))")
+                            Text("\(String(localized: "可用：", table: "DiskManager"))\(formatBytes(usage.available))")
                                 .foregroundColor(Color(hex: "30D158"))
                         }
                         .font(.subheadline)

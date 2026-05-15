@@ -11,17 +11,32 @@ import MagicKit
 /// - 内核只认识 Tool 抽象，不关心具体实现细节
 struct ShellTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💻"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "run_command"
-    let description = "Execute a shell command in terminal. Use this to run build commands, git commands, or other system tools."
 
-    var inputSchema: [String: Any] {
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "在终端中执行 Shell 命令。可用于运行构建命令、git 命令或其他系统工具。"
+        case .english:
+            return "Execute a shell command in terminal. Use this to run build commands, git commands, or other system tools."
+        }
+    }
+
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        let commandDescription: String
+        switch language {
+        case .chinese:
+            commandDescription = "要执行的命令字符串（如 'git status'）"
+        case .english:
+            commandDescription = "The command string to execute (e.g., 'git status')"
+        }
         return [
             "type": "object",
             "properties": [
                 "command": [
                     "type": "string",
-                    "description": "The command string to execute (e.g., 'git status')"
+                    "description": commandDescription
                 ]
             ],
             "required": ["command"]
@@ -39,18 +54,32 @@ struct ShellTool: SuperAgentTool, SuperLog {
 
     @MainActor
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await executeShell(arguments: arguments, context: nil)
+    }
+
+    @MainActor
+    func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
+        try context.checkCancellation()
+        return try await executeShell(arguments: arguments, context: context)
+    }
+
+    @MainActor
+    private func executeShell(arguments: [String: ToolArgument], context: ToolExecutionContext?) async throws -> String {
         guard let command = arguments["command"]?.value as? String else {
             throw ShellToolError.missingCommand
         }
 
         let riskLevel = CommandRiskEvaluator.evaluate(command: command)
         if Self.verbose {
-            AgentCoreToolsPlugin.logger.info("\(self.t)\(riskLevel.displayName) \n \(command)")
+            AgentCoreToolsPlugin.logger.info("\(self.t)\(riskLevel.displayName) \n \(command.max(40))")
         }
 
         let shellService = ShellService.shared
         do {
-            return try await shellService.execute(command)
+            try context?.checkCancellation()
+            let result = try await shellService.execute(command)
+            try context?.checkCancellation()
+            return result
         } catch {
             AgentCoreToolsPlugin.logger.error("\(self.t)Shell execution failed: \(error.localizedDescription)")
             throw ShellToolError.executionFailed(underlying: error)

@@ -107,6 +107,50 @@ final class XcodeSemanticAvailabilityTests: XCTestCase {
         XCTAssertEqual(warningReasons.count, 1)
     }
 
+    func testInspectFileContextFromSnapshotUsesSnapshotTargets() {
+        let snapshot = XcodeEditorContextSnapshot(
+            projectPath: "/Project",
+            workspaceName: "Project",
+            workspacePath: "/Project/Project.xcodeproj",
+            activeScheme: "App",
+            activeSchemeBuildableTargets: ["App"],
+            activeConfiguration: "Debug",
+            activeDestination: "My Mac",
+            buildContextStatus: "Available",
+            isXcodeProject: true,
+            schemes: ["App"],
+            configurations: ["Debug"],
+            currentFilePath: "/Project/Sources/MyFile.swift",
+            currentFileTarget: "App",
+            currentFileMatchedTargets: ["App", "Tests"],
+            currentFileIsInTarget: true
+        )
+        let cachedState = BridgeCachedState(
+            workspaceFolders: nil,
+            buildServerPath: nil,
+            activeScheme: "App",
+            activeConfiguration: "Debug",
+            activeDestination: "My Mac",
+            buildContextStatus: "Available",
+            isXcodeProject: true,
+            isInitialized: true,
+            workspaceName: "Project",
+            workspacePath: "/Project/Project.xcodeproj",
+            schemes: ["App"],
+            configurations: ["Debug"],
+            projectPath: "/Project"
+        )
+
+        let report = XcodeSemanticAvailability.inspectCurrentFileContext(
+            snapshot: snapshot,
+            cachedState: cachedState,
+            buildContextStatus: .available(.init(buildServerJSONPath: "/buildServer.json", workspacePath: "/Project/Project.xcodeproj", scheme: "App"))
+        )
+
+        XCTAssertTrue(report.reasons.contains { $0.id == "multiple-targets-resolved" })
+        XCTAssertFalse(report.reasons.contains { $0.id == "scheme-excludes-targets" })
+    }
+
     // MARK: - Preflight Error Tests
 
     func testWorkspacePreflightErrorNoError() {

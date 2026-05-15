@@ -19,12 +19,12 @@ struct CodeActionPanel: View {
             HStack {
                 Image(systemName: "lightbulb.fill")
                     .foregroundColor(Color(hex: "FF9F0A"))
-                Text("Code Actions")
+                Text(String(localized: "Code Actions", table: "LSPCodeActionEditor"))
                     .font(.system(size: 12, weight: .semibold))
                 Spacer()
                 if actions.indices.contains(selectedIndex),
                    actions[selectedIndex].isPreferred {
-                    Text("Preferred")
+                    Text(String(localized: "Preferred", table: "LSPCodeActionEditor"))
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundColor(Color(hex: "FF9F0A"))
                         .padding(.horizontal, 6)

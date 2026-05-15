@@ -1,7 +1,8 @@
 import Foundation
 
+public extension LumiPreviewFacade {
 /// SPM 编译器：使用 swift build 编译 SPM Package 中的预览。
-public final class SPMCompiler: Sendable {
+final class SPMCompiler: Sendable {
     /// 创建 SPM 编译器。
     public init() {}
 
@@ -60,13 +61,18 @@ public final class SPMCompiler: Sendable {
             }
         }
 
-        arguments.append(
-            contentsOf: Self.linkInputArguments(
-                in: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
-                excludingProductNames: targetName.map { [$0] } ?? []
-            )
+        let linkInputs = Self.linkInputArguments(
+            in: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
+            excludingProductNames: targetName.map { [$0] } ?? []
         )
+        arguments.append(contentsOf: linkInputs)
         arguments.append(contentsOf: Self.packageLinkedLibraryArguments(packageDirectory: packageDirectory))
+
+        if !linkInputs.isEmpty {
+            fputs("[SPMCompiler] previewCompilerArguments found \(linkInputs.count) .o link inputs for \(packageDirectory.lastPathComponent)\n", stderr)
+        } else {
+            fputs("[SPMCompiler] previewCompilerArguments found NO .o link inputs for \(packageDirectory.lastPathComponent), directories: \(existingDirectories)\n", stderr)
+        }
 
         return arguments
     }
@@ -189,7 +195,9 @@ public final class SPMCompiler: Sendable {
         var inputs: [String] = []
 
         for directory in directories {
-            guard let entries = try? fileManager.contentsOfDirectory(
+            // .o files in SPM builds are inside TargetName.build/ subdirectories,
+            // so we need to search recursively.
+            guard let enumerator = fileManager.enumerator(
                 at: directory,
                 includingPropertiesForKeys: [.isRegularFileKey],
                 options: [.skipsHiddenFiles]
@@ -197,7 +205,8 @@ public final class SPMCompiler: Sendable {
                 continue
             }
 
-            for entry in entries {
+            for case let entry as URL in enumerator
+            where entry.pathExtension == "o" || entry.pathExtension == "a" {
                 guard isLinkInput(entry, excludingProductNames: productNames) else { continue }
                 inputs.append(entry.path)
             }
@@ -213,6 +222,10 @@ public final class SPMCompiler: Sendable {
             return false
         }
 
+        if containsTestBuildComponent(url) {
+            return false
+        }
+
         for productName in productNames where !productName.isEmpty {
             if fileName == "\(productName).o"
                 || fileName == "lib\(productName).a"
@@ -222,6 +235,19 @@ public final class SPMCompiler: Sendable {
         }
 
         return true
+    }
+
+    private static func containsTestBuildComponent(_ url: URL) -> Bool {
+        let testBuildSuffixes = [
+            "Tests.build",
+            "PackageTests.build",
+            "PackageDiscoveredTests.build",
+            "PackageDiscoveredTests.derived"
+        ]
+
+        return url.pathComponents.contains { component in
+            testBuildSuffixes.contains(where: { component.hasSuffix($0) })
+        }
     }
 
     private static func packageLinkedLibraryArguments(packageDirectory: URL) -> [String] {
@@ -297,6 +323,8 @@ public final class SPMCompiler: Sendable {
 
         return combinedOutput
     }
+}
+
 }
 
 private extension Array where Element == String {

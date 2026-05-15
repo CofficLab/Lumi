@@ -4,11 +4,18 @@ import MagicKit
 /// GitHub 更新 Issue 工具
 struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_update_issue"
-    let description = "更新 GitHub Issue 的信息，包括标题、描述、状态、标签、指派人员和里程碑。"
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "更新 GitHub Issue 的信息，包括标题、描述、状态、标签、指派人员和里程碑。"
+        case .english:
+            return "Update a GitHub issue, including title, body, state, labels, assignees, and milestone."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

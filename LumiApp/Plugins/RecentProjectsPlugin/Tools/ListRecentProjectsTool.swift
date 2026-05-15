@@ -6,9 +6,16 @@ struct ListRecentProjectsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = true
     let name = "list_recent_projects"
-    let description = "Get a list of recently used projects. Returns project names, paths, and last used times. Useful for understanding what projects the user has been working on."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "获取最近使用的项目列表。返回项目名称、路径和最后使用时间。适合了解用户最近在处理哪些项目。"
+        case .english:
+            return "Get a list of recently used projects. Returns project names, paths, and last used times. Useful for understanding what projects the user has been working on."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
             "properties": [

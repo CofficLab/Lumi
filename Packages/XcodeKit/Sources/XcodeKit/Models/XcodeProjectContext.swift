@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Xcode Destination Context
 
 /// 代表一个构建目标（设备/模拟器/macOS）
-public struct XcodeDestinationContext: Identifiable, Equatable {
+public struct XcodeDestinationContext: Identifiable, Equatable, Sendable {
     public let id: String
     public let platform: String
     public let arch: String?
@@ -42,7 +42,7 @@ public struct XcodeDestinationContext: Identifiable, Equatable {
 // MARK: - Xcode Build Configuration Context
 
 /// 代表一个 Build Configuration（Debug / Release）
-public struct XcodeBuildConfigurationContext: Identifiable, Equatable {
+public struct XcodeBuildConfigurationContext: Identifiable, Equatable, Sendable {
     public let id: String
     public let name: String
     public var settings: [String: String] = [:]
@@ -61,7 +61,7 @@ public struct XcodeBuildConfigurationContext: Identifiable, Equatable {
 // MARK: - Xcode Target Context
 
 /// 代表一个 Xcode Target
-public struct XcodeTargetContext: Identifiable, Equatable {
+public struct XcodeTargetContext: Identifiable, Equatable, Sendable {
     public let id: String
     public let name: String
     public let productType: String?
@@ -90,7 +90,7 @@ public struct XcodeTargetContext: Identifiable, Equatable {
 // MARK: - Xcode Scheme Context
 
 /// 代表一个 Xcode Scheme，绑定 active target / configuration / destination
-public struct XcodeSchemeContext: Identifiable, Equatable {
+public struct XcodeSchemeContext: Identifiable, Equatable, Sendable {
     public let id: String
     public let name: String
     public let buildableTargets: [String]  // target names
@@ -122,7 +122,7 @@ public struct XcodeSchemeContext: Identifiable, Equatable {
 // MARK: - Xcode Project Context
 
 /// 代表一个 .xcodeproj
-public struct XcodeProjectContext: Identifiable, Equatable {
+public struct XcodeProjectContext: Identifiable, Equatable, Sendable {
     public let id: String
     public let name: String
     public let path: URL
@@ -154,7 +154,7 @@ public struct XcodeProjectContext: Identifiable, Equatable {
 // MARK: - Xcode Workspace Context
 
 /// 代表一个 .xcworkspace（可能包含多个 projects）
-public struct XcodeWorkspaceContext: Identifiable, Equatable {
+public struct XcodeWorkspaceContext: Identifiable, Equatable, Sendable {
     public let id: String
     public let name: String
     public let path: URL

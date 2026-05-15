@@ -3,11 +3,10 @@ import os
 import MagicKit
 
 /// Xcode 项目解析器：发现并解析 .xcodeproj / .xcworkspace
-@MainActor
-final public class XcodeProjectResolver: SuperLog {
+final public class XcodeProjectResolver: SuperLog, @unchecked Sendable {
 
-    nonisolated public static let emoji = "🔍"
-    nonisolated public static let verbose = true
+    public static let emoji = "🔍"
+    public static let verbose = false
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.resolver")
 
@@ -59,10 +58,13 @@ final public class XcodeProjectResolver: SuperLog {
         let schemes = (listResult.workspace?.schemes ?? []) + (listResult.project?.schemes ?? [])
         let uniqueSchemes = Array(Set(schemes))
 
-        // 解析 targets
+        // 解析 targets。pbxproj 解析和目录枚举可能很重，放到后台执行。
         let targetNames = listResult.project?.targets ?? []
         let configurations = listResult.project?.configurations ?? []
-        let targetSourceFiles = resolveTargetSourceFiles(projectLikeURL: workspaceURL)
+        let projectLikePath = workspaceURL.path
+        let targetSourceFiles = await Task.detached(priority: .userInitiated) { @Sendable in
+            Self.resolveTargetSourceFiles(projectLikeURL: URL(fileURLWithPath: projectLikePath))
+        }.value
 
         let targetContexts = targetNames.map { targetName in
             let targetConfigurations = configurations.map { configName in
@@ -192,7 +194,7 @@ final public class XcodeProjectResolver: SuperLog {
 
     // MARK: - 工具方法
 
-    func resolveTargetSourceFiles(projectLikeURL: URL) -> [String: Set<String>] {
+    static func resolveTargetSourceFiles(projectLikeURL: URL) -> [String: Set<String>] {
         let projectURL: URL
         if projectLikeURL.pathExtension == "xcodeproj" {
             projectURL = projectLikeURL
@@ -224,13 +226,13 @@ final public class XcodeProjectResolver: SuperLog {
                 } else {
                     rootURL = projectRoot.appendingPathComponent(root.rootPath)
                 }
-                partial.formUnion(enumerateFiles(in: rootURL, excluding: root.excludedRelativePaths))
+                partial.formUnion(Self.enumerateFiles(in: rootURL, excluding: root.excludedRelativePaths))
             }
             result[item.key] = files
         }
     }
 
-    private func enumerateFiles(in rootURL: URL, excluding excludedRelativePaths: Set<String>) -> Set<String> {
+    private static func enumerateFiles(in rootURL: URL, excluding excludedRelativePaths: Set<String>) -> Set<String> {
         if let values = try? rootURL.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey]),
            values.isRegularFile == true {
             return excludedRelativePaths.isEmpty ? [rootURL.path] : []

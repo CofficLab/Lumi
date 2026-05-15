@@ -18,7 +18,7 @@ import os
 public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "💻"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - Provider Info
 
     /// 供应商唯一标识符
@@ -317,8 +317,8 @@ public final class MLXProvider: SuperLLMProvider, SuperLocalLLMProvider, SuperLo
     private static func agentToolsToMLX(_ tools: [SuperAgentTool]?) -> [[String: Sendable]]? {
         guard let tools, !tools.isEmpty else { return nil }
         return tools.map { t in
-            let paramsJson = (try? JSONSerialization.data(withJSONObject: t.inputSchema)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-            return ["name": t.name as Sendable, "description": t.description as Sendable, "parameters": paramsJson as Sendable] as [String: Sendable]
+            let paramsJson = (try? JSONSerialization.data(withJSONObject: t.inputSchema(for: .english))).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+            return ["name": t.name as Sendable, "description": t.description(for: .english) as Sendable, "parameters": paramsJson as Sendable] as [String: Sendable]
         }
     }
 

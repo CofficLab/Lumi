@@ -8,7 +8,7 @@ struct NettoDashboardView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Netto Firewall")
+                Text(String(localized: "Netto Firewall", table: "Netto"))
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 Spacer()
@@ -34,7 +34,7 @@ struct NettoDashboardView: View {
             HSplitView {
                 // Left: Apps List
                 VStack(alignment: .leading) {
-                    Text("Apps")
+                    Text(String(localized: "Apps", table: "Netto"))
                         .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal)
                         .padding(.top)
@@ -51,7 +51,7 @@ struct NettoDashboardView: View {
                 
                 // Right: Events
                 VStack(alignment: .leading) {
-                    Text("Recent Events")
+                    Text(String(localized: "Recent Events", table: "Netto"))
                         .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal)
                         .padding(.top)

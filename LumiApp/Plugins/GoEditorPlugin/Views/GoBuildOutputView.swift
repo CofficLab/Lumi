@@ -180,8 +180,8 @@ struct GoBuildOutputView: View {
             url = URL(fileURLWithPath: file)
         }
         Task { @MainActor in
-            await RootViewContainer.shared.editorVM.service.refreshProjectContext(for: projectRoot)
-            RootViewContainer.shared.editorVM.service.open(at: url)
+            await RootContainer.shared.editorVM.service.refreshProjectContext(for: projectRoot)
+            RootContainer.shared.editorVM.service.open(at: url)
         }
     }
 }

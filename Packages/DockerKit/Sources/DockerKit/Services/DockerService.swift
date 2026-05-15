@@ -1,5 +1,6 @@
 import Foundation
 import os
+import ShellKit
 
 /// The primary namespace for DockerKit
 public enum DockerKit {
@@ -37,60 +38,16 @@ public actor DockerService {
         guard let dockerPath = dockerPath else {
             throw DockerError.dockerNotFound
         }
-        
-        let url = URL(fileURLWithPath: dockerPath)
-        
-        let process = Process()
-        process.executableURL = url
-        process.arguments = args
-        
-        let stdoutPipe = Pipe()
-        let stderrPipe = Pipe()
-        process.standardOutput = stdoutPipe
-        process.standardError = stderrPipe
 
-        let stdoutBuffer = LockedDataBuffer()
-        let stderrBuffer = LockedDataBuffer()
-        let stdoutHandle = stdoutPipe.fileHandleForReading
-        let stderrHandle = stderrPipe.fileHandleForReading
-
-        stdoutHandle.readabilityHandler = { handle in
-            let chunk = handle.availableData
-            if !chunk.isEmpty { stdoutBuffer.append(chunk) }
+        let result = try await Shell.execute(
+            executable: dockerPath,
+            arguments: args,
+            options: ShellOptions(throwsOnError: false)
+        )
+        if result.exitCode == 0 {
+            return result.stdout
         }
-        stderrHandle.readabilityHandler = { handle in
-            let chunk = handle.availableData
-            if !chunk.isEmpty { stderrBuffer.append(chunk) }
-        }
-
-        do {
-            try process.run()
-        } catch {
-            stdoutHandle.readabilityHandler = nil
-            stderrHandle.readabilityHandler = nil
-            throw error
-        }
-
-        await withCheckedContinuation { continuation in
-            process.terminationHandler = { _ in
-                continuation.resume()
-            }
-        }
-
-        stdoutHandle.readabilityHandler = nil
-        stderrHandle.readabilityHandler = nil
-
-        let finalStdout = stdoutHandle.availableData
-        if !finalStdout.isEmpty { stdoutBuffer.append(finalStdout) }
-        let finalStderr = stderrHandle.availableData
-        if !finalStderr.isEmpty { stderrBuffer.append(finalStderr) }
-
-        if process.terminationStatus == 0 {
-            return String(data: stdoutBuffer.snapshot(), encoding: .utf8) ?? ""
-        } else {
-            let errorMsg = String(data: stderrBuffer.snapshot(), encoding: .utf8) ?? "Unknown error"
-            throw DockerError.commandFailed(errorMsg)
-        }
+        throw DockerError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr)
     }
     
     // MARK: - Image Operations
@@ -210,34 +167,15 @@ public actor DockerService {
             throw DockerError.commandFailed("Trivy security scanner not found. Please install trivy (brew install trivy).")
         }
         
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: trivy)
-        process.arguments = ["image", "--format", "table", id]
-        
-        let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
-        
-        return try await withCheckedThrowingContinuation { continuation in
-            do {
-                try process.run()
-                process.waitUntilExit()
-                
-                let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: outputData, encoding: .utf8) ?? ""
-                
-                if process.terminationStatus == 0 {
-                    continuation.resume(returning: output)
-                } else {
-                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                    let errorMsg = String(data: errorData, encoding: .utf8) ?? "Scan failed"
-                    continuation.resume(throwing: DockerError.commandFailed(errorMsg))
-                }
-            } catch {
-                continuation.resume(throwing: error)
-            }
+        let result = try await Shell.execute(
+            executable: trivy,
+            arguments: ["image", "--format", "table", id],
+            options: ShellOptions(throwsOnError: false)
+        )
+        if result.exitCode == 0 {
+            return result.stdout
         }
+        throw DockerError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr)
     }
     
     // MARK: - Private Helpers
@@ -258,22 +196,3 @@ public actor DockerService {
 }
 
 // MARK: - Supporting Types
-
-/// Thread-safe data buffer
-final class LockedDataBuffer: @unchecked Sendable {
-    private let lock = NSLock()
-    private var data = Data()
-
-    func append(_ chunk: Data) {
-        lock.lock()
-        data.append(chunk)
-        lock.unlock()
-    }
-
-    func snapshot() -> Data {
-        lock.lock()
-        let copy = data
-        lock.unlock()
-        return copy
-    }
-}

@@ -15,7 +15,7 @@ struct QuickStartActionsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("下一步操作")
+            Text(String(localized: "下一步操作", table: "CoreMessageRenderer"))
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 

@@ -67,6 +67,9 @@ class VisibleRangeProvider {
         if !(minimapView?.isHidden ?? true), let minimapVisibleRange = minimapView?.visibleTextRange {
             visibleSet.formUnion(IndexSet(integersIn: minimapVisibleRange))
         }
+        guard visibleSet != self.visibleSet else {
+            return
+        }
         self.visibleSet = visibleSet
         delegate?.visibleSetDidUpdate(visibleSet)
     }

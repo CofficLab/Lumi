@@ -70,7 +70,7 @@ struct ShowImagePreviewPanel: View {
                         VStack(spacing: 12) {
                             ProgressView()
                                 .controlSize(.regular)
-                            Text("加载中…")
+                            Text(String(localized: "加载中…", table: "ShowImage"))
                                 .font(.system(size: 12, weight: .regular))
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
@@ -90,7 +90,7 @@ struct ShowImagePreviewPanel: View {
                                 )
                         }
                         .buttonStyle(.plain)
-                        .help("点击放大预览")
+                        .help(String(localized: "点击放大预览", table: "ShowImage"))
                     } else if let errorText {
                         VStack(spacing: 8) {
                             Image(systemName: "photo.badge.exclamationmark")
@@ -202,7 +202,7 @@ struct ShowImageFullscreenSheet: View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
-                Button("关闭") { dismiss() }
+                Button(String(localized: "关闭", table: "ShowImage")) { dismiss() }
                     .keyboardShortcut(.cancelAction)
             }
             .padding(.horizontal, 16)

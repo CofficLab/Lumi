@@ -391,6 +391,29 @@
         }
       }
     },
+    "Open System Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系统设置"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系統設定"
+          }
+        }
+      }
+    },
     "Open in Terminal": {
       "extractionState": "manual",
       "localizations": {
@@ -433,29 +456,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 VS Code 中打开"
-          }
-        }
-      }
-    },
-    "Open System Settings": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open System Settings"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开系统设置"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开系統設定"
           }
         }
       }

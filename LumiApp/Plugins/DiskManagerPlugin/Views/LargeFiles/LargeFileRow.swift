@@ -51,7 +51,7 @@ struct LargeFileRow: View {
                         .foregroundColor(Color(hex: "0A84FF"))
                 }
                 .buttonStyle(.plain)
-                .help("在访达中显示")
+                .help(String(localized: "在访达中显示", table: "DiskManager"))
 
                 Button(action: {
                     showDeleteConfirm = true
@@ -60,12 +60,12 @@ struct LargeFileRow: View {
                         .foregroundColor(Color(hex: "FF453A"))
                 }
                 .buttonStyle(.plain)
-                .help("删除文件")
+                .help(String(localized: "删除文件", table: "DiskManager"))
                 .confirmationDialog("确定要删除此文件吗？", isPresented: $showDeleteConfirm) {
-                    Button("删除", role: .destructive) {
+                    Button(String(localized: "删除", table: "DiskManager"), role: .destructive) {
                         viewModel.deleteFile(item)
                     }
-                    Button("取消", role: .cancel) {}
+                    Button(String(localized: "取消", table: "DiskManager"), role: .cancel) {}
                 } message: {
                     Text("文件 \"\(item.name)\" 将被永久删除。")
                 }

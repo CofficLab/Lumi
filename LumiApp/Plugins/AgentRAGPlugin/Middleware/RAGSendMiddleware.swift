@@ -18,7 +18,7 @@ import os
 @MainActor
 final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let id = "rag"
     let order: Int = 100
 
@@ -162,7 +162,8 @@ final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
             let augmentedPrompt = RAGContextBuilder.buildPrompt(
                 query: userMessage,
                 results: response.results,
-                projectPath: projectPath
+                projectPath: projectPath,
+                languagePreference: ctx.projectVM.languagePreference
             )
             ctx.transientSystemPrompts.append(augmentedPrompt)
 

@@ -1,6 +1,7 @@
 import Foundation
 import MagicKit
 import os
+import SwiftUI
 
 /// AutoTask 插件
 ///
@@ -20,7 +21,7 @@ import os
 /// 4. 自动推进到下一个任务
 actor AutoTaskPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-task")
 
     static let id = "AutoTask"
@@ -29,7 +30,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     static let iconName: String = "checklist"
     static let isConfigurable: Bool = false
     static let enable: Bool = true
-    static var order: Int { 7 }
+    static var order: Int { 90 }
 
     static let shared = AutoTaskPlugin()
 
@@ -57,5 +58,13 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(TaskContextMiddleware())]
+    }
+
+    // MARK: - UI Contributions
+
+    /// 右侧栏 Section 视图：任务列表
+    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] {
+        guard activeIcon == EditorPlugin.iconName else { return [] }
+        return [AnyView(AutoTaskSidebarView())]
     }
 }

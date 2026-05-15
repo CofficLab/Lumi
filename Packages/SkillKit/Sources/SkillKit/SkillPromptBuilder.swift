@@ -16,23 +16,43 @@ public enum SkillPromptBuilder {
     ///   - skills: 可用的 Skill 列表
     ///   - maxSkills: 注入的最大数量，默认 10
     /// - Returns: 格式化后的系统提示词
-    public static func buildPrompt(skills: [SkillMetadata], maxSkills: Int = defaultMaxSkills) -> String {
+    public static func buildPrompt(
+        skills: [SkillMetadata],
+        maxSkills: Int = defaultMaxSkills,
+        language: SkillPromptLanguage = .english
+    ) -> String {
         var lines: [String] = []
 
         let truncated = Array(skills.prefix(maxSkills))
 
-        lines.append("## Available Skills")
+        lines.append(language == .chinese ? "## 可用 Skills" : "## Available Skills")
 
         if truncated.count < skills.count {
             lines.append("")
-            lines.append("Showing \(truncated.count) of \(skills.count) skills.")
+            switch language {
+            case .chinese:
+                lines.append("当前展示 \(truncated.count) / \(skills.count) 个 skills。")
+            case .english:
+                lines.append("Showing \(truncated.count) of \(skills.count) skills.")
+            }
         }
 
         lines.append("")
-        lines.append("You have access to the following specialized skills. If the user's request matches a skill, follow its instructions and guidelines.")
+        switch language {
+        case .chinese:
+            lines.append("你可以使用以下专用 skills。如果用户请求匹配某个 skill，请遵循它的说明和指南。")
+        case .english:
+            lines.append("You have access to the following specialized skills. If the user's request matches a skill, follow its instructions and guidelines.")
+        }
         lines.append("")
-        lines.append("| Skill | Description |")
-        lines.append("|-------|-------------|")
+        switch language {
+        case .chinese:
+            lines.append("| Skill | 描述 |")
+            lines.append("|-------|------|")
+        case .english:
+            lines.append("| Skill | Description |")
+            lines.append("|-------|-------------|")
+        }
 
         for skill in truncated {
             let escapedName = escapeMarkdownInlineCode(skill.name)
@@ -45,7 +65,12 @@ public enum SkillPromptBuilder {
         }
 
         lines.append("")
-        lines.append("When using a skill, start your response with: `[Skill: <skill-name>]` to indicate activation.")
+        switch language {
+        case .chinese:
+            lines.append("使用 skill 时，请在回复开头写 `[Skill: <skill-name>]` 表示已激活。")
+        case .english:
+            lines.append("When using a skill, start your response with: `[Skill: <skill-name>]` to indicate activation.")
+        }
 
         return lines.joined(separator: "\n")
     }
@@ -60,4 +85,9 @@ public enum SkillPromptBuilder {
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "`", with: "\\`")
     }
+}
+
+public enum SkillPromptLanguage: Sendable {
+    case chinese
+    case english
 }

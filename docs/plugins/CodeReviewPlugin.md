@@ -1,246 +1,268 @@
-# CodeReview Plugin Roadmap
+# CodeReview Plugin TODO
 
-## 1. 概述 (Overview)
+## Goal
 
-### 1.1 背景
-开发者在编写代码后，往往需要进行 Code Review 来确保代码质量、发现潜在 Bug 和安全隐患。手动审查耗时且容易遗漏细节。通过 AI 辅助审查，可以在 Commit 前或合并时自动分析代码变更，提供即时反馈。
+Build a Lumi plugin that reviews current Git changes, reports actionable issues, and later helps generate PR descriptions or apply safe fixes.
 
-### 1.2 目标
-- **Diff 分析**: 自动捕获 Git Diff 变更，进行深度代码审查。
-- **多维评估**: 检查潜在 Bug、安全漏洞、性能瓶颈、代码规范。
-- **结构化报告**: 生成清晰的审查报告，支持一键应用建议。
-- **PR 辅助**: 自动生成符合规范的 Pull Request 描述。
+## Phase 0: Scope and Integration
 
-### 1.3 设计原则
-- **非阻塞**: 审查在后台异步运行，不阻塞用户编辑。
-- **上下文感知**: 结合项目规则 (`.agent/rules/`) 和项目技术栈进行审查。
-- **可操作**: 报告中的每条建议都应附带具体的修改代码或命令。
+- [x] Confirm MVP review scopes:
+  - [x] staged changes
+  - [x] unstaged changes
+  - [x] all uncommitted changes
+- [x] Defer branch comparison until the MVP is stable.
+- [ ] Reuse existing plugin extension points:
+  - [x] `agentToolFactories()` for review tools
+  - [ ] `addStatusBarTrailingView(activeIcon:)` for the status entry
+  - [ ] SwiftUI popover for the report view
+- [x] Reuse existing Git infrastructure instead of shelling out first:
+  - [x] Prefer `GitService.getDiff(path:staged:file:)`
+  - [x] Add missing GitService support only if required by review scope
+- [x] Reuse existing LLM infrastructure:
+  - [ ] Use `RootContainer.shared.llmService` from UI/service flows
+  - [x] Use `SuperAgentToolEnvironment.llmService` from tool flows
+  - [x] Use `RootContainer.shared.agentSessionConfig.getCurrentConfig()` for the active model config
 
----
+## Phase 1: Models
 
-## 2. 架构设计 (Architecture)
+- [x] Create `LumiApp/Plugins/CodeReviewPlugin/Models/ReviewReport.swift`.
+- [x] Define `ReviewReport`:
+  - [x] `id`
+  - [x] `repositoryPath`
+  - [x] `scope`
+  - [x] `baseCommitHash`
+  - [x] `diffStats`
+  - [x] `overallScore`
+  - [x] `summary`
+  - [x] `issues`
+  - [x] `suggestions`
+  - [x] `createdAt`
+- [x] Define `ReviewIssue`:
+  - [x] `id`
+  - [x] `severity`
+  - [x] `category`
+  - [x] `file`
+  - [x] `line`
+  - [x] `range`
+  - [x] `description`
+  - [x] `rationale`
+  - [x] `fixSuggestion`
+  - [x] `suggestedPatch`
+  - [x] `confidence`
+- [x] Define `ReviewSeverity`:
+  - [x] `critical`
+  - [x] `warning`
+  - [x] `info`
+- [x] Define `ReviewCategory`:
+  - [x] bug
+  - [x] security
+  - [x] performance
+  - [x] style
+  - [x] test
+  - [x] maintainability
+- [x] Define `ReviewScope`:
+  - [x] staged
+  - [x] unstaged
+  - [x] allUncommitted
+- [x] Define `DiffStats`:
+  - [x] files changed
+  - [x] insertions
+  - [x] deletions
 
-### 2.1 核心组件关系图
+## Phase 2: Diff Analysis
 
-```
-Git Repository
-       │
-       ├── git diff (staged / unstaged)
-       ├── git log
-       └── PR/MR Data (Optional)
-           │
-           ▼
-  ┌─────────────────────┐
-  │   ReviewAnalyzer    │  构建审查上下文 (Diff + 规则 + 技术栈)
-  └─────────┬───────────┘
-            │
-            ▼
-  ┌─────────────────────┐       ┌──────────────────┐
-  │   ReviewEngine      │──────►│  LLM (Analysis)   │
-  │   (审查引擎)         │◄──────┤                  │
-  └─────────┬───────────┘       └──────────────────┘
-            │
-            ▼
-  ┌─────────────────────┐       ┌──────────────────┐
-  │  ReviewReportStore   │──────►│  Local JSON/Cache │
-  │  (报告存储)          │       │                  │
-  └─────────┬───────────┘       └──────────────────┘
-            │
-      ┌─────┴──────┐
-      ▼            ▼
-┌───────────┐  ┌────────────────┐
-│ Review    │  │  ReviewStatusBar│
-│ Tool      │  │  & Popover      │
-└───────────┘  └────────────────┘
-```
+- [x] Create `LumiApp/Plugins/CodeReviewPlugin/Services/ReviewAnalyzer.swift`.
+- [ ] Resolve the active project path from `ProjectVM` in UI flows.
+- [x] Accept an explicit path argument in tool flows.
+- [x] Detect non-Git repositories and return a user-facing error.
+- [x] Load staged diff through `GitService`.
+- [x] Load unstaged diff through `GitService`.
+- [x] Merge staged and unstaged summaries for `allUncommitted`.
+- [x] Compute diff stats.
+- [x] Collect changed file paths.
+- [x] Collect project context:
+  - [x] primary languages
+  - [x] detected frameworks
+  - [ ] test framework hints
+  - [x] relevant package manifests
+- [x] Load project rules:
+  - [x] `.agent/rules/`
+  - [x] `.agents/rules/` if present
+  - [ ] other existing Lumi agent rules if applicable
+- [ ] Add diff size limits:
+  - [x] maximum total diff lines
+  - [ ] maximum per-file diff lines
+  - [x] truncation summary
+  - [x] skipped file list
 
-### 2.2 插件目录结构
+## Phase 3: Review Engine
 
-```
-LumiApp/Plugins/CodeReviewPlugin/
-├── CodeReviewPlugin.swift                     # 插件入口
-├── Services/
-│   ├── ReviewAnalyzer.swift                   # Diff 分析与上下文构建
-│   ├── ReviewEngine.swift                     # 审查核心逻辑 (LLM 调用)
-│   └── ReviewReportStore.swift                # 报告存储与管理 (Actor)
-├── Models/
-│   ├── ReviewReport.swift                     # 审查报告结构
-│   └── ReviewComment.swift                    # 单条审查意见
-├── Tools/
-│   ├── RunReviewTool.swift                    # 触发审查工具
-│   └── ApplySuggestionTool.swift              # 应用建议工具
-└── Views/
-    ├── ReviewStatusBarView.swift              # 状态栏入口
-    └── ReviewReportPopover.swift              # 报告详情面板
-```
+- [x] Create `LumiApp/Plugins/CodeReviewPlugin/Services/ReviewEngine.swift`.
+- [x] Build a deterministic review prompt.
+- [x] Include project context, rules, diff stats, and diff content.
+- [x] Ask the model for strict JSON output.
+- [x] Require every issue to include:
+  - [x] severity
+  - [x] category
+  - [x] file
+  - [x] line or range when possible
+  - [x] concrete rationale
+  - [x] actionable fix suggestion
+  - [x] confidence score
+- [x] Parse the LLM response into `ReviewReport`.
+- [x] Validate parsed issues:
+  - [x] known severity
+  - [x] known category
+  - [x] file exists in changed files
+  - [x] confidence is within range
+- [x] Downgrade low-confidence findings to `info`.
+- [x] Handle malformed model output with a recoverable error.
+- [ ] Add cancellation support for long reviews.
+- [x] Add a no-changes result.
 
----
+## Phase 4: Report Store
 
-## 3. 详细设计 (Detailed Design)
+- [x] Create `LumiApp/Plugins/CodeReviewPlugin/Services/ReviewReportStore.swift`.
+- [x] Implement the store as an actor.
+- [x] Persist reports as JSON cache.
+- [x] Use a stable cache location under app support or existing Lumi cache conventions.
+- [x] Keep latest report per repository and scope.
+- [ ] Add cleanup for old reports.
+- [x] Expose state needed by UI:
+  - [x] idle
+  - [x] reviewing
+  - [x] completed
+  - [x] failed
+  - [x] issue counts by severity
 
-### 3.1 数据模型
+## Phase 5: Agent Tools
 
-#### A. 审查报告 (`ReviewReport`)
-```swift
-struct ReviewReport: Identifiable, Codable {
-    let id: UUID
-    let commitHash: String?
-    let diffStats: DiffStats                // +120, -45
-    let overallScore: Double                // 0.0 ~ 10.0
-    let summary: String                     // 整体评价
-    let issues: [ReviewIssue]               // 发现的问题列表
-    let suggestions: [ReviewSuggestion]     // 优化建议
-    let createdAt: Date
-}
+- [x] Create `LumiApp/Plugins/CodeReviewPlugin/Tools/RunReviewTool.swift`.
+- [x] Register `run_review`.
+- [x] Support arguments:
+  - [x] `path`
+  - [x] `scope`
+  - [x] optional `file`
+- [x] Return a structured text summary with:
+  - [x] score
+  - [x] issue counts
+  - [x] critical issues
+  - [x] warnings
+  - [x] report id
+- [x] Mark `run_review` as low-risk/read-only.
+- [ ] Create `LumiApp/Plugins/CodeReviewPlugin/Tools/ApplySuggestionTool.swift` later.
+- [ ] For `apply_suggestion`, require:
+  - [ ] report id
+  - [ ] suggestion id
+  - [ ] file context validation
+  - [ ] patch preview
+  - [ ] explicit user permission
+- [ ] Do not enable automatic patch application in MVP.
 
-struct ReviewIssue: Codable {
-    let severity: Severity                  // .critical, .warning, .info
-    let file: String
-    let line: Int?
-    let description: String
-    let fixSuggestion: String?              // 建议的修复代码
-}
+## Phase 6: Status Bar UI
 
-enum Severity: String, Codable {
-    case critical = "Critical"
-    case warning = "Warning"
-    case info = "Info"
-}
-```
+- [ ] Create `LumiApp/Plugins/CodeReviewPlugin/Views/ReviewStatusBarView.swift`.
+- [ ] Show nothing when no project or no Git repository is active.
+- [ ] Show review entry when there are uncommitted changes.
+- [ ] Show reviewing state while analysis is running.
+- [ ] Show issue count after review completes.
+- [ ] Use severity color states:
+  - [ ] critical
+  - [ ] warning
+  - [ ] info
+  - [ ] clean
+- [ ] Keep layout consistent with existing status bar plugins.
+- [ ] Use `StatusBarHoverContainer` for the popover.
 
-### 3.2 审查维度
+## Phase 7: Report Popover
 
-| 维度 | 检查内容 | 示例 |
-|------|----------|------|
-| **🐛 潜在 Bug** | 空指针、内存泄漏、未捕获异常、竞态条件 | `Optional unwrapping without nil check` |
-| **🛡️ 安全** | 硬编码密钥、SQL 注入、XSS、不安全的 API 调用 | `API Key hardcoded in Config.swift` |
-| **⚡ 性能** | 冗余计算、主线程阻塞、大量对象创建 | `Network call on MainThread` |
-| **📐 规范** | 命名风格、代码组织、注释缺失、Swift 最佳实践 | `Use `guard` instead of nested `if` |
-| **🧪 测试** | 缺少单元测试、测试覆盖率不足 | `Missing unit test for ViewModel` |
+- [ ] Create `LumiApp/Plugins/CodeReviewPlugin/Views/ReviewReportPopover.swift`.
+- [ ] Show report summary and score.
+- [ ] Show diff stats.
+- [ ] Group findings by severity.
+- [ ] Show file and line metadata for every issue.
+- [ ] Show fix suggestions in a readable format.
+- [ ] Add a rerun review action.
+- [ ] Add copy report action.
+- [ ] Add open file action if existing editor navigation APIs are available.
+- [ ] Add apply fix UI only after safe patch validation exists.
 
-### 3.3 审查引擎 (`ReviewEngine`)
+## Phase 8: Plugin Entry
 
-**工作流程**:
-1. **获取 Diff**: 调用 `git diff` 或 `git diff --cached`。
-2. **构建 Prompt**:
-   ```markdown
-   You are a senior code reviewer. Review the following Git Diff based on the project rules.
-   
-   ## Project Context
-   - Language: Swift
-   - Framework: SwiftUI
-   - Rules: Follow Apple HIG, use MVVM pattern
-   
-   ## Diff Content
-   ```diff
-   + func fetchData() { ... }
-   ```
-   
-   Provide a structured report including Critical Issues, Warnings, and Optimization Suggestions.
-   ```
-3. **LLM 分析**: 调用 Agent 进行异步分析。
-4. **解析结果**: 将 LLM 响应解析为 `ReviewReport` 结构体。
+- [x] Create `LumiApp/Plugins/CodeReviewPlugin/CodeReviewPlugin.swift`.
+- [x] Define plugin metadata:
+  - [x] id
+  - [x] display name
+  - [x] description
+  - [x] icon
+  - [x] order
+  - [x] enabled/configurable behavior
+- [x] Register tool factory.
+- [ ] Register status bar view.
+- [x] Initialize shared store/service dependencies.
+- [ ] Add localization file if user-facing strings need localization.
 
-### 3.4 工具设计
+## Phase 9: PR Description Support
 
-#### A. `run_review` (触发审查)
-- **参数**:
-  - `scope` (string): "staged" (暂存区), "unstaged" (工作区), "branch" (分支对比)
-- **返回**: 结构化审查报告摘要。
+- [ ] Decide whether PR description generation belongs in CodeReviewPlugin or GitHub tools.
+- [ ] Generate PR title and body from:
+  - [ ] diff
+  - [ ] commit log
+  - [ ] review report
+  - [ ] project rules
+- [ ] Support conventional sections:
+  - [ ] summary
+  - [ ] changes
+  - [ ] tests
+  - [ ] risks
+  - [ ] review notes
+- [ ] Keep GitHub API integration out of MVP unless reused from existing GitHub tools.
 
-#### B. `apply_suggestion` (应用建议)
-- **参数**:
-  - `suggestion_id` (string): 建议 ID
-- **动作**: 自动修改文件内容，应用 LLM 提供的 Patch。
+## Phase 10: Tests
 
-### 3.5 状态栏 UI (`ReviewStatusBarView`)
+- [ ] Add unit tests for review models.
+- [ ] Add unit tests for LLM JSON parsing.
+- [ ] Add unit tests for confidence downgrading.
+- [ ] Add unit tests for diff size truncation.
+- [ ] Add tool tests for `run_review`.
+- [ ] Add store persistence tests.
+- [ ] Add UI smoke tests if the project has existing SwiftUI test patterns.
+- [ ] Add regression test for no changes.
+- [ ] Add regression test for malformed LLM output.
 
-- **显示内容**:
-  - **无变更**: 隐藏
-  - **有变更**: `🔍 Review` (提示可审查)
-  - **审查中**: `🔄 Reviewing...`
-  - **审查完成**: `⚠️ 3 Issues` (红色/黄色指示器)
-- **点击交互**: 弹出报告面板，按严重程度列出问题。
+## Technical Decisions
 
----
+- [ ] Prefer existing `GitService` and `LibGit2Swift` over direct `git diff` process calls.
+- [ ] Limit MVP review scope to current uncommitted changes.
+- [ ] Store reports in local JSON cache.
+- [ ] Build LLM context from diff, project rules, and detected tech stack.
+- [ ] Treat automatic fix application as high-risk and ship it after review/reporting is stable.
 
-## 4. 交互流程 (Interaction Flow)
+## Risks
 
-```
-用户完成代码编写
-    │
-    ▼
-状态栏显示 "🔍 Review" 提示
-    │
-    ▼
-用户点击 / 输入 /review
-    │
-    ▼
-ReviewAnalyzer 获取 Git Diff
-    │
-    ▼
-ReviewEngine 调用 LLM 分析 (后台异步)
-    │
-    ▼
-生成 ReviewReport
-    │
-    ▼
-ReviewReportStore 保存报告
-    │
-    ▼
-状态栏显示 "⚠️ 3 Issues"
-    │
-    ▼
-用户点击状态栏 -> 查看报告 -> 点击 "Apply Fix"
-    │
-    ▼
-apply_suggestion 工具执行 -> 代码自动修复 -> Git Diff 更新
-```
+- [ ] Large diff can exceed model context.
+  - [ ] Add file and total diff limits.
+  - [ ] Add truncation summaries.
+  - [ ] Consider chunked review later.
+- [ ] Model may produce false positives.
+  - [ ] Add confidence scoring.
+  - [ ] Downgrade low-confidence issues.
+  - [ ] Make every finding explainable and actionable.
+- [ ] Patch application can corrupt user changes.
+  - [ ] Require context validation.
+  - [ ] Require preview.
+  - [ ] Require explicit permission.
+- [ ] Privacy expectations can be unclear.
+  - [ ] Clearly indicate that configured LLM providers may receive diff content.
+  - [ ] Add a local-only mode only if local model support is good enough.
 
----
+## MVP Done Criteria
 
-## 5. 实施计划 (Implementation Plan)
-
-### Phase 1: 核心服务
-- [ ] 定义 `ReviewReport`, `ReviewIssue` 数据模型
-- [ ] 实现 `ReviewAnalyzer`: Git Diff 获取与上下文构建
-- [ ] 实现 `ReviewEngine`: LLM 调用与结果解析
-
-### Phase 2: 工具与存储
-- [ ] 实现 `RunReviewTool` / `ApplySuggestionTool`
-- [ ] 实现 `ReviewReportStore` (JSON 持久化)
-
-### Phase 3: UI 开发
-- [ ] 实现 `ReviewStatusBarView`
-- [ ] 实现 `ReviewReportPopover` (按严重性分级展示)
-- [ ] 支持 "Apply Fix" 按钮交互
-
-### Phase 4: 集成与优化
-- [ ] 结合 `.agent/rules/` 进行定制化审查
-- [ ] 支持 Commit 前自动审查 (可选 Hook)
-- [ ] PR 描述生成能力
-
----
-
-## 6. 技术决策
-
-| 决策点 | 方案 | 理由 |
-|--------|------|------|
-| **Diff 获取** | `git diff` (Process 调用) | 简单可靠，无需引入第三方 Git 库 |
-| **审查范围** | 仅当前未提交的变更 | 聚焦于用户正在工作的部分 |
-| **存储** | JSON 缓存 | 轻量，易于清理 |
-| **LLM 上下文** | Diff + Rules + Tech Stack | 确保审查建议符合项目规范 |
-
----
-
-## 7. 风险与应对
-
-| 风险 | 应对策略 |
-|------|----------|
-| **大文件 Diff 过大** | 限制单次审查文件大小 (如 500 行)，超出则分块审查或提示 |
-| **误报率高** | 引入置信度评分，低置信度建议仅作为 Info 级别展示 |
-| **隐私问题** | Diff 内容仅在本地处理，不上传外部服务 (除非用户配置) |
-
----
-
-此 Roadmap 定义了 **CodeReview Plugin** 的实现路径，使 Lumi 具备专业代码审查能力，成为用户的“AI 架构师”。
+- [ ] User can run code review for staged or unstaged changes.
+- [ ] The review uses the active Lumi model configuration.
+- [ ] The review report is parsed into structured Swift models.
+- [ ] The latest report is persisted locally.
+- [ ] The status bar shows review state and issue counts.
+- [ ] The popover displays grouped, actionable findings.
+- [ ] No automatic code modification happens without explicit confirmation.
+- [ ] Tests cover parsing, diff handling, and the read-only tool path.

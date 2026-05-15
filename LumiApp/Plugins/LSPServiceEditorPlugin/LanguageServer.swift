@@ -9,7 +9,7 @@ import MagicKit
 /// 注意：不使用 @MainActor，让调用方自行处理并发
 final class LanguageServer: @unchecked Sendable, SuperLog {
     static var emoji: String { "🌐" }
-    static var verbose: Bool { false }
+    static var verbose: Bool { true }
 
     let languageId: String
     let config: LSPConfig.ServerConfig

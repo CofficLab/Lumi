@@ -33,7 +33,7 @@ struct ClipboardHistoryView: View {
                     Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 40))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    Text("No clipboard records")
+                    Text(String(localized: "No clipboard records", table: "ClipboardManager"))
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
@@ -44,14 +44,14 @@ struct ClipboardHistoryView: View {
                         ClipboardItemRow(item: item)
                             .tag(item.id)
                             .contextMenu {
-                                Button("Copy") {
+                                Button(String(localized: "Copy", table: "ClipboardManager")) {
                                     viewModel.copyToClipboard(item)
                                 }
                                 Button(item.isPinned ? "Unpin" : "Pin") {
                                     viewModel.togglePin(id: item.id)
                                 }
                                 Divider()
-                                Button("Delete") {
+                                Button(String(localized: "Delete", table: "ClipboardManager")) {
                                     viewModel.delete(id: item.id)
                                 }
                             }
@@ -72,7 +72,7 @@ struct ClipboardHistoryView: View {
                 GlassButton(title: "Clear All", style: .danger) {
                     viewModel.clearAll()
                 }
-                .help("Clear History")
+                .help(String(localized: "Clear History", table: "ClipboardManager"))
             }
             .padding(8)
             .background(Material.regularMaterial)

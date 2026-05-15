@@ -60,8 +60,8 @@ extension SuperPlugin {
     /// 默认实现：不提供 Rail 内容视图
     @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? { nil }
 
-    /// 默认实现：不提供右侧栏视图
-    @MainActor func addSidebarView(activeIcon: String?) -> AnyView? { nil }
+    /// 默认实现：不提供右侧栏 Section 视图
+    @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] { [] }
 
     /// 默认实现：不提供设置视图
     @MainActor func addSettingsView() -> AnyView? { nil }

@@ -15,6 +15,7 @@ struct LumiThemeContribution: Identifiable {
     let appTheme: any SuperTheme
     let editorThemeId: String
     let editorThemeContributor: AnyObject?
+    let fileIconThemeContributor: AnyObject?
     let order: Int
 
     /// 创建主题贡献。
@@ -23,11 +24,13 @@ struct LumiThemeContribution: Identifiable {
     ///   - appTheme: App 全局主题（实现 `SuperTheme`）
     ///   - editorThemeId: 编辑器主题唯一标识
     ///   - editorThemeContributor: 编辑器主题贡献者（遵循 `SuperEditorThemeContributor`，类型擦除为 `AnyObject` 避免内核依赖编辑器库）
+    ///   - fileIconThemeContributor: 文件树图标主题贡献者（遵循 `LumiFileIconThemeContributor`，类型擦除为 `AnyObject` 保持插件侧简单）
     ///   - order: 排序权重
     init(
         appTheme: any SuperTheme,
         editorThemeId: String,
         editorThemeContributor: AnyObject? = nil,
+        fileIconThemeContributor: AnyObject? = nil,
         order: Int = 0
     ) {
         self.id = appTheme.identifier
@@ -39,6 +42,7 @@ struct LumiThemeContribution: Identifiable {
         self.appTheme = appTheme
         self.editorThemeId = editorThemeId
         self.editorThemeContributor = editorThemeContributor
+        self.fileIconThemeContributor = fileIconThemeContributor
         self.order = order
     }
 }

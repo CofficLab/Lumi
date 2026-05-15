@@ -2,6 +2,7 @@ import MagicKit
 import SwiftUI
 import Foundation
 import os
+import ShellKit
 
 /// 在浏览器中打开远程仓库插件
 ///
@@ -11,7 +12,7 @@ actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🌐"
 
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "AgentOpenRemote"
     static let displayName: String = String(localized: "Open Remote Repository", table: "AgentOpenRemote")
@@ -75,7 +76,7 @@ struct OpenRemoteStatusBarView: View {
                     .scaleEffect(0.6)
                     .frame(width: 10, height: 10)
 
-                Text("加载中...")
+                Text(String(localized: "加载中...", table: "OpenRemotePlugin"))
                     .font(.system(size: 11))
             }
             .padding(.horizontal, 8)
@@ -110,7 +111,7 @@ struct OpenRemoteStatusBarView: View {
             Image(systemName: "safari")
                 .font(.system(size: 10))
 
-            Text("无远程仓库")
+            Text(String(localized: "无远程仓库", table: "OpenRemotePlugin"))
                 .font(.system(size: 11))
         }
         .padding(.horizontal, 8)
@@ -170,33 +171,18 @@ struct OpenRemoteStatusBarView: View {
     }
 
     private func runGit(args: [String], in directory: URL) async -> String? {
-        await Task.detached {
-            let process = Process()
-            let pipe = Pipe()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-            process.arguments = args
-            process.standardOutput = pipe
-            process.standardError = Pipe()
-            process.currentDirectoryURL = directory
-
-            var env = ProcessInfo.processInfo.environment
-            env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-            process.environment = env
-
-            do {
-                try process.run()
-                process.waitUntilExit()
-
-                guard process.terminationStatus == 0 else {
-                    return nil
-                }
-
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                return String(data: data, encoding: .utf8)
-            } catch {
-                return nil
-            }
-        }.value
+        let result = try? await Shell.execute(
+            executable: "/usr/bin/git",
+            arguments: args,
+            options: ShellOptions(
+                workingDirectory: directory.path,
+                environment: [
+                    "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+                ],
+                throwsOnError: false
+            )
+        )
+        return result?.exitCode == 0 ? result?.stdout : nil
     }
 
     private func openInBrowser() {
@@ -219,7 +205,7 @@ struct OpenRemoteDetailView: View {
                     .font(.system(size: 16))
                     .foregroundColor(Color(hex: "7C6FFF"))
 
-                Text("远程仓库")
+                Text(String(localized: "远程仓库", table: "OpenRemotePlugin"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -231,7 +217,7 @@ struct OpenRemoteDetailView: View {
                     }) {
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.up.right.square")
-                            Text("打开")
+                            Text(String(localized: "打开", table: "OpenRemotePlugin"))
                         }
                         .font(.system(size: 12))
                     }
@@ -244,7 +230,7 @@ struct OpenRemoteDetailView: View {
             if let url = url {
                 // URL 显示
                 HStack(spacing: 8) {
-                    Text("URL")
+                    Text(String(localized: "URL", table: "OpenRemotePlugin"))
                         .font(.system(size: 12))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .frame(width: 60, alignment: .leading)
@@ -265,7 +251,7 @@ struct OpenRemoteDetailView: View {
                             .font(.system(size: 12))
                     }
                     .buttonStyle(.plain)
-                    .help("复制 URL")
+                    .help(String(localized: "复制 URL", table: "OpenRemotePlugin"))
                 }
             } else {
                 // 无远程仓库
@@ -276,7 +262,7 @@ struct OpenRemoteDetailView: View {
                             .font(.system(size: 24))
                             .foregroundColor(Color(hex: "FF9F0A"))
 
-                        Text("当前项目没有远程仓库")
+                        Text(String(localized: "当前项目没有远程仓库", table: "OpenRemotePlugin"))
                             .font(.system(size: 13))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }

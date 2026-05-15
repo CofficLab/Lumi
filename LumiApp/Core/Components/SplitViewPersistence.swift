@@ -206,7 +206,7 @@ final class SplitViewWidthPersistenceView: NSView {
         guard idx >= 0, splitView.arrangedSubviews.count > idx, splitView.arrangedSubviews.count >= 2 else { return }
 
         // 从 LayoutVM 读取比例（由 LayoutPlugin 在启动时从磁盘恢复）
-        let savedRatio = RootViewContainer.shared.layoutVM.layoutRatios[storageKey]
+        let savedRatio = RootContainer.shared.layoutVM.layoutRatios[storageKey]
         guard let savedRatio, savedRatio > 0.0, savedRatio < 1.0 else {
             scheduleApplyRetry()
             return
@@ -274,7 +274,7 @@ final class SplitViewWidthPersistenceView: NSView {
         guard ratio > 0.0, ratio < 1.0 else { return }
 
         // 写入 LayoutVM（LayoutPlugin 会观察变化并持久化到磁盘）
-        RootViewContainer.shared.layoutVM.setLayoutRatio(ratio, forKey: storageKey)
+        RootContainer.shared.layoutVM.setLayoutRatio(ratio, forKey: storageKey)
     }
 
     // MARK: - Size Helpers

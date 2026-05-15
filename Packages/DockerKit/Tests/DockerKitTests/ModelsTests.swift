@@ -116,37 +116,3 @@ struct DockerImageCodingTests {
         #expect(image.digest == "")
     }
 }
-
-// MARK: - LockedDataBuffer Tests
-
-struct LockedDataBufferTests {
-    @Test
-    func appendAndSnapshotWork() {
-        let buffer = LockedDataBuffer()
-        
-        buffer.append(Data("hello".utf8))
-        buffer.append(Data(" world".utf8))
-        
-        let snapshot = buffer.snapshot()
-        let string = String(data: snapshot, encoding: .utf8)
-        
-        #expect(string == "hello world")
-    }
-    
-    @Test
-    func snapshotIsIsolated() {
-        let buffer = LockedDataBuffer()
-        
-        buffer.append(Data("test".utf8))
-        
-        let snapshot1 = buffer.snapshot()
-        buffer.append(Data(" more".utf8))
-        let snapshot2 = buffer.snapshot()
-        
-        let string1 = String(data: snapshot1, encoding: .utf8)
-        let string2 = String(data: snapshot2, encoding: .utf8)
-        
-        #expect(string1 == "test")
-        #expect(string2 == "test more")
-    }
-}

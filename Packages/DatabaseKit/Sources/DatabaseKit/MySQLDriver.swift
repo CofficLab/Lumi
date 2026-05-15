@@ -56,8 +56,15 @@ public actor MySQLConnection: DatabaseConnection {
 
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
         guard let conn else { throw DatabaseError.connectionFailed("Not connected") }
-        let rows = try await conn.query(sql, toMySQLData(params ?? [])).get()
-        return rows.count
+        let metadataStore = MySQLQueryMetadataStore()
+        _ = try await conn.query(
+            sql,
+            toMySQLData(params ?? []),
+            onMetadata: { metadata in
+                metadataStore.setAffectedRows(Int(metadata.affectedRows))
+            }
+        ).get()
+        return metadataStore.affectedRows
     }
 
     public func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
@@ -96,6 +103,10 @@ public actor MySQLConnection: DatabaseConnection {
             resultRows.append(values)
         }
 
+        if columns.isEmpty, let probeSQL = Self.normalizedSelectForColumnProbe(sql) {
+            columns = try await queryColumnNames(for: probeSQL, params: params ?? [])
+        }
+
         return QueryResult(columns: columns, rows: resultRows, rowsAffected: 0)
     }
 
@@ -107,7 +118,7 @@ public actor MySQLConnection: DatabaseConnection {
 
     public func close() async {
         guard let conn else { return }
-        _ = conn.close()
+        try? await conn.close().get()
         self.conn = nil
         try? await group.shutdownGracefully()
     }
@@ -130,6 +141,58 @@ public actor MySQLConnection: DatabaseConnection {
                 return .null
             }
         }
+    }
+
+    static func normalizedSelectForColumnProbe(_ sql: String) -> String? {
+        var trimmed = sql.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasSuffix(";") {
+            trimmed.removeLast()
+            trimmed = trimmed.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        guard !trimmed.contains(";") else { return nil }
+        guard trimmed.range(of: #"^\s*select\b"#, options: [.regularExpression, .caseInsensitive]) != nil else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private func queryColumnNames(for sql: String, params: [DatabaseValue]) async throws -> [String] {
+        guard let conn else { throw DatabaseError.connectionFailed("Not connected") }
+
+        let tableName = "databasekit_column_probe_\(UUID().uuidString.replacingOccurrences(of: "-", with: "_"))"
+        let tableIdentifier = quoteIdentifier(tableName)
+        let createSQL = "CREATE TEMPORARY TABLE \(tableIdentifier) AS \(sql) LIMIT 0"
+
+        do {
+            _ = try await conn.query(createSQL, toMySQLData(params)).get()
+            let rows = try await conn.query(
+                """
+                SELECT COLUMN_NAME
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                    AND TABLE_NAME = ?
+                ORDER BY ORDINAL_POSITION
+                """,
+                [MySQLData(string: tableName)]
+            ).get()
+            try await dropTemporaryTable(tableIdentifier)
+            return rows.compactMap { row in
+                row.column("COLUMN_NAME")?.string ?? row.column("column_name")?.string
+            }
+        } catch {
+            try? await dropTemporaryTable(tableIdentifier)
+            throw error
+        }
+    }
+
+    private func dropTemporaryTable(_ tableIdentifier: String) async throws {
+        guard let conn else { return }
+        _ = try await conn.query("DROP TEMPORARY TABLE IF EXISTS \(tableIdentifier)").get()
+    }
+
+    private func quoteIdentifier(_ identifier: String) -> String {
+        "`\(identifier.replacingOccurrences(of: "`", with: "``"))`"
     }
 }
 
@@ -156,6 +219,23 @@ public final actor MySQLTransaction: DatabaseTransaction {
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
         guard !completed else { throw DatabaseError.transactionFailed("Transaction already completed") }
         return try await connection.execute(sql, params: params)
+    }
+}
+
+private final class MySQLQueryMetadataStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _affectedRows = 0
+
+    var affectedRows: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return _affectedRows
+    }
+
+    func setAffectedRows(_ affectedRows: Int) {
+        lock.lock()
+        _affectedRows = affectedRows
+        lock.unlock()
     }
 }
 #else

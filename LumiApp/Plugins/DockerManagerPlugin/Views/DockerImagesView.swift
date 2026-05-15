@@ -30,14 +30,14 @@ struct DockerImagesView: View {
 
                     Menu {
                         Picker("Sort", selection: $viewModel.sortOption) {
-                            Text("Created").tag(DockerManagerViewModel.SortOption.created)
-                            Text("Name").tag(DockerManagerViewModel.SortOption.name)
-                            Text("Size").tag(DockerManagerViewModel.SortOption.size)
+                            Text(String(localized: "Created", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.created)
+                            Text(String(localized: "Name", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.name)
+                            Text(String(localized: "Size", table: "DockerManager")).tag(DockerManagerViewModel.SortOption.size)
                         }
                         Toggle("Descending", isOn: $viewModel.sortDescending)
                     } label: {
                         GlassRow {
-                            Label("Sort", systemImage: "arrow.up.arrow.down")
+                            Label(String(localized: "Sort", table: "DockerManager"), systemImage: "arrow.up.arrow.down")
                                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                         }
                         .frame(width: 90)
@@ -65,20 +65,20 @@ struct DockerImagesView: View {
                     DockerImageRow(image: image)
                         .tag(image)
                         .contextMenu {
-                            Button("Tag...") {
+                            Button(String(localized: "Tag...", table: "DockerManager")) {
                                 imageToTag = image
                                 newTag = image.repository + ":"
                                 showTagSheet = true
                             }
-                            Button("Export...") {
+                            Button(String(localized: "Export...", table: "DockerManager")) {
                                 imageToExport = image
                                 showFileExporter = true
                             }
-                            Button("Scan") {
+                            Button(String(localized: "Scan", table: "DockerManager")) {
                                 Task { await viewModel.scanImage(image) }
                             }
                             Divider()
-                            Button("Delete", role: .destructive) {
+                            Button(String(localized: "Delete", table: "DockerManager"), role: .destructive) {
                                 Task { await viewModel.deleteImage(image) }
                             }
                         }
@@ -113,7 +113,7 @@ struct DockerImagesView: View {
                     Image(systemName: "cube.box")
                         .font(.system(size: 48))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    Text("Select an image to view details")
+                    Text(String(localized: "Select an image to view details", table: "DockerManager"))
                         .font(.title2)
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
@@ -123,7 +123,7 @@ struct DockerImagesView: View {
         }
         .sheet(isPresented: $showPullSheet) {
             VStack(spacing: 20) {
-                Text("Pull New Image")
+                Text(String(localized: "Pull New Image", table: "DockerManager"))
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 GlassTextField(
@@ -152,11 +152,11 @@ struct DockerImagesView: View {
         }
         .sheet(isPresented: $showTagSheet) {
             VStack(spacing: 20) {
-                Text("Tag Image")
+                Text(String(localized: "Tag Image", table: "DockerManager"))
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 if let img = imageToTag {
-                    Text("Source: \(img.name)")
+                    Text(String(localized: "Source:", table: "DockerManager") + " \(img.name)")
                         .font(.caption)
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
@@ -303,7 +303,7 @@ struct DockerImageDetailView: View {
                 // Scan Result
                 if let scanResult = viewModel.scanResult {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Security Scan")
+                        Text(String(localized: "Security Scan", table: "DockerManager"))
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -337,7 +337,7 @@ struct DockerImageDetailView: View {
                     // Config
                     if let config = detail.Config {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Configuration")
+                            Text(String(localized: "Configuration", table: "DockerManager"))
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -347,7 +347,7 @@ struct DockerImageDetailView: View {
                             }
 
                             if let envs = config.Env {
-                                Text("ENV:")
+                                Text(String(localized: "ENV:", table: "DockerManager"))
                                     .font(.caption)
                                     .fontWeight(.bold)
                                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
@@ -357,7 +357,7 @@ struct DockerImageDetailView: View {
                                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 }
                                 if envs.count > 5 {
-                                    Text("... (+ \(envs.count - 5) more)")
+                                    Text("... (+ \(envs.count - 5)) " + String(localized: "more", table: "DockerManager"))
                                         .font(.caption)
                                         .foregroundColor(Color(hex: "98989E"))
                                 }
@@ -371,7 +371,7 @@ struct DockerImageDetailView: View {
 
                 // History/Layers
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("History / Layers")
+                    Text(String(localized: "History / Layers", table: "DockerManager"))
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -404,9 +404,9 @@ struct DockerImageDetailView: View {
             .padding()
         }
         .background(Material.regularMaterial)
-        .alert("Confirm Delete", isPresented: $showDeleteAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
+        .alert(String(localized: "Confirm Delete", table: "DockerManager"), isPresented: $showDeleteAlert) {
+            Button(String(localized: "Cancel", table: "DockerManager"), role: .cancel) { }
+            Button(String(localized: "Delete", table: "DockerManager"), role: .destructive) {
                 Task { await viewModel.deleteImage(image) }
             }
         } message: {

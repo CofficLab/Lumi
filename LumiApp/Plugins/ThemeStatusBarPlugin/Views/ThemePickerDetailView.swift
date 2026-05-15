@@ -5,12 +5,12 @@ struct ThemePickerDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Theme")
+            Text(String(localized: "Theme", table: "ThemeStatusBar"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             if themeVM.themes.isEmpty {
-                Text("No themes available")
+                Text(String(localized: "No themes available", table: "ThemeStatusBar"))
                     .font(.system(size: 12))
                     .foregroundColor(Color(hex: "98989E"))
                     .padding(.vertical, 8)
@@ -46,7 +46,11 @@ struct ThemePickerDetailView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(theme.displayName)
                         .font(.system(size: 12, weight: isSelected ? .medium : .regular))
-                        .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .foregroundColor(
+                            isSelected
+                                ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+                                : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+                        )
                     Text(theme.description)
                         .font(.system(size: 10))
                         .foregroundColor(Color(hex: "98989E"))

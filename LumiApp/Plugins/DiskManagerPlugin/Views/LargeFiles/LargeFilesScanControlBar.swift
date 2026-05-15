@@ -14,7 +14,7 @@ struct LargeFilesScanControlBar: View {
                 }
             }, label: {
                 Label(
-                    title: { Text(viewModel.isScanning ? "停止扫描" : "扫描大文件") },
+                    title: { Text(viewModel.isScanning ? String(localized: "停止扫描", table: "DiskManager") : String(localized: "扫描大文件", table: "DiskManager")) },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle") }
                 )
                 .font(.system(size: 15, weight: .medium))
@@ -26,7 +26,7 @@ struct LargeFilesScanControlBar: View {
 
             Spacer()
 
-            Text("扫描目录：用户主目录")
+            Text(String(localized: "扫描目录：用户主目录", table: "DiskManager"))
                 .font(.caption)
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

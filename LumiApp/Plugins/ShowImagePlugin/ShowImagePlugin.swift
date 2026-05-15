@@ -29,7 +29,7 @@ actor ShowImagePlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🖼️"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id: String = "ShowImage"
     static let displayName: String = String(localized: "Show Image", table: "ShowImage")
     static let description: String = String(localized: "Display images in the UI with support for local paths and remote URLs.", table: "ShowImage")

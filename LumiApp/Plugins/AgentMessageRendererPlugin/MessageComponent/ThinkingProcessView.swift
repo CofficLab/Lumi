@@ -34,7 +34,7 @@ struct ThinkingProcessView: View {
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-                        Text("思考过程")
+                        Text(String(localized: "思考过程", table: "CoreMessageRenderer"))
                             .font(.system(size: 12, weight: .regular))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 

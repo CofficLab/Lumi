@@ -31,7 +31,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     nonisolated static let emoji = "🍎"
     
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     // MARK: - Controllers
 
     /// 状态栏控制器
@@ -115,12 +115,6 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// - 用户切换到其他应用
     /// - 应用窗口被最小化
     func applicationDidResignActive(_ notification: Notification) {
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)应用变为非活跃状态")
-        }
-
-        // 发送应用变为非活跃状态的通知
-        // 让插件可以暂停某些活动
         NotificationCenter.postApplicationDidResignActive()
     }
 

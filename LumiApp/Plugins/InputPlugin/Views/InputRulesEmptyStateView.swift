@@ -14,13 +14,13 @@ struct InputRulesEmptyStateView: View {
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
             // 标题
-            Text("暂无输入源切换规则")
+            Text(String(localized: "暂无输入源切换规则", table: "Input"))
                 .font(.title3)
                 .fontWeight(.medium)
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
             // 描述文字
-            Text("添加应用和对应的输入源，切换应用时自动切换输入法")
+            Text(String(localized: "添加应用和对应的输入源，切换应用时自动切换输入法", table: "Input"))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 280)

@@ -335,6 +335,17 @@ struct MemoryHistoryServiceTests {
 
 struct ProcessServiceTests {
     @Test
+    func processCPUPercentUsesProcTaskInfoTickUnits() {
+        let threeCoresForThreeSeconds = UInt64(90_000_000)
+        let cpuPercent = ProcessService.cpuPercent(
+            forProcessTimeDelta: threeCoresForThreeSeconds,
+            elapsedSeconds: 3.0
+        )
+
+        #expect(cpuPercent == 300.0)
+    }
+
+    @Test
     @MainActor
     func sharedInstanceIsSingleton() {
         let a = ProcessService.shared

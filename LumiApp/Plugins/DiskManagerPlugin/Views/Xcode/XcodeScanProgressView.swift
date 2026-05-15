@@ -43,7 +43,7 @@ struct XcodeScanProgressView: View {
 
             // 进度信息
             VStack(spacing: 6) {
-                Text("正在扫描 Xcode 缓存")
+                Text(String(localized: "正在扫描 Xcode 缓存", table: "DiskManager"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 

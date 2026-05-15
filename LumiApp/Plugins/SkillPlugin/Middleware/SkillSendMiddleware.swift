@@ -22,7 +22,7 @@ import os
 @MainActor
 final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "✨"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let id: String = "skill-context"
     let order: Int = 50
 
@@ -40,23 +40,45 @@ final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
             return
         }
 
-        // 获取可用 Skill 列表
-        let skills = await SkillService.shared.listSkills(projectPath: projectPath)
+        let language = ctx.projectVM.languagePreference.skillPromptLanguage
+
+        // 获取可用 Skill 列表并构建 Prompt。发送管线本身运行在 MainActor，
+        // 这里显式放到后台任务中，避免缓存过期时的文件系统扫描和字符串构建占用 UI 线程。
+        let result = await Task.detached(priority: .userInitiated) {
+            let skills = await SkillService.shared.listSkills(projectPath: projectPath)
+            guard !skills.isEmpty else {
+                return (skills: skills, prompt: nil as String?)
+            }
+
+            let prompt = SkillPromptBuilder.buildPrompt(
+                skills: skills,
+                language: language
+            )
+            return (skills: skills, prompt: prompt)
+        }.value
 
         // 无 Skill 时跳过
-        guard !skills.isEmpty else {
+        guard let prompt = result.prompt else {
             await next(ctx)
             return
         }
-
-        // 构建 Prompt 并注入
-        let prompt = SkillPromptBuilder.buildPrompt(skills: skills)
         ctx.transientSystemPrompts.append(prompt)
 
         if Self.verbose {
-            SkillPlugin.logger.info("\(Self.t)✅ 已注入 \(skills.count) 个 Skill 摘要")
+            SkillPlugin.logger.info("\(Self.t)✅ 已注入 \(result.skills.count) 个 Skill 摘要")
         }
 
         await next(ctx)
+    }
+}
+
+private extension LanguagePreference {
+    var skillPromptLanguage: SkillPromptLanguage {
+        switch self {
+        case .chinese:
+            return .chinese
+        case .english:
+            return .english
+        }
     }
 }

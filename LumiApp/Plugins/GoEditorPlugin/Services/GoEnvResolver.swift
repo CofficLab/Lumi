@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import ShellKit
 
 /// Go 环境解析器
 ///
@@ -35,8 +36,7 @@ struct GoEnvResolver: SuperLog {
     // MARK: - Private
 
     private static func findCommand(_ command: String) -> String? {
-        try? runShellCommand("/usr/bin/which", args: [command])?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        Shell.findCommandSync(command)
     }
 
     private static func goEnv(_ key: String) -> String? {
@@ -46,16 +46,40 @@ struct GoEnvResolver: SuperLog {
     }
 
     private static func runShellCommand(_ path: String, args: [String]) throws -> String? {
-        let process = Process()
-        process.executableURL = URL(filePath: path)
-        process.arguments = args
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-        try process.run()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else { return nil }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8)
+        runShellCommandSync(path, args: args)
+    }
+
+    private static func runShellCommandSync(_ path: String, args: [String]) -> String? {
+        let semaphore = DispatchSemaphore(value: 0)
+        let box = GoLockedStringBox()
+        Task {
+            let result = try? await Shell.execute(
+                executable: path,
+                arguments: args,
+                options: ShellOptions(throwsOnError: false)
+            )
+            box.set(result?.exitCode == 0 ? result?.stdout : nil)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return box.get()
+    }
+}
+
+private final class GoLockedStringBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: String?
+
+    func set(_ value: String?) {
+        lock.lock()
+        self.value = value
+        lock.unlock()
+    }
+
+    func get() -> String? {
+        lock.lock()
+        let result = value
+        lock.unlock()
+        return result
     }
 }

@@ -7,11 +7,18 @@ import SwiftUI
 /// 允许 AI 助手创建新文件或覆盖现有文件。
 struct WriteFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "write_file"
-    let description = "Create a new file or overwrite an existing file with the given content."
+    func description(for language: LanguagePreference) -> String {
+        switch language {
+        case .chinese:
+            return "使用给定内容创建新文件，或覆盖已有文件。"
+        case .english:
+            return "Create a new file or overwrite an existing file with the given content."
+        }
+    }
 
-    var inputSchema: [String: Any] {
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
         return [
             "type": "object",
             "properties": [
@@ -78,4 +85,3 @@ struct WriteFileTool: SuperAgentTool, SuperLog {
         }
     }
 }
-

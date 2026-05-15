@@ -66,6 +66,28 @@
           }
         }
       }
+    },
+    "收集数据中...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收集数据中..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收集数据中..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收集資料中..."
+          }
+        }
+      }
     }
   },
   "version": "1.1"

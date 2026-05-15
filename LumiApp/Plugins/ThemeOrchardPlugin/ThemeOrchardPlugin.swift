@@ -20,6 +20,7 @@ actor ThemeOrchardPlugin: SuperPlugin {
                 appTheme: OrchardTheme(),
                 editorThemeId: "orchard",
                 editorThemeContributor: OrchardSuperEditorThemeContributor(),
+                fileIconThemeContributor: LumiFileIconThemeCatalog.orchard(),
                 order: 90
             )
         ]

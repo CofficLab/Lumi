@@ -1,7 +1,7 @@
 import Foundation
 import CodeEditSourceEditor
 import LanguageServerProtocol
-import EditorKernelCore
+import EditorKernel
 
 public enum EditorOpenItemCommand: Equatable {
     case problem(Diagnostic)
@@ -21,7 +21,7 @@ struct ResolvedEditorOpenItemCommand: Equatable {
 }
 
 extension EditorOpenItemCommand {
-    var kernelValue: EditorKernelCore.EditorOpenItemCommand? {
+    var kernelValue: EditorKernel.EditorOpenItemCommand? {
         switch self {
         case let .problem(diagnostic):
             return .problem(diagnostic)
@@ -52,7 +52,7 @@ extension EditorOpenItemCommand {
 }
 
 extension ResolvedEditorOpenItemCommand {
-    init(kernelValue: EditorKernelCore.ResolvedEditorOpenItemCommand) {
+    init(kernelValue: EditorKernel.ResolvedEditorOpenItemCommand) {
         self.navigationRequest = kernelValue.navigationRequest.map {
             switch $0 {
             case let .reference(reference):

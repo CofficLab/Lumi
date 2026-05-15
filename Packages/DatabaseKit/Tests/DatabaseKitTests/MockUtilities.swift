@@ -90,6 +90,10 @@ actor MockDatabaseConnection: DatabaseConnection {
     func isAlive() async -> Bool {
         mockIsAlive
     }
+
+    func setIsAlive(_ isAlive: Bool) {
+        mockIsAlive = isAlive
+    }
 }
 
 /// Mock implementation of DatabaseTransaction
@@ -121,5 +125,64 @@ actor MockDatabaseTransaction: DatabaseTransaction {
         }
         executeCallCount += 1
         return 0
+    }
+}
+
+enum DatabaseKitIntegrationConfig {
+    private static let env = ProcessInfo.processInfo.environment
+
+    static var mysql: DatabaseConfig? {
+        guard let host = env["DATABASEKIT_MYSQL_HOST"],
+              let database = env["DATABASEKIT_MYSQL_DATABASE"],
+              let username = env["DATABASEKIT_MYSQL_USERNAME"] else {
+            return nil
+        }
+
+        return DatabaseConfig(
+            name: "MySQL Integration",
+            type: .mysql,
+            host: host,
+            port: intEnv("DATABASEKIT_MYSQL_PORT") ?? 3306,
+            database: database,
+            username: username,
+            password: env["DATABASEKIT_MYSQL_PASSWORD"]
+        )
+    }
+
+    static var postgresql: DatabaseConfig? {
+        guard let host = env["DATABASEKIT_POSTGRES_HOST"],
+              let database = env["DATABASEKIT_POSTGRES_DATABASE"],
+              let username = env["DATABASEKIT_POSTGRES_USERNAME"] else {
+            return nil
+        }
+
+        return DatabaseConfig(
+            name: "PostgreSQL Integration",
+            type: .postgresql,
+            host: host,
+            port: intEnv("DATABASEKIT_POSTGRES_PORT") ?? 5432,
+            database: database,
+            username: username,
+            password: env["DATABASEKIT_POSTGRES_PASSWORD"]
+        )
+    }
+
+    static var redis: DatabaseConfig? {
+        guard let host = env["DATABASEKIT_REDIS_HOST"] else {
+            return nil
+        }
+
+        return DatabaseConfig(
+            name: "Redis Integration",
+            type: .redis,
+            host: host,
+            port: intEnv("DATABASEKIT_REDIS_PORT") ?? 6379,
+            database: "redis",
+            password: env["DATABASEKIT_REDIS_PASSWORD"]
+        )
+    }
+
+    private static func intEnv(_ key: String) -> Int? {
+        env[key].flatMap(Int.init)
     }
 }
