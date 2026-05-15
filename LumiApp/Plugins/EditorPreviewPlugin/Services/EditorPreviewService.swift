@@ -940,9 +940,9 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         }
 
         switch liveInfo.state {
-        case .available, .launching, .running:
+        case .available, .launching, .running, .failed:
             return .live
-        case .failed, .stopped, .unavailable:
+        case .stopped, .unavailable:
             return .image
         }
     }

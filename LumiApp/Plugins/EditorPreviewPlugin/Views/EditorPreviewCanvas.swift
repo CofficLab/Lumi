@@ -56,18 +56,11 @@ struct HotPreviewCanvas: View {
                 }
 
                 if let liveFailureMessage {
-                    Image(nsImage: viewModel.renderImage ?? NSImage())
-                        .resizable()
-                        .interpolation(.high)
-                        .blur(radius: 3)
-                        .opacity(viewModel.renderImage != nil ? 0.4 : 0)
-
                     HotPreviewErrorOverlayView(
                         title: String(localized: "Live Preview Error", table: "EditorPreview"),
                         message: liveFailureMessage,
                         contextInfo: liveErrorContextInfo,
                         suggestion: liveErrorSuggestion(for: liveFailureMessage),
-                        isOverlayingStaleFrame: viewModel.renderImage != nil,
                         viewModel: viewModel
                     )
                 } else if let failureMessage = viewModel.failureMessage, viewModel.effectiveDisplayMode == .image {
