@@ -3,7 +3,7 @@ import MagicKit
 
 struct RunReviewTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔎"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "run_review"
     let llmService: LLMService?

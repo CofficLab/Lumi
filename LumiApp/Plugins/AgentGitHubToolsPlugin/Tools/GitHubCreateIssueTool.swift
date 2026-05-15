@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 创建 Issue 工具
 struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✍️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_create_issue"
     func description(for language: LanguagePreference) -> String {
         switch language {

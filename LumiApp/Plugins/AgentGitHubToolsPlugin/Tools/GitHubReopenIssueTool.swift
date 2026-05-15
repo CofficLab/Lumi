@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 重新打开 Issue 工具
 struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔓"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_reopen_issue"
     func description(for language: LanguagePreference) -> String {
         switch language {

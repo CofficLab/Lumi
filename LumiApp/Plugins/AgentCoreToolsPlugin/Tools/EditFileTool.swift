@@ -11,7 +11,7 @@ import MagicKit
 /// - 详细的 diff 输出
 struct EditFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "edit_file"
     func description(for language: LanguagePreference) -> String {
         switch language {

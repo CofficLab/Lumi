@@ -6,7 +6,7 @@ import SwiftUI
 actor CodeReviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.code-review")
     nonisolated static let emoji = "🔎"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let id: String = "CodeReview"
     static let displayName: String = "Code Review"

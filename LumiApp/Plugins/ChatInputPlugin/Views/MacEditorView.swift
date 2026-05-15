@@ -8,7 +8,7 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "✏️"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     /// 最小高度
     static let minHeight: CGFloat = 64
     /// 最大高度
@@ -272,7 +272,7 @@ class EditorTextView: NSTextView, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📝"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     /// 与 `InputAreaView.handleFileDrop` 中作为图片附件处理的扩展名一致
     private static let imagePathExtensions: Set<String> = [

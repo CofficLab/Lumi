@@ -10,7 +10,7 @@ actor AgentChatPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-chat")
 
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id = "AgentChat"
     static let displayName = String(localized: "Agent Chat", table: "AgentChat")
     static let description = String(localized: "Agent chat messages timeline", table: "AgentChat")

@@ -22,7 +22,7 @@ import os
 @MainActor
 final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "✨"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let id: String = "skill-context"
     let order: Int = 50
 

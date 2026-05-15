@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 趋势项目工具
 struct GitHubTrendingTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔥"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_trending"
     func description(for language: LanguagePreference) -> String {
         switch language {

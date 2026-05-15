@@ -14,7 +14,7 @@ actor ConversationListPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "💬"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id: String = "ConversationList"
     static let displayName: String = String(localized: "Conversation List", table: "ConversationList")
     static let description: String = String(localized: "Show all conversation history", table: "ConversationList")

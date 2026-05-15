@@ -4,7 +4,7 @@ import MagicKit
 @MainActor
 struct RAGSettingsPopoverView: View, SuperLog {
     nonisolated static var emoji: String { "🦞" }
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
 
     @EnvironmentObject private var projectVM: ProjectVM
     @Environment(\.dismiss) private var dismiss

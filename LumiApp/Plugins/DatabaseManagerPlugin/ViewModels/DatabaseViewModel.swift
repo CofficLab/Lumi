@@ -5,7 +5,7 @@ import MagicKit
 @MainActor
 class DatabaseViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗄️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     @Published var configs: [DatabaseConfig] = []
     @Published var selectedConfig: DatabaseConfig?
     @Published var queryText: String = "SELECT * FROM sqlite_master;"

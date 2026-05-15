@@ -27,7 +27,7 @@ struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
 @MainActor
 final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔔" }
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
 
     private let center = UNUserNotificationCenter.current()
 

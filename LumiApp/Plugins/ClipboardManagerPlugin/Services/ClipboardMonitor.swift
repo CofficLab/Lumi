@@ -6,7 +6,7 @@ import Combine
 @MainActor
 class ClipboardMonitor: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     
     static let shared = ClipboardMonitor()
     

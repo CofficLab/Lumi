@@ -10,7 +10,7 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "PV"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id: String = "EditorPreview"
     static let displayName: String = "预览V1"
     static let description: String = String(localized: "V1 preview powered by LumiPreviewKit", table: "EditorPreview")

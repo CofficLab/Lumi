@@ -6,7 +6,7 @@ import SwiftUI
 /// 在应用启动和项目切换时，自动在后台确保 RAG 索引存在。
 struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { "🦞" }
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
 
     @EnvironmentObject private var projectVM: ProjectVM
     @State private var autoEnsureTask: Task<Void, Never>?

@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// 当前文件（Editor active tab）的持久化由 EditorTabStripPlugin 负责。
 struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
-    nonisolated static var verbose: Bool { false }
+    nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "📋" }
 
     @EnvironmentObject private var projectVM: ProjectVM

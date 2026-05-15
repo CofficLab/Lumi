@@ -7,7 +7,7 @@ import MagicKit
 /// Agent 在完成一个任务后应调用此工具更新状态，以触发下一个任务的自动推进。
 struct UpdateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✅"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "update_task"
     func description(for language: LanguagePreference) -> String {

@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 仓库信息工具
 struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📦"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let name = "github_repo_info"
     func description(for language: LanguagePreference) -> String {
         switch language {

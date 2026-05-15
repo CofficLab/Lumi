@@ -11,7 +11,7 @@ actor EditorRemoteHotPreviewPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "HP"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     static let id: String = "EditorRemoteHotPreview"
     static let displayName: String = String(localized: "Preview V2", table: "EditorPreviewRemoteHotPlugin")
     static let description: String = String(localized: "V2 preview powered by LumiHotPreviewKit", table: "EditorPreviewRemoteHotPlugin")

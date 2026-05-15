@@ -21,7 +21,7 @@ import os
 @MainActor
 final class AgentRulesContextSuperSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     let id: String = "agent-rules-context"
     let order: Int = 0
 

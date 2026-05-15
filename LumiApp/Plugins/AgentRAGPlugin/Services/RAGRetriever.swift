@@ -3,7 +3,7 @@ import MagicKit
 
 struct RAGRetriever: SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     private let store: RAGSQLiteStore
     init(store: RAGSQLiteStore) {

@@ -9,7 +9,7 @@ struct EditorFileTreeView: View {
     // MARK: - Logging Configuration
 
     /// 日志详细程度控制
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     /// 使用插件的 logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.view")
 

@@ -6,7 +6,7 @@ import os
 /// 智谱 GLM 配额状态栏视图
 struct ZhipuQuotaStatusBarView: View, SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     @EnvironmentObject private var llmVM: LLMVM
     @State private var quotaStatus: ZhipuQuotaStatus = .loading
     @State private var lastUpdateTime: Date?

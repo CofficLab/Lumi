@@ -5,7 +5,7 @@ import Foundation
 /// 对话时间线状态栏视图
 struct ConversationTimelineView: View, SuperLog {
     nonisolated static let emoji = "📅"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     @EnvironmentObject private var conversationVM: ConversationVM
     @EnvironmentObject private var chatHistoryVM: ChatHistoryVM

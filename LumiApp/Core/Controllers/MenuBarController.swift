@@ -9,7 +9,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     nonisolated static let emoji = "📊"
     
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     
     // MARK: - Properties
 

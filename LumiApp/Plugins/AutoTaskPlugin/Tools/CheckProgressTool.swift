@@ -7,7 +7,7 @@ import MagicKit
 /// Agent 可以在需要时主动查询进度，以确认下一步应该做什么。
 struct CheckProgressTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📊"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     let name = "check_progress"
     func description(for language: LanguagePreference) -> String {
