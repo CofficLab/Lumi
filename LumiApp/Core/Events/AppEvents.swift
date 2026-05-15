@@ -26,6 +26,13 @@ extension Notification.Name {
     /// 检查应用更新的通知
     static let checkForUpdates = Notification.Name("checkForUpdates")
 
+    /// 应用更新已在后台下载完成，可安装
+    /// userInfo: ["version": String]
+    static let appUpdateReadyToInstall = Notification.Name("appUpdateReadyToInstall")
+
+    /// 安装已下载完成的应用更新
+    static let installPreparedAppUpdate = Notification.Name("installPreparedAppUpdate")
+
     /// 文件拖放到聊天框的通知
     /// userInfo: ["fileURL": URL]
     static let fileDroppedToChat = Notification.Name("fileDroppedToChat")
@@ -87,6 +94,21 @@ extension NotificationCenter {
     /// - Parameter object: 可选的对象参数
     static func postCheckForUpdates(object: Any? = nil) {
         NotificationCenter.default.post(name: .checkForUpdates, object: object)
+    }
+
+    /// 发送应用更新已准备好安装的通知
+    /// - Parameter version: 已下载更新版本号
+    static func postAppUpdateReadyToInstall(version: String) {
+        NotificationCenter.default.post(
+            name: .appUpdateReadyToInstall,
+            object: nil,
+            userInfo: ["version": version]
+        )
+    }
+
+    /// 发送安装已下载应用更新的通知
+    static func postInstallPreparedAppUpdate() {
+        NotificationCenter.default.post(name: .installPreparedAppUpdate, object: nil)
     }
 
     /// 发送文件拖放到聊天框的通知

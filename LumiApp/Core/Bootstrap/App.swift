@@ -51,6 +51,9 @@ struct CoreApp: App {
     /// - 通知分发
     @NSApplicationDelegateAdaptor private var appDelegate: MacAgent
 
+    /// 应用更新控制器
+    private let updateController = UpdateController.shared
+
     var body: some Scene {
         // 主窗口（单窗口，禁止再开第二个主窗口）
         //
@@ -71,7 +74,7 @@ struct CoreApp: App {
             // 添加检查更新菜单项
             // 位于应用信息菜单之后
             CommandGroup(after: .appInfo) {
-                CheckForUpdatesView(updater: updaterController.updater)
+                CheckForUpdatesView(updater: updateController.updater)
             }
         }
 
@@ -88,15 +91,6 @@ struct CoreApp: App {
         .defaultSize(width: 780, height: 600)
     }
 
-    /// Sparkle 更新控制器
-    ///
-    /// 负责检查应用更新。
-    /// 会在应用启动时自动初始化，并开始监听更新。
-    private let updaterController = SPUStandardUpdaterController(
-        startingUpdater: true,
-        updaterDelegate: nil,
-        userDriverDelegate: nil
-    )
 }
 
 /// 检查更新视图
