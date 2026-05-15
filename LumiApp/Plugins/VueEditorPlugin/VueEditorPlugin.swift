@@ -35,6 +35,9 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
 
     nonisolated var providesEditorExtensions: Bool { true }
 
+    /// Vue 组件大纲视图模型
+    @MainActor private var outlineViewModel: VueOutlineViewModel?
+
     @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
         // 基础补全：Vue 指令、内置组件、宏、修饰符
         registry.registerCompletionContributor(VueCompletionContributor())
@@ -63,9 +66,54 @@ actor VueEditorPlugin: SuperPlugin, SuperLog {
         )
     }
 
+    // MARK: - UI Contributions
+
+    @MainActor func addRailTabs(activeIcon: String?) -> [RailTab] {
+        guard activeIcon == iconName else { return [] }
+        return [
+            RailTab(
+                id: "vue-outline",
+                title: String(localized: "Vue Outline", table: "VueEditor"),
+                systemImage: "curlybraces",
+                priority: 2
+            )
+        ]
+    }
+
+    @MainActor func addRailContentView(tabId: String, activeIcon: String?) -> AnyView? {
+        guard tabId == "vue-outline", activeIcon == iconName else { return nil }
+
+        if outlineViewModel == nil {
+            outlineViewModel = VueOutlineViewModel()
+        }
+
+        return AnyView(
+            VueOutlineView(
+                viewModel: outlineViewModel!,
+                onNavigate: { line in
+                    // 跳转到指定行 — 由编辑器内核处理
+                    NotificationCenter.default.post(
+                        name: .vueNavigateToLine,
+                        object: nil,
+                        userInfo: ["line": line]
+                    )
+                }
+            )
+        )
+    }
+
+    // MARK: - Lifecycle
+
     /// 在打开 Vue 项目时预扫描组件
     /// 应在 EditorState 检测到项目根路径变化时调用
     func precacheComponents(projectPath: String) {
         VueComponentImportResolver.precache(projectPath: projectPath)
     }
+}
+
+// MARK: - Notification Names
+
+extension Notification.Name {
+    /// Vue 区块导航通知（携带 line 参数）
+    static let vueNavigateToLine = Notification.Name("com.coffic.lumi.vue.navigate-to-line")
 }
