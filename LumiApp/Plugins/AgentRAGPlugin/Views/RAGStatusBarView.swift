@@ -371,7 +371,7 @@ struct RAGStatusDetailView: View {
                     .font(.system(size: 16))
                     .foregroundColor(Color(hex: "7C6FFF"))
 
-                Text("RAG 索引状态")
+                Text(String(localized: "RAG 索引状态", table: "RAG"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -401,21 +401,21 @@ struct RAGStatusDetailView: View {
                 ProgressView()
                     .scaleEffect(0.8)
 
-                Text("正在索引...")
+                Text(String(localized: "正在索引...", table: "RAG"))
                     .font(.system(size: 13))
                     .foregroundColor(Color(hex: "7C6FFF"))
             }
 
             if let event = progressEvent {
                 VStack(alignment: .leading, spacing: 8) {
-                    RAGProgressRow(label: "已扫描", value: "\(event.scannedFiles) / \(event.totalFiles) 文件")
-                    RAGProgressRow(label: "已索引", value: "\(event.indexedFiles) 文件")
-                    RAGProgressRow(label: "已跳过", value: "\(event.skippedFiles) 文件")
-                    RAGProgressRow(label: "文档块", value: "\(event.chunkCount) 个")
+                    RAGProgressRow(label: String(localized: "已扫描", table: "RAG"), value: "\(event.scannedFiles) / \(event.totalFiles) \(String(localized: "文件", table: "RAG"))")
+                    RAGProgressRow(label: String(localized: "已索引", table: "RAG"), value: "\(event.indexedFiles) \(String(localized: "文件", table: "RAG"))")
+                    RAGProgressRow(label: String(localized: "已跳过", table: "RAG"), value: "\(event.skippedFiles) \(String(localized: "文件", table: "RAG"))")
+                    RAGProgressRow(label: String(localized: "文档块", table: "RAG"), value: "\(event.chunkCount) \(String(localized: "个", table: "RAG"))")
 
                     if !event.currentFilePath.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("当前文件")
+                            Text(String(localized: "当前文件", table: "RAG"))
                                 .font(.system(size: 11))
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
@@ -433,18 +433,18 @@ struct RAGStatusDetailView: View {
     @ViewBuilder
     private func indexStatusView(_ status: RAGIndexStatus) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            RAGInfoRow(label: "文件数量", value: "\(status.fileCount)")
-            RAGInfoRow(label: "文档块数量", value: "\(status.chunkCount)")
-            RAGInfoRow(label: "最后索引", value: formatIndexTime(status.lastIndexedAt))
-            RAGInfoRow(label: "嵌入模型", value: status.embeddingModel)
-            RAGInfoRow(label: "向量维度", value: "\(status.embeddingDimension)")
+            RAGInfoRow(label: String(localized: "文件数量", table: "RAG"), value: "\(status.fileCount)")
+            RAGInfoRow(label: String(localized: "文档块数量", table: "RAG"), value: "\(status.chunkCount)")
+            RAGInfoRow(label: String(localized: "最后索引", table: "RAG"), value: formatIndexTime(status.lastIndexedAt))
+            RAGInfoRow(label: String(localized: "嵌入模型", table: "RAG"), value: status.embeddingModel)
+            RAGInfoRow(label: String(localized: "向量维度", table: "RAG"), value: "\(status.embeddingDimension)")
 
             if status.isStale {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(Color(hex: "FF9F0A"))
 
-                    Text("索引已过期，建议重新索引")
+                    Text(String(localized: "索引已过期，建议重新索引", table: "RAG"))
                         .font(.system(size: 12))
                         .foregroundColor(Color(hex: "FF9F0A"))
                 }
@@ -459,11 +459,11 @@ struct RAGStatusDetailView: View {
                 .font(.system(size: 32))
                 .foregroundColor(Color(hex: "98989E"))
 
-            Text("RAG 索引未初始化")
+            Text(String(localized: "RAG 索引未初始化", table: "RAG"))
                 .font(.system(size: 13))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-            Text("RAG 服务将在插件启用时自动初始化")
+            Text(String(localized: "RAG 服务将在插件启用时自动初始化", table: "RAG"))
                 .font(.system(size: 11))
                 .foregroundColor(Color(hex: "98989E"))
         }
@@ -478,7 +478,7 @@ struct RAGStatusDetailView: View {
                 .font(.system(size: 32))
                 .foregroundColor(Color(hex: "FF453A"))
 
-            Text("获取索引状态失败")
+            Text(String(localized: "获取索引状态失败", table: "RAG"))
                 .font(.system(size: 13))
                 .foregroundColor(Color(hex: "FF453A"))
 
@@ -498,7 +498,7 @@ struct RAGStatusDetailView: View {
             ProgressView()
                 .scaleEffect(0.8)
 
-            Text("正在检查索引状态...")
+            Text(String(localized: "正在检查索引状态...", table: "RAG"))
                 .font(.system(size: 12))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

@@ -19,15 +19,15 @@ struct RAGSettingsView: View, SuperLog {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("RAG 索引状态")
+                Text(String(localized: "RAG 索引状态", table: "RAG"))
                     .font(.headline)
                 Spacer()
-                Button("刷新全部状态") {
+                Button(String(localized: "刷新全部状态", table: "RAG")) {
                     Task { await loadStatus() }
                 }
                 .disabled(isLoading)
 
-                Button("重建全部索引") {
+                Button(String(localized: "重建全部索引", table: "RAG")) {
                     Task { await rebuildIndex() }
                 }
                 .disabled(isLoading)
@@ -40,7 +40,7 @@ struct RAGSettingsView: View, SuperLog {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     if trackedProjects.isEmpty {
-                        Text("请先选择或添加项目，RAG 才能建立与展示索引。")
+                        Text(String(localized: "请先选择或添加项目，RAG 才能建立与展示索引。", table: "RAG"))
                             .foregroundStyle(.secondary)
                     } else {
                         if let runtimeInfo {
@@ -81,7 +81,7 @@ extension RAGSettingsView {
     @ViewBuilder
     private func runtimeSummary(_ info: RAGRuntimeInfo) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("运行时")
+            Text(String(localized: "运行时", table: "RAG"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fontWeight(.medium)
@@ -106,29 +106,29 @@ extension RAGSettingsView {
             if let status = statusesByPath[project.path] {
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
                     GridRow {
-                        Text("最近索引").foregroundStyle(.secondary)
+                        Text(String(localized: "最近索引", table: "RAG")).foregroundStyle(.secondary)
                         Text(relativeDate(status.lastIndexedAt))
                     }
                     GridRow {
-                        Text("文件数").foregroundStyle(.secondary)
+                        Text(String(localized: "文件数", table: "RAG")).foregroundStyle(.secondary)
                         Text("\(status.fileCount)")
                     }
                     GridRow {
-                        Text("片段数").foregroundStyle(.secondary)
+                        Text(String(localized: "片段数", table: "RAG")).foregroundStyle(.secondary)
                         Text("\(status.chunkCount)")
                     }
                     GridRow {
-                        Text("状态").foregroundStyle(.secondary)
-                        Text(status.isStale ? "已过期" : "最新")
+                        Text(String(localized: "状态", table: "RAG")).foregroundStyle(.secondary)
+                        Text(status.isStale ? String(localized: "已过期", table: "RAG") : String(localized: "最新", table: "RAG"))
                             .foregroundStyle(status.isStale ? .orange : .green)
                     }
                 }
             } else if isLoading {
-                Text("读取中…")
+                Text(String(localized: "读取中…", table: "RAG"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Text("尚未建立索引")
+                Text(String(localized: "尚未建立索引", table: "RAG"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -141,12 +141,12 @@ extension RAGSettingsView {
             }
 
             HStack(spacing: 8) {
-                Button("刷新") {
+                Button(String(localized: "刷新", table: "RAG")) {
                     Task { await refreshProjectStatus(projectPath: project.path) }
                 }
                 .disabled(isLoading)
 
-                Button("重建") {
+                Button(String(localized: "重建", table: "RAG")) {
                     Task { await rebuildProjectIndex(projectPath: project.path) }
                 }
                 .disabled(isLoading)

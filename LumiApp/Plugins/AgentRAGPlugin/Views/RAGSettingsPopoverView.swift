@@ -19,16 +19,16 @@ struct RAGSettingsPopoverView: View, SuperLog {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Label("RAG 索引状态", systemImage: "doc.text.magnifyingglass")
+                Label(String(localized: "RAG 索引状态", table: "RAG"), systemImage: "doc.text.magnifyingglass")
                     .font(.headline)
                 Spacer()
-                Button("刷新全部") {
+                Button(String(localized: "刷新全部", table: "RAG")) {
                     Task { await loadStatus() }
                 }
                 .disabled(isLoading)
                 .controlSize(.small)
 
-                Button("重建全部") {
+                Button(String(localized: "重建全部", table: "RAG")) {
                     Task { await rebuildAll() }
                 }
                 .disabled(isLoading)
@@ -49,7 +49,7 @@ struct RAGSettingsPopoverView: View, SuperLog {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if trackedProjects.isEmpty {
-                        Text("暂无项目")
+                        Text(String(localized: "暂无项目", table: "RAG"))
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(trackedProjects) { project in
@@ -95,13 +95,13 @@ extension RAGSettingsPopoverView {
                 HStack(spacing: 10) {
                     Label("\(status.fileCount)", systemImage: "doc")
                     Label("\(status.chunkCount)", systemImage: "square.stack.3d.up")
-                    Label(status.isStale ? "已过期" : "最新", systemImage: status.isStale ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                    Label(status.isStale ? String(localized: "已过期", table: "RAG") : String(localized: "最新", table: "RAG"), systemImage: status.isStale ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                         .foregroundStyle(status.isStale ? .orange : .green)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
             } else {
-                Text("尚未建立索引")
+                Text(String(localized: "尚未建立索引", table: "RAG"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -111,12 +111,12 @@ extension RAGSettingsPopoverView {
             }
 
             HStack(spacing: 8) {
-                Button("刷新") {
+                Button(String(localized: "刷新", table: "RAG")) {
                     Task { await refreshProjectStatus(projectPath: project.path) }
                 }
                 .disabled(isLoading)
 
-                Button("重建") {
+                Button(String(localized: "重建", table: "RAG")) {
                     Task { await rebuildProject(projectPath: project.path) }
                 }
                 .disabled(isLoading)
