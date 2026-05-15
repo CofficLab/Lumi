@@ -1,6 +1,50 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Content": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内容"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "內容"
+          }
+        }
+      }
+    },
+    "Current Status": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Status"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前状态"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前狀態"
+          }
+        }
+      }
+    },
     "Fast file search with Cmd+P": {
       "localizations": {
         "en": {
@@ -19,6 +63,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用 Cmd+P 快速搜索文件"
+          }
+        }
+      }
+    },
+    "File indexing is automatic when switching projects": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File indexing is automatic when switching projects"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换项目时自动进行文件索引"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切換項目時自動進行檔案索引"
+          }
+        }
+      }
+    },
+    "How to Use": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to Use"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用方法"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用方法"
           }
         }
       }
@@ -65,6 +153,72 @@
           "stringUnit": {
             "state": "translated",
             "value": "未找到匹配文件"
+          }
+        }
+      }
+    },
+    "No project selected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No project selected"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未选择项目"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未選擇項目"
+          }
+        }
+      }
+    },
+    "Please select a project to enable file search": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please select a project to enable file search"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请选择一个项目以启用文件搜索"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請選擇一個項目以啟用檔案搜索"
+          }
+        }
+      }
+    },
+    "Project indexed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project indexed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目已索引"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目已索引"
           }
         }
       }
@@ -133,6 +287,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "輸入文件名進行搜索"
+          }
+        }
+      }
+    },
+    "未找到匹配文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到匹配文件"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到匹配文件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到匹配檔案"
+          }
+        }
+      }
+    },
+    "正在索引文件...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在索引文件..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在索引文件..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在索引檔案..."
           }
         }
       }

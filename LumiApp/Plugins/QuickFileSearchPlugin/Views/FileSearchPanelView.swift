@@ -114,7 +114,7 @@ struct FileSearchPanelView: View {
     private var loadingView: some View {
         VStack(spacing: 12) {
             ProgressView()
-            Text("正在索引文件...")
+            Text(String(localized: "正在索引文件...", table: "QuickFileSearch"))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
         }
@@ -127,7 +127,7 @@ struct FileSearchPanelView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 32))
                 .foregroundColor(.secondary)
-            Text("未找到匹配文件")
+            Text(String(localized: "未找到匹配文件", table: "QuickFileSearch"))
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
         }
