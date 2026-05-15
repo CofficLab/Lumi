@@ -14,6 +14,8 @@ public final class ProcessService: ObservableObject, SuperLog {
     // MARK: - Constants
 
     private nonisolated static let processLimit = 5
+    /// `proc_taskinfo.pti_total_user/system` reports CPU time in 100ns ticks.
+    private nonisolated static let processTimeTicksPerSecond = 10_000_000.0
 
     // MARK: - Published Properties
 
@@ -158,7 +160,7 @@ public final class ProcessService: ObservableObject, SuperLog {
                 let deltaSystem = currentSystem &- previous.system
                 let totalDelta = deltaUser &+ deltaSystem
 
-                let cpuPercent = Double(totalDelta) / (deltaTime * 1_000_000_000) * 100.0
+                let cpuPercent = cpuPercent(forProcessTimeDelta: totalDelta, elapsedSeconds: deltaTime)
 
                 if cpuPercent > 0.1 {
                     let name = getProcessName(pid: pid)
@@ -194,5 +196,13 @@ public final class ProcessService: ObservableObject, SuperLog {
             }
         }
         return "PID \(pid)"
+    }
+
+    nonisolated static func cpuPercent(
+        forProcessTimeDelta totalDelta: UInt64,
+        elapsedSeconds deltaTime: TimeInterval
+    ) -> Double {
+        guard deltaTime > 0 else { return 0 }
+        return Double(totalDelta) / (deltaTime * processTimeTicksPerSecond) * 100.0
     }
 }
