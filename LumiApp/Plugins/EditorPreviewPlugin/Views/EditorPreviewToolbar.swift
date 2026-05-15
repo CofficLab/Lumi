@@ -5,7 +5,6 @@ struct HotPreviewToolbar: View {
     @ObservedObject var viewModel: EditorRemoteHotPreviewViewModel
     let currentFileURL: URL?
     let deleteStaleStringCatalogEntries: () -> Void
-    @State private var showDiagnostics = false
 
     private var toolbarIcon: String {
         if viewModel.isImageMode {
@@ -73,21 +72,6 @@ struct HotPreviewToolbar: View {
                 statusBadge
 
                 Button {
-                    showDiagnostics.toggle()
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(showDiagnostics
-                            ? themeVM.activeAppTheme.workspaceTextColor()
-                            : themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                }
-                .buttonStyle(.plain)
-                .help(String(localized: "Toggle diagnostics info", table: "EditorPreview"))
-                .popover(isPresented: $showDiagnostics, arrowEdge: .bottom) {
-                    HotPreviewDiagnosticsPanel(viewModel: viewModel)
-                }
-
-                Button {
                     viewModel.startHost()
                 } label: {
                     Image(systemName: "play.fill")
@@ -123,6 +107,8 @@ struct HotPreviewToolbar: View {
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
     }
 
+    // MARK: - 子视图
+
     private var statusBadge: some View {
         let statusColor = Self.statusColor(for: viewModel.hostState, theme: themeVM.activeAppTheme)
         return HStack(spacing: 5) {
@@ -154,6 +140,8 @@ struct HotPreviewToolbar: View {
         .padding(.vertical, 3)
         .background(Color.orange.opacity(0.14), in: RoundedRectangle(cornerRadius: 5))
     }
+
+    // MARK: - 私有方法
 
     private static func statusColor(
         for hostState: EditorRemoteHotPreviewHostState,

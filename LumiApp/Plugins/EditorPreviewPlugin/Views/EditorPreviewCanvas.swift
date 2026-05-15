@@ -45,13 +45,7 @@ struct HotPreviewCanvas: View {
                 RoundedRectangle(cornerRadius: 0)
                     .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
 
-                if let liveFailureMessage {
-                    HotPreviewMessageView(
-                        systemImage: "exclamationmark.triangle",
-                        message: liveFailureMessage,
-                        color: .orange
-                    )
-                } else if shouldShowFallbackImage, let renderImage = viewModel.renderImage {
+                if shouldShowFallbackImage, let renderImage = viewModel.renderImage {
                     Image(nsImage: renderImage)
                         .resizable()
                         .interpolation(.high)
@@ -59,11 +53,30 @@ struct HotPreviewCanvas: View {
                             RoundedRectangle(cornerRadius: 0)
                                 .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
                         )
+                }
+
+                if let liveFailureMessage {
+                    Image(nsImage: viewModel.renderImage ?? NSImage())
+                        .resizable()
+                        .interpolation(.high)
+                        .blur(radius: 3)
+                        .opacity(viewModel.renderImage != nil ? 0.4 : 0)
+
+                    HotPreviewErrorOverlayView(
+                        title: String(localized: "Live Preview Error", table: "EditorPreview"),
+                        message: liveFailureMessage,
+                        contextInfo: liveErrorContextInfo,
+                        suggestion: liveErrorSuggestion(for: liveFailureMessage),
+                        isOverlayingStaleFrame: viewModel.renderImage != nil,
+                        viewModel: viewModel
+                    )
                 } else if let failureMessage = viewModel.failureMessage, viewModel.effectiveDisplayMode == .image {
-                    HotPreviewMessageView(
-                        systemImage: "exclamationmark.triangle",
+                    HotPreviewErrorOverlayView(
+                        title: String(localized: "Preview Failed", table: "EditorPreview"),
                         message: failureMessage,
-                        color: .orange
+                        contextInfo: liveErrorContextInfo,
+                        suggestion: liveErrorSuggestion(for: failureMessage),
+                        viewModel: viewModel
                     )
                 } else if viewModel.isLiveLoading {
                     HotPreviewMessageView(
@@ -74,8 +87,6 @@ struct HotPreviewCanvas: View {
                 } else if viewModel.effectiveDisplayMode == .live {
                     EmptyView()
                 } else if viewModel.renderImage == nil {
-                    // Refreshing or waiting for the first frame — show only the
-                    // grid background without any placeholder text.
                     EmptyView()
                 }
             }
@@ -106,6 +117,44 @@ struct HotPreviewCanvas: View {
 
         return viewModel.livePreviewInfo.unavailableReason
             ?? String(localized: "Live preview failed", table: "EditorPreview")
+    }
+
+    /// Live 预览失败时的上下文信息，用于辅助诊断
+    private var liveErrorContextInfo: String? {
+        guard viewModel.preferredDisplayMode == .live,
+              viewModel.livePreviewInfo.state == .failed else {
+            return nil
+        }
+
+        var parts: [String] = []
+        if let previewID = viewModel.selectedPreviewID {
+            parts.append("preview: \(previewID)")
+        }
+        parts.append("display: \(viewModel.effectiveDisplayMode.rawValue)")
+        parts.append("host: \(viewModel.hostState.rawValue)")
+        parts.append("live: \(viewModel.livePreviewInfo.state.rawValue)")
+        if viewModel.transportSummary != "-" {
+            parts.append("transport: \(viewModel.transportSummary)")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " | ")
+    }
+
+    /// 根据错误消息生成可操作的建议
+    private func liveErrorSuggestion(for message: String) -> String? {
+        let lower = message.lowercased()
+        if lower.contains("nsview") || lower.contains("no real") {
+            return String(localized: "Switch to Image mode to see the static preview, or ensure the #Preview macro returns a SwiftUI View.", table: "EditorPreview")
+        }
+        if lower.contains("timed out") || lower.contains("timeout") {
+            return String(localized: "Try refreshing the preview. If the issue persists, stop and restart the preview session.", table: "EditorPreview")
+        }
+        if lower.contains("compilation") || lower.contains("build") {
+            return String(localized: "Fix the compilation errors in the source file and save to trigger a rebuild.", table: "EditorPreview")
+        }
+        if lower.contains("crash") {
+            return String(localized: "The preview process crashed. Try restarting the preview. Check the source for runtime issues.", table: "EditorPreview")
+        }
+        return String(localized: "Try switching to Image mode or restarting the preview session.", table: "EditorPreview")
     }
 }
 
