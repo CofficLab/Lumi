@@ -24,7 +24,9 @@ struct PreviewFileContextCache<Context> {
     }
 
     public mutating func value(forKey key: String) -> Context? {
-        contexts[key]
+        guard let value = contexts[key] else { return nil }
+        markRecentlyUsed(key)
+        return value
     }
 
     public mutating func value(for fileURL: URL) -> Context? {
