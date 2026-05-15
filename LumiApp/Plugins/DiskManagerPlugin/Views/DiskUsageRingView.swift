@@ -31,7 +31,7 @@ struct DiskUsageRingView: View {
                         .font(.title3)
                         .fontWeight(.bold)
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                    Text("已用")
+                    Text(String(localized: "已用", table: "DiskManager"))
                         .font(.caption2)
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 } else {

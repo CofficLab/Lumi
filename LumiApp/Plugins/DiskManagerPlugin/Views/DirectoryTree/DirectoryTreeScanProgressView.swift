@@ -46,7 +46,7 @@ struct DirectoryTreeScanProgressView: View {
 
             // 进度信息
             VStack(spacing: 6) {
-                Text("正在分析目录结构")
+                Text(String(localized: "正在分析目录结构", table: "DiskManager"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 

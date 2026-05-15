@@ -14,7 +14,7 @@ struct XcodeScanControlBar: View {
                 }
             }, label: {
                 Label(
-                    title: { Text(viewModel.isScanning ? "停止扫描" : "扫描 Xcode") },
+                    title: { Text(viewModel.isScanning ? String(localized: "停止扫描", table: "DiskManager") : String(localized: "扫描 Xcode", table: "DiskManager")) },
                     icon: { Image(systemName: viewModel.isScanning ? "stop.circle" : "hammer") }
                 )
                 .font(.system(size: 15, weight: .medium))
@@ -26,7 +26,7 @@ struct XcodeScanControlBar: View {
 
             Spacer()
 
-            Text("扫描范围：Xcode 相关缓存目录")
+            Text(String(localized: "扫描范围：Xcode 相关缓存目录", table: "DiskManager"))
                 .font(.caption)
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

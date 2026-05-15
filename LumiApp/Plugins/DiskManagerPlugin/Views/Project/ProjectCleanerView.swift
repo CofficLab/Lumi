@@ -44,14 +44,14 @@ struct ProjectCleanerView: View {
         .onAppear {
             Task { await viewModel.scanProjectsIfNeeded() }
         }
-        .alert(Text("Confirm Cleanup"), isPresented: $showCleanConfirmation) {
+        .alert(Text(String(localized: "Confirm Cleanup", table: "DiskManager")), isPresented: $showCleanConfirmation) {
             Button(role: .cancel) { } label: {
-                Text("Cancel")
+                Text(String(localized: "Cancel", table: "DiskManager"))
             }
             Button(role: .destructive) {
                 viewModel.cleanSelected()
             } label: {
-                Text("Clean")
+                Text(String(localized: "Clean", table: "DiskManager"))
             }
         } message: {
             let template = String(

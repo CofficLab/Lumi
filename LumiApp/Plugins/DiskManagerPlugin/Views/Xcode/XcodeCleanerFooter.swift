@@ -9,10 +9,10 @@ struct XcodeCleanerFooter: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("已选择：\(viewModel.formatBytes(viewModel.selectedSize))")
+                Text("\(String(localized: "已选择：", table: "DiskManager"))\(viewModel.formatBytes(viewModel.selectedSize))")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                Text("总计：\(viewModel.formatBytes(viewModel.totalSize))")
+                Text("\(String(localized: "总计：", table: "DiskManager"))\(viewModel.formatBytes(viewModel.totalSize))")
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
@@ -27,7 +27,7 @@ struct XcodeCleanerFooter: View {
                         .multilineTextAlignment(.trailing)
                     if viewModel.isPermissionError {
                         Button(action: openFullDiskAccessSettings) {
-                            Text("打开系统设置")
+                            Text(String(localized: "打开系统设置", table: "DiskManager"))
                         }
                         .buttonStyle(.link)
                         .font(.caption)
@@ -38,7 +38,7 @@ struct XcodeCleanerFooter: View {
             Button(action: {
                 showCleanConfirmation = true
             }, label: {
-                Label(title: { Text(viewModel.isCleaning ? "清理中..." : "立即清理") }, icon: {
+                Label(title: { Text(viewModel.isCleaning ? String(localized: "清理中...", table: "DiskManager") : String(localized: "立即清理", table: "DiskManager")) }, icon: {
                     Image(systemName: "trash.fill")
                 })
                 .font(.system(size: 15, weight: .medium))

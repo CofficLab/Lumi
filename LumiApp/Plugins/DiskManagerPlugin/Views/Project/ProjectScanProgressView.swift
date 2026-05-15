@@ -35,7 +35,7 @@ struct ProjectScanProgressView: View {
             }
 
             VStack(spacing: 6) {
-                Text("正在扫描项目")
+                Text(String(localized: "正在扫描项目", table: "DiskManager"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 

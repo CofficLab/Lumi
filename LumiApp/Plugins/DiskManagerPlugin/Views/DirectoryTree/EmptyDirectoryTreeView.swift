@@ -21,16 +21,16 @@ struct EmptyDirectoryTreeView: View {
             }
 
             VStack(spacing: 10) {
-                Text("暂无目录数据")
+                Text(String(localized: "暂无目录数据", table: "DiskManager"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text("点击开始分析，查看目录占用与结构。")
+                Text(String(localized: "点击开始分析，查看目录占用与结构。", table: "DiskManager"))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 Button(action: { viewModel.startScan() }, label: {
-                    Label(title: { Text("开始分析") }, icon: { Image(systemName: "folder.badge.gear") })
+                    Label(title: { Text(String(localized: "开始分析", table: "DiskManager")) }, icon: { Image(systemName: "folder.badge.gear") })
                         .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)

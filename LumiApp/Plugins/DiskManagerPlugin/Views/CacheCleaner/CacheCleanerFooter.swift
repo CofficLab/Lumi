@@ -8,10 +8,10 @@ struct CacheCleanerFooter: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("已选择：\(viewModel.formatBytes(viewModel.totalSelectedSize))")
+                Text("\(String(localized: "已选择：", table: "DiskManager"))\(viewModel.formatBytes(viewModel.totalSelectedSize))")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                Text("\(viewModel.selection.count) 个项目")
+                Text("\(viewModel.selection.count) \(String(localized: "个项目", table: "DiskManager"))")
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
@@ -22,7 +22,7 @@ struct CacheCleanerFooter: View {
                 showCleanConfirmation = true
             }) {
                 Label {
-                    Text(viewModel.isCleaning ? "清理中..." : "立即清理")
+                    Text(viewModel.isCleaning ? String(localized: "清理中...", table: "DiskManager") : String(localized: "立即清理", table: "DiskManager"))
                 } icon: {
                     Image(systemName: "trash.fill")
                 }
