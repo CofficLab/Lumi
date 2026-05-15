@@ -33,7 +33,7 @@ actor GitHubInsightKnowledgeBaseManager {
 
         return urls
             .filter { $0.pathExtension == "json" }
-            .flatMap { url in
+            .flatMap { url -> [GitHubInsightKBEntry] in
                 guard let data = try? Data(contentsOf: url),
                       let store = try? decoder.decode(GitHubInsightProjectStore.self, from: data) else {
                     return []

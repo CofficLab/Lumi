@@ -27,7 +27,7 @@ actor GitHubInsightSyncService {
         defer { syncingProjects.remove(normalizedPath) }
 
         do {
-            guard let profile = await profiler.profile(projectPath: normalizedPath) else {
+            guard let profile = profiler.profile(projectPath: normalizedPath) else {
                 return .failed("Project path is not readable.")
             }
             let entries = try await discoverer.discover(profile: profile)

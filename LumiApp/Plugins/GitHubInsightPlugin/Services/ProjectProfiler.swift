@@ -3,7 +3,7 @@ import Foundation
 struct GitHubInsightProjectProfiler {
     private let fileManager = FileManager.default
 
-    func profile(projectPath: String) async -> GitHubInsightProjectProfile? {
+    func profile(projectPath: String) -> GitHubInsightProjectProfile? {
         let root = URL(fileURLWithPath: projectPath).standardizedFileURL
         var isDirectory: ObjCBool = false
         guard fileManager.fileExists(atPath: root.path, isDirectory: &isDirectory), isDirectory.boolValue else {
@@ -82,8 +82,9 @@ struct GitHubInsightProjectProfiler {
     }
 
     private func dependencyNames(from json: [String: Any], keys: [String]) -> [String] {
-        keys.flatMap { key in
-            (json[key] as? [String: Any])?.keys.map(String.init) ?? []
+        keys.flatMap { key -> [String] in
+            guard let dependencies = json[key] as? [String: Any] else { return [] }
+            return Array(dependencies.keys)
         }
     }
 
