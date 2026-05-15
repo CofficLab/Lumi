@@ -45,7 +45,13 @@ struct HotPreviewCanvas: View {
                 RoundedRectangle(cornerRadius: 0)
                     .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
 
-                if shouldShowFallbackImage, let renderImage = viewModel.renderImage {
+                if let liveFailureMessage {
+                    HotPreviewMessageView(
+                        systemImage: "exclamationmark.triangle",
+                        message: liveFailureMessage,
+                        color: .orange
+                    )
+                } else if shouldShowFallbackImage, let renderImage = viewModel.renderImage {
                     Image(nsImage: renderImage)
                         .resizable()
                         .interpolation(.high)
@@ -90,6 +96,16 @@ struct HotPreviewCanvas: View {
                 EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
             }
         }
+    }
+
+    private var liveFailureMessage: String? {
+        guard viewModel.preferredDisplayMode == .live,
+              viewModel.livePreviewInfo.state == .failed else {
+            return nil
+        }
+
+        return viewModel.livePreviewInfo.unavailableReason
+            ?? String(localized: "Live preview failed", table: "EditorPreviewRemoteHotPlugin")
     }
 }
 

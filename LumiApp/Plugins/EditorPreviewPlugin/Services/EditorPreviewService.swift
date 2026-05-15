@@ -1779,11 +1779,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         if livePreviewInfo.state == .failed,
            let reason = livePreviewInfo.unavailableReason,
            !reason.isEmpty {
-            if preferredDisplayMode == .live && effectiveDisplayMode == .image {
-                modeStatusMessage = String(localized: "Live preview is unavailable. Showing image preview. \(reason)", table: "EditorPreviewRemoteHotPlugin")
-            } else {
-                modeStatusMessage = reason
-            }
+            modeStatusMessage = reason
             return
         }
 
