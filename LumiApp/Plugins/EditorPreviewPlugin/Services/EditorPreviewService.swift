@@ -439,6 +439,9 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
 
     func previewAppDidResignActive() {
         liveCanvasService.cancelPendingFrameSync()
+        Task { [weak self] in
+            await self?.hideLivePreviewIfNeeded(reason: "preview app resigned active")
+        }
         refreshDiagnosticSummary()
     }
 
@@ -1604,6 +1607,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private func showLivePreviewIfNeeded(reason: String, forceOrderFront: Bool = false) async {
         guard isDetailViewVisible,
               isPreviewWindowVisible,
+              NSApp.isActive,
               preferredDisplayMode == .live,
               shouldRestorePreferredLiveMode,
               liveCanvasService.canSyncFrame,
