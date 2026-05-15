@@ -1,7 +1,6 @@
 import AppKit
 import MagicKit
 import Foundation
-import LumiHotPreviewKit
 import LumiPreviewKit
 
 @MainActor
@@ -78,11 +77,11 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     @Published private(set) var prewarmCandidateSummary = "prewarm candidates: idle"
 
     private let scanner = LumiPreviewPackage.PreviewScanner()
-    private let imageLoader = LumiHotPreviewPackage.ImageFileLoader()
+    private let imageLoader = LumiPreviewPackage.ImageFileLoader()
     private let liveCanvasService = EditorRemoteHotPreviewLiveCanvasService()
     private let projectPreviewIndexService = EditorPreviewProjectPreviewIndexService()
-    private var previewSession: LumiHotPreviewPackage.HotPreviewSession?
-    private var previewEngine: LumiHotPreviewPackage.HotPreviewEngine?
+    private var previewSession: LumiPreviewPackage.HotPreviewSession?
+    private var previewEngine: LumiPreviewPackage.HotPreviewEngine?
     private var commandTask: Task<Void, Never>?
     private var scheduledRefreshTask: Task<Void, Never>?
     private var scheduledPrewarmTask: Task<Void, Never>?
@@ -113,6 +112,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     private var shouldRestorePreferredLiveMode = true
     private var isDetailViewVisible = false
     private var isLivePreviewShown = false
+    private var isPreviewAppActive = NSApplication.shared.isActive
 
     init() {
         bindLiveCanvasService()
@@ -402,6 +402,11 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     func previewWindowDidBecomeActive() {
+        guard isPreviewAppActive else {
+            refreshDiagnosticSummary()
+            return
+        }
+
         Task { [weak self] in
             await self?.restoreLivePreviewIfNeeded(reason: "preview window became active")
             await self?.showLivePreviewIfNeeded(reason: "preview window became active", forceOrderFront: true)
@@ -412,7 +417,28 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         refreshDiagnosticSummary()
     }
 
+    func previewAppDidBecomeActive() {
+        isPreviewAppActive = true
+        Task { [weak self] in
+            await self?.restoreLivePreviewIfNeeded(reason: "preview app became active")
+            await self?.showLivePreviewIfNeeded(reason: "preview app became active", forceOrderFront: true)
+        }
+    }
+
+    func previewAppDidResignActive() {
+        isPreviewAppActive = false
+        liveCanvasService.cancelPendingFrameSync()
+        Task { [weak self] in
+            await self?.hideLivePreviewIfNeeded(reason: "preview app resigned active")
+        }
+    }
+
     func previewWindowDidReceiveInteraction() {
+        guard isPreviewAppActive else {
+            refreshDiagnosticSummary()
+            return
+        }
+
         Task { [weak self] in
             await self?.restoreLivePreviewIfNeeded(reason: "preview window received interaction")
             await self?.showLivePreviewIfNeeded(reason: "preview window received interaction", forceOrderFront: true)
@@ -507,7 +533,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         let selectedFingerprint = previewFingerprint(for: selectedPreview)
         recordPreviewStart(fingerprint: selectedFingerprint, fileURL: selectedPreview.sourceFileURL)
 
-        guard let hostExecutableURL = LumiHotPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
+        guard let hostExecutableURL = LumiPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
             handle(.failed(message: String(localized: "Hot preview host executable was not found.", table: "EditorPreviewRemoteHotPlugin")))
             return
         }
@@ -517,7 +543,11 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         }
         isLivePreviewShown = false
 
-        preserveCurrentFrameForRestart(message: String(localized: "Rebuilding hot preview. Showing the previous frame.", table: "EditorPreviewRemoteHotPlugin"))
+        if isSelectedPreviewAlreadyRendered(selectedPreview) {
+            preserveCurrentFrameForRestart(message: String(localized: "Rebuilding hot preview. Showing the previous frame.", table: "EditorPreviewRemoteHotPlugin"))
+        } else {
+            clearRenderedFrameForPreviewChange()
+        }
         hostState = .launching
         updatePhase = .refreshing
         failureMessage = nil
@@ -528,7 +558,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         lastFrame = nil
         lastFrameSummary = "Waiting for Host"  // non-user-facing diagnostic label
 
-        let engine = previewEngine ?? LumiHotPreviewPackage.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = previewEngine ?? LumiPreviewPackage.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
         previewEngine = engine
         hostLifecycleSummary = "host lifecycle: acquired"
 
@@ -575,6 +605,10 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         updatePhase = .refreshing
         failureMessage = nil
         lastFrameSummary = "Frame Pending"  // non-user-facing diagnostic label
+        let isReloadingRenderedPreview = selectedPreview.map(isSelectedPreviewAlreadyRendered) ?? false
+        if !isReloadingRenderedPreview {
+            clearRenderedFrameForPreviewChange()
+        }
 
         do {
             if let selectedPreview {
@@ -644,6 +678,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             resetRenderState()
         case let .failed(message):
             EditorRemoteHotPreviewPlugin.logger.error("\(self.t)Hot preview failed: \(message, privacy: .public)")
+            clearRenderedFrameForPreviewChange()
             hostState = .failed
             failureMessage = message
             renderMessage = message
@@ -663,17 +698,8 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     private func handleRefreshFailure(_ message: String) async {
-        if renderImage != nil {
-            renderMessage = message
-            failureMessage = message
-            hostState = .failed
-            isShowingStaleFrame = true
-            modeStatusMessage = String(localized: "Refresh failed. Showing the previous frame.", table: "EditorPreviewRemoteHotPlugin")
-            lastFrameSummary = message
-            updatePhase = .idle
-        } else {
-            handle(.failed(message: message))
-        }
+        clearRenderedFrameForPreviewChange()
+        handle(.failed(message: message))
 
         if preferredDisplayMode == .live,
            (livePreviewInfo.state == .running || livePreviewInfo.state == .launching) {
@@ -683,7 +709,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         refreshDiagnosticSummary()
     }
 
-    private func syncPreviewState(from session: LumiHotPreviewPackage.HotPreviewSession) async {
+    private func syncPreviewState(from session: LumiPreviewPackage.HotPreviewSession) async {
         if let response = await session.lastHotRenderResponse {
             applyRenderResponse(response)
         }
@@ -703,6 +729,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         case .running:
             hostState = .connected
         case .failed(let error):
+            clearRenderedFrameForPreviewChange()
             hostState = .failed
             failureMessage = EditorPreviewFormatter.message(for: error)
         case .planning, .compiling, .launching:
@@ -715,8 +742,19 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         refreshDiagnosticSummary()
     }
 
-    private func applyRenderResponse(_ response: LumiHotPreviewPackage.HotRenderResponse) {
+    private func applyRenderResponse(_ response: LumiPreviewPackage.HotRenderResponse) {
         let previousImage = renderImage
+        if !response.success {
+            clearRenderedFrameForPreviewChange()
+            renderMessage = response.message
+            failureMessage = response.message
+            diagnostics = response.diagnostics
+            transportSummary = response.preferredTransport.rawValue
+            syncModeStatusMessage()
+            refreshDiagnosticSummary()
+            return
+        }
+
         if let sharedMemoryTag = response.sharedMemoryTag,
            let frameWidth = response.frameSize?.width ?? response.frameWidth,
            let frameHeight = response.frameSize?.height ?? response.frameHeight,
@@ -845,7 +883,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     private func warmupHostIfPossible() {
-        guard let hostExecutableURL = LumiHotPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
+        guard let hostExecutableURL = LumiPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
             hostLifecycleSummary = "host lifecycle: cold"
             return
         }
@@ -853,14 +891,14 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         scheduledHostIdleShutdownTask?.cancel()
         scheduledHostIdleShutdownTask = nil
         if previewEngine == nil {
-            previewEngine = LumiHotPreviewPackage.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
+            previewEngine = LumiPreviewPackage.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
         }
         hostLifecycleSummary = "host lifecycle: warming"
         refreshDiagnosticSummary()
 
         Task { [weak self] in
-            _ = LumiHotPreviewPackage.ImageFileLoader.removeExpiredFrames()
-            _ = LumiHotPreviewPackage.SharedMemoryFrameChannel.removeExpiredFrames()
+            _ = LumiPreviewPackage.ImageFileLoader.removeExpiredFrames()
+            _ = LumiPreviewPackage.SharedMemoryFrameChannel.removeExpiredFrames()
             do {
                 try await self?.previewEngine?.warmupHost()
                 await MainActor.run {
@@ -1208,7 +1246,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         let startedAt = Date()
         prewarmAttemptCount += candidates.count
         refreshPrewarmStatsSummary()
-        guard let hostExecutableURL = LumiHotPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
+        guard let hostExecutableURL = LumiPreviewPackage.HotPreviewHostExecutableResolver.resolve() else {
             prewarmSummary = "prewarm: host missing"
             for _ in candidates {
                 recordPrewarmResult(success: false, duration: Date().timeIntervalSince(startedAt))
@@ -1220,7 +1258,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
             return
         }
 
-        let engine = previewEngine ?? LumiHotPreviewPackage.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
+        let engine = previewEngine ?? LumiPreviewPackage.HotPreviewEngine(hostExecutableURL: hostExecutableURL)
         previewEngine = engine
         prewarmSummary = candidates.count == 1 ? "prewarm: building" : "prewarm: building \(candidates.count)"
         refreshDiagnosticSummary()
@@ -1333,7 +1371,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     private static func startupTimingSummary(
-        for timings: [LumiHotPreviewPackage.HotPreviewStartupTiming]
+        for timings: [LumiPreviewPackage.HotPreviewStartupTiming]
     ) -> String {
         guard !timings.isEmpty else {
             return "startup: idle"
@@ -1347,7 +1385,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     private static func startupBottleneckSummary(
-        for timings: [LumiHotPreviewPackage.HotPreviewStartupTiming]
+        for timings: [LumiPreviewPackage.HotPreviewStartupTiming]
     ) -> String {
         let measuredTimings = timings.filter { timing in
             !timing.stage.hasPrefix("total ") && timing.duration > 0
@@ -1393,7 +1431,7 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         return String(format: "%.2fs", duration)
     }
 
-    private func logStartupTimings(_ timings: [LumiHotPreviewPackage.HotPreviewStartupTiming]) {
+    private func logStartupTimings(_ timings: [LumiPreviewPackage.HotPreviewStartupTiming]) {
         guard !timings.isEmpty else { return }
         let timingSummary = Self.startupTimingSummary(for: timings)
         let previewID = selectedPreview?.id ?? "-"
@@ -1498,7 +1536,9 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     private func restoreLivePreviewIfNeeded(reason: String) async {
-        guard isDetailViewVisible,
+        guard isPreviewAppActive,
+              NSApplication.shared.isActive,
+              isDetailViewVisible,
               preferredDisplayMode == .live,
               shouldRestorePreferredLiveMode,
               let session = previewSession,
@@ -1558,7 +1598,9 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
     }
 
     private func showLivePreviewIfNeeded(reason: String, forceOrderFront: Bool = false) async {
-        guard isDetailViewVisible,
+        guard isPreviewAppActive,
+              NSApplication.shared.isActive,
+              isDetailViewVisible,
               preferredDisplayMode == .live,
               shouldRestorePreferredLiveMode,
               liveCanvasService.canSyncFrame,
@@ -1719,6 +1761,18 @@ final class EditorRemoteHotPreviewService: ObservableObject, SuperLog {
         guard renderImage != nil else { return }
         isShowingStaleFrame = true
         modeStatusMessage = message
+    }
+
+    private func isSelectedPreviewAlreadyRendered(_ preview: LumiPreviewPackage.PreviewDiscovery) -> Bool {
+        previewFingerprint(for: preview) == lastRenderedPreviewFingerprint
+    }
+
+    private func clearRenderedFrameForPreviewChange() {
+        renderImage = nil
+        lastFrame = nil
+        transportSummary = "-"
+        isShowingStaleFrame = false
+        modeStatusMessage = nil
     }
 
     private func syncModeStatusMessage() {

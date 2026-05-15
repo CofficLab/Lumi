@@ -14,7 +14,7 @@ actor EditorRemoteHotPreviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorRemoteHotPreview"
     static let displayName: String = String(localized: "Preview", table: "EditorPreviewRemoteHotPlugin")
-    static let description: String = String(localized: "Preview powered by LumiHotPreviewKit", table: "EditorPreviewRemoteHotPlugin")
+    static let description: String = String(localized: "Preview powered by LumiPreviewKit", table: "EditorPreviewRemoteHotPlugin")
     static let iconName: String = "bolt.horizontal"
     static var isConfigurable: Bool { false }
     static var order: Int { 83 }

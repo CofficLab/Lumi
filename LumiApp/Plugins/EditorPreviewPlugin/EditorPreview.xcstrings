@@ -1,19 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    " cached" : {
-
-    },
-    "%g x %g pt" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$g x %2$g pt"
-          }
-        }
-      }
-    },
     "Active: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -37,20 +24,8 @@
         }
       }
     },
-    "Build %@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Build %1$@%2$@"
-          }
-        }
-      }
-    },
-    "Build product was not found." : {
-
-    },
     "Connected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -73,6 +48,7 @@
       }
     },
     "Diagnostics" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -94,30 +70,31 @@
         }
       }
     },
-    "Experimental hot preview powered by LumiHotPreviewKit" : {
+    "Experimental hot preview powered by LumiPreviewKit" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Experimental hot preview powered by LumiHotPreviewKit"
+            "value" : "Experimental hot preview powered by LumiPreviewKit"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 LumiHotPreviewKit 驱动的实验性热预览"
+            "value" : "由 LumiPreviewKit 驱动的实验性热预览"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 LumiHotPreviewKit 驅動的實驗性熱預覽"
+            "value" : "由 LumiPreviewKit 驅動的實驗性熱預覽"
           }
         }
       }
     },
     "Failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -138,12 +115,6 @@
           }
         }
       }
-    },
-    "Failed to load image: %@" : {
-
-    },
-    "File not found: %@" : {
-
     },
     "Hot live preview active" : {
       "extractionState" : "stale",
@@ -192,6 +163,7 @@
       }
     },
     "Hot preview host executable was not found." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -214,6 +186,7 @@
       }
     },
     "Idle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -236,6 +209,7 @@
       }
     },
     "Image" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -258,6 +232,7 @@
       }
     },
     "Image Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -280,6 +255,7 @@
       }
     },
     "Launching" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -302,6 +278,7 @@
       }
     },
     "Line %lld-%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -324,6 +301,7 @@
       }
     },
     "Live" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -346,6 +324,7 @@
       }
     },
     "Live mode is preferred, but the host is currently showing image preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -368,6 +347,7 @@
       }
     },
     "Live preview failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -390,6 +370,7 @@
       }
     },
     "Live preview is starting" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -412,6 +393,7 @@
       }
     },
     "Live preview is unavailable. Showing image preview. %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -434,6 +416,7 @@
       }
     },
     "Live preview stopped" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -456,6 +439,7 @@
       }
     },
     "Live requires a real SwiftUI view entry" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -500,20 +484,8 @@
         }
       }
     },
-    "Load %@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Load %1$@%2$@"
-          }
-        }
-      }
-    },
-    "Loading image..." : {
-
-    },
     "Markdown Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -536,6 +508,7 @@
       }
     },
     "No #Preview in the current Swift file" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -557,10 +530,8 @@
         }
       }
     },
-    "No build target found for %@" : {
-
-    },
     "No Frame" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -583,6 +554,7 @@
       }
     },
     "No Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -605,6 +577,7 @@
       }
     },
     "Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -626,29 +599,31 @@
         }
       }
     },
-    "Preview powered by LumiHotPreviewKit" : {
+    "Preview powered by LumiPreviewKit" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preview powered by LumiHotPreviewKit"
+            "value" : "Preview powered by LumiPreviewKit"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 LumiHotPreviewKit 驱动的预览"
+            "value" : "由 LumiPreviewKit 驱动的预览"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 LumiHotPreviewKit 驅動的預覽"
+            "value" : "由 LumiPreviewKit 驅動的預覽"
           }
         }
       }
     },
     "Rebuilding hot preview. Showing the previous frame." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -670,10 +645,8 @@
         }
       }
     },
-    "Refresh %@" : {
-
-    },
     "Refresh failed. Showing the previous frame." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -696,6 +669,7 @@
       }
     },
     "Refresh hot preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -718,6 +692,7 @@
       }
     },
     "Refreshing Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -740,6 +715,7 @@
       }
     },
     "Rendering" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -785,6 +761,7 @@
       }
     },
     "Showing the previous frame because no fresh frame is available yet." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -807,6 +784,7 @@
       }
     },
     "Start a preview first" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -829,6 +807,7 @@
       }
     },
     "Start hot preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -851,6 +830,7 @@
       }
     },
     "Start hot preview to render a frame" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -873,6 +853,7 @@
       }
     },
     "Starting hot live preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -895,6 +876,7 @@
       }
     },
     "Starting live preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -917,6 +899,7 @@
       }
     },
     "Stop hot preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -939,6 +922,7 @@
       }
     },
     "Switch to Live mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -961,6 +945,7 @@
       }
     },
     "The current image could not be loaded." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -983,6 +968,7 @@
       }
     },
     "The current Markdown content is unavailable." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1004,10 +990,8 @@
         }
       }
     },
-    "Timed out after %lld seconds." : {
-
-    },
     "Toggle diagnostics info" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1052,10 +1036,8 @@
         }
       }
     },
-    "Unsupported project type: %@" : {
-
-    },
     "V2" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1078,6 +1060,7 @@
       }
     },
     "Waiting to Refresh" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

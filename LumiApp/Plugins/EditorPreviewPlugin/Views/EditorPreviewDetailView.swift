@@ -73,9 +73,10 @@ struct EditorRemoteHotPreviewDetailView: View {
             viewModel.update(sourceText: sourceText, fileURL: currentFileURL, projectRootPath: projectRootPath, reloadPolicy: .scanOnly)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            viewModel.previewWindowDidBecomeActive()
+            viewModel.previewAppDidBecomeActive()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+            viewModel.previewAppDidResignActive()
             EditorPreviewLiveCanvasFrameReporter.scheduleFrameUpdate()
         }
     }

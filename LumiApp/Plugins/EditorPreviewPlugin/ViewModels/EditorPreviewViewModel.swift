@@ -119,6 +119,14 @@ final class EditorRemoteHotPreviewViewModel: ObservableObject {
         service.previewWindowDidBecomeInactive()
     }
 
+    func previewAppDidBecomeActive() {
+        service.previewAppDidBecomeActive()
+    }
+
+    func previewAppDidResignActive() {
+        service.previewAppDidResignActive()
+    }
+
     func previewWindowDidReceiveInteraction() {
         service.previewWindowDidReceiveInteraction()
     }

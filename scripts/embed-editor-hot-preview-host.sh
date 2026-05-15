@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-PACKAGE_DIR="$ROOT_DIR/Packages/LumiHotPreviewKit"
+PACKAGE_DIR="$ROOT_DIR/Packages/LumiPreviewKit"
 SCRATCH_DIR="${DERIVED_FILE_DIR:-$ROOT_DIR/.build}/LumiHotPreviewHostApp"
 CONFIGURATION_NAME="${CONFIGURATION:-Debug}"
 
