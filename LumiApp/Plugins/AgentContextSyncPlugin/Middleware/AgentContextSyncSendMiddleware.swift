@@ -59,7 +59,8 @@ final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
             projectPath: projectPath,
             selectedFileURL: selectedFileURL,
             codeSelectionRange: codeSelectionRange,
-            recentProjects: recentProjects
+            recentProjects: recentProjects,
+            languagePreference: ctx.projectVM.languagePreference
         )
         ctx.transientSystemPrompts.append(prompt)
 
@@ -76,6 +77,34 @@ final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
 
     /// 将项目信息格式化为系统提示词
     private func buildProjectContextPrompt(
+        projectName: String,
+        projectPath: String,
+        selectedFileURL: URL?,
+        codeSelectionRange: CodeSelectionRange?,
+        recentProjects: [Project],
+        languagePreference: LanguagePreference
+    ) -> String {
+        switch languagePreference {
+        case .chinese:
+            return buildChineseProjectContextPrompt(
+                projectName: projectName,
+                projectPath: projectPath,
+                selectedFileURL: selectedFileURL,
+                codeSelectionRange: codeSelectionRange,
+                recentProjects: recentProjects
+            )
+        case .english:
+            return buildEnglishProjectContextPrompt(
+                projectName: projectName,
+                projectPath: projectPath,
+                selectedFileURL: selectedFileURL,
+                codeSelectionRange: codeSelectionRange,
+                recentProjects: recentProjects
+            )
+        }
+    }
+
+    private func buildEnglishProjectContextPrompt(
         projectName: String,
         projectPath: String,
         selectedFileURL: URL?,
@@ -137,6 +166,69 @@ final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
 
         lines.append("")
         lines.append("You should be aware of the project context when responding to user queries. If the user asks about files, code, or project-specific topics, consider the current project path as the working directory.")
+        lines.append("")
+
+        return lines.joined(separator: "\n")
+    }
+
+    private func buildChineseProjectContextPrompt(
+        projectName: String,
+        projectPath: String,
+        selectedFileURL: URL?,
+        codeSelectionRange: CodeSelectionRange?,
+        recentProjects: [Project]
+    ) -> String {
+        var lines: [String] = []
+
+        lines.append("## 当前项目上下文")
+        lines.append("")
+        lines.append("用户当前正在以下项目中工作：")
+        lines.append("")
+        lines.append("**项目名称**：\(projectName.isEmpty ? "未知" : projectName)")
+        lines.append("**项目路径**：`\(projectPath)`")
+
+        if let fileURL = selectedFileURL {
+            let filePath = fileURL.path
+            let relativePath: String
+            if filePath.hasPrefix(projectPath) {
+                let index = filePath.index(filePath.startIndex, offsetBy: projectPath.count)
+                relativePath = String(filePath[index...]).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            } else {
+                relativePath = filePath
+            }
+            lines.append("**当前选中文件**：`\(relativePath.isEmpty ? filePath : relativePath)`")
+
+            if let range = codeSelectionRange {
+                if range.isSingleLine {
+                    lines.append("**代码选区**：第 \(range.startLine) 行，列 \(range.startColumn)-\(range.endColumn)")
+                } else {
+                    lines.append("**代码选区**：第 \(range.startLine)-\(range.endLine) 行（列 \(range.startColumn)-\(range.endColumn)）")
+                }
+            }
+        }
+
+        if !recentProjects.isEmpty {
+            lines.append("")
+            lines.append("## 最近使用的项目")
+            lines.append("")
+            lines.append("用户最近还使用过以下项目：")
+            lines.append("")
+
+            let otherRecentProjects = recentProjects.filter { $0.path != projectPath }
+            if !otherRecentProjects.isEmpty {
+                for project in otherRecentProjects {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                    let lastUsedStr = dateFormatter.string(from: project.lastUsed)
+                    lines.append("- **\(project.name)** (`\(project.path)`) - 最后使用：\(lastUsedStr)")
+                }
+                lines.append("")
+                lines.append("用户可能会引用或切换到这些项目之一。")
+            }
+        }
+
+        lines.append("")
+        lines.append("回复用户时应考虑当前项目上下文。如果用户询问文件、代码或项目相关主题，请将当前项目路径视为工作目录。")
         lines.append("")
 
         return lines.joined(separator: "\n")

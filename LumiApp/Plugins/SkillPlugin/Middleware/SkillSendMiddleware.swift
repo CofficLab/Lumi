@@ -50,7 +50,10 @@ final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
         }
 
         // 构建 Prompt 并注入
-        let prompt = SkillPromptBuilder.buildPrompt(skills: skills)
+        let prompt = SkillPromptBuilder.buildPrompt(
+            skills: skills,
+            language: ctx.projectVM.languagePreference.skillPromptLanguage
+        )
         ctx.transientSystemPrompts.append(prompt)
 
         if Self.verbose {
@@ -58,5 +61,16 @@ final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
         }
 
         await next(ctx)
+    }
+}
+
+private extension LanguagePreference {
+    var skillPromptLanguage: SkillPromptLanguage {
+        switch self {
+        case .chinese:
+            return .chinese
+        case .english:
+            return .english
+        }
     }
 }

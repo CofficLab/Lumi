@@ -61,7 +61,10 @@ final class AgentRulesContextSuperSendMiddleware: SuperSendMiddleware, SuperLog 
             }
 
             // 构建规则摘要提示词
-            let prompt = buildRulesPrompt(rules: rules, projectPath: projectPath)
+            let prompt = buildRulesPrompt(
+                rules: rules,
+                languagePreference: ctx.projectVM.languagePreference
+            )
             ctx.transientSystemPrompts.append(prompt)
 
             if Self.verbose {
@@ -81,7 +84,19 @@ final class AgentRulesContextSuperSendMiddleware: SuperSendMiddleware, SuperLog 
     // MARK: - 提示词构建
 
     /// 将规则列表格式化为系统提示词
-    private func buildRulesPrompt(rules: [AgentRuleMetadata], projectPath: String) -> String {
+    private func buildRulesPrompt(
+        rules: [AgentRuleMetadata],
+        languagePreference: LanguagePreference
+    ) -> String {
+        switch languagePreference {
+        case .chinese:
+            return buildChineseRulesPrompt(rules: rules)
+        case .english:
+            return buildEnglishRulesPrompt(rules: rules)
+        }
+    }
+
+    private func buildEnglishRulesPrompt(rules: [AgentRuleMetadata]) -> String {
         var lines: [String] = []
 
         lines.append("## Current Project Rules")
@@ -102,6 +117,30 @@ final class AgentRulesContextSuperSendMiddleware: SuperSendMiddleware, SuperLog 
 
         lines.append("")
         lines.append("You can use `list_agent_rules` to list all rules, or `create_agent_rule` to create a new rule. Read specific rules when they are relevant to the current task.")
+
+        return lines.joined(separator: "\n")
+    }
+
+    private func buildChineseRulesPrompt(rules: [AgentRuleMetadata]) -> String {
+        var lines: [String] = []
+
+        lines.append("## 当前项目规则")
+        lines.append("")
+        lines.append("当前项目在 `.agent/rules/` 中有 \(rules.count) 个规则文档，定义了编码标准、约定和最佳实践。处理该项目时应读取并遵循这些规则。")
+        lines.append("")
+        lines.append("| 规则 | 描述 |")
+        lines.append("|------|------|")
+
+        for rule in rules {
+            let escapedDescription = rule.description
+                .replacingOccurrences(of: "|", with: "\\|")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            lines.append("| \(rule.title) | \(escapedDescription) |")
+        }
+
+        lines.append("")
+        lines.append("你可以使用 `list_agent_rules` 列出所有规则，或使用 `create_agent_rule` 创建新规则。当前任务相关时，请读取具体规则。")
 
         return lines.joined(separator: "\n")
     }

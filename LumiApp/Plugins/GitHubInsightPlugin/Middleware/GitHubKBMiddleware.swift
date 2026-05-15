@@ -28,7 +28,9 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
             return
         }
 
-        ctx.transientSystemPrompts.append(buildPrompt(entries: Array(relevant)))
+        ctx.transientSystemPrompts.append(
+            buildPrompt(entries: Array(relevant), languagePreference: ctx.projectVM.languagePreference)
+        )
         await next(ctx)
     }
 
@@ -57,15 +59,29 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
             .sorted { $0.relevanceScore > $1.relevanceScore }
     }
 
-    private func buildPrompt(entries: [GitHubInsightKBEntry]) -> String {
-        var lines = [
-            "## GitHub Ecosystem Insights",
-            "",
-            "The following cached GitHub ecosystem references may be relevant. Treat them as leads to verify, not as authoritative conclusions.",
-            "",
-            "| Repo | Type | Signal |",
-            "|------|------|--------|"
-        ]
+    private func buildPrompt(entries: [GitHubInsightKBEntry], languagePreference: LanguagePreference) -> String {
+        var lines: [String]
+
+        switch languagePreference {
+        case .chinese:
+            lines = [
+                "## GitHub 生态洞察",
+                "",
+                "以下缓存的 GitHub 生态参考可能相关。请将它们视为需要验证的线索，而不是权威结论。",
+                "",
+                "| 仓库 | 类型 | 信号 |",
+                "|------|------|------|"
+            ]
+        case .english:
+            lines = [
+                "## GitHub Ecosystem Insights",
+                "",
+                "The following cached GitHub ecosystem references may be relevant. Treat them as leads to verify, not as authoritative conclusions.",
+                "",
+                "| Repo | Type | Signal |",
+                "|------|------|--------|"
+            ]
+        }
 
         for entry in entries {
             let insight = entry.keyInsights.first ?? entry.description
@@ -73,7 +89,12 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
         }
 
         lines.append("")
-        lines.append("Use `query_eco_kb` for more cached repository details when needed.")
+        switch languagePreference {
+        case .chinese:
+            lines.append("需要更多缓存的仓库详情时，使用 `query_eco_kb`。")
+        case .english:
+            lines.append("Use `query_eco_kb` for more cached repository details when needed.")
+        }
         return lines.joined(separator: "\n")
     }
 }

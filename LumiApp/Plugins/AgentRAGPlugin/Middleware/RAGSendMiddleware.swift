@@ -162,7 +162,8 @@ final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
             let augmentedPrompt = RAGContextBuilder.buildPrompt(
                 query: userMessage,
                 results: response.results,
-                projectPath: projectPath
+                projectPath: projectPath,
+                languagePreference: ctx.projectVM.languagePreference
             )
             ctx.transientSystemPrompts.append(augmentedPrompt)
 
