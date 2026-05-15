@@ -14,7 +14,7 @@ struct CallHierarchyTreeView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(direction.title).font(.headline).padding(.horizontal).padding(.top, 8).padding(.bottom, 4)
             if calls.isEmpty {
-                Text("无\(direction.title)").font(.subheadline).foregroundColor(.secondary).padding()
+                Text("\(String(localized: "无", table: "LSPCallHierarchyEditor")\(direction.title)").font(.subheadline).foregroundColor(.secondary).padding()
             } else {
                 List(calls) { call in
                     CallHierarchyRowView(item: call.item, onSelect: onSelect)

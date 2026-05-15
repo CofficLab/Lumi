@@ -33,11 +33,11 @@ struct CallHierarchySheetView: View {
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
             } else {
-                Text("调用层级")
+                Text(String(localized: "调用层级", table: "LSPSheetsEditor"))
                     .font(.system(size: 14, weight: .semibold))
             }
             Spacer()
-            Button("关闭") {
+            Button(String(localized: "关闭", table: "LSPSheetsEditor")) {
                 state.performPanelCommand(.closeCallHierarchy)
             }
         }
@@ -62,7 +62,7 @@ struct CallHierarchySheetView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
-                Button("重新解析") {
+                Button(String(localized: "重新解析", table: "LSPSheetsEditor")) {
                     state.resyncProjectContext()
                 }
                 .buttonStyle(.plain)
@@ -81,7 +81,7 @@ struct CallHierarchySheetView: View {
         if state.callHierarchyProvider.isLoading {
             VStack(spacing: 10) {
                 ProgressView()
-                Text("加载调用层级中...")
+                Text(String(localized: "加载调用层级中...", table: "LSPSheetsEditor"))
                     .foregroundColor(.secondary)
                     .font(.system(size: 12))
             }
@@ -91,7 +91,7 @@ struct CallHierarchySheetView: View {
                 Image(systemName: "arrow.triangle.branch")
                     .font(.system(size: 28))
                     .foregroundColor(.secondary)
-                Text("未找到调用层级信息")
+                Text(String(localized: "未找到调用层级信息", table: "LSPSheetsEditor"))
                     .foregroundColor(.secondary)
                     .font(.system(size: 12))
             }

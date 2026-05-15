@@ -9,7 +9,7 @@ struct DatabaseMainView: View {
         HSplitView {
             // Sidebar
             VStack(alignment: .leading) {
-                Text("Connections")
+                String(localized: "Connections", table: "DatabaseManager")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                     .padding(.horizontal)
@@ -50,7 +50,7 @@ struct DatabaseMainView: View {
                             GlassCard {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
-                                        Text("Keys")
+                                        String(localized: "Keys", table: "DatabaseManager")
                                             .font(.system(size: 15, weight: .medium))
                                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                         Spacer()
@@ -77,7 +77,7 @@ struct DatabaseMainView: View {
                             GlassCard {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
-                                        Text("Tables")
+                                        String(localized: "Tables", table: "DatabaseManager")
                                             .font(.system(size: 15, weight: .medium))
                                             .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                                         Spacer()
@@ -138,7 +138,7 @@ struct DatabaseMainView: View {
                         } else if let result = viewModel.queryResult {
                             QueryResultView(result: result)
                         } else {
-                            Text("No results")
+                            String(localized: "No results", table: "DatabaseManager")
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
@@ -148,7 +148,7 @@ struct DatabaseMainView: View {
                         Image(systemName: "database")
                             .font(.system(size: 48))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        Text("Select a database to connect")
+                        String(localized: "Select a database to connect", table: "DatabaseManager")
                             .font(.title2)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
@@ -195,7 +195,7 @@ struct QueryResultView: View {
                                     .frame(width: 160, alignment: .leading)
                                     .border(Color(hex: "98989E").opacity(0.1))
                                     .contextMenu {
-                                        Button("Copy") {
+                                        Button(String(localized: "Copy", table: "DatabaseManager")) {
                                             NSPasteboard.general.clearContents()
                                             NSPasteboard.general.setString(text, forType: .string)
                                         }
@@ -238,7 +238,7 @@ struct AddConnectionView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Add Connection")
+            String(localized: "Add Connection", table: "DatabaseManager")
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             
@@ -247,7 +247,7 @@ struct AddConnectionView: View {
                     GlassTextField(title: "Connection Name", text: $name, placeholder: "My Database")
                     
                     HStack {
-                        Text("Database Type")
+                        String(localized: "Database Type", table: "DatabaseManager")
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         Spacer()
                         Picker("", selection: $type) {

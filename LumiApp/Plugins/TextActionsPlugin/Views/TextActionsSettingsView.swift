@@ -35,12 +35,12 @@ extension TextActionsSettingsView {
     private var generalSettingsCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("General Settings")
+                String(localized: "General Settings", table: "TextActions")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
                 Toggle(isOn: $isEnabled) {
-                    Text("Enable Text Selection Menu")
+                    String(localized: "Enable Text Selection Menu", table: "TextActions")
                 }
 
                 if !manager.isPermissionGranted {
@@ -54,7 +54,7 @@ extension TextActionsSettingsView {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundColor(Color(hex: "FF9F0A"))
-            Text("Accessibility permission is required to detect text selection")
+            String(localized: "Accessibility permission is required to detect text selection", table: "TextActions")
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             GlassButton(title: LocalizedStringKey(String(localized: "Open System Settings")), style: .secondary) {
@@ -68,7 +68,7 @@ extension TextActionsSettingsView {
     private var supportedActionsCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Supported Actions")
+                String(localized: "Supported Actions", table: "TextActions")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 

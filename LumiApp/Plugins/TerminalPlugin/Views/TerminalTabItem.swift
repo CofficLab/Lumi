@@ -21,7 +21,7 @@ struct TerminalTabItem: View {
             }
             .contextMenu {
                 Button(action: onClose) {
-                    Label("Close Tab", systemImage: "xmark")
+                    Label(String(localized: "Close Tab", table: "Terminal"), systemImage: "xmark")
                 }
             }
     }

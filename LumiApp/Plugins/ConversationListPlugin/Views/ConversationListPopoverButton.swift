@@ -23,7 +23,7 @@ struct ConversationListPopoverButton: View {
                 .frame(width: iconButtonSize, height: iconButtonSize)
                 .clipShape(Circle())
         }
-        .help("会话列表")
+        .help(String(localized: "会话列表", table: "ConversationList"))
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             ConversationListView()
                 .frame(width: 300, height: 480)

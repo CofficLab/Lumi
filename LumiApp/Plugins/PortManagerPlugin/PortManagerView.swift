@@ -51,14 +51,14 @@ struct PortManagerView: View {
                     ContentUnavailableView(
                         LocalizedStringKey(String(localized: "No Listening Ports")),
                         systemImage: "network.slash",
-                        description: Text("No listening ports found.")
+                        description: String(localized: "No listening ports found.", table: "PortManager")
                     )
                 } else {
                     VStack {
                         Image(systemName: "network.slash")
                             .font(.largeTitle)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        Text("No Listening Ports")
+                        String(localized: "No Listening Ports", table: "PortManager")
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                     }
@@ -83,7 +83,7 @@ struct PortManagerView: View {
         .alert(Text("Error"), isPresented: $showError, actions: {
             Button(role: .cancel) {
             } label: {
-                Text("OK")
+                String(localized: "OK", table: "PortManager")
             }
         }, message: {
             Text(errorMessage ?? String(localized: "Unknown error"))
@@ -169,7 +169,7 @@ struct PortRowView: View {
                     .font(.title2)
             }
             .buttonStyle(.borderless)
-            .help(Text("Kill Process"))
+            .help(String(localized: "Kill Process", table: "PortManager"))
             .confirmationDialog(
                 Text("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?"),
                 isPresented: $showConfirm
@@ -181,7 +181,7 @@ struct PortRowView: View {
                 }
                 Button(role: .cancel) {
                 } label: {
-                    Text("Cancel")
+                    String(localized: "Cancel", table: "PortManager")
                 }
             } message: {
                 Text("This action will force terminate the process, which may lead to data loss.")

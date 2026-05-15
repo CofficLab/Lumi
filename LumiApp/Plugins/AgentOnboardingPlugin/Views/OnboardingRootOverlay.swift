@@ -442,7 +442,7 @@ private struct OnboardingSheetView: View {
     /// 顶部导航栏
     private var topBar: some View {
         HStack {
-            Label("新手引导", systemImage: "graduationcap.fill")
+            Label(String(localized: "新手引导", table: "AgentOnboardingPlugin"), systemImage: "graduationcap.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
 
@@ -454,7 +454,7 @@ private struct OnboardingSheetView: View {
             Spacer()
 
             // 跳过按钮
-            Button("跳过") {
+            Button(String(localized: "跳过", table: "AgentOnboardingPlugin")) {
                 viewModel.skip()
             }
             .font(.system(size: 13, weight: .medium))
@@ -639,7 +639,7 @@ private struct OnboardingSheetView: View {
                 Button {
                     viewModel.previousStep()
                 } label: {
-                    Label("上一步", systemImage: "chevron.left")
+                    Label(String(localized: "上一步", table: "AgentOnboardingPlugin"), systemImage: "chevron.left")
                         .font(.system(size: 13, weight: .medium))
                 }
                 .buttonStyle(.plain)
@@ -660,7 +660,7 @@ private struct OnboardingSheetView: View {
                         NotificationCenter.postOpenSettings()
                         viewModel.complete()
                     } label: {
-                        Label("打开设置", systemImage: "gearshape")
+                        Label(String(localized: "打开设置", table: "AgentOnboardingPlugin"), systemImage: "gearshape")
                             .font(.system(size: 13, weight: .medium))
                     }
                     .buttonStyle(.plain)
@@ -677,7 +677,7 @@ private struct OnboardingSheetView: View {
                             viewModel.complete()
                         }
                     } label: {
-                        Label("新建会话", systemImage: "plus")
+                        Label(String(localized: "新建会话", table: "AgentOnboardingPlugin"), systemImage: "plus")
                             .font(.system(size: 13, weight: .medium))
                     }
                     .buttonStyle(.plain)

@@ -73,7 +73,7 @@ struct ZhipuQuotaStatusBarView: View, SuperLog {
                 Image(systemName: "chart.bar.fill")
                     .font(.system(size: 10))
 
-                Text("加载中...")
+                String(localized: "加载中...", table: "Zhipu")
                     .font(.system(size: 11))
             }
             .padding(.horizontal, 8)
