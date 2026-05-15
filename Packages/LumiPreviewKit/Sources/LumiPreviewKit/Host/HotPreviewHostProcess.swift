@@ -102,11 +102,19 @@ private final class ProcessHotHostConnection: LumiPreviewFacade.HotHostConnectio
     private let lock = NSLock()
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
+    private let responseTimeout: TimeInterval
+    private var stdoutBuffer = Data()
 
-    init(process: Process, stdin: FileHandle, stdout: FileHandle) {
+    init(
+        process: Process,
+        stdin: FileHandle,
+        stdout: FileHandle,
+        responseTimeout: TimeInterval = 120
+    ) {
         self.process = process
         self.stdin = stdin
         self.stdout = stdout
+        self.responseTimeout = responseTimeout
     }
 
     var isRunning: Bool {
@@ -216,6 +224,10 @@ private final class ProcessHotHostConnection: LumiPreviewFacade.HotHostConnectio
     private func terminateSync() {
         lock.lock()
         defer { lock.unlock() }
+        terminateWithoutLock()
+    }
+
+    private func terminateWithoutLock() {
         try? stdin.close()
         if process.isRunning {
             process.terminate()
@@ -253,7 +265,15 @@ private final class ProcessHotHostConnection: LumiPreviewFacade.HotHostConnectio
             )
         }
 
-        guard let line = try readLineData() else {
+        let line: Data?
+        do {
+            line = try readLineData(timeout: responseTimeout)
+        } catch {
+            terminateWithoutLock()
+            throw error
+        }
+
+        guard let line else {
             throw LumiPreviewFacade.PreviewError.hostLaunchFailed(message: "Hot host process closed stdout.")
         }
 
@@ -277,20 +297,69 @@ private final class ProcessHotHostConnection: LumiPreviewFacade.HotHostConnectio
         }
     }
 
-    private func readLineData() throws -> Data? {
-        var line = Data()
-
+    private func readLineData(timeout: TimeInterval) throws -> Data? {
         while true {
-            let chunk = stdout.readData(ofLength: 1)
-            guard !chunk.isEmpty else {
-                return line.isEmpty ? nil : line
-            }
-
-            if chunk[0] == 0x0A {
+            if let line = popBufferedLine() {
                 return line
             }
 
-            line.append(chunk)
+            let chunk = try readStdoutChunk(timeout: timeout)
+            guard !chunk.isEmpty else {
+                if stdoutBuffer.isEmpty {
+                    return nil
+                }
+                let line = stdoutBuffer
+                stdoutBuffer.removeAll(keepingCapacity: true)
+                return line
+            }
+
+            stdoutBuffer.append(chunk)
         }
+    }
+
+    private func popBufferedLine() -> Data? {
+        guard let newlineIndex = stdoutBuffer.firstIndex(of: 0x0A) else {
+            return nil
+        }
+
+        let line = stdoutBuffer[..<newlineIndex]
+        stdoutBuffer.removeSubrange(...newlineIndex)
+        return Data(line)
+    }
+
+    private func readStdoutChunk(timeout: TimeInterval) throws -> Data {
+        let semaphore = DispatchSemaphore(value: 0)
+        let result = StdoutChunkReadResult()
+
+        DispatchQueue.global(qos: .userInitiated).async { [stdout] in
+            let chunk = stdout.availableData
+            result.store(.success(chunk))
+            semaphore.signal()
+        }
+
+        guard semaphore.wait(timeout: .now() + timeout) == .success else {
+            throw LumiPreviewFacade.PreviewError.runtimeCrashed(
+                message: "Timed out waiting for hot host response after \(Int(timeout))s."
+            )
+        }
+
+        return try result.load()?.get() ?? Data()
+    }
+}
+
+private final class StdoutChunkReadResult: @unchecked Sendable {
+    private let lock = NSLock()
+    private var result: Result<Data, Error>?
+
+    func store(_ result: Result<Data, Error>) {
+        lock.lock()
+        self.result = result
+        lock.unlock()
+    }
+
+    func load() -> Result<Data, Error>? {
+        lock.lock()
+        defer { lock.unlock() }
+        return result
     }
 }
