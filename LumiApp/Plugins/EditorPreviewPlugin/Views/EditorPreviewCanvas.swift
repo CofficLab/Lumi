@@ -27,8 +27,7 @@ struct HotPreviewCanvas: View {
         } else if let failureMessage = viewModel.failureMessage {
             HotPreviewErrorOverlayView(
                 title: String(localized: "Preview Failed", table: "EditorPreview"),
-                message: failureMessage,
-                viewModel: viewModel
+                message: failureMessage
             )
         } else {
             liveCanvasSurface
@@ -57,8 +56,7 @@ struct HotPreviewCanvas: View {
                     HotPreviewErrorOverlayView(
                         title: String(localized: "Live Preview Error", table: "EditorPreview"),
                         message: liveFailureMessage,
-                        isOverlayingStaleFrame: viewModel.renderImage != nil,
-                        viewModel: viewModel
+                        isOverlayingStaleFrame: viewModel.renderImage != nil
                     )
                 } else if viewModel.isLiveLoading {
                     HotPreviewMessageView(
