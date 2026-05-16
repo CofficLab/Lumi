@@ -150,11 +150,7 @@ final class IncrementalCompiler: Sendable {
             return URL(fileURLWithPath: explicitOutput)
         }
 
-        let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-IncrementalCompiler-\(UUID().uuidString)", isDirectory: true)
-        try? FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
-
-        return outputDirectory
+        return PreviewStoragePaths.makeTransientWorkDirectory(component: "incremental-compiler")
             .appendingPathComponent(fileURL.deletingPathExtension().lastPathComponent)
             .appendingPathExtension("o")
     }
@@ -199,9 +195,7 @@ final class IncrementalCompiler: Sendable {
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-lc", command]
 
-        let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-IncrementalCompilerLogs-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        let outputDirectory = PreviewStoragePaths.makeTransientWorkDirectory(component: "incremental-compiler-logs")
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
         let stdoutURL = outputDirectory.appendingPathComponent("stdout.log")

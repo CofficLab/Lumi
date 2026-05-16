@@ -266,4 +266,118 @@ struct SPMCompilerTests {
 
         return packageDirectory
     }
+
+    @Test("previewCompilerArguments 包含 preview companion 对象文件")
+    func previewCompilerArgumentsIncludePreviewCompanionObjects() throws {
+        let packageDirectory = try makeTemporaryPackage(
+            targetName: "PreviewTarget",
+            sourceFileName: "main.swift",
+            source: """
+            @main
+            struct PreviewTarget {
+                static func main() {}
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let debugDirectory = packageDirectory
+            .appendingPathComponent(".build", isDirectory: true)
+            .appendingPathComponent("debug", isDirectory: true)
+        let targetBuildDirectory = debugDirectory
+            .appendingPathComponent("PreviewTarget.build", isDirectory: true)
+        try FileManager.default.createDirectory(at: targetBuildDirectory, withIntermediateDirectories: true)
+        FileManager.default.createFile(
+            atPath: targetBuildDirectory.appendingPathComponent("Core.swift.o").path,
+            contents: Data()
+        )
+        let registryMarker = Data("7PreviewfMf_15PreviewRegistryfMu_".utf8)
+        FileManager.default.createFile(
+            atPath: targetBuildDirectory.appendingPathComponent("Widget+Preview.swift.o").path,
+            contents: registryMarker + Data(repeating: 0, count: 64)
+        )
+        FileManager.default.createFile(
+            atPath: targetBuildDirectory.appendingPathComponent("MagicRoundedPreviews.swift.o").path,
+            contents: registryMarker + Data(repeating: 0, count: 64)
+        )
+
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(
+            packageDirectory: packageDirectory,
+            targetName: "PreviewTarget"
+        )
+        let normalizedArguments = arguments.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
+
+        #expect(
+            normalizedArguments.contains(
+                targetBuildDirectory.appendingPathComponent("Core.swift.o").standardizedFileURL.path
+            )
+        )
+        #expect(
+            normalizedArguments.contains(
+                targetBuildDirectory.appendingPathComponent("Widget+Preview.swift.o").standardizedFileURL.path
+            )
+        )
+        #expect(
+            normalizedArguments.contains(
+                targetBuildDirectory.appendingPathComponent("MagicRoundedPreviews.swift.o").standardizedFileURL.path
+            )
+        )
+    }
+    @Test("previewCompilerArguments 包含依赖 target 的 preview companion 对象文件")
+    func previewCompilerArgumentsIncludePreviewCompanionObjectsInDependencies() throws {
+        let packageDirectory = try makeTemporaryPackage(
+            targetName: "PreviewTarget",
+            sourceFileName: "main.swift",
+            source: """
+            @main
+            struct PreviewTarget {
+                static func main() {}
+            }
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: packageDirectory) }
+
+        let debugDirectory = packageDirectory
+            .appendingPathComponent(".build", isDirectory: true)
+            .appendingPathComponent("debug", isDirectory: true)
+        let primaryBuildDirectory = debugDirectory
+            .appendingPathComponent("PreviewTarget.build", isDirectory: true)
+        try FileManager.default.createDirectory(at: primaryBuildDirectory, withIntermediateDirectories: true)
+
+        FileManager.default.createFile(
+            atPath: primaryBuildDirectory.appendingPathComponent("Core.swift.o").path,
+            contents: Data()
+        )
+        FileManager.default.createFile(
+            atPath: primaryBuildDirectory.appendingPathComponent("Widget+Preview.swift.o").path,
+            contents: Data()
+        )
+        FileManager.default.createFile(
+            atPath: primaryBuildDirectory.appendingPathComponent("ToastTypes+Preview.swift.o").path,
+            contents: Data()
+        )
+
+        let arguments = LumiPreviewFacade.SPMCompiler().previewCompilerArguments(
+            packageDirectory: packageDirectory,
+            targetName: "PreviewTarget"
+        )
+        let normalizedArguments = arguments.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
+
+        #expect(
+            normalizedArguments.contains(
+                primaryBuildDirectory.appendingPathComponent("Core.swift.o").standardizedFileURL.path
+            )
+        )
+        #expect(
+            normalizedArguments.contains(
+                primaryBuildDirectory.appendingPathComponent("Widget+Preview.swift.o").standardizedFileURL.path
+            )
+        )
+        #expect(
+            normalizedArguments.contains(
+                primaryBuildDirectory.appendingPathComponent("ToastTypes+Preview.swift.o").standardizedFileURL.path
+            )
+        )
+    }
+
 }

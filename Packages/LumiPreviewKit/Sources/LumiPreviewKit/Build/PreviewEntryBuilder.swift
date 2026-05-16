@@ -10,6 +10,9 @@ final class PreviewEntryBuilder: Sendable {
     /// The C symbol dynamic preview dylibs can export to return a retained `NSView`.
     public static let viewSymbolName = "lumi_preview_make_nsview"
 
+    /// Swift condition flags for preview entry dylibs, matching Xcode Debug `#Preview` builds.
+    public static let previewDebugConditionArguments: [String] = ["-DDEBUG"]
+
     private let incrementalCompiler: IncrementalCompiler
     private let spmCompiler: SPMCompiler
     private let xcodeCompiler: XcodeCompiler
@@ -111,8 +114,7 @@ final class PreviewEntryBuilder: Sendable {
     }
 
     private static var cacheRootDirectory: URL {
-        FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-PreviewEntryCache", isDirectory: true)
+        PreviewStorage.paths.previewEntryCacheDirectory
     }
 
     private static func moduleName(for fingerprint: String) -> String {
@@ -158,18 +160,24 @@ final class PreviewEntryBuilder: Sendable {
     }
 
     private func viewEntryCompilerArguments(for buildStrategy: BuildStrategy?) async throws -> [String] {
+        var arguments: [String]
         switch buildStrategy {
         case .spm(let packageDirectory, let targetName):
-            return spmCompiler.previewCompilerArguments(packageDirectory: packageDirectory, targetName: targetName)
+            arguments = spmCompiler.previewCompilerArguments(
+                packageDirectory: packageDirectory,
+                targetName: targetName
+            )
         case .xcode(let projectURL, let scheme, let configuration):
-            return try await xcodeCompiler.previewCompilerArguments(
+            arguments = try await xcodeCompiler.previewCompilerArguments(
                 projectURL: projectURL,
                 scheme: scheme,
                 configuration: configuration
             )
         case .incremental, .none:
-            return []
+            arguments = []
         }
+        arguments.append(contentsOf: Self.previewDebugConditionArguments)
+        return arguments
     }
 
     private struct GeneratedSource {
@@ -204,7 +212,8 @@ final class PreviewEntryBuilder: Sendable {
                 fileName: "PreviewEntry.swift",
                 content: try viewEntrySource(
                     for: discovery,
-                    configuration: configuration
+                    configuration: configuration,
+                    buildStrategy: buildStrategy
                 )
             )
         )
@@ -225,18 +234,20 @@ final class PreviewEntryBuilder: Sendable {
 
     private func viewEntrySource(
         for discovery: PreviewDiscovery,
-        configuration: PreviewRenderConfiguration
+        configuration: PreviewRenderConfiguration,
+        buildStrategy: BuildStrategy?
     ) throws -> String {
         let descriptorSource = try descriptorFunctionSource(for: discovery, configuration: configuration)
         let bodySource = discovery.bodySource?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let viewBody = (bodySource?.isEmpty == false) ? bodySource! : #"Text("Empty Preview")"#
+        let importLine = importModuleName(for: buildStrategy).map { "import \($0)\n" } ?? ""
 
         return """
         import AppKit
         import Darwin
         import SwiftUI
-
+        \(importLine)
         \(descriptorSource)
 
         @_cdecl("\(Self.viewSymbolName)")
@@ -299,10 +310,16 @@ final class PreviewEntryBuilder: Sendable {
 
     private func sourceFiles(for discovery: PreviewDiscovery, buildStrategy: BuildStrategy?) -> [URL] {
         let currentSourceURL = discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
+
+        if buildStrategy != nil,
+           LumiPreviewFacade.ModuleImportEligibilityChecker().shouldUseModuleImport(discovery: discovery) {
+            return []
+        }
+
         var sourceURLs: [URL]
 
-        if case .spm(let packageDirectory, let targetName) = buildStrategy {
-            sourceURLs = BuildPlanner.swiftSourceFiles(packageDirectory: packageDirectory, targetName: targetName)
+        if case .spm = buildStrategy {
+            sourceURLs = [currentSourceURL]
         } else if case .xcode(let projectURL, let scheme, _) = buildStrategy {
             sourceURLs = BuildPlanner.swiftSourceFiles(
                 projectURL: projectURL,
@@ -310,7 +327,7 @@ final class PreviewEntryBuilder: Sendable {
                 containing: currentSourceURL
             )
         } else {
-            sourceURLs = []
+            sourceURLs = [currentSourceURL]
         }
 
         if !sourceURLs.contains(currentSourceURL) {
@@ -322,6 +339,33 @@ final class PreviewEntryBuilder: Sendable {
             .uniqued()
             .filter { $0 == currentSourceURL || $0.lastPathComponent != "main.swift" }
             .sorted { $0.path < $1.path }
+    }
+
+    private func linksPrebuiltModuleArtifacts(for buildStrategy: BuildStrategy) -> Bool {
+        switch buildStrategy {
+        case .spm(let packageDirectory, let targetName):
+            let arguments = spmCompiler.previewCompilerArguments(
+                packageDirectory: packageDirectory,
+                targetName: targetName
+            )
+            return arguments.contains { $0.hasSuffix(".o") }
+        case .xcode:
+            return true
+        case .incremental:
+            return false
+        }
+    }
+
+    private func importModuleName(for buildStrategy: BuildStrategy?) -> String? {
+        guard let buildStrategy else { return nil }
+        switch buildStrategy {
+        case .spm(_, let targetName):
+            return targetName
+        case .xcode(_, let scheme, _):
+            return scheme
+        case .incremental:
+            return nil
+        }
     }
 
     private func sanitizedSourceFile(

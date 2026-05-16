@@ -112,9 +112,7 @@ final class XcodeCompiler: Sendable {
         )
         process.currentDirectoryURL = projectURL.deletingLastPathComponent()
 
-        let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-XcodeCompiler-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        let outputDirectory = PreviewStoragePaths.makeTransientWorkDirectory(component: "xcode-compiler")
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
         let stdoutURL = outputDirectory.appendingPathComponent("stdout.log")

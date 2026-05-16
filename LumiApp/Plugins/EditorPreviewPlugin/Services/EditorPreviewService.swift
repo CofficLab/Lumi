@@ -119,6 +119,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
     private var isLivePreviewShown = false
 
     init() {
+        EditorPreviewStorage.installIfNeeded()
         bindLiveCanvasService()
         bindProjectPreviewIndexService()
         warmupHostIfPossible()
@@ -1216,16 +1217,26 @@ final class EditorPreviewService: ObservableObject, SuperLog {
     }
 
     private static func loadProjectPreviewHistoryStorage() -> [String: ProjectPreviewHistory] {
-        guard let data = UserDefaults.standard.data(forKey: previewHistoryStorageKey),
-              let decoded = try? JSONDecoder().decode([String: ProjectPreviewHistory].self, from: data) else {
+        let fileURL = EditorPreviewStorage.projectPreviewHistoryURL
+        if let data = try? Data(contentsOf: fileURL),
+           let decoded = try? JSONDecoder().decode([String: ProjectPreviewHistory].self, from: data) {
+            return decoded
+        }
+
+        guard let legacyData = UserDefaults.standard.data(forKey: previewHistoryStorageKey),
+              let legacy = try? JSONDecoder().decode([String: ProjectPreviewHistory].self, from: legacyData) else {
             return [:]
         }
-        return decoded
+
+        saveProjectPreviewHistoryStorage(legacy)
+        UserDefaults.standard.removeObject(forKey: previewHistoryStorageKey)
+        return legacy
     }
 
     private static func saveProjectPreviewHistoryStorage(_ storage: [String: ProjectPreviewHistory]) {
         guard let data = try? JSONEncoder().encode(storage) else { return }
-        UserDefaults.standard.set(data, forKey: previewHistoryStorageKey)
+        let fileURL = EditorPreviewStorage.projectPreviewHistoryURL
+        try? data.write(to: fileURL, options: .atomic)
     }
 
     private func waitForPrewarmOpportunity() async -> Bool {

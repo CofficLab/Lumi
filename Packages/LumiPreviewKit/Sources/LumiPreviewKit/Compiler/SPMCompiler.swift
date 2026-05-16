@@ -62,8 +62,9 @@ final class SPMCompiler: Sendable {
         }
 
         let linkInputs = Self.linkInputArguments(
-            in: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
-            excludingProductNames: targetName.map { [$0] } ?? []
+            packageDirectory: packageDirectory,
+            debugDirectories: existingDirectories.map { URL(fileURLWithPath: $0, isDirectory: true) },
+            previewedTargetName: targetName
         )
         arguments.append(contentsOf: linkInputs)
         arguments.append(contentsOf: Self.packageLinkedLibraryArguments(packageDirectory: packageDirectory))
@@ -89,9 +90,7 @@ final class SPMCompiler: Sendable {
         process.arguments = ["swift", "build", "--target", targetName]
         process.currentDirectoryURL = packageDirectory
 
-        let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("LumiPreviewKit-SPMCompiler-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        let outputDirectory = PreviewStoragePaths.makeTransientWorkDirectory(component: "spm-compiler")
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
         let stdoutURL = outputDirectory.appendingPathComponent("stdout.log")
@@ -188,31 +187,174 @@ final class SPMCompiler: Sendable {
     }
 
     private static func linkInputArguments(
-        in directories: [URL],
-        excludingProductNames productNames: [String]
+        packageDirectory: URL,
+        debugDirectories: [URL],
+        previewedTargetName: String?
     ) -> [String] {
         let fileManager = FileManager.default
+        let sourceNames = sourceFileNames(in: packageDirectory)
+        let allowedTargets = previewedTargetName.map {
+            targetDependencyClosure(packageDirectory: packageDirectory, previewedTarget: $0)
+        }
         var inputs: [String] = []
 
-        for directory in directories {
-            // .o files in SPM builds are inside TargetName.build/ subdirectories,
-            // so we need to search recursively.
+        for debugDirectory in debugDirectories {
+            let targetBuildDirectories: [URL]
+            if let allowedTargets {
+                targetBuildDirectories = allowedTargets.map {
+                    debugDirectory.appendingPathComponent("\($0).build", isDirectory: true)
+                }
+            } else {
+                targetBuildDirectories = (try? fileManager.contentsOfDirectory(
+                    at: debugDirectory,
+                    includingPropertiesForKeys: [.isDirectoryKey],
+                    options: [.skipsHiddenFiles]
+                ))?.filter { url in
+                    url.lastPathComponent.hasSuffix(".build")
+                        && !containsTestBuildComponent(url)
+                } ?? []
+            }
+
+            for targetBuildDirectory in targetBuildDirectories {
+                guard fileManager.fileExists(atPath: targetBuildDirectory.path) else { continue }
+
+                guard let enumerator = fileManager.enumerator(
+                    at: targetBuildDirectory,
+                    includingPropertiesForKeys: [.isRegularFileKey],
+                    options: [.skipsHiddenFiles]
+                ) else {
+                    continue
+                }
+
+                for case let entry as URL in enumerator
+                where entry.pathExtension == "o" || entry.pathExtension == "a" {
+                    guard isLinkInput(entry, excludingProductNames: previewedTargetName.map { [$0] } ?? []) else {
+                        continue
+                    }
+                    guard shouldLinkObjectFile(
+                        entry,
+                        packageDirectory: packageDirectory,
+                        sourceNames: sourceNames
+                    ) else { continue }
+                    inputs.append(entry.path)
+                }
+            }
+
+            if let looseEntries = try? fileManager.contentsOfDirectory(
+                at: debugDirectory,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            ) {
+                for entry in looseEntries {
+                    guard entry.pathExtension == "o" || entry.pathExtension == "a" else { continue }
+                    guard isLinkInput(entry, excludingProductNames: previewedTargetName.map { [$0] } ?? []) else {
+                        continue
+                    }
+                    guard shouldLinkObjectFile(
+                        entry,
+                        packageDirectory: packageDirectory,
+                        sourceNames: sourceNames
+                    ) else { continue }
+                    inputs.append(entry.path)
+                }
+            }
+        }
+
+        return inputs.sorted().uniqued()
+    }
+
+    private static func sourceFileName(forObjectFile url: URL) -> String {
+        url.lastPathComponent.replacingOccurrences(of: ".swift.o", with: ".swift")
+    }
+
+    private static func isSPMGeneratedLinkObject(_ objectFile: URL) -> Bool {
+        if objectFile.lastPathComponent == "resource_bundle_accessor.swift.o" {
+            return true
+        }
+        return objectFile.pathComponents.contains("DerivedSources")
+    }
+
+    private static func shouldLinkObjectFile(
+        _ objectFile: URL,
+        packageDirectory: URL,
+        sourceNames: Set<String>
+    ) -> Bool {
+        if isSPMGeneratedLinkObject(objectFile) {
+            return true
+        }
+        guard requiresCorrespondingSourceFile(packageDirectory: packageDirectory) else {
+            return true
+        }
+        return sourceNames.contains(sourceFileName(forObjectFile: objectFile))
+    }
+
+    private static func sourceFileNames(in packageDirectory: URL) -> Set<String> {
+        let fileManager = FileManager.default
+        var names = Set<String>()
+
+        let sourceRoots = [
+            packageDirectory.appendingPathComponent("Sources", isDirectory: true),
+            packageDirectory.appendingPathComponent(".build/checkouts", isDirectory: true)
+        ]
+
+        for root in sourceRoots {
+            guard fileManager.fileExists(atPath: root.path) else { continue }
             guard let enumerator = fileManager.enumerator(
-                at: directory,
+                at: root,
                 includingPropertiesForKeys: [.isRegularFileKey],
                 options: [.skipsHiddenFiles]
             ) else {
                 continue
             }
-
-            for case let entry as URL in enumerator
-            where entry.pathExtension == "o" || entry.pathExtension == "a" {
-                guard isLinkInput(entry, excludingProductNames: productNames) else { continue }
-                inputs.append(entry.path)
+            for case let file as URL in enumerator where file.pathExtension == "swift" {
+                names.insert(file.lastPathComponent)
             }
         }
 
-        return inputs.sorted().uniqued()
+        return names
+    }
+
+    private static func requiresCorrespondingSourceFile(packageDirectory: URL) -> Bool {
+        loadTargetDependencyMap(packageDirectory: packageDirectory) != nil
+    }
+
+    private static func loadTargetDependencyMap(packageDirectory: URL) -> [String: [String]]? {
+        let buildDirectory = packageDirectory.appendingPathComponent(".build", isDirectory: true)
+        for debugDirectory in candidateDebugDirectories(in: buildDirectory) {
+            let descriptionURL = debugDirectory.appendingPathComponent("description.json")
+            guard let data = try? Data(contentsOf: descriptionURL),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let map = json["targetDependencyMap"] as? [String: [String]] else {
+                continue
+            }
+            return map
+        }
+        return nil
+    }
+
+    private static func targetDependencyClosure(
+        packageDirectory: URL,
+        previewedTarget: String
+    ) -> Set<String> {
+        guard let map = loadTargetDependencyMap(packageDirectory: packageDirectory) else {
+            return [previewedTarget]
+        }
+
+        var result = Set<String>()
+        var pending = [previewedTarget]
+        while let current = pending.popLast() {
+            guard result.insert(current).inserted else { continue }
+            for dependency in map[current] ?? [] {
+                pending.append(dependency)
+            }
+        }
+        return result
+    }
+
+
+    /// Legacy hook kept for call sites; preview companion objects are linked when their sources exist.
+    static func filterDedicatedPreviewObjectArguments(_ arguments: [String]) -> [String] {
+        arguments
     }
 
     private static func isLinkInput(_ url: URL, excludingProductNames productNames: [String]) -> Bool {

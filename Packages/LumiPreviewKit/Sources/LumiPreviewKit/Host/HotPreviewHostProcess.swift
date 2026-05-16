@@ -15,6 +15,11 @@ public extension LumiPreviewFacade {
             let process = Process()
             process.executableURL = executableURL
             process.arguments = ["--stdio"]
+            var environment = ProcessInfo.processInfo.environment
+            let storagePaths = PreviewStorage.paths
+            environment[PreviewStoragePaths.framesDirectoryEnvironmentKey] = storagePaths.framesDirectory.path
+            environment[PreviewStoragePaths.rootDirectoryEnvironmentKey] = storagePaths.rootDirectory.path
+            process.environment = environment
 
             let stdinPipe = Pipe()
             let stdoutPipe = Pipe()

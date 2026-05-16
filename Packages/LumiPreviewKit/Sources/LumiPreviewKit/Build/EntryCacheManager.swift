@@ -179,10 +179,7 @@ public extension LumiPreviewFacade {
         }
 
         private static func defaultCacheRootDirectory() -> URL {
-            FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("LumiPreviewKit", isDirectory: true)
-                .appendingPathComponent("EntryCache", isDirectory: true)
-            ?? FileManager.default.temporaryDirectory.appendingPathComponent("LumiPreviewKit-EntryCache", isDirectory: true)
+            PreviewStorage.paths.entryCacheDirectory
         }
     }
 }

@@ -1065,8 +1065,7 @@ public extension LumiPreviewFacade {
                         variant: .sourceInclude
                     )
                 } catch {
-                    // Fall through to the legacy source-including builder as the
-                    // last fallback if the current-file-only compilation fails.
+                    // Fall through to the legacy builder if current-file compilation fails.
                 }
             }
 

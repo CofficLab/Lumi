@@ -32,6 +32,7 @@ typealias ProjectPreviewIndexService = LumiPreviewFacade.ProjectPreviewIndexServ
 typealias PreviewEnvironmentInjection = LumiPreviewFacade.PreviewEnvironmentInjection
 typealias PreviewRenderConfiguration = LumiPreviewFacade.PreviewRenderConfiguration
 typealias EditorPreviewRefreshPolicy = LumiPreviewFacade.EditorPreviewRefreshPolicy
+typealias PreviewStoragePaths = LumiPreviewFacade.PreviewStoragePaths
 
 public extension LumiPreviewFacade {
     typealias LivePreviewFrameAlignment = PreviewFrameAlignment

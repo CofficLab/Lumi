@@ -96,9 +96,11 @@ public extension LumiPreviewFacade {
         }
 
         public static func defaultFrameDirectory(fileManager: FileManager = .default) -> URL {
-            fileManager.temporaryDirectory
-                .appendingPathComponent("LumiPreviewKit", isDirectory: true)
-                .appendingPathComponent("Frames", isDirectory: true)
+            if let override = ProcessInfo.processInfo.environment[PreviewStoragePaths.framesDirectoryEnvironmentKey],
+               !override.isEmpty {
+                return URL(fileURLWithPath: override, isDirectory: true)
+            }
+            return PreviewStorage.paths.framesDirectory
         }
 
         @discardableResult

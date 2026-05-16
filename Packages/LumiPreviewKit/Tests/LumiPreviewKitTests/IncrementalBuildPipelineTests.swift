@@ -225,11 +225,13 @@ struct IncrementalBuildPipelineTests {
             inputPaths: ["/tmp/PreviewEntry.o"],
             dylibOutputPath: "/tmp/PreviewEntry.dylib",
             additionalArguments: ["-module-name", "DemoPreview"],
-            enableInterposableLinking: true
+            enableInterposableLinking: true,
+            enableDeadStripLinking: true
         )
 
         #expect(command.contains("-Xlinker"))
         #expect(command.contains("-interposable"))
+        #expect(command.contains("-dead_strip"))
         #expect(command.contains("DemoPreview"))
         #expect(command.contains("/tmp/PreviewEntry.dylib"))
     }
