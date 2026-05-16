@@ -48,6 +48,10 @@ struct EditorTabItemView: View {
         }
         .onDrag {
             onStartDrag(tab)
+            // 传递绝对路径纯文本，便于拖入输入框等；标签排序仍靠 onStartDrag 状态
+            if let path = tab.fileURL?.path {
+                return NSItemProvider(object: path as NSString)
+            }
             return NSItemProvider(object: tab.sessionID.uuidString as NSString)
         } preview: {
             tabDragPreview
