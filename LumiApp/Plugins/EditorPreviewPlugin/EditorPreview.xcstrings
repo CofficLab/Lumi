@@ -137,7 +137,11 @@
         }
       }
     },
+    "Copy" : {
+
+    },
     "Copy Details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -230,6 +234,7 @@
       }
     },
     "Diagnostics" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -252,6 +257,7 @@
       }
     },
     "Display" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -338,6 +344,7 @@
       }
     },
     "Failure" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -370,6 +377,7 @@
       }
     },
     "Fix the compilation errors in the source file and save to trigger a rebuild." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -392,6 +400,7 @@
       }
     },
     "Frame" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -440,6 +449,7 @@
       }
     },
     "Hide Details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -462,6 +472,7 @@
       }
     },
     "Host" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -654,6 +665,7 @@
       }
     },
     "Live Error" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -862,6 +874,7 @@
       }
     },
     "Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -976,6 +989,7 @@
       }
     },
     "Performance" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1036,6 +1050,7 @@
       }
     },
     "Preview ID" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1080,6 +1095,7 @@
       }
     },
     "Previews" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1184,6 +1200,7 @@
       }
     },
     "Render" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1238,6 +1255,7 @@
       }
     },
     "Show Details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1452,6 +1470,7 @@
       }
     },
     "Switch to Image mode to see the static preview, or ensure the #Preview macro returns a SwiftUI View." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1556,6 +1575,7 @@
       }
     },
     "The preview process crashed. Try restarting the preview. Check the source for runtime issues." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1617,6 +1637,7 @@
       }
     },
     "Transport" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1633,6 +1654,7 @@
       }
     },
     "Try refreshing the preview. If the issue persists, stop and restart the preview session." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1655,6 +1677,7 @@
       }
     },
     "Try switching to Image mode or restarting the preview session." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

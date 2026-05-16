@@ -74,70 +74,35 @@ final class PreviewEntryBuilder: Sendable {
         configuration: PreviewRenderConfiguration,
         buildStrategy: BuildStrategy? = nil
     ) async throws -> URL {
-        do {
-            let generatedSources = try viewEntrySources(
-                for: discovery,
-                configuration: configuration,
-                buildStrategy: buildStrategy
-            )
-            let compilerArguments = try await viewEntryCompilerArguments(for: buildStrategy)
-            let fingerprint = Self.fingerprint(
-                discovery: discovery,
-                configuration: configuration,
-                buildStrategy: buildStrategy,
-                generatedSources: generatedSources,
-                compilerArguments: compilerArguments
-            )
-            let directory = Self.cacheDirectory(for: fingerprint)
-            let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
-            if FileManager.default.fileExists(atPath: dylibURL.path) {
-                return dylibURL
-            }
-
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            let viewSourceURLs = try write(generatedSources, to: directory)
-            let dylib = try await incrementalCompiler.compileLibrary(
-                sourceURLs: viewSourceURLs,
-                dylibURL: dylibURL,
-                compilerArguments: compilerArguments,
-                moduleName: Self.moduleName(for: fingerprint)
-            )
-            try await incrementalCompiler.codesign(dylibURL: dylib)
-            return dylib
-        } catch {
-            let fingerprint = Self.fallbackFingerprint(
-                discovery: discovery,
-                configuration: configuration,
-                buildStrategy: buildStrategy,
-                error: error
-            )
-            let directory = Self.cacheDirectory(for: fingerprint)
-            let sourceURL = directory.appendingPathComponent("PreviewEntry.swift")
-            let objectURL = directory.appendingPathComponent("PreviewEntry.o")
-            let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
-            if FileManager.default.fileExists(atPath: dylibURL.path) {
-                return dylibURL
-            }
-
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try descriptorEntrySource(
-                for: discovery,
-                configuration: configuration,
-                viewEntryBuildError: Self.diagnosticMessage(from: error)
-            ).write(to: sourceURL, atomically: true, encoding: .utf8)
-            return try await compileEntry(sourceURL: sourceURL, objectURL: objectURL)
-        }
-    }
-
-    private func compileEntry(sourceURL: URL, objectURL: URL) async throws -> URL {
-        let objectFile = try await incrementalCompiler.compile(
-            fileURL: sourceURL,
-            compileCommand: "/usr/bin/env swiftc -c \(Self.shellQuoted(sourceURL.path)) -o \(Self.shellQuoted(objectURL.path))"
+        let generatedSources = try viewEntrySources(
+            for: discovery,
+            configuration: configuration,
+            buildStrategy: buildStrategy
         )
-        let dylibURL = try await incrementalCompiler.link(objectFileURL: objectFile)
-        try await incrementalCompiler.codesign(dylibURL: dylibURL)
+        let compilerArguments = try await viewEntryCompilerArguments(for: buildStrategy)
+        let fingerprint = Self.fingerprint(
+            discovery: discovery,
+            configuration: configuration,
+            buildStrategy: buildStrategy,
+            generatedSources: generatedSources,
+            compilerArguments: compilerArguments
+        )
+        let directory = Self.cacheDirectory(for: fingerprint)
+        let dylibURL = directory.appendingPathComponent("PreviewEntry.dylib")
+        if FileManager.default.fileExists(atPath: dylibURL.path) {
+            return dylibURL
+        }
 
-        return dylibURL
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let viewSourceURLs = try write(generatedSources, to: directory)
+        let dylib = try await incrementalCompiler.compileLibrary(
+            sourceURLs: viewSourceURLs,
+            dylibURL: dylibURL,
+            compilerArguments: compilerArguments,
+            moduleName: Self.moduleName(for: fingerprint)
+        )
+        try await incrementalCompiler.codesign(dylibURL: dylib)
+        return dylib
     }
 
     private static func cacheDirectory(for fingerprint: String) -> URL {
@@ -176,24 +141,6 @@ final class PreviewEntryBuilder: Sendable {
             parts.append(source.content)
         }
         return sha256(parts.joined(separator: "\u{1e}"))
-    }
-
-    private static func fallbackFingerprint(
-        discovery: PreviewDiscovery,
-        configuration: PreviewRenderConfiguration,
-        buildStrategy: BuildStrategy?,
-        error: Error
-    ) -> String {
-        sha256([
-            "fallback-v2",
-            discovery.id,
-            discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath().path,
-            "\(discovery.lineNumber)-\(discovery.endLineNumber)",
-            discovery.bodySource ?? "",
-            String(describing: buildStrategy),
-            configurationFingerprint(configuration),
-            diagnosticMessage(from: error)
-        ].joined(separator: "\u{1e}"))
     }
 
     private static func configurationFingerprint(_ configuration: PreviewRenderConfiguration) -> String {
@@ -301,24 +248,6 @@ final class PreviewEntryBuilder: Sendable {
             view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
             return Unmanaged.passRetained(view).toOpaque()
         }
-        """
-    }
-
-    private func descriptorEntrySource(
-        for discovery: PreviewDiscovery,
-        configuration: PreviewRenderConfiguration,
-        viewEntryBuildError: String? = nil
-    ) throws -> String {
-        let descriptorSource = try descriptorFunctionSource(
-            for: discovery,
-            configuration: configuration,
-            viewEntryBuildError: viewEntryBuildError
-        )
-
-        return """
-        import Darwin
-
-        \(descriptorSource)
         """
     }
 
