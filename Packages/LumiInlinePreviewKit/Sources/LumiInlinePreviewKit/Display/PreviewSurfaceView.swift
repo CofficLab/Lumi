@@ -257,6 +257,8 @@ public extension LumiInlinePreviewFacade {
             let scale = window?.backingScaleFactor ?? 1
             let logicalWidth = CGFloat(surfaceWidth) / scale
             let logicalHeight = CGFloat(surfaceHeight) / scale
+            let ciImage = CIImage(ioSurface: surface)
+            let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
             if let cgImage {
                 let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: logicalWidth, height: logicalHeight))
                 imageView.image = nsImage
