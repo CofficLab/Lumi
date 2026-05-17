@@ -132,6 +132,10 @@
 		0B1780FC2FAF5C0F00F8A599 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
 		0B1781F22FAF5C0F00F8A599 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
 		0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0B462DC52FB9C743007E52B1 /* MagicApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = MagicApp.xcodeproj; sourceTree = "<group>"; };
+		0B462F062FB9C743007E52B1 /* ZIPFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ZIPFoundation.xcodeproj; sourceTree = "<group>"; };
+		0B4630542FB9C747007E52B1 /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
+		0B4631932FB9C747007E52B1 /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
 		0BC9016B2FAD5B54003651CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
 		0BC901B12FAD5B56003651CA /* Demo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Demo.xcodeproj; sourceTree = "<group>"; };
 		0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ID3TagEditor.xcodeproj; sourceTree = "<group>"; };
@@ -366,6 +370,34 @@
 			sourceTree = "<group>";
 		};
 		0B1781FB2FAF5C0F00F8A599 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B462F082FB9C743007E52B1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B462F0A2FB9C743007E52B1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B4631E72FB9C747007E52B1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0B4631E92FB9C747007E52B1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -1028,6 +1060,10 @@
 					ProjectRef = 0BC901B12FAD5B56003651CA /* Demo.xcodeproj */;
 				},
 				{
+					ProductGroup = 0B4631E72FB9C747007E52B1 /* Products */;
+					ProjectRef = 0B4630542FB9C747007E52B1 /* Demo.xcodeproj */;
+				},
+				{
 					ProductGroup = F56701272FAF42620054AB4B /* Products */;
 					ProjectRef = F567FE272FAF42620054AB4B /* FileSharedAcrossTargets.xcodeproj */;
 				},
@@ -1048,6 +1084,10 @@
 					ProjectRef = 0BC902F02FAD5B56003651CA /* ID3TagEditor.xcodeproj */;
 				},
 				{
+					ProductGroup = 0B4631E92FB9C747007E52B1 /* Products */;
+					ProjectRef = 0B4631932FB9C747007E52B1 /* ID3TagEditor.xcodeproj */;
+				},
+				{
 					ProductGroup = F5E211592FAEF3440005256B /* Products */;
 					ProjectRef = F5E211272FAEF3440005256B /* iOSTerminal.xcodeproj */;
 				},
@@ -1058,6 +1098,10 @@
 				{
 					ProductGroup = F53711392FB1E52800AF4705 /* Products */;
 					ProjectRef = F5370FB92FB1E52800AF4705 /* MagicApp.xcodeproj */;
+				},
+				{
+					ProductGroup = 0B462F0A2FB9C743007E52B1 /* Products */;
+					ProjectRef = 0B462DC52FB9C743007E52B1 /* MagicApp.xcodeproj */;
 				},
 				{
 					ProductGroup = F53711332FB1E52800AF4705 /* Products */;
@@ -1154,6 +1198,10 @@
 				{
 					ProductGroup = F53707E72FB1E52400AF4705 /* Products */;
 					ProjectRef = F53707E52FB1E52400AF4705 /* ZIPFoundation.xcodeproj */;
+				},
+				{
+					ProductGroup = 0B462F082FB9C743007E52B1 /* Products */;
+					ProjectRef = 0B462F062FB9C743007E52B1 /* ZIPFoundation.xcodeproj */;
 				},
 			);
 			projectRoot = "";

@@ -17,15 +17,15 @@ let package = Package(
         )
     ],
     dependencies: [
-        // Read-only 消费：仅复用 PreviewScanner + PreviewDiscovery，
-        // 不修改 LumiPreviewKit，符合"不动老代码"边界。
-        .package(path: "../LumiPreviewKit")
+        .package(path: "../LumiPreviewKit"),
+        .package(url: "https://github.com/CofficLab/MagicKit", branch: "main")
     ],
     targets: [
         .target(
             name: "LumiInlinePreviewKit",
             dependencies: [
-                .product(name: "LumiPreviewKit", package: "LumiPreviewKit")
+                .product(name: "LumiPreviewKit", package: "LumiPreviewKit"),
+                .product(name: "MagicKit", package: "MagicKit")
             ],
             path: "Sources/LumiInlinePreviewKit"
         ),

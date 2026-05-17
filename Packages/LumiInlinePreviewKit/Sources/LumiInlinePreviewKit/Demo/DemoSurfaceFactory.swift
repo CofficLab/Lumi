@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import IOSurface
+import MagicKit
 import os
 
 public extension LumiInlinePreviewFacade {
@@ -9,7 +10,10 @@ public extension LumiInlinePreviewFacade {
     /// 不依赖任何子进程，纯粹在主进程内画一张测试图，证明
     /// `PreviewSurfaceView` → `CALayer.contents` → `IOSurfaceLookup` 的链路通了。
     /// Phase 2 子进程帧流接入后，此类会被替换。
-    final class DemoSurfaceFactory: @unchecked Sendable {
+    final class DemoSurfaceFactory: @unchecked Sendable, SuperLog {
+        nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "LumiInlinePreviewKit.DemoSurfaceFactory")
+        public nonisolated static let emoji = "🎬"
+        public nonisolated static let verbose: Bool = true
 
         // MARK: - 单例
 
@@ -44,11 +48,11 @@ public extension LumiInlinePreviewFacade {
             seq: UInt64
         ) -> IOSurfaceFrame? {
             if LumiInlinePreviewFacade.verbose {
-                            LumiInlinePreviewFacade.logger.info("[DemoSurfaceFactory] makeFrame \(width)×\(height) @\(String(format: "%.1f", scale)) seq=\(seq)")
+                Self.logger.info("\(self.t)🎬 渲染 Demo 帧：\(width)×\(height) @\(String(format: "%.1f", scale)) seq=\(seq)")
             }
             guard width > 0, height > 0 else {
                 if LumiInlinePreviewFacade.verbose {
-                                    LumiInlinePreviewFacade.logger.error("[DemoSurfaceFactory] ❌ invalid dimensions: \(width)×\(height)")
+                    Self.logger.error("\(self.t)❌ 无效尺寸：\(width)×\(height)")
                 }
                 return nil
             }
@@ -65,21 +69,21 @@ public extension LumiInlinePreviewFacade {
 
             guard let surface = IOSurfaceCreate(properties as CFDictionary) else {
                 if LumiInlinePreviewFacade.verbose {
-                                    LumiInlinePreviewFacade.logger.error("[DemoSurfaceFactory] ❌ IOSurfaceCreate returned nil for \(width)×\(height)")
+                    Self.logger.error("\(self.t)❌ IOSurfaceCreate 返回 nil：\(width)×\(height)")
                 }
                 return nil
             }
 
             let surfaceID = IOSurfaceGetID(surface)
             if LumiInlinePreviewFacade.verbose {
-                            LumiInlinePreviewFacade.logger.info("[DemoSurfaceFactory] ✅ IOSurface created: id=\(surfaceID) \(width)×\(height)")
+                Self.logger.info("\(self.t)✅ 已创建 IOSurface：id=\(surfaceID) \(width)×\(height)")
             }
 
             paint(into: surface, width: width, height: height, bytesPerRow: bytesPerRow, seq: seq)
             retainSurface(surface)
 
             if LumiInlinePreviewFacade.verbose {
-                            LumiInlinePreviewFacade.logger.info("[DemoSurfaceFactory] ✅ Frame ready: surfaceID=\(UInt32(surfaceID)) seq=\(seq)")
+                Self.logger.info("\(self.t)✅ 帧已就绪：surfaceID=\(UInt32(surfaceID)) seq=\(seq)")
             }
             return IOSurfaceFrame(
                 surfaceID: UInt32(surfaceID),
@@ -126,7 +130,7 @@ public extension LumiInlinePreviewFacade {
             let lockResult = IOSurfaceLock(surface, [], &seed)
             guard lockResult == KERN_SUCCESS else {
                 if LumiInlinePreviewFacade.verbose {
-                                    LumiInlinePreviewFacade.logger.error("[DemoSurfaceFactory] ❌ IOSurfaceLock failed: \(lockResult)")
+                    Self.logger.error("\(self.t)❌ IOSurfaceLock 失败：\(lockResult)")
                 }
                 return
             }
@@ -144,7 +148,7 @@ public extension LumiInlinePreviewFacade {
                       bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
                   ) else {
                 if LumiInlinePreviewFacade.verbose {
-                                    LumiInlinePreviewFacade.logger.error("[DemoSurfaceFactory] ❌ CGContext creation failed")
+                    Self.logger.error("\(self.t)❌ CGContext 创建失败")
                 }
                 return
             }
@@ -186,7 +190,7 @@ public extension LumiInlinePreviewFacade {
             context.stroke(CGRect(x: 1, y: 1, width: CGFloat(width) - 2, height: CGFloat(height) - 2))
 
             if LumiInlinePreviewFacade.verbose {
-                            LumiInlinePreviewFacade.logger.info("[DemoSurfaceFactory] 🎨 Painted seq=\(seq): phase=\(String(format: "%.2f", phase))")
+                Self.logger.info("\(self.t)🎨 已绘制 seq=\(seq): phase=\(String(format: "%.2f", phase))")
             }
         }
     }

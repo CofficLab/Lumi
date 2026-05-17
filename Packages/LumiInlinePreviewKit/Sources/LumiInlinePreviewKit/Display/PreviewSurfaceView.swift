@@ -1,5 +1,6 @@
 import AppKit
 import IOSurface
+import MagicKit
 import os
 
 public extension LumiInlinePreviewFacade {
@@ -10,7 +11,10 @@ public extension LumiInlinePreviewFacade {
     ///   通过 `onInputEvent` 回调上抛，给 ViewModel 走 `forwardInputEvent` 命令送子进程。
     /// - 不持有任何窗口；本控件被嵌入 Lumi 自己的预览面板。
     @MainActor
-    final class PreviewSurfaceView: NSView {
+    final class PreviewSurfaceView: NSView, SuperLog {
+        nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "LumiInlinePreviewKit.PreviewSurfaceView")
+        public nonisolated static let emoji = "👁"
+        public nonisolated static let verbose: Bool = true
 
         // MARK: - 公开属性
 
@@ -181,11 +185,11 @@ public extension LumiInlinePreviewFacade {
             let scaleVal = window?.backingScaleFactor ?? 1
             let boundsStr = "\(bounds.width)×\(bounds.height)"
             if LumiInlinePreviewFacade.verbose {
-                            LumiInlinePreviewFacade.logger.info("[PreviewSurfaceView] attach(surfaceID: \(surfaceID)) — currentSurfaceID: \(curIDStr), bounds: \(boundsStr), window: \(winStr)")
+                Self.logger.info("\(self.t)📎 绑定 surfaceID: \(surfaceID) — 当前: \(curIDStr), 边界: \(boundsStr), 窗口: \(winStr)")
             }
             guard let surface = IOSurfaceLookup(IOSurfaceID(surfaceID)) else {
                 if LumiInlinePreviewFacade.verbose {
-                                    LumiInlinePreviewFacade.logger.error("[PreviewSurfaceView] ❌ IOSurfaceLookup FAILED for surfaceID=\(surfaceID)")
+                    Self.logger.error("\(self.t)❌ IOSurfaceLookup 失败：surfaceID=\(surfaceID)")
                 }
                 return
             }
@@ -195,7 +199,7 @@ public extension LumiInlinePreviewFacade {
             layer?.contentsScale = scaleVal
             layer?.setNeedsDisplay()
             if LumiInlinePreviewFacade.verbose {
-                            LumiInlinePreviewFacade.logger.info("[PreviewSurfaceView] ✅ Attached surface \(surfaceID) to layer, contentsScale=\(scaleVal), layer: \(layerStr)")
+                Self.logger.info("\(self.t)✅ 已绑定 surface \(surfaceID) 到 layer，contentsScale=\(scaleVal), layer: \(layerStr)")
             }
         }
 

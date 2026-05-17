@@ -1,5 +1,6 @@
 import AppKit
 import LumiInlinePreviewKit
+import MagicKit
 import os
 import SwiftUI
 
@@ -12,7 +13,13 @@ import SwiftUI
 /// - **Load Dylib…**：手动挑选一个用户编译产出的预览 dylib，让子进程 `dlopen`
 ///   并把其 `lumi_preview_make_nsview` 导出的 `NSView` 挂为 previewView。
 ///   后续阶段会把这一步自动化（扫描 → 编译 → 加载）。
-struct EditorInlinePreviewDetailView: View {
+struct EditorInlinePreviewDetailView: View, SuperLog {
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.editor-inline-preview.view"
+    )
+    nonisolated static let emoji = "👁"
+    nonisolated static let verbose: Bool = true
 
     @EnvironmentObject private var editorVM: EditorVM
     @StateObject private var viewModel = EditorInlinePreviewViewModel()
@@ -32,20 +39,20 @@ struct EditorInlinePreviewDetailView: View {
             canvasArea
         }
         .onAppear {
-            if EditorInlinePreviewPlugin.verbose {
-                            EditorInlinePreviewPlugin.logger.info("📺 onAppear — currentFile=\(currentFileURL?.lastPathComponent ?? "nil")")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)📺 视图出现 — 当前文件=\(currentFileURL?.lastPathComponent ?? "nil")")
             }
             viewModel.setActiveFile(currentFileURL, sourceText: sourceText)
         }
         .onChange(of: currentFileURL) { _, newValue in
-            if EditorInlinePreviewPlugin.verbose {
-                            EditorInlinePreviewPlugin.logger.info("📄 currentFileURL changed → \(newValue?.lastPathComponent ?? "nil")")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)📄 currentFileURL 变更 → \(newValue?.lastPathComponent ?? "nil")")
             }
             viewModel.setActiveFile(newValue, sourceText: sourceText)
         }
         .onChange(of: editorVM.service.saveRevision) { _, _ in
-            if EditorInlinePreviewPlugin.verbose {
-                            EditorInlinePreviewPlugin.logger.info("💾 saveRevision changed")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)💾 saveRevision 变更")
             }
             // 仅在保存时触发重建，对齐 Xcode 的 #Preview 刷新策略。
             viewModel.applySaveRevision(sourceText: sourceText)
@@ -61,8 +68,8 @@ struct EditorInlinePreviewDetailView: View {
     private var toolbar: some View {
         HStack(spacing: 8) {
             Button {
-                if EditorInlinePreviewPlugin.verbose {
-                                    EditorInlinePreviewPlugin.logger.info("🖱 clicked Demo Frame button")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)🖱 点击 Demo Frame 按钮")
                 }
                 viewModel.renderDemoFrame()
             } label: {
