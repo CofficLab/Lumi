@@ -2,9 +2,22 @@ import Foundation
 import Darwin
 
 public extension LumiPreviewFacade {
+    /// Hot 预览宿主进程启动器。
+    ///
+    /// 通过 `Process` 启动 `LumiHotPreviewHostApp` 子进程，
+    /// 建立 stdin/stdout 管道通信，传递帧和存储路径环境变量。
     final class HotPreviewHostProcess: Sendable {
+        /// 创建宿主进程启动器。
         public init() {}
 
+        /// 启动宿主进程并返回一个基于管道的连接。
+        ///
+        /// 宿主进程以 `--stdio` 模式启动，通过 stdin/stdout 交换 JSON 行协议消息。
+        /// 自动注入帧目录和存储根目录环境变量。
+        ///
+        /// - Parameter executableURL: `LumiHotPreviewHostApp` 可执行文件路径。
+        /// - Returns: 已建立的管道连接。
+        /// - Throws: 可执行文件不存在、进程立即退出等错误。
         public func launch(executableURL: URL) async throws -> HotHostConnection {
             guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
                 throw LumiPreviewFacade.PreviewError.hostLaunchFailed(
@@ -49,46 +62,64 @@ public extension LumiPreviewFacade {
         }
     }
 
+    /// Hot 预览宿主进程连接协议。
+    ///
+    /// 定义了与宿主进程通信的所有请求方法，涵盖渲染、帧捕获、dylib 加载和 Live 预览控制。
+    /// 每个方法对应一个 `HotHostCommand`，返回宿主进程的 `HotRenderResponse`。
     protocol HotHostConnection: AnyObject, Sendable {
+        /// 宿主进程是否仍在运行。
         var isRunning: Bool { get async }
+        /// 宿主进程 PID。
         var processID: Int32 { get async }
 
+        /// 请求渲染一个预览。
         @discardableResult
         func requestRender(
             discovery: LumiPreviewFacade.PreviewDiscovery,
             configuration: LumiPreviewFacade.PreviewRenderConfiguration
         ) async throws -> HotRenderResponse
 
+        /// 请求刷新当前预览。
         @discardableResult
         func requestRefresh() async throws -> HotRenderResponse
 
+        /// 请求捕获当前预览帧。
         @discardableResult
         func requestCaptureFrame(includeImageFallback: Bool) async throws -> HotRenderResponse
 
+        /// 请求加载预览入口 dylib。
         @discardableResult
         func requestLoadPreviewEntry(at dylibURL: URL, symbolName: String) async throws -> HotRenderResponse
 
+        /// 请求通过 interpose 替换 dylib 中的符号（热更新优化）。
         @discardableResult
         func requestInterposeDylib(at dylibURL: URL, symbolName: String?) async throws -> HotRenderResponse
 
+        /// 请求启动 Live 预览。
         @discardableResult
         func requestStartLivePreview() async throws -> HotRenderResponse
 
+        /// 请求更新 Live 预览窗口的屏幕坐标和尺寸。
         @discardableResult
         func requestUpdateLiveFrame(x: Double, y: Double, width: Double, height: Double, scale: Double) async throws -> HotRenderResponse
 
+        /// 请求显示 Live 预览窗口。
         @discardableResult
         func requestShowLivePreview() async throws -> HotRenderResponse
 
+        /// 请求隐藏 Live 预览窗口。
         @discardableResult
         func requestHideLivePreview() async throws -> HotRenderResponse
 
+        /// 请求重新加载 Live 预览（加载新 dylib）。
         @discardableResult
         func requestReloadLivePreview(at dylibURL: URL, symbolName: String) async throws -> HotRenderResponse
 
+        /// 请求停止 Live 预览。
         @discardableResult
         func requestStopLivePreview() async throws -> HotRenderResponse
 
+        /// 终止宿主进程。
         func terminate() async
     }
 }
@@ -100,6 +131,11 @@ public extension LumiPreviewFacade.HotHostConnection {
     }
 }
 
+/// 基于 `Process` 管道的 `HotHostConnection` 实现。
+///
+/// 通过 stdin/stdout 管道与宿主进程交换 JSON 行协议消息。
+/// 所有操作通过 `NSLock` 序列化，保证线程安全。
+/// 发送请求后同步等待响应，超时时间默认 120 秒。
 private final class ProcessHotHostConnection: LumiPreviewFacade.HotHostConnection, @unchecked Sendable {
     private let process: Process
     private let stdin: FileHandle

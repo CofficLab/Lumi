@@ -1,6 +1,7 @@
 import Foundation
 
 public extension LumiPreviewFacade {
+    /// 渲染帧的尺寸描述。
     struct HotFrameSize: Codable, Sendable, Equatable {
         public let width: Int
         public let height: Int
@@ -11,19 +12,24 @@ public extension LumiPreviewFacade {
         }
     }
 
-    /// Transport used for a rendered preview frame.
+    /// 渲染帧的传输方式。
     enum HotFrameTransport: String, Codable, Sendable, Equatable {
+        /// 通过 Base64 编码的 PNG 内嵌在 JSON 中。
         case base64
+        /// 通过文件系统路径引用 PNG 文件。
         case file
+        /// 通过共享内存（mmap 或 POSIX shm）传输像素数据。
         case sharedMemory
+        /// 通过 IOSurface 跨进程传输。
         case surface
+        /// 无帧数据。
         case none
     }
 
-    /// Response model used by the hot preview pipeline.
+    /// Hot 预览管线使用的响应模型。
     ///
-    /// It keeps compatibility with `LumiPreviewKit.RenderResponse` while allowing
-    /// new hosts to return file or shared-memory frame metadata.
+    /// 保持与 `RenderResponse` 的兼容性，同时支持文件路径和共享内存等
+    /// 新的帧传输方式。包含帧数据、诊断信息、Live 预览状态等。
     struct HotRenderResponse: Codable, Sendable, Equatable {
         private enum CodingKeys: String, CodingKey {
             case success
@@ -42,21 +48,36 @@ public extension LumiPreviewFacade {
             case liveWindowNumber
         }
 
+        /// 请求是否成功。
         public let success: Bool
+        /// 相关预览标识符。
         public let previewID: String?
+        /// 可展示或记录的响应消息。
         public let message: String?
+        /// 宿主进程当前预览画面的 PNG 数据，Base64 编码。
         public let previewImagePNGBase64: String?
+        /// 宿主进程当前预览画面的 PNG 文件路径。
         public let imageFilePath: String?
+        /// 共享内存帧的唯一标识标签。
         public let sharedMemoryTag: String?
+        /// 帧尺寸。
         public let frameSize: HotFrameSize?
+        /// 帧宽度（便捷访问 `frameSize?.width`）。
         public var frameWidth: Int? { frameSize?.width }
+        /// 帧高度（便捷访问 `frameSize?.height`）。
         public var frameHeight: Int? { frameSize?.height }
+        /// 帧每行字节数。
         public let bytesPerRow: Int?
+        /// 结构化诊断信息。
         public let diagnostics: String?
+        /// 本次响应是否来自降级预览入口。
         public let isFallback: Bool
+        /// 宿主进程是否支持 Live 预览模式。
         public let livePreviewEnabled: Bool
+        /// Live 预览窗口编号。
         public let liveWindowNumber: Int?
 
+        /// 推荐的帧传输方式，按共享内存 > 文件 > Base64 优先级选择。
         public var preferredTransport: HotFrameTransport {
             if sharedMemoryTag != nil {
                 return .sharedMemory
@@ -144,6 +165,7 @@ public extension LumiPreviewFacade {
             try container.encodeIfPresent(liveWindowNumber, forKey: .liveWindowNumber)
         }
 
+        /// 从旧版 `RenderResponse` 创建 `HotRenderResponse`。
         public init(_ response: LumiPreviewFacade.RenderResponse) {
             self.init(
                 success: response.success,
