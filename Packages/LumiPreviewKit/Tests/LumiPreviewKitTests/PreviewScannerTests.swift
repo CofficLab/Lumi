@@ -326,4 +326,57 @@ struct PreviewScannerTests {
         #expect(results.count == 1)
         #expect(results[0].id == "source-preview-1-0")
     }
+
+    @Test("5.1 detects preview with traits in signature")
+    func scanPreviewWithTraits() {
+        let scanner = LumiPreviewFacade.PreviewScanner()
+        let source = """
+        import SwiftUI
+
+        #Preview("Sized", traits: .sizeThatFitsLayout) {
+            Text("Hello")
+        }
+        """
+        let results = scanner.scan(
+            fileURL: URL(fileURLWithPath: "/tmp/TraitsPreview.swift"),
+            sourceText: source
+        )
+        #expect(results.count == 1)
+        #expect(results[0].title == "Sized")
+        #expect(results[0].bodySource?.contains("Text(\"Hello\")") == true)
+    }
+
+    @Test("5.2 unclosed brace does not crash scanner")
+    func scanUnclosedBraceDoesNotCrash() {
+        let scanner = LumiPreviewFacade.PreviewScanner()
+        let source = """
+        #Preview("Broken") {
+            Text("Hello")
+        """
+        let results = scanner.scan(
+            fileURL: URL(fileURLWithPath: "/tmp/BrokenPreview.swift"),
+            sourceText: source
+        )
+        #expect(results.isEmpty)
+    }
+
+    @Test("5.3 detects preview inside DEBUG conditional compilation")
+    func scanPreviewInsideIfDebug() {
+        let scanner = LumiPreviewFacade.PreviewScanner()
+        let source = """
+        import SwiftUI
+
+        #if DEBUG
+        #Preview("Debug Only") {
+            Text("Debug")
+        }
+        #endif
+        """
+        let results = scanner.scan(
+            fileURL: URL(fileURLWithPath: "/tmp/DebugPreview.swift"),
+            sourceText: source
+        )
+        #expect(results.count == 1)
+        #expect(results[0].title == "Debug Only")
+    }
 }

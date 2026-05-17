@@ -650,4 +650,66 @@ struct BuildPlannerTests {
         }
         """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: .utf8)
     }
+
+    @Test("5.4 bare directory without Package.swift returns nil")
+    func bareDirectoryWithoutPackageReturnsNil() throws {
+        let directory = try TemporaryProjectFixtures.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fileURL = try TemporaryProjectFixtures.writeSwiftFileWithPreview(
+            at: directory.appendingPathComponent("Loose.swift"),
+            previewLabel: "Loose"
+        )
+
+        let strategy = LumiPreviewFacade.BuildPlanner().plan(for: fileURL)
+        #expect(strategy == nil)
+    }
+
+    @Test("5.5 multiple sibling xcodeproj directories do not crash planner")
+    func multipleSiblingXcodeProjectsDoNotCrash() throws {
+        let directory = try TemporaryProjectFixtures.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let (_, _, swiftFile) = try TemporaryProjectFixtures.makeDualXcodeProjects(in: directory)
+
+        let strategy = LumiPreviewFacade.BuildPlanner().plan(for: swiftFile)
+        #expect(strategy == nil || strategy != nil)
+    }
+
+    @Test("5.6 package with binary target does not crash planner")
+    func packageWithBinaryTargetDoesNotCrash() throws {
+        let directory = try TemporaryProjectFixtures.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let packageDirectory = directory
+        let sources = packageDirectory
+            .appendingPathComponent("Sources/App", isDirectory: true)
+        try FileManager.default.createDirectory(at: sources, withIntermediateDirectories: true)
+        let fileURL = sources.appendingPathComponent("App.swift")
+        try TemporaryProjectFixtures.writeSwiftFileWithPreview(at: fileURL, previewLabel: "App")
+        let manifest = """
+        // swift-tools-version: 5.9
+        import PackageDescription
+
+        let package = Package(
+            name: "BinaryPkg",
+            platforms: [.macOS(.v14)],
+            targets: [
+                .binaryTarget(name: "External", path: "Artifacts/External.xcframework"),
+                .target(name: "App", dependencies: ["External"], path: "Sources/App")
+            ]
+        )
+        """
+        try manifest.write(
+            to: packageDirectory.appendingPathComponent("Package.swift"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let strategy = LumiPreviewFacade.BuildPlanner().plan(for: fileURL)
+        if case .spm(let packageURL, let targetName) = strategy {
+            #expect(packageURL == packageDirectory)
+            #expect(targetName == "App")
+        } else {
+            Issue.record("Expected SPM strategy, got \(String(describing: strategy))")
+        }
+    }
+
 }

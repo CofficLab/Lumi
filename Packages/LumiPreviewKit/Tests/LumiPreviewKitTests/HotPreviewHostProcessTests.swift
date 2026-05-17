@@ -84,6 +84,41 @@ struct HotPreviewHostProcessTests {
         #expect(showResponse.liveWindowNumber == startResponse.liveWindowNumber)
     }
 
+
+    @Test("refresh keeps live session without reloading dylib path")
+    func refreshAfterLoad() async throws {
+        let executableURL = try buildHotHostExecutable()
+        let connection = try await LumiPreviewFacade.HotPreviewHostProcess().launch(executableURL: executableURL)
+        defer { Task { await connection.terminate() } }
+
+        let dylibURL = try await buildPreviewDylib(
+            title: "Refresh Preview",
+            text: "Refresh",
+            red: 0.2,
+            green: 0.6,
+            blue: 0.3
+        )
+
+        _ = try await connection.requestLoadPreviewEntry(
+            at: dylibURL,
+            symbolName: LumiPreviewFacade.PreviewEntryBuilder.symbolName
+        )
+        let refreshResponse = try await connection.requestRefresh()
+        #expect(refreshResponse.success)
+    }
+
+    @Test("terminated host can be launched again")
+    func relaunchesAfterTermination() async throws {
+        let executableURL = try buildHotHostExecutable()
+        let connection = try await LumiPreviewFacade.HotPreviewHostProcess().launch(executableURL: executableURL)
+        await connection.terminate()
+        #expect(await connection.isRunning == false)
+
+        let relaunched = try await LumiPreviewFacade.HotPreviewHostProcess().launch(executableURL: executableURL)
+        defer { Task { await relaunched.terminate() } }
+        #expect(await relaunched.isRunning)
+    }
+
     private func buildHotHostExecutable() throws -> URL {
         let packageDirectory = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
