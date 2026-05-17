@@ -8,7 +8,7 @@ import Security
 /// 此类是纯粹的网络层，不包含重试逻辑——重试策略由调用方统一管理。
 class LLMAPIService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// URLSession 配置
     private nonisolated let session: URLSession
     private nonisolated let tlsDelegate: TLSValidationDelegate

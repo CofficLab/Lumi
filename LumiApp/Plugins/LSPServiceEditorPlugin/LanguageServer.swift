@@ -50,9 +50,11 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         initializationOptions: LanguageServerProtocol.LSPAny? = nil
     ) async throws -> LanguageServer {
         if LSPService.verbose {
-            LSPService.logger.info(
-                "\(Self.t)正在创建 \(languageId) 服务器: exec=\(config.execPath, privacy: .public), args=\(config.arguments.joined(separator: " "), privacy: .public), workspacePath=\(workspacePath, privacy: .public), workspaceFolders=\(workspaceFolders?.count ?? 0), hasInitOptions=\(initializationOptions != nil)"
-            )
+            if LSPService.verbose {
+                            LSPService.logger.info(
+                                "\(Self.t)正在创建 \(languageId) 服务器: exec=\(config.execPath, privacy: .public), args=\(config.arguments.joined(separator: " "), privacy: .public), workspacePath=\(workspacePath, privacy: .public), workspaceFolders=\(workspaceFolders?.count ?? 0), hasInitOptions=\(initializationOptions != nil)"
+                            )
+            }
         }
         
         let execParams = Process.ExecutionParameters(
@@ -64,7 +66,9 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         let (channel, process) = try DataChannel.localProcessChannel(
             parameters: execParams,
             terminationHandler: {
-                LSPService.logger.error("\(LanguageServer.t)数据通道意外终止")
+                if LSPService.verbose {
+                                    LSPService.logger.error("\(LanguageServer.t)数据通道意外终止")
+                }
             }
         )
         
@@ -81,9 +85,11 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         let initResult = try await initServer.initializeIfNeeded()
         
         if LSPService.verbose {
-            LSPService.logger.info(
-                "\(Self.t)服务器已初始化，PID: \(process.processIdentifier), rootUri=file://\(workspacePath, privacy: .public), workspaceFolders=\(workspaceFolders?.count ?? 0), definitionProvider=\(String(describing: initResult.capabilities.definitionProvider), privacy: .public)"
-            )
+            if LSPService.verbose {
+                            LSPService.logger.info(
+                                "\(Self.t)服务器已初始化，PID: \(process.processIdentifier), rootUri=file://\(workspacePath, privacy: .public), workspaceFolders=\(workspaceFolders?.count ?? 0), definitionProvider=\(String(describing: initResult.capabilities.definitionProvider), privacy: .public)"
+                            )
+            }
         }
         
         let languageServer = LanguageServer(
@@ -240,7 +246,9 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
             throw error
         }
         if LSPService.verbose {
-            LSPService.logger.debug("\(Self.t)已打开: \(uri)")
+            if LSPService.verbose {
+                            LSPService.logger.debug("\(Self.t)已打开: \(uri)")
+            }
         }
     }
     
@@ -255,7 +263,9 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
         
         try await server.textDocumentDidClose(DidCloseTextDocumentParams(textDocument: TextDocumentIdentifier(uri: uri)))
         if LSPService.verbose {
-            LSPService.logger.debug("\(Self.t)已关闭: \(uri)")
+            if LSPService.verbose {
+                            LSPService.logger.debug("\(Self.t)已关闭: \(uri)")
+            }
         }
     }
 
@@ -276,7 +286,9 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
             )
         )
         if LSPService.verbose {
-            LSPService.logger.debug("\(Self.t)已保存: \(uri)")
+            if LSPService.verbose {
+                            LSPService.logger.debug("\(Self.t)已保存: \(uri)")
+            }
         }
     }
     
@@ -591,13 +603,17 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
     
     func shutdown() async throws {
         if LSPService.verbose {
-            LSPService.logger.info("\(Self.t)正在关闭 \(self.languageId) 服务器")
+            if LSPService.verbose {
+                            LSPService.logger.info("\(Self.t)正在关闭 \(self.languageId) 服务器")
+            }
         }
         eventTask?.cancel()
         eventTask = nil
         try await server.shutdownAndExit()
         if LSPService.verbose {
-            LSPService.logger.info("\(Self.t)服务器已关闭")
+            if LSPService.verbose {
+                            LSPService.logger.info("\(Self.t)服务器已关闭")
+            }
         }
     }
     
@@ -629,7 +645,9 @@ final class LanguageServer: @unchecked Sendable, SuperLog {
                         self.onProgressUpdate?(tokenStr, params.value)
                     case let .windowShowMessage(params):
                         if LSPService.verbose {
-                            LSPService.logger.info("\(LanguageServer.t)LSP 消息 [\(params.type.rawValue)]: \(params.message)")
+                            if LSPService.verbose {
+                                                            LSPService.logger.info("\(LanguageServer.t)LSP 消息 [\(params.type.rawValue)]: \(params.message)")
+                            }
                         }
                     default:
                         continue

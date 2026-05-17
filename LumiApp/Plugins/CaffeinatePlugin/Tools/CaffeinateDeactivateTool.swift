@@ -6,7 +6,7 @@ import MagicKit
 /// 释放 IOKit 电源断言，恢复系统正常的休眠策略。
 struct CaffeinateDeactivateTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "😴"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "caffeinate_deactivate"
     func description(for language: LanguagePreference) -> String {
@@ -43,7 +43,9 @@ struct CaffeinateDeactivateTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            CaffeinatePlugin.logger.info("\(Self.t)Deactivating caffeinate")
+            if CaffeinatePlugin.verbose {
+                            CaffeinatePlugin.logger.info("\(Self.t)Deactivating caffeinate")
+            }
         }
 
         manager.deactivate()

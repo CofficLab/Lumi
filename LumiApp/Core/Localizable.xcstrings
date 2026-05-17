@@ -1612,7 +1612,7 @@
         }
       }
     },
-    "Click “Start Stream” to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it." : {
+    "Click \"Start Stream\" to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it." : {
 
     },
     "Clipboard" : {

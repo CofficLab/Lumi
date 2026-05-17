@@ -7,7 +7,7 @@ actor RegistryManagerPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔁"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "RegistryManager"
     static let navigationId: String = "registry_manager"

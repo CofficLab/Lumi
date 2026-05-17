@@ -6,7 +6,7 @@ import MagicKit
 /// 封装 GitHub REST API v3 的网络请求
 final class GitHubAPIService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🐙"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let shared = GitHubAPIService()
 
     /// API 基础 URL
@@ -306,7 +306,9 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)GET \(request.url!)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)GET \(request.url!)")
+            }
         }
 
         let (data, response) = try await session.data(for: request)
@@ -316,7 +318,9 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)HTTP \(httpResponse.statusCode)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)HTTP \(httpResponse.statusCode)")
+            }
         }
 
         // 处理错误状态码
@@ -366,7 +370,9 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         request.httpBody = encodedBody
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)POST \(request.url!)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)POST \(request.url!)")
+            }
         }
 
         let (data, response) = try await session.data(for: request)
@@ -376,7 +382,9 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)HTTP \(httpResponse.statusCode)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)HTTP \(httpResponse.statusCode)")
+            }
         }
 
         // 处理错误状态码
@@ -426,7 +434,9 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         request.httpBody = encodedBody
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)PATCH \(request.url!)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)PATCH \(request.url!)")
+            }
         }
 
         let (data, response) = try await session.data(for: request)
@@ -436,7 +446,9 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)HTTP \(httpResponse.statusCode)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)HTTP \(httpResponse.statusCode)")
+            }
         }
 
         // 处理错误状态码

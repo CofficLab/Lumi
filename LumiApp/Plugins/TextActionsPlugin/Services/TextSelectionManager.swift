@@ -7,7 +7,7 @@ import Combine
 @MainActor
 class TextSelectionManager: ObservableObject, SuperLog {
     nonisolated static let emoji = "✂️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     static let shared = TextSelectionManager()
     
@@ -29,7 +29,9 @@ class TextSelectionManager: ObservableObject, SuperLog {
         isPermissionGranted = AXIsProcessTrustedWithOptions(options)
         
         if Self.verbose {
-            TextActionsPlugin.logger.info("\(self.t) 辅助功能权限状态：\(self.isPermissionGranted ? "✅ 已授予" : "❌ 未授予")")
+            if TextActionsPlugin.verbose {
+                            TextActionsPlugin.logger.info("\(self.t) 辅助功能权限状态：\(self.isPermissionGranted ? "✅ 已授予" : "❌ 未授予")")
+            }
         }
     }
     
@@ -45,7 +47,9 @@ class TextSelectionManager: ObservableObject, SuperLog {
             }
             
             if Self.verbose {
-                TextActionsPlugin.logger.info("\(self.t) 开始监控文本选择")
+                if TextActionsPlugin.verbose {
+                                    TextActionsPlugin.logger.info("\(self.t) 开始监控文本选择")
+                }
             }
         }
     }
@@ -58,7 +62,9 @@ class TextSelectionManager: ObservableObject, SuperLog {
             }
             
             if Self.verbose {
-                TextActionsPlugin.logger.info("\(self.t) 停止监控文本选择")
+                if TextActionsPlugin.verbose {
+                                    TextActionsPlugin.logger.info("\(self.t) 停止监控文本选择")
+                }
             }
         }
     }
@@ -75,7 +81,9 @@ class TextSelectionManager: ObservableObject, SuperLog {
                     self.selectedText = text
                     self.selectionRect = rect
                     if Self.verbose {
-                        TextActionsPlugin.logger.info("\(self.t) 检测到选择：\(text.prefix(50))...")
+                        if TextActionsPlugin.verbose {
+                                                    TextActionsPlugin.logger.info("\(self.t) 检测到选择：\(text.prefix(50))...")
+                        }
                     }
                 } else {
                     // Hide menu if clicking elsewhere

@@ -6,7 +6,7 @@ import MCP
 /// A Transport that communicates via Server-Sent Events (SSE)
 actor SSEClientTransport: Transport, SuperLog {
     nonisolated static let emoji = "📡"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     nonisolated let logger: Logging.Logger
     let url: URL
     let headers: [String: String]
@@ -31,7 +31,9 @@ actor SSEClientTransport: Transport, SuperLog {
 
     func connect() async throws {
         if Self.verbose {
-            AgentMCPToolsPlugin.logger.info("\(Self.t)Connecting to SSE: \(self.url.absoluteString)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.info("\(Self.t)Connecting to SSE: \(self.url.absoluteString)")
+            }
         }
 
         var request = URLRequest(url: url)
@@ -54,7 +56,9 @@ actor SSEClientTransport: Transport, SuperLog {
                 }
 
                 if Self.verbose {
-                    AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Connected")
+                    if AgentMCPToolsPlugin.verbose {
+                                            AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Connected")
+                    }
                 }
 
                 var currentEvent: String?
@@ -96,12 +100,16 @@ actor SSEClientTransport: Transport, SuperLog {
 
                 // Stream ended
                 if Self.verbose {
-                    AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Stream ended")
+                    if AgentMCPToolsPlugin.verbose {
+                                            AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Stream ended")
+                    }
                 }
                 self.messageContinuation.finish()
 
             } catch {
-                AgentMCPToolsPlugin.logger.error("\(Self.t)SSE Error: \(error.localizedDescription)")
+                if AgentMCPToolsPlugin.verbose {
+                                    AgentMCPToolsPlugin.logger.error("\(Self.t)SSE Error: \(error.localizedDescription)")
+                }
                 self.messageContinuation.finish(throwing: error)
             }
         }
@@ -115,10 +123,14 @@ actor SSEClientTransport: Transport, SuperLog {
             if let endpoint = URL(string: endpointString, relativeTo: self.url) {
                 self.endpointURL = endpoint
                 if Self.verbose {
-                    AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Endpoint received: \(endpoint.absoluteString)")
+                    if AgentMCPToolsPlugin.verbose {
+                                            AgentMCPToolsPlugin.logger.info("\(Self.t)SSE Endpoint received: \(endpoint.absoluteString)")
+                    }
                 }
             } else {
-                AgentMCPToolsPlugin.logger.error("\(Self.t)Invalid endpoint URL: \(endpointString)")
+                if AgentMCPToolsPlugin.verbose {
+                                    AgentMCPToolsPlugin.logger.error("\(Self.t)Invalid endpoint URL: \(endpointString)")
+                }
             }
             return
         }

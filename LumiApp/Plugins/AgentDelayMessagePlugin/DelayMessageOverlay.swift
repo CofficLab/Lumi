@@ -40,7 +40,9 @@ struct DelayMessageOverlay<Content: View>: View, SuperLog {
         DelayMessageState.shared.syncConversationId(conversationVM.selectedConversationId)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ 已同步 VM 引用到 DelayMessageState")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)✅ 已同步 VM 引用到 DelayMessageState")
+            }
         }
     }
 }

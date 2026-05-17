@@ -4,7 +4,7 @@ import MagicKit
 /// Returns an overview of a project for the model: path, type, structure (2 levels), Git info, manifests, README preview, key files.
 struct ProjectOverviewTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "project_overview"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -36,7 +36,9 @@ struct ProjectOverviewTool: SuperAgentTool, SuperLog {
         let root = URL(fileURLWithPath: path).standardizedFileURL
 
         if Self.verbose {
-            ProjectOverviewPlugin.logger.info("\(self.t)Project overview: \(root.path)")
+            if ProjectOverviewPlugin.verbose {
+                            ProjectOverviewPlugin.logger.info("\(self.t)Project overview: \(root.path)")
+            }
         }
 
         var isDir: ObjCBool = false

@@ -9,7 +9,7 @@ struct ModelSelectorView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🌐"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 环境对象：用于关闭当前视图
     @Environment(\.dismiss) private var dismiss
 
@@ -394,9 +394,15 @@ extension ModelSelectorView {
         isStatsLoaded = true
 
         if Self.verbose {
-            ChatInputPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
-            ChatInputPlugin.logger.info("\(Self.t)📊 加载到 \(frequentModels.count) 个常用模型")
-            ChatInputPlugin.logger.info("\(Self.t)⚡️ 加载到 \(fastModels.count) 个较快模型")
+            if ChatInputPlugin.verbose {
+                            ChatInputPlugin.logger.info("\(Self.t)📊 加载到 \(detailedStats.count) 个模型的性能统计")
+            }
+            if ChatInputPlugin.verbose {
+                            ChatInputPlugin.logger.info("\(Self.t)📊 加载到 \(frequentModels.count) 个常用模型")
+            }
+            if ChatInputPlugin.verbose {
+                            ChatInputPlugin.logger.info("\(Self.t)⚡️ 加载到 \(fastModels.count) 个较快模型")
+            }
         }
     }
 
@@ -567,7 +573,9 @@ extension ModelSelectorView {
         }
 
         guard let caps = provider.modelCapabilities[model] else {
-            ChatInputPlugin.logger.error("\(Self.t) 远程模型缺少能力声明: provider=\(provider.id), model=\(model)")
+            if ChatInputPlugin.verbose {
+                            ChatInputPlugin.logger.error("\(Self.t) 远程模型缺少能力声明: provider=\(provider.id), model=\(model)")
+            }
             return (nil, nil)
         }
 

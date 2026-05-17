@@ -21,7 +21,7 @@ import SwiftUI
 /// 4. 自动推进到下一个任务
 actor AutoTaskPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-task")
 
     static let id = "AutoTask"

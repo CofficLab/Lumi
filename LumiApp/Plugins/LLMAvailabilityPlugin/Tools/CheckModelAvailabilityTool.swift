@@ -7,7 +7,7 @@ import os
 /// 向目标模型发送一条轻量 ping 消息，验证其连通性并返回结果。
 struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "check_model_availability"
     func description(for language: LanguagePreference) -> String {
@@ -44,20 +44,26 @@ struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let providerId = arguments["providerId"]?.value as? String, !providerId.isEmpty else {
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 缺少必填参数 providerId")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 缺少必填参数 providerId")
+                }
             }
             return "## ❌ 参数错误\n\n缺少必填参数 `providerId`，请提供供应商 ID。"
         }
 
         guard let modelId = arguments["modelId"]?.value as? String, !modelId.isEmpty else {
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 缺少必填参数 modelId")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 缺少必填参数 modelId")
+                }
             }
             return "## ❌ 参数错误\n\n缺少必填参数 `modelId`，请提供模型 ID。"
         }
 
         if Self.verbose {
-            LLMAvailabilityPlugin.logger.info("\(self.t)🔍 开始检测：\(providerId) / \(modelId)")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(self.t)🔍 开始检测：\(providerId) / \(modelId)")
+            }
         }
 
         let llmService = RootContainer.shared.llmService
@@ -66,7 +72,9 @@ struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
 
         if result.isAvailable {
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.info("\(self.t)✅ 检测完成：\(providerId) / \(modelId) 可用")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.info("\(self.t)✅ 检测完成：\(providerId) / \(modelId) 可用")
+                }
             }
             return """
                 ## ✅ 模型可用
@@ -77,7 +85,9 @@ struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
                 """
         } else {
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(self.t)❌ 检测完成：\(providerId) / \(modelId) 不可用 - \(result.reason ?? "未知原因")")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(self.t)❌ 检测完成：\(providerId) / \(modelId) 不可用 - \(result.reason ?? "未知原因")")
+                }
             }
             return """
                 ## ❌ 模型不可用

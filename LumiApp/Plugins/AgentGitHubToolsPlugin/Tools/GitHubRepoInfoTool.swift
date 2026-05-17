@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 仓库信息工具
 struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📦"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_repo_info"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -47,7 +47,9 @@ struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)获取仓库信息：\(owner)/\(repo)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)获取仓库信息：\(owner)/\(repo)")
+            }
         }
 
         do {
@@ -57,7 +59,9 @@ struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
             )
             return formatRepoInfo(repoInfo)
         } catch {
-            GitHubToolsPlugin.logger.error("\(self.t)获取仓库信息失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(self.t)获取仓库信息失败：\(error.localizedDescription)")
+            }
             return "获取仓库信息失败：\(error.localizedDescription)"
         }
     }

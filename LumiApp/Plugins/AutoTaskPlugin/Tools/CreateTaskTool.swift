@@ -7,7 +7,7 @@ import MagicKit
 /// 当用户提出复杂目标时，Agent 调用此工具将目标拆解为可执行的子任务。
 struct CreateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "create_task"
     func description(for language: LanguagePreference) -> String {
@@ -85,7 +85,9 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
         let manager = TaskStateManager.shared
         await manager.createTasks(conversationId: conversationId, items: items)
 
-        AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks, posting autoTaskDidChange for cid=\(conversationId.prefix(8))")
+        if AutoTaskPlugin.verbose {
+                    AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks, posting autoTaskDidChange for cid=\(conversationId.prefix(8))")
+        }
 
         // 通知 UI 刷新
         NotificationCenter.default.post(
@@ -107,7 +109,9 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
         result += "\nNow start working on task #1: **\(items[0].title)**"
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks for conversation \(conversationId)")
+            if AutoTaskPlugin.verbose {
+                            AutoTaskPlugin.logger.info("\(Self.t)Created \(items.count) tasks for conversation \(conversationId)")
+            }
         }
 
         return result

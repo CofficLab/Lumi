@@ -9,7 +9,7 @@ import os
 /// 存储位置：<dbRoot>/EditorTabStrip/projects/<projectHash>/tabs.json
 final class EditorTabStripStore: @unchecked Sendable, SuperLog {
     nonisolated static var emoji: String { "📑" }
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi", category: "plugin.editor-tab-strip-store")
 
@@ -141,7 +141,9 @@ final class EditorTabStripStore: @unchecked Sendable, SuperLog {
             self.writeSnapshot(snapshot, forProject: projectPath)
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)设置当前文件：\(path)，项目：\(projectPath)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)设置当前文件：\(path)，项目：\(projectPath)")
+                }
             }
         }
     }

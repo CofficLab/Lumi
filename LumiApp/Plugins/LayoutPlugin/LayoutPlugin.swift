@@ -25,7 +25,7 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     nonisolated static let emoji = "📐"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "Layout"
     static let displayName: String = "Layout Persistence"
@@ -74,7 +74,9 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                 .allowsHitTesting(false)
                 .onAppear {
                     if LayoutPlugin.verbose {
-                        LayoutPlugin.logger.info("\(LayoutPlugin.t)生命周期锚点 appeared")
+                        if LayoutPlugin.verbose {
+                                                    LayoutPlugin.logger.info("\(LayoutPlugin.t)生命周期锚点 appeared")
+                        }
                     }
                     restoreLayout()
                     startObserving()
@@ -91,7 +93,9 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                 guard hasRestored else { return }
                 guard oldValue != newValue else { return }
                 if LayoutPlugin.verbose {
-                    LayoutPlugin.logger.info("\(LayoutPlugin.t)侧边栏 Tab 变更: \(oldValue) → \(newValue)")
+                    if LayoutPlugin.verbose {
+                                            LayoutPlugin.logger.info("\(LayoutPlugin.t)侧边栏 Tab 变更: \(oldValue) → \(newValue)")
+                    }
                 }
                 LayoutPluginLocalStore.shared.saveSelectedAgentSidebarTabId(newValue)
             }
@@ -99,7 +103,9 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
                 guard hasRestored else { return }
                 guard oldValue != newValue else { return }
                 if LayoutPlugin.verbose {
-                    LayoutPlugin.logger.info("\(LayoutPlugin.t)Detail 变更: \(oldValue) → \(newValue)")
+                    if LayoutPlugin.verbose {
+                                            LayoutPlugin.logger.info("\(LayoutPlugin.t)Detail 变更: \(oldValue) → \(newValue)")
+                    }
                 }
                 LayoutPluginLocalStore.shared.saveSelectedAgentDetailId(newValue)
             }
@@ -117,7 +123,9 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
         // 恢复活动栏图标
         if let savedIcon = store.loadActivePanelIcon() {
             if LayoutPlugin.verbose {
-                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复活动栏图标: \(savedIcon)")
+                if LayoutPlugin.verbose {
+                                    LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复活动栏图标: \(savedIcon)")
+                }
             }
             pluginVM.activePanelIcon = savedIcon
         }
@@ -125,7 +133,9 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
         // 恢复侧边栏 Tab
         if let savedTabId = store.loadSelectedAgentSidebarTabId() {
             if LayoutPlugin.verbose {
-                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复侧边栏 Tab: \(savedTabId)")
+                if LayoutPlugin.verbose {
+                                    LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复侧边栏 Tab: \(savedTabId)")
+                }
             }
             layoutVM.restoreFromPlugin(tabId: savedTabId)
         }
@@ -133,7 +143,9 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
         // 恢复 Detail 视图
         if let savedDetailId = store.loadSelectedAgentDetailId() {
             if LayoutPlugin.verbose {
-                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复 Detail 视图: \(savedDetailId)")
+                if LayoutPlugin.verbose {
+                                    LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复 Detail 视图: \(savedDetailId)")
+                }
             }
             layoutVM.restoreFromPlugin(detailId: savedDetailId)
         }
@@ -142,7 +154,9 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
         let savedRatios = store.loadLayoutRatios()
         if !savedRatios.isEmpty {
             if LayoutPlugin.verbose {
-                LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复分栏比例: \(savedRatios.count) 项")
+                if LayoutPlugin.verbose {
+                                    LayoutPlugin.logger.info("\(LayoutPlugin.t)恢复分栏比例: \(savedRatios.count) 项")
+                }
             }
             layoutVM.restoreFromPlugin(ratios: savedRatios)
         }
@@ -160,7 +174,9 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
             .sink { newValue in
                 guard hasRestored else { return }
                 if LayoutPlugin.verbose {
-                    LayoutPlugin.logger.info("\(LayoutPlugin.t)活动栏图标变更: \(newValue ?? "nil")")
+                    if LayoutPlugin.verbose {
+                                            LayoutPlugin.logger.info("\(LayoutPlugin.t)活动栏图标变更: \(newValue ?? "nil")")
+                    }
                 }
                 LayoutPluginLocalStore.shared.saveActivePanelIcon(newValue)
             }

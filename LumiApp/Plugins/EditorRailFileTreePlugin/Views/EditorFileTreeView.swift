@@ -11,7 +11,7 @@ struct EditorFileTreeView: View, SuperLog {
 
     /// 日志详细程度控制
     nonisolated static let emoji = "🌳"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 使用插件的 logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree.view")
 
@@ -74,7 +74,9 @@ struct EditorFileTreeView: View, SuperLog {
         coordinator.setProjectRootPath(projectVM.currentProjectPath)
         rootRefreshToken += 1
         if Self.verbose {
-            Self.logger.info("\(Self.t)项目路径变化，更新协调器并递增刷新令牌")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)项目路径变化，更新协调器并递增刷新令牌")
+            }
         }
     }
 
@@ -84,7 +86,9 @@ struct EditorFileTreeView: View, SuperLog {
             coordinator.setProjectRootPath(projectVM.currentProjectPath)
             rootRefreshToken += 1
             if Self.verbose {
-                Self.logger.info("\(Self.t)视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)视图首次出现，初始化协调器，项目路径：\(projectVM.currentProjectPath)")
+                }
             }
         }
     }
@@ -96,7 +100,9 @@ struct EditorFileTreeView: View, SuperLog {
     private func onDisappear() {
         coordinator.stop()
         if Self.verbose {
-            Self.logger.info("\(Self.t)视图消失，停止协调器监听")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)视图消失，停止协调器监听")
+            }
         }
     }
 
@@ -105,7 +111,9 @@ struct EditorFileTreeView: View, SuperLog {
         guard newToken > 0 else { return }
         rootRefreshToken += 1
         if Self.verbose {
-            Self.logger.info("\(Self.t)协调器驱动刷新，令牌：\(rootRefreshToken)")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)协调器驱动刷新，令牌：\(rootRefreshToken)")
+            }
         }
     }
 
@@ -114,12 +122,16 @@ struct EditorFileTreeView: View, SuperLog {
         if isExpanded {
             coordinator.addExpandedPath(relativePath)
             if Self.verbose {
-                Self.logger.info("\(Self.t)节点展开：\(relativePath)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)节点展开：\(relativePath)")
+                }
             }
         } else {
             coordinator.removeExpandedPath(relativePath)
             if Self.verbose {
-                Self.logger.info("\(Self.t)节点折叠：\(relativePath)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)节点折叠：\(relativePath)")
+                }
             }
         }
     }

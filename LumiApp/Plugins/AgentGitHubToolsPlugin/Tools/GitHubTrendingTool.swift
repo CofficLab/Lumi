@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 趋势项目工具
 struct GitHubTrendingTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔥"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_trending"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -41,14 +41,18 @@ struct GitHubTrendingTool: SuperAgentTool, SuperLog {
         let limit = arguments["limit"]?.value as? Int ?? 10
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(Self.t)获取趋势项目：since=\(since)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(Self.t)获取趋势项目：since=\(since)")
+            }
         }
 
         do {
             let repos = try await GitHubAPIService.shared.getTrendingRepositories(since: since)
             return formatTrendingRepos(Array(repos.prefix(limit)))
         } catch {
-            GitHubToolsPlugin.logger.error("\(Self.t)获取趋势项目失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(Self.t)获取趋势项目失败：\(error.localizedDescription)")
+            }
             return "获取趋势项目失败：\(error.localizedDescription)"
         }
     }

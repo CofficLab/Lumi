@@ -738,7 +738,9 @@ struct GitCommitDetailView: View {
                 do {
                     return try await GitCommitDetailService.loadUncommittedFiles(path: path)
                 } catch {
-                    GitPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+                    if GitPlugin.verbose {
+                                            GitPlugin.logger.error("加载未提交变更失败: \(error.localizedDescription)")
+                    }
                     return []
                 }
             }()
@@ -799,7 +801,9 @@ struct GitCommitDetailView: View {
                 self.loading = false
                 self.errorMessage = error.localizedDescription
 
-                GitPlugin.logger.error("加载 commit 详情失败: \(error.localizedDescription)")
+                if GitPlugin.verbose {
+                                    GitPlugin.logger.error("加载 commit 详情失败: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -845,7 +849,9 @@ struct GitCommitDetailView: View {
                     self.loadingDiff = false
                 }
 
-                GitPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
+                if GitPlugin.verbose {
+                                    GitPlugin.logger.error("加载文件 diff 失败: \(error.localizedDescription)")
+                }
             }
         }
     }

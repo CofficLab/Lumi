@@ -12,7 +12,7 @@ import os
 actor RAGPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🦞"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "rag"
     static let navigationId: String = "rag_settings"
@@ -37,7 +37,9 @@ actor RAGPlugin: SuperPlugin, SuperLog {
 
     nonisolated func onEnable() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)🦞 RAG 插件已启用，开始初始化服务...")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)🦞 RAG 插件已启用，开始初始化服务...")
+            }
         }
 
         // 在后台异步初始化 RAG 服务
@@ -46,7 +48,9 @@ actor RAGPlugin: SuperPlugin, SuperLog {
                 try await Self.service.initialize()
             } catch {
                 if Self.verbose {
-                    Self.logger.error("\(Self.t)❌ RAG 服务初始化失败：\(error.localizedDescription)")
+                    if Self.verbose {
+                                            Self.logger.error("\(Self.t)❌ RAG 服务初始化失败：\(error.localizedDescription)")
+                    }
                 }
             }
         }
@@ -57,7 +61,9 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         if Self.verbose {
-            Self.logger.info("\(Self.t)🦞 RAG 中间件已注册")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)🦞 RAG 中间件已注册")
+            }
         }
         return [AnySuperSendMiddleware(RAGSuperSendMiddleware())]
     }

@@ -13,14 +13,18 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
     init(bridge: XcodeProjectContextBridge = .shared) {
         self.bridge = bridge
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)初始化完成")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)初始化完成")
+            }
         }
     }
 
     func canHandleProject(at path: String?) -> Bool {
         guard let path, !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)canHandleProject: 路径为空 -> false")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)canHandleProject: 路径为空 -> false")
+                }
             }
             return false
         }
@@ -34,51 +38,69 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
         let canHandle = XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: path))
         XcodeProjectCapabilityCache.set(canHandle, for: path)
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)canHandleProject: \(path) -> \(canHandle)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)canHandleProject: \(path) -> \(canHandle)")
+            }
         }
         return canHandle
     }
 
     func projectOpened(at path: String) async {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)projectOpened 开始: \(path)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)projectOpened 开始: \(path)")
+            }
         }
         await bridge.projectOpened(at: path)
         XcodeProjectCapabilityCache.set(bridge.isXcodeProject, for: path)
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)projectOpened 完成: \(path)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)projectOpened 完成: \(path)")
+            }
         }
     }
 
     func projectClosed() {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)projectClosed")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)projectClosed")
+            }
         }
         bridge.projectClosed()
     }
 
     func resyncProjectContext() async {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)resyncProjectContext 开始")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)resyncProjectContext 开始")
+            }
         }
         await bridge.resyncBuildContext()
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)resyncProjectContext 完成")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)resyncProjectContext 完成")
+            }
         }
     }
 
     func makeEditorContextSnapshot(currentFileURL: URL?) -> EditorProjectContextSnapshot? {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)makeEditorContextSnapshot，currentFile: \(currentFileURL?.path ?? "nil")")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)makeEditorContextSnapshot，currentFile: \(currentFileURL?.path ?? "nil")")
+            }
         }
         guard let snapshot = bridge.makeEditorContextSnapshot(currentFileURL: currentFileURL) else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)snapshot 为空")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)snapshot 为空")
+                }
             }
             return nil
         }
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)snapshot 创建成功，workspace: \(snapshot.workspaceName), scheme: \(snapshot.activeScheme ?? "nil")")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)snapshot 创建成功，workspace: \(snapshot.workspaceName), scheme: \(snapshot.activeScheme ?? "nil")")
+            }
         }
         return EditorProjectContextSnapshot(
             projectPath: snapshot.projectPath,
@@ -102,13 +124,17 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
     func updateLatestEditorSnapshot(_ snapshot: EditorProjectContextSnapshot?) {
         guard let snapshot else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)updateLatestEditorSnapshot: nil")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)updateLatestEditorSnapshot: nil")
+                }
             }
             bridge.updateLatestEditorSnapshot(nil)
             return
         }
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)updateLatestEditorSnapshot: workspace=\(snapshot.workspaceName), file=\(snapshot.currentFilePath ?? "nil")")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)updateLatestEditorSnapshot: workspace=\(snapshot.workspaceName), file=\(snapshot.currentFilePath ?? "nil")")
+            }
         }
         bridge.updateLatestEditorSnapshot(
             XcodeEditorContextSnapshot(
@@ -133,7 +159,9 @@ final class XcodeProjectContextCapabilityAdapter: SuperEditorProjectContextCapab
 
     private func status(from description: String) -> EditorProjectContextStatus {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)状态映射: \(description)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)状态映射: \(description)")
+            }
         }
         if description.contains("Needs resync") {
             return .needsResync
@@ -169,20 +197,26 @@ final class XcodeLanguageIntegrationCapabilityAdapter: SuperEditorLanguageIntegr
     init(bridge: XcodeProjectContextBridge = .shared) {
         self.bridge = bridge
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)初始化完成")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)初始化完成")
+            }
         }
     }
 
     func supports(languageId: String, projectPath: String?) -> Bool {
         guard languageId == "swift" || languageId == "sourcekit" else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)supports: languageId=\(languageId) 不支持")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)supports: languageId=\(languageId) 不支持")
+                }
             }
             return false
         }
         guard let projectPath, !projectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)supports: projectPath 为空")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)supports: projectPath 为空")
+                }
             }
             return false
         }
@@ -196,20 +230,26 @@ final class XcodeLanguageIntegrationCapabilityAdapter: SuperEditorLanguageIntegr
         let supported = XcodeProjectResolver.isXcodeProjectRoot(URL(filePath: projectPath))
         XcodeProjectCapabilityCache.set(supported, for: projectPath)
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)supports: language=\(languageId), project=\(projectPath) -> \(supported)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)supports: language=\(languageId), project=\(projectPath) -> \(supported)")
+            }
         }
         return supported
     }
 
     func workspaceFolders(for languageId: String, projectPath: String) -> [EditorWorkspaceFolder]? {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)workspaceFolders 请求，language=\(languageId), project=\(projectPath)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)workspaceFolders 请求，language=\(languageId), project=\(projectPath)")
+            }
         }
         guard supports(languageId: languageId, projectPath: projectPath),
               let folders = bridge.makeWorkspaceFolders(),
               !folders.isEmpty else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)workspaceFolders 为空")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)workspaceFolders 为空")
+                }
             }
             return nil
         }
@@ -218,20 +258,26 @@ final class XcodeLanguageIntegrationCapabilityAdapter: SuperEditorLanguageIntegr
             return EditorWorkspaceFolder(uri: uri, name: name)
         }
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)workspaceFolders 返回 \(result.count) 项")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)workspaceFolders 返回 \(result.count) 项")
+            }
         }
         return result
     }
 
     func initializationOptions(for languageId: String, projectPath: String) -> [String: String]? {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)initializationOptions 请求，language=\(languageId), project=\(projectPath)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)initializationOptions 请求，language=\(languageId), project=\(projectPath)")
+            }
         }
         guard supports(languageId: languageId, projectPath: projectPath),
               let options = bridge.makeInitializationOptions(),
               !options.isEmpty else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)initializationOptions 为空")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)initializationOptions 为空")
+                }
             }
             return nil
         }
@@ -239,7 +285,9 @@ final class XcodeLanguageIntegrationCapabilityAdapter: SuperEditorLanguageIntegr
             partial[entry.key] = String(describing: entry.value)
         }
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)initializationOptions 返回 key 数: \(result.count)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)initializationOptions 返回 key 数: \(result.count)")
+            }
         }
         return result
     }
@@ -254,19 +302,25 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
     func canHandle(uri: String?) -> Bool {
         guard let uri, !uri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)canHandle: uri 为空 -> false")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)canHandle: uri 为空 -> false")
+                }
             }
             return false
         }
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)canHandle: \(uri) -> true")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)canHandle: \(uri) -> true")
+            }
         }
         return true
     }
 
     func inspectCurrentFileContext(uri: String?) -> EditorSemanticAvailabilityReport {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)inspectCurrentFileContext: \(uri ?? "nil")")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)inspectCurrentFileContext: \(uri ?? "nil")")
+            }
         }
         let bridge = XcodeProjectContextBridge.shared
         let snapshot = bridge.latestEditorSnapshot
@@ -281,7 +335,9 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
             report = XcodeSemanticAvailability.inspectCurrentFileContext(uri: uri, contextProvider: bridge)
         }
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)inspectCurrentFileContext 完成，reasons: \(report.reasons.count)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)inspectCurrentFileContext 完成，reasons: \(report.reasons.count)")
+            }
         }
         return EditorSemanticAvailabilityReport(
             reasons: report.reasons.map { reason in
@@ -302,7 +358,9 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
         strength: EditorSemanticPreflightStrength
     ) -> String? {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)preflightMessage operation=\(operation), symbol=\(symbolName ?? "nil"), strength=\(String(describing: strength))")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)preflightMessage operation=\(operation), symbol=\(symbolName ?? "nil"), strength=\(String(describing: strength))")
+            }
         }
         let message = XcodeSemanticAvailability.preflightMessage(
             uri: uri,
@@ -312,7 +370,9 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
             contextProvider: XcodeProjectContextBridge.shared
         )
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)preflightMessage 结果: \(message ?? "nil")")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)preflightMessage 结果: \(message ?? "nil")")
+            }
         }
         return message
     }
@@ -324,7 +384,9 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
         strength: EditorSemanticPreflightStrength
     ) -> EditorLanguageFeatureError? {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)preflightError operation=\(operation), symbol=\(symbolName ?? "nil"), strength=\(String(describing: strength))")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)preflightError operation=\(operation), symbol=\(symbolName ?? "nil"), strength=\(String(describing: strength))")
+            }
         }
         guard let error = XcodeSemanticAvailability.preflightError(
             uri: uri,
@@ -334,13 +396,17 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
             contextProvider: XcodeProjectContextBridge.shared
         ) else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)preflightError 结果为空")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)preflightError 结果为空")
+                }
             }
             return nil
         }
 
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.warning("\(self.t)preflightError: \(error.localizedDescription)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.warning("\(self.t)preflightError: \(error.localizedDescription)")
+            }
         }
         return EditorLanguageFeatureError(
             domain: "xcode.semantic",
@@ -356,7 +422,9 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
         symbolName: String?
     ) -> String? {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)missingResultMessage operation=\(operation), symbol=\(symbolName ?? "nil")")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)missingResultMessage operation=\(operation), symbol=\(symbolName ?? "nil")")
+            }
         }
         let message = XcodeSemanticAvailability.missingResultMessage(
             uri: uri,
@@ -365,7 +433,9 @@ final class XcodeSemanticCapabilityAdapter: SuperEditorSemanticCapability, Super
             contextProvider: XcodeProjectContextBridge.shared
         )
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(self.t)missingResultMessage 结果: \(message ?? "nil")")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(self.t)missingResultMessage 结果: \(message ?? "nil")")
+            }
         }
         return message
     }

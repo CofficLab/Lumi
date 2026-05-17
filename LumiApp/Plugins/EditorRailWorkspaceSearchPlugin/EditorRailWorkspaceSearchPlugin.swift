@@ -10,7 +10,7 @@ actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔍"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let id: String = "EditorRailWorkspaceSearch"
     static let displayName: String = String(
         localized: "Editor Rail Workspace Search", table: "EditorRailWorkspaceSearch")

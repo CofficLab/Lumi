@@ -7,7 +7,7 @@ import MagicKit
 /// 可选择是否同时阻止屏幕休眠，以及设置持续时间。
 struct CaffeinateActivateTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "☕️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "caffeinate_activate"
     func description(for language: LanguagePreference) -> String {
@@ -54,7 +54,9 @@ struct CaffeinateActivateTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            CaffeinatePlugin.logger.info("\(Self.t)Activating caffeinate: mode=\(mode.rawValue), duration=\(duration)s")
+            if CaffeinatePlugin.verbose {
+                            CaffeinatePlugin.logger.info("\(Self.t)Activating caffeinate: mode=\(mode.rawValue), duration=\(duration)s")
+            }
         }
 
         let manager = CaffeinateManager.shared

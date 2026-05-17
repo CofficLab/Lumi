@@ -25,7 +25,7 @@ import MagicKit
 /// ```
 final class ToolExecutionService: SuperLog, @unchecked Sendable {
     nonisolated static let emoji = "⚙️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - 依赖
 
     /// 工具服务

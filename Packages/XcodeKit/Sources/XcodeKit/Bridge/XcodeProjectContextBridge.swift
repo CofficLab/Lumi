@@ -99,7 +99,9 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
                 self?.updateCache()
             }
             .store(in: &cancellables)
-        Self.logger.info("\(Self.t)BuildContextProvider 已注册")
+        if Self.verbose {
+                    Self.logger.info("\(Self.t)BuildContextProvider 已注册")
+        }
         updateCache()
     }
 
@@ -122,7 +124,9 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         currentWorkspaceURL = inspection.workspaceURL
         cachedWorkspaceFolders = Self.makeWorkspaceFolders(workspaceURL: inspection.workspaceURL)
 
-        Self.logger.info("\(Self.t)项目已打开: \(path, privacy: .public), 是 Xcode 项目: \(inspection.isXcodeProject)")
+        if Self.verbose {
+                    Self.logger.info("\(Self.t)项目已打开: \(path, privacy: .public), 是 Xcode 项目: \(inspection.isXcodeProject)")
+        }
 
         if inspection.isXcodeProject {
             await initializeXcodeBuildContext(projectPath: path, inspection: inspection)
@@ -145,14 +149,18 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
 
         cachedState = nil
         latestEditorSnapshot = nil
-        Self.logger.info("\(Self.t)项目已关闭，build context 已失效")
+        if Self.verbose {
+                    Self.logger.info("\(Self.t)项目已关闭，build context 已失效")
+        }
     }
 
     public func resyncBuildContext() async {
         guard let currentProjectPath, isXcodeProject else { return }
         guard let provider = _buildContextProvider as? XcodeBuildContextProvider else { return }
 
-        Self.logger.info("\(Self.t)手动触发 build context 重解析: \(currentProjectPath, privacy: .public)")
+        if Self.verbose {
+                    Self.logger.info("\(Self.t)手动触发 build context 重解析: \(currentProjectPath, privacy: .public)")
+        }
         provider.invalidateAllContexts()
         let inspection = await XcodeProjectBackgroundQuery.inspectProject(path: currentProjectPath, store: provider.store)
         isXcodeProject = inspection.isXcodeProject
@@ -213,13 +221,17 @@ final public class XcodeProjectContextBridge: SuperLog, XcodeContextProviding {
         inspection: XcodeProjectBackgroundQuery.ProjectInspection
     ) async {
         guard let provider = _buildContextProvider as? XcodeBuildContextProvider else {
-            Self.logger.warning("\(Self.t)BuildContextProvider 未注册，跳过初始化")
+            if Self.verbose {
+                            Self.logger.warning("\(Self.t)BuildContextProvider 未注册，跳过初始化")
+            }
             return
         }
 
         if inspection.validBuildServerConfig != nil, let workspaceURL = inspection.workspaceURL {
             await provider.openProject(at: workspaceURL)
-            Self.logger.info("\(Self.t)使用已有的 buildServer.json")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)使用已有的 buildServer.json")
+            }
             return
         }
         await provider.openProject(at: URL(fileURLWithPath: path))

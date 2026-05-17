@@ -4,7 +4,7 @@ import MagicKit
 /// 获取当前项目工具
 struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "get_current_project"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -28,7 +28,9 @@ struct GetCurrentProjectTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)Getting current project")
+            if RecentProjectsPlugin.verbose {
+                            RecentProjectsPlugin.logger.info("\(Self.t)Getting current project")
+            }
         }
 
         let store = RecentProjectsStore()

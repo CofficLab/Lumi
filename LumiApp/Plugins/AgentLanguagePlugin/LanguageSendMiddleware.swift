@@ -15,7 +15,7 @@ import os
 @MainActor
 final class LanguageSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "🌐"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let id: String = "language-preference"
     /// 优先级设为 -10，在大多数中间件之前执行
     let order: Int = -10

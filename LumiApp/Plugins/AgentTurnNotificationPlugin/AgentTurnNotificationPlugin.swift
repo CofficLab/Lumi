@@ -12,7 +12,7 @@ actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
 
     nonisolated static let emoji = "🔔"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "AgentTurnNotification"
     static let displayName: String = String(localized: "Turn Notification", table: "AgentTurnNotification")
@@ -28,7 +28,9 @@ actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
 
     init() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ AgentTurnNotificationPlugin 初始化完成")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)✅ AgentTurnNotificationPlugin 初始化完成")
+            }
         }
     }
 
@@ -36,19 +38,25 @@ actor AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
 
     nonisolated func onRegister() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)📝 AgentTurnNotificationPlugin 已注册")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)📝 AgentTurnNotificationPlugin 已注册")
+            }
         }
     }
 
     nonisolated func onEnable() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)✅ AgentTurnNotificationPlugin 已启用")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)✅ AgentTurnNotificationPlugin 已启用")
+            }
         }
     }
 
     nonisolated func onDisable() {
         if Self.verbose {
-            Self.logger.info("\(Self.t)⛔️ AgentTurnNotificationPlugin 已禁用")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)⛔️ AgentTurnNotificationPlugin 已禁用")
+            }
         }
     }
 

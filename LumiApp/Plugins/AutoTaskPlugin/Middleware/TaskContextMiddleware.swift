@@ -11,7 +11,7 @@ import MagicKit
 @MainActor
 struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let id = "auto_task_context"
     let order: Int = 70
@@ -40,7 +40,9 @@ struct TaskContextMiddleware: SuperSendMiddleware, SuperLog {
         ctx.transientSystemPrompts.append(prompt)
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)注入任务进度：\(summary.completed)/\(summary.total) (\(summary.completionPercent)%)")
+            if AutoTaskPlugin.verbose {
+                            AutoTaskPlugin.logger.info("\(Self.t)注入任务进度：\(summary.completed)/\(summary.total) (\(summary.completionPercent)%)")
+            }
         }
 
         await next(ctx)

@@ -7,7 +7,7 @@ import MagicKit
 /// 适用于后台下载等需要保持系统运行但不需要屏幕的场景。
 struct CaffeinateTurnOffDisplayTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔌"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "caffeinate_turn_off_display"
     func description(for language: LanguagePreference) -> String {
@@ -40,7 +40,9 @@ struct CaffeinateTurnOffDisplayTool: SuperAgentTool, SuperLog {
         let duration = arguments["duration"]?.value as? TimeInterval ?? 0
 
         if Self.verbose {
-            CaffeinatePlugin.logger.info("\(Self.t)Activating caffeinate with display off, duration=\(duration)s")
+            if CaffeinatePlugin.verbose {
+                            CaffeinatePlugin.logger.info("\(Self.t)Activating caffeinate with display off, duration=\(duration)s")
+            }
         }
 
         let manager = CaffeinateManager.shared

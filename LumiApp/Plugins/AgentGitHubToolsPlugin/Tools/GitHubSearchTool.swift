@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 搜索工具
 struct GitHubSearchTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_search"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -67,7 +67,9 @@ struct GitHubSearchTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(Self.t)搜索：\(searchQuery)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(Self.t)搜索：\(searchQuery)")
+            }
         }
 
         do {

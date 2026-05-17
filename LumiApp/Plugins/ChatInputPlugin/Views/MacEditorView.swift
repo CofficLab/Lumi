@@ -8,7 +8,7 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "✏️"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 最小高度
     static let minHeight: CGFloat = 64
     /// 最大高度
@@ -272,7 +272,7 @@ class EditorTextView: NSTextView, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📝"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     /// 与 `InputAreaView.handleFileDrop` 中作为图片附件处理的扩展名一致
     private static let imagePathExtensions: Set<String> = [
@@ -330,7 +330,9 @@ class EditorTextView: NSTextView, SuperLog {
         let pasteboard = sender.draggingPasteboard
         
         if Self.verbose {
-            ChatInputPlugin.logger.info("\(Self.t)📎 performDragOperation 被调用")
+            if ChatInputPlugin.verbose {
+                            ChatInputPlugin.logger.info("\(Self.t)📎 performDragOperation 被调用")
+            }
         }
 
         // 首先尝试读取文件 URL
@@ -338,7 +340,9 @@ class EditorTextView: NSTextView, SuperLog {
            !urls.isEmpty
         {
             if Self.verbose {
-                ChatInputPlugin.logger.info("\(Self.t)📎 读取到 \(urls.count) 个 URL: \(urls.first?.path ?? "unknown")")
+                if ChatInputPlugin.verbose {
+                                    ChatInputPlugin.logger.info("\(Self.t)📎 读取到 \(urls.count) 个 URL: \(urls.first?.path ?? "unknown")")
+                }
             }
             // 发送通知让 InputAreaView 处理
             NotificationCenter.postFileDroppedToChat(fileURL: urls.first!)
@@ -351,7 +355,9 @@ class EditorTextView: NSTextView, SuperLog {
            let firstString = strings.first
         {
             if Self.verbose {
-                ChatInputPlugin.logger.info("\(Self.t)📎 读取到字符串: \(firstString)")
+                if ChatInputPlugin.verbose {
+                                    ChatInputPlugin.logger.info("\(Self.t)📎 读取到字符串: \(firstString)")
+                }
             }
             // 如果是绝对路径，发送通知
             if firstString.hasPrefix("/") {
@@ -361,7 +367,9 @@ class EditorTextView: NSTextView, SuperLog {
         }
         
         if Self.verbose {
-            ChatInputPlugin.logger.info("\(Self.t)⚠️ 没有读取到有效的拖放数据")
+            if ChatInputPlugin.verbose {
+                            ChatInputPlugin.logger.info("\(Self.t)⚠️ 没有读取到有效的拖放数据")
+            }
         }
 
         return super.performDragOperation(sender)

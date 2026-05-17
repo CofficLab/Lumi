@@ -503,7 +503,9 @@ final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
             do {
                 try process.run()
             } catch {
-                Self.logger.error("\(Self.t)命令执行失败: \(error.localizedDescription, privacy: .public)")
+                if Self.verbose {
+                                    Self.logger.error("\(Self.t)命令执行失败: \(error.localizedDescription, privacy: .public)")
+                }
                 continuation.resume(returning: false)
             }
         }

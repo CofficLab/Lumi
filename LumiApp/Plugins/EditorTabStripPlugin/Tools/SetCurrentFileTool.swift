@@ -6,7 +6,7 @@ import MagicKit
 /// 基于 EditorTabStripStore 的 activeTabPath 设置当前活跃文件。
 struct SetCurrentFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "set_current_file"
     func description(for language: LanguagePreference) -> String {
         switch language {

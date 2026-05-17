@@ -6,7 +6,7 @@ import MagicKit
 /// 监听 `AgentTurnService` turn 结束事件并发出系统通知的 Overlay 视图
 struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { "🔔" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
 
     let content: Content
 
@@ -27,7 +27,7 @@ struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {
 @MainActor
 final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔔" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
 
     private let center = UNUserNotificationCenter.current()
 
@@ -38,7 +38,9 @@ final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
         // 只在首次设置，避免重复设置代理
         if !(center.delegate is AgentTurnNotificationHandler) {
             center.delegate = self
-            AppLogger.core.info("\(Self.t)✅ 已设置通知中心代理")
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)✅ 已设置通知中心代理")
+            }
         }
     }
 
@@ -68,7 +70,9 @@ final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
                 await deliverNotification(conversationId: conversationId)
             }
         } catch {
-            AppLogger.core.error("\(Self.t)❌ 请求通知权限失败: \(error)")
+            if Self.verbose {
+                AppLogger.core.error("\(Self.t)❌ 请求通知权限失败: \(error)")
+            }
         }
     }
 
@@ -87,9 +91,13 @@ final class AgentTurnNotificationHandler: NSObject, ObservableObject, SuperLog {
 
         do {
             try await center.add(request)
-            AppLogger.core.info("\(Self.t)📤 已发送 turn 结束通知: \(conversationId)")
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)📤 已发送 turn 结束通知: \(conversationId)")
+            }
         } catch {
-            AppLogger.core.error("\(Self.t)❌ 发送 turn 结束通知失败: \(error)")
+            if Self.verbose {
+                AppLogger.core.error("\(Self.t)❌ 发送 turn 结束通知失败: \(error)")
+            }
         }
     }
 }

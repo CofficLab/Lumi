@@ -189,7 +189,7 @@ public final class CursorCoordinator: TextViewCoordinator, @unchecked Sendable {
 public final class ContextMenuCoordinator: TextViewCoordinator, @unchecked Sendable, SuperLog {
 
     public nonisolated static let emoji = "🖱️"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
 
     private weak var state: EditorState?
 
@@ -301,7 +301,7 @@ final class ContextMenuManager: SuperLog {
 final class ContextMenuHelper: NSObject, SuperLog {
 
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private weak var textView: TextView?
     private weak var state: EditorState?

@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 更新 Issue 工具
 struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_update_issue"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -86,7 +86,9 @@ struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
         let milestone = arguments["milestone"]?.value as? Int
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)更新 Issue：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)更新 Issue：\(owner)/\(repo)#\(issueNumber)")
+            }
         }
 
         do {
@@ -103,7 +105,9 @@ struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
             )
             return formatUpdatedIssue(issue)
         } catch {
-            GitHubToolsPlugin.logger.error("更新 Issue 失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("更新 Issue 失败：\(error.localizedDescription)")
+            }
             return "更新 Issue 失败：\(error.localizedDescription)"
         }
     }

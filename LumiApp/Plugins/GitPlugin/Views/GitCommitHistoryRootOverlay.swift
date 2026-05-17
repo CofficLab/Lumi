@@ -19,7 +19,9 @@ struct GitCommitHistoryRootOverlay<Content: View>: View {
             guard newHash != nil else { return }
 
             if GitPlugin.verbose {
-                GitPlugin.logger.info("Commit selected: \(newHash?.prefix(7) ?? "nil"), activating panel")
+                if GitPlugin.verbose {
+                                    GitPlugin.logger.info("Commit selected: \(newHash?.prefix(7) ?? "nil"), activating panel")
+                }
             }
 
             // 有 commit 被选中时，自动激活当前面板

@@ -8,7 +8,7 @@ import os
 final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.openai")
     nonisolated static let emoji = "🟢"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - 基础信息
 
     static let id = "openai"
@@ -200,7 +200,9 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             return nil
         } catch {
             if Self.verbose {
-                Self.logger.error("解析流式数据块失败: \(error.localizedDescription)")
+                if Self.verbose {
+                                    Self.logger.error("解析流式数据块失败: \(error.localizedDescription)")
+                }
             }
             return nil
         }

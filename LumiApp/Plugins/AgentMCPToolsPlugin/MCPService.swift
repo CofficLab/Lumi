@@ -5,7 +5,7 @@ import MagicKit
 
 /// MCP 服务：负责管理 MCP 服务器连接和工具发现（插件内部实现细节）。
 final class MCPService: SuperLog, @unchecked Sendable {
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     nonisolated static let emoji = "🐘"
 
     // MARK: - Combine Publishers
@@ -80,7 +80,9 @@ final class MCPService: SuperLog, @unchecked Sendable {
             await updateToolsFromCache()
         } catch {
             if Self.verbose {
-                AgentMCPToolsPlugin.logger.error("\(Self.t)Failed to connect to MCP server \(config.name): \(error.localizedDescription)")
+                if AgentMCPToolsPlugin.verbose {
+                                    AgentMCPToolsPlugin.logger.error("\(Self.t)Failed to connect to MCP server \(config.name): \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -100,7 +102,9 @@ final class MCPService: SuperLog, @unchecked Sendable {
         toolsPublisher.send(tools)
 
         if Self.verbose {
-            AgentMCPToolsPlugin.logger.info("\(Self.t)✅ MCP tools updated: \(newTools.count)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.info("\(Self.t)✅ MCP tools updated: \(newTools.count)")
+            }
         }
     }
 }

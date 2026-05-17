@@ -8,7 +8,7 @@ import SwiftUI
 /// 支持悬停弹出详细信息
 struct RAGStatusBarView: View, SuperLog {
     nonisolated static let emoji = "🦞"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - 属性
 
     @EnvironmentObject private var projectVM: ProjectVM
@@ -297,7 +297,9 @@ struct RAGStatusBarView: View, SuperLog {
         let now = Date()
         guard now.timeIntervalSince(lastUpdateAttempt) > 1.0 else {
             if RAGPlugin.verbose {
-                RAGPlugin.logger.info("\(Self.t)RAG status update throttled")
+                if RAGPlugin.verbose {
+                                    RAGPlugin.logger.info("\(Self.t)RAG status update throttled")
+                }
             }
             return
         }
@@ -306,7 +308,9 @@ struct RAGStatusBarView: View, SuperLog {
         // 如果正在索引，不更新状态（避免冲突）
         if isIndexing {
             if RAGPlugin.verbose {
-                RAGPlugin.logger.info("\(Self.t)RAG is indexing, skip status update")
+                if RAGPlugin.verbose {
+                                    RAGPlugin.logger.info("\(Self.t)RAG is indexing, skip status update")
+                }
             }
             return
         }
@@ -324,9 +328,11 @@ struct RAGStatusBarView: View, SuperLog {
 
                 if RAGPlugin.verbose, let status = indexStatus {
                     if Self.verbose {
-                        RAGPlugin.logger.info(
-                            "\(Self.t)RAG index status updated: \(status.projectPath), files: \(status.fileCount), chunks: \(status.chunkCount), stale: \(status.isStale)"
-                        )
+                        if RAGPlugin.verbose {
+                                                    RAGPlugin.logger.info(
+                                                        "\(Self.t)RAG index status updated: \(status.projectPath), files: \(status.fileCount), chunks: \(status.chunkCount), stale: \(status.isStale)"
+                                                    )
+                        }
                     }
                 }
             }
@@ -336,7 +342,9 @@ struct RAGStatusBarView: View, SuperLog {
                 isNotInitialized = true
                 errorMessage = nil
                 if Self.verbose {
-                    RAGPlugin.logger.info("\(Self.t)RAG service not initialized")
+                    if RAGPlugin.verbose {
+                                            RAGPlugin.logger.info("\(Self.t)RAG service not initialized")
+                    }
                 }
                 return
             }
@@ -344,7 +352,9 @@ struct RAGStatusBarView: View, SuperLog {
             // 只在没有状态且不在索引中时才显示错误
             if indexStatus == nil && !isIndexing && !isNotInitialized {
                 errorMessage = String(localized: "Failed to get status", table: "RAG")
-                RAGPlugin.logger.error("\(Self.t)Failed to get RAG index status: \(error.localizedDescription)")
+                if RAGPlugin.verbose {
+                                    RAGPlugin.logger.error("\(Self.t)Failed to get RAG index status: \(error.localizedDescription)")
+                }
             } else {
                 // 如果已经有状态或正在索引，清除错误（保留现有状态）
                 errorMessage = nil

@@ -84,7 +84,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         activeRequestID = requestID
         lastMoveDebugSignature = nil
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 发起: 事件行列=\(cursorPosition.start.line):\(cursorPosition.start.column), 实时offset=\(cursorOffset), LSP行列=\(line):\(character), 前缀='\(context.prefix)', 类型上下文=\(context.isTypeContext)")
+            if EditorPlugin.verbose {
+                            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 发起: 事件行列=\(cursorPosition.start.line):\(cursorPosition.start.column), 实时offset=\(cursorOffset), LSP行列=\(line):\(character), 前缀='\(context.prefix)', 类型上下文=\(context.isTypeContext)")
+            }
         }
 
         let completionItems = await lspClient.requestCompletion(line: line, character: character)
@@ -101,7 +103,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         guard requestGeneration.isCurrent(requestGen) else { return nil }
         let extensionEntries = extensionSuggestions.map(EditorPluginSuggestionEntry.init)
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP返回: \(entries.count) 项，扩展=\(extensionEntries.count) 项")
+            if EditorPlugin.verbose {
+                            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP返回: \(entries.count) 项，扩展=\(extensionEntries.count) 项")
+            }
         }
         guard !entries.isEmpty else {
             if !extensionEntries.isEmpty {
@@ -122,7 +126,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
                 if !fallback.isEmpty {
                     if EditorPlugin.verbose {
                         let preview = fallback.prefix(5).map(\.label).joined(separator: ", ")
-                        EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP空返回，启用类型兜底: \(fallback.count) 项，Top=\(preview)")
+                        if EditorPlugin.verbose {
+                                                    EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] LSP空返回，启用类型兜底: \(fallback.count) 项，Top=\(preview)")
+                        }
                     }
                     requestAnchor = cursorPosition
                     requestAnchorOffset = Self.utf16Offset(for: cursorPosition.start, in: content)
@@ -137,7 +143,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
             requestAnchor = nil
             requestAnchorOffset = nil
             if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 无返回项，结束")
+                if EditorPlugin.verbose {
+                                    EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 无返回项，结束")
+                }
             }
             return nil
         }
@@ -150,7 +158,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         )
         if EditorPlugin.verbose {
             let preview = entries.prefix(5).map(\.label).joined(separator: ", ")
-            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 本地过滤排序: \(beforeFilterCount) -> \(entries.count)，Top=\(preview)")
+            if EditorPlugin.verbose {
+                            EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 本地过滤排序: \(beforeFilterCount) -> \(entries.count)，Top=\(preview)")
+            }
         }
         requestAnchor = cursorPosition
         requestAnchorOffset = Self.utf16Offset(for: cursorPosition.start, in: content)
@@ -163,14 +173,18 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
                 if !fallback.isEmpty {
                     if EditorPlugin.verbose {
                         let preview = fallback.prefix(5).map(\.label).joined(separator: ", ")
-                        EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 过滤为空，启用类型兜底: \(fallback.count) 项，Top=\(preview)")
+                        if EditorPlugin.verbose {
+                                                    EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 过滤为空，启用类型兜底: \(fallback.count) 项，Top=\(preview)")
+                        }
                     }
                     activeFallbackTypeItems = fallback
                     return (cursorPosition, fallback.map { $0 })
                 }
             }
             if EditorPlugin.verbose {
-                EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 过滤后为空，不展示补全窗")
+                if EditorPlugin.verbose {
+                                    EditorPlugin.logger.debug("\(Self.t)补全请求[\(requestID)] 过滤后为空，不展示补全窗")
+                }
             }
             return nil
         }
@@ -204,7 +218,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
                     let signature = "fallback|\(requestID)|\(context.prefix)|\(filtered.count)"
                     if signature != lastMoveDebugSignature {
                         let preview = filtered.prefix(5).map(\.label).joined(separator: ", ")
-                        EditorPlugin.logger.debug("\(Self.t)补全重筛[\(requestID)](兜底) 前缀='\(context.prefix)' \(self.activeFallbackTypeItems.count)->\(filtered.count)，Top=\(preview)")
+                        if EditorPlugin.verbose {
+                                                    EditorPlugin.logger.debug("\(Self.t)补全重筛[\(requestID)](兜底) 前缀='\(context.prefix)' \(self.activeFallbackTypeItems.count)->\(filtered.count)，Top=\(preview)")
+                        }
                         lastMoveDebugSignature = signature
                     }
                 }
@@ -228,7 +244,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
                     plugin: pluginFiltered,
                     prioritizePlugin: context.isTypeContext
                 ).prefix(5).map(\.label).joined(separator: ", ")
-                EditorPlugin.logger.debug("\(Self.t)补全重筛[\(requestID)] 前缀='\(context.prefix)' 类型上下文=\(context.isTypeContext) LSP \(sourceCount)->\(filtered.count), 扩展=\(pluginFiltered.count)，Top=\(combinedPreview)")
+                if EditorPlugin.verbose {
+                                    EditorPlugin.logger.debug("\(Self.t)补全重筛[\(requestID)] 前缀='\(context.prefix)' 类型上下文=\(context.isTypeContext) LSP \(sourceCount)->\(filtered.count), 扩展=\(pluginFiltered.count)，Top=\(combinedPreview)")
+                }
                 lastMoveDebugSignature = signature
             }
         }
@@ -244,7 +262,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         requestGeneration.invalidate()
         if EditorPlugin.verbose {
             let requestID = activeRequestID ?? -1
-            EditorPlugin.logger.debug("\(Self.t)补全窗口关闭[\(requestID)]")
+            if EditorPlugin.verbose {
+                            EditorPlugin.logger.debug("\(Self.t)补全窗口关闭[\(requestID)]")
+            }
         }
         activeItems.removeAll()
         activePluginItems.removeAll()
@@ -264,7 +284,9 @@ final class LSPCompletionDelegate: NSObject, CodeSuggestionDelegate, SuperLog {
         guard let view = textView.textView else { return }
         if EditorPlugin.verbose {
             let requestID = activeRequestID ?? -1
-            EditorPlugin.logger.debug("\(Self.t)应用补全[\(requestID)] label='\(item.label)' replacement='\(item.replacementText)'")
+            if EditorPlugin.verbose {
+                            EditorPlugin.logger.debug("\(Self.t)应用补全[\(requestID)] label='\(item.label)' replacement='\(item.replacementText)'")
+            }
         }
 
         let replacementRange: NSRange

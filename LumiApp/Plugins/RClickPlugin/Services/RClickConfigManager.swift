@@ -8,7 +8,7 @@ import MagicKit
 @MainActor
 class RClickConfigManager: ObservableObject, SuperLog {
     nonisolated static let emoji = "🖱️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     static let shared = RClickConfigManager()
     
@@ -30,7 +30,9 @@ class RClickConfigManager: ObservableObject, SuperLog {
     func loadConfig() {
         guard let data = store.data(forKey: configKey) else {
             if Self.verbose {
-                RClickPlugin.logger.info("\(Self.t)配置文件不存在，使用默认配置")
+                if RClickPlugin.verbose {
+                                    RClickPlugin.logger.info("\(Self.t)配置文件不存在，使用默认配置")
+                }
             }
             return
         }
@@ -39,10 +41,14 @@ class RClickConfigManager: ObservableObject, SuperLog {
             let decoded = try JSONDecoder().decode(RClickConfig.self, from: data)
             self.config = decoded
             if Self.verbose {
-                RClickPlugin.logger.info("\(Self.t)已加载配置：\(self.config.items.count) 个菜单项，\(self.config.fileTemplates.count) 个模板")
+                if RClickPlugin.verbose {
+                                    RClickPlugin.logger.info("\(Self.t)已加载配置：\(self.config.items.count) 个菜单项，\(self.config.fileTemplates.count) 个模板")
+                }
             }
         } catch {
-            RClickPlugin.logger.error("\(Self.t)❌ 解码配置失败：\(error.localizedDescription)")
+            if RClickPlugin.verbose {
+                            RClickPlugin.logger.error("\(Self.t)❌ 解码配置失败：\(error.localizedDescription)")
+            }
             self.config = RClickConfig.default
         }
     }
@@ -53,10 +59,14 @@ class RClickConfigManager: ObservableObject, SuperLog {
             let data = try JSONEncoder().encode(config)
             store.set(data, forKey: configKey)
             if Self.verbose {
-                RClickPlugin.logger.info("\(Self.t)💾 已保存配置")
+                if RClickPlugin.verbose {
+                                    RClickPlugin.logger.info("\(Self.t)💾 已保存配置")
+                }
             }
         } catch {
-            RClickPlugin.logger.error("\(Self.t)❌ 编码配置失败：\(error.localizedDescription)")
+            if RClickPlugin.verbose {
+                            RClickPlugin.logger.error("\(Self.t)❌ 编码配置失败：\(error.localizedDescription)")
+            }
         }
     }
     
@@ -103,7 +113,9 @@ class RClickConfigManager: ObservableObject, SuperLog {
         store.clearAll()
         self.config = RClickConfig.default
         if Self.verbose {
-            RClickPlugin.logger.info("\(Self.t)🗑️ 已清空所有配置")
+            if RClickPlugin.verbose {
+                            RClickPlugin.logger.info("\(Self.t)🗑️ 已清空所有配置")
+            }
         }
     }
 }

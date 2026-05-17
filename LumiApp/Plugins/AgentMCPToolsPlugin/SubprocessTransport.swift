@@ -25,7 +25,7 @@ actor SubprocessTransport: Transport, SuperLog {
     var logger: Logging.Logger
 
     nonisolated static let emoji = "📟"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let command: String
     let arguments: [String]
     let environment: [String: String]
@@ -63,7 +63,9 @@ actor SubprocessTransport: Transport, SuperLog {
         }
 
         if Self.verbose {
-            AgentMCPToolsPlugin.logger.info("\(Self.t)启动子进程: \(executablePath) \(self.arguments.joined(separator: " "))")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.info("\(Self.t)启动子进程: \(executablePath) \(self.arguments.joined(separator: " "))")
+            }
         }
 
         let process = Process()
@@ -94,17 +96,23 @@ actor SubprocessTransport: Transport, SuperLog {
         do {
             try process.run()
             if Self.verbose {
-                AgentMCPToolsPlugin.logger.info("\(Self.t)✅ 子进程已启动: \(executablePath)")
+                if AgentMCPToolsPlugin.verbose {
+                                    AgentMCPToolsPlugin.logger.info("\(Self.t)✅ 子进程已启动: \(executablePath)")
+                }
             }
         } catch {
-            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 运行进程失败 \(executablePath): \(error)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 运行进程失败 \(executablePath): \(error)")
+            }
             throw error
         }
     }
 
     func disconnect() async {
         if Self.verbose {
-            AgentMCPToolsPlugin.logger.info("\(Self.t)停止子进程: \(self.command)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.info("\(Self.t)停止子进程: \(self.command)")
+            }
         }
         process?.terminate()
         process = nil
@@ -124,7 +132,9 @@ actor SubprocessTransport: Transport, SuperLog {
 
         if Self.verbose {
             if let str = String(data: data, encoding: .utf8) {
-                AgentMCPToolsPlugin.logger.info("\(Self.t)📤 已发送: \(str.prefix(200))")
+                if AgentMCPToolsPlugin.verbose {
+                                    AgentMCPToolsPlugin.logger.info("\(Self.t)📤 已发送: \(str.prefix(200))")
+                }
             }
         }
     }
@@ -141,14 +151,18 @@ actor SubprocessTransport: Transport, SuperLog {
                 if let data = line.data(using: .utf8) {
                     if Self.verbose {
                         if let str = String(data: data, encoding: .utf8) {
-                            AgentMCPToolsPlugin.logger.info("\(Self.t)📥 已接收: \(str.prefix(200))")
+                            if AgentMCPToolsPlugin.verbose {
+                                                            AgentMCPToolsPlugin.logger.info("\(Self.t)📥 已接收: \(str.prefix(200))")
+                            }
                         }
                     }
                     messageContinuation.yield(data)
                 }
             }
         } catch {
-            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 从 stdout 读取失败: \(error.localizedDescription)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 从 stdout 读取失败: \(error.localizedDescription)")
+            }
             messageContinuation.finish(throwing: error)
             return
         }
@@ -161,11 +175,15 @@ actor SubprocessTransport: Transport, SuperLog {
         do {
             for try await line in handle.bytes.lines {
                 if Self.verbose {
-                    AgentMCPToolsPlugin.logger.info("\(Self.t)[MCP Stderr] \(line)")
+                    if AgentMCPToolsPlugin.verbose {
+                                            AgentMCPToolsPlugin.logger.info("\(Self.t)[MCP Stderr] \(line)")
+                    }
                 }
             }
         } catch {
-            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 从 stderr 读取失败: \(error.localizedDescription)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 从 stderr 读取失败: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -203,13 +221,17 @@ actor SubprocessTransport: Transport, SuperLog {
             if let path = String(data: buffer.snapshot(), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
                 if FileManager.default.fileExists(atPath: path) {
                     if Self.verbose {
-                        AgentMCPToolsPlugin.logger.info("\(Self.t)解析命令 '\(command)' 为: \(path)")
+                        if AgentMCPToolsPlugin.verbose {
+                                                    AgentMCPToolsPlugin.logger.info("\(Self.t)解析命令 '\(command)' 为: \(path)")
+                        }
                     }
                     return path
                 }
             }
         } catch {
-            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 解析命令失败 \(command): \(error.localizedDescription)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.error("\(Self.t)❌ 解析命令失败 \(command): \(error.localizedDescription)")
+            }
         }
 
         let commonPaths = [
@@ -222,14 +244,18 @@ actor SubprocessTransport: Transport, SuperLog {
         for path in commonPaths {
             if FileManager.default.fileExists(atPath: path) {
                 if Self.verbose {
-                    AgentMCPToolsPlugin.logger.info("\(Self.t)解析命令 '\(command)' 为备用路径: \(path)")
+                    if AgentMCPToolsPlugin.verbose {
+                                            AgentMCPToolsPlugin.logger.info("\(Self.t)解析命令 '\(command)' 为备用路径: \(path)")
+                    }
                 }
                 return path
             }
         }
 
         if Self.verbose {
-            AgentMCPToolsPlugin.logger.info("\(Self.t)⚠️ 使用最终备用路径命令 '\(command)': /usr/bin/\(command)")
+            if AgentMCPToolsPlugin.verbose {
+                            AgentMCPToolsPlugin.logger.info("\(Self.t)⚠️ 使用最终备用路径命令 '\(command)': /usr/bin/\(command)")
+            }
         }
         return "/usr/bin/\(command)"
     }

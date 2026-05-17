@@ -6,7 +6,7 @@ import DiskManagerKit
 @MainActor
 class CacheCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗑️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var categories: [CacheCategory] = []
     @Published var isScanning = false
     @Published var isCleaning = false
@@ -98,14 +98,18 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
 
         if Self.verbose {
             let size = pathsToClean.reduce(0 as Int64) { $0 + $1.size }
-            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(pathsToClean.count) 个路径，预估 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(pathsToClean.count) 个路径，预估 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+            }
         }
 
         Task {
             do {
                 let freed = try await service.cleanup(paths: pathsToClean)
                 if Self.verbose {
-                    DiskManagerPlugin.logger.info("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freed, countStyle: .file))")
+                    if DiskManagerPlugin.verbose {
+                                            DiskManagerPlugin.logger.info("\(self.t)清理完成，释放 \(ByteCountFormatter.string(fromByteCount: freed, countStyle: .file))")
+                    }
                 }
                 await MainActor.run {
                     self.lastFreedSpace = freed
@@ -117,7 +121,9 @@ class CacheCleanerViewModel: ObservableObject, SuperLog {
                 self.scan()
             } catch {
                 await MainActor.run {
-                    DiskManagerPlugin.logger.error("\(self.t)清理失败：\(error.localizedDescription)")
+                    if DiskManagerPlugin.verbose {
+                                            DiskManagerPlugin.logger.error("\(self.t)清理失败：\(error.localizedDescription)")
+                    }
                     self.alertMessage = String(localized: "Cleanup error: \(error.localizedDescription)")
                     self.isCleaning = false
                 }

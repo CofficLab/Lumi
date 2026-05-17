@@ -1,5 +1,6 @@
 import AppKit
 import LumiInlinePreviewKit
+import os
 import SwiftUI
 
 /// 内嵌预览插件的底部面板内容视图。
@@ -12,6 +13,7 @@ import SwiftUI
 ///   并把其 `lumi_preview_make_nsview` 导出的 `NSView` 挂为 previewView。
 ///   后续阶段会把这一步自动化（扫描 → 编译 → 加载）。
 struct EditorInlinePreviewDetailView: View {
+
     @EnvironmentObject private var editorVM: EditorVM
     @StateObject private var viewModel = EditorInlinePreviewViewModel()
 
@@ -30,12 +32,21 @@ struct EditorInlinePreviewDetailView: View {
             canvasArea
         }
         .onAppear {
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.info("📺 onAppear — currentFile=\(currentFileURL?.lastPathComponent ?? "nil")")
+            }
             viewModel.setActiveFile(currentFileURL, sourceText: sourceText)
         }
         .onChange(of: currentFileURL) { _, newValue in
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.info("📄 currentFileURL changed → \(newValue?.lastPathComponent ?? "nil")")
+            }
             viewModel.setActiveFile(newValue, sourceText: sourceText)
         }
         .onChange(of: editorVM.service.saveRevision) { _, _ in
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.info("💾 saveRevision changed")
+            }
             // 仅在保存时触发重建，对齐 Xcode 的 #Preview 刷新策略。
             viewModel.applySaveRevision(sourceText: sourceText)
         }
@@ -50,6 +61,9 @@ struct EditorInlinePreviewDetailView: View {
     private var toolbar: some View {
         HStack(spacing: 8) {
             Button {
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.info("🖱 clicked Demo Frame button")
+                }
                 viewModel.renderDemoFrame()
             } label: {
                 Label("Demo Frame", systemImage: "wand.and.stars")
@@ -215,6 +229,7 @@ struct EditorInlinePreviewDetailView: View {
 
     @ViewBuilder
     private var canvasArea: some View {
+        let hasFrame = viewModel.currentFrame != nil
         ZStack {
             LumiInlinePreviewFacade.PreviewSurfaceCanvas(
                 surfaceID: viewModel.currentFrame?.surfaceID,
@@ -228,12 +243,12 @@ struct EditorInlinePreviewDetailView: View {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            if viewModel.currentFrame == nil {
+            if !hasFrame {
                 VStack(spacing: 12) {
                     Image(systemName: "rectangle.dashed")
                         .font(.system(size: 36))
                         .foregroundStyle(.secondary)
-                    Text("Click “Start Stream” to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it.")
+                    Text("Click \"Start Stream\" to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it.")
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)

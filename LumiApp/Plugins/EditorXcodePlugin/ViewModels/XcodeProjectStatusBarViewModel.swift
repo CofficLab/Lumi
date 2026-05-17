@@ -34,14 +34,18 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
 
     private init() {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) 初始化开始（单例）")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t) 初始化开始（单例）")
+            }
         }
         setup()
     }
 
     private func setup() {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) setup() 开始")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t) setup() 开始")
+            }
         }
         
         let bridge = XcodeProjectContextBridge.shared
@@ -59,12 +63,16 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         indexingTask = LSPService.shared.progressProvider.primaryActiveTask
 
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) 初始状态: isXcodeProject=\(self.isXcodeProject), activeScheme=\(self.activeScheme ?? "nil")")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t) 初始状态: isXcodeProject=\(self.isXcodeProject), activeScheme=\(self.activeScheme ?? "nil")")
+            }
         }
 
         guard let provider = bridge.buildContextProvider else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.warning("\(Self.t) buildContextProvider 为空")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.warning("\(Self.t) buildContextProvider 为空")
+                }
             }
             return
         }
@@ -75,7 +83,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         buildContextStatus = provider.buildContextStatus
 
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) schemes 数量: \(self.schemes.count), configurations 数量: \(self.configurations.count)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t) schemes 数量: \(self.schemes.count), configurations 数量: \(self.configurations.count)")
+            }
         }
 
         // 订阅 provider 的状态变化
@@ -83,7 +93,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
                 if XcodePluginLog.verbose {
-                    XcodePluginLog.logger.info("\(Self.t) buildContextStatus 变化: \(status.displayDescription)")
+                    if XcodePluginLog.verbose {
+                                            XcodePluginLog.logger.info("\(Self.t) buildContextStatus 变化: \(status.displayDescription)")
+                    }
                 }
                 self?.buildContextStatus = status
                 self?.buildContextStatusDescription = Self.localizedBuildContextStatusDescription(status)
@@ -95,7 +107,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .sink { [weak self] workspace in
                 guard let self else { return }
                 if XcodePluginLog.verbose {
-                    XcodePluginLog.logger.info("\(Self.t) workspace 变化: \(workspace?.name ?? "nil")")
+                    if XcodePluginLog.verbose {
+                                            XcodePluginLog.logger.info("\(Self.t) workspace 变化: \(workspace?.name ?? "nil")")
+                    }
                 }
                 self.isXcodeProject = workspace != nil
                 self.schemes = workspace?.schemes.map(\.name) ?? []
@@ -109,7 +123,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] scheme in
                 if XcodePluginLog.verbose {
-                    XcodePluginLog.logger.info("\(Self.t) activeScheme 变化: \(scheme?.name ?? "nil")")
+                    if XcodePluginLog.verbose {
+                                            XcodePluginLog.logger.info("\(Self.t) activeScheme 变化: \(scheme?.name ?? "nil")")
+                    }
                 }
                 self?.activeScheme = scheme?.name
                 self?.activeConfiguration = scheme?.activeConfiguration
@@ -120,7 +136,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] configuration in
                 if XcodePluginLog.verbose {
-                    XcodePluginLog.logger.info("\(Self.t) activeConfiguration 变化: \(configuration ?? "nil")")
+                    if XcodePluginLog.verbose {
+                                            XcodePluginLog.logger.info("\(Self.t) activeConfiguration 变化: \(configuration ?? "nil")")
+                    }
                 }
                 self?.activeConfiguration = configuration
             }
@@ -130,7 +148,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] destination in
                 if XcodePluginLog.verbose {
-                    XcodePluginLog.logger.info("\(Self.t) activeDestination 变化: \(destination?.name ?? "nil")")
+                    if XcodePluginLog.verbose {
+                                            XcodePluginLog.logger.info("\(Self.t) activeDestination 变化: \(destination?.name ?? "nil")")
+                    }
                 }
                 self?.activeDestination = destination?.name
             }
@@ -148,7 +168,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 if XcodePluginLog.verbose {
-                    XcodePluginLog.logger.info("\(Self.t) 收到 projectContextDidChange 通知")
+                    if XcodePluginLog.verbose {
+                                            XcodePluginLog.logger.info("\(Self.t) 收到 projectContextDidChange 通知")
+                    }
                 }
                 self?.scheduleSemanticRefresh()
             }
@@ -158,26 +180,34 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 if XcodePluginLog.verbose {
-                        XcodePluginLog.logger.info("\(Self.t) 收到 projectSnapshotDidChange 通知")
+                        if XcodePluginLog.verbose {
+                                                    XcodePluginLog.logger.info("\(Self.t) 收到 projectSnapshotDidChange 通知")
+                        }
                 }
                 self?.scheduleSemanticRefresh()
             }
             .store(in: &cancellables)
         
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) setup() 完成")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t) setup() 完成")
+            }
         }
     }
 
     func setActiveScheme(_ schemeName: String) {
         guard let provider, let scheme = provider.currentWorkspace?.schemes.first(where: { $0.name == schemeName }) else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.warning("\(Self.t) setActiveScheme 失败: 找不到 scheme \(schemeName)")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.warning("\(Self.t) setActiveScheme 失败: 找不到 scheme \(schemeName)")
+                }
             }
             return
         }
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) setActiveScheme: \(schemeName)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t) setActiveScheme: \(schemeName)")
+            }
         }
         Task {
             await provider.setActiveScheme(scheme)
@@ -187,12 +217,16 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     func setActiveConfiguration(_ configurationName: String) {
         guard let provider else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.warning("\(Self.t) setActiveConfiguration 失败: provider 为空")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.warning("\(Self.t) setActiveConfiguration 失败: provider 为空")
+                }
             }
             return
         }
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) setActiveConfiguration: \(configurationName)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t) setActiveConfiguration: \(configurationName)")
+            }
         }
         Task {
             await provider.setActiveConfiguration(configurationName)
@@ -202,13 +236,17 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
     func resyncBuildContext() {
         guard !isResyncingBuildContext else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.warning("\(Self.t) resyncBuildContext 已在进行中，跳过")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.warning("\(Self.t) resyncBuildContext 已在进行中，跳过")
+                }
             }
             return
         }
         isResyncingBuildContext = true
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) 开始 resyncBuildContext")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t) 开始 resyncBuildContext")
+            }
         }
         Task.detached { [weak self] in
             await XcodeProjectContextBridge.shared.resyncBuildContext()
@@ -240,7 +278,9 @@ final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
         refreshSemanticStateFromBridge()
         isResyncingBuildContext = false
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t) resyncBuildContext 完成")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t) resyncBuildContext 完成")
+            }
         }
     }
 

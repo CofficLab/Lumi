@@ -9,7 +9,7 @@ import WebKit
 /// 截图保存到系统临时目录，返回文件路径。
 struct BrowserScreenshotTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📸"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "browser_screenshot"
     func description(for language: LanguagePreference) -> String {

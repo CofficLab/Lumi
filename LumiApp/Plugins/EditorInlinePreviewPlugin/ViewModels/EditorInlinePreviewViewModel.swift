@@ -1,5 +1,7 @@
 import Foundation
 import LumiInlinePreviewKit
+import MagicKit
+import os
 import SwiftUI
 
 /// 内嵌预览插件的视图模型。
@@ -13,34 +15,90 @@ import SwiftUI
 ///
 /// `renderDemoFrame()` 是 Phase 1 遗留的离线 demo 路径，仅用于验证显示链路。
 @MainActor
-final class EditorInlinePreviewViewModel: ObservableObject {
+final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
+    nonisolated static let emoji = "🔮"
 
     // MARK: - 类型
 
-    enum SessionStatus: Equatable {
+    enum SessionStatus: Equatable, CustomStringConvertible {
         case idle
         case starting
         case running
         case stopping
         case failed(String)
+
+        var description: String {
+            switch self {
+            case .idle: return "idle"
+            case .starting: return "starting"
+            case .running: return "running"
+            case .stopping: return "stopping"
+            case .failed(let msg): return "failed(\(msg))"
+            }
+        }
     }
 
-    enum EntryStatus: Equatable {
+    enum EntryStatus: Equatable, CustomStringConvertible {
         case demo
         case building(file: String)
         case loading(path: String)
         case loaded(path: String, title: String)
         case failed(message: String)
+
+        var description: String {
+            switch self {
+            case .demo: return "demo"
+            case .building(let file): return "building(\(file))"
+            case .loading(let path): return "loading(\(path))"
+            case .loaded(_, let title): return "loaded(\(title))"
+            case .failed(let msg): return "failed(\(msg))"
+            }
+        }
     }
 
     // MARK: - 已发布状态
 
-    @Published private(set) var currentFrame: LumiInlinePreviewFacade.IOSurfaceFrame?
-    @Published private(set) var canvasSize: CGSize = .zero
+    @Published private(set) var currentFrame: LumiInlinePreviewFacade.IOSurfaceFrame? {
+        didSet {
+            if let frame = currentFrame {
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.info("\(self.t)✅ currentFrame set: surfaceID=\(frame.surfaceID) seq=\(frame.seq) \(frame.width)×\(frame.height) @\(String(format: "%.1fx", frame.scale))")
+                }
+            } else {
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.info("\(self.t)⚠️ currentFrame set to nil")
+                }
+            }
+        }
+    }
+    @Published private(set) var canvasSize: CGSize = .zero {
+        didSet {
+            let oldStr = "\(oldValue.width)×\(oldValue.height)"
+            let newStr = "\(canvasSize.width)×\(canvasSize.height)"
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.info("\(self.t)📐 canvasSize changed: \(oldStr) → \(newStr)")
+            }
+        }
+    }
     @Published private(set) var canvasScale: CGFloat = 1
-    @Published private(set) var status: SessionStatus = .idle
+    @Published private(set) var status: SessionStatus = .idle {
+        didSet {
+            let oldDesc = oldValue.description
+            let newDesc = status.description
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.info("\(self.t)🔄 status changed: \(oldDesc) → \(newDesc)")
+            }
+        }
+    }
     @Published private(set) var policy: LumiInlinePreviewFacade.FrameStreamPolicy = .stopped
-    @Published private(set) var entryStatus: EntryStatus = .demo
+    @Published private(set) var entryStatus: EntryStatus = .demo {
+        didSet {
+            let desc = entryStatus.description
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.info("\(self.t)📦 entryStatus changed: \(desc)")
+            }
+        }
+    }
 
     // MARK: - 私有
 
@@ -59,6 +117,10 @@ final class EditorInlinePreviewViewModel: ObservableObject {
     // MARK: - 初始化
 
     init() {
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(Self.t)🚩 Init EditorInlinePreviewViewModel")
+        }
+        LumiInlinePreviewFacade.verbose = EditorInlinePreviewPlugin.verbose
         wireSessionCallbacks()
     }
 
@@ -73,20 +135,45 @@ final class EditorInlinePreviewViewModel: ObservableObject {
         let pixelWidth = max(1, Int((pointWidth * scale).rounded()))
         let pixelHeight = max(1, Int((pointHeight * scale).rounded()))
 
+        let seq = demoSeq
+        let canvasStr = "\(canvasSize.width)×\(canvasSize.height)"
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(self.t)🎬 renderDemoFrame seq=\(seq) canvasSize=\(canvasStr) → pixel \(pixelWidth)×\(pixelHeight) @\(String(format: "%.1f", scale))")
+        }
+
         currentFrame = LumiInlinePreviewFacade.DemoSurfaceFactory.makeFrame(
             width: pixelWidth,
             height: pixelHeight,
             scale: Double(scale),
             seq: demoSeq
         )
+
+        if currentFrame != nil {
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.info("\(self.t)✅ Demo frame created successfully")
+            }
+        } else {
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.error("\(self.t)❌ Demo frame creation FAILED — makeFrame returned nil")
+            }
+        }
     }
 
     // MARK: - 公开方法 — Session 路径
 
     func startSession() {
-        guard status == .idle || isFailed(status) else { return }
+        let currentStatus = status
+        guard currentStatus == .idle || isFailed(currentStatus) else {
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.warning("\(self.t)⚠️ startSession skipped — status=\(currentStatus.description)")
+            }
+            return
+        }
         status = .starting
         let (pixelWidth, pixelHeight, scale) = currentPixelSize()
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(self.t)▶️ startSession pixel \(pixelWidth)×\(pixelHeight) @\(String(format: "%.1f", scale))")
+        }
 
         Task { [weak self] in
             do {
@@ -94,22 +181,40 @@ final class EditorInlinePreviewViewModel: ObservableObject {
                 _ = try await self?.session.startFrameStream(width: pixelWidth, height: pixelHeight, scale: scale)
                 self?.lastSentPixelSize = (pixelWidth, pixelHeight, scale)
                 self?.status = .running
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.info("\(Self.t)✅ Session running, starting autoBuildIfPossible")
+                }
                 // 起流后若已经有目标文件，自动 build & load。
                 self?.autoBuildIfPossible()
             } catch {
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.error("\(Self.t)❌ startSession failed: \(error.localizedDescription)")
+                }
                 self?.status = .failed(error.localizedDescription)
             }
         }
     }
 
     func stopSession() {
-        guard status == .running || status == .starting else { return }
+        let currentStatus = status
+        guard currentStatus == .running || currentStatus == .starting else {
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.warning("\(self.t)⚠️ stopSession skipped — status=\(currentStatus.description)")
+            }
+            return
+        }
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(self.t)⏹ stopSession")
+        }
         status = .stopping
         Task { [weak self] in
             await self?.session.stop()
             self?.status = .idle
             self?.policy = .stopped
             self?.currentFrame = nil
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.info("\(Self.t)✅ Session stopped")
+            }
         }
     }
 
@@ -142,31 +247,42 @@ final class EditorInlinePreviewViewModel: ObservableObject {
     // MARK: - 公开方法 — Entry 路径（Phase 2.5）
 
     /// 让子进程加载用户预览 dylib，把其 `lumi_preview_make_nsview` 导出的 `NSView` 挂为 previewView。
-    ///
-    /// 仅在 session 已 running 时生效；调用方负责保证 session 已启动。
-    /// 调用此方法表示**用户手选**了 dylib——会冻结自动 build 流程，避免被保存触发覆盖。
     func loadDylib(at url: URL) {
         manualDylibActive = true
         lastLoadedFingerprint = nil
         let path = url.path
         entryStatus = .loading(path: path)
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(self.t)📥 loadDylib (manual): \(path)")
+        }
         Task { [weak self] in
             do {
                 let response = try await self?.session.loadDylib(path: path)
                 if response?.success == true {
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.info("\(Self.t)✅ Dylib loaded: \(path)")
+                    }
                     self?.entryStatus = .loaded(path: path, title: (path as NSString).lastPathComponent)
                 } else {
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.error("\(Self.t)❌ Dylib load failed: \(response?.message ?? "unknown")")
+                    }
                     self?.entryStatus = .failed(message: response?.message ?? "unknown")
                 }
             } catch {
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.error("\(Self.t)❌ Dylib load error: \(error.localizedDescription)")
+                }
                 self?.entryStatus = .failed(message: error.localizedDescription)
             }
         }
     }
 
     /// 卸载用户 dylib，子进程恢复内置 demo 视图。
-    /// 也用于"放弃手选模式"：之后保存当前文件会重新触发自动 build。
     func unloadDylib() {
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(self.t)📤 unloadDylib — resetting to demo mode")
+        }
         manualDylibActive = false
         lastLoadedFingerprint = nil
         Task { [weak self] in
@@ -179,6 +295,9 @@ final class EditorInlinePreviewViewModel: ObservableObject {
 
     /// 由 View 在 `currentFileURL` 改变时调用。stash 当前文件 + 源文，session running 时立即重建。
     func setActiveFile(_ url: URL?, sourceText: String?) {
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(self.t)📄 setActiveFile: \(url?.lastPathComponent ?? "nil"), hasSource=\(sourceText != nil)")
+        }
         activeFileURL = url
         latestSourceText = sourceText
         lastLoadedFingerprint = nil
@@ -186,14 +305,15 @@ final class EditorInlinePreviewViewModel: ObservableObject {
     }
 
     /// 由 View 在 `saveRevision` 改变时调用——即用户按下了 Cmd+S。
-    /// 这是 Xcode 风格的刷新触发：编辑过程中不重建，只在保存时重建。
     func applySaveRevision(sourceText: String?) {
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(self.t)💾 applySaveRevision, hasSource=\(sourceText != nil)")
+        }
         latestSourceText = sourceText
         autoBuildIfPossible()
     }
 
     /// 由 View 在 buffer 内容变化（未保存）时调用——只更新 stash，不触发重建。
-    /// 让 saveRevision 时拿到最新 buffer 即可。
     func updateBufferText(_ sourceText: String?) {
         latestSourceText = sourceText
     }
@@ -209,10 +329,18 @@ final class EditorInlinePreviewViewModel: ObservableObject {
     }
 
     private func autoBuildIfPossible() {
-        guard status == .running else { return }
+        let currentStatus = status
+        guard currentStatus == .running else {
+            if EditorInlinePreviewPlugin.verbose {
+                            EditorInlinePreviewPlugin.logger.info("\(self.t)⏭ autoBuild skipped — session not running (status=\(currentStatus.description))")
+            }
+            return
+        }
         guard canAutoBuildActiveFile() else {
-            // 非 Swift 文件 / 没源文——若上次自动加载了 dylib，回到 demo
             if !manualDylibActive, isEntryAuto() {
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.info("\(self.t)🔄 autoBuild: no eligible file, unloading dylib → demo")
+                }
                 Task { [weak self] in
                     _ = try? await self?.session.unloadDylib()
                     self?.entryStatus = .demo
@@ -225,26 +353,38 @@ final class EditorInlinePreviewViewModel: ObservableObject {
         guard let url = activeFileURL, let source = latestSourceText else { return }
         let displayName = url.lastPathComponent
         entryStatus = .building(file: displayName)
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(self.t)🔨 autoBuild: building \(displayName)")
+        }
 
         Task { [weak self] in
             guard let self else { return }
             do {
                 let result = try await self.builder.build(fileURL: url, sourceText: source)
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.info("\(Self.t)✅ Build succeeded: \(result.dylibURL.path) fingerprint=\(result.fingerprint) title=\(result.primaryTitle)")
+                }
                 guard !self.manualDylibActive else { return }
                 if self.lastLoadedFingerprint == result.fingerprint {
-                    // 已经加载过相同产物——保留 .loaded 状态。
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.info("\(Self.t)⏭ Same fingerprint, skipping load")
+                    }
                     self.entryStatus = .loaded(path: result.dylibURL.path, title: result.primaryTitle)
                     return
                 }
                 self.entryStatus = .loading(path: result.dylibURL.path)
                 _ = try? await self.session.loadDylib(path: result.dylibURL.path)
                 self.lastLoadedFingerprint = result.fingerprint
-                // 子进程会推 entryLoaded 事件；onEntryLoaded 回调里把 .loading 切到 .loaded。
-                // 这里立即先把 title 置好，避免回调里只有 path。
                 self.entryStatus = .loaded(path: result.dylibURL.path, title: result.primaryTitle)
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.info("\(Self.t)✅ Dylib loaded after build")
+                }
             } catch let error as LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError {
                 switch error {
                 case .noPreviewFound:
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.warning("\(Self.t)⚠️ No #Preview found in \(displayName)")
+                    }
                     if self.isEntryAuto() {
                         _ = try? await self.session.unloadDylib()
                         self.entryStatus = .demo
@@ -253,9 +393,15 @@ final class EditorInlinePreviewViewModel: ObservableObject {
                         self.entryStatus = .demo
                     }
                 case .sdkResolutionFailed, .swiftcFailed:
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.error("\(Self.t)❌ Build failed: \(error.localizedDescription)")
+                    }
                     self.entryStatus = .failed(message: error.localizedDescription)
                 }
             } catch {
+                if EditorInlinePreviewPlugin.verbose {
+                                    EditorInlinePreviewPlugin.logger.error("\(Self.t)❌ Build error: \(error.localizedDescription)")
+                }
                 self.entryStatus = .failed(message: error.localizedDescription)
             }
         }
@@ -280,16 +426,31 @@ final class EditorInlinePreviewViewModel: ObservableObject {
         }
         session.onPolicy = { [weak self] policy in
             Task { @MainActor in
+                if self != nil {
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.info("\(Self.t)📊 policy changed: \(policy.rawValue)")
+                    }
+                }
                 self?.policy = policy
             }
         }
         session.onError = { [weak self] message in
             Task { @MainActor in
+                if self != nil {
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.error("\(Self.t)❌ Session error: \(message)")
+                    }
+                }
                 self?.status = .failed(message)
             }
         }
         session.onTerminated = { [weak self] in
             Task { @MainActor in
+                if self != nil {
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.info("\(Self.t)🛑 Session terminated")
+                    }
+                }
                 self?.status = .idle
                 self?.policy = .stopped
                 self?.entryStatus = .demo
@@ -299,13 +460,17 @@ final class EditorInlinePreviewViewModel: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 if success {
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.info("\(Self.t)✅ onEntryLoaded success: \(message ?? "nil")")
+                    }
                     if case let .loading(path) = self.entryStatus {
                         let title = (path as NSString).lastPathComponent
                         self.entryStatus = .loaded(path: path, title: title)
                     }
-                    // unloadDylib 后子进程也会推 success=true,message="demo restored"，
-                    // 此时已由 unloadDylib() 本地置为 .demo，不需再覆盖。
                 } else {
+                    if EditorInlinePreviewPlugin.verbose {
+                                            EditorInlinePreviewPlugin.logger.error("\(Self.t)❌ onEntryLoaded failed: \(message ?? "nil")")
+                    }
                     self.entryStatus = .failed(message: message ?? "unknown")
                 }
             }
@@ -326,6 +491,9 @@ final class EditorInlinePreviewViewModel: ObservableObject {
         let (w, h, s) = currentPixelSize()
         if let last = lastSentPixelSize, last == (w, h, s) { return }
         lastSentPixelSize = (w, h, s)
+        if EditorInlinePreviewPlugin.verbose {
+                    EditorInlinePreviewPlugin.logger.info("\(self.t)📐 sendResize: \(w)×\(h) @\(String(format: "%.1f", s))")
+        }
         Task { [weak self] in
             _ = try? await self?.session.resize(width: w, height: h, scale: s)
         }

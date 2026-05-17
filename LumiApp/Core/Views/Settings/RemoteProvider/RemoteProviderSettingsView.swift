@@ -6,7 +6,7 @@ import MagicKit
 /// 云端大模型设置视图（仅展示远程/API 供应商）
 struct RemoteProviderSettingsView: View, SuperLog {
     nonisolated static let emoji = "☁️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     // MARK: - State
 

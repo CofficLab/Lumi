@@ -27,7 +27,7 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
     // MARK: - Properties
 
     nonisolated static let emoji = "🌳"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     /// 刷新令牌，每次变化时递增。SwiftUI 视图监听此值来触发重新加载。
     @Published var refreshToken: Int = 0
@@ -160,14 +160,18 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
         watcher.updateWatchedDirectories(directoryURLs)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)📡 已更新监控列表：\(directoryURLs.count) 个目录")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)📡 已更新监控列表：\(directoryURLs.count) 个目录")
+            }
         }
     }
 
     /// 处理目录变化事件
     private func handleDirectoryChanged(url: URL) {
         if Self.verbose {
-            Self.logger.info("\(Self.t)🔄 检测到目录变化：\(url.lastPathComponent)")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)🔄 检测到目录变化：\(url.lastPathComponent)")
+            }
         }
         triggerRefresh()
     }
@@ -181,7 +185,9 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
             guard let self else { return }
             self.refreshToken += 1
             if Self.verbose {
-                Self.logger.info("\(Self.t)✅ 刷新令牌递增：\(self.refreshToken)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)✅ 刷新令牌递增：\(self.refreshToken)")
+                }
             }
         }
     }

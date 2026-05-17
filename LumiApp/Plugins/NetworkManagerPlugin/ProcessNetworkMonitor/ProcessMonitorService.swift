@@ -7,7 +7,7 @@ import MagicKit
 class ProcessMonitorService: ObservableObject, SuperLog {
     static let shared = ProcessMonitorService()
     nonisolated static let emoji = "👮"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     // Sampling interval
     private let interval: TimeInterval = 1.0
@@ -83,15 +83,21 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         do {
             try task.run()
             if Self.verbose {
-                NetworkManagerPlugin.logger.info("\(self.t)nettop process started")
+                if NetworkManagerPlugin.verbose {
+                                    NetworkManagerPlugin.logger.info("\(self.t)nettop process started")
+                }
             }
         } catch {
-            NetworkManagerPlugin.logger.error("\(self.t)Failed to start nettop: \(error.localizedDescription)")
+            if NetworkManagerPlugin.verbose {
+                            NetworkManagerPlugin.logger.error("\(self.t)Failed to start nettop: \(error.localizedDescription)")
+            }
             self.isRunning = false
         }
         #else
         // Linux implementation would go here (using /proc/net/tcp, etc.)
-        NetworkManagerPlugin.logger.error("\(self.t)Process monitoring not supported on this OS")
+        if NetworkManagerPlugin.verbose {
+                    NetworkManagerPlugin.logger.error("\(self.t)Process monitoring not supported on this OS")
+        }
         #endif
     }
     
@@ -245,7 +251,9 @@ class ProcessMonitorService: ObservableObject, SuperLog {
         // 回调
         if !resultProcesses.isEmpty {
             if Self.verbose {
-                NetworkManagerPlugin.logger.info("\(self.t)Published \(resultProcesses.count) processes")
+                if NetworkManagerPlugin.verbose {
+                                    NetworkManagerPlugin.logger.info("\(self.t)Published \(resultProcesses.count) processes")
+                }
             }
         }
         

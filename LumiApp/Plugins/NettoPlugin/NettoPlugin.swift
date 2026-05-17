@@ -8,7 +8,7 @@ actor NettoPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     nonisolated static let emoji = "🛡️"
     nonisolated static let enable: Bool = false
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "Netto"
     static let navigationId = "netto_firewall"

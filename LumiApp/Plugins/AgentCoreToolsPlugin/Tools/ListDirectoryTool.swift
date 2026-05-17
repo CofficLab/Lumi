@@ -4,7 +4,7 @@ import SwiftUI
 
 struct ListDirectoryTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📁"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "ls"
     func description(for language: LanguagePreference) -> String {
         switch language {

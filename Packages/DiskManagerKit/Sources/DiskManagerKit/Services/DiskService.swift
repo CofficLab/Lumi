@@ -5,6 +5,7 @@ import os
 /// Disk service - performs scanning and cleaning operations in the background.
 public final class DiskService: @unchecked Sendable {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.diskmanagerkit", category: "disk")
+    nonisolated(unsafe) static var verbose: Bool = false
     public static let shared = DiskService()
 
     private let coordinator = ScanCoordinator()
@@ -23,7 +24,9 @@ public final class DiskService: @unchecked Sendable {
                     return DiskUsage(total: Int64(total), used: used, available: Int64(available))
                 }
             } catch {
-                Self.logger.error("Failed to get disk usage: \(error.localizedDescription)")
+                if Self.verbose {
+                                    Self.logger.error("Failed to get disk usage: \(error.localizedDescription)")
+                }
             }
             return nil
         }.value

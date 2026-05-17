@@ -9,6 +9,7 @@ import AppKit
 public final class ProcessService: ObservableObject, SuperLog {
     public static let shared = ProcessService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.process")
+    nonisolated(unsafe) static var verbose: Bool = false
     nonisolated public static let emoji = "⚙️"
 
     // MARK: - Constants
@@ -38,7 +39,9 @@ public final class ProcessService: ObservableObject, SuperLog {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.info("\(self.t)开始进程监控")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)开始进程监控")
+            }
             previousTimestamp = Date().timeIntervalSince1970
             sampleProcesses()
 
@@ -53,7 +56,9 @@ public final class ProcessService: ObservableObject, SuperLog {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.info("\(self.t)停止进程监控")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)停止进程监控")
+            }
             monitoringTimer?.invalidate()
             monitoringTimer = nil
             samplingTask?.cancel()

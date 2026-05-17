@@ -1,5 +1,6 @@
 import AppKit
 import IOSurface
+import os
 
 public extension LumiInlinePreviewFacade {
     /// 内嵌预览的核心 NSView：
@@ -174,14 +175,28 @@ public extension LumiInlinePreviewFacade {
         /// - 重复绑定同一个 surface ID 时仍然会触发一次 `setNeedsDisplay()`，
         ///   因为子进程可能用同一个 surface 写了新像素而 ID 没变。
         public func attach(surfaceID: UInt32) {
+            let curIDStr = currentSurfaceID.map { String($0) } ?? "nil"
+            let winStr = (window != nil) ? "yes" : "no"
+            let layerStr = (layer != nil) ? "yes" : "no"
+            let scaleVal = window?.backingScaleFactor ?? 1
+            let boundsStr = "\(bounds.width)×\(bounds.height)"
+            if LumiInlinePreviewFacade.verbose {
+                            LumiInlinePreviewFacade.logger.info("[PreviewSurfaceView] attach(surfaceID: \(surfaceID)) — currentSurfaceID: \(curIDStr), bounds: \(boundsStr), window: \(winStr)")
+            }
             guard let surface = IOSurfaceLookup(IOSurfaceID(surfaceID)) else {
+                if LumiInlinePreviewFacade.verbose {
+                                    LumiInlinePreviewFacade.logger.error("[PreviewSurfaceView] ❌ IOSurfaceLookup FAILED for surfaceID=\(surfaceID)")
+                }
                 return
             }
             currentSurfaceID = surfaceID
             retainedSurface = surface
             layer?.contents = surface
-            layer?.contentsScale = window?.backingScaleFactor ?? 1
+            layer?.contentsScale = scaleVal
             layer?.setNeedsDisplay()
+            if LumiInlinePreviewFacade.verbose {
+                            LumiInlinePreviewFacade.logger.info("[PreviewSurfaceView] ✅ Attached surface \(surfaceID) to layer, contentsScale=\(scaleVal), layer: \(layerStr)")
+            }
         }
 
         /// 清空当前显示。

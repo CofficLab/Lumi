@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 添加 Issue 评论工具
 struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_add_issue_comment"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -57,7 +57,9 @@ struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)添加 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)添加 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            }
         }
 
         do {
@@ -69,7 +71,9 @@ struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
             )
             return formatAddedComment(comment)
         } catch {
-            GitHubToolsPlugin.logger.error("添加评论失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("添加评论失败：\(error.localizedDescription)")
+            }
             return "添加评论失败：\(error.localizedDescription)"
         }
     }

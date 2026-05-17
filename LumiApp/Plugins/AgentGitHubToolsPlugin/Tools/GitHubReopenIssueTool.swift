@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 重新打开 Issue 工具
 struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔓"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_reopen_issue"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -52,7 +52,9 @@ struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
         }
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)重新打开 Issue：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)重新打开 Issue：\(owner)/\(repo)#\(issueNumber)")
+            }
         }
 
         do {
@@ -63,7 +65,9 @@ struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
             )
             return formatReopenedIssue(issue)
         } catch {
-            GitHubToolsPlugin.logger.error("重新打开 Issue 失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("重新打开 Issue 失败：\(error.localizedDescription)")
+            }
             return "重新打开 Issue 失败：\(error.localizedDescription)"
         }
     }

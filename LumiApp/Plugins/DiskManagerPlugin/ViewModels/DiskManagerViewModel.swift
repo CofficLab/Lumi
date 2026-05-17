@@ -6,7 +6,7 @@ import DiskManagerKit
 @MainActor
 class DiskManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "💿"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var diskUsage: DiskUsage?
     @Published var largeFiles: [LargeFileEntry] = []
     @Published var rootEntries: [DirectoryEntry] = [] // Directory tree root nodes
@@ -20,7 +20,9 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func refreshDiskUsage() {
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)刷新磁盘使用情况")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)刷新磁盘使用情况")
+            }
         }
         Task {
             self.diskUsage = await service.getDiskUsage()
@@ -41,7 +43,9 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)开始扫描：\((url.path as NSString).lastPathComponent)")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)开始扫描：\((url.path as NSString).lastPathComponent)")
+            }
         }
 
         isScanning = true
@@ -62,7 +66,9 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                             self.rootEntries = result.entries
                             self.isScanning = false
                             if Self.verbose {
-                                DiskManagerPlugin.logger.info("\(self.t)扫描完成，发现 \(result.largeFiles.count) 个大文件")
+                                if DiskManagerPlugin.verbose {
+                                                                    DiskManagerPlugin.logger.info("\(self.t)扫描完成，发现 \(result.largeFiles.count) 个大文件")
+                                }
                             }
                         }
                     }
@@ -81,7 +87,9 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)停止扫描")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)停止扫描")
+            }
         }
         scanTask?.cancel()
         Task { await service.cancelScan() }
@@ -90,7 +98,9 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
 
     func deleteFile(_ item: LargeFileEntry) {
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)删除文件：\(item.name)")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)删除文件：\(item.name)")
+            }
         }
         Task {
             do {
@@ -102,7 +112,9 @@ class DiskManagerViewModel: ObservableObject, SuperLog {
                 }
             } catch {
                 await MainActor.run {
-                    DiskManagerPlugin.logger.error("\(self.t)删除文件失败：\(error.localizedDescription)")
+                    if DiskManagerPlugin.verbose {
+                                            DiskManagerPlugin.logger.error("\(self.t)删除文件失败：\(error.localizedDescription)")
+                    }
                     self.errorMessage = String(localized: "Delete failed: \(error.localizedDescription)")
                 }
             }

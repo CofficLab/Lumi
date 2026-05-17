@@ -8,7 +8,7 @@ struct PendingMessagesView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "📋"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @EnvironmentObject var messageQueueVM: MessageQueueVM
     @EnvironmentObject var conversationVM: ConversationVM
 
@@ -102,7 +102,9 @@ struct PendingMessagesView: View, SuperLog {
             cachedConversationTitle = try modelContext.fetch(descriptor).first?.title
         } catch {
             if Self.verbose {
-                ChatInputPlugin.logger.error("\(Self.t)❌ 获取会话标题失败：\(error.localizedDescription)")
+                if ChatInputPlugin.verbose {
+                                    ChatInputPlugin.logger.error("\(Self.t)❌ 获取会话标题失败：\(error.localizedDescription)")
+                }
             }
         }
     }

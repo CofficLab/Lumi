@@ -7,7 +7,7 @@ import ShellKit
 /// 检测用户是否安装了 GitHub CLI (gh) 命令行工具
 final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     static let shared = GitHubCLIDetectService()
 
     private init() {}
@@ -18,11 +18,15 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     /// - Returns: 如果已安装返回 true
     func isInstalled() -> Bool {
         if Self.verbose {
-            GitHubCLIDetectPlugin.logger.info("\(self.t)开始检查 gh 安装...")
+            if GitHubCLIDetectPlugin.verbose {
+                            GitHubCLIDetectPlugin.logger.info("\(self.t)开始检查 gh 安装...")
+            }
         }
         let installed = checkGHInstallation()
         if Self.verbose {
-            GitHubCLIDetectPlugin.logger.info("\(self.t)gh 安装状态：\(installed ? "已安装" : "未安装")")
+            if GitHubCLIDetectPlugin.verbose {
+                            GitHubCLIDetectPlugin.logger.info("\(self.t)gh 安装状态：\(installed ? "已安装" : "未安装")")
+            }
         }
         return installed
     }
@@ -60,13 +64,17 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
     /// 检查 gh 是否安装
     private func checkGHInstallation() -> Bool {
         if Self.verbose {
-            GitHubCLIDetectPlugin.logger.info("\(self.t)执行 which gh 命令...")
+            if GitHubCLIDetectPlugin.verbose {
+                            GitHubCLIDetectPlugin.logger.info("\(self.t)执行 which gh 命令...")
+            }
         }
 
         let result = runGHCommand("which gh")
         if let result {
             if Self.verbose {
-                GitHubCLIDetectPlugin.logger.info("\(self.t)which gh 终止状态：\(result.exitCode)")
+                if GitHubCLIDetectPlugin.verbose {
+                                    GitHubCLIDetectPlugin.logger.info("\(self.t)which gh 终止状态：\(result.exitCode)")
+                }
             }
 
             if result.exitCode == 0 {
@@ -74,10 +82,14 @@ final class GitHubCLIDetectService: @unchecked Sendable, SuperLog {
             }
             let errorOutput = result.stderr.isEmpty ? result.stdout : result.stderr
             if Self.verbose {
-                GitHubCLIDetectPlugin.logger.error("\(self.t)which gh 错误输出：\(errorOutput.isEmpty ? "无输出" : errorOutput)")
+                if GitHubCLIDetectPlugin.verbose {
+                                    GitHubCLIDetectPlugin.logger.error("\(self.t)which gh 错误输出：\(errorOutput.isEmpty ? "无输出" : errorOutput)")
+                }
             }
         } else if Self.verbose {
-            GitHubCLIDetectPlugin.logger.error("\(self.t)检查 gh 安装失败")
+            if GitHubCLIDetectPlugin.verbose {
+                            GitHubCLIDetectPlugin.logger.error("\(self.t)检查 gh 安装失败")
+            }
         }
 
         return false

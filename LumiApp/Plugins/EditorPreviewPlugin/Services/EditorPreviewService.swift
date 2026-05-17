@@ -579,7 +579,9 @@ final class EditorPreviewService: ObservableObject, SuperLog {
     }
 
     private func startSession(reason: String) async {
-        EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Starting hot preview: \(reason, privacy: .public)")
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Starting hot preview: \(reason, privacy: .public)")
+        }
         scheduledHostIdleShutdownTask?.cancel()
         scheduledHostIdleShutdownTask = nil
         scheduledRefreshTask?.cancel()
@@ -660,13 +662,17 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         scheduledPrewarmFingerprints = []
         liveCanvasService.cancelPendingFrameSync()
         guard let previewSession, let previewEngine else {
-            EditorRemoteHotPreviewPlugin.logger.debug(
-                "\(self.t)Skipping hot preview reload without a session: \(reason, privacy: .public)"
-            )
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.debug(
+                                "\(self.t)Skipping hot preview reload without a session: \(reason, privacy: .public)"
+                            )
+            }
             return
         }
 
-        EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Reloading hot preview: \(reason, privacy: .public)")
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Reloading hot preview: \(reason, privacy: .public)")
+        }
         hostState = .rendering
         updatePhase = .refreshing
         failureMessage = nil
@@ -724,7 +730,9 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             return
         }
 
-        EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Stopping hot preview: \(reason, privacy: .public)")
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Stopping hot preview: \(reason, privacy: .public)")
+        }
         try? await engine.stopLivePreview(session)
         await engine.stopPreview(session)
         guard !Task.isCancelled else { return }
@@ -740,10 +748,14 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             hostState = .connected
             lastFrameSummary = frame.summary
         case let .sessionStopped(reason):
-            EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Hot preview stopped: \(reason, privacy: .public)")
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Hot preview stopped: \(reason, privacy: .public)")
+            }
             resetRenderState()
         case let .failed(message):
-            EditorRemoteHotPreviewPlugin.logger.error("\(self.t)Hot preview failed: \(message, privacy: .public)")
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.error("\(self.t)Hot preview failed: \(message, privacy: .public)")
+            }
             clearRenderedFrameForPreviewChange()
             hostState = .failed
             failureMessage = message
@@ -972,9 +984,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
                     self?.refreshDiagnosticSummary()
                 }
             } catch {
-                EditorRemoteHotPreviewPlugin.logger.debug(
-                    "\(Self.t)Hot preview warmup skipped: \(error.localizedDescription, privacy: .public)"
-                )
+                if EditorRemoteHotPreviewPlugin.verbose {
+                                    EditorRemoteHotPreviewPlugin.logger.debug(
+                                        "\(Self.t)Hot preview warmup skipped: \(error.localizedDescription, privacy: .public)"
+                                    )
+                }
                 await MainActor.run {
                     self?.hostLifecycleSummary = "host lifecycle: cold"
                     self?.refreshDiagnosticSummary()
@@ -1001,9 +1015,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
                 self?.hostLifecycleSummary = "host lifecycle: recycled"
                 self?.scheduledHostIdleShutdownTask = nil
                 self?.refreshDiagnosticSummary()
-                EditorRemoteHotPreviewPlugin.logger.info(
-                    "\(Self.t)Recycled idle hot preview host after \(reason, privacy: .public)"
-                )
+                if EditorRemoteHotPreviewPlugin.verbose {
+                                    EditorRemoteHotPreviewPlugin.logger.info(
+                                        "\(Self.t)Recycled idle hot preview host after \(reason, privacy: .public)"
+                                    )
+                }
             }
         }
     }
@@ -1377,9 +1393,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
                     recordPrewarmFailure(fingerprint: fingerprint)
                 }
                 if let errorDescription = result.errorDescription {
-                    EditorRemoteHotPreviewPlugin.logger.debug(
-                        "\(self.t)Hot preview prewarm failed: \(errorDescription, privacy: .public)"
-                    )
+                    if EditorRemoteHotPreviewPlugin.verbose {
+                                            EditorRemoteHotPreviewPlugin.logger.debug(
+                                                "\(self.t)Hot preview prewarm failed: \(errorDescription, privacy: .public)"
+                                            )
+                    }
                 }
             }
         }
@@ -1399,9 +1417,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         } else {
             prewarmSummary = "prewarm: partial \(successfulCount)/\(results.count)"
         }
-        EditorRemoteHotPreviewPlugin.logger.info(
-            "\(self.t)Prewarmed hot preview entries: \(successfulCount, privacy: .public)/\(results.count, privacy: .public), cached \(cachedCount, privacy: .public) \(reason, privacy: .public)"
-        )
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info(
+                        "\(self.t)Prewarmed hot preview entries: \(successfulCount, privacy: .public)/\(results.count, privacy: .public), cached \(cachedCount, privacy: .public) \(reason, privacy: .public)"
+                    )
+        }
         refreshDiagnosticSummary()
     }
 
@@ -1512,9 +1532,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         let timingSummary = Self.startupTimingSummary(for: timings)
         let previewID = selectedPreview?.id ?? "-"
         let filePath = activeFileURL?.path ?? "-"
-        EditorRemoteHotPreviewPlugin.logger.info(
-            "\(self.t)Hot preview startup timings preview=\(previewID, privacy: .public) file=\(filePath, privacy: .public) \(timingSummary, privacy: .public)"
-        )
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info(
+                        "\(self.t)Hot preview startup timings preview=\(previewID, privacy: .public) file=\(filePath, privacy: .public) \(timingSummary, privacy: .public)"
+                    )
+        }
     }
 
     private func finishScheduledPrewarmBatch() {
@@ -1545,7 +1567,9 @@ final class EditorPreviewService: ObservableObject, SuperLog {
 
     private func startLivePreviewSession(reason: String) async {
         guard let session = previewSession, let engine = previewEngine else { return }
-        EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Starting hot live preview: \(reason, privacy: .public)")
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Starting hot live preview: \(reason, privacy: .public)")
+        }
         effectiveDisplayMode = .live
         isLiveLoading = true
         livePreviewInfo = LumiPreviewFacade.LivePreviewInfo(state: .launching)
@@ -1587,7 +1611,9 @@ final class EditorPreviewService: ObservableObject, SuperLog {
 
     private func stopLivePreviewSession(reason: String) async {
         guard let session = previewSession, let engine = previewEngine else { return }
-        EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Stopping hot live preview: \(reason, privacy: .public)")
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Stopping hot live preview: \(reason, privacy: .public)")
+        }
         do {
             try await engine.stopLivePreview(session)
             isLivePreviewShown = false
@@ -1623,9 +1649,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
 
         switch livePreviewInfo.state {
         case .available, .stopped:
-            EditorRemoteHotPreviewPlugin.logger.info(
-                "\(self.t)Restoring hot live preview: \(reason, privacy: .public)"
-            )
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.info(
+                                "\(self.t)Restoring hot live preview: \(reason, privacy: .public)"
+                            )
+            }
             await syncLiveFrameFromEngine(reason: reason)
             await showLivePreviewIfNeeded(reason: reason)
             await capturePreviewFrameIfNeeded(reason: reason)
@@ -1647,15 +1675,19 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             return
         }
 
-        EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Hiding hot live preview: \(reason, privacy: .public)")
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Hiding hot live preview: \(reason, privacy: .public)")
+        }
         do {
             try await engine.hideLivePreview(session)
             isLivePreviewShown = false
             await syncPreviewState(from: session)
         } catch {
-            EditorRemoteHotPreviewPlugin.logger.debug(
-                "\(self.t)Failed to hide hot live preview: \(error.localizedDescription, privacy: .public)"
-            )
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.debug(
+                                "\(self.t)Failed to hide hot live preview: \(error.localizedDescription, privacy: .public)"
+                            )
+            }
         }
         refreshDiagnosticSummary()
     }
@@ -1684,21 +1716,27 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             return
         }
         guard forceOrderFront || !isLivePreviewShown else {
-            EditorRemoteHotPreviewPlugin.logger.debug(
-                "\(self.t)Skipping hot live preview show because it is already shown: \(reason, privacy: .public)"
-            )
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.debug(
+                                "\(self.t)Skipping hot live preview show because it is already shown: \(reason, privacy: .public)"
+                            )
+            }
             return
         }
 
-        EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Showing hot live preview: \(reason, privacy: .public)")
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Showing hot live preview: \(reason, privacy: .public)")
+        }
         do {
             try await engine.showLivePreview(session)
             isLivePreviewShown = true
             await syncPreviewState(from: session)
         } catch {
-            EditorRemoteHotPreviewPlugin.logger.debug(
-                "\(self.t)Failed to show hot live preview: \(error.localizedDescription, privacy: .public)"
-            )
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.debug(
+                                "\(self.t)Failed to show hot live preview: \(error.localizedDescription, privacy: .public)"
+                            )
+            }
         }
     }
 
@@ -1726,7 +1764,9 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         }
 
         let rect = liveCanvasService.canvasRect
-        EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Syncing hot live preview frame: \(reason, privacy: .public)")
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Syncing hot live preview frame: \(reason, privacy: .public)")
+        }
 
         do {
             try await engine.updateLiveFrame(
@@ -1738,9 +1778,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
                 scale: Double(liveCanvasService.canvasScale)
             )
         } catch {
-            EditorRemoteHotPreviewPlugin.logger.debug(
-                "\(self.t)Failed to sync hot live preview frame: \(error.localizedDescription, privacy: .public)"
-            )
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.debug(
+                                "\(self.t)Failed to sync hot live preview frame: \(error.localizedDescription, privacy: .public)"
+                            )
+            }
         }
 
         refreshDiagnosticSummary()
@@ -1768,9 +1810,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
                 let response = try await engine.capturePreviewFrame(session)
                 applyRenderResponse(response)
             } catch {
-                EditorRemoteHotPreviewPlugin.logger.debug(
-                    "\(self.t)Failed to capture fallback image while switching to image mode: \(error.localizedDescription, privacy: .public)"
-                )
+                if EditorRemoteHotPreviewPlugin.verbose {
+                                    EditorRemoteHotPreviewPlugin.logger.debug(
+                                        "\(self.t)Failed to capture fallback image while switching to image mode: \(error.localizedDescription, privacy: .public)"
+                                    )
+                }
             }
         }
 
@@ -1793,17 +1837,21 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             return
         }
 
-        EditorRemoteHotPreviewPlugin.logger.debug(
-            "\(self.t)Capturing hot preview frame: \(reason, privacy: .public)"
-        )
+        if EditorRemoteHotPreviewPlugin.verbose {
+                    EditorRemoteHotPreviewPlugin.logger.debug(
+                        "\(self.t)Capturing hot preview frame: \(reason, privacy: .public)"
+                    )
+        }
 
         do {
             let response = try await engine.capturePreviewFrame(session)
             applyRenderResponse(response)
         } catch {
-            EditorRemoteHotPreviewPlugin.logger.debug(
-                "\(self.t)Failed to capture hot preview frame: \(error.localizedDescription, privacy: .public)"
-            )
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.debug(
+                                "\(self.t)Failed to capture hot preview frame: \(error.localizedDescription, privacy: .public)"
+                            )
+            }
         }
     }
 
@@ -1817,9 +1865,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             try await engine.stopLivePreview(session)
             isLivePreviewShown = false
         } catch {
-            EditorRemoteHotPreviewPlugin.logger.debug(
-                "\(self.t)Failed to stop hot live preview after refresh failure: \(error.localizedDescription, privacy: .public)"
-            )
+            if EditorRemoteHotPreviewPlugin.verbose {
+                            EditorRemoteHotPreviewPlugin.logger.debug(
+                                "\(self.t)Failed to stop hot live preview after refresh failure: \(error.localizedDescription, privacy: .public)"
+                            )
+            }
         }
 
         effectiveDisplayMode = .image

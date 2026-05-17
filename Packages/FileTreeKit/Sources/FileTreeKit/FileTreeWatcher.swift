@@ -38,7 +38,7 @@ public final class FileTreeWatcher: @unchecked Sendable {
     private let queue = DispatchQueue(label: "FileTreeWatcher.queue", qos: .utility)
 
     /// 是否启用日志
-    public var verbose: Bool = true
+    public var verbose: Bool = false
 
     // MARK: - Init
 

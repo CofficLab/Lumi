@@ -6,7 +6,7 @@ import DiskManagerKit
 @MainActor
 final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var projects: [ProjectInfo] = []
     @Published var selectedItemIds: Set<UUID> = []
     @Published var isScanning = false
@@ -38,7 +38,9 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     func scanProjects() async {
         guard !isScanning else { return }
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)开始扫描项目")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)开始扫描项目")
+            }
         }
 
         isScanning = true
@@ -67,7 +69,9 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
                     self.progressTask?.cancel()
 
                     if Self.verbose {
-                        DiskManagerPlugin.logger.info("\(self.t)项目扫描完成：\(result.count) 个项目")
+                        if DiskManagerPlugin.verbose {
+                                                    DiskManagerPlugin.logger.info("\(self.t)项目扫描完成：\(result.count) 个项目")
+                        }
                     }
 
                     // Select all cleanable items by default
@@ -88,7 +92,9 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
 
     func stopScan() {
         if Self.verbose {
-            DiskManagerPlugin.logger.info("\(self.t)停止扫描项目")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)停止扫描项目")
+            }
         }
         scanTask?.cancel()
         progressTask?.cancel()
@@ -120,7 +126,9 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
         if Self.verbose {
             let size = itemsToClean.reduce(0 as Int64) { $0 + $1.size }
             let sizeString = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
-            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(itemsToClean.count) 项，预估 \(sizeString)")
+            if DiskManagerPlugin.verbose {
+                            DiskManagerPlugin.logger.info("\(self.t)开始清理 \(itemsToClean.count) 项，预估 \(sizeString)")
+            }
         }
 
         Task {
@@ -130,12 +138,16 @@ final class ProjectCleanerViewModel: ObservableObject, SuperLog {
                 try await service.cleanProjects(itemsToClean)
 
                 if Self.verbose {
-                    DiskManagerPlugin.logger.info("\(self.t)项目清理完成")
+                    if DiskManagerPlugin.verbose {
+                                            DiskManagerPlugin.logger.info("\(self.t)项目清理完成")
+                    }
                 }
 
                 await scanProjects() // Rescan to update status
             } catch {
-                DiskManagerPlugin.logger.error("\(self.t)项目清理失败：\(error.localizedDescription)")
+                if DiskManagerPlugin.verbose {
+                                    DiskManagerPlugin.logger.error("\(self.t)项目清理失败：\(error.localizedDescription)")
+                }
                 // TODO: Show error
             }
 

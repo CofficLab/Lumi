@@ -6,7 +6,7 @@ import SwiftUI
 /// 应用服务
 final class AppService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "📦"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     private let cacheManager = CacheManager.shared
 
     // 标准应用安装路径
@@ -55,7 +55,9 @@ final class AppService: @unchecked Sendable, SuperLog {
                 Task {
                     do {
                         if Self.verbose {
-                            AppManagerPlugin.logger.info("\(t)正在扫描已安装应用 (force: \(force))")
+                            if AppManagerPlugin.verbose {
+                                                            AppManagerPlugin.logger.info("\(t)正在扫描已安装应用 (force: \(force))")
+                            }
                         }
 
                         var apps: [AppModel] = []
@@ -102,7 +104,9 @@ final class AppService: @unchecked Sendable, SuperLog {
 
                         let stats = await cacheManager.getStats()
                         if Self.verbose {
-                            AppManagerPlugin.logger.info("\(t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
+                            if AppManagerPlugin.verbose {
+                                                            AppManagerPlugin.logger.info("\(t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
+                            }
                         }
 
                         let sortedApps = apps.sorted {
@@ -110,7 +114,9 @@ final class AppService: @unchecked Sendable, SuperLog {
                         }
 
                         if Self.verbose {
-                            AppManagerPlugin.logger.info("\(t)扫描完成: 发现 \(sortedApps.count) 个应用")
+                            if AppManagerPlugin.verbose {
+                                                            AppManagerPlugin.logger.info("\(t)扫描完成: 发现 \(sortedApps.count) 个应用")
+                            }
                         }
                         continuation.resume(returning: sortedApps)
                     }
@@ -171,12 +177,16 @@ final class AppService: @unchecked Sendable, SuperLog {
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] {
         guard let bundleId = app.bundleIdentifier else {
             if Self.verbose {
-                AppManagerPlugin.logger.info("\(self.t)跳过扫描：无 Bundle ID (\(app.displayName))")
+                if AppManagerPlugin.verbose {
+                                    AppManagerPlugin.logger.info("\(self.t)跳过扫描：无 Bundle ID (\(app.displayName))")
+                }
             }
             return []
         }
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
+            }
         }
         let home = NSHomeDirectory()
         var relatedFiles: [RelatedFile] = []
@@ -244,7 +254,9 @@ final class AppService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t)关联文件扫描完成：\(app.displayName)，找到 \(relatedFiles.count) 个")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t)关联文件扫描完成：\(app.displayName)，找到 \(relatedFiles.count) 个")
+            }
         }
         return relatedFiles
     }
@@ -262,25 +274,33 @@ final class AppService: @unchecked Sendable, SuperLog {
     /// 删除指定的文件列表
     func deleteFiles(_ files: [RelatedFile]) async throws {
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t)开始删除 \(files.count) 个文件")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t)开始删除 \(files.count) 个文件")
+            }
         }
         let fileManager = FileManager.default
         for file in files {
             // 使用 trashItem 放入废纸篓，比较安全
             try fileManager.trashItem(at: URL(fileURLWithPath: file.path), resultingItemURL: nil)
             if Self.verbose {
-                AppManagerPlugin.logger.info("\(self.t)  └─ 已移至废纸篓：\((file.path as NSString).lastPathComponent)")
+                if AppManagerPlugin.verbose {
+                                    AppManagerPlugin.logger.info("\(self.t)  └─ 已移至废纸篓：\((file.path as NSString).lastPathComponent)")
+                }
             }
         }
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t)删除完成：\(files.count) 个文件已移至废纸篓")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t)删除完成：\(files.count) 个文件已移至废纸篓")
+            }
         }
     }
 
     /// 保存缓存
     func saveCache() async {
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t)保存应用列表缓存")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t)保存应用列表缓存")
+            }
         }
         await cacheManager.saveCache()
     }
@@ -288,7 +308,9 @@ final class AppService: @unchecked Sendable, SuperLog {
     /// 卸载应用
     func uninstallApp(_ app: AppModel) async throws {
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t)准备卸载应用: \(app.displayName)")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t)准备卸载应用: \(app.displayName)")
+            }
         }
 
         let fileManager = FileManager.default
@@ -296,20 +318,26 @@ final class AppService: @unchecked Sendable, SuperLog {
 
         // 检查应用是否存在
         guard fileManager.fileExists(atPath: appPath) else {
-            AppManagerPlugin.logger.error("\(self.t)应用不存在: \(appPath)")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.error("\(self.t)应用不存在: \(appPath)")
+            }
             throw AppError.appNotFound
         }
 
         // 检查是否有写入权限
         guard fileManager.isWritableFile(atPath: appPath) else {
-            AppManagerPlugin.logger.error("\(self.t)权限不足: \(appPath)")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.error("\(self.t)权限不足: \(appPath)")
+            }
             throw AppError.permissionDenied
         }
 
         // 移到废纸篓
         try fileManager.trashItem(at: app.bundleURL, resultingItemURL: nil)
         if Self.verbose {
-            AppManagerPlugin.logger.info("\(self.t)应用已移至废纸篓: \(app.displayName)")
+            if AppManagerPlugin.verbose {
+                            AppManagerPlugin.logger.info("\(self.t)应用已移至废纸篓: \(app.displayName)")
+            }
         }
     }
 

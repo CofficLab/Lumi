@@ -19,6 +19,7 @@ struct JSScriptResult: Sendable {
 actor RuntimeBridge: SuperLog {
     nonisolated static let emoji = "🚀"
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "js.runtime")
+    nonisolated(unsafe) static var verbose: Bool = false
 
     static let shared = RuntimeBridge()
 
@@ -32,7 +33,9 @@ actor RuntimeBridge: SuperLog {
     func run(script: String, projectPath: String, arguments: [String] = []) async -> JSScriptResult {
         let packageManager = JSEnvResolver.detectPackageManager(projectPath: projectPath)
         guard let pmPath = JSEnvResolver.packageManagerPath(packageManager) else {
-            Self.logger.error("\(Self.t)未找到 \(packageManager.rawValue) 可执行文件")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)未找到 \(packageManager.rawValue) 可执行文件")
+            }
             return JSScriptResult(exitCode: -1, stdout: "", stderr: "Package manager '\(packageManager.rawValue)' not found", duration: 0)
         }
 
@@ -45,13 +48,17 @@ actor RuntimeBridge: SuperLog {
         }
         args.append(contentsOf: arguments)
 
-        Self.logger.info("\(Self.t)执行: \(pmPath) \(args.joined(separator: " "))")
+        if Self.verbose {
+                    Self.logger.info("\(Self.t)执行: \(pmPath) \(args.joined(separator: " "))")
+        }
 
         let startTime = Date()
         let result = await executeProcess(executable: pmPath, arguments: args, currentDirectory: projectPath)
         let duration = Date().timeIntervalSince(startTime)
 
-        Self.logger.info("\(Self.t)完成: exitCode=\(result.exitCode), duration=\(String(format: "%.2f", duration))s")
+        if Self.verbose {
+                    Self.logger.info("\(Self.t)完成: exitCode=\(result.exitCode), duration=\(String(format: "%.2f", duration))s")
+        }
 
         return JSScriptResult(
             exitCode: result.exitCode,

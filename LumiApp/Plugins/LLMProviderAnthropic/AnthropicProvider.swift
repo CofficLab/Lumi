@@ -31,7 +31,7 @@ import os
 final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.anthropic")
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Basic Info
 
     static let id = "anthropic"
@@ -290,7 +290,9 @@ final class AnthropicProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked 
             return StreamChunk(eventType: .unknown, rawEvent: text)
         } catch {
             if Self.verbose {
-                Self.logger.warning("解析流式数据块失败: \(error.localizedDescription)")
+                if Self.verbose {
+                                    Self.logger.warning("解析流式数据块失败: \(error.localizedDescription)")
+                }
             }
             return StreamChunk(error: "解析失败: \(error.localizedDescription)", eventType: .unknown, rawEvent: text)
         }
@@ -329,7 +331,9 @@ extension AnthropicProvider {
 
         if !message.images.isEmpty {
             if Self.verbose {
-                Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t) 消息包含 \(message.images.count) 张图片，正在转换...")
+                }
             }
 
             var content: [[String: Any]] = []
@@ -341,7 +345,9 @@ extension AnthropicProvider {
             for (index, image) in message.images.enumerated() {
                 let base64Data = image.data.base64EncodedString()
                 if Self.verbose {
-                    Self.logger.info("\(self.t) 图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
+                    if Self.verbose {
+                                            Self.logger.info("\(self.t) 图片 \(index + 1): \(image.mimeType), base64长度: \(base64Data.count)")
+                    }
                 }
                 content.append([
                     "type": "image",
@@ -350,7 +356,9 @@ extension AnthropicProvider {
             }
 
             if Self.verbose {
-                Self.logger.info("\(self.t) 已将 \(message.images.count) 张图片转换为 API 格式")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t) 已将 \(message.images.count) 张图片转换为 API 格式")
+                }
             }
 
             return ["role": message.role.rawValue, "content": content]

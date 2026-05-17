@@ -21,7 +21,7 @@ import SwiftUI
 /// ```
 struct RootView<Content>: View, SuperLog where Content: View {
     nonisolated static var emoji: String { "📤" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
 
     /// 视图内容
     var content: Content
@@ -131,23 +131,23 @@ extension RootView {
     @MainActor
     func onInputQueueRequested() {
         guard let requestId = container.inputQueueVM.pendingRequest?.id else {
-            AppLogger.core.warning("\(Self.t) 收到输入队列版本变化，但没有待处理输入请求")
+            if Self.verbose { AppLogger.core.warning("\(Self.t) 收到输入队列版本变化，但没有待处理输入请求") }
             return
         }
         guard let request = container.inputQueueVM.consumePendingRequest(id: requestId) else {
-            AppLogger.core.warning("\(Self.t) 输入请求已不存在或 ID 不匹配，忽略：\(requestId)")
+            if Self.verbose { AppLogger.core.warning("\(Self.t) 输入请求已不存在或 ID 不匹配，忽略：\(requestId)") }
             return
         }
 
         guard let conversationId = container.conversationVM.selectedConversationId else {
-            AppLogger.core.warning("\(Self.t) 用户输入了数据，但没有选择对话，忽略")
+            if Self.verbose { AppLogger.core.warning("\(Self.t) 用户输入了数据，但没有选择对话，忽略") }
             return
         }
 
         let pendingImages = container.agentAttachmentsVM.drainPendingImageAttachments()
         let allImages = request.images + pendingImages
         guard !request.text.isEmpty || !allImages.isEmpty else {
-            AppLogger.core.warning("\(Self.t) 用户输入了数据，但是文本和图片都为空，忽略")
+            if Self.verbose { AppLogger.core.warning("\(Self.t) 用户输入了数据，但是文本和图片都为空，忽略") }
             return
         }
         
@@ -176,7 +176,9 @@ extension RootView {
         container.taskCancellationVM.consumeRequest()
         sendController.cancelSend(conversationId: conversationId)
 
-        AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 任务已取消")
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t) [\(String(conversationId.uuidString.prefix(8)))] 任务已取消")
+        }
     }
 
     @MainActor

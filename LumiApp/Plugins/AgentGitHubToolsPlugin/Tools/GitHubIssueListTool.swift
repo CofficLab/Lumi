@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub Issue 列表工具
 struct GitHubIssueListTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_issues"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -65,7 +65,9 @@ struct GitHubIssueListTool: SuperAgentTool, SuperLog {
         let perPage = min(arguments["perPage"]?.value as? Int ?? 10, 100)
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(Self.t)获取 Issue 列表：\(owner)/\(repo) state=\(stateRaw)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(Self.t)获取 Issue 列表：\(owner)/\(repo) state=\(stateRaw)")
+            }
         }
 
         do {
@@ -78,7 +80,9 @@ struct GitHubIssueListTool: SuperAgentTool, SuperLog {
             )
             return formatIssues(issues)
         } catch {
-            GitHubToolsPlugin.logger.error("\(Self.t)获取 Issue 列表失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(Self.t)获取 Issue 列表失败：\(error.localizedDescription)")
+            }
             return "获取 Issue 列表失败：\(error.localizedDescription)"
         }
     }

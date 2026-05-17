@@ -1,7 +1,7 @@
-import MagicKit
-import SwiftUI
 import Foundation
+import MagicKit
 import os
+import SwiftUI
 
 /// 主题状态栏插件
 ///
@@ -13,7 +13,7 @@ actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-theme-status")
     nonisolated static let emoji = "🎨"
     nonisolated static let enable: Bool = true
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "EditorThemeStatusBar"
     static let displayName: String = "Editor Theme Status"
@@ -67,27 +67,35 @@ private struct ThemePersistenceAnchor<Content: View>: View {
                 // 通知在 EditorState 注册监听之前就已经发出，导致 EditorState 错过了初始通知。
                 // 此处由插件（外层）主动向 EditorState（内层）推送，而非 EditorState 反向读取 ThemeVM。
                 let editorThemeId = themeVM.activeEditorThemeId
-                ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)onAppear: 同步初始编辑器主题 → \(editorThemeId, privacy: .public)")
+                if ThemeStatusBarPlugin.verbose {
+                    ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)onAppear: 同步初始编辑器主题 → \(editorThemeId, privacy: .public)")
+                }
                 editorVM.syncInitialEditorTheme(editorThemeId)
             }
             .onChange(of: themeVM.currentThemeId) { oldValue, newValue in
                 guard hasRestored else { return }
                 guard oldValue != newValue else { return }
-                ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)主题变更: \(oldValue, privacy: .public) → \(newValue, privacy: .public)")
+                if ThemeStatusBarPlugin.verbose {
+                    ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)主题变更: \(oldValue, privacy: .public) → \(newValue, privacy: .public)")
+                }
                 ThemeStatusBarPluginLocalStore.shared.saveSelectedThemeID(newValue)
             }
     }
 
     /// 从本地存储恢复上次保存的主题
     private func restoreSavedTheme() {
-         guard !hasRestored else { return }
+        guard !hasRestored else { return }
         hasRestored = true
 
         guard let savedId = ThemeStatusBarPluginLocalStore.shared.loadSelectedThemeID() else {
-            ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)无已保存主题，使用默认主题")
+            if ThemeStatusBarPlugin.verbose {
+                ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)无已保存主题，使用默认主题")
+            }
             return
         }
-        ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)恢复已保存主题: \(savedId, privacy: .public)")
+        if ThemeStatusBarPlugin.verbose {
+            ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)恢复已保存主题: \(savedId, privacy: .public)")
+        }
         themeVM.selectTheme(savedId)
     }
 }

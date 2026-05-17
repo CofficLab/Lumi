@@ -7,7 +7,7 @@ import MagicKit
 /// Agent 在完成一个任务后应调用此工具更新状态，以触发下一个任务的自动推进。
 struct UpdateTaskTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✅"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "update_task"
     func description(for language: LanguagePreference) -> String {
@@ -102,13 +102,17 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
                 result += "\nContinue working on this task now."
 
                 if Self.verbose {
-                    AutoTaskPlugin.logger.info("\(Self.t)Auto-started next task: \(nextTask.title)")
+                    if AutoTaskPlugin.verbose {
+                                            AutoTaskPlugin.logger.info("\(Self.t)Auto-started next task: \(nextTask.title)")
+                    }
                 }
             }
         }
 
         if Self.verbose {
-            AutoTaskPlugin.logger.info("\(Self.t)Task \(taskId) → \(status.rawValue)")
+            if AutoTaskPlugin.verbose {
+                            AutoTaskPlugin.logger.info("\(Self.t)Task \(taskId) → \(status.rawValue)")
+            }
         }
 
         return result

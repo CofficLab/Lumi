@@ -3,7 +3,7 @@ import MagicKit
 
 struct RAGIndexer: SuperLog {
     nonisolated static var emoji: String { "🦞" }
-    nonisolated static var verbose: Bool { true }
+    nonisolated static var verbose: Bool { false }
 
     private static let progressLogInterval = 50
     private static let skipDirectories: Set<String> = [

@@ -7,7 +7,7 @@ struct ConfigCommand: Commands, SuperLog {
     nonisolated static let emoji = "⚙️"
 
     /// 是否启用详细日志输出
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     var body: some Commands {
         #if os(macOS)
         CommandMenu("配置") {

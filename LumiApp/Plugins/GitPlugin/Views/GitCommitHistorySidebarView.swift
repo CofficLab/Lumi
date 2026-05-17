@@ -275,7 +275,9 @@ struct GitCommitHistorySidebarView: View {
                     self.gitVM.updateUnpushedCommitHashes(unpushedHashes)
                 }
 
-                GitPlugin.logger.error("刷新提交列表失败: \(error.localizedDescription)")
+                if GitPlugin.verbose {
+                                    GitPlugin.logger.error("刷新提交列表失败: \(error.localizedDescription)")
+                }
             }
 
             // 加载未提交变更数量（不阻塞 commit 列表的显示）
@@ -349,7 +351,9 @@ struct GitCommitHistorySidebarView: View {
                 await MainActor.run {
                     self.loading = false
                 }
-                GitPlugin.logger.error("加载更多提交失败: \(error.localizedDescription)")
+                if GitPlugin.verbose {
+                                    GitPlugin.logger.error("加载更多提交失败: \(error.localizedDescription)")
+                }
             }
         }
     }

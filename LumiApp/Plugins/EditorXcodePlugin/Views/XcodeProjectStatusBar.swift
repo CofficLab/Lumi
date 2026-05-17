@@ -33,12 +33,16 @@ struct XcodeProjectStatusBar: View, SuperLog {
         }
         .onAppear {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)onAppear，isXcodeProject=\(viewModel.isXcodeProject)")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)onAppear，isXcodeProject=\(viewModel.isXcodeProject)")
+                }
             }
         }
         .onChange(of: viewModel.isXcodeProject) { _, newValue in
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(self.t)isXcodeProject 变化: \(newValue)")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(self.t)isXcodeProject 变化: \(newValue)")
+                }
             }
         }
     }

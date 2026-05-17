@@ -22,7 +22,7 @@ import os
 @MainActor
 final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
     nonisolated static let emoji = "✨"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let id: String = "skill-context"
     let order: Int = 50
 
@@ -65,7 +65,9 @@ final class SkillSendMiddleware: SuperSendMiddleware, SuperLog {
         ctx.transientSystemPrompts.append(prompt)
 
         if Self.verbose {
-            SkillPlugin.logger.info("\(Self.t)✅ 已注入 \(result.skills.count) 个 Skill 摘要")
+            if SkillPlugin.verbose {
+                            SkillPlugin.logger.info("\(Self.t)✅ 已注入 \(result.skills.count) 个 Skill 摘要")
+            }
         }
 
         await next(ctx)

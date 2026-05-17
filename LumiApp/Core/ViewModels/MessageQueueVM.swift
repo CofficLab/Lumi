@@ -5,7 +5,7 @@ import MagicKit
 @MainActor
 final class MessageQueueVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     /// 所有队列中的消息
     @Published private(set) var messages: [ChatMessage] = []

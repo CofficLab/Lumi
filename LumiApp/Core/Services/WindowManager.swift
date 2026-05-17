@@ -9,7 +9,7 @@ import SwiftUI
 final class WindowManager: ObservableObject, SuperLog {
     static let shared = WindowManager()
     nonisolated static let emoji = "🪟"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Published Properties
 
     /// 所有窗口状态

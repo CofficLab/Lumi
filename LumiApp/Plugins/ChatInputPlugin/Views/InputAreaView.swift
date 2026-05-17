@@ -14,7 +14,7 @@ struct InputAreaView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 待发送附件
     @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
 
@@ -335,7 +335,9 @@ extension InputAreaView {
     /// - Parameter fileURL: 拖放的文件 URL
     private func handleFileDrop(fileURL: URL) {
         if Self.verbose {
-            ChatInputPlugin.logger.info("\(Self.t)📎 handleFileDrop: \(fileURL.path)")
+            if ChatInputPlugin.verbose {
+                            ChatInputPlugin.logger.info("\(Self.t)📎 handleFileDrop: \(fileURL.path)")
+            }
         }
 
         // 检查是否是图片文件
@@ -352,7 +354,9 @@ extension InputAreaView {
         }
 
         if Self.verbose {
-            ChatInputPlugin.logger.info("\(Self.t)✅ handleFileDrop 完成，text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
+            if ChatInputPlugin.verbose {
+                            ChatInputPlugin.logger.info("\(Self.t)✅ handleFileDrop 完成，text.count=\(inputViewModel.text.count), cursorPosition=\(inputViewModel.cursorPosition)")
+            }
         }
     }
 }

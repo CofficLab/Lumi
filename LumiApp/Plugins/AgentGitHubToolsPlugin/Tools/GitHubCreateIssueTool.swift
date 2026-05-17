@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 创建 Issue 工具
 struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✍️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_create_issue"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -75,7 +75,9 @@ struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
         let milestone = arguments["milestone"]?.value as? Int
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(Self.t)创建 Issue：\(owner)/\(repo) - \(title)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(Self.t)创建 Issue：\(owner)/\(repo) - \(title)")
+            }
         }
 
         do {
@@ -90,7 +92,9 @@ struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
             )
             return formatCreatedIssue(issue)
         } catch {
-            GitHubToolsPlugin.logger.error("\(Self.t)创建 Issue 失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(Self.t)创建 Issue 失败：\(error.localizedDescription)")
+            }
             return "创建 Issue 失败：\(error.localizedDescription)"
         }
     }

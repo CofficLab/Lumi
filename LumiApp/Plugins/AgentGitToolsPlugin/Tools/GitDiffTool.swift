@@ -5,7 +5,7 @@ import SwiftUI
 /// Git 差异工具
 struct GitDiffTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "git_diff"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -46,7 +46,9 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
         let file = arguments["file"]?.value as? String
 
         if Self.verbose {
-            GitToolsPlugin.logger.info("\(Self.t)获取 Git 差异：\(path ?? "当前目录") staged=\(staged) file=\(file ?? "all")")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.info("\(Self.t)获取 Git 差异：\(path ?? "当前目录") staged=\(staged) file=\(file ?? "all")")
+            }
         }
 
         do {
@@ -57,7 +59,9 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
             )
             return formatDiff(diff)
         } catch {
-            GitToolsPlugin.logger.error("\(Self.t)获取 Git 差异失败：\(error.localizedDescription)")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.error("\(Self.t)获取 Git 差异失败：\(error.localizedDescription)")
+            }
             return "获取 Git 差异失败：\(error.localizedDescription)"
         }
     }

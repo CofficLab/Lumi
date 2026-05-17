@@ -70,7 +70,9 @@ final class LSPService: ObservableObject, SuperLog {
             let available = LSPConfig.findServer(for: languageId) != nil
             isAvailable = available
             if Self.verbose {
-                Self.logger.info("\(Self.t)LSP 可用性: \(languageId) = \(available ? "是" : "否")")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)LSP 可用性: \(languageId) = \(available ? "是" : "否")")
+                }
             }
             return
         }
@@ -82,7 +84,9 @@ final class LSPService: ObservableObject, SuperLog {
         }
         isAvailable = available
         if Self.verbose {
-            Self.logger.info("\(Self.t)LSP 可用性(任意语言) = \(available ? "是" : "否")")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)LSP 可用性(任意语言) = \(available ? "是" : "否")")
+            }
         }
     }
     
@@ -126,19 +130,25 @@ final class LSPService: ObservableObject, SuperLog {
         // 和 buildServer.json 生成。
         if let existing = server {
             if Self.verbose {
-                Self.logger.info("\(Self.t)正在停止现有服务器")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)正在停止现有服务器")
+                }
             }
             try? await existing.shutdown()
             server = nil
         }
         
         guard let config = LSPConfig.defaultConfig(for: languageId) else {
-            Self.logger.warning("\(Self.t)未找到 \(languageId) 的服务器配置")
+            if Self.verbose {
+                            Self.logger.warning("\(Self.t)未找到 \(languageId) 的服务器配置")
+            }
             return nil
         }
         
         if Self.verbose {
-            Self.logger.info("\(Self.t)启动 \(languageId) 服务器，路径: \(config.execPath)")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)启动 \(languageId) 服务器，路径: \(config.execPath)")
+            }
         }
         isInitializing = true
         activeLanguageId = languageId
@@ -171,11 +181,15 @@ final class LSPService: ObservableObject, SuperLog {
             server = newServer
             isInitializing = false
             if Self.verbose {
-                Self.logger.info("\(Self.t)\(languageId) 服务器已初始化, workspaceFolders=\(workspaceFolders?.count ?? 0), hasInitOptions=\(initializationOptions != nil)")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)\(languageId) 服务器已初始化, workspaceFolders=\(workspaceFolders?.count ?? 0), hasInitOptions=\(initializationOptions != nil)")
+                }
             }
             return newServer
         } catch {
-            Self.logger.error("\(Self.t)启动服务器失败: \(error.localizedDescription)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)启动服务器失败: \(error.localizedDescription)")
+            }
             isInitializing = false
             activeLanguageId = nil
             return nil
@@ -210,7 +224,9 @@ final class LSPService: ObservableObject, SuperLog {
     func setProjectRootPath(_ projectPath: String?) {
         projectRootPath = projectPath
         if Self.verbose {
-            Self.logger.info("\(Self.t)设置项目根目录: \(projectPath ?? "<nil>", privacy: .public)")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)设置项目根目录: \(projectPath ?? "<nil>", privacy: .public)")
+            }
         }
         if projectPath == nil {
             Self.projectContextCapability(for: nil)?.projectClosed()
@@ -234,16 +250,20 @@ final class LSPService: ObservableObject, SuperLog {
     func openDocument(uri: String, languageId: String, text: String, version: Int = 0) async {
         checkAvailability(for: languageId)
         if Self.verbose {
-            Self.logger.info(
-                "\(Self.t)openDocument: uri=\(uri, privacy: .public), languageId=\(languageId, privacy: .public), version=\(version), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), existingServerLanguage=\(self.activeLanguageId ?? "<nil>", privacy: .public), hasServer=\(self.server != nil)"
-            )
+            if Self.verbose {
+                            Self.logger.info(
+                                "\(Self.t)openDocument: uri=\(uri, privacy: .public), languageId=\(languageId, privacy: .public), version=\(version), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), existingServerLanguage=\(self.activeLanguageId ?? "<nil>", privacy: .public), hasServer=\(self.server != nil)"
+                            )
+            }
         }
 
         if server == nil || activeLanguageId != languageId {
             if let root = projectRootPath {
                 _ = await ensureServer(for: languageId, projectPath: root)
             } else {
-                Self.logger.warning("\(Self.t)无项目根目录")
+                if Self.verbose {
+                                    Self.logger.warning("\(Self.t)无项目根目录")
+                }
                 return
             }
         }
@@ -259,7 +279,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             try await server.openDocument(uri: uri, languageId: languageId, text: text, version: version)
         } catch {
-            Self.logger.error("\(Self.t)打开文档失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)打开文档失败: \(error)")
+            }
         }
     }
     
@@ -276,7 +298,9 @@ final class LSPService: ObservableObject, SuperLog {
                     pendingChanges.removeAll()
                 }
             } catch {
-                Self.logger.error("\(Self.t)关闭文档失败: \(error)")
+                if Self.verbose {
+                                    Self.logger.error("\(Self.t)关闭文档失败: \(error)")
+                }
             }
         }
     }
@@ -307,7 +331,9 @@ final class LSPService: ObservableObject, SuperLog {
             try await server.documentDidChange(uri: uri, changes: changes, fullText: snapshot, version: currentVersion)
             pendingChanges.removeAll()
         } catch {
-            Self.logger.error("\(Self.t)发送变更失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)发送变更失败: \(error)")
+            }
         }
     }
 
@@ -316,7 +342,9 @@ final class LSPService: ObservableObject, SuperLog {
         changeDebounceTimer?.invalidate()
         changeDebounceTimer = nil
         if Self.verbose {
-            Self.logger.debug("\(Self.t)\(operation) 前同步待发送变更: \(self.pendingChanges.count) 条")
+            if Self.verbose {
+                            Self.logger.debug("\(Self.t)\(operation) 前同步待发送变更: \(self.pendingChanges.count) 条")
+            }
         }
         await flushChange(uri: uri)
     }
@@ -333,7 +361,9 @@ final class LSPService: ObservableObject, SuperLog {
             do {
                 try await server.documentDidChange(uri: uri, text: text, version: version)
             } catch {
-                Self.logger.error("\(Self.t)替换文档失败: \(error)")
+                if Self.verbose {
+                                    Self.logger.error("\(Self.t)替换文档失败: \(error)")
+                }
             }
         }
     }
@@ -349,7 +379,9 @@ final class LSPService: ObservableObject, SuperLog {
             do {
                 try await server.documentDidSave(uri: uri, text: text)
             } catch {
-                Self.logger.error("\(Self.t)发送 didSave 失败: \(error)")
+                if Self.verbose {
+                                    Self.logger.error("\(Self.t)发送 didSave 失败: \(error)")
+                }
             }
         }
     }
@@ -362,7 +394,9 @@ final class LSPService: ObservableObject, SuperLog {
             self.changeDebounceTimer?.invalidate()
             self.changeDebounceTimer = nil
             if Self.verbose {
-                Self.logger.debug("\(Self.t)补全前同步待发送变更: \(self.pendingChanges.count) 条")
+                if Self.verbose {
+                                    Self.logger.debug("\(Self.t)补全前同步待发送变更: \(self.pendingChanges.count) 条")
+                }
             }
             await self.flushChange(uri: uri)
         }
@@ -370,17 +404,23 @@ final class LSPService: ObservableObject, SuperLog {
             let response: CompletionResponse = try await server.completion(uri: uri, line: line, character: character)
             return parseCompletionItems(response)
         } catch {
-            Self.logger.error("\(Self.t)补全请求失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)补全请求失败: \(error)")
+            }
             if await recoverServerIfNeeded(after: error) {
                 guard let recoveredServer = self.server else { return [] }
                 do {
                     let response: CompletionResponse = try await recoveredServer.completion(uri: uri, line: line, character: character)
                     if Self.verbose {
-                        Self.logger.info("\(Self.t)补全请求重试成功")
+                        if Self.verbose {
+                                                    Self.logger.info("\(Self.t)补全请求重试成功")
+                        }
                     }
                     return parseCompletionItems(response)
                 } catch {
-                    Self.logger.error("\(Self.t)补全请求重试失败: \(error)")
+                    if Self.verbose {
+                                            Self.logger.error("\(Self.t)补全请求重试失败: \(error)")
+                    }
                 }
             }
             return []
@@ -395,7 +435,9 @@ final class LSPService: ObservableObject, SuperLog {
             await MainActor.run { onHover?(content) }
             return content
         } catch {
-            Self.logger.error("\(Self.t)悬停请求失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)悬停请求失败: \(error)")
+            }
             return nil
         }
     }
@@ -406,7 +448,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.hover(uri: uri, line: line, character: character)
         } catch {
-            Self.logger.error("\(Self.t)原始悬停请求失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)原始悬停请求失败: \(error)")
+            }
             return nil
         }
     }
@@ -415,30 +459,40 @@ final class LSPService: ObservableObject, SuperLog {
         guard let server else { return nil }
         await flushPendingChangesIfNeeded(uri: uri, operation: "definition")
         if Self.verbose {
-            Self.logger.info(
-                "\(Self.t)definition 请求: uri=\(uri, privacy: .public), line=\(line), character=\(character), pendingChanges=\(self.pendingChanges.count), currentURI=\(self.currentURI ?? "<nil>", privacy: .public), currentVersion=\(self.currentVersion), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), serverRoot=\(server.rootPath.path, privacy: .public)"
-            )
+            if Self.verbose {
+                            Self.logger.info(
+                                "\(Self.t)definition 请求: uri=\(uri, privacy: .public), line=\(line), character=\(character), pendingChanges=\(self.pendingChanges.count), currentURI=\(self.currentURI ?? "<nil>", privacy: .public), currentVersion=\(self.currentVersion), projectRoot=\(self.projectRootPath ?? "<nil>", privacy: .public), serverRoot=\(server.rootPath.path, privacy: .public)"
+                            )
+            }
         }
         do {
             let response: DefinitionResponse = try await server.definition(uri: uri, line: line, character: character)
             if Self.verbose {
-                Self.logger.info(
-                    "\(Self.t)definition 原始响应: \(self.describeDefinitionResponse(response), privacy: .public)"
-                )
+                if Self.verbose {
+                                    Self.logger.info(
+                                        "\(Self.t)definition 原始响应: \(self.describeDefinitionResponse(response), privacy: .public)"
+                                    )
+                }
             }
             let parsed = parseDefinitionLocation(response)
             if Self.verbose {
                 if let parsed {
-                    Self.logger.info(
-                        "\(Self.t)definition 解析结果: uri=\(parsed.uri, privacy: .public), startLine=\(parsed.range.start.line), startCharacter=\(parsed.range.start.character), endLine=\(parsed.range.end.line), endCharacter=\(parsed.range.end.character)"
-                    )
+                    if Self.verbose {
+                                            Self.logger.info(
+                                                "\(Self.t)definition 解析结果: uri=\(parsed.uri, privacy: .public), startLine=\(parsed.range.start.line), startCharacter=\(parsed.range.start.character), endLine=\(parsed.range.end.line), endCharacter=\(parsed.range.end.character)"
+                                            )
+                    }
                 } else {
-                    Self.logger.warning("\(Self.t)definition 解析结果为空")
+                    if Self.verbose {
+                                            Self.logger.warning("\(Self.t)definition 解析结果为空")
+                    }
                 }
             }
             return parsed
         } catch {
-            Self.logger.error("\(Self.t)定义跳转失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)定义跳转失败: \(error)")
+            }
             return nil
         }
     }
@@ -449,7 +503,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.references(uri: uri, line: line, character: character)
         } catch {
-            Self.logger.error("\(Self.t)引用查找失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)引用查找失败: \(error)")
+            }
             return []
         }
     }
@@ -459,7 +515,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.documentSymbols(uri: uri)
         } catch {
-            Self.logger.error("\(Self.t)文档符号请求失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)文档符号请求失败: \(error)")
+            }
             return []
         }
     }
@@ -470,7 +528,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.rename(uri: uri, line: line, character: character, newName: newName)
         } catch {
-            Self.logger.error("\(Self.t)重命名失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)重命名失败: \(error)")
+            }
             return nil
         }
     }
@@ -480,7 +540,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.formatting(uri: uri, tabSize: tabSize, insertSpaces: insertSpaces)
         } catch {
-            Self.logger.error("\(Self.t)格式化失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)格式化失败: \(error)")
+            }
             return nil
         }
     }
@@ -491,7 +553,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.signatureHelp(uri: uri, line: line, character: character)
         } catch {
-            Self.logger.error("\(Self.t)签名帮助失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)签名帮助失败: \(error)")
+            }
             return nil
         }
     }
@@ -502,7 +566,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.inlayHint(uri: uri, startLine: startLine, startCharacter: startCharacter, endLine: endLine, endCharacter: endCharacter)
         } catch {
-            Self.logger.error("\(Self.t)内联提示失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)内联提示失败: \(error)")
+            }
             return nil
         }
     }
@@ -513,7 +579,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.documentHighlight(uri: uri, line: line, character: character)
         } catch {
-            Self.logger.error("\(Self.t)文档高亮失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)文档高亮失败: \(error)")
+            }
             return []
         }
     }
@@ -529,7 +597,9 @@ final class LSPService: ObservableObject, SuperLog {
             )
             return try await server.codeAction(uri: uri, range: range, context: context)
         } catch {
-            Self.logger.error("\(Self.t)代码操作失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)代码操作失败: \(error)")
+            }
             return []
         }
     }
@@ -551,7 +621,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.codeActionResolve(action)
         } catch {
-            Self.logger.error("\(Self.t)代码操作解析失败: \(error.localizedDescription)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)代码操作解析失败: \(error.localizedDescription)")
+            }
             return nil
         }
     }
@@ -567,7 +639,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.semanticTokens(uri: uri)
         } catch {
-            Self.logger.error("\(Self.t)语义令牌失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)语义令牌失败: \(error)")
+            }
             return nil
         }
     }
@@ -577,7 +651,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.semanticTokensDelta(uri: uri, previousResultId: previousResultId)
         } catch {
-            Self.logger.error("\(Self.t)语义令牌增量失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)语义令牌增量失败: \(error)")
+            }
             return nil
         }
     }
@@ -589,7 +665,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.declaration(uri: uri, line: line, character: character)
         } catch {
-            Self.logger.error("\(Self.t)声明跳转失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)声明跳转失败: \(error)")
+            }
             return nil
         }
     }
@@ -601,7 +679,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.typeDefinition(uri: uri, line: line, character: character)
         } catch {
-            Self.logger.error("\(Self.t)类型定义跳转失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)类型定义跳转失败: \(error)")
+            }
             return nil
         }
     }
@@ -613,7 +693,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.implementation(uri: uri, line: line, character: character)
         } catch {
-            Self.logger.error("\(Self.t)实现查找失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)实现查找失败: \(error)")
+            }
             return nil
         }
     }
@@ -637,7 +719,9 @@ final class LSPService: ObservableObject, SuperLog {
             let response = try await server.foldingRange(uri: uri)
             return response ?? []
         } catch {
-            Self.logger.error("\(Self.t)折叠范围失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)折叠范围失败: \(error)")
+            }
             return []
         }
     }
@@ -649,7 +733,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.selectionRange(uri: uri, line: line, character: character) ?? []
         } catch {
-            Self.logger.error("\(Self.t)选择范围失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)选择范围失败: \(error)")
+            }
             return []
         }
     }
@@ -662,7 +748,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.documentLink(uri: uri) ?? []
         } catch {
-            Self.logger.error("\(Self.t)文档链接失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)文档链接失败: \(error)")
+            }
             return []
         }
     }
@@ -678,7 +766,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.resolveDocumentLink(lspLink)
         } catch {
-            Self.logger.error("\(Self.t)解析文档链接失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)解析文档链接失败: \(error)")
+            }
             return nil
         }
     }
@@ -688,7 +778,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.resolveDocumentLink(link)
         } catch {
-            Self.logger.error("\(Self.t)解析文档链接失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)解析文档链接失败: \(error)")
+            }
             return nil
         }
     }
@@ -701,7 +793,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.documentColor(uri: uri)
         } catch {
-            Self.logger.error("\(Self.t)文档颜色请求失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)文档颜色请求失败: \(error)")
+            }
             return []
         }
     }
@@ -712,7 +806,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.colorPresentation(uri: uri, color: color, range: range)
         } catch {
-            Self.logger.error("\(Self.t)颜色展示请求失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)颜色展示请求失败: \(error)")
+            }
             return []
         }
     }
@@ -726,7 +822,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.callHierarchyPrepare(uri: uri, line: line, character: character) ?? []
         } catch {
-            Self.logger.error("\(Self.t)调用层级准备失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)调用层级准备失败: \(error)")
+            }
             return []
         }
     }
@@ -736,7 +834,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return (try await server.callHierarchyIncomingCalls(item: item)) ?? []
         } catch {
-            Self.logger.error("\(Self.t)调用层级(入向)失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)调用层级(入向)失败: \(error)")
+            }
             return []
         }
     }
@@ -746,7 +846,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return (try await server.callHierarchyOutgoingCalls(item: item)) ?? []
         } catch {
-            Self.logger.error("\(Self.t)调用层级(出向)失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)调用层级(出向)失败: \(error)")
+            }
             return []
         }
     }
@@ -758,7 +860,9 @@ final class LSPService: ObservableObject, SuperLog {
         do {
             return try await server.workspaceSymbol(query: query)
         } catch {
-            Self.logger.error("\(Self.t)工作区符号查找失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)工作区符号查找失败: \(error)")
+            }
             return nil
         }
     }
@@ -793,12 +897,16 @@ final class LSPService: ObservableObject, SuperLog {
         guard let server else { return nil }
         if let commands = server.capabilities.executeCommandProvider?.commands,
            !commands.contains(command) {
-            Self.logger.warning("\(Self.t)命令 \(command) 不在服务器能力列表中，但仍尝试执行")
+            if Self.verbose {
+                            Self.logger.warning("\(Self.t)命令 \(command) 不在服务器能力列表中，但仍尝试执行")
+            }
         }
         do {
             return try await server.executeCommand(command: command, arguments: arguments)
         } catch {
-            Self.logger.error("\(Self.t)执行命令失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)执行命令失败: \(error)")
+            }
             return nil
         }
     }
@@ -812,35 +920,47 @@ final class LSPService: ObservableObject, SuperLog {
     private func recoverServerIfNeeded(after error: Error) async -> Bool {
         guard isTransportClosedError(error) else {
             if Self.verbose {
-                Self.logger.debug("\(Self.t)跳过自动恢复：错误非断链类型 -> \(String(describing: error))")
+                if Self.verbose {
+                                    Self.logger.debug("\(Self.t)跳过自动恢复：错误非断链类型 -> \(String(describing: error))")
+                }
             }
             return false
         }
         guard let languageId = activeLanguageId else {
             if Self.verbose {
-                Self.logger.warning("\(Self.t)跳过自动恢复：activeLanguageId 为空")
+                if Self.verbose {
+                                    Self.logger.warning("\(Self.t)跳过自动恢复：activeLanguageId 为空")
+                }
             }
             return false
         }
         guard let projectRootPath else {
             if Self.verbose {
-                Self.logger.warning("\(Self.t)跳过自动恢复：projectRootPath 为空")
+                if Self.verbose {
+                                    Self.logger.warning("\(Self.t)跳过自动恢复：projectRootPath 为空")
+                }
             }
             return false
         }
         if Self.verbose {
-            Self.logger.warning("\(Self.t)检测到 LSP 通道断开，尝试自动恢复: language=\(languageId), root=\(projectRootPath)")
+            if Self.verbose {
+                            Self.logger.warning("\(Self.t)检测到 LSP 通道断开，尝试自动恢复: language=\(languageId), root=\(projectRootPath)")
+            }
         }
 
         _ = await ensureServer(for: languageId, projectPath: projectRootPath)
         guard let restartedServer = server else {
-            Self.logger.error("\(Self.t)LSP 自动恢复失败：重启后服务器为空")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)LSP 自动恢复失败：重启后服务器为空")
+            }
             return false
         }
 
         guard let currentURI, let latestDocumentSnapshot else {
             if Self.verbose {
-                Self.logger.info("\(Self.t)LSP 自动恢复完成（无活跃文档）")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)LSP 自动恢复完成（无活跃文档）")
+                }
             }
             return true
         }
@@ -854,11 +974,15 @@ final class LSPService: ObservableObject, SuperLog {
             )
             pendingChanges.removeAll()
             if Self.verbose {
-                Self.logger.info("\(Self.t)LSP 自动恢复完成并重新打开文档")
+                if Self.verbose {
+                                    Self.logger.info("\(Self.t)LSP 自动恢复完成并重新打开文档")
+                }
             }
             return true
         } catch {
-            Self.logger.error("\(Self.t)LSP 自动恢复后打开文档失败: \(error)")
+            if Self.verbose {
+                            Self.logger.error("\(Self.t)LSP 自动恢复后打开文档失败: \(error)")
+            }
             return false
         }
     }

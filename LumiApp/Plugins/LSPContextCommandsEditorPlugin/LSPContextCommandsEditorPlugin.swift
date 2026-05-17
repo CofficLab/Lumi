@@ -16,7 +16,7 @@ import os
 actor LSPContextCommandsEditorPlugin: SuperPlugin, SuperLog {
     static let shared = LSPContextCommandsEditorPlugin()
     nonisolated static let emoji = "🔌"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id = "LSPContextCommandsEditor"
     static let displayName = String(localized: "LSP Context Commands", table: "LSPContextCommandsEditor")
@@ -34,7 +34,9 @@ actor LSPContextCommandsEditorPlugin: SuperPlugin, SuperLog {
         let contributor = LSPContextCommandContributor()
         registry.registerCommandContributor(contributor)
         if Self.verbose {
-            Self.logger.info("\(Self.t)注册 CommandContributor 完成, contributorId=\(contributor.id)")
+            if Self.verbose {
+                            Self.logger.info("\(Self.t)注册 CommandContributor 完成, contributorId=\(contributor.id)")
+            }
         }
     }
 }

@@ -65,7 +65,9 @@ extension RAGAutoIndexOverlay {
                 await service.ensureIndexedBackground(projectPath: path)
             }
             if Self.verbose {
-                RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
+                if RAGPlugin.verbose {
+                                    RAGPlugin.logger.info("\(Self.t)批量自动索引已触发 source=\(source) count=\(candidatePaths.count)")
+                }
             }
         }
     }

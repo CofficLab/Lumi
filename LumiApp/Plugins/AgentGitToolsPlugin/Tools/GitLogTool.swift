@@ -4,7 +4,7 @@ import MagicKit
 /// Git 日志工具
 struct GitLogTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📜"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "git_log"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -50,7 +50,9 @@ struct GitLogTool: SuperAgentTool, SuperLog {
         let file = arguments["file"]?.value as? String
 
         if Self.verbose {
-            GitToolsPlugin.logger.info("\(Self.t)获取 Git 日志：\(path ?? "当前目录") count=\(count)")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.info("\(Self.t)获取 Git 日志：\(path ?? "当前目录") count=\(count)")
+            }
         }
 
         do {
@@ -62,7 +64,9 @@ struct GitLogTool: SuperAgentTool, SuperLog {
             )
             return formatLog(logs)
         } catch {
-            GitToolsPlugin.logger.error("\(Self.t)获取 Git 日志失败：\(error.localizedDescription)")
+            if GitToolsPlugin.verbose {
+                            GitToolsPlugin.logger.error("\(Self.t)获取 Git 日志失败：\(error.localizedDescription)")
+            }
             return "获取 Git 日志失败：\(error.localizedDescription)"
         }
     }

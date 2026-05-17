@@ -4,7 +4,7 @@ import os
 /// 在用户首条消息发送时，根据内容自动生成会话标题（发送管线中间件）。
 actor AutoConversationTitlePlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.auto-conversation-title")
 
     static let id = "AutoConversationTitlePlugin"

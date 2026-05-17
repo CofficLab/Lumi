@@ -118,7 +118,9 @@ final class GoCommandContributor: SuperEditorCommandContributor {
             workingDirectory: projectRoot
         )
         if GoEditorPlugin.verbose {
-            GoEditorPlugin.logger.info("\(GoEditorPlugin.t)go fmt: exit=\(result.exitCode)")
+            if GoEditorPlugin.verbose {
+                            GoEditorPlugin.logger.info("\(GoEditorPlugin.t)go fmt: exit=\(result.exitCode)")
+            }
         }
     }
 
@@ -131,7 +133,9 @@ final class GoCommandContributor: SuperEditorCommandContributor {
             workingDirectory: projectRoot
         )
         if GoEditorPlugin.verbose {
-            GoEditorPlugin.logger.info("\(GoEditorPlugin.t)go mod tidy: exit=\(result.exitCode)")
+            if GoEditorPlugin.verbose {
+                            GoEditorPlugin.logger.info("\(GoEditorPlugin.t)go mod tidy: exit=\(result.exitCode)")
+            }
         }
     }
 
@@ -141,7 +145,9 @@ final class GoCommandContributor: SuperEditorCommandContributor {
         guard let fileURL = state.currentFileURL else { return nil }
         let root = GoProjectDetector.findProjectRoot(from: fileURL)
         if root == nil, GoEditorPlugin.verbose {
-            GoEditorPlugin.logger.warning("\(GoEditorPlugin.t)未找到 go.mod 项目根目录")
+            if GoEditorPlugin.verbose {
+                            GoEditorPlugin.logger.warning("\(GoEditorPlugin.t)未找到 go.mod 项目根目录")
+            }
         }
         return root
     }

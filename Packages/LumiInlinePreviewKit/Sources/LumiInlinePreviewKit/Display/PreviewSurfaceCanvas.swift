@@ -33,6 +33,9 @@ public extension LumiInlinePreviewFacade {
         // MARK: - NSViewRepresentable
 
         public func makeNSView(context: Context) -> PreviewSurfaceView {
+            if LumiInlinePreviewFacade.verbose {
+                            LumiInlinePreviewFacade.logger.info("[PreviewSurfaceCanvas] makeNSView — surfaceID: \(surfaceID.map { String($0) } ?? "nil")")
+            }
             let view = PreviewSurfaceView()
             view.onSizeChange = onSizeChange
             view.onInputEvent = onInputEvent
@@ -44,6 +47,9 @@ public extension LumiInlinePreviewFacade {
         }
 
         public func updateNSView(_ nsView: PreviewSurfaceView, context: Context) {
+            if LumiInlinePreviewFacade.verbose {
+                            LumiInlinePreviewFacade.logger.info("[PreviewSurfaceCanvas] updateNSView — surfaceID: \(surfaceID.map { String($0) } ?? "nil"), isInteractive: \(isInteractive)")
+            }
             nsView.onSizeChange = onSizeChange
             nsView.onInputEvent = onInputEvent
             nsView.isInteractive = isInteractive

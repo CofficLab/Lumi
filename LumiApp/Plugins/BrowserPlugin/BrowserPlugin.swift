@@ -14,7 +14,7 @@ actor BrowserPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "🖼️"
 
     /// 是否启用详细日志
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let id: String = "Browser"
     static let displayName: String = "Browser"

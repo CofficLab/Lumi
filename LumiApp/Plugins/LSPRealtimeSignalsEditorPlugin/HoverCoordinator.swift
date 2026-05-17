@@ -125,7 +125,9 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             if let cached = cachedHover(line: line, character: character, state: state),
                !cached.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 if EditorPlugin.verbose {
-                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)✅ 缓存命中: 行=\(line) 字符=\(character)")
+                    if EditorPlugin.verbose {
+                                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)✅ 缓存命中: 行=\(line) 字符=\(character)")
+                    }
                 }
                 if let cachedRange = cached.range {
                     setActiveHoverRange(
@@ -207,7 +209,9 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
         guard hasActiveHoverState || hasPendingWork else { return }
         hoverRequestGeneration.invalidate()
         if EditorPlugin.verbose {
-            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🔴 取消悬停被调用")
+            if EditorPlugin.verbose {
+                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)🔴 取消悬停被调用")
+            }
         }
         hoverTask?.cancel()
         hoverTask = nil
@@ -453,7 +457,9 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
             // Esc
             if event.keyCode == 53 {
                 if EditorPlugin.verbose {
-                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)⌨️ 检测到 Esc 键，取消悬停")
+                    if EditorPlugin.verbose {
+                                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)⌨️ 检测到 Esc 键，取消悬停")
+                    }
                 }
                 self.cancelHover()
             }
@@ -669,7 +675,9 @@ final class HoverEditorCoordinator: TextViewCoordinator, SuperLog {
                 let now = DispatchTime.now().uptimeNanoseconds
                 if now &- lastOutsideVisibleLogAtNs >= Self.outsideVisibleLogIntervalNs {
                     lastOutsideVisibleLogAtNs = now
-                    EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)⚠️ 鼠标事件: 鼠标坐标=\(String(describing: localPoint)) 在扩展矩形=\(String(describing: expandedRect)) 之外 可见矩形=\(String(describing: visibleRect))")
+                    if EditorPlugin.verbose {
+                                            EditorPlugin.logger.debug("\(HoverEditorCoordinator.t)⚠️ 鼠标事件: 鼠标坐标=\(String(describing: localPoint)) 在扩展矩形=\(String(describing: expandedRect)) 之外 可见矩形=\(String(describing: visibleRect))")
+                    }
                 }
             }
             // 鼠标移出了 textView 可见区域

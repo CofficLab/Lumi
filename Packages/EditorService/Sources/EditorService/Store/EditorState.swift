@@ -28,7 +28,7 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     public nonisolated static let emoji = "📝"
-    nonisolated static let verbose = false
+    nonisolated(unsafe) static var verbose: Bool = false
 
     let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.state")
 
@@ -1612,7 +1612,9 @@ public final class EditorState: ObservableObject, SuperLog {
                 EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)
             }
             guard self.currentThemeId != themeId else { return }
-            self.logger.info("\(Self.t)observeThemeChanges: \(self.currentThemeId) → \(themeId)")
+            if Self.verbose {
+                            self.logger.info("\(Self.t)observeThemeChanges: \(self.currentThemeId) → \(themeId)")
+            }
             self.currentThemeId = themeId
             self.currentTheme = self.resolveTheme(for: themeId)
         }
@@ -1627,11 +1629,15 @@ public final class EditorState: ObservableObject, SuperLog {
         let before = self.currentThemeId
         guard before != editorThemeId else {
             if Self.verbose {
-                self.logger.debug("\(Self.t)syncInitialThemeFromExternal: 主题一致，跳过（\(before)）")
+                if Self.verbose {
+                                    self.logger.debug("\(Self.t)syncInitialThemeFromExternal: 主题一致，跳过（\(before)）")
+                }
             }
             return
         }
-        self.logger.info("\(Self.t)syncInitialThemeFromExternal: \(before) → \(editorThemeId)")
+        if Self.verbose {
+                    self.logger.info("\(Self.t)syncInitialThemeFromExternal: \(before) → \(editorThemeId)")
+        }
         EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)
         self.currentThemeId = editorThemeId
         self.currentTheme = self.resolveTheme(for: editorThemeId)
@@ -1648,7 +1654,9 @@ public final class EditorState: ObservableObject, SuperLog {
         guard let url = url else {
             isFileLoadInProgress = false
             fileLoadErrorMessage = nil
-            logger.info("\(self.t)loadFile: url 为 nil → resetState")
+            if Self.verbose {
+                logger.info("\(self.t)loadFile: url 为 nil → resetState")
+            }
             resetState()
             return
         }
@@ -1657,7 +1665,9 @@ public final class EditorState: ObservableObject, SuperLog {
         if isDirectory {
             isFileLoadInProgress = false
             fileLoadErrorMessage = nil
-            logger.info("\(self.t)loadFile: url 是目录 → resetState, url=\(url.path)")
+            if Self.verbose {
+                logger.info("\(self.t)loadFile: url 是目录 → resetState, url=\(url.path)")
+            }
             resetState()
             return
         }
@@ -1681,13 +1691,17 @@ public final class EditorState: ObservableObject, SuperLog {
                     let isReloadingCurrentFile = self.currentFileURL?.standardizedFileURL == standardizedLoadingURL
                     let shouldReplaceCurrentBuffer = !isReloadingCurrentFile || self.content == nil || self.fullLoadOverrides.contains(standardizedLoadingURL)
                     guard shouldReplaceCurrentBuffer else {
-                        self.logger.info("\(self.t)loadFile: shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path)")
+                        if Self.verbose {
+                                                    self.logger.info("\(self.t)loadFile: shouldReplaceCurrentBuffer=false, 跳过. url=\(loadingURL.path)")
+                        }
                         self.isFileLoadInProgress = false
                         return
                     }
                     switch loadedDocument {
                     case .binary:
-                        self.logger.info("\(self.t)loadFile: → 加载二进制文件, url=\(loadingURL.path)")
+                        if Self.verbose {
+                                                    self.logger.info("\(self.t)loadFile: → 加载二进制文件, url=\(loadingURL.path)")
+                        }
                         self.loadBinaryFile(from: loadingURL, loadedDocument: loadedDocument)
                         self.isFileLoadInProgress = false
                         self.fileLoadErrorMessage = nil
@@ -1748,9 +1762,11 @@ public final class EditorState: ObservableObject, SuperLog {
                         if let languageId {
                             let rootPath = self.projectRootPath ?? loadingURL.deletingLastPathComponent().path
                             if Self.verbose {
-                                self.logger.info(
-                                    "\(Self.t)LSP openFile 准备: file=\(loadingURL.path), languageId=\(languageId), projectRoot=\(self.projectRootPath ?? "<nil>"), chosenRoot=\(rootPath)"
-                                )
+                                if Self.verbose {
+                                                                    self.logger.info(
+                                                                        "\(Self.t)LSP openFile 准备: file=\(loadingURL.path), languageId=\(languageId), projectRoot=\(self.projectRootPath ?? "<nil>"), chosenRoot=\(rootPath)"
+                                                                    )
+                                }
                             }
                             self.lspClient.setProjectRootPath(rootPath)
                             let documentVersion = self.currentDocumentVersion
@@ -1766,7 +1782,9 @@ public final class EditorState: ObservableObject, SuperLog {
                     }
                 }
             } catch {
-                self.logger.error("\(self.t)loadFile: 加载失败 error=\(error.localizedDescription), url=\(loadingURL.path)")
+                if Self.verbose {
+                                    self.logger.error("\(self.t)loadFile: 加载失败 error=\(error.localizedDescription), url=\(loadingURL.path)")
+                }
                 await MainActor.run { [weak self] in
                     self?.isFileLoadInProgress = false
                     self?.fileLoadErrorMessage = error.localizedDescription

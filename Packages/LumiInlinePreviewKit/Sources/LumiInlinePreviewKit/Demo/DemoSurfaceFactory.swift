@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import IOSurface
+import os
 
 public extension LumiInlinePreviewFacade {
     /// 仅用于 Phase 1 的本地 IOSurface 生成器。
@@ -42,7 +43,15 @@ public extension LumiInlinePreviewFacade {
             scale: Double = 2,
             seq: UInt64
         ) -> IOSurfaceFrame? {
-            guard width > 0, height > 0 else { return nil }
+            if LumiInlinePreviewFacade.verbose {
+                            LumiInlinePreviewFacade.logger.info("[DemoSurfaceFactory] makeFrame \(width)×\(height) @\(String(format: "%.1f", scale)) seq=\(seq)")
+            }
+            guard width > 0, height > 0 else {
+                if LumiInlinePreviewFacade.verbose {
+                                    LumiInlinePreviewFacade.logger.error("[DemoSurfaceFactory] ❌ invalid dimensions: \(width)×\(height)")
+                }
+                return nil
+            }
             let bytesPerRow = width * 4
 
             let properties: [CFString: Any] = [
@@ -55,14 +64,25 @@ public extension LumiInlinePreviewFacade {
             ]
 
             guard let surface = IOSurfaceCreate(properties as CFDictionary) else {
+                if LumiInlinePreviewFacade.verbose {
+                                    LumiInlinePreviewFacade.logger.error("[DemoSurfaceFactory] ❌ IOSurfaceCreate returned nil for \(width)×\(height)")
+                }
                 return nil
+            }
+
+            let surfaceID = IOSurfaceGetID(surface)
+            if LumiInlinePreviewFacade.verbose {
+                            LumiInlinePreviewFacade.logger.info("[DemoSurfaceFactory] ✅ IOSurface created: id=\(surfaceID) \(width)×\(height)")
             }
 
             paint(into: surface, width: width, height: height, bytesPerRow: bytesPerRow, seq: seq)
             retainSurface(surface)
 
+            if LumiInlinePreviewFacade.verbose {
+                            LumiInlinePreviewFacade.logger.info("[DemoSurfaceFactory] ✅ Frame ready: surfaceID=\(UInt32(surfaceID)) seq=\(seq)")
+            }
             return IOSurfaceFrame(
-                surfaceID: UInt32(IOSurfaceGetID(surface)),
+                surfaceID: UInt32(surfaceID),
                 width: width,
                 height: height,
                 scale: scale,
@@ -103,7 +123,13 @@ public extension LumiInlinePreviewFacade {
             seq: UInt64
         ) {
             var seed: UInt32 = 0
-            guard IOSurfaceLock(surface, [], &seed) == KERN_SUCCESS else { return }
+            let lockResult = IOSurfaceLock(surface, [], &seed)
+            guard lockResult == KERN_SUCCESS else {
+                if LumiInlinePreviewFacade.verbose {
+                                    LumiInlinePreviewFacade.logger.error("[DemoSurfaceFactory] ❌ IOSurfaceLock failed: \(lockResult)")
+                }
+                return
+            }
             defer { _ = IOSurfaceUnlock(surface, [], &seed) }
 
             guard let baseAddress = IOSurfaceGetBaseAddressOfPlane(surface, 0) as UnsafeMutableRawPointer?,
@@ -117,6 +143,9 @@ public extension LumiInlinePreviewFacade {
                       space: colorSpace,
                       bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
                   ) else {
+                if LumiInlinePreviewFacade.verbose {
+                                    LumiInlinePreviewFacade.logger.error("[DemoSurfaceFactory] ❌ CGContext creation failed")
+                }
                 return
             }
 
@@ -155,6 +184,10 @@ public extension LumiInlinePreviewFacade {
             context.setStrokeColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.6))
             context.setLineWidth(2)
             context.stroke(CGRect(x: 1, y: 1, width: CGFloat(width) - 2, height: CGFloat(height) - 2))
+
+            if LumiInlinePreviewFacade.verbose {
+                            LumiInlinePreviewFacade.logger.info("[DemoSurfaceFactory] 🎨 Painted seq=\(seq): phase=\(String(format: "%.2f", phase))")
+            }
         }
     }
 }

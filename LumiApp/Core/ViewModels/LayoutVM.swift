@@ -11,7 +11,7 @@ import MagicKit
 final class LayoutVM: ObservableObject, SuperLog {
     
     nonisolated static let emoji = "🖥️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     
     // MARK: - Published Properties
     

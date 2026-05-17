@@ -6,6 +6,7 @@ class FilterDataProvider: NEFilterDataProvider {
 
     private var ipc = IPCConnection.shared
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.coffic.lumi.extension", category: "FilterDataProvider")
+    private var verbose: Bool = false
 
     /**
      * Start Filter
@@ -18,9 +19,13 @@ class FilterDataProvider: NEFilterDataProvider {
 
         apply(filterSettings) { error in
             if let applyError = error {
-                self.logger.error("Failed to apply filter settings: \(applyError.localizedDescription)")
+                if self.verbose {
+                                    self.logger.error("Failed to apply filter settings: \(applyError.localizedDescription)")
+                }
             } else {
-                self.logger.info("🎉 Success to apply filter settings")
+                if self.verbose {
+                                    self.logger.info("🎉 Success to apply filter settings")
+                }
             }
 
             completionHandler(error)

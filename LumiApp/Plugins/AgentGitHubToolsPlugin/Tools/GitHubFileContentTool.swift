@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub 文件内容获取工具
 struct GitHubFileContentTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_file_content"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -58,7 +58,9 @@ struct GitHubFileContentTool: SuperAgentTool, SuperLog {
         let branch = arguments["branch"]?.value as? String ?? "main"
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)获取文件：\(owner)/\(repo)/\(path)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)获取文件：\(owner)/\(repo)/\(path)")
+            }
         }
 
         do {
@@ -75,7 +77,9 @@ struct GitHubFileContentTool: SuperAgentTool, SuperLog {
 
             return "📄 **\(fileContent.name)**\n\n```\(content)```"
         } catch {
-            GitHubToolsPlugin.logger.error("\(self.t)获取文件失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(self.t)获取文件失败：\(error.localizedDescription)")
+            }
             return "获取文件失败：\(error.localizedDescription)"
         }
     }

@@ -17,7 +17,9 @@ final class LSPContextCommandContributor: SuperEditorCommandContributor, SuperLo
     ) -> [EditorCommandSuggestion] {
         let selection = textView?.selectionManager.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         if Self.verbose {
-            LSPContextCommandsEditorPlugin.logger.info("\(self.t)provideCommands 被调用, canPreview=\(state.canPreview), isEditable=\(state.isEditable), textView=\(textView != nil)")
+            if LSPContextCommandsEditorPlugin.verbose {
+                            LSPContextCommandsEditorPlugin.logger.info("\(self.t)provideCommands 被调用, canPreview=\(state.canPreview), isEditable=\(state.isEditable), textView=\(textView != nil)")
+            }
         }
 
         return [

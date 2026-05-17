@@ -4,7 +4,7 @@ import MagicKit
 /// GitHub Issue 评论列表工具
 struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "💬"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "github_issue_comments"
     func description(for language: LanguagePreference) -> String {
         switch language {
@@ -63,7 +63,9 @@ struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
         let perPage = min(arguments["perPage"]?.value as? Int ?? 10, 100)
 
         if Self.verbose {
-            GitHubToolsPlugin.logger.info("\(self.t)获取 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.info("\(self.t)获取 Issue 评论：\(owner)/\(repo)#\(issueNumber)")
+            }
         }
 
         do {
@@ -76,7 +78,9 @@ struct GitHubIssueCommentsTool: SuperAgentTool, SuperLog {
             )
             return formatComments(comments)
         } catch {
-            GitHubToolsPlugin.logger.error("\(self.t)获取 Issue 评论失败：\(error.localizedDescription)")
+            if GitHubToolsPlugin.verbose {
+                            GitHubToolsPlugin.logger.error("\(self.t)获取 Issue 评论失败：\(error.localizedDescription)")
+            }
             return "获取 Issue 评论失败：\(error.localizedDescription)"
         }
     }

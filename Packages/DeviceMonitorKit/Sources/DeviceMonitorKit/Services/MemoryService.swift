@@ -8,6 +8,7 @@ import os
 public final class MemoryService: ObservableObject, SuperLog {
     public static let shared = MemoryService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.memory")
+    nonisolated(unsafe) static var verbose: Bool = false
     nonisolated public static let emoji = "💾"
 
     // MARK: - Published Properties
@@ -39,7 +40,9 @@ public final class MemoryService: ObservableObject, SuperLog {
     public func startMonitoring() {
         subscribersCount += 1
         if monitoringTimer == nil {
-            Self.logger.info("\(self.t)开始 Memory 监控")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)开始 Memory 监控")
+            }
 
             updateMemoryUsage()
 
@@ -54,7 +57,9 @@ public final class MemoryService: ObservableObject, SuperLog {
     public func stopMonitoring() {
         subscribersCount = max(0, subscribersCount - 1)
         if subscribersCount == 0 {
-            Self.logger.info("\(self.t)停止 Memory 监控")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)停止 Memory 监控")
+            }
 
             monitoringTimer?.invalidate()
             monitoringTimer = nil

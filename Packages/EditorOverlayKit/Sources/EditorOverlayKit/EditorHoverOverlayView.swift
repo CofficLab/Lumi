@@ -8,7 +8,7 @@ import EditorService
 /// 气泡，同时回写气泡实际尺寸以便后续定位更稳定。
 public struct EditorHoverOverlayView: View, SuperLog {
     nonisolated public static let emoji = "📝"
-    nonisolated public static let verbose: Bool = true
+    nonisolated public static let verbose: Bool = false
 
     @ObservedObject var state: EditorState
     let containerSize: CGSize

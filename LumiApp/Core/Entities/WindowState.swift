@@ -9,7 +9,7 @@ import SwiftUI
 @MainActor
 final class WindowState: ObservableObject, Identifiable, SuperLog {
     nonisolated static let emoji = "🪟"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     /// 窗口唯一标识
     let id: UUID
 

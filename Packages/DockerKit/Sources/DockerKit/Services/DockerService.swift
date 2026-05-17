@@ -6,6 +6,8 @@ import ShellKit
 public enum DockerKit {
     /// Logger instance for DockerKit operations
     public static let logger = Logger(subsystem: "com.coffic.dockerkit", category: "docker")
+    /// 是否启用日志输出
+    nonisolated(unsafe) public static var verbose: Bool = false
 }
 
 /// Core service for Docker operations
@@ -68,7 +70,9 @@ public actor DockerService {
                     let image = try decoder.decode(DockerImage.self, from: data)
                     images.append(image)
                 } catch {
-                    DockerKit.logger.error("Failed to decode image line: \(error)")
+                    if DockerKit.verbose {
+                                            DockerKit.logger.error("Failed to decode image line: \(error)")
+                    }
                 }
             }
         }
@@ -128,7 +132,9 @@ public actor DockerService {
                     let item = try decoder.decode(DockerImageHistory.self, from: data)
                     history.append(item)
                 } catch {
-                    DockerKit.logger.error("Failed to decode history line: \(error)")
+                    if DockerKit.verbose {
+                                            DockerKit.logger.error("Failed to decode history line: \(error)")
+                    }
                 }
             }
         }

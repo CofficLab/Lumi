@@ -84,7 +84,9 @@ final class GoBuildManager: ObservableObject, SuperLog {
         }
 
         if GoBuildManager.verbose {
-            GoBuildManager.logger.info("\(GoBuildManager.t)构建完成: \(result.exitCode), errors=\(parsed.filter { $0.severity == .error }.count), warnings=\(parsed.filter { $0.severity == .warning }.count)")
+            if GoBuildManager.verbose {
+                            GoBuildManager.logger.info("\(GoBuildManager.t)构建完成: \(result.exitCode), errors=\(parsed.filter { $0.severity == .error }.count), warnings=\(parsed.filter { $0.severity == .warning }.count)")
+            }
         }
     }
 
@@ -129,7 +131,9 @@ final class GoBuildManager: ObservableObject, SuperLog {
 
         if GoBuildManager.verbose {
             let events = testEvents
-            GoBuildManager.logger.info("\(GoBuildManager.t)测试完成: passed=\(events.filter { $0.status == .pass }.count), failed=\(events.filter { $0.status == .fail }.count)")
+            if GoBuildManager.verbose {
+                            GoBuildManager.logger.info("\(GoBuildManager.t)测试完成: passed=\(events.filter { $0.status == .pass }.count), failed=\(events.filter { $0.status == .fail }.count)")
+            }
         }
     }
 

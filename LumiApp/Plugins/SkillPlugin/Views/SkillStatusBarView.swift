@@ -58,11 +58,15 @@ struct SkillStatusBarView: View, SuperLog {
     private func refreshSkills() {
         let projectPath = projectVM.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         if Self.verbose {
-            Self.logger.info("\(self.t)刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            if Self.verbose {
+                            Self.logger.info("\(self.t)刷新 Skill 列表，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            }
         }
         guard !projectPath.isEmpty else {
             if Self.verbose {
-                Self.logger.info("\(self.t)项目路径为空，清空 Skill 列表")
+                if Self.verbose {
+                                    Self.logger.info("\(self.t)项目路径为空，清空 Skill 列表")
+                }
             }
             refreshTask?.cancel()
             refreshTask = nil
@@ -80,9 +84,13 @@ struct SkillStatusBarView: View, SuperLog {
                 skills = loaded
             }
             if Self.verbose {
-                Self.logger.info("\(SkillStatusBarView.t)刷新完成，找到 \(loaded.count) 个 Skill")
+                if Self.verbose {
+                                    Self.logger.info("\(SkillStatusBarView.t)刷新完成，找到 \(loaded.count) 个 Skill")
+                }
                 for s in loaded {
-                    Self.logger.info("\(SkillStatusBarView.t)Skill：\(s.name) - \(s.title)")
+                    if Self.verbose {
+                                            Self.logger.info("\(SkillStatusBarView.t)Skill：\(s.name) - \(s.title)")
+                    }
                 }
             }
         }

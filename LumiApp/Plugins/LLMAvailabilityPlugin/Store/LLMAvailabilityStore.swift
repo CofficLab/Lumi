@@ -51,7 +51,7 @@ struct LLMProviderAvailability: Identifiable, Equatable, Sendable {
 /// LLM 可用性日志辅助（非 MainActor 隔离，供 Store / Checker 使用）
 enum LLMAvailabilityLog: SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 }
 
 /// LLM 可用性存储
@@ -88,7 +88,9 @@ final class LLMAvailabilityStore: ObservableObject, @unchecked Sendable {
 
         if LLMAvailabilityLog.verbose {
             let totalModels = providers.reduce(0) { $0 + $1.models.count }
-            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)📋 已初始化 \(providers.count) 个供应商，共 \(totalModels) 个模型")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)📋 已初始化 \(providers.count) 个供应商，共 \(totalModels) 个模型")
+            }
         }
     }
 
@@ -135,15 +137,21 @@ final class LLMAvailabilityStore: ObservableObject, @unchecked Sendable {
         switch status {
         case .checking:
             if LLMAvailabilityLog.verbose {
-                LLMAvailabilityPlugin.logger.debug("\(LLMAvailabilityLog.t)🔍 检测中: \(providerId) / \(modelId)")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.debug("\(LLMAvailabilityLog.t)🔍 检测中: \(providerId) / \(modelId)")
+                }
             }
         case .available:
             if LLMAvailabilityLog.verbose {
-                LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 可用: \(providerId) / \(modelId)")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)✅ 可用: \(providerId) / \(modelId)")
+                }
             }
         case .unavailable(let reason):
             if LLMAvailabilityLog.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 不可用: \(providerId) / \(modelId) - \(reason)")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(LLMAvailabilityLog.t)❌ 不可用: \(providerId) / \(modelId) - \(reason)")
+                }
             }
         case .unknown:
             break
@@ -162,7 +170,9 @@ final class LLMAvailabilityStore: ObservableObject, @unchecked Sendable {
         }
 
         if LLMAvailabilityLog.verbose {
-            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)\(value ? "🚀 开始" : "🏁 结束")全局可用性检测")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)\(value ? "🚀 开始" : "🏁 结束")全局可用性检测")
+            }
         }
     }
 
@@ -177,7 +187,9 @@ final class LLMAvailabilityStore: ObservableObject, @unchecked Sendable {
         lock.unlock()
 
         if LLMAvailabilityLog.verbose {
-            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)🔄 已重置所有检测状态")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)🔄 已重置所有检测状态")
+            }
         }
     }
 }

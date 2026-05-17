@@ -7,7 +7,7 @@ import SwiftUI
 /// 允许 AI 助手创建新文件或覆盖现有文件。
 struct WriteFileTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "✏️"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     let name = "write_file"
     func description(for language: LanguagePreference) -> String {
         switch language {

@@ -57,9 +57,11 @@ final class EditorPanelCoordinator: ObservableObject {
     func handleAppear() {
         guard let panelService, let service, let projectVM else { return }
 
-        EditorPlugin.logger.info(
-            "\(EditorPlugin.t)onAppear, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), activeSessionID=\(service.activeSessionID?.uuidString ?? "nil", privacy: .public), currentFileURL=\(service.currentFileURL?.path ?? "nil", privacy: .public)"
-        )
+        if EditorPlugin.verbose {
+                    EditorPlugin.logger.info(
+                        "\(EditorPlugin.t)onAppear, currentProjectPath=\(projectVM.currentProjectPath, privacy: .public), activeSessionID=\(service.activeSessionID?.uuidString ?? "nil", privacy: .public), currentFileURL=\(service.currentFileURL?.path ?? "nil", privacy: .public)"
+                    )
+        }
 
         service.projectRootPath = projectVM.currentProject?.path
         panelService.refreshProjectContext(for: projectVM.currentProjectPath, service: service)
@@ -97,7 +99,9 @@ final class EditorPanelCoordinator: ObservableObject {
     func handleProjectPathChange(oldPath: String, newPath: String) {
         guard let panelService, let service else { return }
 
-        EditorPlugin.logger.info("\(EditorPlugin.t)项目路径变化, oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)")
+        if EditorPlugin.verbose {
+                    EditorPlugin.logger.info("\(EditorPlugin.t)项目路径变化, oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)")
+        }
 
         // 保存未保存的变更后关闭所有编辑器会话
         if service.hasUnsavedChanges { service.saveNow() }

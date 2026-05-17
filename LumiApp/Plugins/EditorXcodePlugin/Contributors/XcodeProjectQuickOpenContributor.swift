@@ -15,20 +15,26 @@ final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
     ) async -> [EditorQuickOpenItemSuggestion] {
         guard let projectRootPath = state.projectRootPath, !projectRootPath.isEmpty else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.warning("⚠️ XcodeProjectQuickOpenContributor | projectRootPath 为空，跳过")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.warning("⚠️ XcodeProjectQuickOpenContributor | projectRootPath 为空，跳过")
+                }
             }
             return []
         }
         let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !normalizedQuery.isEmpty else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 查询为空，跳过")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 查询为空，跳过")
+                }
             }
             return []
         }
 
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 开始收集建议，projectRoot: \(projectRootPath), 查询: \(normalizedQuery)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 开始收集建议，projectRoot: \(projectRootPath), 查询: \(normalizedQuery)")
+            }
         }
 
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -39,13 +45,17 @@ final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
             let results = Self.collectRawMatches(query: normalizedQuery, projectRootPath: projectRootPath)
             let elapsed = (CFAbsoluteTimeGetCurrent() - backgroundStartTime) * 1000
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor [后台] | 原始匹配收集完成，\(results.count) 条，耗时 \(String(format: "%.1f", elapsed))ms")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor [后台] | 原始匹配收集完成，\(results.count) 条，耗时 \(String(format: "%.1f", elapsed))ms")
+                }
             }
             return results
         }.value
 
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 开始构造 UI 建议，rawResults: \(rawResults.count)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 开始构造 UI 建议，rawResults: \(rawResults.count)")
+            }
         }
 
         // 回到主线程构造 UI 建议（action 闭包需要访问 MainActor 的 state）
@@ -72,7 +82,9 @@ final class XcodeProjectQuickOpenContributor: SuperEditorQuickOpenContributor {
 
         let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 完成，\(suggestions.count) 条结果，耗时 \(String(format: "%.1f", elapsed))ms")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("📂 XcodeProjectQuickOpenContributor | 完成，\(suggestions.count) 条结果，耗时 \(String(format: "%.1f", elapsed))ms")
+            }
         }
 
         return suggestions

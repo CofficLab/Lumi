@@ -17,6 +17,7 @@ enum FilterStatus: String, CaseIterable {
 class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
     static let shared = FirewallService()
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
+    private var verbose: Bool = false
     
     @Published var status: FilterStatus = .indeterminate
     @Published var events: [FirewallEvent] = []
@@ -44,7 +45,9 @@ class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
         let manager = NEFilterManager.shared()
         manager.loadFromPreferences { error in
             if let error = error {
-                self.logger.error("Failed to load filter configuration: \(error.localizedDescription)")
+                if self.verbose {
+                                    self.logger.error("Failed to load filter configuration: \(error.localizedDescription)")
+                }
                 DispatchQueue.main.async { self.status = .error }
                 return
             }
@@ -61,10 +64,14 @@ class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
             manager.isEnabled = true
             manager.saveToPreferences { error in
                 if let error = error {
-                    self.logger.error("Failed to save filter configuration: \(error.localizedDescription)")
+                    if self.verbose {
+                                            self.logger.error("Failed to save filter configuration: \(error.localizedDescription)")
+                    }
                     DispatchQueue.main.async { self.status = .error }
                 } else {
-                    self.logger.info("Filter configuration saved successfully")
+                    if self.verbose {
+                                            self.logger.info("Filter configuration saved successfully")
+                    }
                     DispatchQueue.main.async { self.status = .running }
                 }
             }
@@ -75,14 +82,18 @@ class FirewallService: NSObject, ObservableObject, @unchecked Sendable {
         let manager = NEFilterManager.shared()
         manager.loadFromPreferences { error in
             if let error = error {
-                self.logger.error("Failed to load filter configuration: \(error.localizedDescription)")
+                if self.verbose {
+                                    self.logger.error("Failed to load filter configuration: \(error.localizedDescription)")
+                }
                 return
             }
             
             manager.isEnabled = false
             manager.saveToPreferences { error in
                 if let error = error {
-                    self.logger.error("Failed to disable filter: \(error.localizedDescription)")
+                    if self.verbose {
+                                            self.logger.error("Failed to disable filter: \(error.localizedDescription)")
+                    }
                 } else {
                     DispatchQueue.main.async { self.status = .stopped }
                 }

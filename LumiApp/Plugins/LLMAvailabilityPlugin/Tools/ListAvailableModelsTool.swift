@@ -5,7 +5,7 @@ import os
 /// 列出可用 LLM 模型工具
 struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🤖"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let name = "list_available_models"
     func description(for language: LanguagePreference) -> String {
@@ -41,16 +41,22 @@ struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
 
         if Self.verbose {
             if let filter = providerFilter {
-                LLMAvailabilityPlugin.logger.info("\(self.t)📋 查询可用模型，过滤供应商: \(filter)")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.info("\(self.t)📋 查询可用模型，过滤供应商: \(filter)")
+                }
             } else {
-                LLMAvailabilityPlugin.logger.info("\(self.t)📋 查询所有可用模型")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.info("\(self.t)📋 查询所有可用模型")
+                }
             }
         }
 
         // ── 情况 1：没有任何注册的供应商 ──
         if allProviders.isEmpty {
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 未注册任何 LLM 供应商")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 未注册任何 LLM 供应商")
+                }
             }
             return """
                 ## ⚠️ 未注册任何 LLM 供应商
@@ -74,7 +80,9 @@ struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
         if providers.isEmpty, let filter = providerFilter {
             let registeredIds = allProviders.map(\.providerId)
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 未找到供应商: \(filter)，已注册: \(registeredIds)")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 未找到供应商: \(filter)，已注册: \(registeredIds)")
+                }
             }
             return """
                 ## ❌ 未找到供应商：\(filter)
@@ -111,7 +119,9 @@ struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
             }
 
             if Self.verbose {
-                LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 有 \(allProviders.count) 个注册供应商，但无可用模型")
+                if LLMAvailabilityPlugin.verbose {
+                                    LLMAvailabilityPlugin.logger.warning("\(self.t)⚠️ 有 \(allProviders.count) 个注册供应商，但无可用模型")
+                }
             }
 
             return """
@@ -135,7 +145,9 @@ struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
         markdown += availableMarkdown
 
         if Self.verbose {
-            LLMAvailabilityPlugin.logger.info("\(self.t)✅ 返回 \(totalAvailablePairs) 个可用模型对")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(self.t)✅ 返回 \(totalAvailablePairs) 个可用模型对")
+            }
         }
 
         return markdown

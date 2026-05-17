@@ -30,7 +30,9 @@ extension LLMAvailabilityOverlay {
         hasInitialized = true
 
         if LLMAvailabilityPlugin.verbose {
-            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)🚀 初始化 LLM 可用性检测覆盖层")
+            if LLMAvailabilityPlugin.verbose {
+                            LLMAvailabilityPlugin.logger.info("\(LLMAvailabilityLog.t)🚀 初始化 LLM 可用性检测覆盖层")
+            }
         }
 
         // 初始化可用性列表（从当前 LLMVM 获取所有供应商+模型）

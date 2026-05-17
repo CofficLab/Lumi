@@ -9,20 +9,26 @@ final class XcodePackageManifestHoverContributor: SuperEditorHoverContributor, S
 
     func provideHover(context: EditorHoverContext) async -> [EditorHoverSuggestion] {
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t)开始处理 hover，line: \(context.line), character: \(context.character)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t)开始处理 hover，line: \(context.line), character: \(context.character)")
+            }
         }
 
         let runtimeContext = SuperEditorRuntimeContext.shared
         guard let fileURL = runtimeContext.currentFileURL else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.warning("\(Self.t)无法获取当前文件 URL")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.warning("\(Self.t)无法获取当前文件 URL")
+                }
             }
             return []
         }
 
         guard fileURL.lastPathComponent == "Package.swift" else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(Self.t)当前文件不是 Package.swift，跳过: \(fileURL.lastPathComponent)")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(Self.t)当前文件不是 Package.swift，跳过: \(fileURL.lastPathComponent)")
+                }
             }
             return []
         }
@@ -32,7 +38,9 @@ final class XcodePackageManifestHoverContributor: SuperEditorHoverContributor, S
         let content = runtimeContext.currentContent
 
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t)文件: \(fileURL.path), 内容长度: \(content.count ?? 0)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t)文件: \(fileURL.path), 内容长度: \(content.count ?? 0)")
+            }
         }
 
         // Markdown 生成移到后台线程（涉及语法解析）
@@ -46,9 +54,13 @@ final class XcodePackageManifestHoverContributor: SuperEditorHoverContributor, S
             let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
             if XcodePluginLog.verbose {
                 if result != nil {
-                    XcodePluginLog.logger.info("\(Self.t)生成 markdown 成功，耗时 \(String(format: "%.1f", elapsed))ms")
+                    if XcodePluginLog.verbose {
+                                            XcodePluginLog.logger.info("\(Self.t)生成 markdown 成功，耗时 \(String(format: "%.1f", elapsed))ms")
+                    }
                 } else {
-                    XcodePluginLog.logger.info("\(Self.t)无 hover 结果，耗时 \(String(format: "%.1f", elapsed))ms")
+                    if XcodePluginLog.verbose {
+                                            XcodePluginLog.logger.info("\(Self.t)无 hover 结果，耗时 \(String(format: "%.1f", elapsed))ms")
+                    }
                 }
             }
             return result
@@ -56,13 +68,17 @@ final class XcodePackageManifestHoverContributor: SuperEditorHoverContributor, S
 
         guard let markdown else {
             if XcodePluginLog.verbose {
-                XcodePluginLog.logger.info("\(Self.t)hover 结果为空，返回空数组")
+                if XcodePluginLog.verbose {
+                                    XcodePluginLog.logger.info("\(Self.t)hover 结果为空，返回空数组")
+                }
             }
             return []
         }
 
         if XcodePluginLog.verbose {
-            XcodePluginLog.logger.info("\(Self.t)Hover 生成完成，line: \(line), character: \(character)")
+            if XcodePluginLog.verbose {
+                            XcodePluginLog.logger.info("\(Self.t)Hover 生成完成，line: \(line), character: \(character)")
+            }
         }
 
         return [

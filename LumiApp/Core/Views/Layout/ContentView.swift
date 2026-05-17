@@ -8,7 +8,7 @@ import SwiftUI
 /// 不再有全局右侧栏，右侧栏由各插件在自己的面板视图内自行管理。
 struct ContentView: View, SuperLog {
     nonisolated static let emoji = "📱"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     @EnvironmentObject var pluginProvider: PluginVM
     @EnvironmentObject var themeVM: ThemeVM

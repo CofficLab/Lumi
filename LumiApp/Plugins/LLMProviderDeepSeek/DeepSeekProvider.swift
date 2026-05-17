@@ -10,7 +10,7 @@ import os
 final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.deepseek")
     nonisolated static let emoji = "🟠"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     // MARK: - Basic Info
 
     static let id = "deepseek"
@@ -197,7 +197,9 @@ final class DeepSeekProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked S
             return nil
         } catch {
             if Self.verbose {
-                Self.logger.error("解析流式数据块失败: \(error.localizedDescription)")
+                if Self.verbose {
+                                    Self.logger.error("解析流式数据块失败: \(error.localizedDescription)")
+                }
             }
             return nil
         }

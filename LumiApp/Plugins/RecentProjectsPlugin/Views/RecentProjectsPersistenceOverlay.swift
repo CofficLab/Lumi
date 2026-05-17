@@ -168,14 +168,18 @@ extension RecentProjectsPersistenceOverlay {
 
         if switched {
             if Self.verbose {
-                RecentProjectsPlugin.logger.info("\(Self.t)✅ Switched to latest conversation for project [\(projectPath)]")
+                if RecentProjectsPlugin.verbose {
+                                    RecentProjectsPlugin.logger.info("\(Self.t)✅ Switched to latest conversation for project [\(projectPath)]")
+                }
             }
             return
         }
 
         // 该项目没有关联对话 → 新建一个
         if Self.verbose {
-            RecentProjectsPlugin.logger.info("\(Self.t)📁 No associated conversation for project [\(projectPath)], creating new one")
+            if RecentProjectsPlugin.verbose {
+                            RecentProjectsPlugin.logger.info("\(Self.t)📁 No associated conversation for project [\(projectPath)], creating new one")
+            }
         }
 
         Task {
