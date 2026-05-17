@@ -399,3 +399,41 @@ extension ZhipuProvider {
         ["name": tool.name, "description": tool.description, "input_schema": tool.inputSchema]
     }
 }
+
+// MARK: - 响应模型
+
+private struct ZhipuResponse: Decodable {
+    let content: [ContentBlock]
+
+    struct ContentBlock: Decodable {
+        let type: String
+        let text: String?
+        let id: String?
+        let name: String?
+        let input: [String: ZhipuAnySendable]?
+    }
+}
+
+private struct ZhipuAnySendable: Decodable {
+    let value: Any
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if let intValue = try? container.decode(Int.self) {
+            value = intValue
+        } else if let doubleValue = try? container.decode(Double.self) {
+            value = doubleValue
+        } else if let stringValue = try? container.decode(String.self) {
+            value = stringValue
+        } else if let boolValue = try? container.decode(Bool.self) {
+            value = boolValue
+        } else if let dictValue = try? container.decode([String: ZhipuAnySendable].self) {
+            value = dictValue.mapValues { $0.value }
+        } else if let arrayValue = try? container.decode([ZhipuAnySendable].self) {
+            value = arrayValue.map { $0.value }
+        } else {
+            value = ""
+        }
+    }
+}

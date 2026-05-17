@@ -255,3 +255,29 @@ extension FeifeimiaoProvider {
         ]
     }
 }
+
+// MARK: - 响应模型
+
+private struct FeifeimiaoResponse: Decodable {
+    let choices: [Choice]
+
+    struct Choice: Decodable {
+        let message: Message
+    }
+
+    struct Message: Decodable {
+        let content: String?
+        let tool_calls: [ToolCallData]?
+    }
+
+    struct ToolCallData: Decodable {
+        let id: String
+        let type: String
+        let function: FunctionData
+    }
+
+    struct FunctionData: Decodable {
+        let name: String
+        let arguments: String
+    }
+}
