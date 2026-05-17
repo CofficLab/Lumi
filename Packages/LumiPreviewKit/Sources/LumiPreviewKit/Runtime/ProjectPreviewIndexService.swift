@@ -2,13 +2,30 @@ import Darwin
 import Foundation
 
 extension LumiPreviewFacade {
+  /// 项目预览索引服务：扫描项目目录中的 Swift 源文件，发现所有 `#Preview` 宏声明。
+  ///
+  /// 功能：
+  /// - 递归扫描项目目录下的 `.swift` 文件
+  /// - 使用 `PreviewScanner` 提取所有 `#Preview` 声明
+  /// - 通过文件系统监控（kqueue）监听目录变化，自动增量更新索引
+  /// - 提供预览预热候选排序，优先处理当前活跃文件
+  ///
+  /// 典型流程：
+  /// 1. `prepareIndex(projectRootPath:)` — 触发全量扫描
+  /// 2. `refreshCurrentFile(fileURL:sourceText:previews:)` — 增量更新当前文件
+  /// 3. `prewarmCandidates(preferredFileURL:limit:)` — 获取预热候选列表
   @MainActor
   public final class ProjectPreviewIndexService {
+    /// 索引快照：某一时刻的项目扫描统计摘要。
     public struct Snapshot {
-      public let rootURL: URL
-      public let scannedFileCount: Int
-      public let previewCount: Int
-      public let indexedAt: Date
+        /// 项目根目录。
+        public let rootURL: URL
+        /// 已扫描的 Swift 文件数。
+        public let scannedFileCount: Int
+        /// 发现的 `#Preview` 数量。
+        public let previewCount: Int
+        /// 快照生成时间。
+        public let indexedAt: Date
 
       public init(rootURL: URL, scannedFileCount: Int, previewCount: Int, indexedAt: Date) {
         self.rootURL = rootURL

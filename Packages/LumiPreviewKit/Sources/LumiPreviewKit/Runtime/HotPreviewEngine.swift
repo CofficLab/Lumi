@@ -1,9 +1,15 @@
 import Foundation
 
 public extension LumiPreviewFacade {
+    /// Hot 预览引擎的启动计时记录。
+    ///
+    /// 记录预览启动过程中各阶段的耗时，用于性能分析和诊断。
     struct HotPreviewStartupTiming: Sendable, Equatable {
+        /// 阶段名称，如 `"build planning"`、`"host acquire"`、`"total start"`。
         public let stage: String
+        /// 该阶段耗时，单位秒。
         public let duration: TimeInterval
+        /// 可选补充信息。
         public let detail: String?
 
         public init(stage: String, duration: TimeInterval, detail: String? = nil) {
@@ -13,6 +19,10 @@ public extension LumiPreviewFacade {
         }
     }
 
+    /// Hot 预览会话：管理单个预览实例的完整生命周期。
+    ///
+    /// 跟踪预览的状态、编译策略、宿主连接、渲染配置、性能指标和 Live 预览信息。
+    /// 由 `HotPreviewEngine` 创建和管理。
     actor HotPreviewSession: LumiPreviewFacade.PreviewSession {
         public nonisolated let id: String
 
@@ -174,9 +184,22 @@ public extension LumiPreviewFacade {
         }
     }
 
+    /// Hot 预览引擎：协调源码扫描、编译规划、增量构建、入口生成和宿主进程管理的核心调度器。
+    ///
+    /// 完整流程：
+    /// 1. 语法预检 → 2. 构建规划 → 3. 编译（带缓存） → 4. 入口 dylib 生成 → 5. 宿主进程加载
+    ///
+    /// 支持两种入口变体：
+    /// - `moduleImport`：通过 import 已构建模块实现热更新（更快）
+    /// - `sourceInclude`：将源码内联编译为独立 dylib（兼容性更强）
+    ///
+    /// 还提供 Live 预览控制、帧捕获和预热能力。
     final class HotPreviewEngine: Sendable {
+        /// 预览入口变体类型。
         enum PreviewEntryVariant: String {
+            /// 模块导入模式：通过 import 已编译模块的 swiftmodule 实现。
             case moduleImport = "module-import"
+            /// 源码内联模式：将预览闭包源码和目标源码一起编译为 dylib。
             case sourceInclude = "source-include"
         }
 
@@ -1240,6 +1263,9 @@ public extension LumiPreviewFacade {
         }
     }
 }
+/// 语法预检缓存：基于文件修改时间和大小判断是否需要重新检查语法。
+///
+/// 避免每次预览启动都调用 `swiftc -parse`，加速预览循环。
 actor HotSyntaxPreflightCache {
     struct LookupResult: Sendable {
         let result: LumiPreviewFacade.SyntaxCheckResult
@@ -1295,6 +1321,10 @@ actor HotSyntaxPreflightCache {
     }
 }
 
+/// 构建指纹生成器：基于源码文件修改时间和大小生成内容指纹。
+///
+/// 用于 `HotPreviewBuildCoordinator` 判断是否需要重新编译。
+/// 当指纹不变时，跳过编译步骤直接复用上次构建结果。
 private enum HotBuildFingerprint {
     static func make(strategy: LumiPreviewFacade.BuildStrategy, previewFileURL: URL) -> String? {
         let rootURL: URL

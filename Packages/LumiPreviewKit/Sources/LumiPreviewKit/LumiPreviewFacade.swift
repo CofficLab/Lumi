@@ -1,4 +1,7 @@
-/// Unified public namespace for LumiPreviewKit.
+/// 统一公共命名空间。
+///
+/// 所有 LumiPreviewKit 的公开类型都挂载在这个 `enum` 下，
+/// 避免全局命名冲突，同时提供统一的导入入口。
 public enum LumiPreviewFacade {}
 
 typealias PreviewSession = LumiPreviewFacade.PreviewSession

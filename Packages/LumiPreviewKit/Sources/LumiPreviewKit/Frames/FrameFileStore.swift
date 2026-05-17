@@ -1,11 +1,19 @@
 import Foundation
 
 public extension LumiPreviewFacade {
-    /// Persists PNG frame payloads so the UI can load them from disk instead of JSON Base64.
+    /// PNG 帧文件持久化存储。
+    ///
+    /// 将 Base64 编码的 PNG 帧数据写入磁盘文件，使 UI 层可以通过文件路径
+    /// 加载图片，而非在 JSON 响应中内嵌大量 Base64 数据。
     struct FrameFileStore: @unchecked Sendable {
         private let fileManager: FileManager
         private let directory: URL
 
+        /// 创建帧文件存储器。
+        ///
+        /// - Parameters:
+        ///   - directory: 帧文件存储目录，默认使用 `ImageFileLoader.defaultFrameDirectory()`。
+        ///   - fileManager: 文件管理器。
         public init(
             directory: URL = ImageFileLoader.defaultFrameDirectory(),
             fileManager: FileManager = .default
@@ -14,6 +22,12 @@ public extension LumiPreviewFacade {
             self.fileManager = fileManager
         }
 
+        /// 将 Base64 编码的 PNG 数据写入磁盘文件。
+        ///
+        /// - Parameters:
+        ///   - base64EncodedPNG: Base64 编码的 PNG 数据。
+        ///   - previewID: 可选的预览标识符，用于生成文件名前缀。
+        /// - Returns: 写入的文件 URL。
         public func writePNG(base64EncodedPNG: String, previewID: String? = nil) throws -> URL {
             guard let data = Data(base64Encoded: base64EncodedPNG) else {
                 throw CocoaError(.coderInvalidValue)
