@@ -38,3 +38,4 @@
 - [目录结构规范](./plugin-directory-rules.md)
 - [国际化规范](./plugin-i18n-rules.md)
 - [最少功能原则](./minimal-functionality.md)
+- [自动化测试 / 大模型自测](./automation-system-rules.md)

@@ -1,0 +1,13 @@
+---
+description: Lumi HTTP 自动化测试与大模型自测流程
+globs:
+  - "**/Automation*.swift"
+  - scripts/test-automation*.sh
+alwaysApply: false
+---
+
+# Lumi 自动化测试规范
+
+请参考项目规范文档：`.agent/rules/automation-system-rules.md`
+
+通过 HTTP 自测或扩展 `AutomationController` 时，遵循该文档中的测试流程。
