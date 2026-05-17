@@ -354,6 +354,7 @@ public extension LumiPreviewFacade {
 
         public init(
             hostExecutableURL: URL,
+            hostProcessManager: HostProcessManager<HotHostConnection>? = nil,
             buildPlanner: LumiPreviewFacade.BuildPlanner = .init(),
             spmCompiler: LumiPreviewFacade.SPMCompiler = .init(),
             xcodeCompiler: LumiPreviewFacade.XcodeCompiler = .init(),
@@ -379,22 +380,26 @@ public extension LumiPreviewFacade {
             self.moduleImportEligibilityChecker = moduleImportEligibilityChecker
             self.moduleImportEligibilityCache = moduleImportEligibilityCache
             self.syntaxChecker = syntaxChecker
-            self.hostProcessManager = HostProcessManager(
-                executableURL: hostExecutableURL,
-                maximumIdleConnections: maximumIdleHosts,
-                launcher: { executableURL in
-                    try await hotPreviewHostProcess.launch(executableURL: executableURL)
-                },
-                isRunning: { connection in
-                    await connection.isRunning
-                },
-                terminate: { connection in
-                    await connection.terminate()
-                },
-                identity: { connection in
-                    ObjectIdentifier(connection as AnyObject)
-                }
-            )
+            if let hostProcessManager {
+                self.hostProcessManager = hostProcessManager
+            } else {
+                self.hostProcessManager = HostProcessManager(
+                    executableURL: hostExecutableURL,
+                    maximumIdleConnections: maximumIdleHosts,
+                    launcher: { executableURL in
+                        try await hotPreviewHostProcess.launch(executableURL: executableURL)
+                    },
+                    isRunning: { connection in
+                        await connection.isRunning
+                    },
+                    terminate: { connection in
+                        await connection.terminate()
+                    },
+                    identity: { connection in
+                        ObjectIdentifier(connection as AnyObject)
+                    }
+                )
+            }
             LumiPreviewFacade.PreviewEntryBuilder.removeExpiredCacheEntries()
         }
 
@@ -1235,61 +1240,6 @@ public extension LumiPreviewFacade {
         }
     }
 }
-
-private actor HotPreviewBuildCoordinator {
-    enum Result {
-        case built
-        case reused
-        case joined
-    }
-
-    private struct InFlightKey: Hashable {
-        let strategy: LumiPreviewFacade.BuildStrategy
-        let fingerprint: String
-    }
-
-    private var fingerprints: [LumiPreviewFacade.BuildStrategy: String] = [:]
-    private var inFlightBuilds: [InFlightKey: Task<Void, Error>] = [:]
-
-    func buildIfNeeded(
-        strategy: LumiPreviewFacade.BuildStrategy,
-        fingerprint: String?,
-        operation: @escaping @Sendable () async throws -> Void
-    ) async throws -> Result {
-        guard let fingerprint else {
-            try await operation()
-            return .built
-        }
-
-        if fingerprints[strategy] == fingerprint {
-            return .reused
-        }
-
-        let key = InFlightKey(strategy: strategy, fingerprint: fingerprint)
-        if let build = inFlightBuilds[key] {
-            try await build.value
-            fingerprints[strategy] = fingerprint
-            return .joined
-        }
-
-        let build = Task {
-            try await operation()
-        }
-        inFlightBuilds[key] = build
-
-        do {
-            try await build.value
-        } catch {
-            inFlightBuilds[key] = nil
-            throw error
-        }
-
-        inFlightBuilds[key] = nil
-        fingerprints[strategy] = fingerprint
-        return .built
-    }
-}
-
 actor HotSyntaxPreflightCache {
     struct LookupResult: Sendable {
         let result: LumiPreviewFacade.SyntaxCheckResult
