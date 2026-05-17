@@ -41,7 +41,7 @@ struct HotPreviewBoardGrid: View {
         var y: CGFloat = 0
         while y <= size.height {
             path.move(to: CGPoint(x: 0, y: y))
-            path.addLine(to: CGPoint(x: size.width, y: size.height))
+            path.addLine(to: CGPoint(x: size.width, y: y))
             y += spacing
         }
 
