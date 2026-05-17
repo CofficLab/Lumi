@@ -1,0 +1,229 @@
+import Foundation
+import Combine
+import LumiInlinePreviewKit
+import MagicKit
+import os
+
+/// 自动化控制器 — 集中处理自动化测试动作
+///
+/// 在应用启动时初始化，监听 `.automationActionReceived` 通知，
+/// 根据 action 名称路由到相应的处理器。
+/// 不依赖任何视图是否可见，直接操作 VM 层。
+@MainActor
+final class AutomationController {
+    // MARK: - Singleton
+
+    static let shared = AutomationController()
+
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.coffic.lumi",
+        category: "automation.controller"
+    )
+
+    private var cancellables: Set<AnyCancellable> = []
+
+    private init() {}
+
+    // MARK: - Lifecycle
+
+    /// 启动自动化控制器，注册通知监听
+    func start() {
+        NotificationCenter.default.publisher(for: .automationActionReceived)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                self?.handleAction(notification)
+            }
+            .store(in: &cancellables)
+
+        Self.logger.info("🤖 AutomationController started")
+    }
+
+    /// 停止自动化控制器
+    func stop() {
+        cancellables.removeAll()
+        Self.logger.info("🤖 AutomationController stopped")
+    }
+
+    // MARK: - Action Routing
+
+    private func handleAction(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let action = userInfo["action"] as? String else {
+            return
+        }
+
+        let payload = userInfo["payload"] as? [String: Any]
+
+        Self.logger.info("🤖 Routing action: \(action, privacy: .public)")
+
+        switch action {
+        // Inline Preview 操作
+        case "inline_preview.demoFrame", "inline_preview.demo_frame", "inline_preview.renderDemoFrame":
+            handleInlinePreviewDemoFrame(payload: payload)
+        case "inline_preview.start_stream", "inline_preview.startStream":
+            handleInlinePreviewStartStream(payload: payload)
+        case "inline_preview.stop_stream", "inline_preview.stopStream":
+            handleInlinePreviewStopStream(payload: payload)
+
+        // 导航操作
+        case "navigate.to", "navigateTo":
+            handleNavigateTo(payload: payload)
+
+        // 编辑器操作
+        case "editor.openFile", "editor.open_file":
+            handleEditorOpenFile(payload: payload)
+
+        // 通用按钮点击（通过 plugin + view id）
+        case "button.click", "buttonClick":
+            handleButtonClick(payload: payload)
+
+        default:
+            Self.logger.info("🤖 Unhandled action: \(action, privacy: .public)")
+        }
+    }
+
+    // MARK: - Handlers
+
+    /// 处理 Inline Preview Demo Frame 渲染
+    private func handleInlinePreviewDemoFrame(payload: [String: Any]?) {
+        Self.logger.info("🤖 Handling inline_preview.demoFrame")
+
+        // 确保编辑器面板可见
+        ensureEditorPanelActive()
+        // 确保底部面板的 Inline Preview tab 被激活
+        ensureInlinePreviewBottomTabActive()
+
+        // 直接调用 DemoSurfaceFactory 创建预览帧
+        // 这是 Phase 1 验证显示链路的核心方法
+        let width = payload?["width"] as? Int ?? 640
+        let height = payload?["height"] as? Int ?? 360
+        let scale = payload?["scale"] as? Double ?? 2.0
+
+        let frame = LumiInlinePreviewFacade.DemoSurfaceFactory.makeFrame(
+            width: width,
+            height: height,
+            scale: scale,
+            seq: UInt64.random(in: 1...99999)
+        )
+
+        if let frame {
+            Self.logger.info("🤖 DemoFrame created: surfaceID=\(frame.surfaceID) seq=\(frame.seq) \(frame.width)×\(frame.height) @\(String(format: "%.1fx", frame.scale))")
+            // 将帧存储到共享状态，供 View 层消费
+            InlinePreviewAutomationState.shared.currentFrame = frame
+        } else {
+            Self.logger.warning("🤖 DemoFrame creation failed — makeFrame returned nil")
+        }
+    }
+
+    /// 处理 Inline Preview 启动流
+    private func handleInlinePreviewStartStream(payload: [String: Any]?) {
+        Self.logger.info("🤖 Handling inline_preview.startStream")
+
+        ensureEditorPanelActive()
+        ensureInlinePreviewBottomTabActive()
+        InlinePreviewAutomationState.shared.sessionAction = .start
+    }
+
+    /// 处理 Inline Preview 停止流
+    private func handleInlinePreviewStopStream(payload: [String: Any]?) {
+        Self.logger.info("🤖 Handling inline_preview.stopStream")
+
+        ensureEditorPanelActive()
+        ensureInlinePreviewBottomTabActive()
+        InlinePreviewAutomationState.shared.sessionAction = .stop
+    }
+
+    /// 处理导航到指定面板
+    private func handleNavigateTo(payload: [String: Any]?) {
+        guard let panel = payload?["panel"] as? String else {
+            Self.logger.warning("🤖 navigate.to: missing 'panel' in payload")
+            return
+        }
+
+        Self.logger.info("🤖 Navigating to panel: \(panel, privacy: .public)")
+
+        switch panel {
+        case "editor", "code", "codeEditor":
+            ensureEditorPanelActive()
+        case "chat", "agent":
+            ensureAgentPanelActive()
+        default:
+            Self.logger.warning("🤖 Unknown panel: \(panel, privacy: .public)")
+        }
+    }
+
+    /// 处理编辑器打开文件
+    private func handleEditorOpenFile(payload: [String: Any]?) {
+        guard let path = payload?["path"] as? String else {
+            Self.logger.warning("🤖 editor.openFile: missing 'path' in payload")
+            return
+        }
+
+        let url = URL(fileURLWithPath: path)
+        Self.logger.info("🤖 Opening file: \(url.path, privacy: .public)")
+
+        ensureEditorPanelActive()
+        InlinePreviewAutomationState.shared.pendingFileURL = url
+    }
+
+    /// 处理通用按钮点击
+    private func handleButtonClick(payload: [String: Any]?) {
+        guard let buttonId = payload?["buttonId"] as? String else {
+            Self.logger.warning("🤖 button.click: missing 'buttonId' in payload")
+            return
+        }
+
+        Self.logger.info("🤖 Button click: \(buttonId, privacy: .public)")
+    }
+
+    // MARK: - Helpers
+
+    /// 确保编辑器面板处于活动状态
+    private func ensureEditorPanelActive() {
+        PluginVM.shared.activePanelIcon = EditorPlugin.iconName
+        Self.logger.info("🤖 Activated editor panel")
+    }
+
+    /// 确保底部面板的 Inline Preview tab 被激活
+    private func ensureInlinePreviewBottomTabActive() {
+        NotificationCenter.default.post(
+            name: .automationActivateBottomTab,
+            object: nil,
+            userInfo: ["tabId": "editor-bottom-inline-preview"]
+        )
+        Self.logger.info("🤖 Activated inline preview bottom tab")
+    }
+
+    /// 确保 Agent 面板处于活动状态
+    private func ensureAgentPanelActive() {
+        // Agent 面板通常是默认面板
+        PluginVM.shared.activePanelIcon = nil
+    }
+}
+
+// MARK: - InlinePreviewAutomationState
+
+/// 自动化测试专用的共享状态
+///
+/// 供 `AutomationController` 写入操作结果，供 `EditorInlinePreviewDetailView` 读取并响应。
+/// 这样即使 View 层在 AutomationController 之后才渲染，也能获取到之前的操作结果。
+@MainActor
+final class InlinePreviewAutomationState: ObservableObject {
+    static let shared = InlinePreviewAutomationState()
+
+    /// 待显示的预览帧（由自动化控制器写入，View 层消费后清零）
+    @Published var currentFrame: LumiInlinePreviewFacade.IOSurfaceFrame?
+
+    /// Session 操作指令（start / stop）
+    @Published var sessionAction: SessionAction?
+
+    /// 待打开的文件 URL
+    @Published var pendingFileURL: URL?
+
+    private init() {}
+
+    enum SessionAction {
+        case start
+        case stop
+    }
+}
