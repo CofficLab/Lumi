@@ -166,6 +166,11 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
                     return StreamChunk(content: content, eventType: .textDelta)
                 }
 
+                // 小米 thinking mode 返回 reasoning_content
+                if let reasoning = delta["reasoning_content"] as? String {
+                    return StreamChunk(content: reasoning, eventType: .thinkingDelta)
+                }
+
                 if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
                     var resultToolCalls: [ToolCall] = []
                     var partialJson: String?
@@ -227,6 +232,11 @@ extension XiaomiProvider {
             "role": message.role.rawValue,
             "content": message.content,
         ]
+
+        // 小米 thinking mode 要求：如果 assistant 消息包含思考过程，必须回传 reasoning_content
+        if let thinking = message.thinkingContent, !thinking.isEmpty {
+            dict["reasoning_content"] = thinking
+        }
 
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
             dict["tool_calls"] = toolCalls.map { tc in

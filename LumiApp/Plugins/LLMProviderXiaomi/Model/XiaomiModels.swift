@@ -20,6 +20,9 @@ struct XiaomiResponse: Decodable {
             /// 文本内容
             let content: String?
             
+            /// 思考过程（thinking mode）
+            let reasoning_content: String?
+            
             /// 工具调用列表
             let tool_calls: [ToolCallData]?
             
