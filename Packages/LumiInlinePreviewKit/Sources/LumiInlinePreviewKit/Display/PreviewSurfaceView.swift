@@ -183,13 +183,12 @@ public extension LumiInlinePreviewFacade {
             }
             let surfaceWidth = IOSurfaceGetWidth(surface)
             let surfaceHeight = IOSurfaceGetHeight(surface)
+            // 确保 layer 以 Retina 密度渲染
+            layer?.contentsScale = window?.backingScaleFactor ?? 1
             let ciImage = CIImage(ioSurface: surface)
             let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
             if let cgImage {
                 layer?.contents = cgImage
-                Self.logger.info("📝[updateLayer] ✅ CGImage 已设置到 layer: \(cgImage.width)×\(cgImage.height)")
-            } else {
-                Self.logger.error("📝[updateLayer] ❌ CGImage 创建失败")
             }
         }
 
@@ -251,15 +250,19 @@ public extension LumiInlinePreviewFacade {
 
             // 通过 NSImageView 渲染 IOSurface 内容
             // 在 SwiftUI NSViewRepresentable 中直接设置 layer.contents 会被宿主覆盖，
-            // NSImageView 作为子视图可以可靠渲染
-            let ciImage = CIImage(ioSurface: surface)
-            let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
+            // NSImageView 作为子视图可以可靠渲染。
+            //
+            // 关键：NSImage 的 size 必须是**逻辑尺寸**（像素 / backingScale），
+            // 否则 2x 像素的图会被当作 1x 来缩放，导致模糊。
+            let scale = window?.backingScaleFactor ?? 1
+            let logicalWidth = CGFloat(surfaceWidth) / scale
+            let logicalHeight = CGFloat(surfaceHeight) / scale
             if let cgImage {
-                let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: surfaceWidth, height: surfaceHeight))
+                let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: logicalWidth, height: logicalHeight))
                 imageView.image = nsImage
                 imageView.frame = bounds
                 imageView.needsDisplay = true
-                Self.logger.info("📝[attach] ✅ NSImageView.image 设置完成: \(surfaceWidth)×\(surfaceHeight)")
+                Self.logger.info("📝[attach] ✅ NSImageView.image 设置完成: \(surfaceWidth)×\(surfaceHeight) px → \(String(format: "%.0f", logicalWidth))×\(String(format: "%.0f", logicalHeight)) pt @\(scale)x")
             } else {
                 Self.logger.error("📝[attach] ❌ CGImage 创建失败")
             }
