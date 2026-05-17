@@ -48,3 +48,11 @@ struct HotPreviewBoardGrid: View {
         context.stroke(path, with: .color(Color(nsColor: color)), lineWidth: lineWidth)
     }
 }
+
+// MARK: - Preview
+
+#Preview {
+    HotPreviewBoardGrid()
+        .frame(width: 400, height: 300)
+        .background(Color(nsColor: .windowBackgroundColor))
+}
