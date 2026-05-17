@@ -1371,6 +1371,9 @@
         }
       }
     },
+    "building %@" : {
+
+    },
     "Cancel" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1608,6 +1611,9 @@
           }
         }
       }
+    },
+    "Click “Start Stream” to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it." : {
+
     },
     "Clipboard" : {
       "extractionState" : "manual",
@@ -2016,6 +2022,9 @@
         }
       }
     },
+    "Demo Frame" : {
+
+    },
     "Deny" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2417,6 +2426,12 @@
         }
       }
     },
+    "entry · %@" : {
+
+    },
+    "entry failed: %@" : {
+
+    },
     "ENV:" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2540,6 +2555,9 @@
         }
       }
     },
+    "failed: %@" : {
+
+    },
     "Fetching..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2605,6 +2623,9 @@
           }
         }
       }
+    },
+    "Generate a one-shot IOSurface in this process to verify the embedded display pipeline." : {
+
     },
     "Generic" : {
       "extractionState" : "stale",
@@ -3061,6 +3082,12 @@
           }
         }
       }
+    },
+    "Load Dylib…" : {
+
+    },
+    "loading %@" : {
+
     },
     "Loading..." : {
 
@@ -3784,6 +3811,9 @@
         }
       }
     },
+    "Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it." : {
+
+    },
     "PID: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4129,6 +4159,9 @@
         }
       }
     },
+    "Reset Demo" : {
+
+    },
     "Reset to Defaults" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4214,6 +4247,9 @@
           }
         }
       }
+    },
+    "running · %@" : {
+
     },
     "Rust" : {
       "extractionState" : "stale",
@@ -4466,6 +4502,16 @@
         }
       }
     },
+    "seq %llu · %lld×%lld @%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "seq %1$llu · %2$lld×%3$lld @%4$@"
+          }
+        }
+      }
+    },
     "Show in Finder" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4653,6 +4699,15 @@
         }
       }
     },
+    "Start Stream" : {
+
+    },
+    "starting" : {
+
+    },
+    "Starting" : {
+
+    },
     "Starting scan..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4702,6 +4757,15 @@
           }
         }
       }
+    },
+    "Stop Stream" : {
+
+    },
+    "stopping" : {
+
+    },
+    "Stopping" : {
+
     },
     "Successfully freed %@ space." : {
       "extractionState" : "stale",
@@ -5208,6 +5272,9 @@
           }
         }
       }
+    },
+    "Unload the user dylib and restore the built-in demo view." : {
+
     },
     "Unpin" : {
       "localizations" : {

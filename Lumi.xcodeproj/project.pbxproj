@@ -19,6 +19,7 @@
 		0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8E2F662D8500F15618 /* MLXLMCommon */; };
 		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0B462A922FB976B4007E52B1 /* LumiInlinePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */; };
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */; };
 		0B8027C42F6C4E7F007FD39D /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8027C32F6C4E7F007FD39D /* MagicKit */; };
@@ -328,6 +329,7 @@
 				0B1A4F872F662D8500F15618 /* MLXNN in Frameworks */,
 				0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */,
 				A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */,
+				0B462A922FB976B4007E52B1 /* LumiInlinePreviewKit in Frameworks */,
 				A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */,
 				A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */,
 				A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */,
@@ -846,6 +848,7 @@
 				F5DF6D172FA3461A00673F72 /* XcodeProj */,
 				0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */,
 				F1E2A3022FC2000100000001 /* FileTreeKit */,
+				0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -942,6 +945,7 @@
 				B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */,
 				0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */,
 				F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */,
+				0B462A902FB976B4007E52B1 /* XCLocalSwiftPackageReference "Packages/LumiInlinePreviewKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1780,6 +1784,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		0B462A902FB976B4007E52B1 /* XCLocalSwiftPackageReference "Packages/LumiInlinePreviewKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LumiInlinePreviewKit;
+		};
 		0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/EditorOverlayKit;
@@ -2027,6 +2035,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
 			productName = MLXVLM;
+		};
+		0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LumiInlinePreviewKit;
 		};
 		0B6DF8582F8E780800FA0CAC /* LanguageClient */ = {
 			isa = XCSwiftPackageProductDependency;
