@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import LumiInlinePreviewKit
+import MagicAlert
 import MagicKit
 import os
 
@@ -110,6 +111,7 @@ final class AutomationController {
             Self.logger.info("🤖 DemoFrame created: surfaceID=\(frame.surfaceID) seq=\(frame.seq) \(frame.width)×\(frame.height) @\(String(format: "%.1fx", frame.scale))")
             // 将帧存储到共享状态，供 View 层消费
             InlinePreviewAutomationState.shared.currentFrame = frame
+            alert_info("自动化测试：渲染 Demo 预览帧")
         } else {
             Self.logger.warning("🤖 DemoFrame creation failed — makeFrame returned nil")
         }
@@ -122,6 +124,7 @@ final class AutomationController {
         ensureEditorPanelActive()
         ensureInlinePreviewBottomTabActive()
         InlinePreviewAutomationState.shared.sessionAction = .start
+        alert_info("自动化测试：启动预览流")
     }
 
     /// 处理 Inline Preview 停止流
@@ -131,6 +134,7 @@ final class AutomationController {
         ensureEditorPanelActive()
         ensureInlinePreviewBottomTabActive()
         InlinePreviewAutomationState.shared.sessionAction = .stop
+        alert_info("自动化测试：停止预览流")
     }
 
     /// 处理导航到指定面板
@@ -145,8 +149,10 @@ final class AutomationController {
         switch panel {
         case "editor", "code", "codeEditor":
             ensureEditorPanelActive()
+            alert_info("自动化测试：切换到编辑器面板")
         case "chat", "agent":
             ensureAgentPanelActive()
+            alert_info("自动化测试：切换到 Agent 面板")
         default:
             Self.logger.warning("🤖 Unknown panel: \(panel, privacy: .public)")
         }
@@ -163,7 +169,16 @@ final class AutomationController {
         Self.logger.info("🤖 Opening file: \(url.path, privacy: .public)")
 
         ensureEditorPanelActive()
-        InlinePreviewAutomationState.shared.pendingFileURL = url
+
+        // 直接通过 EditorService 打开文件，触发完整流程：
+        // 1. EditorService.open(at:) → 创建/激活 session + 加载内容
+        // 2. EditorInlinePreviewDetailView.onChange(of: currentFileURL) → setActiveFile
+        // 3. EditorInlinePreviewViewModel.autoBuildIfPossible → 扫描 #Preview + 自动编译
+        let editorService = RootContainer.shared.editorVM.service
+        editorService.open(at: url)
+
+        Self.logger.info("🤖 File opened: \(url.lastPathComponent, privacy: .public)")
+        alert_info("自动化测试：打开文件 \(url.lastPathComponent)")
     }
 
     /// 处理通用按钮点击
@@ -174,6 +189,7 @@ final class AutomationController {
         }
 
         Self.logger.info("🤖 Button click: \(buttonId, privacy: .public)")
+        alert_info("自动化测试：点击按钮 \(buttonId)")
     }
 
     // MARK: - Helpers

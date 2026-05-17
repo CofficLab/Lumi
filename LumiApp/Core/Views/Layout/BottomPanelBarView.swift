@@ -1,3 +1,4 @@
+import MagicAlert
 import SwiftUI
 
 /// 全局底部面板视图
@@ -49,6 +50,15 @@ struct BottomPanelBarView: View {
                 activeTabId = newIds.first
             } else if activeTabId == nil {
                 activeTabId = newIds.first
+            }
+        }
+        // 监听自动化测试请求切换底部面板 Tab
+        .onReceive(NotificationCenter.default.publisher(for: .automationActivateBottomTab)) { notification in
+            guard let tabId = notification.userInfo?["tabId"] as? String else { return }
+            if tabs.contains(where: { $0.id == tabId }) {
+                activeTabId = tabId
+                let tabTitle = tabs.first(where: { $0.id == tabId })?.title ?? tabId
+                alert_info("自动化测试：切换底部面板「\(tabTitle)」")
             }
         }
     }

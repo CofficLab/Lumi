@@ -47,18 +47,30 @@ public extension LumiInlinePreviewFacade {
             if let surfaceID {
                 view.attach(surfaceID: surfaceID)
             }
+            if LumiInlinePreviewFacade.verbose {
+                Self.logger.info("\(self.t) NSView 已创建：frame=\(view.frame.width)×\(view.frame.height), bounds=\(view.bounds.width)×\(view.bounds.height), superview=\(view.superview != nil)")
+            }
             return view
         }
 
         public func updateNSView(_ nsView: PreviewSurfaceView, context: Context) {
             if LumiInlinePreviewFacade.verbose {
-                Self.logger.info("\(self.t)🔄 更新 NSView — surfaceID: \(surfaceID.map { String($0) } ?? "nil"), 可交互: \(isInteractive)")
+                Self.logger.info("\(self.t)🔄 更新 NSView — surfaceID: \(surfaceID.map { String($0) } ?? "nil"), 可交互: \(isInteractive), view.frame=\(nsView.frame.width)×\(nsView.frame.height), view.bounds=\(nsView.bounds.width)×\(nsView.bounds.height)")
             }
             nsView.onSizeChange = onSizeChange
             nsView.onInputEvent = onInputEvent
             nsView.isInteractive = isInteractive
             if let surfaceID {
                 nsView.attach(surfaceID: surfaceID)
+                // 🔍 诊断：检查视图层级和 layer 状态
+                if LumiInlinePreviewFacade.verbose {
+                    let winStr = nsView.window != nil ? "yes" : "no"
+                    let supStr = nsView.superview != nil ? "yes" : "no"
+                    let layerStr = nsView.layer != nil ? "yes" : "no"
+                    let hiddenStr = nsView.isHidden ? "yes" : "no"
+                    let alphaStr = String(format: "%.2f", nsView.alphaValue)
+                    Self.logger.info("\(self.t) 层级诊断：window=\(winStr), superview=\(supStr), layer=\(layerStr), hidden=\(hiddenStr), alpha=\(alphaStr), frame=\(nsView.frame.width)×\(nsView.frame.height)")
+                }
             } else {
                 nsView.detach()
             }

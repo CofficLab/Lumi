@@ -150,10 +150,12 @@
 
 ### 当前局限（已知，留 2.5c+ 处理）
 
-- **不导入工程模块**：生成的 entry 只 import AppKit/Foundation/SwiftUI；`#Preview` 体内若引用工程内别的文件类型，目前必须把那些类型也写在同一个 `.swift` 文件里。Phase 2.5c 计划接入 `LumiPreviewKit.BuildPlanner` 解析模块路径与依赖文件后，可移除此限制。
-- **swiftc 冷启 ~1s**：目前每个新指纹都跑一遍 `swiftc -O`；后续可改 `-Onone` + 模块缓存优化到 ~300ms。
+- **同包文件自动收集（已实现）**：`InlinePreviewBuilder` 现在会自动查找源文件所属 SPM 包的 `Sources/` 目录，把同包所有 `.swift` 文件一起传入 swiftc。解决了如 `DesignTokens` 等跨文件类型引用的问题。仅支持无外部 SPM 依赖的包（纯标准库 import 的包天然兼容）。
+- **swiftc 冷启已优化**：编译选项从 `-O` 改为 `-Onone`，冷启从 ~90s 降至 ~57s（52 文件的 LumiUI 包）。缓存命中时跳过编译秒回。
+- **跨包依赖仍不支持**：如果源文件所在的 SPM 包依赖了其他 SPM 包（如 `import LumiPreviewKit`），这些类型仍无法解析。需要 Phase 2.5c 接入 `LumiPreviewKit.BuildPlanner` 解析模块路径与依赖后才能支持。
 - **首条 `#Preview` only**：扫到多个 `#Preview` 时仅取第一个；UI 切换不同 preview 待后续做。
 - **interposeDylib 未做**：现在每次都 dlclose+dlopen，view state 重置；Phase 2.5c 用 `InterposingDylibLoader` 思路做"热替换符号、保活 view"。
+- **自动化 API `editor.openFile` 已补全**：`AutomationController.handleEditorOpenFile` 现在直接调用 `EditorService.open(at:)`，能完整触发"打开文件 → 更新 currentFileURL → ViewModel.setActiveFile → autoBuildIfPossible"链路。自动化测试脚本 `scripts/test-automation-inline-preview-preview-file.sh` 已覆盖端到端流程。
 
 ---
 

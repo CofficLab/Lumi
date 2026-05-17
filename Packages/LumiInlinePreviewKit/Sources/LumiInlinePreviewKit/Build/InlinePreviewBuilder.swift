@@ -107,8 +107,15 @@ public extension LumiInlinePreviewFacade {
             let entrySource = LumiInlinePreviewFacade.InlinePreviewEntryGenerator.generate(for: discovery)
             try entrySource.write(to: entrySourceURL, atomically: true, encoding: .utf8)
 
+            // 收集编译输入：用户源文件 + entry + 同包内的其他 Swift 文件。
+            // 同包文件可能包含被源文件引用的类型（如 DesignTokens），
+            // 将它们一起传入 swiftc 以解决跨文件依赖。
+            var swiftcInputs = [userSourceURL, entrySourceURL]
+            let packageSwiftFiles = Self.collectPeerSwiftFiles(for: fileURL)
+            swiftcInputs.append(contentsOf: packageSwiftFiles)
+
             try await runSwiftc(
-                inputs: [userSourceURL, entrySourceURL],
+                inputs: swiftcInputs,
                 output: dylibURL
             )
 
@@ -174,7 +181,7 @@ public extension LumiInlinePreviewFacade {
             process.arguments = [
                 "swiftc",
                 "-emit-library",
-                "-O",
+                "-Onone",
                 "-module-name", "LumiInlinePreviewEntry",
                 "-sdk", sdkPath,
                 "-target", "\(arch)-apple-macosx14.0",
@@ -249,6 +256,81 @@ public extension LumiInlinePreviewFacade {
             hasher.update(data: Data(sourceText.utf8))
             let digest = hasher.finalize()
             return digest.map { String(format: "%02x", $0) }.joined().prefix(16).description
+        }
+
+        // MARK: - 私有 — 同包文件收集
+
+        /// 查找与 `fileURL` 同属于一个 SPM 包 / 模块目录的其他 Swift 文件。
+        ///
+        /// 查找策略：
+        /// 1. 从 `fileURL` 向上遍历，找到包含 `Package.swift` 的目录（即 SPM 包根目录）。
+        /// 2. 从 `fileURL` 向上遍历，找到 `Sources/` 或 `Sources/<target>/` 目录。
+        /// 3. 收集该 `Sources/` 目录下（递归）所有 `.swift` 文件，**排除** `fileURL` 自身
+        ///    （因为它已经作为 `UserSource.swift` 写入 build dir 了）。
+        ///
+        /// 这样做的好处：用户在文件中引用的同包类型（如 `DesignTokens`）能被 swiftc 解析到，
+        /// 而不需要完整的 SPM 编译管线。
+        ///
+        /// 如果找不到 SPM 包结构（如文件不在任何包中），返回空数组——回退到仅编译单文件。
+        private static func collectPeerSwiftFiles(for fileURL: URL) -> [URL] {
+            let fm = FileManager.default
+            var currentDir = fileURL.deletingLastPathComponent()
+
+            // 1. 向上查找 Package.swift → 确定包根目录
+            var packageRoot: URL?
+            var searchDir = currentDir
+            for _ in 0..<8 {
+                let packageSwift = searchDir.appendingPathComponent("Package.swift")
+                if fm.fileExists(atPath: packageSwift.path) {
+                    packageRoot = searchDir
+                    break
+                }
+                let parent = searchDir.deletingLastPathComponent()
+                if parent.path == searchDir.path { break } // 到达根目录
+                searchDir = parent
+            }
+
+            guard let packageRoot else { return [] }
+
+            // 2. 从 fileURL 向上查找 Sources 目录
+            var sourcesDir: URL?
+            searchDir = currentDir
+            for _ in 0..<6 {
+                if searchDir.lastPathComponent == "Sources" {
+                    sourcesDir = searchDir
+                    break
+                }
+                let parent = searchDir.deletingLastPathComponent()
+                if parent.path == searchDir.path { break }
+                searchDir = parent
+            }
+
+            // 如果没直接找到 Sources 目录，尝试在包根目录下找
+            if sourcesDir == nil {
+                let candidate = packageRoot.appendingPathComponent("Sources")
+                if fm.fileExists(atPath: candidate.path) {
+                    sourcesDir = candidate
+                }
+            }
+
+            guard let sourcesDir else { return [] }
+
+            // 3. 收集 Sources/ 下所有 .swift 文件（排除 fileURL 自身）
+            guard let deepEnumerator = fm.enumerator(
+                at: sourcesDir,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            ) else { return [] }
+
+            var result: [URL] = []
+            for case let url as URL in deepEnumerator {
+                guard url.pathExtension == "swift" else { continue }
+                // 排除源文件自身（因为 buffer 内容可能已修改，用 UserSource.swift 替代）
+                if url.path == fileURL.path { continue }
+                result.append(url)
+            }
+
+            return result
         }
     }
 }

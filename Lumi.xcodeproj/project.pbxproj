@@ -27,6 +27,7 @@
 		0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DA2F8A931C00B45F10 /* MagicDiffView */; };
 		0BC2F1DE2F8A94CE00B45F10 /* LibGit2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0BC2F1DD2F8A94CE00B45F10 /* LibGit2Swift */; };
 		0BE04A752F409A6E0028FDF4 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE04A742F409A6E0028FDF4 /* MCP */; };
+		0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */; };
 		0EEF877AF112444CBFBB2CE4 /* BeautifulMermaid in Frameworks */ = {isa = PBXBuildFile; productRef = 223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */; };
 		A1B2C3A22F70000200AAA101 /* SkillKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3A12F70000200AAA101 /* SkillKit */; };
 		A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F70000100AAA101 /* MarkdownKitCore */; };
@@ -320,6 +321,7 @@
 				F5A640822F3ED7060039A761 /* _ConnectionPoolModule in Frameworks */,
 				0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */,
 				F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */,
+				0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */,
 				0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */,
 				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
 				F5826C862F35731C0079B285 /* MagicKit in Frameworks */,
@@ -827,6 +829,7 @@
 				F5A9DB4E2F763C8700A47D9C /* CopyFiles */,
 				C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */,
 				D1A0B00330B1000100AAA201 /* Embed Editor Hot Preview Host */,
+				A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */,
 			);
 			buildRules = (
 			);
@@ -881,6 +884,7 @@
 				0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */,
 				F1E2A3022FC2000100000001 /* FileTreeKit */,
 				0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */,
+				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -978,6 +982,7 @@
 				0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */,
 				F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */,
 				0B462A902FB976B4007E52B1 /* XCLocalSwiftPackageReference "Packages/LumiInlinePreviewKit" */,
+				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1298,6 +1303,34 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
 			shellScript = "\"$SRCROOT/scripts/embed-editor-hot-preview-host.sh\"\n";
+		};
+		A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Package.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/main.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderer.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderLoop.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewDemoView.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotStdioPreviewHost.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewEventDispatcher.swift",
+				"$(SRCROOT)/scripts/embed-inline-preview-host.sh",
+			);
+			name = "Embed Inline Preview Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiInlinePreviewHostApp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/embed-inline-preview-host.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1840,6 +1873,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/EditorOverlayKit;
 		};
+		0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LLMProviderKit;
+		};
 		A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SkillKit;
@@ -2122,6 +2159,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0BE04A732F409A6E0028FDF4 /* XCRemoteSwiftPackageReference "swift-sdk" */;
 			productName = MCP;
+		};
+		0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LLMProviderKit;
 		};
 		223CEF0966EF4E889E1AFE80 /* BeautifulMermaid */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -1,4 +1,5 @@
 import AppKit
+import CoreImage
 import IOSurface
 import MagicKit
 import os
@@ -30,14 +31,25 @@ public extension LumiInlinePreviewFacade {
         /// 当前显示的 surface ID；nil 表示尚未附着任何 surface。
         public private(set) var currentSurfaceID: UInt32?
 
-        /// 强引用最近一帧的 IOSurface，避免 CALayer 之外没有持有方时被 ARC 回收。
+        /// 强引用最近一帧的 IOSurface，避免被 ARC 回收。
         private var retainedSurface: IOSurfaceRef?
+
+        /// 内嵌的图像视图，用于可靠渲染 IOSurface 内容。
+        /// 在 SwiftUI 的 NSViewRepresentable 中，直接设置 layer.contents 会被宿主覆盖，
+        /// 使用 NSImageView 子视图可以绕过这个限制。
+        private let imageView: NSImageView = {
+            let iv = NSImageView()
+            iv.autoresizingMask = [.width, .height]
+            iv.imageScaling = .scaleProportionallyUpOrDown
+            return iv
+        }()
 
         // MARK: - 初始化
 
         public override init(frame frameRect: NSRect) {
             super.init(frame: frameRect)
-            wantsLayer = true
+            // 使用 NSImageView 作为内容渲染层，绕过 SwiftUI 对自定义 layer 的覆盖
+            addSubview(imageView)
         }
 
         @available(*, unavailable)
@@ -135,7 +147,7 @@ public extension LumiInlinePreviewFacade {
             phase: MouseEvent.Phase,
             button: MouseEvent.Button
         ) {
-            let local = convert(event.locationInWindow, from: nil)
+            let local = self.convert(event.locationInWindow, from: nil)
             let model = MouseEvent(
                 phase: phase,
                 button: button,
@@ -144,7 +156,7 @@ public extension LumiInlinePreviewFacade {
                 clickCount: phase == .moved ? 0 : event.clickCount,
                 modifiers: ModifierFlags.fromAppKitImported(event.modifierFlags)
             )
-            onInputEvent?(.mouse(model))
+            self.onInputEvent?(.mouse(model))
         }
 
         private func forwardKey(_ event: NSEvent, phase: KeyEvent.Phase) {
@@ -163,11 +175,30 @@ public extension LumiInlinePreviewFacade {
 
         public override var wantsUpdateLayer: Bool { true }
 
+        public override func updateLayer() {
+            super.updateLayer()
+            guard let surface = retainedSurface else {
+                layer?.contents = nil
+                return
+            }
+            let surfaceWidth = IOSurfaceGetWidth(surface)
+            let surfaceHeight = IOSurfaceGetHeight(surface)
+            let ciImage = CIImage(ioSurface: surface)
+            let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
+            if let cgImage {
+                layer?.contents = cgImage
+                Self.logger.info("📝[updateLayer] ✅ CGImage 已设置到 layer: \(cgImage.width)×\(cgImage.height)")
+            } else {
+                Self.logger.error("📝[updateLayer] ❌ CGImage 创建失败")
+            }
+        }
+
         public override func makeBackingLayer() -> CALayer {
             let layer = CALayer()
             layer.contentsGravity = .resize
             layer.magnificationFilter = .nearest
             layer.minificationFilter = .linear
+            // 恢复为 false，让 layer 支持透明合成
             layer.isOpaque = false
             return layer
         }
@@ -181,25 +212,56 @@ public extension LumiInlinePreviewFacade {
         public func attach(surfaceID: UInt32) {
             let curIDStr = currentSurfaceID.map { String($0) } ?? "nil"
             let winStr = (window != nil) ? "yes" : "no"
-            let layerStr = (layer != nil) ? "yes" : "no"
             let scaleVal = window?.backingScaleFactor ?? 1
-            let boundsStr = "\(bounds.width)×\(bounds.height)"
+            let boundsStr = "\(self.bounds.width)×\(self.bounds.height)"
             if LumiInlinePreviewFacade.verbose {
-                Self.logger.info("\(self.t)📎 绑定 surfaceID: \(surfaceID) — 当前: \(curIDStr), 边界: \(boundsStr), 窗口: \(winStr)")
+                Self.logger.info("\(self.t) 绑定 surfaceID: \(surfaceID) — 当前: \(curIDStr), 边界: \(boundsStr), 窗口: \(winStr)")
             }
+            
+            // 🔍 诊断：记录 attach 开始
+            Self.logger.info("📝[attach] 开始绑定 surfaceID=\(surfaceID)")
+            Self.logger.info("📝[attach] 当前视图状态：bounds=\(boundsStr), window=\(winStr), scale=\(scaleVal)")
+            
             guard let surface = IOSurfaceLookup(IOSurfaceID(surfaceID)) else {
                 if LumiInlinePreviewFacade.verbose {
                     Self.logger.error("\(self.t)❌ IOSurfaceLookup 失败：surfaceID=\(surfaceID)")
                 }
+                Self.logger.error("📝[attach] ❌ IOSurfaceLookup 失败：surfaceID=\(surfaceID)")
                 return
             }
+            
+            // 🔍 诊断：IOSurface 查找成功
+            let surfaceWidth = IOSurfaceGetWidth(surface)
+            let surfaceHeight = IOSurfaceGetHeight(surface)
+            Self.logger.info("📝[attach] ✅ IOSurfaceLookup 成功：\(surfaceWidth)×\(surfaceHeight)")
+            
+            guard let layer = self.layer else {
+                if LumiInlinePreviewFacade.verbose {
+                    Self.logger.error("\(self.t) layer 为 nil，无法绑定 surface")
+                }
+                Self.logger.error("📝[attach] ❌ layer 为 nil，无法绑定 surface")
+                return
+            }
+            
+            // 🔍 诊断：layer 状态
+            Self.logger.info("📝[attach] layer 状态：bounds=\(layer.bounds.width)×\(layer.bounds.height), contentsScale=\(layer.contentsScale)")
+            
             currentSurfaceID = surfaceID
             retainedSurface = surface
-            layer?.contents = surface
-            layer?.contentsScale = scaleVal
-            layer?.setNeedsDisplay()
-            if LumiInlinePreviewFacade.verbose {
-                Self.logger.info("\(self.t)✅ 已绑定 surface \(surfaceID) 到 layer，contentsScale=\(scaleVal), layer: \(layerStr)")
+
+            // 通过 NSImageView 渲染 IOSurface 内容
+            // 在 SwiftUI NSViewRepresentable 中直接设置 layer.contents 会被宿主覆盖，
+            // NSImageView 作为子视图可以可靠渲染
+            let ciImage = CIImage(ioSurface: surface)
+            let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
+            if let cgImage {
+                let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: surfaceWidth, height: surfaceHeight))
+                imageView.image = nsImage
+                imageView.frame = bounds
+                imageView.needsDisplay = true
+                Self.logger.info("📝[attach] ✅ NSImageView.image 设置完成: \(surfaceWidth)×\(surfaceHeight)")
+            } else {
+                Self.logger.error("📝[attach] ❌ CGImage 创建失败")
             }
         }
 
@@ -207,13 +269,15 @@ public extension LumiInlinePreviewFacade {
         public func detach() {
             currentSurfaceID = nil
             retainedSurface = nil
-            layer?.contents = nil
+            imageView.image = nil
         }
 
         // MARK: - 尺寸通知
 
         public override func layout() {
             super.layout()
+            // 同步 imageView 的 frame 到当前 bounds
+            imageView.frame = bounds
             notifySize()
         }
 

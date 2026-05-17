@@ -6,10 +6,6 @@ import os
 
 public extension LumiInlinePreviewFacade {
     /// 仅用于 Phase 1 的本地 IOSurface 生成器。
-    ///
-    /// 不依赖任何子进程，纯粹在主进程内画一张测试图，证明
-    /// `PreviewSurfaceView` → `CALayer.contents` → `IOSurfaceLookup` 的链路通了。
-    /// Phase 2 子进程帧流接入后，此类会被替换。
     final class DemoSurfaceFactory: @unchecked Sendable, SuperLog {
         nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "LumiInlinePreviewKit.DemoSurfaceFactory")
         public nonisolated static let emoji = "🎬"
@@ -35,12 +31,6 @@ public extension LumiInlinePreviewFacade {
 
         // MARK: - 公开方法
 
-        /// 在当前进程中创建一个像素尺寸为 `width × height` 的 BGRA `IOSurface`，
-        /// 内容是渐变 + 帧序号方块，方便肉眼校验帧是否更新。
-        ///
-        /// Factory 内部维护一个最多保留 `retainPoolLimit` 帧的强引用池，
-        /// 保证 `IOSurfaceID` 在被消费前不会被 ARC 回收（行为与子进程
-        /// 的 `recentSurfaces` 缓冲一致）。
         public func makeFrame(
             width: Int,
             height: Int,
@@ -79,7 +69,10 @@ public extension LumiInlinePreviewFacade {
                 Self.logger.info("\(self.t)✅ 已创建 IOSurface：id=\(surfaceID) \(width)×\(height)")
             }
 
-            paint(into: surface, width: width, height: height, bytesPerRow: bytesPerRow, seq: seq)
+            // 🔴 验证模式：直接写入红色内存，跳过 CGContext
+            paintRedDirectly(into: surface)
+            
+            // paint(into: surface, width: width, height: height, bytesPerRow: bytesPerRow, seq: seq)
             retainSurface(surface)
 
             if LumiInlinePreviewFacade.verbose {
@@ -96,7 +89,6 @@ public extension LumiInlinePreviewFacade {
 
         // MARK: - 静态便捷入口
 
-        /// 便捷调用，等价于 `DemoSurfaceFactory.shared.makeFrame(...)`。
         public static func makeFrame(
             width: Int,
             height: Int,
@@ -117,7 +109,73 @@ public extension LumiInlinePreviewFacade {
             }
         }
 
-        // MARK: - 私有绘制
+        // 🔴 验证：直接写入内存
+        private func paintRedDirectly(into surface: IOSurfaceRef) {
+            // 🔍 诊断：记录 paintRedDirectly 开始
+            Self.logger.info("📝[paintRedDirectly] 开始写入 IOSurface")
+            
+            var seed: UInt32 = 0
+            let lockResult = IOSurfaceLock(surface, [], &seed)
+            guard lockResult == KERN_SUCCESS else {
+                if LumiInlinePreviewFacade.verbose {
+                    Self.logger.error("\(self.t)❌ IOSurfaceLock 失败：\(lockResult)")
+                }
+                Self.logger.error("📝[paintRedDirectly] ❌ IOSurfaceLock 失败：\(lockResult)")
+                return
+            }
+            defer { _ = IOSurfaceUnlock(surface, [], &seed) }
+
+            let width = Int(IOSurfaceGetWidth(surface))
+            let height = Int(IOSurfaceGetHeight(surface))
+            let bytesPerRow = Int(IOSurfaceGetBytesPerRowOfPlane(surface, 0))
+            
+            // 🔍 诊断：IOSurface 属性
+            Self.logger.info("📝[paintRedDirectly] IOSurface 属性：\(width)×\(height), bytesPerRow=\(bytesPerRow)")
+            
+            // IOSurfaceGetBaseAddressOfPlane 返回非 Optional 指针（或 IUO），直接赋值
+            let baseAddress = IOSurfaceGetBaseAddressOfPlane(surface, 0)
+            
+            // 🔍 诊断：检查 baseAddress
+            if baseAddress == nil {
+                Self.logger.error("📝[paintRedDirectly] ❌ baseAddress 为 nil")
+                return
+            }
+            Self.logger.info("📝[paintRedDirectly] ✅ baseAddress 非nil")
+            
+            // 填充红色 (BGRA: B=0, G=0, R=255, A=255)
+            // 这样可以看到明显的红色，证明 IOSurface 链路是通的
+            let buffer = baseAddress.bindMemory(to: UInt8.self, capacity: bytesPerRow * height)
+            
+            // 🔍 诊断：开始填充像素
+            Self.logger.info("📝[paintRedDirectly] 开始填充像素：上半红，下半绿")
+            
+            // 优化：只填充一半高度为红色，一半为绿色，以确认尺寸有效
+            for y in 0..<height {
+                let rowOffset = y * bytesPerRow
+                // 上半部分红色，下半部分绿色
+                let r = (y < height / 2) ? UInt8(255) : UInt8(0)
+                let g = (y < height / 2) ? UInt8(0) : UInt8(255)
+                let b = UInt8(0)
+                let a = UInt8(255) // 完全不透明
+                
+                for x in 0..<width {
+                    let offset = rowOffset + x * 4
+                    buffer[offset] = b     // B
+                    buffer[offset + 1] = g // G
+                    buffer[offset + 2] = r // R
+                    buffer[offset + 3] = a // A
+                }
+            }
+            
+            if LumiInlinePreviewFacade.verbose {
+                Self.logger.info("\(self.t)🎨 已直接写入内存：红/绿各半")
+            }
+            
+            // 🔍 诊断：填充完成
+            Self.logger.info("📝[paintRedDirectly] ✅ 像素填充完成")
+        }
+
+        // MARK: - 私有绘制 (暂存)
 
         private func paint(
             into surface: IOSurfaceRef,
@@ -145,7 +203,7 @@ public extension LumiInlinePreviewFacade {
                       bitsPerComponent: 8,
                       bytesPerRow: bytesPerRow,
                       space: colorSpace,
-                      bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
+                      bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
                   ) else {
                 if LumiInlinePreviewFacade.verbose {
                     Self.logger.error("\(self.t)❌ CGContext 创建失败")
@@ -171,7 +229,7 @@ public extension LumiInlinePreviewFacade {
                 ))
             }
 
-            // 中央方块：帧序号可视化（简单的方块格栅，避免引入字体/文字栈）
+            // 中央方块
             let cellSize = CGFloat(min(width, height)) / 16
             context.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.9))
             for bit in 0..<8 {

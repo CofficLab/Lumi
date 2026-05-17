@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import LumiInlinePreviewKit
 import MagicKit
@@ -9,9 +10,9 @@ import SwiftUI
 /// 职责（按阶段累积）：
 /// - **Phase 2** — 管理 `InlinePreviewSession` 启动/停止；frame 转 `@Published`；canvas resize forward。
 /// - **Phase 2.5a 手选 dylib** — `loadDylib(at:)` / `unloadDylib()`；用户主动选 .dylib 时进入 manual 模式，冻结自动流程。
-/// - **Phase 2.5b 自动构建** — `setActiveFile(_:sourceText:)` / `applySaveRevision(sourceText:)` /
-///   `updateBufferText(_:)`：跟随编辑器的 `currentFileURL` + `saveRevision` + `contentRevision`，
+/// - **Phase 2.5b 自动构建** — 直接订阅 `EditorService` 的 `currentFileURL` / `saveRevision` / `contentRevision`，
 ///   按 Xcode 风格"保存触发"重建 dylib（`InlinePreviewBuilder`）并自动 `loadDylib`。
+///   **不依赖 View 层的 `onAppear`/`onChange`**——即使 Inline Preview tab 未被选中也能感知文件变化。
 ///
 /// `renderDemoFrame()` 是 Phase 1 遗留的离线 demo 路径，仅用于验证显示链路。
 @MainActor
@@ -119,6 +120,9 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
     /// 标识"用户主动手选了 dylib"——此时不应被自动 build 流程覆盖。
     private var manualDylibActive: Bool = false
 
+    /// Combine 订阅令牌（订阅 EditorService 状态变化）。
+    private var editorCancellables = Set<AnyCancellable>()
+
     // MARK: - 初始化
 
     init() {
@@ -127,6 +131,46 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
         LumiInlinePreviewFacade.verbose = Self.verbose
         wireSessionCallbacks()
+    }
+
+    /// 订阅 EditorService 的状态变化，直接感知文件切换/保存/内容变化。
+    /// 不再依赖 View 层的 `onAppear`/`onChange`——即使 Inline Preview tab 未被选中也能工作。
+    func wireEditorService(_ service: EditorService) {
+        let state = service.state
+
+        // 文件切换 → setActiveFile
+        state.$currentFileURL
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] url in
+                guard let self else { return }
+                let sourceText = service.content?.string
+                self.handleFileURLChange(url, sourceText: sourceText)
+            }
+            .store(in: &editorCancellables)
+
+        // 保存 → applySaveRevision
+        state.$saveRevision
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let sourceText = service.content?.string
+                self.handleSaveRevision(sourceText: sourceText)
+            }
+            .store(in: &editorCancellables)
+
+        // 内容变化（未保存）→ updateBufferText
+        state.$contentRevision
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let sourceText = service.content?.string
+                self.handleBufferTextUpdate(sourceText)
+            }
+            .store(in: &editorCancellables)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🔗 已订阅 EditorService 状态变化")
+        }
     }
 
     // MARK: - 公开方法 — Demo 路径（Phase 1 遗留）
@@ -146,6 +190,15 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     Self.logger.info("\(self.t)🎬 渲染 Demo 帧 seq=\(seq) canvasSize=\(canvasStr) → 像素 \(pixelWidth)×\(pixelHeight) @\(String(format: "%.1f", scale))")
         }
 
+        // 🔍 诊断：记录当前状态
+        Self.logger.info("📝[renderDemoFrame] 开始渲染 Demo 帧 seq=\(seq)")
+        Self.logger.info("📝[renderDemoFrame] canvasSize=\(canvasStr), canvasScale=\(self.canvasScale)")
+        Self.logger.info("📝[renderDemoFrame] 计算尺寸：pointWidth=\(pointWidth), pointHeight=\(pointHeight), scale=\(scale)")
+        Self.logger.info("📝[renderDemoFrame] 像素尺寸：\(pixelWidth)×\(pixelHeight)")
+        
+        // 检查 DemoSurfaceFactory 是否可用
+        Self.logger.info("📝[renderDemoFrame] 调用 DemoSurfaceFactory.makeFrame")
+        
         currentFrame = LumiInlinePreviewFacade.DemoSurfaceFactory.makeFrame(
             width: pixelWidth,
             height: pixelHeight,
@@ -153,14 +206,10 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
             seq: demoSeq
         )
 
-        if currentFrame != nil {
-            if Self.verbose {
-                            Self.logger.info("\(self.t)✅ Demo 帧创建成功")
-            }
+        if let frame = currentFrame {
+            Self.logger.info("📝[renderDemoFrame] ✅ Demo 帧创建成功：surfaceID=\(frame.surfaceID) seq=\(frame.seq) \(frame.width)×\(frame.height) @\(String(format: "%.1fx", frame.scale))")
         } else {
-            if Self.verbose {
-                            Self.logger.error("\(self.t)❌ Demo 帧创建失败 — makeFrame 返回 nil")
-            }
+            Self.logger.error("📝[renderDemoFrame] ❌ Demo 帧创建失败 — makeFrame 返回 nil")
         }
     }
 
@@ -298,7 +347,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
     // MARK: - 公开方法 — 自动构建（Phase 2.5b）
 
-    /// 由 View 在 `currentFileURL` 改变时调用。stash 当前文件 + 源文，session running 时立即重建。
+    /// 由 Combine 订阅（文件 URL 变化）触发，也可由 View 层直接调用。
     func setActiveFile(_ url: URL?, sourceText: String?) {
         if Self.verbose {
                     Self.logger.info("\(self.t)📄 设置活跃文件：\(url?.lastPathComponent ?? "nil")，有源码=\(sourceText != nil)")
@@ -309,7 +358,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         autoBuildIfPossible()
     }
 
-    /// 由 View 在 `saveRevision` 改变时调用——即用户按下了 Cmd+S。
+    /// 由 Combine 订阅（保存）触发，也可由 View 层直接调用。
     func applySaveRevision(sourceText: String?) {
         if Self.verbose {
                     Self.logger.info("\(self.t)💾 应用保存修订，有源码=\(sourceText != nil)")
@@ -318,9 +367,23 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         autoBuildIfPossible()
     }
 
-    /// 由 View 在 buffer 内容变化（未保存）时调用——只更新 stash，不触发重建。
+    /// 由 Combine 订阅（内容变化）触发，也可由 View 层直接调用。
     func updateBufferText(_ sourceText: String?) {
         latestSourceText = sourceText
+    }
+
+    // MARK: - 私有 — Combine 订阅处理器
+
+    private func handleFileURLChange(_ url: URL?, sourceText: String?) {
+        setActiveFile(url, sourceText: sourceText)
+    }
+
+    private func handleSaveRevision(sourceText: String?) {
+        applySaveRevision(sourceText: sourceText)
+    }
+
+    private func handleBufferTextUpdate(_ sourceText: String?) {
+        updateBufferText(sourceText)
     }
 
     // MARK: - 私有 — 自动构建

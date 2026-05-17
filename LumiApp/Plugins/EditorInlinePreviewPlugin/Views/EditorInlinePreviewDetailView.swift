@@ -1,5 +1,6 @@
 import AppKit
 import LumiInlinePreviewKit
+import MagicAlert
 import MagicKit
 import os
 import SwiftUI
@@ -23,6 +24,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
     @EnvironmentObject private var editorVM: EditorVM
     @StateObject private var viewModel = EditorInlinePreviewViewModel()
+    @StateObject private var automationState = InlinePreviewAutomationState.shared
 
     private var sourceText: String? {
         editorVM.service.content?.string
@@ -30,6 +32,12 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
     private var currentFileURL: URL? {
         editorVM.service.currentFileURL
+    }
+
+    /// 合并 VM 帧和自动化帧
+    private var displayFrame: LumiInlinePreviewFacade.IOSurfaceFrame? {
+        // 自动化帧优先（由 HTTP API 触发）
+        automationState.currentFrame ?? viewModel.currentFrame
     }
 
     var body: some View {
@@ -40,19 +48,38 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         }
         .onAppear {
             if Self.verbose {
-                            Self.logger.info("\(self.t)📺 视图出现 — 当前文件=\(currentFileURL?.lastPathComponent ?? "nil")")
+                Self.logger.info("\(self.t)📺 视图出现 — 当前文件=\(currentFileURL?.lastPathComponent ?? "nil")")
             }
-            viewModel.setActiveFile(currentFileURL, sourceText: sourceText)
+            // 订阅 EditorService（幂等，内部有 Combine 订阅，多次调用会重复订阅，所以只调一次）
+            viewModel.wireEditorService(editorVM.service)
+
+            // 消费 AutomationController 可能在 View 出现之前就写入的 pending sessionAction。
+            // onChange 只监听变化，不会触发初始值，所以必须在 onAppear 中手动消费一次。
+            if let pendingAction = automationState.sessionAction {
+                automationState.sessionAction = nil
+                switch pendingAction {
+                case .start:
+                    if Self.verbose {
+                        Self.logger.info("\(self.t)🤖 onAppear 消费 pending sessionAction=.start")
+                    }
+                    viewModel.startSession()
+                case .stop:
+                    if Self.verbose {
+                        Self.logger.info("\(self.t)🤖 onAppear 消费 pending sessionAction=.stop")
+                    }
+                    viewModel.stopSession()
+                }
+            }
         }
         .onChange(of: currentFileURL) { _, newValue in
             if Self.verbose {
-                            Self.logger.info("\(self.t)📄 currentFileURL 变更 → \(newValue?.lastPathComponent ?? "nil")")
+                Self.logger.info("\(self.t)📄 currentFileURL 变更 → \(newValue?.lastPathComponent ?? "nil")")
             }
             viewModel.setActiveFile(newValue, sourceText: sourceText)
         }
         .onChange(of: editorVM.service.saveRevision) { _, _ in
             if Self.verbose {
-                            Self.logger.info("\(self.t)💾 saveRevision 变更")
+                Self.logger.info("\(self.t)💾 saveRevision 变更")
             }
             // 仅在保存时触发重建，对齐 Xcode 的 #Preview 刷新策略。
             viewModel.applySaveRevision(sourceText: sourceText)
@@ -60,6 +87,54 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         .onChange(of: editorVM.service.contentRevision) { _, _ in
             // 编辑过程中只 stash buffer，让下次保存能拿到最新内容；不重建。
             viewModel.updateBufferText(sourceText)
+        }
+        // 监听自动化测试动作（路径 1：View 已渲染时实时响应）
+        .onAutomationAction { action, payload in
+            switch action {
+            case "inline_preview.demo_frame", "inline_preview.demoFrame", "inline_preview.renderDemoFrame":
+                if Self.verbose {
+                    Self.logger.info("\(self.t)🤖 自动化：收到 renderDemoFrame 动作")
+                }
+                if Self.verbose {
+                    Self.logger.info("\(self.t)🤖 自动化：调用 viewModel.renderDemoFrame()")
+                }
+                alert_info("自动化测试：渲染 Demo 预览帧")
+                viewModel.renderDemoFrame()
+            case "inline_preview.start_stream", "inline_preview.startStream":
+                if Self.verbose {
+                    Self.logger.info("\(self.t)🤖 自动化：收到 start_stream 动作")
+                }
+                alert_info("自动化测试：启动预览流")
+                viewModel.startSession()
+            case "inline_preview.stop_stream", "inline_preview.stopStream":
+                if Self.verbose {
+                    Self.logger.info("\(self.t)🤖 自动化：收到 stop_stream 动作")
+                }
+                alert_info("自动化测试：停止预览流")
+                viewModel.stopSession()
+            default:
+                break
+            }
+        }
+        // 监听自动化共享状态（路径 2：View 后于 AutomationController 渲染时消费已写入的指令）
+        .onChange(of: automationState.sessionAction) { oldAction, newAction in
+            guard let newAction else { return }
+            // 消费后清零，避免重复触发
+            automationState.sessionAction = nil
+            switch newAction {
+            case .start:
+                if Self.verbose {
+                    Self.logger.info("\(self.t)🤖 自动化状态：消费 sessionAction=.start")
+                }
+                alert_info("自动化测试：启动预览流")
+                viewModel.startSession()
+            case .stop:
+                if Self.verbose {
+                    Self.logger.info("\(self.t)🤖 自动化状态：消费 sessionAction=.stop")
+                }
+                alert_info("自动化测试：停止预览流")
+                viewModel.stopSession()
+            }
         }
     }
 
@@ -69,7 +144,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         HStack(spacing: 8) {
             Button {
                 if Self.verbose {
-                                    Self.logger.info("\(self.t)🖱 点击 Demo Frame 按钮")
+                    Self.logger.info("\(self.t)🖱 点击 Demo Frame 按钮")
                 }
                 viewModel.renderDemoFrame()
             } label: {
@@ -91,7 +166,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
             statusBadge
 
-            if let frame = viewModel.currentFrame {
+            if let frame = viewModel.currentFrame ?? automationState.currentFrame {
                 Text("seq \(frame.seq) · \(frame.width)×\(frame.height) @\(String(format: "%.0fx", frame.scale))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -129,7 +204,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         switch viewModel.entryStatus {
         case .demo:
             EmptyView()
-        case .building(let file):
+        case let .building(file):
             HStack(spacing: 4) {
                 ProgressView().controlSize(.small)
                 Text("building \(file)")
@@ -137,19 +212,19 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
             .font(.caption)
             .foregroundStyle(.orange)
             .lineLimit(1)
-        case .loading(let path):
+        case let .loading(path):
             Text("loading \((path as NSString).lastPathComponent)")
                 .font(.caption)
                 .foregroundStyle(.orange)
                 .lineLimit(1)
                 .truncationMode(.middle)
-        case .loaded(_, let title):
+        case let .loaded(_, title):
             Text("entry · \(title)")
                 .font(.caption)
                 .foregroundStyle(.green)
                 .lineLimit(1)
                 .truncationMode(.middle)
-        case .failed(let message):
+        case let .failed(message):
             Text("entry failed: \(message)")
                 .font(.caption)
                 .foregroundStyle(.red)
@@ -223,7 +298,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
             Text("running · \(viewModel.policy.rawValue)").font(.caption).foregroundStyle(.green)
         case .stopping:
             Text("stopping").font(.caption).foregroundStyle(.orange)
-        case .failed(let message):
+        case let .failed(message):
             Text("failed: \(message)")
                 .font(.caption)
                 .foregroundStyle(.red)
@@ -236,20 +311,8 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
     @ViewBuilder
     private var canvasArea: some View {
-        let hasFrame = viewModel.currentFrame != nil
+        let hasFrame = displayFrame != nil
         ZStack {
-            LumiInlinePreviewFacade.PreviewSurfaceCanvas(
-                surfaceID: viewModel.currentFrame?.surfaceID,
-                isInteractive: viewModel.isInteractive,
-                onSizeChange: { size, scale in
-                    viewModel.canvasDidResize(size, scale: scale)
-                },
-                onInputEvent: { event in
-                    viewModel.forwardInputEvent(event)
-                }
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
             if !hasFrame {
                 VStack(spacing: 12) {
                     Image(systemName: "rectangle.dashed")
@@ -260,6 +323,34 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
+                .onAppear {
+                    if Self.verbose {
+                        Self.logger.info("\(self.t)🖼️ canvasArea: 占位符视图显示 (hasFrame=false)")
+                    }
+                }
+            }
+
+            LumiInlinePreviewFacade.PreviewSurfaceCanvas(
+                surfaceID: displayFrame?.surfaceID,
+                isInteractive: viewModel.isInteractive,
+                onSizeChange: { size, scale in
+                    viewModel.canvasDidResize(size, scale: scale)
+                },
+                onInputEvent: { event in
+                    viewModel.forwardInputEvent(event)
+                }
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(hasFrame ? Color.clear : Color.black.opacity(0.01))
+            .onAppear {
+                if Self.verbose {
+                    Self.logger.info("\(self.t)️ canvasArea: PreviewSurfaceCanvas 显示 (hasFrame=\(hasFrame), surfaceID=\(displayFrame?.surfaceID ?? 0))")
+                }
+            }
+        }
+        .onAppear {
+            if Self.verbose {
+                Self.logger.info("\(self.t)🖼️ canvasArea: 视图出现，hasFrame=\(hasFrame)")
             }
         }
     }
