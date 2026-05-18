@@ -19,8 +19,6 @@
 - [x] `LumiInlinePreviewHostApp/main.swift`：占位 stub（Phase 2 填充）
 - [x] 单元测试：`IOSurfaceFrameTests` / `DemoSurfaceFactoryTests` / `PreviewSurfaceViewTests`（7/7 通过）
 - [x] 插件 `EditorInlinePreviewPlugin`：底部面板 tab + Detail View + ViewModel
-- [ ] **手动**：在 Xcode 里把此包加为 LumiApp 的 SPM 依赖（见下方）
-- [ ] **手动**：在 Xcode 里把 `LumiApp/Plugins/EditorInlinePreviewPlugin/` 加入 LumiApp target
 
 ### 验收
 
@@ -79,7 +77,7 @@
 
 ---
 
-## Phase 2.5 — 接入用户代码（手动 dylib 路径已完成，自动编译待开始）
+## Phase 2.5 — 接入用户代码（手动 dylib + 自动编译最小切片已完成）
 
 目标：把"渲染写死 demo"换成"渲染当前文件的 `#Preview`"。
 策略：先打通**任何 dylib 都能加载渲染**的运行时路径（2.5a），再接编译管线（2.5b）。
@@ -129,15 +127,20 @@
   - `EntryStatus` 增加 `.building(file:)` 与 `.loaded(path: title:)`，UI 能区分编译中/加载中/已加载
   - `lastLoadedFingerprint` 去重，相同源不重复 dlopen
   - `startSession` 成功后回放 `autoBuildIfPossible()`，让先开 panel 再 Start Stream 的场景也能自动加载
+  - 多 `#Preview` 支持：发布当前文件 preview 列表与选中 index，切换后自动 rebuild/load
 - [x] `EditorInlinePreviewDetailView`：
   - `@EnvironmentObject var editorVM: EditorVM`
   - `.onAppear` / `.onChange(of: currentFileURL)` 推 `setActiveFile`
   - `.onChange(of: saveRevision)` 推 `applySaveRevision`（Xcode 风格保存触发）
   - `.onChange(of: contentRevision)` 推 `updateBufferText`（仅 stash，不重建）
   - 状态徽标 `building` 显示带 `ProgressView` 的橙色文本
+  - 当前文件存在多个 `#Preview` 时显示菜单，用户可选择要构建和渲染的 preview
+- [x] `InlinePreviewBuilder` 多 preview 选择：支持按 index 构建指定 preview，并把不同 preview 纳入独立缓存指纹。
 - [x] **新增单元测试** `InlinePreviewEntryGeneratorTests`：3 case，覆盖符号名、缩进、空 body 兜底。
 - [x] **新增端到端测试** `InlinePreviewBuilderTests.test_build_thenLoadDylib_endToEnd`（**1.7s 通过**）：写源文件 → builder.build → 缓存命中验证 → spawn 子进程 → loadDylib → 收到 `entryLoaded(success: true)` + 至少一帧。
 - [x] **新增错误路径测试** `test_build_throwsNoPreviewFound_whenSourceHasNoPreview`：无 `#Preview` 时显式抛 `BuildError.noPreviewFound`。
+- [x] **新增多 preview 测试**：覆盖 `discoverPreviews` 返回所有 preview summary，以及不同 preview index 构建时缓存指纹互不复用。
+- [x] **Phase 2.5c 跨 target 依赖最小切片**：`InlinePreviewBuilder` 命中 `BuildPlanner` 时强制走 planned build，不再静默吞错回退 standalone；新增 `test_build_spmTargetWithLocalDependency_usesPlannedBuildPath`，覆盖 `App` target 依赖 `ThemeKit` target 的 SPM fixture，并验证产物可 `dlopen` 且导出 `lumi_preview_make_nsview`。
 
 ### 验收（2.5b，手动）
 
@@ -150,10 +153,10 @@
 
 ### 当前局限（已知，留 2.5c+ 处理）
 
+- [x] **插件专属磁盘目录**：`EditorInlinePreviewPlugin` 已安装 `LumiPreviewKit.PreviewStorage` 到 `AppConfig.getPluginDBFolderURL(pluginName: "EditorInlinePreviewPlugin")/`，自动构建 workspace 使用其下的 `inline-builder-workspace/`，避免默认写入 `$TMPDIR/LumiInlinePreviewKit-Builds-*` 或全局 cache 目录。
 - **同包文件自动收集（已实现）**：`InlinePreviewBuilder` 现在会自动查找源文件所属 SPM 包的 `Sources/` 目录，把同包所有 `.swift` 文件一起传入 swiftc。解决了如 `DesignTokens` 等跨文件类型引用的问题。仅支持无外部 SPM 依赖的包（纯标准库 import 的包天然兼容）。
 - **swiftc 冷启已优化**：编译选项从 `-O` 改为 `-Onone`，冷启从 ~90s 降至 ~57s（52 文件的 LumiUI 包）。缓存命中时跳过编译秒回。
-- **跨包依赖仍不支持**：如果源文件所在的 SPM 包依赖了其他 SPM 包（如 `import LumiPreviewKit`），这些类型仍无法解析。需要 Phase 2.5c 接入 `LumiPreviewKit.BuildPlanner` 解析模块路径与依赖后才能支持。
-- **首条 `#Preview` only**：扫到多个 `#Preview` 时仅取第一个；UI 切换不同 preview 待后续做。
+- **跨 target 依赖已支持最小切片**：SPM target 依赖会通过 `LumiPreviewKit.BuildPlanner` + `PreviewEntryBuilder` 走 planned build，复用 `.build` 里的模块搜索路径与 link inputs。外部 package 依赖和 Xcode workspace 复杂依赖仍需要用真实项目继续压测。
 - **interposeDylib 未做**：现在每次都 dlclose+dlopen，view state 重置；Phase 2.5c 用 `InterposingDylibLoader` 思路做"热替换符号、保活 view"。
 - **自动化 API `editor.openFile` 已补全**：`AutomationController.handleEditorOpenFile` 现在直接调用 `EditorService.open(at:)`，能完整触发"打开文件 → 更新 currentFileURL → ViewModel.setActiveFile → autoBuildIfPossible"链路。自动化测试脚本 `scripts/test-automation-inline-preview-preview-file.sh` 已覆盖端到端流程。
 
@@ -188,8 +191,10 @@
   - `forwardInputEvent(_:)` 走 best-effort 转发
   - `isInteractive: Bool` 计算属性：`status == .running && entryStatus ∈ {building, loading, loaded}`
 - [x] `EditorInlinePreviewDetailView`：把 `viewModel.isInteractive` + `viewModel.forwardInputEvent` 接到 `PreviewSurfaceCanvas`。
+- [x] **Frame stream policy 自适应最小切片**：启动/输入后短暂进入 `.interactive` 60fps，静止后自动回 `.idle` 1fps；手动 `.animating` 仍保留 60fps。
 - [x] **新增 7 条单元测试** `PreviewInputEventTests`：mouse/scroll/key/flagsChanged Codable round-trip、ModifierFlags 与 ScrollWheelEvent.Phase 的 AppKit 互转、`forwardInputEvent` HostCommand 编解码。
 - [x] **新增 1 条端到端集成测试** `InputForwardingIntegrationTests.test_forwardInputEvent_acceptsAllShapes_andKeepsSubprocessAlive`（**0.2s 通过**）：spawn 子进程 → startFrameStream → 连发 9 种事件（mouseDown/Up/Moved/Dragged + scrollWheel + keyDown/Up + flagsChanged ×2）→ 全部 `success == true` + 无 error 事件 + 后续 ping 仍通。
+- [x] **新增 1 条端到端集成测试** `InputForwardingIntegrationTests.test_forwardInputEvent_promotesIdleStreamBackToInteractive`：验证 stream 会从 `.interactive` 自动冷却到 `.idle`，收到输入后再回 `.interactive`。
 
 ### 验收（手动）
 
@@ -201,11 +206,17 @@
 
 ### 已知局限（留 3.5+ 处理）
 
-- **Frame stream policy 没自适应**：当前一直跑 60fps；理想做法是收到输入事件触发 `.interactive`，N 秒静止后回 `.idle`。
+- **Frame stream policy 仍是最小实现**：已支持输入触发 `.interactive` 并静止回 `.idle`，但还没有 dirty 检测，也还没有用 `CVDisplayLink` 替换 `Timer`。
 - **TextField IME（中文输入）**：跨进程的 marked text / candidates 协议未实现，目前仅英文输入工作。
 - **键盘焦点抢占**：子进程 `makeKeyAndOrderFront` 会让离屏窗口自认为 key window，但实际 OS 焦点仍在 Lumi 主窗口；多数情况 SwiftUI 的 firstResponder 链路能转发，但极端场景（含 `@FocusState` 的复杂表单）可能需要进一步调试。
 - **Drag-and-drop / NSCursor / TouchBar**：未覆盖。
 - **状态可视化未做**：没有 entry 内部 state 的回读，所以集成测试只验证"路径不崩"，不验证"事件改变了画面"——后者需要 entry 暴露状态读取符号。
+
+---
+
+## 待办
+
+- [ ] **移除手动 Load Dylib / Reset 按钮**：`EditorInlinePreviewDetailView` 中的 `Load Dylib…` 和 `Reset` 按钮属于开发者调试入口，普通用户不应看到。自动构建流程（打开 Swift 文件 → 保存 → 自动编译加载）已覆盖正常使用场景。移除后同时清理 ViewModel 中 `manualDylibActive` 相关的手动模式逻辑，简化状态机。
 
 ---
 
