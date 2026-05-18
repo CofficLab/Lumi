@@ -35,6 +35,8 @@ public extension LumiInlinePreviewFacade {
         public var onError: ((String) -> Void)?
         public var onTerminated: (() -> Void)?
         public var onEntryLoaded: ((_ success: Bool, _ message: String?) -> Void)?
+        public var onEntryDebugState: ((String) -> Void)?
+        public var onCursorChanged: ((PreviewCursorShape) -> Void)?
 
         public init() {}
 
@@ -105,6 +107,12 @@ public extension LumiInlinePreviewFacade {
             try await send(.unloadDylib)
         }
 
+        /// 请求用户 entry 可选导出的调试状态。
+        @discardableResult
+        public func requestEntryDebugState() async throws -> HostResponse {
+            try await send(.requestEntryDebugState)
+        }
+
         /// 把主进程捕获的输入事件转发给子进程注入到离屏窗口。
         ///
         /// 调用方应自行确保此 session 在 running 状态；非 running 时会因 `connection == nil` 抛错。
@@ -157,6 +165,10 @@ public extension LumiInlinePreviewFacade {
                 onError?(message)
             case let .entryLoaded(success, message):
                 onEntryLoaded?(success, message)
+            case let .entryDebugState(state):
+                onEntryDebugState?(state)
+            case let .cursorChanged(shape):
+                onCursorChanged?(shape)
             }
         }
 

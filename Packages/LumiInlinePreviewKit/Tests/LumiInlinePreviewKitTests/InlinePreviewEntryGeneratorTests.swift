@@ -20,6 +20,8 @@ final class InlinePreviewEntryGeneratorTests: XCTestCase {
 
         XCTAssertTrue(source.contains("@_cdecl(\"lumi_preview_make_nsview\")"))
         XCTAssertTrue(source.contains("public func lumi_preview_make_nsview() -> UnsafeMutableRawPointer?"))
+        XCTAssertTrue(source.contains("@_cdecl(\"lumi_preview_update_nsview\")"))
+        XCTAssertTrue(source.contains("public func lumi_preview_update_nsview(_ existingView: UnsafeMutableRawPointer?) -> Bool"))
         XCTAssertTrue(source.contains("import AppKit"))
         XCTAssertTrue(source.contains("import SwiftUI"))
         XCTAssertTrue(source.contains("Text(\"hello\")"))

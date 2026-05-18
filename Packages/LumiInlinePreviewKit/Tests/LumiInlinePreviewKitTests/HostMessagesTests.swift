@@ -42,6 +42,10 @@ final class HostMessagesTests: XCTestCase {
         try roundTrip(LumiInlinePreviewFacade.HostCommand.unloadDylib)
     }
 
+    func test_command_requestEntryDebugState_roundTrip() throws {
+        try roundTrip(LumiInlinePreviewFacade.HostCommand.requestEntryDebugState)
+    }
+
     // MARK: - Request
 
     func test_request_roundTrip() throws {
@@ -82,6 +86,18 @@ final class HostMessagesTests: XCTestCase {
         try roundTrip(LumiInlinePreviewFacade.HostOutbound.event(
             .entryLoaded(success: false, message: "dlopen failed: file not found")
         ))
+    }
+
+    func test_outbound_event_entryDebugState_roundTrip() throws {
+        try roundTrip(LumiInlinePreviewFacade.HostOutbound.event(
+            .entryDebugState("mouseDown=1;keyDown=1")
+        ))
+    }
+
+    func test_outbound_event_cursorChanged_roundTrip() throws {
+        for shape in LumiInlinePreviewFacade.PreviewCursorShape.allCases {
+            try roundTrip(LumiInlinePreviewFacade.HostOutbound.event(.cursorChanged(shape)))
+        }
     }
 
     // MARK: - Helpers

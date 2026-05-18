@@ -20,6 +20,7 @@ final class HotStdioPreviewHost {
     private let stdoutLock = NSLock()
     private var stdinReader: DispatchSourceRead?
     private var stdinBuffer = Data()
+    private var lastCursorShape: LumiInlinePreviewFacade.PreviewCursorShape = .arrow
 
     // MARK: - 初始化
 
@@ -97,7 +98,7 @@ final class HotStdioPreviewHost {
 
         case let .startFrameStream(width, height, scale):
             renderer.resize(width: width, height: height, scale: CGFloat(scale))
-            renderLoop.setPolicy(.interactive)
+            renderLoop.startInteractiveBurst()
             return .init(success: true, message: "stream started")
 
         case .stopFrameStream:
@@ -125,11 +126,22 @@ final class HotStdioPreviewHost {
 
         case .unloadDylib:
             renderer.unloadDylib()
+            sendCursorChanged(.arrow)
             sendEvent(.entryLoaded(success: true, message: "dylib unloaded"))
             return .init(success: true, message: "dylib unloaded")
 
+        case .requestEntryDebugState:
+            guard let state = renderer.entryDebugState() else {
+                return .init(success: false, message: "entry debug state unavailable")
+            }
+            sendEvent(.entryDebugState(state))
+            return .init(success: true, message: state)
+
         case let .forwardInputEvent(inputEvent):
             eventDispatcher.dispatch(inputEvent)
+            publishCurrentCursorIfNeeded()
+            renderer.markDirty()
+            renderLoop.noteInteractiveActivity()
             return .init(success: true)
         }
     }
@@ -151,6 +163,16 @@ final class HotStdioPreviewHost {
 
     private func sendEvent(_ event: LumiInlinePreviewFacade.HostEvent) {
         write(.event(event))
+    }
+
+    private func publishCurrentCursorIfNeeded() {
+        sendCursorChanged(LumiInlinePreviewFacade.PreviewCursorShape(appKit: NSCursor.current))
+    }
+
+    private func sendCursorChanged(_ shape: LumiInlinePreviewFacade.PreviewCursorShape) {
+        guard lastCursorShape != shape else { return }
+        lastCursorShape = shape
+        sendEvent(.cursorChanged(shape))
     }
 
     private func write(_ outbound: LumiInlinePreviewFacade.HostOutbound) {

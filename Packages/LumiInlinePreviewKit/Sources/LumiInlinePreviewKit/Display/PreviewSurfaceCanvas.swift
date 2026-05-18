@@ -17,6 +17,7 @@ public extension LumiInlinePreviewFacade {
 
         public let surfaceID: UInt32?
         public let isInteractive: Bool
+        public let cursorShape: PreviewCursorShape
         public let onSizeChange: (CGSize, CGFloat) -> Void
         public let onInputEvent: (PreviewInputEvent) -> Void
 
@@ -25,11 +26,13 @@ public extension LumiInlinePreviewFacade {
         public init(
             surfaceID: UInt32?,
             isInteractive: Bool = false,
+            cursorShape: PreviewCursorShape = .arrow,
             onSizeChange: @escaping (CGSize, CGFloat) -> Void = { _, _ in },
             onInputEvent: @escaping (PreviewInputEvent) -> Void = { _ in }
         ) {
             self.surfaceID = surfaceID
             self.isInteractive = isInteractive
+            self.cursorShape = cursorShape
             self.onSizeChange = onSizeChange
             self.onInputEvent = onInputEvent
         }
@@ -44,6 +47,7 @@ public extension LumiInlinePreviewFacade {
             view.onSizeChange = onSizeChange
             view.onInputEvent = onInputEvent
             view.isInteractive = isInteractive
+            view.setCursorShape(cursorShape)
             if let surfaceID {
                 view.attach(surfaceID: surfaceID)
             }
@@ -60,6 +64,7 @@ public extension LumiInlinePreviewFacade {
             nsView.onSizeChange = onSizeChange
             nsView.onInputEvent = onInputEvent
             nsView.isInteractive = isInteractive
+            nsView.setCursorShape(cursorShape)
             if let surfaceID {
                 nsView.attach(surfaceID: surfaceID)
                 // 🔍 诊断：检查视图层级和 layer 状态

@@ -12,7 +12,7 @@ public extension LumiInlinePreviewFacade {
     ///   通过 `onInputEvent` 回调上抛，给 ViewModel 走 `forwardInputEvent` 命令送子进程。
     /// - 不持有任何窗口；本控件被嵌入 Lumi 自己的预览面板。
     @MainActor
-    final class PreviewSurfaceView: NSView, SuperLog {
+    final class PreviewSurfaceView: NSView, @preconcurrency NSTextInputClient, SuperLog {
         nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "LumiInlinePreviewKit.PreviewSurfaceView")
         public nonisolated static let emoji = "👁"
         public nonisolated static let verbose: Bool = true
@@ -28,30 +28,24 @@ public extension LumiInlinePreviewFacade {
         /// 输入事件回调；仅在 `isInteractive == true` 时触发。
         public var onInputEvent: ((PreviewInputEvent) -> Void)?
 
+        /// 子进程回传的当前 cursor 形状。
+        public private(set) var cursorShape: PreviewCursorShape = .arrow
+
         /// 当前显示的 surface ID；nil 表示尚未附着任何 surface。
         public private(set) var currentSurfaceID: UInt32?
 
         /// 强引用最近一帧的 IOSurface，避免被 ARC 回收。
         private var retainedSurface: IOSurfaceRef?
-
-        /// 内嵌的图像视图，用于可靠渲染 IOSurface 内容。
-        /// 在 SwiftUI 的 NSViewRepresentable 中，直接设置 layer.contents 会被宿主覆盖，
-        /// 使用 NSImageView 子视图可以绕过这个限制。
-        private let imageView: NSImageView = {
-            let iv = NSImageView()
-            iv.autoresizingMask = [.width, .height]
-            iv.imageScaling = .scaleProportionallyUpOrDown
-            return iv
-        }()
+        private var hasIMEMarkedText = false
+        private var markedText = ""
+        private var inputTrackingArea: NSTrackingArea?
 
         // MARK: - 初始化
 
         public override init(frame frameRect: NSRect) {
             super.init(frame: frameRect)
             wantsLayer = true
-            // 使用 NSImageView 作为内容渲染层，绕过 SwiftUI 对自定义 layer 的覆盖
-            imageView.frame = bounds
-            addSubview(imageView)
+            registerForDraggedTypes([.fileURL, .URL, .string])
         }
 
         @available(*, unavailable)
@@ -83,6 +77,14 @@ public extension LumiInlinePreviewFacade {
         public override func mouseMoved(with event: NSEvent) {
             guard isInteractive else { super.mouseMoved(with: event); return }
             forwardMouse(event, phase: .moved, button: .left)
+        }
+        public override func mouseEntered(with event: NSEvent) {
+            guard isInteractive else { super.mouseEntered(with: event); return }
+            forwardMouse(event, phase: .entered, button: .left)
+        }
+        public override func mouseExited(with event: NSEvent) {
+            guard isInteractive else { super.mouseExited(with: event); return }
+            forwardMouse(event, phase: .exited, button: .left)
         }
         public override func rightMouseDown(with event: NSEvent) {
             guard isInteractive else { super.rightMouseDown(with: event); return }
@@ -129,6 +131,9 @@ public extension LumiInlinePreviewFacade {
 
         public override func keyDown(with event: NSEvent) {
             guard isInteractive else { super.keyDown(with: event); return }
+            if inputContext?.handleEvent(event) == true {
+                return
+            }
             forwardKey(event, phase: .down)
         }
 
@@ -140,6 +145,32 @@ public extension LumiInlinePreviewFacade {
         public override func flagsChanged(with event: NSEvent) {
             guard isInteractive else { super.flagsChanged(with: event); return }
             onInputEvent?(.flagsChanged(modifiers: ModifierFlags.fromAppKitImported(event.modifierFlags)))
+        }
+
+        public override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+            guard isInteractive else { return [] }
+            forwardDrag(sender, phase: .entered)
+            return .copy
+        }
+
+        public override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+            guard isInteractive else { return [] }
+            forwardDrag(sender, phase: .updated)
+            return .copy
+        }
+
+        public override func draggingExited(_ sender: NSDraggingInfo?) {
+            guard isInteractive, let sender else {
+                super.draggingExited(sender)
+                return
+            }
+            forwardDrag(sender, phase: .exited)
+        }
+
+        public override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+            guard isInteractive else { return false }
+            forwardDrag(sender, phase: .perform)
+            return true
         }
 
         // MARK: - 输入事件辅助
@@ -155,10 +186,14 @@ public extension LumiInlinePreviewFacade {
                 button: button,
                 x: Double(local.x),
                 y: Double(local.y),
-                clickCount: phase == .moved ? 0 : event.clickCount,
+                clickCount: Self.usesSyntheticClickCount(phase) ? 0 : event.clickCount,
                 modifiers: ModifierFlags.fromAppKitImported(event.modifierFlags)
             )
             self.onInputEvent?(.mouse(model))
+        }
+
+        private static func usesSyntheticClickCount(_ phase: MouseEvent.Phase) -> Bool {
+            phase == .moved || phase == .entered || phase == .exited
         }
 
         private func forwardKey(_ event: NSEvent, phase: KeyEvent.Phase) {
@@ -173,31 +208,40 @@ public extension LumiInlinePreviewFacade {
             onInputEvent?(.key(model))
         }
 
+        private func forwardDrag(_ sender: NSDraggingInfo, phase: DragDropEvent.Phase) {
+            let location = convert(sender.draggingLocation, from: nil)
+            onInputEvent?(.dragAndDrop(.init(
+                phase: phase,
+                x: Double(location.x),
+                y: Double(location.y),
+                items: Self.dragItems(from: sender.draggingPasteboard),
+                modifiers: ModifierFlags.fromAppKitImported(NSApp.currentEvent?.modifierFlags ?? [])
+            )))
+        }
+
+        private static func dragItems(from pasteboard: NSPasteboard) -> [DragDropEvent.Item] {
+            var items: [DragDropEvent.Item] = []
+            if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
+                items.append(contentsOf: urls.map { .fileURL($0.path) })
+            }
+            if let string = pasteboard.string(forType: .string), !string.isEmpty {
+                items.append(.string(string))
+            }
+            return items
+        }
+
         // MARK: - Layer 配置
 
         public override var wantsUpdateLayer: Bool { true }
 
         public override func updateLayer() {
             super.updateLayer()
-            guard let surface = retainedSurface else {
-                layer?.contents = nil
-                return
-            }
-            let surfaceWidth = IOSurfaceGetWidth(surface)
-            let surfaceHeight = IOSurfaceGetHeight(surface)
-            // 确保 layer 以 Retina 密度渲染
-            layer?.contentsScale = window?.backingScaleFactor ?? 1
-            let ciImage = CIImage(ioSurface: surface)
-            let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
-            if let cgImage {
-                layer?.contents = cgImage
-            }
         }
 
         public override func makeBackingLayer() -> CALayer {
             let layer = CALayer()
             layer.contentsGravity = .resize
-            layer.magnificationFilter = .nearest
+            layer.magnificationFilter = .linear
             layer.minificationFilter = .linear
             // 恢复为 false，让 layer 支持透明合成
             layer.isOpaque = false
@@ -226,35 +270,20 @@ public extension LumiInlinePreviewFacade {
                 return
             }
 
-            guard let layer = self.layer else {
-                if LumiInlinePreviewFacade.verbose {
-                    Self.logger.error("\(self.t)layer 为 nil，无法绑定 surface")
-                }
-                return
-            }
-
             currentSurfaceID = surfaceID
             retainedSurface = surface
+            layer?.contentsScale = scaleVal
 
-            // 通过 NSImageView 渲染 IOSurface 内容
-            // 在 SwiftUI NSViewRepresentable 中直接设置 layer.contents 会被宿主覆盖，
-            // NSImageView 作为子视图可以可靠渲染。
-            //
-            // 关键：NSImage 的 size 必须是**逻辑尺寸**（像素 / backingScale），
-            // 否则 2x 像素的图会被当作 1x 来缩放，导致模糊。
             let surfaceWidth = IOSurfaceGetWidth(surface)
             let surfaceHeight = IOSurfaceGetHeight(surface)
-            let logicalWidth = CGFloat(surfaceWidth) / scaleVal
-            let logicalHeight = CGFloat(surfaceHeight) / scaleVal
             let ciImage = CIImage(ioSurface: surface)
             let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
             if let cgImage {
-                let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: logicalWidth, height: logicalHeight))
-                imageView.image = nsImage
-                imageView.frame = bounds
-                imageView.needsDisplay = true
-                layer.contents = cgImage
+                layer?.contents = cgImage
+                layer?.setNeedsDisplay()
                 if LumiInlinePreviewFacade.verbose {
+                    let logicalWidth = CGFloat(surfaceWidth) / scaleVal
+                    let logicalHeight = CGFloat(surfaceHeight) / scaleVal
                     Self.logger.info("\(self.t)渲染完成：\(surfaceWidth)×\(surfaceHeight) px → \(String(format: "%.0f", logicalWidth))×\(String(format: "%.0f", logicalHeight)) pt @\(String(format: "%.1f", scaleVal))x")
                 }
             } else {
@@ -269,15 +298,12 @@ public extension LumiInlinePreviewFacade {
             currentSurfaceID = nil
             retainedSurface = nil
             layer?.contents = nil
-            imageView.image = nil
         }
 
         // MARK: - 尺寸通知
 
         public override func layout() {
             super.layout()
-            // 同步 imageView 的 frame 到当前 bounds
-            imageView.frame = bounds
             notifySize()
         }
 
@@ -290,7 +316,36 @@ public extension LumiInlinePreviewFacade {
         public override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             layer?.contentsScale = window?.backingScaleFactor ?? 1
+            window?.acceptsMouseMovedEvents = true
             notifySize()
+        }
+
+        public override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            if let inputTrackingArea {
+                removeTrackingArea(inputTrackingArea)
+            }
+            let area = NSTrackingArea(
+                rect: bounds,
+                options: [.activeInKeyWindow, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
+                owner: self,
+                userInfo: nil
+            )
+            addTrackingArea(area)
+            inputTrackingArea = area
+        }
+
+        public override func resetCursorRects() {
+            super.resetCursorRects()
+            guard isInteractive else { return }
+            addCursorRect(bounds, cursor: cursorShape.appKitCursor)
+        }
+
+        public func setCursorShape(_ shape: PreviewCursorShape) {
+            guard cursorShape != shape else { return }
+            cursorShape = shape
+            discardCursorRects()
+            window?.invalidateCursorRects(for: self)
         }
 
         // MARK: - 私有方法
@@ -298,6 +353,77 @@ public extension LumiInlinePreviewFacade {
         private func notifySize() {
             let scale = window?.backingScaleFactor ?? 1
             onSizeChange?(bounds.size, scale)
+        }
+
+        // MARK: - NSTextInputClient
+
+        public func insertText(_ string: Any, replacementRange: NSRange) {
+            guard isInteractive else { return }
+            onInputEvent?(.textInput(.init(
+                phase: .insertText,
+                text: Self.plainText(from: string),
+                replacementRange: LumiInlinePreviewFacade.Range(replacementRange)
+            )))
+        }
+
+        public func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
+            guard isInteractive else { return }
+            hasIMEMarkedText = true
+            markedText = Self.plainText(from: string)
+            onInputEvent?(.textInput(.init(
+                phase: .setMarkedText,
+                text: markedText,
+                selectedRange: LumiInlinePreviewFacade.Range(selectedRange),
+                replacementRange: LumiInlinePreviewFacade.Range(replacementRange)
+            )))
+        }
+
+        public func unmarkText() {
+            hasIMEMarkedText = false
+            markedText = ""
+            onInputEvent?(.textInput(.init(phase: .unmarkText, text: "")))
+        }
+
+        public func selectedRange() -> NSRange {
+            NSRange(location: NSNotFound, length: 0)
+        }
+
+        public func markedRange() -> NSRange {
+            hasIMEMarkedText ? NSRange(location: 0, length: (markedText as NSString).length) : NSRange(location: NSNotFound, length: 0)
+        }
+
+        public func hasMarkedText() -> Bool {
+            hasIMEMarkedText
+        }
+
+        public func attributedSubstring(forProposedRange range: NSRange, actualRange: NSRangePointer?) -> NSAttributedString? {
+            actualRange?.pointee = NSRange(location: NSNotFound, length: 0)
+            return nil
+        }
+
+        public func validAttributesForMarkedText() -> [NSAttributedString.Key] {
+            []
+        }
+
+        public func firstRect(forCharacterRange range: NSRange, actualRange: NSRangePointer?) -> NSRect {
+            actualRange?.pointee = range
+            guard let window else { return .zero }
+            return window.convertToScreen(convert(bounds, to: nil))
+        }
+
+        public func characterIndex(for point: NSPoint) -> Int {
+            0
+        }
+
+        public override func doCommand(by selector: Selector) {
+            // Keep command keys on the normal key event path; IME composition is handled above.
+        }
+
+        private static func plainText(from string: Any) -> String {
+            if let attributed = string as? NSAttributedString {
+                return attributed.string
+            }
+            return String(describing: string)
         }
     }
 }

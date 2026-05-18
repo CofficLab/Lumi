@@ -7,6 +7,8 @@ private actor FrameCollector {
     private(set) var sawInteractivePolicy = false
     private(set) var errorMessages: [String] = []
     private(set) var entryLoadedEvents: [(success: Bool, message: String?)] = []
+    private(set) var debugStates: [String] = []
+    private(set) var cursorShapes: [LumiInlinePreviewFacade.PreviewCursorShape] = []
 
     func append(_ frame: LumiInlinePreviewFacade.IOSurfaceFrame) {
         frames.append(frame)
@@ -19,6 +21,12 @@ private actor FrameCollector {
     }
     func noteEntryLoaded(success: Bool, message: String?) {
         entryLoadedEvents.append((success, message))
+    }
+    func noteDebugState(_ state: String) {
+        debugStates.append(state)
+    }
+    func noteCursorShape(_ shape: LumiInlinePreviewFacade.PreviewCursorShape) {
+        cursorShapes.append(shape)
     }
     var firstFrame: LumiInlinePreviewFacade.IOSurfaceFrame? { frames.first }
     var frameCount: Int { frames.count }
@@ -75,6 +83,10 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
                     await collector.noteError(message)
                 case .entryLoaded(let success, let message):
                     await collector.noteEntryLoaded(success: success, message: message)
+                case .entryDebugState(let state):
+                    await collector.noteDebugState(state)
+                case .cursorChanged(let shape):
+                    await collector.noteCursorShape(shape)
                 }
             }
         }
@@ -134,6 +146,10 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
                         pendingEntryFail = nil
                         exp.fulfill()
                     }
+                case .entryDebugState(let state):
+                    await collector.noteDebugState(state)
+                case .cursorChanged(let shape):
+                    await collector.noteCursorShape(shape)
                 }
             }
         }
@@ -200,6 +216,10 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
                         pendingEntryLoaded = nil
                         exp.fulfill()
                     }
+                case .entryDebugState(let state):
+                    await collector.noteDebugState(state)
+                case .cursorChanged(let shape):
+                    await collector.noteCursorShape(shape)
                 }
             }
         }
@@ -220,6 +240,177 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
         // 3. unload，子进程恢复 demo
         let unloadResponse = try await connection.send(.unloadDylib)
         XCTAssertTrue(unloadResponse.success)
+
+        eventTask.cancel()
+        await connection.terminate()
+    }
+
+    /// 端到端验证用户 entry 的可选调试状态符号：
+    /// load fixture → 读取初始状态 → 转发输入事件 → 再读取状态，
+    /// 证明跨进程输入确实改变了 entry 内部状态。
+    func test_entryDebugState_reflectsForwardedInput() async throws {
+        guard let hostURL = LumiInlinePreviewFacade.InlineHostExecutableResolver.resolve() else {
+            throw XCTSkip("LumiInlinePreviewHostApp binary not found; run `swift build` first.")
+        }
+
+        let dylibURL = try compileFixtureDylib()
+        defer { try? FileManager.default.removeItem(at: dylibURL) }
+
+        let connection = try LumiInlinePreviewFacade.ProcessInlineHostConnection.launch(executableURL: hostURL)
+
+        let collector = FrameCollector()
+        let entryLoadedExpectation = expectation(description: "fixture entry loaded")
+        var pendingEntryLoaded: XCTestExpectation? = entryLoadedExpectation
+
+        let events = connection.events
+        let eventTask = Task {
+            for await event in events {
+                switch event {
+                case .frameProduced(let frame):
+                    await collector.append(frame)
+                case .streamStateChanged(let policy):
+                    await collector.notePolicy(policy)
+                case .error(let message):
+                    await collector.noteError(message)
+                case .entryLoaded(let success, let message):
+                    await collector.noteEntryLoaded(success: success, message: message)
+                    if success, message == nil, let exp = pendingEntryLoaded {
+                        pendingEntryLoaded = nil
+                        exp.fulfill()
+                    }
+                case .entryDebugState(let state):
+                    await collector.noteDebugState(state)
+                case .cursorChanged(let shape):
+                    await collector.noteCursorShape(shape)
+                }
+            }
+        }
+
+        let start = try await connection.send(.startFrameStream(width: 320, height: 180, scale: 2))
+        XCTAssertTrue(start.success)
+
+        let loadResponse = try await connection.send(
+            .loadDylib(path: dylibURL.path, symbolName: "lumi_preview_make_nsview")
+        )
+        XCTAssertTrue(loadResponse.success, "loadDylib failed: \(loadResponse.message ?? "nil")")
+        await fulfillment(of: [entryLoadedExpectation], timeout: 5)
+
+        let initialState = try await connection.send(.requestEntryDebugState)
+        XCTAssertTrue(initialState.success)
+        XCTAssertTrue(initialState.message?.contains("mouseDown=0;keyDown=0;drop=0;lastKey=") == true, initialState.message ?? "nil")
+
+        let mouseResponse = try await connection.send(.forwardInputEvent(.mouse(.init(
+            phase: .entered,
+            button: .left,
+            x: 80,
+            y: 80,
+            clickCount: 0,
+            modifiers: []
+        ))))
+        XCTAssertTrue(mouseResponse.success)
+
+        let clickResponse = try await connection.send(.forwardInputEvent(.mouse(.init(
+            phase: .down,
+            button: .left,
+            x: 80,
+            y: 80,
+            clickCount: 1,
+            modifiers: []
+        ))))
+        XCTAssertTrue(clickResponse.success)
+
+        let keyResponse = try await connection.send(.forwardInputEvent(.key(.init(
+            phase: .down,
+            keyCode: 0,
+            characters: "a",
+            charactersIgnoringModifiers: "a",
+            isARepeat: false,
+            modifiers: []
+        ))))
+        XCTAssertTrue(keyResponse.success)
+
+        let textInputResponse = try await connection.send(.forwardInputEvent(.textInput(.init(
+            phase: .insertText,
+            text: "中",
+            replacementRange: .notFound
+        ))))
+        XCTAssertTrue(textInputResponse.success)
+
+        let finalState = try await connection.send(.requestEntryDebugState)
+        XCTAssertTrue(finalState.success)
+        XCTAssertTrue(finalState.message?.contains("first=a中") == true, finalState.message ?? "nil")
+        XCTAssertTrue(finalState.message?.contains("focus=first") == true, finalState.message ?? "nil")
+
+        let errors = await collector.errorMessages
+        XCTAssertTrue(errors.isEmpty, "subprocess pushed errors during debug state test: \(errors)")
+
+        eventTask.cancel()
+        await connection.terminate()
+    }
+
+    func test_dragAndDropEvent_reachesLoadedFixture() async throws {
+        guard let hostURL = LumiInlinePreviewFacade.InlineHostExecutableResolver.resolve() else {
+            throw XCTSkip("LumiInlinePreviewHostApp binary not found; run `swift build` first.")
+        }
+
+        let dylibURL = try compileFixtureDylib()
+        defer { try? FileManager.default.removeItem(at: dylibURL) }
+
+        let connection = try LumiInlinePreviewFacade.ProcessInlineHostConnection.launch(executableURL: hostURL)
+
+        let collector = FrameCollector()
+        let entryLoadedExpectation = expectation(description: "fixture entry loaded for drop")
+        var pendingEntryLoaded: XCTestExpectation? = entryLoadedExpectation
+
+        let events = connection.events
+        let eventTask = Task {
+            for await event in events {
+                switch event {
+                case .frameProduced(let frame):
+                    await collector.append(frame)
+                case .streamStateChanged(let policy):
+                    await collector.notePolicy(policy)
+                case .error(let message):
+                    await collector.noteError(message)
+                case .entryLoaded(let success, let message):
+                    await collector.noteEntryLoaded(success: success, message: message)
+                    if success, message == nil, let exp = pendingEntryLoaded {
+                        pendingEntryLoaded = nil
+                        exp.fulfill()
+                    }
+                case .entryDebugState(let state):
+                    await collector.noteDebugState(state)
+                case .cursorChanged(let shape):
+                    await collector.noteCursorShape(shape)
+                }
+            }
+        }
+
+        let start = try await connection.send(.startFrameStream(width: 320, height: 180, scale: 2))
+        XCTAssertTrue(start.success)
+
+        let loadResponse = try await connection.send(
+            .loadDylib(path: dylibURL.path, symbolName: "lumi_preview_make_nsview")
+        )
+        XCTAssertTrue(loadResponse.success, "loadDylib failed: \(loadResponse.message ?? "nil")")
+        await fulfillment(of: [entryLoadedExpectation], timeout: 5)
+
+        let dropResponse = try await connection.send(.forwardInputEvent(.dragAndDrop(.init(
+            phase: .perform,
+            x: 120,
+            y: 90,
+            items: [.string("fixture-drop")],
+            modifiers: []
+        ))))
+        XCTAssertTrue(dropResponse.success)
+
+        let finalState = try await connection.send(.requestEntryDebugState)
+        XCTAssertTrue(finalState.success)
+        XCTAssertTrue(finalState.message?.contains("drop=1") == true, finalState.message ?? "nil")
+        XCTAssertTrue(finalState.message?.contains("lastDrop=fixture-drop") == true, finalState.message ?? "nil")
+
+        let errors = await collector.errorMessages
+        XCTAssertTrue(errors.isEmpty, "subprocess pushed errors during drag-and-drop test: \(errors)")
 
         eventTask.cancel()
         await connection.terminate()

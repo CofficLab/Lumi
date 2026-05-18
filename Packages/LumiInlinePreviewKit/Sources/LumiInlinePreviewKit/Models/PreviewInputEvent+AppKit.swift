@@ -57,3 +57,13 @@ public extension LumiInlinePreviewFacade.ScrollWheelEvent.Phase {
         }
     }
 }
+
+public extension LumiInlinePreviewFacade.Range {
+    init(_ range: NSRange) {
+        self.init(location: range.location, length: range.length)
+    }
+
+    func toNSRange() -> NSRange {
+        NSRange(location: location, length: length)
+    }
+}

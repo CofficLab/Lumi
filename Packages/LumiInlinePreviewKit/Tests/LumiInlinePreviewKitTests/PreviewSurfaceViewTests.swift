@@ -18,6 +18,7 @@ final class PreviewSurfaceViewTests: XCTestCase {
 
         XCTAssertEqual(view.currentSurfaceID, frame.surfaceID)
         XCTAssertNotNil(view.layer?.contents)
+        XCTAssertTrue(view.subviews.isEmpty)
     }
 
     func test_detach_clearsContents() throws {
@@ -39,5 +40,14 @@ final class PreviewSurfaceViewTests: XCTestCase {
         let view = LumiInlinePreviewFacade.PreviewSurfaceView()
         view.attach(surfaceID: 0xFFFF_FFFF)
         XCTAssertNil(view.currentSurfaceID)
+    }
+
+    func test_setCursorShape_updatesCurrentShape() {
+        let view = LumiInlinePreviewFacade.PreviewSurfaceView()
+        XCTAssertEqual(view.cursorShape, .arrow)
+
+        view.setCursorShape(.pointingHand)
+
+        XCTAssertEqual(view.cursorShape, .pointingHand)
     }
 }

@@ -4,11 +4,12 @@ import LumiPreviewKit
 public extension LumiInlinePreviewFacade {
 
     /// 把 `LumiPreviewKit.PreviewDiscovery` 的 `bodySource` 包装成一段
-    /// **可独立编译的 Swift 源**，导出 `lumi_preview_make_nsview` C 符号。
+    /// entry Swift 源，导出 `lumi_preview_make_nsview` C 符号。
     ///
     /// 设计取舍：
-    /// - 仅依赖标准库 / AppKit / SwiftUI / Foundation，**不导入**用户工程模块；
-    ///   因此当前阶段只支持完全文件本地的 `#Preview`（这是绝大多数 SwiftUI 文档示例的形态）。
+    /// - standalone 编译路径仅依赖标准库 / AppKit / SwiftUI / Foundation，不导入用户工程模块。
+    /// - planned build 路径由 `PreviewEntryBuilder` 负责导入目标模块；这里保留轻量 entry
+    ///   模板用于无工程上下文时的 fallback。
     /// - 符号名与老 `LumiPreviewKit.PreviewEntryBuilder.viewSymbolName` 保持一致
     ///   （`lumi_preview_make_nsview`），后续若接入完整老编译管线产物可零成本兼容。
     /// - 闭包 body 直接拼接进生成源——若 body 引用文件其他类型，需要把同文件源
@@ -17,6 +18,7 @@ public extension LumiInlinePreviewFacade {
 
         /// 与 `HotPreviewRenderer.loadDylib(symbolName:)` 默认值保持一致的导出符号名。
         public static let viewSymbolName = "lumi_preview_make_nsview"
+        public static let updateViewSymbolName = "lumi_preview_update_nsview"
 
         /// 默认承载视图尺寸（点）。子进程会在 `resizeSurface` 时再调整 hosting view 的 frame，
         /// 这里给一个非零初值仅是为了让 `NSHostingView.bitmapImageRepForCachingDisplay` 能拿到合法尺寸。
@@ -51,6 +53,19 @@ public extension LumiInlinePreviewFacade {
                     height: \(Int(defaultViewSize.height))
                 )
                 return Unmanaged.passRetained(hosting).toOpaque()
+            }
+
+            @_cdecl("\(updateViewSymbolName)")
+            public func \(updateViewSymbolName)(_ existingView: UnsafeMutableRawPointer?) -> Bool {
+                guard let existingView else { return false }
+                let object = Unmanaged<AnyObject>.fromOpaque(existingView).takeUnretainedValue()
+                guard let hosting = object as? NSHostingView<AnyView> else { return false }
+                hosting.rootView = AnyView({
+            \(indented(body, spaces: 8))
+                }())
+                hosting.needsLayout = true
+                hosting.needsDisplay = true
+                return true
             }
             """
         }

@@ -39,7 +39,7 @@ final class PreviewSurfaceViewLayerTests: XCTestCase {
         let layer = view.makeBackingLayer()
 
         XCTAssertEqual(layer.contentsGravity, .resize, "contentsGravity 应为 .resize")
-        XCTAssertEqual(layer.magnificationFilter, .nearest, "magnificationFilter 应为 .nearest")
+        XCTAssertEqual(layer.magnificationFilter, .linear, "magnificationFilter 应为 .linear")
         XCTAssertEqual(layer.minificationFilter, .linear, "minificationFilter 应为 .linear")
         XCTAssertFalse(layer.isOpaque, "isOpaque 应为 false")
     }

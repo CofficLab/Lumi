@@ -65,8 +65,10 @@ final class HotPreviewRenderer {
     private var window: InvisibleHostWindow?
     private var previewView: NSView?
     private var loadedDylibHandle: UnsafeMutableRawPointer?
+    private var debugStateProvider: (@MainActor () -> String?)?
     private var recentSurfaces: [IOSurfaceRef] = []
     private var seq: UInt64 = 0
+    private var isDirty = true
 
     /// 暴露给 `HotPreviewEventDispatcher` 用于合成 `NSEvent.windowNumber` 与
     /// 调用 `sendEvent(_:)`。子进程内部使用，不跨进程。
@@ -97,6 +99,7 @@ final class HotPreviewRenderer {
         window?.setContentSize(frame.size)
         previewView?.needsLayout = true
         previewView?.needsDisplay = true
+        markDirty()
     }
 
     /// 加载用户预览 dylib，并把其导出的 `NSView` 挂为当前 `previewView`。
@@ -119,6 +122,12 @@ final class HotPreviewRenderer {
             throw LoadDylibError.symbolMissing(symbolName)
         }
 
+        if try updateExistingPreviewIfPossible(with: handle) {
+            replaceLoadedHandlePreservingView(with: handle)
+            debugStateProvider = makeDebugStateProvider(handle: handle)
+            return
+        }
+
         typealias MakeViewFn = @convention(c) () -> UnsafeMutableRawPointer?
         let makeView = unsafeBitCast(symbol, to: MakeViewFn.self)
         guard let opaque = makeView() else {
@@ -138,12 +147,14 @@ final class HotPreviewRenderer {
 
         unloadDylib()  // 卸老
         loadedDylibHandle = handle
+        debugStateProvider = makeDebugStateProvider(handle: handle)
         installView(view)
     }
 
     /// 卸载当前用户 dylib，恢复内置空白视图。
     func unloadDylib() {
         installDemoView()
+        debugStateProvider = nil
         if let handle = loadedDylibHandle {
             // 推迟一拍 dlclose：先让旧 view 的析构完成，避免它引用 dylib 中已 unmap 的代码段。
             loadedDylibHandle = nil
@@ -151,6 +162,34 @@ final class HotPreviewRenderer {
                 dlclose(handle)
             }
         }
+    }
+
+    /// 读取用户 entry 可选导出的调试状态。
+    func entryDebugState() -> String? {
+        debugStateProvider?()
+    }
+
+    /// 输入注入前确保离屏窗口仍处于可接收键盘事件的 responder 状态。
+    func prepareForInputDispatch() {
+        ensureWindow()
+        guard let window else { return }
+        if !window.isKeyWindow {
+            window.makeKeyAndOrderFront(nil)
+        }
+        if window.firstResponder == nil, let previewView {
+            window.makeFirstResponder(previewView)
+        }
+    }
+
+    func markDirty() {
+        isDirty = true
+    }
+
+    func snapshotIfDirty() -> LumiInlinePreviewFacade.IOSurfaceFrame? {
+        guard isDirty else { return nil }
+        guard let frame = snapshot() else { return nil }
+        isDirty = false
+        return frame
     }
 
     /// 抓一张当前画面到 IOSurface，返回跨进程帧描述符。
@@ -190,8 +229,22 @@ final class HotPreviewRenderer {
 
         context.clear(CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
 
+        context.interpolationQuality = .high
+
         // Snapshot 走 NSBitmapImageRep（layer-backed view 的可靠路径）。
-        guard let bitmap = view.bitmapImageRepForCachingDisplay(in: pointBounds) else { return nil }
+        // 离屏窗口可能拿不到真实 Retina backing，显式按 pointSize × scale 创建位图。
+        guard let bitmap = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: pixelWidth,
+            pixelsHigh: pixelHeight,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: bytesPerRow,
+            bitsPerPixel: 32
+        ) else { return nil }
         bitmap.size = pointBounds.size
         view.cacheDisplay(in: pointBounds, to: bitmap)
         guard let cgImage = bitmap.cgImage else { return nil }
@@ -249,9 +302,56 @@ final class HotPreviewRenderer {
         previewView = view
         view.needsLayout = true
         view.needsDisplay = true
+        markDirty()
         // 让 hosting view 成为 firstResponder：键盘事件能直达 SwiftUI TextField。
         // NSHostingView 通过 _NSResponderChain 内部转发到具体控件。
         window.makeFirstResponder(view)
+    }
+
+    private func updateExistingPreviewIfPossible(with handle: UnsafeMutableRawPointer) throws -> Bool {
+        guard let previewView,
+              let updateSymbol = dlsym(handle, "lumi_preview_update_nsview") else {
+            return false
+        }
+        typealias UpdateViewFn = @convention(c) (UnsafeMutableRawPointer?) -> Bool
+        let updateView = unsafeBitCast(updateSymbol, to: UpdateViewFn.self)
+        let updated = updateView(Unmanaged.passUnretained(previewView).toOpaque())
+        guard updated else { return false }
+        previewView.frame = NSRect(origin: .zero, size: pointSize)
+        previewView.wantsLayer = true
+        previewView.needsLayout = true
+        previewView.needsDisplay = true
+        window?.setContentSize(pointSize)
+        markDirty()
+        prepareForInputDispatch()
+        return true
+    }
+
+    private func replaceLoadedHandlePreservingView(with handle: UnsafeMutableRawPointer) {
+        if let oldHandle = loadedDylibHandle {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+                dlclose(oldHandle)
+            }
+        }
+        loadedDylibHandle = handle
+    }
+
+    private func makeDebugStateProvider(handle: UnsafeMutableRawPointer) -> (@MainActor () -> String?)? {
+        guard let symbol = dlsym(handle, "lumi_preview_debug_state") else { return nil }
+        typealias DebugStateFn = @convention(c) () -> UnsafeMutableRawPointer?
+        let debugState = unsafeBitCast(symbol, to: DebugStateFn.self)
+        return {
+            guard let opaque = debugState() else { return nil }
+            let unmanaged = Unmanaged<AnyObject>.fromOpaque(opaque)
+            let object = unmanaged.takeRetainedValue()
+            if let string = object as? String {
+                return string
+            }
+            if let string = object as? NSString {
+                return string as String
+            }
+            return nil
+        }
     }
 
     private func makeSurface(width: Int, height: Int, bytesPerRow: Int) -> IOSurfaceRef? {

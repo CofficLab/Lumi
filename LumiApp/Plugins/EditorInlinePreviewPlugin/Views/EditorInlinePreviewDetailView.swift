@@ -131,6 +131,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                 entryControls
             } else {
                 staticPreviewModeBadge
+                markdownTODOBadge
             }
 
             Spacer()
@@ -140,7 +141,11 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
                 buildInfoBadge
 
+                cacheControls
+
                 statusBadge
+
+                entryDebugControls
 
                 if let frame = viewModel.currentFrame {
                     Text("seq \(frame.seq) · \(frame.width)×\(frame.height) @\(String(format: "%.0fx", frame.scale))")
@@ -174,6 +179,25 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                 .foregroundStyle(.secondary)
         case .swift:
             EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private var markdownTODOBadge: some View {
+        if case .markdown = viewModel.previewMode,
+           let stats = MarkdownTODOScanner.scan(sourceText ?? "") {
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.circle.fill")
+                    .imageScale(.small)
+                Text("\(stats.completed)/\(stats.total)")
+                    .fontWeight(.semibold)
+                Text("(\(stats.percent)%)")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption)
+            .foregroundStyle(.green)
+            .lineLimit(1)
+            .help(String(localized: "Markdown TODO completion", table: "EditorInlinePreview"))
         }
     }
 
@@ -217,6 +241,57 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         return "\(mode) · \(time) · \(info.previewCount) preview(s)"
     }
 
+    @ViewBuilder
+    private var cacheControls: some View {
+        let summary = viewModel.cacheSummary
+        if !summary.isEmpty {
+            HStack(spacing: 4) {
+                Label(
+                    "\(String(localized: "cache", table: "EditorInlinePreview")) · \(summary.formattedByteCount)",
+                    systemImage: "externaldrive"
+                )
+                .labelStyle(.titleAndIcon)
+
+                Button {
+                    viewModel.purgeBuildCaches()
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .help(String(localized: "Clear Inline Preview build cache", table: "EditorInlinePreview"))
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+    }
+
+    @ViewBuilder
+    private var entryDebugControls: some View {
+        if canRequestEntryDebugState {
+            Button {
+                viewModel.requestEntryDebugState()
+            } label: {
+                if viewModel.isRequestingEntryDebugState {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "stethoscope")
+                }
+            }
+            .buttonStyle(.borderless)
+            .help(String(localized: "Refresh entry debug state", table: "EditorInlinePreview"))
+        }
+    }
+
+    private var canRequestEntryDebugState: Bool {
+        guard viewModel.status == .running else { return false }
+        if case .loaded = viewModel.entryStatus {
+            return true
+        }
+        return false
+    }
+
     private static let buildTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
@@ -249,8 +324,8 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                 .foregroundStyle(.green)
                 .lineLimit(1)
                 .truncationMode(.middle)
-        case let .failed(message):
-            Text(String(localized: "entry failed: \(message)", table: "EditorInlinePreview"))
+        case let .failed(failure):
+            Text(failure.title)
                 .font(.caption)
                 .foregroundStyle(.red)
                 .lineLimit(1)
@@ -263,6 +338,10 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         switch viewModel.status {
         case .idle:
             EmptyView()
+        case .warming:
+            Text(String(localized: "warming", table: "EditorInlinePreview")).font(.caption).foregroundStyle(.orange)
+        case .ready:
+            Text(String(localized: "ready", table: "EditorInlinePreview")).font(.caption).foregroundStyle(.secondary)
         case .starting:
             Text(String(localized: "starting", table: "EditorInlinePreview")).font(.caption).foregroundStyle(.orange)
         case .running:
@@ -329,6 +408,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
             LumiInlinePreviewFacade.PreviewSurfaceCanvas(
                 surfaceID: viewModel.currentFrame?.surfaceID,
                 isInteractive: viewModel.isInteractive,
+                cursorShape: viewModel.cursorShape,
                 onSizeChange: { size, scale in
                     viewModel.canvasDidResize(size, scale: scale)
                 },
@@ -339,19 +419,41 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(hasFrame ? Color.clear : Color.black.opacity(0.01))
 
-            if let message = entryFailureMessage {
+            if let failure = entryFailure {
                 VStack {
                     Spacer()
-                    EditorInlinePreviewFailureDetailsView(message: message)
+                    EditorInlinePreviewFailureDetailsView(failure: failure)
                         .padding(16)
                 }
+            }
+
+            if let debugState = viewModel.entryDebugState, !debugState.isEmpty {
+                VStack {
+                    HStack {
+                        Spacer()
+                        EditorInlinePreviewDebugStateView(state: debugState)
+                            .padding(16)
+                    }
+                    Spacer()
+                }
+            }
+
+            if let file = buildingFileName {
+                EditorInlinePreviewBuildingOverlay(fileName: file)
             }
         }
     }
 
-    private var entryFailureMessage: String? {
-        if case let .failed(message) = viewModel.entryStatus {
-            return message
+    private var entryFailure: EditorInlinePreviewViewModel.EntryFailure? {
+        if case let .failed(failure) = viewModel.entryStatus {
+            return failure
+        }
+        return nil
+    }
+
+    private var buildingFileName: String? {
+        if case let .building(file) = viewModel.entryStatus {
+            return file
         }
         return nil
     }
@@ -371,6 +473,123 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                     .padding(.horizontal, 32)
             }
         }
+    }
+}
+
+private struct EditorInlinePreviewDebugStateView: View {
+    let state: String
+
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "stethoscope")
+                    .foregroundStyle(.blue)
+                Text(String(localized: "Entry debug state", table: "EditorInlinePreview"))
+                    .font(.system(size: 13, weight: .semibold))
+                Spacer(minLength: 8)
+                Button {
+                    isExpanded.toggle()
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                }
+                .buttonStyle(.borderless)
+                .help(String(localized: "Show entry debug state", table: "EditorInlinePreview"))
+            }
+
+            if isExpanded {
+                ScrollView {
+                    Text(state)
+                        .font(.system(size: 12, design: .monospaced))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                }
+                .frame(maxHeight: 180)
+                .background(Color.black.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            } else {
+                Text(state)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+            }
+        }
+        .padding(12)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary.opacity(0.18), lineWidth: 1)
+        )
+        .frame(width: 360)
+        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+    }
+}
+
+private struct EditorInlinePreviewBuildingOverlay: View {
+    let fileName: String
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ProgressView()
+                .controlSize(.regular)
+            Text(String(localized: "building \(fileName)", table: "EditorInlinePreview"))
+                .font(.callout)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Text(fileName)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
+        .frame(minWidth: 220, maxWidth: 360)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08))
+        }
+        .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
+        .padding(24)
+    }
+}
+
+private struct MarkdownTODOStats: Equatable {
+    let total: Int
+    let completed: Int
+
+    var ratio: Double {
+        total > 0 ? Double(completed) / Double(total) : 0
+    }
+
+    var percent: Int {
+        Int((ratio * 100).rounded())
+    }
+}
+
+private enum MarkdownTODOScanner {
+    static func scan(_ markdown: String) -> MarkdownTODOStats? {
+        var total = 0
+        var completed = 0
+
+        for line in markdown.split(separator: "\n", omittingEmptySubsequences: false) {
+            let trimmed = line.drop { $0 == " " || $0 == "\t" }
+            if trimmed.hasPrefix("- [ ]") {
+                total += 1
+            } else if trimmed.hasPrefix("- [x]") {
+                total += 1
+                completed += 1
+            }
+        }
+
+        guard total > 0 else { return nil }
+        return MarkdownTODOStats(total: total, completed: completed)
     }
 }
 
@@ -439,16 +658,16 @@ private struct EditorInlinePreviewMarkdownView: View {
 }
 
 private struct EditorInlinePreviewFailureDetailsView: View {
-    let message: String
+    let failure: EditorInlinePreviewViewModel.EntryFailure
 
     @State private var isExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
+                Image(systemName: failure.systemImage)
                     .foregroundStyle(.orange)
-                Text(String(localized: "Preview failed", table: "EditorInlinePreview"))
+                Text(failure.title)
                     .font(.system(size: 13, weight: .semibold))
                 Spacer(minLength: 8)
                 Button {
@@ -462,7 +681,7 @@ private struct EditorInlinePreviewFailureDetailsView: View {
 
             if isExpanded {
                 ScrollView {
-                    Text(message)
+                    Text(failure.message)
                         .font(.system(size: 12, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -472,7 +691,7 @@ private struct EditorInlinePreviewFailureDetailsView: View {
                 .background(Color.black.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             } else {
-                Text(message)
+                Text(failure.message)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)

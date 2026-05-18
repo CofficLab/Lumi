@@ -22,7 +22,118 @@
 import AppKit
 import SwiftUI
 
+@MainActor
+private final class FixtureState: ObservableObject {
+    static let shared = FixtureState()
+
+    private(set) var mouseDownCount = 0
+    private(set) var keyDownCount = 0
+    private(set) var dropCount = 0
+    private(set) var lastKey = ""
+    private(set) var lastDrop = ""
+    @Published var firstText = ""
+    @Published var secondText = ""
+    @Published var focusedField = "none"
+
+    func recordMouseDown() {
+        mouseDownCount += 1
+    }
+
+    func recordKeyDown(_ characters: String) {
+        keyDownCount += 1
+        lastKey = characters
+    }
+
+    func recordDrop(_ value: String) {
+        dropCount += 1
+        lastDrop = value
+    }
+
+    var debugDescription: String {
+        [
+            "mouseDown=\(mouseDownCount)",
+            "keyDown=\(keyDownCount)",
+            "drop=\(dropCount)",
+            "lastKey=\(lastKey)",
+            "lastDrop=\(lastDrop)",
+            "first=\(firstText)",
+            "second=\(secondText)",
+            "focus=\(focusedField)"
+        ].joined(separator: ";")
+    }
+}
+
+@MainActor
+private final class FixtureProbeView: NSHostingView<FixtureRoot> {
+    override var acceptsFirstResponder: Bool { true }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        NSCursor.pointingHand.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        NSCursor.pointingHand.set()
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        super.cursorUpdate(with: event)
+        NSCursor.pointingHand.set()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        FixtureState.shared.recordMouseDown()
+        super.mouseDown(with: event)
+        NSCursor.pointingHand.set()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        FixtureState.shared.recordKeyDown(event.characters ?? "")
+        super.keyDown(with: event)
+    }
+
+    override func insertText(_ insertString: Any) {
+        if let attributed = insertString as? NSAttributedString {
+            FixtureState.shared.recordKeyDown(attributed.string)
+        } else {
+            FixtureState.shared.recordKeyDown(String(describing: insertString))
+        }
+        super.insertText(insertString)
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        .copy
+    }
+
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        true
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let pasteboard = sender.draggingPasteboard
+        if let string = pasteboard.string(forType: .string) {
+            FixtureState.shared.recordDrop(string)
+            return true
+        }
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL],
+           let first = urls.first {
+            FixtureState.shared.recordDrop(first.path)
+            return true
+        }
+        return false
+    }
+}
+
 private struct FixtureRoot: View {
+    enum Field: Hashable {
+        case first
+        case second
+    }
+
+    @ObservedObject private var state = FixtureState.shared
+    @FocusState private var focusedField: Field?
+
     var body: some View {
         TimelineView(.animation) { context in
             let phase = context.date.timeIntervalSinceReferenceDate
@@ -45,17 +156,53 @@ private struct FixtureRoot: View {
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.85))
                         .monospacedDigit()
+                    VStack(spacing: 4) {
+                        TextField("First", text: $state.firstText)
+                            .focused($focusedField, equals: .first)
+                        TextField("Second", text: $state.secondText)
+                            .focused($focusedField, equals: .second)
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 180)
                 }
                 .padding(8)
                 .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 6))
+            }
+            .onAppear {
+                focusedField = .first
+            }
+            .onHover { inside in
+                if inside {
+                    NSCursor.pointingHand.set()
+                } else {
+                    NSCursor.arrow.set()
+                }
+            }
+            .onChange(of: focusedField) { newValue in
+                switch newValue {
+                case .first:
+                    state.focusedField = "first"
+                case .second:
+                    state.focusedField = "second"
+                case nil:
+                    state.focusedField = "none"
+                }
             }
         }
     }
 }
 
 @_cdecl("lumi_preview_make_nsview")
+@MainActor
 public func lumi_preview_make_nsview() -> UnsafeMutableRawPointer? {
-    let view = NSHostingView(rootView: FixtureRoot())
+    let view = FixtureProbeView(rootView: FixtureRoot())
     view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
     return Unmanaged.passRetained(view).toOpaque()
+}
+
+@_cdecl("lumi_preview_debug_state")
+@MainActor
+public func lumi_preview_debug_state() -> UnsafeMutableRawPointer? {
+    let state = FixtureState.shared.debugDescription
+    return Unmanaged.passRetained(NSString(string: state)).toOpaque()
 }

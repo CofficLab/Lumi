@@ -4,19 +4,20 @@ import LumiPreviewKit
 
 public extension LumiInlinePreviewFacade {
 
-    /// 把 Swift 源文件中的第一个 `#Preview` 自动编译成可被
+    /// 把 Swift 源文件中的 `#Preview` 自动编译成可被
     /// `InlinePreviewSession.loadDylib(path:)` 加载的 dylib。
     ///
     /// 流水线：
-    /// 1. 用 `LumiPreviewKit.PreviewScanner` 扫源；选第一条 `PreviewDiscovery`。
-    /// 2. 计算源码 SHA256 指纹；命中缓存时直接返回上次产物。
-    /// 3. `InlinePreviewEntryGenerator` 生成 entry .swift。
-    /// 4. 把"用户源 + entry"两个文件一起喂给 `xcrun swiftc -emit-library`。
-    /// 5. 缓存 (fingerprint → dylib URL) 并返回。
+    /// 1. 用 `LumiPreviewKit.PreviewScanner` 扫源；按 requested index 选择 `PreviewDiscovery`。
+    /// 2. 计算源码、文件路径、preview id 的 SHA256 指纹；命中缓存时直接返回上次产物。
+    /// 3. 优先用 `LumiPreviewKit.BuildPlanner` 规划 SPM/Xcode 构建上下文。
+    /// 4. 有构建上下文时复用 `PreviewEntryBuilder` 生成可导入目标模块的 entry dylib。
+    /// 5. 无构建上下文时回退 standalone swiftc，编译"用户源 + entry + 同包 Swift 文件"。
+    /// 6. 缓存 (fingerprint → dylib URL) 并返回。
     ///
-    /// **范围**：当前阶段仅支持文件本地的 `#Preview`（不导入工程模块、不解析 SPM 依赖）。
-    /// 这覆盖大多数 SwiftUI 文档式片段；更复杂的预览仍可走 `Load Dylib…` 手动路径。
-    public actor InlinePreviewBuilder {
+    /// **范围**：支持 standalone Swift 文件和基础 SPM/Xcode target 上下文；复杂 workspace
+    /// 的外部 package link inputs 仍需要真实项目压测继续收敛。
+    actor InlinePreviewBuilder {
 
         // MARK: - 错误
 
@@ -24,6 +25,7 @@ public extension LumiInlinePreviewFacade {
             case noPreviewFound
             case sdkResolutionFailed(String)
             case swiftcFailed(stderr: String)
+            case plannedBuildFailed(String)
 
             public var errorDescription: String? {
                 switch self {
@@ -33,6 +35,8 @@ public extension LumiInlinePreviewFacade {
                     return "Failed to resolve macOS SDK path: \(message)"
                 case let .swiftcFailed(stderr):
                     return "swiftc failed:\n\(stderr)"
+                case let .plannedBuildFailed(message):
+                    return "Planned preview build failed:\n\(message)"
                 }
             }
         }
@@ -44,11 +48,25 @@ public extension LumiInlinePreviewFacade {
             public let fingerprint: String
             public let usedCache: Bool
             public let primaryTitle: String
+            public let selectedPreviewIndex: Int
+            public let previewCount: Int
+        }
+
+        public struct PreviewSummary: Sendable, Equatable, Identifiable {
+            public let id: String
+            public let index: Int
+            public let title: String
+            public let lineNumber: Int
+            public let primaryTypeName: String?
         }
 
         // MARK: - 私有
 
         private let scanner = LumiPreviewFacade.PreviewScanner()
+        private let buildPlanner = LumiPreviewFacade.BuildPlanner()
+        private let previewEntryBuilder = LumiPreviewFacade.PreviewEntryBuilder()
+        private let spmCompiler = LumiPreviewFacade.SPMCompiler()
+        private let xcodeCompiler = LumiPreviewFacade.XcodeCompiler()
         private let workspaceRoot: URL
         private let cacheLimit: Int
         /// fingerprint → dylib URL（最近若干次保存的产物）。
@@ -78,24 +96,110 @@ public extension LumiInlinePreviewFacade {
         ///
         /// - 同样的 `sourceText` 命中缓存直接返回上次产物（`usedCache == true`）。
         /// - 仅扫源不重写磁盘：传入的是 buffer 内容，避免读到未保存的旧文件。
-        public func build(fileURL: URL, sourceText: String) async throws -> BuildResult {
+        public func build(
+            fileURL: URL,
+            sourceText: String,
+            previewIndex requestedPreviewIndex: Int = 0
+        ) async throws -> BuildResult {
             let discoveries = scanner.scan(fileURL: fileURL, sourceText: sourceText)
-            guard let discovery = discoveries.first else {
+            guard !discoveries.isEmpty else {
                 throw BuildError.noPreviewFound
             }
+            let previewIndex = discoveries.indices.contains(requestedPreviewIndex) ? requestedPreviewIndex : 0
+            let discovery = discoveries[previewIndex]
 
-            let fingerprint = Self.fingerprint(of: sourceText, fileURL: fileURL)
+            let fingerprint = Self.fingerprint(
+                of: sourceText,
+                fileURL: fileURL,
+                previewID: discovery.id
+            )
             if let cached = cache[fingerprint], FileManager.default.fileExists(atPath: cached.path) {
                 touch(fingerprint: fingerprint)
                 return BuildResult(
                     dylibURL: cached,
                     fingerprint: fingerprint,
                     usedCache: true,
-                    primaryTitle: discovery.title
+                    primaryTitle: discovery.title,
+                    selectedPreviewIndex: previewIndex,
+                    previewCount: discoveries.count
                 )
             }
 
             try ensureWorkspace()
+            let dylibURL: URL
+            if let buildStrategy = buildPlanner.plan(for: fileURL) {
+                dylibURL = try await buildPlannedEntry(
+                    discovery: discovery,
+                    buildStrategy: buildStrategy,
+                    fingerprint: fingerprint
+                )
+            } else {
+                dylibURL = try await buildStandaloneEntry(
+                    discovery: discovery,
+                    fileURL: fileURL,
+                    sourceText: sourceText,
+                    fingerprint: fingerprint
+                )
+            }
+
+            insert(fingerprint: fingerprint, dylibURL: dylibURL)
+
+            return BuildResult(
+                dylibURL: dylibURL,
+                fingerprint: fingerprint,
+                usedCache: false,
+                primaryTitle: discovery.title,
+                selectedPreviewIndex: previewIndex,
+                previewCount: discoveries.count
+            )
+        }
+
+        private func buildPlannedEntry(
+            discovery: LumiPreviewFacade.PreviewDiscovery,
+            buildStrategy: LumiPreviewFacade.BuildStrategy,
+            fingerprint: String
+        ) async throws -> URL {
+            do {
+                try await buildTargetIfNeeded(buildStrategy)
+                let builtURL = try await previewEntryBuilder.buildEntry(
+                    for: discovery,
+                    configuration: .empty,
+                    buildStrategy: buildStrategy
+                )
+                let buildDir = workspaceRoot.appendingPathComponent(fingerprint, isDirectory: true)
+                try FileManager.default.createDirectory(at: buildDir, withIntermediateDirectories: true)
+                let dylibURL = buildDir.appendingPathComponent("InlinePreviewEntry.dylib")
+                if FileManager.default.fileExists(atPath: dylibURL.path) {
+                    try FileManager.default.removeItem(at: dylibURL)
+                }
+                try FileManager.default.copyItem(at: builtURL, to: dylibURL)
+                return dylibURL
+            } catch {
+                throw BuildError.plannedBuildFailed(error.localizedDescription)
+            }
+        }
+
+        private func buildTargetIfNeeded(_ buildStrategy: LumiPreviewFacade.BuildStrategy) async throws {
+            switch buildStrategy {
+            case .spm(let packageDirectory, let targetName):
+                _ = try await spmCompiler.build(packageDirectory: packageDirectory, targetName: targetName)
+            case .xcode(let projectURL, let scheme, let configuration):
+                _ = try await xcodeCompiler.build(
+                    projectURL: projectURL,
+                    scheme: scheme,
+                    configuration: configuration
+                )
+            case .incremental:
+                break
+            }
+        }
+
+        private func buildStandaloneEntry(
+            discovery: LumiPreviewFacade.PreviewDiscovery,
+            fileURL: URL,
+            sourceText: String,
+            fingerprint: String
+        ) async throws -> URL {
             let buildDir = workspaceRoot.appendingPathComponent(fingerprint, isDirectory: true)
             try FileManager.default.createDirectory(at: buildDir, withIntermediateDirectories: true)
 
@@ -118,15 +222,19 @@ public extension LumiInlinePreviewFacade {
                 inputs: swiftcInputs,
                 output: dylibURL
             )
+            return dylibURL
+        }
 
-            insert(fingerprint: fingerprint, dylibURL: dylibURL)
-
-            return BuildResult(
-                dylibURL: dylibURL,
-                fingerprint: fingerprint,
-                usedCache: false,
-                primaryTitle: discovery.title
-            )
+        public func discoverPreviews(fileURL: URL, sourceText: String) -> [PreviewSummary] {
+            scanner.scan(fileURL: fileURL, sourceText: sourceText).enumerated().map { index, discovery in
+                PreviewSummary(
+                    id: discovery.id,
+                    index: index,
+                    title: discovery.title,
+                    lineNumber: discovery.lineNumber,
+                    primaryTypeName: discovery.primaryTypeName
+                )
+            }
         }
 
         /// 清空缓存与磁盘产物；下次 `build` 必定走完整 swiftc。
@@ -249,9 +357,11 @@ public extension LumiInlinePreviewFacade {
 
         // MARK: - 私有 — 指纹
 
-        private static func fingerprint(of sourceText: String, fileURL: URL) -> String {
+        private static func fingerprint(of sourceText: String, fileURL: URL, previewID: String) -> String {
             var hasher = SHA256()
             hasher.update(data: Data(fileURL.path.utf8))
+            hasher.update(data: Data([0]))
+            hasher.update(data: Data(previewID.utf8))
             hasher.update(data: Data([0]))
             hasher.update(data: Data(sourceText.utf8))
             let digest = hasher.finalize()
@@ -274,7 +384,7 @@ public extension LumiInlinePreviewFacade {
         /// 如果找不到 SPM 包结构（如文件不在任何包中），返回空数组——回退到仅编译单文件。
         private static func collectPeerSwiftFiles(for fileURL: URL) -> [URL] {
             let fm = FileManager.default
-            var currentDir = fileURL.deletingLastPathComponent()
+            let currentDir = fileURL.deletingLastPathComponent()
 
             // 1. 向上查找 Package.swift → 确定包根目录
             var packageRoot: URL?

@@ -23,6 +23,13 @@ public extension LumiInlinePreviewFacade {
         /// 卸载当前用户 dylib，恢复到内置空白视图。
         case unloadDylib
 
+        /// 读取用户 dylib 可选导出的调试状态。
+        ///
+        /// 调试符号约定：
+        /// `@_cdecl("lumi_preview_debug_state") () -> UnsafeMutableRawPointer?`，
+        /// 返回 `Unmanaged.passRetained(NSString(string: ...)).toOpaque()`。
+        case requestEntryDebugState
+
         /// 把主进程捕获的输入事件注入到子进程离屏窗口。
         ///
         /// 坐标必须是子进程当前 hosting view 内的 point 值（bottom-left 原点）；
@@ -66,6 +73,12 @@ public extension LumiInlinePreviewFacade {
 
         /// 用户 dylib 加载结果。`success == false` 时 `message` 描述失败原因。
         case entryLoaded(success: Bool, message: String?)
+
+        /// 用户 dylib 可选调试状态，用于端到端验证输入是否改变 entry 内部状态。
+        case entryDebugState(String)
+
+        /// 子进程当前 hover 位置对应的 cursor 形状。
+        case cursorChanged(PreviewCursorShape)
     }
 
     // MARK: - 出站 envelope

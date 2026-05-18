@@ -7,15 +7,24 @@ final class PreviewInputEventTests: XCTestCase {
     // MARK: - Codable round-trips
 
     func test_mouseEvent_roundTrip() throws {
-        let event = LumiInlinePreviewFacade.PreviewInputEvent.mouse(.init(
-            phase: .down,
-            button: .left,
-            x: 12,
-            y: 34,
-            clickCount: 1,
-            modifiers: [.shift, .command]
-        ))
-        try roundTrip(event)
+        for phase in [
+            LumiInlinePreviewFacade.MouseEvent.Phase.down,
+            .up,
+            .moved,
+            .dragged,
+            .entered,
+            .exited
+        ] {
+            let event = LumiInlinePreviewFacade.PreviewInputEvent.mouse(.init(
+                phase: phase,
+                button: .left,
+                x: 12,
+                y: 34,
+                clickCount: 1,
+                modifiers: [.shift, .command]
+            ))
+            try roundTrip(event)
+        }
     }
 
     func test_scrollWheelEvent_roundTrip() throws {
@@ -45,6 +54,49 @@ final class PreviewInputEventTests: XCTestCase {
 
     func test_flagsChanged_roundTrip() throws {
         let event = LumiInlinePreviewFacade.PreviewInputEvent.flagsChanged(modifiers: [.command, .option])
+        try roundTrip(event)
+    }
+
+    func test_textInputEvents_roundTrip() throws {
+        let events: [LumiInlinePreviewFacade.PreviewInputEvent] = [
+            .textInput(.init(
+                phase: .setMarkedText,
+                text: "zhong",
+                selectedRange: .init(location: 0, length: 5),
+                replacementRange: .notFound
+            )),
+            .textInput(.init(
+                phase: .insertText,
+                text: "中",
+                replacementRange: .init(location: 0, length: 5)
+            )),
+            .textInput(.init(phase: .unmarkText, text: ""))
+        ]
+        for event in events {
+            try roundTrip(event)
+        }
+    }
+
+    func test_dragDropEvent_roundTrip() throws {
+        let event = LumiInlinePreviewFacade.PreviewInputEvent.dragAndDrop(.init(
+            phase: .perform,
+            x: 44,
+            y: 55,
+            items: [
+                .string("hello"),
+                .fileURL("/tmp/example.txt")
+            ],
+            modifiers: [.option]
+        ))
+        try roundTrip(event)
+    }
+
+    func test_touchBarEvent_roundTrip() throws {
+        let event = LumiInlinePreviewFacade.PreviewInputEvent.touchBar(.init(
+            itemIdentifier: "com.coffic.lumi.inline-preview.fixture.increment",
+            phase: .itemPressed,
+            modifiers: [.command]
+        ))
         try roundTrip(event)
     }
 

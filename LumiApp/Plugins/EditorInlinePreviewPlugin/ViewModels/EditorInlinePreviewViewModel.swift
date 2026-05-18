@@ -9,7 +9,6 @@ import SwiftUI
 ///
 /// 职责：
 /// - 管理 `InlinePreviewSession` 启动/停止；frame 转 `@Published`；canvas resize forward。
-/// - 手选 dylib：`loadDylib(at:)` / `unloadDylib()`；用户主动选 .dylib 时进入 manual 模式，冻结自动流程。
 /// - 自动构建：直接订阅 `EditorService` 的 `currentFileURL` / `saveRevision` / `contentRevision`，
 ///   按 Xcode 风格"保存触发"重建 dylib（`InlinePreviewBuilder`）并自动 `loadDylib`。
 ///   **不依赖 View 层的 `onAppear`/`onChange`**——即使 Inline Preview tab 未被选中也能感知文件变化。
@@ -26,6 +25,8 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
     enum SessionStatus: Equatable, CustomStringConvertible {
         case idle
+        case warming
+        case ready
         case starting
         case running
         case stopping
@@ -34,6 +35,8 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         var description: String {
             switch self {
             case .idle: return "idle"
+            case .warming: return "warming"
+            case .ready: return "ready"
             case .starting: return "starting"
             case .running: return "running"
             case .stopping: return "stopping"
@@ -47,7 +50,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         case building(file: String)
         case loading(path: String)
         case loaded(path: String, title: String)
-        case failed(message: String)
+        case failed(EntryFailure)
 
         var description: String {
             switch self {
@@ -55,9 +58,67 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
             case .building(let file): return "building(\(file))"
             case .loading(let path): return "loading(\(path))"
             case .loaded(_, let title): return "loaded(\(title))"
-            case .failed(let msg): return "failed(\(msg))"
+            case .failed(let failure): return "failed(\(failure.kind.rawValue): \(failure.message))"
             }
         }
+    }
+
+    enum EntryFailureKind: String, Equatable {
+        case sdk
+        case compile
+        case dependency
+        case dylibLoad
+        case unknown
+    }
+
+    struct EntryFailure: Equatable {
+        let kind: EntryFailureKind
+        let message: String
+
+        var title: String {
+            switch kind {
+            case .sdk:
+                return String(localized: "SDK resolution failed", table: "EditorInlinePreview")
+            case .compile:
+                return String(localized: "Compilation failed", table: "EditorInlinePreview")
+            case .dependency:
+                return String(localized: "Dependency planning failed", table: "EditorInlinePreview")
+            case .dylibLoad:
+                return String(localized: "Preview dylib failed to load", table: "EditorInlinePreview")
+            case .unknown:
+                return String(localized: "Preview failed", table: "EditorInlinePreview")
+            }
+        }
+
+        var systemImage: String {
+            switch kind {
+            case .sdk:
+                return "gear.badge.questionmark"
+            case .compile:
+                return "curlybraces"
+            case .dependency:
+                return "shippingbox"
+            case .dylibLoad:
+                return "link.badge.plus"
+            case .unknown:
+                return "exclamationmark.triangle.fill"
+            }
+        }
+    }
+
+    enum PreviewMode: Equatable {
+        case swift
+        case image(URL)
+        case markdown(URL)
+        case stringCatalog(URL)
+        case unsupported(URL?)
+    }
+
+    struct BuildInfo: Equatable {
+        let completedAt: Date
+        let usedCache: Bool
+        let previewCount: Int
+        let selectedTitle: String
     }
 
     // MARK: - 已发布状态
@@ -103,19 +164,28 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
             }
         }
     }
+    @Published private(set) var previewMode: PreviewMode = .unsupported(nil)
+    @Published private(set) var availablePreviews: [LumiInlinePreviewFacade.InlinePreviewBuilder.PreviewSummary] = []
+    @Published private(set) var selectedPreviewIndex: Int = 0
+    @Published private(set) var lastBuildInfo: BuildInfo?
+    @Published private(set) var cacheSummary: EditorInlinePreviewStorage.CacheSummary = .init(fileCount: 0, byteCount: 0)
+    @Published private(set) var entryDebugState: String?
+    @Published private(set) var isRequestingEntryDebugState = false
+    @Published private(set) var cursorShape: LumiInlinePreviewFacade.PreviewCursorShape = .arrow
 
     // MARK: - 私有
 
-    private let session = LumiInlinePreviewFacade.InlinePreviewSession()
-    private let builder = LumiInlinePreviewFacade.InlinePreviewBuilder()
+    private let session: LumiInlinePreviewFacade.InlinePreviewSession
+    private let builder: LumiInlinePreviewFacade.InlinePreviewBuilder
     private var lastSentPixelSize: (width: Int, height: Int, scale: Double)?
     /// 最近一次从编辑器收到的 (currentFileURL, source)。用于 startSession / saveRevision 时取最新内容重建。
     private var activeFileURL: URL?
     private var latestSourceText: String?
     /// 最近一次成功 loadDylib 的 build fingerprint，避免重复加载相同产物。
     private var lastLoadedFingerprint: String?
-    /// 标识"用户主动手选了 dylib"——此时不应被自动 build 流程覆盖。
-    private var manualDylibActive: Bool = false
+    private var isViewVisible = false
+    private var didWireEditorService = false
+    private var warmupTask: Task<Void, Never>?
 
     /// Combine 订阅令牌（订阅 EditorService 状态变化）。
     private var editorCancellables = Set<AnyCancellable>()
@@ -123,16 +193,25 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
     // MARK: - 初始化
 
     init() {
+        EditorInlinePreviewStorage.installIfNeeded()
+        session = LumiInlinePreviewFacade.InlinePreviewSession()
+        builder = LumiInlinePreviewFacade.InlinePreviewBuilder(
+            workspaceRoot: EditorInlinePreviewStorage.inlineBuilderWorkspaceDirectory
+        )
         if Self.verbose {
                     Self.logger.info("\(Self.t)🚩 初始化 EditorInlinePreviewViewModel")
         }
         LumiInlinePreviewFacade.verbose = Self.verbose
         wireSessionCallbacks()
+        refreshCacheSummary()
+        warmupSessionIfPossible()
     }
 
     /// 订阅 EditorService 的状态变化，直接感知文件切换/保存/内容变化。
     /// 不再依赖 View 层的 `onAppear`/`onChange`——即使 Inline Preview tab 未被选中也能工作。
     func wireEditorService(_ service: EditorService) {
+        guard !didWireEditorService else { return }
+        didWireEditorService = true
         let state = service.state
 
         // 文件切换 → setActiveFile
@@ -170,11 +249,30 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
     }
 
+    func viewDidAppear(fileURL: URL?, sourceText: String?) {
+        isViewVisible = true
+        setActiveFile(fileURL, sourceText: sourceText)
+        startSessionIfNeededForActiveFile()
+    }
+
+    func viewDidDisappear() {
+        isViewVisible = false
+        stopSessionIfNeeded()
+    }
+
     // MARK: - 公开方法 — Session 路径
 
     func startSession() {
         let currentStatus = status
-        guard currentStatus == .idle || isFailed(currentStatus) else {
+        if currentStatus == .warming {
+            Task { [weak self] in
+                await self?.warmupTask?.value
+                guard self?.isViewVisible == true else { return }
+                self?.startSession()
+            }
+            return
+        }
+        guard currentStatus == .idle || currentStatus == .ready || isFailed(currentStatus) else {
             if Self.verbose {
                             Self.logger.warning("\(self.t)⚠️ 跳过 startSession — 当前状态=\(currentStatus.description)")
             }
@@ -208,7 +306,10 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
     func stopSession() {
         let currentStatus = status
-        guard currentStatus == .running || currentStatus == .starting else {
+        guard currentStatus == .running ||
+              currentStatus == .starting ||
+              currentStatus == .warming ||
+              currentStatus == .ready else {
             if Self.verbose {
                             Self.logger.warning("\(self.t)⚠️ 跳过 stopSession — 当前状态=\(currentStatus.description)")
             }
@@ -219,10 +320,17 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
         status = .stopping
         Task { [weak self] in
+            let warmupTask = self?.warmupTask
+            warmupTask?.cancel()
+            self?.warmupTask = nil
+            if let warmupTask {
+                await warmupTask.value
+            }
             await self?.session.stop()
             self?.status = .idle
             self?.policy = .stopped
             self?.currentFrame = nil
+            self?.cursorShape = .arrow
             if Self.verbose {
                             Self.logger.info("\(Self.t)✅ Session 已停止")
             }
@@ -254,53 +362,6 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - 公开方法 — Entry 路径
-
-    /// 让子进程加载用户预览 dylib，把其 `lumi_preview_make_nsview` 导出的 `NSView` 挂为 previewView。
-    func loadDylib(at url: URL) {
-        manualDylibActive = true
-        lastLoadedFingerprint = nil
-        let path = url.path
-        entryStatus = .loading(path: path)
-        if Self.verbose {
-                    Self.logger.info("\(self.t)📥 加载 Dylib（手动）：\(path)")
-        }
-        Task { [weak self] in
-            do {
-                let response = try await self?.session.loadDylib(path: path)
-                if response?.success == true {
-                    if Self.verbose {
-                                            Self.logger.info("\(Self.t)✅ Dylib 已加载：\(path)")
-                    }
-                    self?.entryStatus = .loaded(path: path, title: (path as NSString).lastPathComponent)
-                } else {
-                    if Self.verbose {
-                                            Self.logger.error("\(Self.t)❌ Dylib 加载失败：\(response?.message ?? "unknown")")
-                    }
-                    self?.entryStatus = .failed(message: response?.message ?? "unknown")
-                }
-            } catch {
-                if Self.verbose {
-                                    Self.logger.error("\(Self.t)❌ Dylib 加载异常：\(error.localizedDescription)")
-                }
-                self?.entryStatus = .failed(message: error.localizedDescription)
-            }
-        }
-    }
-
-    /// 卸载用户 dylib。
-    func unloadDylib() {
-        if Self.verbose {
-                    Self.logger.info("\(self.t)📤 卸载 Dylib")
-        }
-        manualDylibActive = false
-        lastLoadedFingerprint = nil
-        Task { [weak self] in
-            _ = try? await self?.session.unloadDylib()
-            self?.entryStatus = .noPreview
-        }
-    }
-
     // MARK: - 公开方法 — 自动构建
 
     /// 由 Combine 订阅（文件 URL 变化）触发，也可由 View 层直接调用。
@@ -310,7 +371,17 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
         activeFileURL = url
         latestSourceText = sourceText
+        updatePreviewMode(for: url)
+        selectedPreviewIndex = 0
         lastLoadedFingerprint = nil
+        entryDebugState = nil
+        cursorShape = .arrow
+        guard previewMode == .swift else {
+            resetInlineStateForStaticPreview()
+            return
+        }
+        refreshAvailablePreviews()
+        startSessionIfNeededForActiveFile()
         autoBuildIfPossible()
     }
 
@@ -320,12 +391,57 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     Self.logger.info("\(self.t)💾 应用保存修订，有源码=\(sourceText != nil)")
         }
         latestSourceText = sourceText
+        guard previewMode == .swift else { return }
+        refreshAvailablePreviews()
+        startSessionIfNeededForActiveFile()
         autoBuildIfPossible()
     }
 
     /// 由 Combine 订阅（内容变化）触发，也可由 View 层直接调用。
     func updateBufferText(_ sourceText: String?) {
         latestSourceText = sourceText
+        guard previewMode == .swift else { return }
+        refreshAvailablePreviews()
+        startSessionIfNeededForActiveFile()
+    }
+
+    func selectPreview(index: Int) {
+        guard previewMode == .swift else { return }
+        guard index != selectedPreviewIndex else { return }
+        selectedPreviewIndex = index
+        lastLoadedFingerprint = nil
+        autoBuildIfPossible()
+    }
+
+    func purgeBuildCaches() {
+        if Self.verbose {
+            Self.logger.info("\(self.t)🧹 清理 Inline Preview 构建缓存")
+        }
+        Task { [weak self] in
+            await self?.builder.purge()
+            EditorInlinePreviewStorage.purgeBuildCaches()
+            self?.lastLoadedFingerprint = nil
+            self?.lastBuildInfo = nil
+            self?.entryDebugState = nil
+            self?.refreshCacheSummary()
+        }
+    }
+
+    func requestEntryDebugState() {
+        guard status == .running else { return }
+        guard case .loaded = entryStatus else { return }
+        isRequestingEntryDebugState = true
+        Task { [weak self] in
+            do {
+                let response = try await self?.session.requestEntryDebugState()
+                if response?.success == false {
+                    self?.entryDebugState = response?.message
+                }
+            } catch {
+                self?.entryDebugState = error.localizedDescription
+            }
+            self?.isRequestingEntryDebugState = false
+        }
     }
 
     // MARK: - 私有 — Combine 订阅处理器
@@ -346,7 +462,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
     /// 当前文件是否值得跑自动 build。
     private func canAutoBuildActiveFile() -> Bool {
-        guard !manualDylibActive else { return false }
+        guard previewMode == .swift else { return false }
         guard let url = activeFileURL else { return false }
         guard latestSourceText != nil else { return false }
         return url.pathExtension.lowercased() == "swift"
@@ -361,7 +477,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
             return
         }
         guard canAutoBuildActiveFile() else {
-            if !manualDylibActive, isEntryAuto() {
+            if isEntryAuto() {
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)🔄 autoBuild：无匹配文件，卸载 Dylib")
                 }
@@ -369,6 +485,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     _ = try? await self?.session.unloadDylib()
                     self?.entryStatus = .noPreview
                     self?.lastLoadedFingerprint = nil
+                    self?.entryDebugState = nil
                 }
             }
             return
@@ -384,11 +501,22 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         Task { [weak self] in
             guard let self else { return }
             do {
-                let result = try await self.builder.build(fileURL: url, sourceText: source)
+                let result = try await self.builder.build(
+                    fileURL: url,
+                    sourceText: source,
+                    previewIndex: self.selectedPreviewIndex
+                )
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)✅ 构建成功：\(result.dylibURL.path) 指纹=\(result.fingerprint) 标题=\(result.primaryTitle)")
                 }
-                guard !self.manualDylibActive else { return }
+                self.lastBuildInfo = BuildInfo(
+                    completedAt: Date(),
+                    usedCache: result.usedCache,
+                    previewCount: result.previewCount,
+                    selectedTitle: result.primaryTitle
+                )
+                self.refreshCacheSummary()
+                self.selectedPreviewIndex = result.selectedPreviewIndex
                 if self.lastLoadedFingerprint == result.fingerprint {
                     if Self.verbose {
                                             Self.logger.info("\(Self.t)⏭ 指纹相同，跳过加载")
@@ -397,8 +525,17 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     return
                 }
                 self.entryStatus = .loading(path: result.dylibURL.path)
-                _ = try? await self.session.loadDylib(path: result.dylibURL.path)
+                let loadResponse = try await self.session.loadDylib(path: result.dylibURL.path)
+                guard loadResponse.success else {
+                    let message = loadResponse.message ?? "unknown dylib load failure"
+                    if Self.verbose {
+                                            Self.logger.error("\(Self.t)❌ 构建产物加载失败：\(message)")
+                    }
+                    self.entryStatus = .failed(EntryFailure(kind: .dylibLoad, message: message))
+                    return
+                }
                 self.lastLoadedFingerprint = result.fingerprint
+                self.entryDebugState = nil
                 self.entryStatus = .loaded(path: result.dylibURL.path, title: result.primaryTitle)
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)✅ 构建后已加载 Dylib")
@@ -413,34 +550,149 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                         _ = try? await self.session.unloadDylib()
                         self.entryStatus = .noPreview
                         self.lastLoadedFingerprint = nil
+                        self.entryDebugState = nil
                     } else {
                         self.entryStatus = .noPreview
                     }
-                case .sdkResolutionFailed, .swiftcFailed:
+                case .sdkResolutionFailed:
                     if Self.verbose {
-                                            Self.logger.error("\(Self.t)❌ 构建失败：\(error.localizedDescription)")
+                                            Self.logger.error("\(Self.t)❌ SDK 解析失败：\(error.localizedDescription)")
                     }
-                    self.entryStatus = .failed(message: error.localizedDescription)
+                    self.entryStatus = .failed(EntryFailure(kind: .sdk, message: error.localizedDescription))
+                case .swiftcFailed:
+                    if Self.verbose {
+                                            Self.logger.error("\(Self.t)❌ 编译失败：\(error.localizedDescription)")
+                    }
+                    self.entryStatus = .failed(EntryFailure(kind: .compile, message: error.localizedDescription))
+                case .plannedBuildFailed:
+                    if Self.verbose {
+                                            Self.logger.error("\(Self.t)❌ 依赖解析/计划构建失败：\(error.localizedDescription)")
+                    }
+                    self.entryStatus = .failed(EntryFailure(kind: .dependency, message: error.localizedDescription))
                 }
             } catch {
                 if Self.verbose {
                                     Self.logger.error("\(Self.t)❌ 构建异常：\(error.localizedDescription)")
                 }
-                self.entryStatus = .failed(message: error.localizedDescription)
+                self.entryStatus = .failed(EntryFailure(kind: .unknown, message: error.localizedDescription))
             }
         }
     }
 
-    /// 当前 entryStatus 是否对应自动 build 流程（区别于手选 dylib）。
+    private func updatePreviewMode(for url: URL?) {
+        guard let url else {
+            previewMode = .unsupported(nil)
+            return
+        }
+
+        let ext = url.pathExtension.lowercased()
+        if ext == "swift" {
+            previewMode = .swift
+        } else if Self.imageExtensions.contains(ext) {
+            previewMode = .image(url)
+        } else if Self.markdownExtensions.contains(ext) {
+            previewMode = .markdown(url)
+        } else if Self.stringCatalogExtensions.contains(ext) {
+            previewMode = .stringCatalog(url)
+        } else {
+            previewMode = .unsupported(url)
+        }
+    }
+
+    private func resetInlineStateForStaticPreview() {
+        availablePreviews = []
+        selectedPreviewIndex = 0
+        entryStatus = .noPreview
+        currentFrame = nil
+        lastLoadedFingerprint = nil
+        lastBuildInfo = nil
+        entryDebugState = nil
+        cursorShape = .arrow
+
+        if status == .running || status == .starting {
+            stopSessionIfNeeded()
+        }
+    }
+
+    private func startSessionIfNeededForActiveFile() {
+        guard isViewVisible else { return }
+        guard previewMode == .swift else { return }
+        guard let source = latestSourceText, source.contains("#Preview") else { return }
+        let currentStatus = status
+        guard currentStatus == .idle || currentStatus == .ready || currentStatus == .warming || isFailed(currentStatus) else { return }
+        startSession()
+    }
+
+    private func stopSessionIfNeeded() {
+        if status == .running || status == .starting || status == .warming || status == .ready {
+            stopSession()
+        }
+    }
+
+    /// 当前 entryStatus 是否对应自动 build 流程。
     private func isEntryAuto() -> Bool {
-        if manualDylibActive { return false }
         switch entryStatus {
         case .building, .loading, .loaded, .failed: return true
         case .noPreview: return false
         }
     }
 
+    private func refreshAvailablePreviews() {
+        guard canAutoBuildActiveFile(),
+              let url = activeFileURL,
+              let source = latestSourceText else {
+            availablePreviews = []
+            selectedPreviewIndex = 0
+            return
+        }
+
+        Task { [weak self] in
+            guard let self else { return }
+            let summaries = await self.builder.discoverPreviews(fileURL: url, sourceText: source)
+            guard self.activeFileURL == url, self.latestSourceText == source else { return }
+            self.availablePreviews = summaries
+            if summaries.isEmpty {
+                self.selectedPreviewIndex = 0
+            } else if !summaries.contains(where: { $0.index == self.selectedPreviewIndex }) {
+                self.selectedPreviewIndex = summaries[0].index
+            }
+        }
+    }
+
     // MARK: - 私有
+
+    private func warmupSessionIfPossible() {
+        guard status == .idle else { return }
+        status = .warming
+        warmupTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.session.start()
+                guard !Task.isCancelled else {
+                    await self.session.stop()
+                    return
+                }
+                if self.status == .warming {
+                    self.status = .ready
+                }
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)✅ Inline Preview host 预热完成")
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                if Self.verbose {
+                    Self.logger.warning("\(Self.t)⚠️ Inline Preview host 预热失败，将在正式启动时重试：\(error.localizedDescription)")
+                }
+                if self.status == .warming {
+                    self.status = .idle
+                }
+            }
+        }
+    }
+
+    private func refreshCacheSummary() {
+        cacheSummary = EditorInlinePreviewStorage.cacheSummary()
+    }
 
     private func wireSessionCallbacks() {
         session.onFrame = { [weak self] frame in
@@ -478,6 +730,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                 self?.status = .idle
                 self?.policy = .stopped
                 self?.entryStatus = .noPreview
+                self?.entryDebugState = nil
             }
         }
         session.onEntryLoaded = { [weak self] success, message in
@@ -491,12 +744,23 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                         let title = (path as NSString).lastPathComponent
                         self.entryStatus = .loaded(path: path, title: title)
                     }
+                    self.entryDebugState = nil
                 } else {
                     if Self.verbose {
                                             Self.logger.error("\(Self.t)❌ onEntryLoaded 失败：\(message ?? "nil")")
                     }
-                    self.entryStatus = .failed(message: message ?? "unknown")
+                    self.entryStatus = .failed(EntryFailure(kind: .dylibLoad, message: message ?? "unknown"))
                 }
+            }
+        }
+        session.onEntryDebugState = { [weak self] state in
+            Task { @MainActor in
+                self?.entryDebugState = state
+            }
+        }
+        session.onCursorChanged = { [weak self] shape in
+            Task { @MainActor in
+                self?.cursorShape = shape
             }
         }
     }
@@ -527,4 +791,11 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         if case .failed = status { return true }
         return false
     }
+
+    private static let imageExtensions: Set<String> = [
+        "png", "jpg", "jpeg", "gif", "tiff", "tif", "bmp", "webp",
+        "svg", "icns", "ico", "heic", "heif"
+    ]
+    private static let markdownExtensions: Set<String> = ["md", "markdown"]
+    private static let stringCatalogExtensions: Set<String> = ["xcstrings"]
 }

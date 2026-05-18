@@ -26,6 +26,28 @@
     "cache" : {
 
     },
+    "Clear Inline Preview build cache" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Inline Preview build cache"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清理内嵌预览构建缓存"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清理內嵌預覽建置快取"
+          }
+        }
+      }
+    },
     "Choose which #Preview in the current Swift file to build and render." : {
       "localizations" : {
         "en" : {
@@ -71,10 +93,16 @@
         }
       }
     },
+    "Compilation failed" : {
+
+    },
     "Default Localization" : {
 
     },
     "Default Localization (%@)" : {
+
+    },
+    "Dependency planning failed" : {
 
     },
     "Embedded preview powered by LumiInlinePreviewKit" : {
@@ -95,6 +123,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "由 LumiInlinePreviewKit 驅動的內嵌預覽"
+          }
+        }
+      }
+    },
+    "Entry debug state" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entry debug state"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入口调试状态"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入口除錯狀態"
           }
         }
       }
@@ -122,6 +172,7 @@
       }
     },
     "entry failed: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -267,6 +318,28 @@
     "Markdown Preview" : {
 
     },
+    "Markdown TODO completion" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown TODO completion"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown TODO 完成度"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown TODO 完成度"
+          }
+        }
+      }
+    },
     "No #Preview in the current Swift file." : {
       "localizations" : {
         "en" : {
@@ -346,8 +419,36 @@
         }
       }
     },
+    "Preview dylib failed to load" : {
+
+    },
     "Preview failed" : {
 
+    },
+    "ready" : {
+
+    },
+    "Refresh entry debug state" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh entry debug state"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新入口调试状态"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新整理入口除錯狀態"
+          }
+        }
+      }
     },
     "rebuilt" : {
 
@@ -397,6 +498,9 @@
         }
       }
     },
+    "SDK resolution failed" : {
+
+    },
     "Select a preview .dylib that exports lumi_preview_make_nsview" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -422,6 +526,28 @@
     },
     "Show error details" : {
 
+    },
+    "Show entry debug state" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show entry debug state"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示入口调试状态"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示入口除錯狀態"
+          }
+        }
+      }
     },
     "Start Stream" : {
       "extractionState" : "stale",
@@ -587,6 +713,9 @@
           }
         }
       }
+    },
+    "warming" : {
+
     }
   },
   "version" : "1.0"

@@ -16,6 +16,9 @@ public extension LumiInlinePreviewFacade {
         case scrollWheel(ScrollWheelEvent)
         case key(KeyEvent)
         case flagsChanged(modifiers: ModifierFlags)
+        case textInput(TextInputEvent)
+        case dragAndDrop(DragDropEvent)
+        case touchBar(TouchBarEvent)
     }
 
     // MARK: - 鼠标
@@ -26,6 +29,8 @@ public extension LumiInlinePreviewFacade {
             case up
             case moved
             case dragged
+            case entered
+            case exited
         }
 
         public enum Button: Int, Codable, Sendable, Equatable {
@@ -54,6 +59,65 @@ public extension LumiInlinePreviewFacade {
             self.x = x
             self.y = y
             self.clickCount = clickCount
+            self.modifiers = modifiers
+        }
+    }
+
+    // MARK: - 拖放
+
+    struct DragDropEvent: Codable, Sendable, Equatable {
+        public enum Phase: String, Codable, Sendable, Equatable {
+            case entered
+            case updated
+            case exited
+            case perform
+        }
+
+        public enum Item: Codable, Sendable, Equatable {
+            case string(String)
+            case fileURL(String)
+        }
+
+        public let phase: Phase
+        public let x: Double
+        public let y: Double
+        public let items: [Item]
+        public let modifiers: ModifierFlags
+
+        public init(
+            phase: Phase,
+            x: Double,
+            y: Double,
+            items: [Item],
+            modifiers: ModifierFlags
+        ) {
+            self.phase = phase
+            self.x = x
+            self.y = y
+            self.items = items
+            self.modifiers = modifiers
+        }
+    }
+
+    // MARK: - Touch Bar
+
+    struct TouchBarEvent: Codable, Sendable, Equatable {
+        public enum Phase: String, Codable, Sendable, Equatable {
+            case itemPressed
+        }
+
+        /// `NSTouchBarItem.Identifier.rawValue` for the target item.
+        public let itemIdentifier: String
+        public let phase: Phase
+        public let modifiers: ModifierFlags
+
+        public init(
+            itemIdentifier: String,
+            phase: Phase = .itemPressed,
+            modifiers: ModifierFlags = []
+        ) {
+            self.itemIdentifier = itemIdentifier
+            self.phase = phase
             self.modifiers = modifiers
         }
     }
@@ -137,6 +201,45 @@ public extension LumiInlinePreviewFacade {
             self.isARepeat = isARepeat
             self.modifiers = modifiers
         }
+    }
+
+    // MARK: - 文本输入 / IME
+
+    struct TextInputEvent: Codable, Sendable, Equatable {
+        public enum Phase: String, Codable, Sendable, Equatable {
+            case insertText
+            case setMarkedText
+            case unmarkText
+        }
+
+        public let phase: Phase
+        public let text: String
+        public let selectedRange: Range
+        public let replacementRange: Range
+
+        public init(
+            phase: Phase,
+            text: String,
+            selectedRange: Range = .notFound,
+            replacementRange: Range = .notFound
+        ) {
+            self.phase = phase
+            self.text = text
+            self.selectedRange = selectedRange
+            self.replacementRange = replacementRange
+        }
+    }
+
+    struct Range: Codable, Sendable, Equatable {
+        public let location: Int
+        public let length: Int
+
+        public init(location: Int, length: Int) {
+            self.location = location
+            self.length = length
+        }
+
+        public static let notFound = Range(location: NSNotFound, length: 0)
     }
 
     // MARK: - 修饰键
