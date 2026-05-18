@@ -211,26 +211,6 @@
 
 ---
 
-## 6. LLM Provider Kit
-
-> 目标：将多个 OpenAI-compatible 供应商插件中重复的逻辑提取到独立 Swift Package。
-
-### Phase 4: 迁移第一批 Provider
-
-- [ ] OpenAIProvider 使用 `OpenAICompatibleProviderAdapter`。
-- [ ] DeepSeekProvider 使用 `OpenAICompatibleProviderAdapter`。
-- [ ] OpenRouterProvider 使用 `OpenAICompatibleProviderAdapter`，保留额外 headers 和 tool call id 策略。
-- [ ] 迁移 AiRouter、FreeModel、Feifeimiao、FlyMux、HyperAPI、MegaLLM、Xiaomi、Xybbz。
-- [ ] 删除每个 provider 中重复的 response DTO、`transformMessage`、`formatTool`、`parseStreamChunk`。
-
-### Phase 5: 清理和文档
-
-- [ ] 删除迁移后不再使用的重复 DTO。
-- [ ] 更新 provider 插件说明，记录新 provider 接入方式。
-- [ ] 增加 `Packages/LLMProviderKit/README.md` 新供应商模板。
-
----
-
 ## 7. 编辑器文件树 Xcode 风格 Package Dependencies
 
 > 目标：在 `EditorRailFileTreePlugin` 的文件树底部显示类似 Xcode 的 Swift Package Dependencies 列表。
