@@ -125,7 +125,7 @@ final class HotStdioPreviewHost {
 
         case .unloadDylib:
             renderer.unloadDylib()
-            sendEvent(.entryLoaded(success: true, message: "demo restored"))
+            sendEvent(.entryLoaded(success: true, message: "dylib unloaded"))
             return .init(success: true, message: "dylib unloaded")
 
         case let .forwardInputEvent(inputEvent):

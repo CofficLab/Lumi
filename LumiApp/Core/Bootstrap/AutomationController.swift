@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import LumiInlinePreviewKit
 import MagicAlert
 import MagicKit
 import os
@@ -59,8 +58,6 @@ final class AutomationController {
 
         switch action {
         // Inline Preview 操作
-        case "inline_preview.demoFrame", "inline_preview.demo_frame", "inline_preview.renderDemoFrame":
-            handleInlinePreviewDemoFrame(payload: payload)
         case "inline_preview.start_stream", "inline_preview.startStream":
             handleInlinePreviewStartStream(payload: payload)
         case "inline_preview.stop_stream", "inline_preview.stopStream":
@@ -84,38 +81,6 @@ final class AutomationController {
     }
 
     // MARK: - Handlers
-
-    /// 处理 Inline Preview Demo Frame 渲染
-    private func handleInlinePreviewDemoFrame(payload: [String: Any]?) {
-        Self.logger.info("🤖 Handling inline_preview.demoFrame")
-
-        // 确保编辑器面板可见
-        ensureEditorPanelActive()
-        // 确保底部面板的 Inline Preview tab 被激活
-        ensureInlinePreviewBottomTabActive()
-
-        // 直接调用 DemoSurfaceFactory 创建预览帧
-        // 这是 Phase 1 验证显示链路的核心方法
-        let width = payload?["width"] as? Int ?? 640
-        let height = payload?["height"] as? Int ?? 360
-        let scale = payload?["scale"] as? Double ?? 2.0
-
-        let frame = LumiInlinePreviewFacade.DemoSurfaceFactory.makeFrame(
-            width: width,
-            height: height,
-            scale: scale,
-            seq: UInt64.random(in: 1...99999)
-        )
-
-        if let frame {
-            Self.logger.info("🤖 DemoFrame created: surfaceID=\(frame.surfaceID) seq=\(frame.seq) \(frame.width)×\(frame.height) @\(String(format: "%.1fx", frame.scale))")
-            // 将帧存储到共享状态，供 View 层消费
-            InlinePreviewAutomationState.shared.currentFrame = frame
-            alert_info("自动化测试：渲染 Demo 预览帧")
-        } else {
-            Self.logger.warning("🤖 DemoFrame creation failed — makeFrame returned nil")
-        }
-    }
 
     /// 处理 Inline Preview 启动流
     private func handleInlinePreviewStartStream(payload: [String: Any]?) {
@@ -226,9 +191,6 @@ final class AutomationController {
 @MainActor
 final class InlinePreviewAutomationState: ObservableObject {
     static let shared = InlinePreviewAutomationState()
-
-    /// 待显示的预览帧（由自动化控制器写入，View 层消费后清零）
-    @Published var currentFrame: LumiInlinePreviewFacade.IOSurfaceFrame?
 
     /// Session 操作指令（start / stop）
     @Published var sessionAction: SessionAction?

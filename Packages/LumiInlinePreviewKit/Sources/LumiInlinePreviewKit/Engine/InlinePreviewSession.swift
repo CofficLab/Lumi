@@ -99,7 +99,7 @@ public extension LumiInlinePreviewFacade {
             try await send(.loadDylib(path: path, symbolName: symbolName))
         }
 
-        /// 卸载用户 dylib，恢复内置 demo 视图。
+        /// 卸载用户 dylib，恢复内置空白视图。
         @discardableResult
         public func unloadDylib() async throws -> HostResponse {
             try await send(.unloadDylib)

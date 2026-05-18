@@ -7,14 +7,12 @@ import SwiftUI
 
 /// 内嵌预览插件的视图模型。
 ///
-/// 职责（按阶段累积）：
-/// - **Phase 2** — 管理 `InlinePreviewSession` 启动/停止；frame 转 `@Published`；canvas resize forward。
-/// - **Phase 2.5a 手选 dylib** — `loadDylib(at:)` / `unloadDylib()`；用户主动选 .dylib 时进入 manual 模式，冻结自动流程。
-/// - **Phase 2.5b 自动构建** — 直接订阅 `EditorService` 的 `currentFileURL` / `saveRevision` / `contentRevision`，
+/// 职责：
+/// - 管理 `InlinePreviewSession` 启动/停止；frame 转 `@Published`；canvas resize forward。
+/// - 手选 dylib：`loadDylib(at:)` / `unloadDylib()`；用户主动选 .dylib 时进入 manual 模式，冻结自动流程。
+/// - 自动构建：直接订阅 `EditorService` 的 `currentFileURL` / `saveRevision` / `contentRevision`，
 ///   按 Xcode 风格"保存触发"重建 dylib（`InlinePreviewBuilder`）并自动 `loadDylib`。
 ///   **不依赖 View 层的 `onAppear`/`onChange`**——即使 Inline Preview tab 未被选中也能感知文件变化。
-///
-/// `renderDemoFrame()` 是 Phase 1 遗留的离线 demo 路径，仅用于验证显示链路。
 @MainActor
 final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(
@@ -45,7 +43,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
     }
 
     enum EntryStatus: Equatable, CustomStringConvertible {
-        case demo
+        case noPreview
         case building(file: String)
         case loading(path: String)
         case loaded(path: String, title: String)
@@ -53,7 +51,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
         var description: String {
             switch self {
-            case .demo: return "demo"
+            case .noPreview: return "noPreview"
             case .building(let file): return "building(\(file))"
             case .loading(let path): return "loading(\(path))"
             case .loaded(_, let title): return "loaded(\(title))"
@@ -97,7 +95,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
     }
     @Published private(set) var policy: LumiInlinePreviewFacade.FrameStreamPolicy = .stopped
-    @Published private(set) var entryStatus: EntryStatus = .demo {
+    @Published private(set) var entryStatus: EntryStatus = .noPreview {
         didSet {
             let desc = entryStatus.description
             if Self.verbose {
@@ -110,7 +108,6 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
     private let session = LumiInlinePreviewFacade.InlinePreviewSession()
     private let builder = LumiInlinePreviewFacade.InlinePreviewBuilder()
-    private var demoSeq: UInt64 = 0
     private var lastSentPixelSize: (width: Int, height: Int, scale: Double)?
     /// 最近一次从编辑器收到的 (currentFileURL, source)。用于 startSession / saveRevision 时取最新内容重建。
     private var activeFileURL: URL?
@@ -170,46 +167,6 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
         if Self.verbose {
             Self.logger.info("\(Self.t)🔗 已订阅 EditorService 状态变化")
-        }
-    }
-
-    // MARK: - 公开方法 — Demo 路径（Phase 1 遗留）
-
-    func renderDemoFrame() {
-        demoSeq &+= 1
-        let pointWidth: CGFloat = canvasSize.width > 0 ? canvasSize.width : 320
-        let pointHeight: CGFloat = canvasSize.height > 0 ? canvasSize.height : 180
-        let scale: CGFloat = canvasScale > 0 ? canvasScale : 2
-
-        let pixelWidth = max(1, Int((pointWidth * scale).rounded()))
-        let pixelHeight = max(1, Int((pointHeight * scale).rounded()))
-
-        let seq = demoSeq
-        let canvasStr = "\(canvasSize.width)×\(canvasSize.height)"
-        if Self.verbose {
-                    Self.logger.info("\(self.t)🎬 渲染 Demo 帧 seq=\(seq) canvasSize=\(canvasStr) → 像素 \(pixelWidth)×\(pixelHeight) @\(String(format: "%.1f", scale))")
-        }
-
-        // 🔍 诊断：记录当前状态
-        Self.logger.info("📝[renderDemoFrame] 开始渲染 Demo 帧 seq=\(seq)")
-        Self.logger.info("📝[renderDemoFrame] canvasSize=\(canvasStr), canvasScale=\(self.canvasScale)")
-        Self.logger.info("📝[renderDemoFrame] 计算尺寸：pointWidth=\(pointWidth), pointHeight=\(pointHeight), scale=\(scale)")
-        Self.logger.info("📝[renderDemoFrame] 像素尺寸：\(pixelWidth)×\(pixelHeight)")
-        
-        // 检查 DemoSurfaceFactory 是否可用
-        Self.logger.info("📝[renderDemoFrame] 调用 DemoSurfaceFactory.makeFrame")
-        
-        currentFrame = LumiInlinePreviewFacade.DemoSurfaceFactory.makeFrame(
-            width: pixelWidth,
-            height: pixelHeight,
-            scale: Double(scale),
-            seq: demoSeq
-        )
-
-        if let frame = currentFrame {
-            Self.logger.info("📝[renderDemoFrame] ✅ Demo 帧创建成功：surfaceID=\(frame.surfaceID) seq=\(frame.seq) \(frame.width)×\(frame.height) @\(String(format: "%.1fx", frame.scale))")
-        } else {
-            Self.logger.error("📝[renderDemoFrame] ❌ Demo 帧创建失败 — makeFrame 返回 nil")
         }
     }
 
@@ -279,7 +236,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         sendResizeIfNeeded()
     }
 
-    // MARK: - 公开方法 — 输入转发（Phase 3）
+    // MARK: - 公开方法 — 输入转发
 
     /// 由 `PreviewSurfaceCanvas` 在 `isInteractive == true` 时回调；把事件转发给子进程。
     /// 高频事件（mouseMoved / dragged / scrollWheel / keyDown 重复）走 best-effort 不阻塞。
@@ -289,16 +246,15 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
     }
 
     /// 当前面板是否处于"可交互"状态：session running + 已加载用户视图。
-    /// Demo 视图时即便允许交互也没意义（无内容可点）；这里只在 entry 已 ready 时返回 true。
     var isInteractive: Bool {
         guard status == .running else { return false }
         switch entryStatus {
         case .loaded, .loading, .building: return true
-        case .demo, .failed: return false
+        case .noPreview, .failed: return false
         }
     }
 
-    // MARK: - 公开方法 — Entry 路径（Phase 2.5）
+    // MARK: - 公开方法 — Entry 路径
 
     /// 让子进程加载用户预览 dylib，把其 `lumi_preview_make_nsview` 导出的 `NSView` 挂为 previewView。
     func loadDylib(at url: URL) {
@@ -332,20 +288,20 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
     }
 
-    /// 卸载用户 dylib，子进程恢复内置 demo 视图。
+    /// 卸载用户 dylib。
     func unloadDylib() {
         if Self.verbose {
-                    Self.logger.info("\(self.t)📤 卸载 Dylib — 重置为 Demo 模式")
+                    Self.logger.info("\(self.t)📤 卸载 Dylib")
         }
         manualDylibActive = false
         lastLoadedFingerprint = nil
         Task { [weak self] in
             _ = try? await self?.session.unloadDylib()
-            self?.entryStatus = .demo
+            self?.entryStatus = .noPreview
         }
     }
 
-    // MARK: - 公开方法 — 自动构建（Phase 2.5b）
+    // MARK: - 公开方法 — 自动构建
 
     /// 由 Combine 订阅（文件 URL 变化）触发，也可由 View 层直接调用。
     func setActiveFile(_ url: URL?, sourceText: String?) {
@@ -407,11 +363,11 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         guard canAutoBuildActiveFile() else {
             if !manualDylibActive, isEntryAuto() {
                 if Self.verbose {
-                                    Self.logger.info("\(self.t)🔄 autoBuild：无匹配文件，卸载 Dylib → Demo")
+                                    Self.logger.info("\(Self.t)🔄 autoBuild：无匹配文件，卸载 Dylib")
                 }
                 Task { [weak self] in
                     _ = try? await self?.session.unloadDylib()
-                    self?.entryStatus = .demo
+                    self?.entryStatus = .noPreview
                     self?.lastLoadedFingerprint = nil
                 }
             }
@@ -455,10 +411,10 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     }
                     if self.isEntryAuto() {
                         _ = try? await self.session.unloadDylib()
-                        self.entryStatus = .demo
+                        self.entryStatus = .noPreview
                         self.lastLoadedFingerprint = nil
                     } else {
-                        self.entryStatus = .demo
+                        self.entryStatus = .noPreview
                     }
                 case .sdkResolutionFailed, .swiftcFailed:
                     if Self.verbose {
@@ -480,7 +436,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         if manualDylibActive { return false }
         switch entryStatus {
         case .building, .loading, .loaded, .failed: return true
-        case .demo: return false
+        case .noPreview: return false
         }
     }
 
@@ -521,7 +477,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                 }
                 self?.status = .idle
                 self?.policy = .stopped
-                self?.entryStatus = .demo
+                self?.entryStatus = .noPreview
             }
         }
         session.onEntryLoaded = { [weak self] success, message in

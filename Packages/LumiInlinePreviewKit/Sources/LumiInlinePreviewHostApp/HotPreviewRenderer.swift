@@ -9,7 +9,7 @@ import SwiftUI
 /// 子进程内的离屏 SwiftUI 渲染器。
 ///
 /// 维护一个常驻的离屏 `NSWindow`（位置在 (-100000, -100000)），里面挂一个
-/// `previewView`（默认是内置 `HotPreviewDemoView` 的 `NSHostingView`，
+/// `previewView`（默认是内置 `HotPreviewPlaceholderView` 的 `NSHostingView`，
 /// 也可以通过 `loadDylib(path:symbolName:)` 替换为用户编译产出的 `NSView`）。
 /// 每次 `snapshot()` 把当前画面写入一张 BGRA `IOSurface`，并返回 `IOSurfaceFrame`。
 ///
@@ -141,7 +141,7 @@ final class HotPreviewRenderer {
         installView(view)
     }
 
-    /// 卸载当前用户 dylib，恢复内置 demo 视图。
+    /// 卸载当前用户 dylib，恢复内置空白视图。
     func unloadDylib() {
         installDemoView()
         if let handle = loadedDylibHandle {
@@ -235,7 +235,7 @@ final class HotPreviewRenderer {
     }
 
     private func installDemoView() {
-        let hosting = NSHostingView(rootView: AnyView(HotPreviewDemoView()))
+        let hosting = NSHostingView(rootView: AnyView(HotPreviewPlaceholderView()))
         installView(hosting)
     }
 

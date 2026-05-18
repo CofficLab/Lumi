@@ -7,13 +7,11 @@ import SwiftUI
 
 /// 内嵌预览插件的底部面板内容视图。
 ///
-/// Phase 2 / 2.5 提供三条路径：
-/// - **Render Demo Frame**：主进程内 `DemoSurfaceFactory`，验证显示链路。
-/// - **Start / Stop Stream**：启动 `LumiInlinePreviewHostApp` 子进程，订阅
-///   60fps `frameProduced` 事件，实时显示子进程跑的 SwiftUI demo。
+/// 提供以下功能：
+/// - **Start / Stop Stream**：启动 `LumiInlinePreviewHostApp` 子进程，订阅帧流，实时显示预览。
 /// - **Load Dylib…**：手动挑选一个用户编译产出的预览 dylib，让子进程 `dlopen`
 ///   并把其 `lumi_preview_make_nsview` 导出的 `NSView` 挂为 previewView。
-///   后续阶段会把这一步自动化（扫描 → 编译 → 加载）。
+/// - 自动构建：打开 Swift 文件并保存时自动扫描 `#Preview`，编译并加载。
 struct EditorInlinePreviewDetailView: View, SuperLog {
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
@@ -34,12 +32,6 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         editorVM.service.currentFileURL
     }
 
-    /// 合并 VM 帧和自动化帧
-    private var displayFrame: LumiInlinePreviewFacade.IOSurfaceFrame? {
-        // 自动化帧优先（由 HTTP API 触发）
-        automationState.currentFrame ?? viewModel.currentFrame
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             toolbar
@@ -54,7 +46,6 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
             viewModel.wireEditorService(editorVM.service)
 
             // 消费 AutomationController 可能在 View 出现之前就写入的 pending sessionAction。
-            // onChange 只监听变化，不会触发初始值，所以必须在 onAppear 中手动消费一次。
             if let pendingAction = automationState.sessionAction {
                 automationState.sessionAction = nil
                 switch pendingAction {
@@ -81,25 +72,14 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(self.t)💾 saveRevision 变更")
             }
-            // 仅在保存时触发重建，对齐 Xcode 的 #Preview 刷新策略。
             viewModel.applySaveRevision(sourceText: sourceText)
         }
         .onChange(of: editorVM.service.contentRevision) { _, _ in
-            // 编辑过程中只 stash buffer，让下次保存能拿到最新内容；不重建。
             viewModel.updateBufferText(sourceText)
         }
-        // 监听自动化测试动作（路径 1：View 已渲染时实时响应）
+        // 监听自动化测试动作
         .onAutomationAction { action, payload in
             switch action {
-            case "inline_preview.demo_frame", "inline_preview.demoFrame", "inline_preview.renderDemoFrame":
-                if Self.verbose {
-                    Self.logger.info("\(self.t)🤖 自动化：收到 renderDemoFrame 动作")
-                }
-                if Self.verbose {
-                    Self.logger.info("\(self.t)🤖 自动化：调用 viewModel.renderDemoFrame()")
-                }
-                alert_info("自动化测试：渲染 Demo 预览帧")
-                viewModel.renderDemoFrame()
             case "inline_preview.start_stream", "inline_preview.startStream":
                 if Self.verbose {
                     Self.logger.info("\(self.t)🤖 自动化：收到 start_stream 动作")
@@ -116,10 +96,9 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                 break
             }
         }
-        // 监听自动化共享状态（路径 2：View 后于 AutomationController 渲染时消费已写入的指令）
+        // 监听自动化共享状态
         .onChange(of: automationState.sessionAction) { oldAction, newAction in
             guard let newAction else { return }
-            // 消费后清零，避免重复触发
             automationState.sessionAction = nil
             switch newAction {
             case .start:
@@ -142,18 +121,6 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
     private var toolbar: some View {
         HStack(spacing: 8) {
-            Button {
-                if Self.verbose {
-                    Self.logger.info("\(self.t)🖱 点击 Demo Frame 按钮")
-                }
-                viewModel.renderDemoFrame()
-            } label: {
-                Label("Demo Frame", systemImage: "wand.and.stars")
-            }
-            .buttonStyle(.borderless)
-            .disabled(viewModel.status == .running || viewModel.status == .starting)
-            .help("Generate a one-shot IOSurface in this process to verify the embedded display pipeline.")
-
             sessionToggleButton
 
             Divider().frame(height: 16)
@@ -166,7 +133,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
             statusBadge
 
-            if let frame = viewModel.currentFrame ?? automationState.currentFrame {
+            if let frame = viewModel.currentFrame {
                 Text("seq \(frame.seq) · \(frame.width)×\(frame.height) @\(String(format: "%.0fx", frame.scale))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -191,18 +158,18 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
             Button {
                 viewModel.unloadDylib()
             } label: {
-                Label("Reset Demo", systemImage: "arrow.counterclockwise")
+                Label("Reset", systemImage: "arrow.counterclockwise")
             }
             .buttonStyle(.borderless)
             .disabled(viewModel.status != .running)
-            .help("Unload the user dylib and restore the built-in demo view.")
+            .help("Unload the user dylib.")
         }
     }
 
     @ViewBuilder
     private var entryStatusBadge: some View {
         switch viewModel.entryStatus {
-        case .demo:
+        case .noPreview:
             EmptyView()
         case let .building(file):
             HStack(spacing: 4) {
@@ -235,7 +202,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
     private var isEntryActive: Bool {
         switch viewModel.entryStatus {
-        case .demo: return false
+        case .noPreview: return false
         case .building, .loading, .loaded, .failed: return true
         }
     }
@@ -311,7 +278,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
     @ViewBuilder
     private var canvasArea: some View {
-        let hasFrame = displayFrame != nil
+        let hasFrame = viewModel.currentFrame != nil
         ZStack {
             if !hasFrame {
                 VStack(spacing: 12) {
@@ -323,15 +290,10 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
-                .onAppear {
-                    if Self.verbose {
-                        Self.logger.info("\(self.t)🖼️ canvasArea: 占位符视图显示 (hasFrame=false)")
-                    }
-                }
             }
 
             LumiInlinePreviewFacade.PreviewSurfaceCanvas(
-                surfaceID: displayFrame?.surfaceID,
+                surfaceID: viewModel.currentFrame?.surfaceID,
                 isInteractive: viewModel.isInteractive,
                 onSizeChange: { size, scale in
                     viewModel.canvasDidResize(size, scale: scale)
@@ -342,16 +304,6 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(hasFrame ? Color.clear : Color.black.opacity(0.01))
-            .onAppear {
-                if Self.verbose {
-                    Self.logger.info("\(self.t)️ canvasArea: PreviewSurfaceCanvas 显示 (hasFrame=\(hasFrame), surfaceID=\(displayFrame?.surfaceID ?? 0))")
-                }
-            }
-        }
-        .onAppear {
-            if Self.verbose {
-                Self.logger.info("\(self.t)🖼️ canvasArea: 视图出现，hasFrame=\(hasFrame)")
-            }
         }
     }
 }

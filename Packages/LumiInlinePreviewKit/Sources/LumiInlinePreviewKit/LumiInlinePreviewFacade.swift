@@ -4,7 +4,7 @@ import os
 
 /// 命名空间外壳，所有公开类型都嵌套在此 enum 下，避免与 `LumiPreviewKit` 命名冲突。
 public enum LumiInlinePreviewFacade {
-    /// 包内共享 Logger，供 DemoSurfaceFactory / PreviewSurfaceCanvas 等使用。
+    /// 包内共享 Logger，供 PreviewSurfaceCanvas 等使用。
     public static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "LumiInlinePreviewKit"

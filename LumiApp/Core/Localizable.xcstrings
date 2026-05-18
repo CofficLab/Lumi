@@ -2022,9 +2022,6 @@
         }
       }
     },
-    "Demo Frame" : {
-
-    },
     "Deny" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2623,9 +2620,6 @@
           }
         }
       }
-    },
-    "Generate a one-shot IOSurface in this process to verify the embedded display pipeline." : {
-
     },
     "Generic" : {
       "extractionState" : "stale",
@@ -4159,9 +4153,6 @@
         }
       }
     },
-    "Reset Demo" : {
-
-    },
     "Reset to Defaults" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5273,7 +5264,7 @@
         }
       }
     },
-    "Unload the user dylib and restore the built-in demo view." : {
+    "Unload the user dylib." : {
 
     },
     "Unpin" : {

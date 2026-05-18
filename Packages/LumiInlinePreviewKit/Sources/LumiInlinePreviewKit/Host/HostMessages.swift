@@ -20,7 +20,7 @@ public extension LumiInlinePreviewFacade {
         /// `() -> UnsafeMutableRawPointer?`，返回 `Unmanaged.passRetained(view).toOpaque()`。
         case loadDylib(path: String, symbolName: String)
 
-        /// 卸载当前用户 dylib，恢复到内置 demo 视图。
+        /// 卸载当前用户 dylib，恢复到内置空白视图。
         case unloadDylib
 
         /// 把主进程捕获的输入事件注入到子进程离屏窗口。

@@ -4,13 +4,11 @@ import MagicKit
 import SwiftUI
 import os
 
-/// 内嵌预览插件（v2 实现路径）。
+/// 内嵌预览插件。
 ///
-/// 与 `EditorRemoteHotPreviewPlugin` 并行存在，技术核心为：
-/// IOSurface 帧流 + Lumi 面板内 `CALayer` 显示，逐步走向"对齐 Xcode Previews"。
-///
-/// 当前阶段：Phase 1 — 仅打通 IOSurface 显示通路，使用主进程内的
-/// `DemoSurfaceFactory` 生成测试帧。Phase 2 起接入子进程帧流。
+/// 技术核心为：IOSurface 帧流 + Lumi 面板内 `CALayer` 显示。
+/// 通过子进程 `LumiInlinePreviewHostApp` 运行用户编译的预览 dylib，
+/// 自动扫描 `#Preview` 宏并构建渲染。
 actor EditorInlinePreviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
