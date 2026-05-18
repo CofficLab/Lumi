@@ -1,6 +1,31 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "building %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "building %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "构建中 %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建置中 %@"
+          }
+        }
+      }
+    },
+    "cache" : {
+
+    },
     "Choose which #Preview in the current Swift file to build and render." : {
       "localizations" : {
         "en" : {
@@ -24,6 +49,7 @@
       }
     },
     "Click \"Start Stream\" to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -45,6 +71,12 @@
         }
       }
     },
+    "Default Localization" : {
+
+    },
+    "Default Localization (%@)" : {
+
+    },
     "Embedded preview powered by LumiInlinePreviewKit" : {
       "localizations" : {
         "en" : {
@@ -63,292 +95,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "由 LumiInlinePreviewKit 驅動的內嵌預覽"
-          }
-        }
-      }
-    },
-    "Inline Preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inline Preview"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "内嵌预览"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "內嵌預覽"
-          }
-        }
-      }
-    },
-    "Load" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Load"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加载"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入"
-          }
-        }
-      }
-    },
-    "Load Dylib…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Load Dylib…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加载 Dylib…"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入 Dylib…"
-          }
-        }
-      }
-    },
-    "Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择一个导出 lumi_preview_make_nsview 的 .dylib，让子进程渲染它。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個匯出 lumi_preview_make_nsview 的 .dylib，讓子程序算繪它。"
-          }
-        }
-      }
-    },
-    "Preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preview"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "预览"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "預覽"
-          }
-        }
-      }
-    },
-    "Reset" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重置"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重置"
-          }
-        }
-      }
-    },
-    "Select a preview .dylib that exports lumi_preview_make_nsview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a preview .dylib that exports lumi_preview_make_nsview"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择导出 lumi_preview_make_nsview 的预览 .dylib"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇匯出 lumi_preview_make_nsview 的預覽 .dylib"
-          }
-        }
-      }
-    },
-    "Start Stream" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start Stream"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启动流"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟動串流"
-          }
-        }
-      }
-    },
-    "Starting" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starting"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启动中"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟動中"
-          }
-        }
-      }
-    },
-    "Stop Stream" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stop Stream"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止流"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止串流"
-          }
-        }
-      }
-    },
-    "Stopping" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stopping"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止中"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止中"
-          }
-        }
-      }
-    },
-    "Unload the user dylib." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unload the user dylib."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卸载用户 dylib。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卸載使用者 dylib。"
-          }
-        }
-      }
-    },
-    "building %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "building %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "构建中 %@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建置中 %@"
           }
         }
       }
@@ -397,6 +143,9 @@
         }
       }
     },
+    "Failed to load string catalog: %@" : {
+
+    },
     "failed: %@" : {
       "localizations" : {
         "en" : {
@@ -415,6 +164,80 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "失敗：%@"
+          }
+        }
+      }
+    },
+    "Image Preview" : {
+
+    },
+    "Inline Preview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inline Preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内嵌预览"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內嵌預覽"
+          }
+        }
+      }
+    },
+    "Key" : {
+
+    },
+    "Load" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入"
+          }
+        }
+      }
+    },
+    "Load Dylib…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load Dylib…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载 Dylib…"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入 Dylib…"
           }
         }
       }
@@ -441,6 +264,117 @@
         }
       }
     },
+    "Markdown Preview" : {
+
+    },
+    "No #Preview in the current Swift file." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No #Preview in the current Swift file."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前 Swift 文件中没有 #Preview。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前 Swift 檔案中沒有 #Preview。"
+          }
+        }
+      }
+    },
+    "No Markdown content to preview." : {
+
+    },
+    "No String Catalog content to preview." : {
+
+    },
+    "Open a Swift file with a `#Preview`, an image, Markdown, or String Catalog file to preview it here." : {
+
+    },
+    "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save." : {
+
+    },
+    "Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个导出 lumi_preview_make_nsview 的 .dylib，让子进程渲染它。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇一個匯出 lumi_preview_make_nsview 的 .dylib，讓子程序算繪它。"
+          }
+        }
+      }
+    },
+    "Preview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽"
+          }
+        }
+      }
+    },
+    "Preview failed" : {
+
+    },
+    "rebuilt" : {
+
+    },
+    "Reset" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置"
+          }
+        }
+      }
+    },
     "running · %@" : {
       "localizations" : {
         "en" : {
@@ -459,6 +393,55 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "執行中 · %@"
+          }
+        }
+      }
+    },
+    "Select a preview .dylib that exports lumi_preview_make_nsview" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a preview .dylib that exports lumi_preview_make_nsview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导出 lumi_preview_make_nsview 的预览 .dylib"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇匯出 lumi_preview_make_nsview 的預覽 .dylib"
+          }
+        }
+      }
+    },
+    "Show error details" : {
+
+    },
+    "Start Stream" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Stream"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启动流"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟動串流"
           }
         }
       }
@@ -485,6 +468,52 @@
         }
       }
     },
+    "Starting" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starting"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启动中"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟動中"
+          }
+        }
+      }
+    },
+    "Stop Stream" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop Stream"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止流"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止串流"
+          }
+        }
+      }
+    },
     "stopping" : {
       "localizations" : {
         "en" : {
@@ -503,6 +532,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "停止中"
+          }
+        }
+      }
+    },
+    "Stopping" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopping"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止中"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止中"
+          }
+        }
+      }
+    },
+    "String Catalog Preview" : {
+
+    },
+    "This file type is not supported by Inline Preview yet." : {
+
+    },
+    "Unload the user dylib." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unload the user dylib."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸载用户 dylib。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸載使用者 dylib。"
           }
         }
       }
