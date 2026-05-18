@@ -280,6 +280,9 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
     private var canvasArea: some View {
         let hasFrame = viewModel.currentFrame != nil
         ZStack {
+            // 底层网格背景
+            EditorInlinePreviewBoardGrid()
+
             if !hasFrame {
                 VStack(spacing: 12) {
                     Image(systemName: "rectangle.dashed")
