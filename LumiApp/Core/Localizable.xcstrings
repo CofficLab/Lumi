@@ -4484,16 +4484,6 @@
         }
       }
     },
-    "seq %llu · %lld×%lld @%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "seq %1$llu · %2$lld×%3$lld @%4$@"
-          }
-        }
-      }
-    },
     "Show in Finder" : {
       "extractionState" : "stale",
       "localizations" : {
