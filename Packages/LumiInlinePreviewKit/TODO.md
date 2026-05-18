@@ -23,7 +23,7 @@
 - 当前文件 `#Preview` 自动发现、自动编译、自动加载已完成最小实现。
 - 多 `#Preview` 切换和独立缓存指纹已支持。
 - 同包 Swift 文件收集已支持。
-- SPM 跨 target 本地依赖已支持最小切片，并有自动化测试覆盖 planned build 路径。
+- SPM 跨 target 本地依赖已支持最小切片，并有自动化测试覆盖 fixture 与真实 LumiUI package 的 planned build 路径。
 - 鼠标、滚轮、键盘、modifier 输入事件反向注入已完成最小实现。
 - 输入后 frame policy 可从 idle 自动回到 interactive。
 - Entry 可选调试状态回读已支持，用于自动化验证输入是否改变预览内部状态。
@@ -37,7 +37,9 @@
 
 最近验证：
 
-- `swift test --package-path Packages/LumiInlinePreviewKit`：75 tests passed（包含 SPM target + 本地依赖 target planned build 路径）。
+- `swift test --package-path Packages/LumiInlinePreviewKit`：76 tests passed（包含 SPM target + 本地依赖 target planned build 路径、真实 LumiUI package planned build 路径）。
+- `swift test --package-path Packages/LumiInlinePreviewKit --filter InlinePreviewBuilderTests/test_build_realRepositoryLumiUIPackage_usesPlannedBuildPath`：passed（真实 `Packages/LumiUI` / `AppButton.swift` planned build，52 个 link inputs，entry dylib 可 `dlopen`）。
+- `swift test --package-path Packages/LumiPreviewKit --filter ModuleImportEligibilityCheckerTests`：7 tests passed。
 - `xcodebuild -project Lumi.xcodeproj -scheme Lumi -configuration Debug -destination 'platform=macOS' build`：退出码 0，`BUILD SUCCEEDED`。
 
 当前整体完成度估计：**99%**。
@@ -63,15 +65,17 @@
 
 - [ ] **真实项目压测外部 package / workspace 依赖**
   - [x] 用自动化 fixture 验证 SPM target + 本地依赖 target 的 planned build 路径，确认 entry dylib 可 `dlopen` 且导出 `lumi_preview_make_nsview`。
-  - [ ] 用 Lumi 自己的复杂 SwiftPM/Xcode 项目文件测试自动预览。
-  - [ ] 重点验证外部 package import、Xcode workspace 派生路径、resource bundle、module search path、link inputs。
+  - [x] 用 Lumi 自己的真实 SwiftPM package（`Packages/LumiUI/Sources/LumiUI/Components/AppButton.swift`）测试自动预览 planned build，确认真实包 link inputs 可用于 entry dylib。
+  - [ ] 用 Lumi 自己的 Xcode workspace / app target 文件测试自动预览。
+  - [ ] 重点验证外部 package import、Xcode workspace 派生路径、resource bundle、module search path。
   - 失败时把错误准确映射到 UI，不允许静默 fallback 到 standalone 编译。
 
-- [x] **完善构建失败体验**
+- [ ] **完善构建失败体验**
   - UI 展示 swiftc/build planner 的关键错误信息。
   - 区分 no preview、编译失败、依赖解析失败、dlopen 失败。
   - 保留上一帧成功预览，避免失败时直接清空画面。
   - [x] 把错误信息做成可展开详情，而不是只放在单行 badge 里。
+  - [ ] 构建中（`entryStatus == .building`）时在画布上显示友好的构建中视图（居中旋转进度条 + 文件名），而不是静默保留旧帧或显示空占位，提升用户感知。
 
 ### P1
 
