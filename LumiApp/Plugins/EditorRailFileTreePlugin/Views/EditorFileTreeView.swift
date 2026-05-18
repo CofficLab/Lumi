@@ -38,7 +38,8 @@ struct EditorFileTreeView: View, SuperLog {
                         projectRootPath: projectVM.currentProjectPath,
                         onExpansionChange: { relativePath, isExpanded in
                             handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
-                        }
+                        },
+                        gitStatusSnapshot: coordinator.gitStatusSnapshot
                     )
                 }
             }

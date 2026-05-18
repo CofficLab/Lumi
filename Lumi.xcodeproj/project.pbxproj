@@ -1252,6 +1252,34 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Package.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/main.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderer.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderLoop.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewDemoView.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotStdioPreviewHost.swift",
+				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewEventDispatcher.swift",
+				"$(SRCROOT)/scripts/embed-inline-preview-host.sh",
+			);
+			name = "Embed Inline Preview Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiInlinePreviewHostApp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "\"$SRCROOT/scripts/embed-inline-preview-host.sh\"\n";
+		};
 		C0D3E0012FB1000000A11001 /* Embed SwiftUI Preview Host */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -1303,34 +1331,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
 			shellScript = "\"$SRCROOT/scripts/embed-editor-hot-preview-host.sh\"\n";
-		};
-		A1B2D00130B2000100AAA201 /* Embed Inline Preview Host */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Package.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/main.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderer.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderLoop.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewDemoView.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotStdioPreviewHost.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewEventDispatcher.swift",
-				"$(SRCROOT)/scripts/embed-inline-preview-host.sh",
-			);
-			name = "Embed Inline Preview Host";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiInlinePreviewHostApp",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/zsh;
-			shellScript = "\"$SRCROOT/scripts/embed-inline-preview-host.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
