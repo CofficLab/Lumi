@@ -122,6 +122,14 @@ struct GitHubKBPopover: View {
     let projectPath: String
     @State private var selectedRelation: GitHubInsightRelationType?
 
+    private var primaryTextColor: Color {
+        Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+    }
+
+    private var secondaryTextColor: Color {
+        Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
@@ -137,17 +145,19 @@ struct GitHubKBPopover: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Image(systemName: "network")
+                    .foregroundColor(primaryTextColor)
                 Text("GitHub Ecosystem KB")
                     .font(.headline)
+                    .foregroundColor(primaryTextColor)
                 Spacer()
                 Text("\(viewModel.entries.count)")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
             }
             if let profile = viewModel.profile {
                 Text("Profile: \(profile.shortTitle)")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
             }
         }
     }
@@ -171,7 +181,7 @@ struct GitHubKBPopover: View {
                 if filteredEntries.isEmpty {
                     Text(emptyText)
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(secondaryTextColor)
                         .frame(maxWidth: .infinity, minHeight: 180)
                 } else {
                     ForEach(filteredEntries) { entry in
@@ -186,7 +196,7 @@ struct GitHubKBPopover: View {
         HStack {
             Text(statusText)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundColor(secondaryTextColor)
             Spacer()
             Button {
                 viewModel.load(projectPath: projectPath, force: true)
@@ -230,40 +240,55 @@ struct GitHubKBPopover: View {
 private struct GitHubKBEntryRow: View {
     let entry: GitHubInsightKBEntry
 
+    private var primaryTextColor: Color {
+        Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+    }
+
+    private var secondaryTextColor: Color {
+        Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+    }
+
+    private var rowBackgroundColor: Color {
+        Color.adaptive(light: "F5F5F7", dark: "1C1C1E")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(entry.fullName)
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(primaryTextColor)
                 Text(entry.relationType.title)
                     .font(.caption2)
+                    .foregroundColor(Color.adaptive(light: "FFFFFF", dark: "FFFFFF"))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color.accentColor.opacity(0.15))
+                    .background(Color.accentColor.opacity(0.8))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                 Spacer()
                 Label("\(entry.stars)", systemImage: "star")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
             }
 
             if !entry.description.isEmpty {
                 Text(entry.description)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
                     .lineLimit(2)
             }
 
             if let insight = entry.keyInsights.first {
                 Text(insight)
                     .font(.caption)
+                    .foregroundColor(primaryTextColor.opacity(0.8))
                     .lineLimit(2)
             }
 
             HStack {
                 Text(entry.language ?? "Unknown")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(secondaryTextColor)
                 Spacer()
                 Button {
                     if let url = URL(string: entry.repoURL) {
@@ -276,7 +301,7 @@ private struct GitHubKBEntryRow: View {
             }
         }
         .padding(10)
-        .background(Color.primary.opacity(0.04))
+        .background(rowBackgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
