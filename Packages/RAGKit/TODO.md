@@ -7,7 +7,7 @@
 ## 阶段一：基础设施搭建
 
 ### 1.1 创建 Package.swift
-- [ ] 创建 `/Packages/RAGKit/Package.swift`
+- [x] 创建 `/Packages/RAGKit/Package.swift`
   - `swift-tools-version: 6.0`
   - `platforms: [.macOS(.v14)]`
   - products: `RAGKit`（静态库）
@@ -15,14 +15,14 @@
   - 无外部依赖（纯 Apple 系统框架：Foundation、CryptoKit、NaturalLanguage、SQLite3、Accelerate）
 
 ### 1.2 定义 RAGKit 内部日志协议
-- [ ] 创建 `Sources/RAGKit/RAGLogger.swift`
+- [x] 创建 `Sources/RAGKit/RAGLogger.swift`
   - 定义 `public protocol RAGLogger: Sendable`
   - 方法：`info(_:)`, `error(_:)`, `warning(_:)`
   - 提供默认空实现 `NullRAGLogger`（用于测试和默认场景）
   - 设计参考：当前 `AppLogger.core.info(...)` 的调用模式
 
 ### 1.3 定义 RAGKit 配置协议
-- [ ] 创建 `Sources/RAGKit/RAGConfiguration.swift`
+- [x] 创建 `Sources/RAGKit/RAGConfiguration.swift`
   - 定义 `public protocol RAGConfiguration: Sendable`
   - 需要提供的配置项：
     - `func pluginDatabaseDirectory() -> URL`（替代 `AppConfig.getPluginDBFolderURL(pluginName:)`）
@@ -30,7 +30,7 @@
   - 提供默认实现
 
 ### 1.4 定义语言偏好枚举
-- [ ] 创建 `Sources/RAGKit/RAGLanguagePreference.swift`
+- [x] 创建 `Sources/RAGKit/RAGLanguagePreference.swift`
   - 定义 `public enum RAGLanguagePreference`
     - `.chinese`, `.english`
   - 替代当前对 `MagicKit.LanguagePreference` 的依赖
@@ -41,7 +41,7 @@
 ## 阶段二：迁移 Models（无依赖，最先迁移）
 
 ### 2.1 迁移 RAGModels.swift
-- [ ] 复制 `Models/RAGModels.swift` → `Sources/RAGKit/Models/RAGModels.swift`
+- [x] 复制 `Models/RAGModels.swift` → `Sources/RAGKit/Models/RAGModels.swift`
   - 需要将所有类型标记为 `public`
   - 涉及类型：
     - `RAGSearchResult`（需 public）
@@ -58,7 +58,7 @@
     - `RAGIntentDecision`（需 public，当前未被使用但已定义）
 
 ### 2.2 迁移 RAGError.swift
-- [ ] 复制 `Models/RAGError.swift` → `Sources/RAGKit/Models/RAGError.swift`
+- [x] 复制 `Models/RAGError.swift` → `Sources/RAGKit/Models/RAGError.swift`
   - 标记 `public enum RAGError: LocalizedError`
   - 标记所有 case 和 `errorDescription` 为 public
 
@@ -67,11 +67,11 @@
 ## 阶段三：迁移 Utils（无依赖或仅依赖系统框架）
 
 ### 3.1 迁移 Float+Data.swift
-- [ ] 复制 `Utils/Float+Data.swift` → `Sources/RAGKit/Utils/Float+Data.swift`
+- [x] 复制 `Utils/Float+Data.swift` → `Sources/RAGKit/Utils/Float+Data.swift`
   - `Array<Float>.toData()` 和 `Array<Float>.init(data:)` 标记为 `internal`（RAGKit 内部使用）
 
 ### 3.2 迁移 RAGTextUtils.swift
-- [ ] 复制 `Utils/RAGTextUtils.swift` → `Sources/RAGKit/Utils/RAGTextUtils.swift`
+- [x] 复制 `Utils/RAGTextUtils.swift` → `Sources/RAGKit/Utils/RAGTextUtils.swift`
   - `RAGTextUtils` 标记为 `public enum`
   - `tokenize(_:)` 标记 `public`
   - `lexicalBoost(query:content:)` 标记 `public`
@@ -79,27 +79,27 @@
   - 注意：`UnicodeScalar.isCJK` 扩展当前在 `HashEmbeddingProvider.swift` 中，需提取到此处或独立文件
 
 ### 3.3 迁移 RAGMathUtils.swift
-- [ ] 复制 `Utils/RAGMathUtils.swift` → `Sources/RAGKit/Utils/RAGMathUtils.swift`
+- [x] 复制 `Utils/RAGMathUtils.swift` → `Sources/RAGKit/Utils/RAGMathUtils.swift`
   - 标记 `public`
   - 依赖 `Accelerate`（系统框架，可正常使用）
 
 ### 3.4 迁移 RAGPathUtils.swift
-- [ ] 复制 `Utils/RAGPathUtils.swift` → `Sources/RAGKit/Utils/RAGPathUtils.swift`
+- [x] 复制 `Utils/RAGPathUtils.swift` → `Sources/RAGKit/Utils/RAGPathUtils.swift`
   - 标记 `public`
   - 纯 Foundation，无外部依赖
 
 ### 3.5 迁移 RAGFileScanner.swift
-- [ ] 复制 `Utils/RAGFileScanner.swift` → `Sources/RAGKit/Utils/RAGFileScanner.swift`
+- [x] 复制 `Utils/RAGFileScanner.swift` → `Sources/RAGKit/Utils/RAGFileScanner.swift`
   - 标记 `public`
   - 纯 Foundation，无外部依赖
   - 注意：当前 `RAGIndexer` 中有 `discoverFiles` 和 `skipDirectories`/`allowedExtensions` 的私有副本，迁移后应统一使用 `RAGFileScanner`
 
 ### 3.6 迁移 RAGUtils.swift
-- [ ] 复制 `Utils/RAGUtils.swift` → `Sources/RAGKit/Utils/RAGUtils.swift`
+- [x] 复制 `Utils/RAGUtils.swift` → `Sources/RAGKit/Utils/RAGUtils.swift`
   - 标记 `public`
 
 ### 3.7 提取 UnicodeScalar+CJK.swift
-- [ ] 创建 `Sources/RAGKit/Utils/UnicodeScalar+CJK.swift`
+- [x] 创建 `Sources/RAGKit/Utils/UnicodeScalar+CJK.swift`
   - 从 `HashEmbeddingProvider.swift` 中提取 `UnicodeScalar.isCJK` 扩展
   - 标记 `public`（RAGKit 内部和外部都可能使用）
 
@@ -108,13 +108,13 @@
 ## 阶段四：迁移 Services/Providers（仅依赖系统框架 + 内部 Protocol）
 
 ### 4.1 迁移 RAGEmbeddingProvider.swift
-- [ ] 复制 `Services/Providers/RAGEmbeddingProvider.swift` → `Sources/RAGKit/Services/Providers/RAGEmbeddingProvider.swift`
+- [x] 复制 `Services/Providers/RAGEmbeddingProvider.swift` → `Sources/RAGKit/Services/Providers/RAGEmbeddingProvider.swift`
   - 标记 `public protocol RAGEmbeddingProvider`
   - 标记 `modelID`, `modelVersion`, `dimension`, `embed(_:)`, `embedBatch(_:)` 为 public
   - 标记 extension 中的 `modelIdentifierWithVersion` 为 public
 
 ### 4.2 迁移 HashEmbeddingProvider.swift
-- [ ] 复制 `Services/Providers/HashEmbeddingProvider.swift` → `Sources/RAGKit/Services/Providers/HashEmbeddingProvider.swift`
+- [x] 复制 `Services/Providers/HashEmbeddingProvider.swift` → `Sources/RAGKit/Services/Providers/HashEmbeddingProvider.swift`
   - 标记 `public struct HashEmbeddingProvider: RAGEmbeddingProvider`
   - 标记 init 为 public
   - **移除** `UnicodeScalar.isCJK` 扩展（已移至 `UnicodeScalar+CJK.swift`）
@@ -122,7 +122,7 @@
   - 依赖：`RAGTextUtils.tokenize`（提取到 Utils 后可用，注意当前内部有独立 tokenize，应复用 `RAGTextUtils`）
 
 ### 4.3 迁移 AppleNativeEmbeddingProvider.swift
-- [ ] 复制 `Services/Providers/AppleNativeEmbeddingProvider.swift` → `Sources/RAGKit/Services/Providers/AppleNativeEmbeddingProvider.swift`
+- [x] 复制 `Services/Providers/AppleNativeEmbeddingProvider.swift` → `Sources/RAGKit/Services/Providers/AppleNativeEmbeddingProvider.swift`
   - 标记 `public struct AppleNativeEmbeddingProvider: RAGEmbeddingProvider`
   - 标记 init 为 public
   - 依赖：`NaturalLanguage`（系统框架）
@@ -130,7 +130,7 @@
   - `convertToDoubleArray(_:)` 有两个重载（接受 `[Double]` 和 `[Float]`），确保都正确迁移
 
 ### 4.4 迁移 RAGEmbeddingFactory.swift
-- [ ] 复制 `Services/Providers/RAGEmbeddingFactory.swift` → `Sources/RAGKit/Services/Providers/RAGEmbeddingFactory.swift`
+- [x] 复制 `Services/Providers/RAGEmbeddingFactory.swift` → `Sources/RAGKit/Services/Providers/RAGEmbeddingFactory.swift`
   - 标记 `public enum RAGEmbeddingFactory`
   - 标记所有 factory 方法为 public
 
@@ -139,19 +139,19 @@
 ## 阶段五：迁移 Services/Core（需要解耦的关键部分）
 
 ### 5.1 迁移 RAGChunker.swift
-- [ ] 复制 `Services/RAGChunker.swift` → `Sources/RAGKit/Services/RAGChunker.swift`
+- [x] 复制 `Services/RAGChunker.swift` → `Sources/RAGKit/Services/RAGChunker.swift`
   - 标记 `public struct RAGChunker`
   - 标记 init 和 `chunk(_:)` 为 public
   - 无外部依赖 ✅
 
 ### 5.2 迁移 RAGIndexingRegistry.swift
-- [ ] 复制 `Services/RAGIndexingRegistry.swift` → `Sources/RAGKit/Services/RAGIndexingRegistry.swift`
+- [x] 复制 `Services/RAGIndexingRegistry.swift` → `Sources/RAGKit/Services/RAGIndexingRegistry.swift`
   - 标记 `public final class RAGIndexingRegistry: @unchecked Sendable`
   - 标记所有方法为 public
   - 无外部依赖 ✅
 
 ### 5.3 迁移 RAGSQLiteStore.swift（⚠️ 最复杂）
-- [ ] 复制 `Services/RAGSQLiteStore.swift` → `Sources/RAGKit/Services/RAGSQLiteStore.swift`
+- [x] 复制 `Services/RAGSQLiteStore.swift` → `Sources/RAGKit/Services/RAGSQLiteStore.swift`
   - 标记必要 API 为 public
   - **依赖分析**：
     - `CryptoKit` → `SHA256`（系统框架 ✅）
@@ -167,7 +167,7 @@
   - 日志：当前无日志调用 ✅（仅通过 `runtimeInfo` 传递状态信息）
 
 ### 5.4 迁移 RAGRetriever.swift
-- [ ] 复制 `Services/RAGRetriever.swift` → `Sources/RAGKit/Services/RAGRetriever.swift`
+- [x] 复制 `Services/RAGRetriever.swift` → `Sources/RAGKit/Services/RAGRetriever.swift`
   - 标记 `public struct RAGRetriever`
   - 标记 `retrieve(...)` 为 public
   - **解耦 `SuperLog`**：
@@ -185,7 +185,7 @@
     - `sourcePathBoost(queryTerms:filePath:)` → 复用 `RAGTextUtils.sourcePathBoost(queryTerms:filePath:)`
 
 ### 5.5 迁移 RAGContextBuilder.swift
-- [ ] 复制 `Services/RAGContextBuilder.swift` → `Sources/RAGKit/Services/RAGContextBuilder.swift`
+- [x] 复制 `Services/RAGContextBuilder.swift` → `Sources/RAGKit/Services/RAGContextBuilder.swift`
   - 标记 `public enum RAGContextBuilder`
   - 标记 `buildPrompt(...)` 为 public
   - **解耦 `LanguagePreference`**：
@@ -193,7 +193,7 @@
   - 无其他外部依赖 ✅
 
 ### 5.6 迁移 RAGIndexer.swift
-- [ ] 复制 `Services/RAGIndexer.swift` → `Sources/RAGKit/Services/RAGIndexer.swift`
+- [x] 复制 `Services/RAGIndexer.swift` → `Sources/RAGKit/Services/RAGIndexer.swift`
   - 标记必要 API 为 public
   - **解耦 `SuperLog`**：同 RAGRetriever
   - **解耦 `AppLogger`**：替换为注入的 `RAGLogger`
@@ -209,7 +209,7 @@
     - 构造函数增加 `onProgress: ((RAGIndexProgressEvent) -> Void)? = nil`
 
 ### 5.7 迁移 RAGService.swift（⚠️ 核心，需最仔细）
-- [ ] 复制 `Services/RAGService.swift` → `Sources/RAGKit/Services/RAGService.swift`
+- [x] 复制 `Services/RAGService.swift` → `Sources/RAGKit/Services/RAGService.swift`
   - 标记 `public actor RAGService`
   - 标记公开 API 为 public：
     - `initialize()`
@@ -236,7 +236,7 @@
     - 需要保留此模式，或改为注入共享 registry
 
 ### 5.8 迁移 RAGIntentAnalyzer.swift（可选，建议移入 RAGKit）
-- [ ] 复制 `Middleware/RAGIntentAnalyzer.swift` → `Sources/RAGKit/RAGIntentAnalyzer.swift`
+- [x] 复制 `Middleware/RAGIntentAnalyzer.swift` → `Sources/RAGKit/RAGIntentAnalyzer.swift`
   - 标记 `public struct RAGIntentAnalyzer`
   - 标记 `shouldUseRAG(for:)` 为 public
   - 标记 `analyzeIntent(for:)` 为 public（如果存在）
@@ -349,30 +349,30 @@
 
 | 原路径 (AgentRAGPlugin/) | 新路径 (RAGKit/Sources/RAGKit/) | 状态 |
 |---|---|---|
-| `Models/RAGModels.swift` | `Models/RAGModels.swift` | 🔄 需 public 化 |
-| `Models/RAGError.swift` | `Models/RAGError.swift` | 🔄 需 public 化 |
-| `Utils/Float+Data.swift` | `Utils/Float+Data.swift` | ✅ 基本直接迁移 |
-| `Utils/RAGTextUtils.swift` | `Utils/RAGTextUtils.swift` | 🔄 需 public 化 |
-| `Utils/RAGMathUtils.swift` | `Utils/RAGMathUtils.swift` | 🔄 需 public 化 |
-| `Utils/RAGPathUtils.swift` | `Utils/RAGPathUtils.swift` | 🔄 需 public 化 |
-| `Utils/RAGFileScanner.swift` | `Utils/RAGFileScanner.swift` | 🔄 需 public 化 |
-| `Utils/RAGUtils.swift` | `Utils/RAGUtils.swift` | 🔄 需 public 化 |
-| — | `Utils/UnicodeScalar+CJK.swift` | 🆕 从 HashEmbeddingProvider 提取 |
-| `Services/Providers/RAGEmbeddingProvider.swift` | `Services/Providers/RAGEmbeddingProvider.swift` | 🔄 需 public 化 |
-| `Services/Providers/HashEmbeddingProvider.swift` | `Services/Providers/HashEmbeddingProvider.swift` | 🔄 移除 isCJK 扩展 |
-| `Services/Providers/AppleNativeEmbeddingProvider.swift` | `Services/Providers/AppleNativeEmbeddingProvider.swift` | ✅ 基本直接迁移 |
-| `Services/Providers/RAGEmbeddingFactory.swift` | `Services/Providers/RAGEmbeddingFactory.swift` | 🔄 需 public 化 |
-| `Services/RAGChunker.swift` | `Services/RAGChunker.swift` | 🔄 需 public 化 |
-| `Services/RAGIndexingRegistry.swift` | `Services/RAGIndexingRegistry.swift` | 🔄 需 public 化 |
-| `Services/RAGSQLiteStore.swift` | `Services/RAGSQLiteStore.swift` | 🔄 需 public 化 |
-| `Services/RAGRetriever.swift` | `Services/RAGRetriever.swift` | ⚠️ 需解耦 SuperLog+复用 Utils |
-| `Services/RAGContextBuilder.swift` | `Services/RAGContextBuilder.swift` | 🔄 替换 LanguagePreference |
-| `Services/RAGIndexer.swift` | `Services/RAGIndexer.swift` | ⚠️ 需解耦 SuperLog+统一 discoverFiles+进度回调 |
-| `Services/RAGService.swift` | `Services/RAGService.swift` | ⚠️ 需解耦 AppConfig+SuperLog+注入 logger |
-| `Middleware/RAGIntentAnalyzer.swift` | `RAGIntentAnalyzer.swift` | ✅ 移除无用 import MagicKit |
-| — | `RAGLogger.swift` | 🆕 日志协议 |
-| — | `RAGConfiguration.swift` | 🆕 配置协议 |
-| — | `RAGLanguagePreference.swift` | 🆕 语言偏好枚举 |
+| `Models/RAGModels.swift` | `Models/RAGModels.swift` | ✅ 已迁移 |
+| `Models/RAGError.swift` | `Models/RAGError.swift` | ✅ 已迁移 |
+| `Utils/Float+Data.swift` | `Utils/Float+Data.swift` | ✅ 已迁移 |
+| `Utils/RAGTextUtils.swift` | `Utils/RAGTextUtils.swift` | ✅ 已迁移 |
+| `Utils/RAGMathUtils.swift` | `Utils/RAGMathUtils.swift` | ✅ 已迁移 |
+| `Utils/RAGPathUtils.swift` | `Utils/RAGPathUtils.swift` | ✅ 已迁移 |
+| `Utils/RAGFileScanner.swift` | `Utils/RAGFileScanner.swift` | ✅ 已迁移 |
+| `Utils/RAGUtils.swift` | `Utils/RAGUtils.swift` | ✅ 已迁移 |
+| — | `Utils/UnicodeScalar+CJK.swift` | ✅ 已创建 |
+| `Services/Providers/RAGEmbeddingProvider.swift` | `Services/Providers/RAGEmbeddingProvider.swift` | ✅ 已迁移 |
+| `Services/Providers/HashEmbeddingProvider.swift` | `Services/Providers/HashEmbeddingProvider.swift` | ✅ 已迁移 |
+| `Services/Providers/AppleNativeEmbeddingProvider.swift` | `Services/Providers/AppleNativeEmbeddingProvider.swift` | ✅ 已迁移 |
+| `Services/Providers/RAGEmbeddingFactory.swift` | `Services/Providers/RAGEmbeddingFactory.swift` | ✅ 已迁移 |
+| `Services/RAGChunker.swift` | `Services/RAGChunker.swift` | ✅ 已迁移 |
+| `Services/RAGIndexingRegistry.swift` | `Services/RAGIndexingRegistry.swift` | ✅ 已迁移 |
+| `Services/RAGSQLiteStore.swift` | `Services/RAGSQLiteStore.swift` | ✅ 已迁移 |
+| `Services/RAGRetriever.swift` | `Services/RAGRetriever.swift` | ✅ 已迁移 |
+| `Services/RAGContextBuilder.swift` | `Services/RAGContextBuilder.swift` | ✅ 已迁移 |
+| `Services/RAGIndexer.swift` | `Services/RAGIndexer.swift` | ✅ 已迁移 |
+| `Services/RAGService.swift` | `Services/RAGService.swift` | ✅ 已迁移 |
+| `Middleware/RAGIntentAnalyzer.swift` | `RAGIntentAnalyzer.swift` | ✅ 已迁移 |
+| — | `RAGLogger.swift` | ✅ 已创建 |
+| — | `RAGConfiguration.swift` | ✅ 已创建 |
+| — | `RAGLanguagePreference.swift` | ✅ 已创建 |
 
 ### 留在 Plugin 层的文件（不迁移）
 
