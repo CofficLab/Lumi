@@ -374,14 +374,11 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
     @ViewBuilder
     private var swiftPreviewCanvas: some View {
         let hasFrame = viewModel.currentFrame != nil
-        let _ = Self.logger.warning("\(self.t)📝 swiftPreviewCanvas render: hasFrame=\(hasFrame, privacy: .public) surfaceID=\(viewModel.currentFrame?.surfaceID.description ?? "nil", privacy: .public) frameSeq=\(viewModel.currentFrame?.seq.description ?? "nil", privacy: .public) status=\(viewModel.status.description, privacy: .public) entry=\(viewModel.entryStatus.description, privacy: .public) policy=\(viewModel.policy.rawValue, privacy: .public) currentFile=\(currentFileURL?.path ?? "nil", privacy: .public)")
         GeometryReader { proxy in
-            let _ = Self.logger.warning("\(self.t)📝 swiftPreviewCanvas geometry: size=\(proxy.size.width, privacy: .public)×\(proxy.size.height, privacy: .public) hasFrame=\(hasFrame, privacy: .public) surfaceID=\(viewModel.currentFrame?.surfaceID.description ?? "nil", privacy: .public) entry=\(viewModel.entryStatus.description, privacy: .public)")
             ZStack {
                 EditorInlinePreviewBoardGrid()
 
                 if !hasFrame {
-                    let _ = Self.logger.warning("\(self.t)📝 swiftPreviewCanvas placeholder branch: entry=\(viewModel.entryStatus.description, privacy: .public) fileExt=\(currentFileURL?.pathExtension ?? "nil", privacy: .public) status=\(viewModel.status.description, privacy: .public)")
                     VStack(spacing: 12) {
                         if viewModel.entryStatus == .noPreview, currentFileURL?.pathExtension == "swift" {
                             Image(systemName: "bolt.slash")

@@ -441,11 +441,11 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
     func requestEntryDebugState() {
         guard status == .running else {
-            Self.logger.warning("\(self.t)📝 requestEntryDebugState skipped: status=\(self.status.description, privacy: .public)")
+            Self.logger.info("\(self.t)📝 requestEntryDebugState skipped: status=\(self.status.description, privacy: .public)")
             return
         }
         guard case .loaded = entryStatus else {
-            Self.logger.warning("\(self.t)📝 requestEntryDebugState skipped: entryStatus=\(self.entryStatus.description, privacy: .public)")
+            Self.logger.info("\(self.t)📝 requestEntryDebugState skipped: entryStatus=\(self.entryStatus.description, privacy: .public)")
             return
         }
         isRequestingEntryDebugState = true
@@ -498,7 +498,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
             return
         }
         guard canAutoBuildActiveFile() else {
-            Self.logger.warning("\(self.t)📝 autoBuildIfPossible skipped: canAutoBuild=false mode=\(String(describing: self.previewMode), privacy: .public) file=\(self.activeFileURL?.path ?? "nil", privacy: .public) hasSource=\(self.latestSourceText != nil, privacy: .public)")
+            Self.logger.info("\(self.t)📝 autoBuildIfPossible skipped: canAutoBuild=false mode=\(String(describing: self.previewMode), privacy: .public) file=\(self.activeFileURL?.path ?? "nil", privacy: .public) hasSource=\(self.latestSourceText != nil, privacy: .public)")
             if isEntryAuto() {
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)🔄 autoBuild：无匹配文件，卸载 Dylib")
@@ -545,7 +545,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     if Self.verbose {
                                             Self.logger.info("\(Self.t)⏭ 指纹相同，跳过加载")
                     }
-                    Self.logger.warning("\(Self.t)📝 load skipped: same fingerprint=\(result.fingerprint, privacy: .public) entry will be marked loaded without loadDylib; frameCount=\(self.receivedFrameCount, privacy: .public) seq=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
+                    Self.logger.info("\(Self.t)📝 load skipped: same fingerprint=\(result.fingerprint, privacy: .public) entry will be marked loaded without loadDylib; frameCount=\(self.receivedFrameCount, privacy: .public) seq=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
                     self.entryStatus = .loaded(path: result.dylibURL.path, title: result.primaryTitle)
                     return
                 }
