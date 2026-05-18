@@ -55,12 +55,14 @@ struct GitHubKBStatusBarView: View {
                     popoverWidth: 720,
                     id: "github-insight-kb"
                 ) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Image(systemName: iconName)
                             .font(.system(size: 10))
-                        Text(label)
-                            .font(.system(size: 11))
-                            .lineLimit(1)
+                        if let count = displayCount {
+                            Text("\(count)")
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .monospacedDigit()
+                        }
                     }
                     .foregroundColor(.white)
                     .padding(.horizontal, 8)
@@ -101,20 +103,16 @@ struct GitHubKBStatusBarView: View {
         }
     }
 
-    private var label: String {
+    private var displayCount: Int? {
         switch viewModel.state {
         case .idle:
-            return viewModel.entries.isEmpty
-                ? String(localized: "GitHub KB", table: "GitHubInsight")
-                : String(format: String(localized: "%lld Insights", table: "GitHubInsight"), viewModel.entries.count)
+            return viewModel.entries.isEmpty ? nil : viewModel.entries.count
         case .syncing:
-            return String(localized: "Syncing...", table: "GitHubInsight")
+            return nil
         case .ready(let count):
-            return String(format: String(localized: "%lld Insights", table: "GitHubInsight"), count)
-        case .rateLimited:
-            return String(localized: "Rate limited", table: "GitHubInsight")
-        case .failed:
-            return String(localized: "Insight error", table: "GitHubInsight")
+            return count
+        case .rateLimited, .failed:
+            return nil
         }
     }
 }
