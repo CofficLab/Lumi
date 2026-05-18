@@ -10,13 +10,16 @@ import os
 /// 根据 action 名称路由到相应的处理器。
 /// 不依赖任何视图是否可见，直接操作 VM 层。
 @MainActor
-final class AutomationController {
+final class AutomationController: SuperLog {
+    nonisolated static let emoji = "🤖"
+    nonisolated static let verbose = false
+
     // MARK: - Singleton
 
     static let shared = AutomationController()
 
     private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "com.coffic.lumi",
+        subsystem: "com.coffic.lumi",
         category: "automation.controller"
     )
 
@@ -35,13 +38,13 @@ final class AutomationController {
             }
             .store(in: &cancellables)
 
-        Self.logger.info("🤖 AutomationController started")
+        Self.logger.info("\(Self.t)AutomationController started")
     }
 
     /// 停止自动化控制器
     func stop() {
         cancellables.removeAll()
-        Self.logger.info("🤖 AutomationController stopped")
+        Self.logger.info("\(Self.t)AutomationController stopped")
     }
 
     // MARK: - Action Routing
