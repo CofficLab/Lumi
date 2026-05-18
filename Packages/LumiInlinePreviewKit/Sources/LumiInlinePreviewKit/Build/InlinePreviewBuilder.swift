@@ -67,6 +67,8 @@ public extension LumiInlinePreviewFacade {
         private let previewEntryBuilder = LumiPreviewFacade.PreviewEntryBuilder()
         private let spmCompiler = LumiPreviewFacade.SPMCompiler()
         private let xcodeCompiler = LumiPreviewFacade.XcodeCompiler()
+        private let incrementalBuildPipeline = LumiPreviewFacade.IncrementalBuildPipeline()
+        private let moduleImportEligibilityChecker = LumiPreviewFacade.ModuleImportEligibilityChecker()
         private let workspaceRoot: URL
         private let cacheLimit: Int
         /// fingerprint → dylib URL（最近若干次保存的产物）。
@@ -154,29 +156,89 @@ public extension LumiInlinePreviewFacade {
             )
         }
 
+        /// 使用分级回退机制构建 planned entry dylib。
+        ///
+        /// 策略选择：
+        /// - **SPM target**：尝试 module import → 回退到 legacy builder（收集完整 target 源码）。
+        /// - **Xcode target**：直接使用 legacy builder（Xcode app target 不导出 internal 符号，
+        ///   module import 不可靠；`compilePreviewEntryIncludingCurrentSource` 只编译单文件，
+        ///   无法解决跨文件依赖）。
+        /// - **incremental**：直接使用 legacy builder。
+        ///
+        /// 对 SPM target，module import 失败时自动回退到 legacy builder。
+        /// 仅在 legacy builder 也失败时才抛出错误。
         private func buildPlannedEntry(
             discovery: LumiPreviewFacade.PreviewDiscovery,
             buildStrategy: LumiPreviewFacade.BuildStrategy,
             fingerprint: String
         ) async throws -> URL {
+            try await buildTargetIfNeeded(buildStrategy)
+
+            // 对 SPM target：先尝试 module import（最快，对 public 符号有效）
+            if case .spm = buildStrategy,
+               shouldAttemptModuleImport(discovery: discovery, buildStrategy: buildStrategy),
+               let importPlan = try? await incrementalBuildPipeline.resolveModuleImportPlan(
+                   buildStrategy: buildStrategy
+               ),
+               importPlan.hasUsableModuleArtifact {
+                do {
+                    let entryURL = try await incrementalBuildPipeline.compilePreviewEntryImportingModule(
+                        discovery: discovery,
+                        configuration: .empty,
+                        buildStrategy: buildStrategy,
+                        importPlan: importPlan
+                    )
+                    return try copyToWorkspace(entryURL, fingerprint: fingerprint)
+                } catch {
+                    // module import 失败，回退到 legacy builder
+                }
+            }
+
+            // 最终兜底：legacy PreviewEntryBuilder（收集完整 target 源码，最稳健）
+            // 会通过 BuildPlanner.swiftSourceFiles() 收集 Xcode target 的所有源文件，
+            // 并在 entry 中直接内联编译而非 import 模块——从而解决 internal 符号可见性问题。
+            let forcedSourceIncludeStrategy = buildStrategy
             do {
-                try await buildTargetIfNeeded(buildStrategy)
                 let builtURL = try await previewEntryBuilder.buildEntry(
                     for: discovery,
                     configuration: .empty,
-                    buildStrategy: buildStrategy
+                    buildStrategy: forcedSourceIncludeStrategy,
+                    forceSourceInclude: true
                 )
-                let buildDir = workspaceRoot.appendingPathComponent(fingerprint, isDirectory: true)
-                try FileManager.default.createDirectory(at: buildDir, withIntermediateDirectories: true)
-                let dylibURL = buildDir.appendingPathComponent("InlinePreviewEntry.dylib")
-                if FileManager.default.fileExists(atPath: dylibURL.path) {
-                    try FileManager.default.removeItem(at: dylibURL)
-                }
-                try FileManager.default.copyItem(at: builtURL, to: dylibURL)
-                return dylibURL
+                return try copyToWorkspace(builtURL, fingerprint: fingerprint)
             } catch {
                 throw BuildError.plannedBuildFailed(error.localizedDescription)
             }
+        }
+
+        /// 判断是否应该尝试 module import 路径。
+        ///
+        /// 仅当预览 body 没有引用 private/fileprivate 符号时才返回 true。
+        /// 对于 incremental 策略不支持 module import。
+        private func shouldAttemptModuleImport(
+            discovery: LumiPreviewFacade.PreviewDiscovery,
+            buildStrategy: LumiPreviewFacade.BuildStrategy
+        ) -> Bool {
+            switch buildStrategy {
+            case .spm, .xcode:
+                return moduleImportEligibilityChecker.shouldUseModuleImport(
+                    discovery: discovery
+                )
+            case .incremental:
+                return false
+            }
+        }
+
+        /// 将编译产物复制到 workspace 目录中。
+        private func copyToWorkspace(_ sourceURL: URL, fingerprint: String) throws -> URL {
+            let buildDir = workspaceRoot.appendingPathComponent(fingerprint, isDirectory: true)
+            try FileManager.default.createDirectory(at: buildDir, withIntermediateDirectories: true)
+            let dylibURL = buildDir.appendingPathComponent("InlinePreviewEntry.dylib")
+            if FileManager.default.fileExists(atPath: dylibURL.path) {
+                try FileManager.default.removeItem(at: dylibURL)
+            }
+            try FileManager.default.copyItem(at: sourceURL, to: dylibURL)
+            return dylibURL
         }
 
         private func buildTargetIfNeeded(_ buildStrategy: LumiPreviewFacade.BuildStrategy) async throws {

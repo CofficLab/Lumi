@@ -72,15 +72,21 @@ final class PreviewEntryBuilder: Sendable {
     ///
     /// When target context is available, the generated entry is compiled with
     /// sanitized target sources so `#Preview` bodies can reference sibling files.
+    ///
+    /// - Parameter forceSourceInclude: When `true`, always collects and inlines target
+    ///   source files instead of attempting module import. This is necessary for targets
+    ///   like Xcode app targets that don't export internal symbols via their swiftmodule.
     public func buildEntry(
         for discovery: PreviewDiscovery,
         configuration: PreviewRenderConfiguration,
-        buildStrategy: BuildStrategy? = nil
+        buildStrategy: BuildStrategy? = nil,
+        forceSourceInclude: Bool = false
     ) async throws -> URL {
         let generatedSources = try viewEntrySources(
             for: discovery,
             configuration: configuration,
-            buildStrategy: buildStrategy
+            buildStrategy: buildStrategy,
+            forceSourceInclude: forceSourceInclude
         )
         let compilerArguments = try await viewEntryCompilerArguments(for: buildStrategy)
         let fingerprint = Self.fingerprint(
@@ -188,9 +194,14 @@ final class PreviewEntryBuilder: Sendable {
     private func viewEntrySources(
         for discovery: PreviewDiscovery,
         configuration: PreviewRenderConfiguration,
-        buildStrategy: BuildStrategy?
+        buildStrategy: BuildStrategy?,
+        forceSourceInclude: Bool = false
     ) throws -> [GeneratedSource] {
-        let targetSourceURLs = sourceFiles(for: discovery, buildStrategy: buildStrategy)
+        let targetSourceURLs = sourceFiles(
+            for: discovery,
+            buildStrategy: buildStrategy,
+            forceSourceInclude: forceSourceInclude
+        )
         let moduleNameToRemove = selfImportModuleName(for: buildStrategy)
         var generatedSources: [GeneratedSource] = []
         for (index, targetSourceURL) in targetSourceURLs.enumerated() {
@@ -213,7 +224,8 @@ final class PreviewEntryBuilder: Sendable {
                 content: try viewEntrySource(
                     for: discovery,
                     configuration: configuration,
-                    buildStrategy: buildStrategy
+                    buildStrategy: buildStrategy,
+                    forceSourceInclude: forceSourceInclude
                 )
             )
         )
@@ -235,13 +247,21 @@ final class PreviewEntryBuilder: Sendable {
     private func viewEntrySource(
         for discovery: PreviewDiscovery,
         configuration: PreviewRenderConfiguration,
-        buildStrategy: BuildStrategy?
+        buildStrategy: BuildStrategy?,
+        forceSourceInclude: Bool = false
     ) throws -> String {
         let descriptorSource = try descriptorFunctionSource(for: discovery, configuration: configuration)
         let bodySource = discovery.bodySource?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let viewBody = (bodySource?.isEmpty == false) ? bodySource! : #"Text("Empty Preview")"#
-        let importLine = importModuleName(for: buildStrategy).map { "import \($0)\n" } ?? ""
+        // When force-including source files, don't import the module —
+        // all types are available via inlined source files.
+        let importLine: String
+        if forceSourceInclude {
+            importLine = ""
+        } else {
+            importLine = importModuleName(for: buildStrategy).map { "import \($0)\n" } ?? ""
+        }
 
         return """
         import AppKit
@@ -308,10 +328,15 @@ final class PreviewEntryBuilder: Sendable {
         return parts.isEmpty ? nil : parts.joined(separator: "\n")
     }
 
-    private func sourceFiles(for discovery: PreviewDiscovery, buildStrategy: BuildStrategy?) -> [URL] {
+    private func sourceFiles(
+        for discovery: PreviewDiscovery,
+        buildStrategy: BuildStrategy?,
+        forceSourceInclude: Bool = false
+    ) -> [URL] {
         let currentSourceURL = discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
 
-        if buildStrategy != nil,
+        if !forceSourceInclude,
+           buildStrategy != nil,
            LumiPreviewFacade.ModuleImportEligibilityChecker().shouldUseModuleImport(discovery: discovery) {
             return []
         }
