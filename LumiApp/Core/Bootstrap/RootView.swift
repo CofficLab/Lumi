@@ -69,6 +69,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.projectContextRequestVM)
             .environmentObject(container.gitVM)
             .environmentObject(container.editorVM)
+            .environmentObject(container.idleTimeVM)
             .modelContainer(container.modelContainer)
             .onReceive(container.messageQueueVM.$queueVersion.dropFirst()) { _ in
                 onMessageQueueChanged()

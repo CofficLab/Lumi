@@ -57,6 +57,7 @@ final class RootContainer: ObservableObject, SuperLog {
     let agentSessionConfig: LLMVM
     let captureThinkingContent: Bool
     let editorVM: EditorVM
+    let idleTimeVM: IdleTimeVM
 
     // MARK: - 初始化
 
@@ -274,5 +275,11 @@ final class RootContainer: ObservableObject, SuperLog {
             AppSettingStore.savePendingEditorSettingsSearchQuery(searchQuery)
             NotificationCenter.postOpenSettings()
         }
+
+        // ========================================
+        // 空闲时间
+        // ========================================
+
+        self.idleTimeVM = IdleTimeVM()
     }
 }

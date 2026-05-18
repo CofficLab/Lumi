@@ -1,5 +1,30 @@
 import Foundation
 
+// MARK: - Internal Inference Profile
+
+enum IdleInferenceProfile: Sendable {
+    case weekday
+    case weekend
+    case global
+
+    var source: RestWindowSource {
+        switch self {
+        case .weekday: return .weekday
+        case .weekend: return .weekend
+        case .global: return .globalFallback
+        }
+    }
+
+    var targetObservedDays: Int {
+        switch self {
+        case .weekday, .global: return 14
+        case .weekend: return 6
+        }
+    }
+}
+
+// MARK: - RestWindowInferencer
+
 struct RestWindowInferencer: Sendable {
     static let bucketsPerDay = 48
     static let bucketMinutes = 30
