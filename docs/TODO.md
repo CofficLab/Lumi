@@ -522,37 +522,27 @@ openWindow(id: MainWindowID.main, value: LumiWindowRoute(conversationId: convers
 
 > 目标：将多个 OpenAI-compatible 供应商插件中重复的请求构造、消息转换、工具格式化、响应解析和 SSE 流解析逻辑提取到独立 Swift Package。
 
-### Phase 1: 新建 Package 和测试骨架
+### 已完成摘要（2026-05-18）
 
-- [ ] 新增 `Packages/LLMProviderKit/Package.swift`。
-- [ ] 新增 `Sources/LLMProviderKit` 和 `Tests/LLMProviderKitTests`。
-- [ ] 配置 macOS platform，添加最小 public API 和空测试。
-
-### Phase 2: 下沉核心模型
-
-- [ ] 将 `LLMModelCapabilities`、`LLMModelSpec`、`LLMModelCatalogItem` 移入 package。
-- [ ] 将 `ChatMessage`、`ToolCall`、`StreamChunk`、`StreamEventType` 移入 package。
-- [ ] 评估 `SuperAgentTool` 是否整体下沉。
-- [ ] App target 引入 `LLMProviderKit`，更新引用确保编译。
-
-### Phase 3: 实现 OpenAI-compatible 公共逻辑
-
-- [ ] 实现 request builder。
-- [ ] 实现 message transformer。
-- [ ] 实现 tool formatter。
-- [ ] 实现普通 response DTO 和 parser。
-- [ ] 实现 SSE parser。
-- [ ] 支持 provider 配置项（additional headers、stream usage options、empty chunk fallback、tool call id 策略）。
+Package 创建、核心模型下沉、OpenAI-compatible 公共逻辑、Anthropic-compatible 公共逻辑全部完成，50 个单元测试通过。详见 `Packages/LLMProviderKit/`。
 
 ### Phase 4: 迁移第一批 Provider
 
-- [ ] OpenAI、DeepSeek、OpenRouter 使用 `OpenAICompatibleProviderAdapter`。
+- [ ] OpenAIProvider 使用 `OpenAICompatibleProviderAdapter`。
+- [ ] DeepSeekProvider 使用 `OpenAICompatibleProviderAdapter`。
+- [ ] OpenRouterProvider 使用 `OpenAICompatibleProviderAdapter`，保留额外 headers 和 tool call id 策略。
 - [ ] 迁移 AiRouter、FreeModel、Feifeimiao、FlyMux、HyperAPI、MegaLLM、Xiaomi、Xybbz。
-- [ ] 删除每个 provider 中重复的 DTO、`transformMessage`、`formatTool`、`parseStreamChunk`。
+- [ ] 删除每个 provider 中重复的 response DTO、`transformMessage`、`formatTool`、`parseStreamChunk`。
 - [ ] 保留 provider 自身 model catalog、default model、api key storage key、website URL。
 
 ### Phase 5: 清理和文档
 
-- [ ] 删除迁移后不再使用的重复 DTO。
+- [ ] 删除迁移后不再使用的重复 DTO（如 `DeepSeekResponse` 等同构类型）。
 - [ ] 更新 provider 插件说明，记录新 provider 接入方式。
 - [ ] 增加 `Packages/LLMProviderKit/README.md` 新供应商模板。
+
+### 注意事项
+
+1. `SuperAgentTool` 依赖 `LanguagePreference`、`ToolArgument`、`CommandRiskLevel` 等 App 概念，package 中已定义轻量 `LLMToolSchemaProviding` 协议解耦。Provider 迁移时需在 `formatTool` 调用点做适配。
+2. 不同供应商虽然声称 OpenAI-compatible，但 stream tool call delta 细节可能不同。`OpenAICompatibleProviderConfiguration` 已保留配置 hook（`returnsEmptyChunkWhenNoDelta`、`acceptsFunctionScopedToolCallID`）。
+3. 迁移建议先做 OpenAI、DeepSeek、OpenRouter 三个代表，验证回归后再批量处理剩余 provider。
