@@ -200,9 +200,8 @@ final class OpenAIProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
             return nil
         } catch {
             if Self.verbose {
-                if Self.verbose {
                                     Self.logger.error("解析流式数据块失败: \(error.localizedDescription)")
-                }
+
             }
             return nil
         }

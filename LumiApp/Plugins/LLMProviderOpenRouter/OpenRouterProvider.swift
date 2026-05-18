@@ -216,9 +216,8 @@ final class OpenRouterProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked
             return StreamChunk(content: "", eventType: .textDelta)
         } catch {
             if Self.verbose {
-                if Self.verbose {
                                     Self.logger.error("解析流式数据块失败：\(error.localizedDescription)")
-                }
+
             }
             return nil
         }

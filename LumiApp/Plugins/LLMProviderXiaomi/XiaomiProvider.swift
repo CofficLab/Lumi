@@ -70,6 +70,13 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
             body["tools"] = tools.map { formatTool($0) }
         }
 
+        if Self.verbose {
+            if let jsonData = try? JSONSerialization.data(withJSONObject: body, options: []),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                Self.logger.info("\(self.t)buildRequestBody request body: \(jsonString.prefix(500), privacy: .public)...")
+            }
+        }
+
         return body
     }
 
@@ -207,9 +214,7 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
             return nil
         } catch {
             if Self.verbose {
-                if Self.verbose {
-                                    Self.logger.error("解析流式数据块失败: \(error.localizedDescription)")
-                }
+                Self.logger.error("\(self.t)解析流式数据块失败: \(error.localizedDescription)")
             }
             return nil
         }
@@ -221,6 +226,9 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, SuperLog, @unchecked Sen
 extension XiaomiProvider {
     func transformMessage(_ message: ChatMessage) -> [String: Any] {
         if let toolCallID = message.toolCallID {
+            if Self.verbose {
+                Self.logger.info("\(self.t)transformMessage role=tool, toolCallID=\(toolCallID, privacy: .public)")
+            }
             return [
                 "role": "tool",
                 "tool_call_id": toolCallID,
@@ -235,7 +243,12 @@ extension XiaomiProvider {
 
         // 小米 thinking mode 要求：如果 assistant 消息包含思考过程，必须回传 reasoning_content
         if let thinking = message.thinkingContent, !thinking.isEmpty {
+            if Self.verbose {
+                Self.logger.info("\(self.t)transformMessage role=\(message.role.rawValue, privacy: .public), thinkingContent=\(thinking.prefix(100), privacy: .public)...")
+            }
             dict["reasoning_content"] = thinking
+        } else if Self.verbose {
+            Self.logger.warning("\(self.t)transformMessage role=\(message.role.rawValue, privacy: .public), thinkingContent is nil or empty, hasToolCalls=\(message.toolCalls != nil)")
         }
 
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {

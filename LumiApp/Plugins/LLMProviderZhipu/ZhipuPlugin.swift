@@ -30,9 +30,8 @@ actor ZhipuPlugin: SuperPlugin, SuperLog {
     /// 添加状态栏尾部视图（显示智谱 GLM 配额状态）
     @MainActor func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
         if Self.verbose {
-            if Self.verbose {
                             Self.logger.info("\(Self.t)提供 ZhipuQuotaStatusBarView")
-            }
+
         }
         return AnyView(ZhipuQuotaStatusBarView())
     }

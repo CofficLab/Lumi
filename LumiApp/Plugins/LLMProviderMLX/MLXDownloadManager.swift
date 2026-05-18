@@ -57,9 +57,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         try? fileManager.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
 
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(self.t)MLXDownloadManager 已初始化")
-            }
+            Self.logger.info("\(self.t)MLXDownloadManager 已初始化")
         }
     }
 
@@ -91,9 +89,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
                 await self.updateStatus(.completed)
                 if Self.verbose {
-                    if Self.verbose {
-                                            Self.logger.info("\(self.t)模型下载完成：\(modelId)")
-                    }
+                    Self.logger.info("\(self.t)模型下载完成：\(modelId)")
                 }
 
             } catch {
@@ -126,9 +122,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         progress = DownloadProgress()
 
         if Self.verbose {
-            if Self.verbose {
-                            Self.logger.info("\(self.t)下载已取消")
-            }
+            Self.logger.info("\(self.t)下载已取消")
         }
     }
 
