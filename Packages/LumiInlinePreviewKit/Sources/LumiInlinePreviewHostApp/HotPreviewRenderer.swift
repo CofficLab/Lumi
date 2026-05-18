@@ -114,7 +114,6 @@ final class HotPreviewRenderer {
         previewView?.needsLayout = true
         previewView?.needsDisplay = true
         markDirty()
-        diagnostic("resize applied pointSize=\(format(pointSize)) scale=\(format(self.scale)) previewAfter=\(describe(previewView)) windowAfter=\(describe(window))")
     }
 
     /// 加载用户预览 dylib，并把其导出的 `NSView` 挂为当前 `previewView`。
