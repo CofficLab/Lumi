@@ -28,17 +28,26 @@
 - 输入后 frame policy 可从 idle 自动回到 interactive。
 - Entry 可选调试状态回读已支持，用于自动化验证输入是否改变预览内部状态。
 - `EditorInlinePreviewPlugin` 已使用插件专属磁盘目录，自动构建 workspace 位于插件目录下。
+- 普通用户可见的手动 dylib 调试入口已移除，用户路径只保留自动预览流程。
+- 自动构建后的 dylib 加载结果会严格检查；加载失败不会误标为 loaded，也不会覆盖上一次成功预览的 fingerprint。
 
 最近验证：
 
 - `swift test --package-path Packages/LumiInlinePreviewKit`：75 tests passed。
 - `xcodebuild -project Lumi.xcodeproj -scheme Lumi -configuration Debug -destination 'platform=macOS' build`：退出码 0，`BUILD SUCCEEDED`。
 
-当前整体完成度估计：**92%**。
+当前整体完成度估计：**94%**。
 
 ## 下一步 TODO
 
 ### P0
+
+- [ ] **自动启动预览会话**
+  老方案 `EditorPreviewPlugin` 在视图出现或文件切换时会自动调用 `startHost()`（见 `EditorPreviewDetailView.refreshScanAndStartIfNeeded()`），且 `EditorPreviewService.init()` 中有 `warmupHostIfPossible()` 预热宿主进程。新方案当前要求用户手动点击 "Start Stream"，应改为：
+  - 视图首次出现时（`onAppear`）自动调用 `viewModel.startSession()`。
+  - 文件切换到含 `#Preview` 的 Swift 文件时，若 session 未运行，自动启动。
+  - 移除工具栏的 "Start Stream" / "Stop Stream" 按钮，改为自动生命周期管理（类似老方案，视图消失或切到非 Swift 文件时自动停止）。
+  - 考虑在 ViewModel 初始化时预热子进程，减少首次启动延迟。
 
 - [ ] **支持非 Swift 文件的预览**
   参考 `EditorPreviewPlugin`（老方案），当前插件只支持 Swift `#Preview` 预览，但老方案还支持以下文件格式。新方案需要在 `EditorInlinePreviewDetailView` 的画布区域根据文件类型切换显示内容，工具栏也应随之调整（隐藏 Start/Stop Stream 等不相关的控件）。
@@ -47,11 +56,6 @@
   - **String Catalog 预览**（xcstrings）：用 `StringCatalogKit` 解析 `.xcstrings` 文件，左侧语言列表 + 右侧键值对照表，高亮占位符。参考 `EditorPreviewStringCatalogView.swift`。
   - 需要在 `EditorInlinePreviewViewModel` 中增加文件类型判断逻辑（`isImageMode` / `isMarkdownMode` / `isStringCatalogMode`），监听 `currentFileURL` 变化时自动切换模式。
   - 非预览模式下应停止子进程以节省资源。
-
-- [ ] **移除普通用户可见的手动 dylib 调试入口**
-  - 移除 `EditorInlinePreviewDetailView` 里的 `Load Dylib...` / `Reset Demo` 按钮。
-  - 清理 `EditorInlinePreviewViewModel` 里的 `manualDylibActive` 手动模式逻辑。
-  - 保留必要的测试辅助 API，但不要暴露到普通 UI。
 
 - [ ] **真实项目压测外部 package / workspace 依赖**
   - 用 Lumi 自己的复杂 SwiftPM/Xcode 项目文件测试自动预览。
@@ -62,6 +66,7 @@
   - UI 展示 swiftc/build planner 的关键错误信息。
   - 区分 no preview、编译失败、依赖解析失败、dlopen 失败。
   - 保留上一帧成功预览，避免失败时直接清空画面。
+  - 剩余重点：把错误信息做成可展开详情，而不是只放在单行 badge 里。
 
 ### P1
 
