@@ -514,10 +514,10 @@ openWindow(id: MainWindowID.main, value: LumiWindowRoute(conversationId: convers
 
 ### Phase 3: 项目和会话新窗口入口
 
-- [ ] 在项目入口增加「在新窗口打开」。
-- [ ] 在最近项目入口增加「在新窗口打开」。
-- [ ] 在会话列表增加「在新窗口打开」。
-- [ ] 使用 `openWindow(id:value:)` 统一创建窗口。
+- [x] 在项目入口增加「在新窗口打开」。
+- [x] 在最近项目入口增加「在新窗口打开」。
+- [x] 在会话列表增加「在新窗口打开」。
+- [x] 使用 `openWindow(id:value:)` 统一创建窗口。
 
 ### Phase 4: 窗口级状态迁移
 

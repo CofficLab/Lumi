@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct ProjectSelectorView: View {
     @EnvironmentObject var projectVM: ProjectVM
     @EnvironmentObject private var projectContextRequestVM: ProjectContextRequestVM
+    @Environment(\.openWindow) private var openWindow
 
     @Binding var isPresented: Bool
 
@@ -195,6 +196,17 @@ struct ProjectSelectorView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.trailing, 8)
+            }
+        }
+        .contextMenu {
+            Button {
+                openWindow(
+                    id: MainWindowID.main,
+                    value: LumiWindowRoute(projectPath: project.path)
+                )
+                isPresented = false
+            } label: {
+                Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
             }
         }
         .padding(.horizontal)

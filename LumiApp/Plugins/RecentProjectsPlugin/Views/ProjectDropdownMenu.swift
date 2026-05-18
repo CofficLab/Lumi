@@ -5,6 +5,7 @@ import SwiftUI
 
 struct ProjectDropdownMenu: View {
     @EnvironmentObject var projectVM: ProjectVM
+    @Environment(\.openWindow) private var openWindow
     @Binding var isPresented: Bool
 
     let onSelect: (Project) -> Void
@@ -49,6 +50,17 @@ struct ProjectDropdownMenu: View {
                         onSelect(project)
                     }
                 )
+                .contextMenu {
+                    Button {
+                        openWindow(
+                            id: MainWindowID.main,
+                            value: LumiWindowRoute(projectPath: project.path)
+                        )
+                        isPresented = false
+                    } label: {
+                        Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
+                    }
+                }
             }
 
             // 浏览按钮

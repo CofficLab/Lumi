@@ -4,6 +4,7 @@ import MagicKit
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {
     @EnvironmentObject var projectVM: ProjectVM
+    @Environment(\.openWindow) private var openWindow
     @StateObject private var branchCache = GitBranchCache()
     @State private var isFileImporterPresented = false
 
@@ -106,6 +107,16 @@ struct RecentProjectsSidebarView: View {
             NSItemProvider(object: project.path as NSString)
         } preview: {
             RecentProjectDragPreview(fileURL: URL(fileURLWithPath: project.path))
+        }
+        .contextMenu {
+            Button {
+                openWindow(
+                    id: MainWindowID.main,
+                    value: LumiWindowRoute(projectPath: project.path)
+                )
+            } label: {
+                Label(String(localized: "Open in New Window", table: "RecentProjects"), systemImage: "macwindow.badge.plus")
+            }
         }
     }
 

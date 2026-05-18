@@ -308,6 +308,29 @@
           }
         }
       }
+    },
+    "Open in New Window": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in New Window"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在新窗口中打开"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在新視窗中打開"
+          }
+        }
+      }
     }
   },
   "version": "1.1"
