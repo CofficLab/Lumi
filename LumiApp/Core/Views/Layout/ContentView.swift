@@ -91,6 +91,14 @@ struct ContentView: View, SuperLog {
             }
         }
         .environment(\.windowState, windowState)
+        .background {
+            // 使用 WindowAccessor 可靠获取当前 SwiftUI view 所在的 NSWindow，
+            // 避免 NSApplication.shared.keyWindow 在多窗口场景下指向其他窗口。
+            WindowAccessor { window in
+                WindowManager.shared.associateWindow(window, with: windowState.id)
+                window.title = windowState.title
+            }
+        }
     }
 
     /// 主内容区域：活动栏 + Rail + 面板 + 右侧栏（只要有插件提供右侧视图就显示）
@@ -273,11 +281,8 @@ extension ContentView {
         // 注册窗口到 WindowManager
         WindowManager.shared.registerWindow(windowState)
 
-        // 配置窗口标题
-        if let window = NSApplication.shared.keyWindow ?? NSApplication.shared.windows.last {
-            WindowManager.shared.associateWindow(window, with: windowState.id)
-            window.title = windowState.title
-        }
+        // 窗口关联和标题设置已由 WindowAccessor 在 .background 中可靠完成，
+        // 此处不再使用 NSApplication.shared.keyWindow 避免多窗口误关联。
 
         // 应用默认配置
         if let defaultSidebarVisibility = defaultSidebarVisibility {
@@ -292,9 +297,7 @@ extension ContentView {
         windowState.$title
             .receive(on: DispatchQueue.main)
             .sink { newTitle in
-                if let window = NSApplication.shared.windows.first(where: { _ in
-                    WindowManager.shared.getWindowState(windowId) != nil
-                }) {
+                if let window = WindowManager.shared.window(for: windowId) {
                     window.title = newTitle
                 }
             }

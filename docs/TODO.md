@@ -498,19 +498,19 @@ openWindow(id: MainWindowID.main, value: LumiWindowRoute(conversationId: convers
 
 ### Phase 1: 打开多个主窗口
 
-- [ ] 新增 `LumiWindowRoute`。
-- [ ] 将主 Scene 从 `Window` 改成 `WindowGroup(..., for: LumiWindowRoute.self)`。
-- [ ] 新增 `WindowCommand`（`Cmd+Shift+N`）。
-- [ ] 在 `.commands` 注册 `WindowCommand()`。
+- [x] 新增 `LumiWindowRoute`。
+- [x] 将主 Scene 从 `Window` 改成 `WindowGroup(..., for: LumiWindowRoute.self)`。
+- [x] 新增 `WindowCommand`（`Cmd+Shift+N`）。
+- [x] 在 `.commands` 注册 `WindowCommand()`。
 - [ ] 👤 需要用户参与：验证能创建多个主窗口且设置窗口仍然单例。
 
 ### Phase 2: 修复窗口跟踪
 
-- [ ] 新增 `WindowAccessor`（NSViewRepresentable）。
-- [ ] `ContentView` 使用 `WindowAccessor` 获取当前 `NSWindow`。
-- [ ] `WindowManager` 新增 `window(for:)`。
-- [ ] 修复标题同步只更新当前窗口。
-- [ ] 修复 `closeWindow(_:)` 避免重复注销。
+- [x] 新增 `WindowAccessor`（NSViewRepresentable）。
+- [x] `ContentView` 使用 `WindowAccessor` 获取当前 `NSWindow`。
+- [x] `WindowManager` 新增 `window(for:)`。
+- [x] 修复标题同步只更新当前窗口。
+- [x] 修复 `closeWindow(_:)` 避免重复注销。
 
 ### Phase 3: 项目和会话新窗口入口
 

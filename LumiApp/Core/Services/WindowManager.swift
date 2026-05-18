@@ -111,20 +111,27 @@ final class WindowManager: ObservableObject, SuperLog {
 
     // MARK: - Window Operations
 
+    /// 根据 ID 查找关联的 NSWindow
+    /// - Parameter windowId: 窗口状态 ID
+    /// - Returns: 关联的 NSWindow，如果未找到返回 nil
+    func window(for windowId: UUID) -> NSWindow? {
+        windowIdMap.first(where: { $0.value == windowId })?.key
+    }
+
     /// 关闭指定窗口
     /// - Parameter windowId: 窗口 ID
     func closeWindow(_ windowId: UUID) {
-        // 找到对应的 NSWindow 并关闭
-        if let window = windowIdMap.first(where: { $0.value == windowId })?.key {
+        // 只调用 NSWindow.close()，注销由 windowWillClose(_:) 统一负责，
+        // 避免主动调用 unregisterWindow 导致与 windowWillClose 重复注销。
+        if let window = window(for: windowId) {
             window.close()
         }
-        unregisterWindow(windowId)
     }
 
     /// 激活指定窗口
     /// - Parameter windowId: 窗口 ID
     func activateWindow(_ windowId: UUID) {
-        guard let window = windowIdMap.first(where: { $0.value == windowId })?.key else { return }
+        guard let window = window(for: windowId) else { return }
 
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
