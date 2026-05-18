@@ -48,7 +48,9 @@ public extension LumiInlinePreviewFacade {
 
         public override init(frame frameRect: NSRect) {
             super.init(frame: frameRect)
+            wantsLayer = true
             // 使用 NSImageView 作为内容渲染层，绕过 SwiftUI 对自定义 layer 的覆盖
+            imageView.frame = bounds
             addSubview(imageView)
         }
 
@@ -211,40 +213,26 @@ public extension LumiInlinePreviewFacade {
         public func attach(surfaceID: UInt32) {
             let curIDStr = currentSurfaceID.map { String($0) } ?? "nil"
             let winStr = (window != nil) ? "yes" : "no"
-            let scaleVal = window?.backingScaleFactor ?? 1
             let boundsStr = "\(self.bounds.width)×\(self.bounds.height)"
+            let scaleVal = window?.backingScaleFactor ?? 1
             if LumiInlinePreviewFacade.verbose {
-                Self.logger.info("\(self.t) 绑定 surfaceID: \(surfaceID) — 当前: \(curIDStr), 边界: \(boundsStr), 窗口: \(winStr)")
+                Self.logger.info("\(self.t)绑定 surfaceID=\(surfaceID) — 当前=\(curIDStr) bounds=\(boundsStr) window=\(winStr) scale=\(scaleVal)")
             }
-            
-            // 🔍 诊断：记录 attach 开始
-            Self.logger.info("📝[attach] 开始绑定 surfaceID=\(surfaceID)")
-            Self.logger.info("📝[attach] 当前视图状态：bounds=\(boundsStr), window=\(winStr), scale=\(scaleVal)")
-            
+
             guard let surface = IOSurfaceLookup(IOSurfaceID(surfaceID)) else {
                 if LumiInlinePreviewFacade.verbose {
-                    Self.logger.error("\(self.t)❌ IOSurfaceLookup 失败：surfaceID=\(surfaceID)")
+                    Self.logger.error("\(self.t)IOSurfaceLookup 失败：surfaceID=\(surfaceID)")
                 }
-                Self.logger.error("📝[attach] ❌ IOSurfaceLookup 失败：surfaceID=\(surfaceID)")
                 return
             }
-            
-            // 🔍 诊断：IOSurface 查找成功
-            let surfaceWidth = IOSurfaceGetWidth(surface)
-            let surfaceHeight = IOSurfaceGetHeight(surface)
-            Self.logger.info("📝[attach] ✅ IOSurfaceLookup 成功：\(surfaceWidth)×\(surfaceHeight)")
-            
+
             guard let layer = self.layer else {
                 if LumiInlinePreviewFacade.verbose {
-                    Self.logger.error("\(self.t) layer 为 nil，无法绑定 surface")
+                    Self.logger.error("\(self.t)layer 为 nil，无法绑定 surface")
                 }
-                Self.logger.error("📝[attach] ❌ layer 为 nil，无法绑定 surface")
                 return
             }
-            
-            // 🔍 诊断：layer 状态
-            Self.logger.info("📝[attach] layer 状态：bounds=\(layer.bounds.width)×\(layer.bounds.height), contentsScale=\(layer.contentsScale)")
-            
+
             currentSurfaceID = surfaceID
             retainedSurface = surface
 
@@ -254,9 +242,10 @@ public extension LumiInlinePreviewFacade {
             //
             // 关键：NSImage 的 size 必须是**逻辑尺寸**（像素 / backingScale），
             // 否则 2x 像素的图会被当作 1x 来缩放，导致模糊。
-            let scale = window?.backingScaleFactor ?? 1
-            let logicalWidth = CGFloat(surfaceWidth) / scale
-            let logicalHeight = CGFloat(surfaceHeight) / scale
+            let surfaceWidth = IOSurfaceGetWidth(surface)
+            let surfaceHeight = IOSurfaceGetHeight(surface)
+            let logicalWidth = CGFloat(surfaceWidth) / scaleVal
+            let logicalHeight = CGFloat(surfaceHeight) / scaleVal
             let ciImage = CIImage(ioSurface: surface)
             let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
             if let cgImage {
@@ -264,9 +253,14 @@ public extension LumiInlinePreviewFacade {
                 imageView.image = nsImage
                 imageView.frame = bounds
                 imageView.needsDisplay = true
-                Self.logger.info("📝[attach] ✅ NSImageView.image 设置完成: \(surfaceWidth)×\(surfaceHeight) px → \(String(format: "%.0f", logicalWidth))×\(String(format: "%.0f", logicalHeight)) pt @\(scale)x")
+                layer.contents = cgImage
+                if LumiInlinePreviewFacade.verbose {
+                    Self.logger.info("\(self.t)渲染完成：\(surfaceWidth)×\(surfaceHeight) px → \(String(format: "%.0f", logicalWidth))×\(String(format: "%.0f", logicalHeight)) pt @\(String(format: "%.1f", scaleVal))x")
+                }
             } else {
-                Self.logger.error("📝[attach] ❌ CGImage 创建失败")
+                if LumiInlinePreviewFacade.verbose {
+                    Self.logger.error("\(self.t)CGImage 创建失败")
+                }
             }
         }
 
@@ -274,6 +268,7 @@ public extension LumiInlinePreviewFacade {
         public func detach() {
             currentSurfaceID = nil
             retainedSurface = nil
+            layer?.contents = nil
             imageView.image = nil
         }
 
