@@ -104,15 +104,17 @@ struct GitHubKBStatusBarView: View {
     private var label: String {
         switch viewModel.state {
         case .idle:
-            return viewModel.entries.isEmpty ? "GitHub KB" : "\(viewModel.entries.count) insights"
+            return viewModel.entries.isEmpty
+                ? String(localized: "GitHub KB", table: "GitHubInsight")
+                : String(format: String(localized: "%lld Insights", table: "GitHubInsight"), viewModel.entries.count)
         case .syncing:
-            return "Syncing..."
+            return String(localized: "Syncing...", table: "GitHubInsight")
         case .ready(let count):
-            return "\(count) insights"
+            return String(format: String(localized: "%lld Insights", table: "GitHubInsight"), count)
         case .rateLimited:
-            return "Rate limited"
+            return String(localized: "Rate limited", table: "GitHubInsight")
         case .failed:
-            return "Insight error"
+            return String(localized: "Insight error", table: "GitHubInsight")
         }
     }
 }
@@ -146,7 +148,7 @@ struct GitHubKBPopover: View {
             HStack {
                 Image(systemName: "network")
                     .foregroundColor(primaryTextColor)
-                Text("GitHub Ecosystem KB")
+                Text(String(localized: "GitHub Ecosystem KB", table: "GitHubInsight"))
                     .font(.headline)
                     .foregroundColor(primaryTextColor)
                 Spacer()
@@ -155,7 +157,7 @@ struct GitHubKBPopover: View {
                     .foregroundColor(secondaryTextColor)
             }
             if let profile = viewModel.profile {
-                Text("Profile: \(profile.shortTitle)")
+                Text(String(format: String(localized: "Profile: %@", table: "GitHubInsight"), profile.shortTitle))
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
             }
@@ -167,7 +169,7 @@ struct GitHubKBPopover: View {
             get: { selectedRelation?.rawValue ?? "all" },
             set: { selectedRelation = $0 == "all" ? nil : GitHubInsightRelationType(rawValue: $0) }
         )) {
-            Text("All").tag("all")
+            Text(String(localized: "All", table: "GitHubInsight")).tag("all")
             ForEach(GitHubInsightRelationType.allCases, id: \.rawValue) { relation in
                 Text(relation.title).tag(relation.rawValue)
             }
@@ -201,7 +203,7 @@ struct GitHubKBPopover: View {
             Button {
                 viewModel.load(projectPath: projectPath, force: true)
             } label: {
-                Label("Sync Now", systemImage: "arrow.clockwise")
+                Label(String(localized: "Sync Now", table: "GitHubInsight"), systemImage: "arrow.clockwise")
             }
         }
     }
@@ -215,22 +217,22 @@ struct GitHubKBPopover: View {
     private var emptyText: String {
         switch viewModel.state {
         case .syncing:
-            return "Syncing GitHub ecosystem references..."
+            return String(localized: "Syncing GitHub ecosystem references...", table: "GitHubInsight")
         default:
-            return "No cached GitHub ecosystem references yet."
+            return String(localized: "No cached GitHub ecosystem references yet.", table: "GitHubInsight")
         }
     }
 
     private var statusText: String {
         switch viewModel.state {
         case .idle:
-            return "Idle"
+            return String(localized: "Idle", table: "GitHubInsight")
         case .syncing:
-            return "Syncing"
+            return String(localized: "Syncing", table: "GitHubInsight")
         case .ready(let count):
-            return "Ready: \(count) entries"
+            return String(format: String(localized: "Ready: %lld entries", table: "GitHubInsight"), count)
         case .rateLimited:
-            return "GitHub rate limited"
+            return String(localized: "GitHub rate limited", table: "GitHubInsight")
         case .failed(let message):
             return message
         }

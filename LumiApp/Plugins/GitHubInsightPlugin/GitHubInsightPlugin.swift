@@ -9,8 +9,8 @@ actor GitHubInsightPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose: Bool = false
 
     static let id = "GitHubInsight"
-    static let displayName = "GitHub Insight"
-    static let description = "Builds a local cache of GitHub ecosystem references for the current project."
+    static let displayName = String(localized: "GitHub Insight", table: "GitHubInsight")
+    static let description = String(localized: "Builds a local cache of GitHub ecosystem references for the current project.", table: "GitHubInsight")
     static let iconName = "network"
     static let isConfigurable = true
     static let enable = true

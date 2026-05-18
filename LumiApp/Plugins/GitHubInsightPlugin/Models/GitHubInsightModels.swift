@@ -36,9 +36,9 @@ enum GitHubInsightRelationType: String, Codable, CaseIterable, Sendable {
 
     var title: String {
         switch self {
-        case .alternative: return "Alternative"
-        case .complementary: return "Complementary"
-        case .example: return "Example"
+        case .alternative: return String(localized: "Alternative", table: "GitHubInsight")
+        case .complementary: return String(localized: "Complementary", table: "GitHubInsight")
+        case .example: return String(localized: "Example", table: "GitHubInsight")
         }
     }
 }
