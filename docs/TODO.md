@@ -78,7 +78,7 @@
 
 ---
 
-## 3. 文件树图标主题
+## 2. 文件树图标主题
 
 > 目标：让 Lumi 主题插件通过单一 `LumiThemeContribution` 配置文件树图标。
 
@@ -94,7 +94,7 @@
 
 ---
 
-## 4. Onboarding 插件选择界面
+## 3. Onboarding 插件选择界面
 
 > 目标：在首次引导最后一步之前新增「选择要启用的插件」页面。
 > 涉及文件：`LumiApp/Plugins/AgentOnboardingPlugin/Views/OnboardingRootOverlay.swift`
@@ -120,7 +120,7 @@
 
 ---
 
-## 5. 编辑器文件树 Git 状态标记
+## 4. 编辑器文件树 Git 状态标记
 
 > 目标：在文件树中实现类似 Xcode 的 Source Control 状态标记。
 
@@ -157,7 +157,7 @@
 
 ---
 
-## 6. Auto 模型路由
+## 5. Auto 模型路由
 
 > 目标：用户选择 "Auto" 后，系统自动根据消息内容、任务类型和历史表现选择最合适的模型。参考 Cursor Auto 模式。
 
@@ -211,7 +211,7 @@
 
 ---
 
-## 7. LLM Provider Kit
+## 6. LLM Provider Kit
 
 > 目标：将多个 OpenAI-compatible 供应商插件中重复的逻辑提取到独立 Swift Package。
 
@@ -231,7 +231,7 @@
 
 ---
 
-## 8. 编辑器文件树 Xcode 风格 Package Dependencies
+## 7. 编辑器文件树 Xcode 风格 Package Dependencies
 
 > 目标：在 `EditorRailFileTreePlugin` 的文件树底部显示类似 Xcode 的 Swift Package Dependencies 列表。
 
@@ -280,7 +280,7 @@
 
 ---
 
-## 9. Motrix 下载管理插件
+## 8. Motrix 下载管理插件
 
 > 目标：以插件形式提供 Motrix 等价的下载管理能力（HTTP/HTTPS、BitTorrent、Magnet）。
 
@@ -329,7 +329,7 @@
 
 ---
 
-## 10. CodeReview Plugin
+## 9. CodeReview Plugin
 
 > 目标：审查当前 Git 变更，报告可操作问题。Phase 1-5 核心实现已完成。
 
