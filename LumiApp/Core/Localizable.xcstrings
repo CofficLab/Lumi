@@ -186,6 +186,9 @@
         }
       }
     },
+    "(%lld%%)" : {
+
+    },
     "/path/to/db.sqlite" : {
       "localizations" : {
         "zh-Hans" : {
@@ -220,6 +223,16 @@
     },
     "%@" : {
 
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
     },
     "%@ (%lld%%)" : {
       "localizations" : {
@@ -395,6 +408,16 @@
     },
     "%lld spaces" : {
 
+    },
+    "%lld x %lld pt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld x %2$lld pt"
+          }
+        }
+      }
     },
     "%lld 个项目" : {
       "extractionState" : "stale",
@@ -957,6 +980,7 @@
       }
     },
     "All" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1371,9 +1395,6 @@
         }
       }
     },
-    "building %@" : {
-
-    },
     "Cancel" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1611,9 +1632,6 @@
           }
         }
       }
-    },
-    "Click \"Start Stream\" to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it." : {
-
     },
     "Clipboard" : {
       "extractionState" : "manual",
@@ -2423,12 +2441,6 @@
         }
       }
     },
-    "entry · %@" : {
-
-    },
-    "entry failed: %@" : {
-
-    },
     "ENV:" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2552,9 +2564,6 @@
         }
       }
     },
-    "failed: %@" : {
-
-    },
     "Fetching..." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2639,9 +2648,6 @@
       }
     },
     "GitHub" : {
-
-    },
-    "GitHub Ecosystem KB" : {
 
     },
     "GitHub Tools" : {
@@ -3076,12 +3082,6 @@
           }
         }
       }
-    },
-    "Load Dylib…" : {
-
-    },
-    "loading %@" : {
-
     },
     "Loading..." : {
 
@@ -3805,9 +3805,6 @@
         }
       }
     },
-    "Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it." : {
-
-    },
     "PID: %@" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3952,9 +3949,6 @@
           }
         }
       }
-    },
-    "Profile: %@" : {
-
     },
     "Project Info" : {
       "extractionState" : "stale",
@@ -4238,9 +4232,6 @@
           }
         }
       }
-    },
-    "running · %@" : {
-
     },
     "Rust" : {
       "extractionState" : "stale",
@@ -4690,15 +4681,6 @@
         }
       }
     },
-    "Start Stream" : {
-
-    },
-    "starting" : {
-
-    },
-    "Starting" : {
-
-    },
     "Starting scan..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4748,15 +4730,6 @@
           }
         }
       }
-    },
-    "Stop Stream" : {
-
-    },
-    "stopping" : {
-
-    },
-    "Stopping" : {
-
     },
     "Successfully freed %@ space." : {
       "extractionState" : "stale",
@@ -4844,9 +4817,6 @@
           }
         }
       }
-    },
-    "Sync Now" : {
-
     },
     "System" : {
       "extractionState" : "stale",
@@ -5114,6 +5084,9 @@
         }
       }
     },
+    "TOC" : {
+
+    },
     "Tools" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5263,9 +5236,6 @@
           }
         }
       }
-    },
-    "Unload the user dylib." : {
-
     },
     "Unpin" : {
       "localizations" : {
