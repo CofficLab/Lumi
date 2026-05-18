@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public extension LumiInlinePreviewFacade {
 
@@ -43,6 +44,10 @@ public extension LumiInlinePreviewFacade {
 
     /// 基于 `Process` + 管道的 `InlineHostConnection` 实现。
     final class ProcessInlineHostConnection: InlineHostConnection, @unchecked Sendable {
+        private nonisolated static let logger = Logger(
+            subsystem: "com.coffic.lumi",
+            category: "LumiInlinePreviewKit.InlineHostConnection"
+        )
 
         // MARK: 属性
 
@@ -62,6 +67,7 @@ public extension LumiInlinePreviewFacade {
         private var nextRequestID: UInt64 = 0
         private var pendingRequests: [UInt64: CheckedContinuation<HostResponse, Error>] = [:]
         private var stdoutBuffer = Data()
+        private var stderrBuffer = Data()
 
         private let eventContinuation: AsyncStream<HostEvent>.Continuation
         public let events: AsyncStream<HostEvent>
@@ -75,6 +81,7 @@ public extension LumiInlinePreviewFacade {
 
             let process = Process()
             process.executableURL = executableURL
+            process.environment = Self.hostEnvironment(executableURL: executableURL)
 
             let stdin = Pipe()
             let stdout = Pipe()
@@ -97,6 +104,34 @@ public extension LumiInlinePreviewFacade {
             )
         }
 
+        private static func hostEnvironment(executableURL: URL) -> [String: String] {
+            var environment = ProcessInfo.processInfo.environment
+            if let profilePath = environment["LLVM_PROFILE_FILE"],
+               !profilePath.isEmpty {
+                environment["LLVM_PROFILE_FILE"] = hostProfilePath(from: URL(fileURLWithPath: profilePath))
+                return environment
+            }
+
+            let buildDirectory = executableURL.deletingLastPathComponent()
+            let codecovDirectory = buildDirectory.appendingPathComponent("codecov", isDirectory: true)
+            if FileManager.default.fileExists(atPath: codecovDirectory.path) {
+                environment["LLVM_PROFILE_FILE"] = codecovDirectory
+                    .appendingPathComponent("LumiInlinePreviewHostApp-inline-host-%p.profraw")
+                    .path
+            }
+            return environment
+        }
+
+        private static func hostProfilePath(from url: URL) -> String {
+            let basename = url.deletingPathExtension().lastPathComponent
+            let ext = url.pathExtension.isEmpty ? "profraw" : url.pathExtension
+            let filename = "\(basename)-inline-host-%p.\(ext)"
+            return url
+                .deletingLastPathComponent()
+                .appendingPathComponent(filename)
+                .path
+        }
+
         private init(
             process: Process,
             stdin: FileHandle,
@@ -115,6 +150,7 @@ public extension LumiInlinePreviewFacade {
             self.eventContinuation = continuationCapture
 
             installStdoutReader()
+            installStderrReader()
             installTerminationHandler()
         }
 
@@ -158,6 +194,9 @@ public extension LumiInlinePreviewFacade {
 
         public func terminate() async {
             try? stdin.close()
+            for _ in 0..<20 where process.isRunning {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
             if process.isRunning {
                 process.terminate()
                 process.waitUntilExit()
@@ -187,6 +226,19 @@ public extension LumiInlinePreviewFacade {
             }
         }
 
+        private func installStderrReader() {
+            stderr.readabilityHandler = { [weak self] handle in
+                guard let self else { return }
+                let data = handle.availableData
+                if data.isEmpty {
+                    handle.readabilityHandler = nil
+                    self.flushStderrRemainder()
+                    return
+                }
+                self.appendStderr(data)
+            }
+        }
+
         private func installTerminationHandler() {
             process.terminationHandler = { [weak self] _ in
                 guard let self else { return }
@@ -198,14 +250,14 @@ public extension LumiInlinePreviewFacade {
         private func appendStdout(_ data: Data) {
             lock.lock()
             stdoutBuffer.append(data)
-            let lines = drainLines()
+            let lines = drainStdoutLines()
             lock.unlock()
             for line in lines {
                 process(line: line)
             }
         }
 
-        private func drainLines() -> [Data] {
+        private func drainStdoutLines() -> [Data] {
             var lines: [Data] = []
             while let newlineIndex = stdoutBuffer.firstIndex(of: 0x0A) {
                 let lineData = Data(stdoutBuffer.prefix(upTo: newlineIndex))
@@ -215,6 +267,42 @@ public extension LumiInlinePreviewFacade {
                 }
             }
             return lines
+        }
+
+        private func appendStderr(_ data: Data) {
+            lock.lock()
+            stderrBuffer.append(data)
+            let lines = drainStderrLines()
+            lock.unlock()
+            for line in lines {
+                logHostStderr(line)
+            }
+        }
+
+        private func drainStderrLines() -> [Data] {
+            var lines: [Data] = []
+            while let newlineIndex = stderrBuffer.firstIndex(of: 0x0A) {
+                let lineData = Data(stderrBuffer.prefix(upTo: newlineIndex))
+                stderrBuffer.removeSubrange(...newlineIndex)
+                if !lineData.isEmpty {
+                    lines.append(lineData)
+                }
+            }
+            return lines
+        }
+
+        private func flushStderrRemainder() {
+            lock.lock()
+            let data = stderrBuffer
+            stderrBuffer.removeAll()
+            lock.unlock()
+            guard !data.isEmpty else { return }
+            logHostStderr(data)
+        }
+
+        private func logHostStderr(_ data: Data) {
+            let message = String(data: data, encoding: .utf8) ?? "<non-utf8 stderr \(data.count) bytes>"
+            Self.logger.info("📝 inline host stderr pid=\(self.process.processIdentifier, privacy: .public): \(message, privacy: .public)")
         }
 
         private func process(line data: Data) {

@@ -186,6 +186,9 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
     private var isViewVisible = false
     private var didWireEditorService = false
     private var warmupTask: Task<Void, Never>?
+    private var pendingCanvasResizeTask: Task<Void, Never>?
+    private var lastFrameSeq: UInt64?
+    private var receivedFrameCount: UInt64 = 0
 
     /// Combine 订阅令牌（订阅 EditorService 状态变化）。
     private var editorCancellables = Set<AnyCancellable>()
@@ -274,7 +277,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
         guard currentStatus == .idle || currentStatus == .ready || isFailed(currentStatus) else {
             if Self.verbose {
-                            Self.logger.warning("\(self.t)⚠️ 跳过 startSession — 当前状态=\(currentStatus.description)")
+                            Self.logger.warning("\(self.t)⚠️ 跳过 startSession — 当前状态=\(currentStatus.description, privacy: .public)")
             }
             return
         }
@@ -311,7 +314,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
               currentStatus == .warming ||
               currentStatus == .ready else {
             if Self.verbose {
-                            Self.logger.warning("\(self.t)⚠️ 跳过 stopSession — 当前状态=\(currentStatus.description)")
+                            Self.logger.warning("\(self.t)⚠️ 跳过 stopSession — 当前状态=\(currentStatus.description, privacy: .public)")
             }
             return
         }
@@ -330,6 +333,9 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
             self?.status = .idle
             self?.policy = .stopped
             self?.currentFrame = nil
+            self?.entryStatus = .noPreview
+            self?.lastLoadedFingerprint = nil
+            self?.entryDebugState = nil
             self?.cursorShape = .arrow
             if Self.verbose {
                             Self.logger.info("\(Self.t)✅ Session 已停止")
@@ -339,9 +345,15 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
     /// 由 `PreviewSurfaceCanvas` 在 layout / backing 变化时回调。
     func canvasDidResize(_ size: CGSize, scale: CGFloat) {
-        canvasSize = size
-        canvasScale = scale
-        sendResizeIfNeeded()
+        guard canvasSize != size || canvasScale != scale else { return }
+        pendingCanvasResizeTask?.cancel()
+        pendingCanvasResizeTask = Task { @MainActor [weak self] in
+            guard let self, !Task.isCancelled else { return }
+            self.canvasSize = size
+            self.canvasScale = scale
+            self.sendResizeIfNeeded()
+            self.pendingCanvasResizeTask = nil
+        }
     }
 
     // MARK: - 公开方法 — 输入转发
@@ -428,16 +440,24 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
     }
 
     func requestEntryDebugState() {
-        guard status == .running else { return }
-        guard case .loaded = entryStatus else { return }
+        guard status == .running else {
+            Self.logger.warning("\(self.t)📝 requestEntryDebugState skipped: status=\(self.status.description, privacy: .public)")
+            return
+        }
+        guard case .loaded = entryStatus else {
+            Self.logger.warning("\(self.t)📝 requestEntryDebugState skipped: entryStatus=\(self.entryStatus.description, privacy: .public)")
+            return
+        }
         isRequestingEntryDebugState = true
         Task { [weak self] in
             do {
                 let response = try await self?.session.requestEntryDebugState()
+                Self.logger.info("\(Self.t)📝 requestEntryDebugState response: success=\(response?.success == true, privacy: .public) message=\(response?.message ?? "nil", privacy: .public)")
                 if response?.success == false {
                     self?.entryDebugState = response?.message
                 }
             } catch {
+                Self.logger.error("\(Self.t)📝 requestEntryDebugState failed: \(error.localizedDescription, privacy: .public)")
                 self?.entryDebugState = error.localizedDescription
             }
             self?.isRequestingEntryDebugState = false
@@ -470,13 +490,15 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
     private func autoBuildIfPossible() {
         let currentStatus = status
+        Self.logger.info("\(self.t)📝 autoBuildIfPossible enter: status=\(currentStatus.description, privacy: .public) mode=\(String(describing: self.previewMode), privacy: .public) visible=\(self.isViewVisible, privacy: .public) file=\(self.activeFileURL?.path ?? "nil", privacy: .public) sourceLength=\(self.latestSourceText?.count ?? -1, privacy: .public) canvas=\(self.canvasSize.width, privacy: .public)×\(self.canvasSize.height, privacy: .public) @\(String(format: "%.1f", self.canvasScale), privacy: .public) frames=\(self.receivedFrameCount, privacy: .public) seq=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
         guard currentStatus == .running else {
             if Self.verbose {
-                            Self.logger.info("\(self.t)⏭ 跳过 autoBuild — Session 未运行（状态=\(currentStatus.description)）")
+                            Self.logger.info("\(self.t)⏭ 跳过 autoBuild — Session 未运行（状态=\(currentStatus.description, privacy: .public)）")
             }
             return
         }
         guard canAutoBuildActiveFile() else {
+            Self.logger.warning("\(self.t)📝 autoBuildIfPossible skipped: canAutoBuild=false mode=\(String(describing: self.previewMode), privacy: .public) file=\(self.activeFileURL?.path ?? "nil", privacy: .public) hasSource=\(self.latestSourceText != nil, privacy: .public)")
             if isEntryAuto() {
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)🔄 autoBuild：无匹配文件，卸载 Dylib")
@@ -494,6 +516,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         guard let url = activeFileURL, let source = latestSourceText else { return }
         let displayName = url.lastPathComponent
         entryStatus = .building(file: displayName)
+        Self.logger.info("\(self.t)📝 autoBuild start: file=\(url.path, privacy: .public) previewIndex=\(self.selectedPreviewIndex, privacy: .public) sourceLength=\(source.count, privacy: .public) frameCountBeforeBuild=\(self.receivedFrameCount, privacy: .public) seqBeforeBuild=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
         if Self.verbose {
                     Self.logger.info("\(self.t)🔨 autoBuild：正在构建 \(displayName)")
         }
@@ -509,6 +532,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)✅ 构建成功：\(result.dylibURL.path) 指纹=\(result.fingerprint) 标题=\(result.primaryTitle)")
                 }
+                Self.logger.info("\(Self.t)📝 build result: dylib=\(result.dylibURL.path, privacy: .public) fingerprint=\(result.fingerprint, privacy: .public) usedCache=\(result.usedCache, privacy: .public) previewCount=\(result.previewCount, privacy: .public) selectedIndex=\(result.selectedPreviewIndex, privacy: .public) title=\(result.primaryTitle, privacy: .public)")
                 self.lastBuildInfo = BuildInfo(
                     completedAt: Date(),
                     usedCache: result.usedCache,
@@ -521,11 +545,19 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     if Self.verbose {
                                             Self.logger.info("\(Self.t)⏭ 指纹相同，跳过加载")
                     }
+                    Self.logger.warning("\(Self.t)📝 load skipped: same fingerprint=\(result.fingerprint, privacy: .public) entry will be marked loaded without loadDylib; frameCount=\(self.receivedFrameCount, privacy: .public) seq=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
                     self.entryStatus = .loaded(path: result.dylibURL.path, title: result.primaryTitle)
                     return
                 }
                 self.entryStatus = .loading(path: result.dylibURL.path)
+                let frameSeqBeforeLoad = self.lastFrameSeq
+                let frameCountBeforeLoad = self.receivedFrameCount
+                Self.logger.info("\(Self.t)📝 loadDylib start: path=\(result.dylibURL.path, privacy: .public) frameCountBeforeLoad=\(frameCountBeforeLoad, privacy: .public) seqBeforeLoad=\(frameSeqBeforeLoad.map(String.init) ?? "nil", privacy: .public) policy=\(self.policy.rawValue, privacy: .public)")
                 let loadResponse = try await self.session.loadDylib(path: result.dylibURL.path)
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)📥 loadDylib 响应：success=\(loadResponse.success, privacy: .public) message=\(loadResponse.message ?? "nil", privacy: .public)")
+                }
+                Self.logger.info("\(Self.t)📝 loadDylib response: success=\(loadResponse.success, privacy: .public) message=\(loadResponse.message ?? "nil", privacy: .public) frameCountAfterResponse=\(self.receivedFrameCount, privacy: .public) seqAfterResponse=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
                 guard loadResponse.success else {
                     let message = loadResponse.message ?? "unknown dylib load failure"
                     if Self.verbose {
@@ -537,6 +569,13 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                 self.lastLoadedFingerprint = result.fingerprint
                 self.entryDebugState = nil
                 self.entryStatus = .loaded(path: result.dylibURL.path, title: result.primaryTitle)
+                Self.logger.info("\(Self.t)📝 entry marked loaded: title=\(result.primaryTitle, privacy: .public) fingerprint=\(result.fingerprint, privacy: .public) frameCountAtLoaded=\(self.receivedFrameCount, privacy: .public) seqAtLoaded=\(self.lastFrameSeq.map(String.init) ?? "nil", privacy: .public)")
+                self.schedulePostLoadFrameDiagnostics(
+                    fingerprint: result.fingerprint,
+                    title: result.primaryTitle,
+                    frameSeqAtLoad: self.lastFrameSeq,
+                    frameCountAtLoad: self.receivedFrameCount
+                )
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)✅ 构建后已加载 Dylib")
                 }
@@ -697,7 +736,15 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
     private func wireSessionCallbacks() {
         session.onFrame = { [weak self] frame in
             Task { @MainActor in
-                self?.currentFrame = frame
+                guard let self else { return }
+                let previousSeq = self.lastFrameSeq
+                self.lastFrameSeq = frame.seq
+                self.receivedFrameCount &+= 1
+                if Self.verbose {
+                    let previous = previousSeq.map(String.init) ?? "nil"
+                    Self.logger.info("\(Self.t)🎞 收到帧 #\(self.receivedFrameCount, privacy: .public)：seq=\(frame.seq, privacy: .public) prev=\(previous, privacy: .public) surfaceID=\(frame.surfaceID, privacy: .public) \(frame.width, privacy: .public)×\(frame.height, privacy: .public) @\(String(format: "%.1f", frame.scale), privacy: .public) entry=\(self.entryStatus.description, privacy: .public)")
+                }
+                self.currentFrame = frame
             }
         }
         session.onPolicy = { [weak self] policy in
@@ -718,6 +765,8 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     }
                 }
                 self?.status = .failed(message)
+                self?.currentFrame = nil
+                self?.lastLoadedFingerprint = nil
             }
         }
         session.onTerminated = { [weak self] in
@@ -729,8 +778,11 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                 }
                 self?.status = .idle
                 self?.policy = .stopped
+                self?.currentFrame = nil
                 self?.entryStatus = .noPreview
+                self?.lastLoadedFingerprint = nil
                 self?.entryDebugState = nil
+                self?.cursorShape = .arrow
             }
         }
         session.onEntryLoaded = { [weak self] success, message in
@@ -743,6 +795,12 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     if case let .loading(path) = self.entryStatus {
                         let title = (path as NSString).lastPathComponent
                         self.entryStatus = .loaded(path: path, title: title)
+                        self.schedulePostLoadFrameDiagnostics(
+                            fingerprint: self.lastLoadedFingerprint ?? "callback",
+                            title: title,
+                            frameSeqAtLoad: self.lastFrameSeq,
+                            frameCountAtLoad: self.receivedFrameCount
+                        )
                     }
                     self.entryDebugState = nil
                 } else {
@@ -755,6 +813,9 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
         session.onEntryDebugState = { [weak self] state in
             Task { @MainActor in
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)🩺 收到 entry debug state：\(state, privacy: .public)")
+                }
                 self?.entryDebugState = state
             }
         }
@@ -783,7 +844,40 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
                     Self.logger.info("\(self.t)📐 sendResize：\(w)×\(h) @\(String(format: "%.1f", s))")
         }
         Task { [weak self] in
-            _ = try? await self?.session.resize(width: w, height: h, scale: s)
+            do {
+                let response = try await self?.session.resize(width: w, height: h, scale: s)
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)📐 resize 响应：success=\(response?.success == true, privacy: .public) message=\(response?.message ?? "nil", privacy: .public)")
+                }
+            } catch {
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)❌ resize 失败：\(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    private func schedulePostLoadFrameDiagnostics(
+        fingerprint: String,
+        title: String,
+        frameSeqAtLoad: UInt64?,
+        frameCountAtLoad: UInt64
+    ) {
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard let self else { return }
+            guard case .loaded = self.entryStatus else { return }
+            guard self.lastLoadedFingerprint == fingerprint || fingerprint == "callback" else { return }
+
+            let currentSeq = self.lastFrameSeq
+            let currentCount = self.receivedFrameCount
+            if currentCount == frameCountAtLoad {
+                let seqText = currentSeq.map(String.init) ?? "nil"
+                Self.logger.error("\(Self.t)📝 Inline Preview 诊断：dylib 已加载但 3s 内没有新帧。title=\(title, privacy: .public) fingerprint=\(fingerprint, privacy: .public) seqAtLoad=\(frameSeqAtLoad.map(String.init) ?? "nil", privacy: .public) currentSeq=\(seqText, privacy: .public) status=\(self.status.description, privacy: .public) policy=\(self.policy.rawValue, privacy: .public) canvas=\(self.canvasSize.width, privacy: .public)×\(self.canvasSize.height, privacy: .public) @\(String(format: "%.1f", self.canvasScale), privacy: .public)")
+                self.requestEntryDebugState()
+            } else {
+                Self.logger.info("\(Self.t)📝 Inline Preview 诊断：dylib 加载后已收到新帧。title=\(title, privacy: .public) framesDelta=\(currentCount - frameCountAtLoad, privacy: .public) seq=\(currentSeq.map(String.init) ?? "nil", privacy: .public) policy=\(self.policy.rawValue, privacy: .public)")
+            }
         }
     }
 

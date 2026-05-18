@@ -102,7 +102,7 @@ final class HostMessagesTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func roundTrip<T: Codable & Equatable>(_ value: T, file: StaticString = #file, line: UInt = #line) throws {
+    private func roundTrip<T: Codable & Equatable>(_ value: T, file: StaticString = #filePath, line: UInt = #line) throws {
         let data = try JSONEncoder().encode(value)
         let decoded = try JSONDecoder().decode(T.self, from: data)
         XCTAssertEqual(decoded, value, file: file, line: line)

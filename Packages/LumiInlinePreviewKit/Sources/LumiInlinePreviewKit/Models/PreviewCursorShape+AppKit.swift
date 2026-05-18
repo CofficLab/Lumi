@@ -2,26 +2,27 @@ import AppKit
 
 public extension LumiInlinePreviewFacade.PreviewCursorShape {
     init(appKit cursor: NSCursor) {
-        switch cursor {
-        case NSCursor.iBeam:
+        if cursor === NSCursor.arrow {
+            self = .arrow
+        } else if cursor === NSCursor.iBeam {
             self = .iBeam
-        case NSCursor.pointingHand:
+        } else if cursor === NSCursor.pointingHand {
             self = .pointingHand
-        case NSCursor.openHand:
+        } else if cursor === NSCursor.openHand {
             self = .openHand
-        case NSCursor.closedHand:
+        } else if cursor === NSCursor.closedHand {
             self = .closedHand
-        case NSCursor.crosshair:
+        } else if cursor === NSCursor.crosshair {
             self = .crosshair
-        case NSCursor.resizeLeftRight:
+        } else if cursor === NSCursor.resizeLeftRight {
             self = .resizeLeftRight
-        case NSCursor.resizeUpDown:
+        } else if cursor === NSCursor.resizeUpDown {
             self = .resizeUpDown
-        case NSCursor.operationNotAllowed:
+        } else if cursor === NSCursor.operationNotAllowed {
             self = .operationNotAllowed
-        case NSCursor.disappearingItem:
+        } else if cursor === NSCursor.disappearingItem {
             self = .disappearingItem
-        default:
+        } else {
             self = .arrow
         }
     }

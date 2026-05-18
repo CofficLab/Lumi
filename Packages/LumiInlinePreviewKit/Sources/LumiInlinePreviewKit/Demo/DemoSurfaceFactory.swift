@@ -1,4 +1,3 @@
-import CoreGraphics
 import Foundation
 import IOSurface
 import MagicKit
@@ -69,10 +68,7 @@ public extension LumiInlinePreviewFacade {
                 Self.logger.info("\(self.t)✅ 已创建 IOSurface：id=\(surfaceID) \(width)×\(height)")
             }
 
-            // 🔴 验证模式：直接写入红色内存，跳过 CGContext
             paintRedDirectly(into: surface)
-            
-            // paint(into: surface, width: width, height: height, bytesPerRow: bytesPerRow, seq: seq)
             retainSurface(surface)
 
             if LumiInlinePreviewFacade.verbose {
@@ -132,14 +128,7 @@ public extension LumiInlinePreviewFacade {
             // 🔍 诊断：IOSurface 属性
             Self.logger.info("📝[paintRedDirectly] IOSurface 属性：\(width)×\(height), bytesPerRow=\(bytesPerRow)")
             
-            // IOSurfaceGetBaseAddressOfPlane 返回非 Optional 指针（或 IUO），直接赋值
             let baseAddress = IOSurfaceGetBaseAddressOfPlane(surface, 0)
-            
-            // 🔍 诊断：检查 baseAddress
-            if baseAddress == nil {
-                Self.logger.error("📝[paintRedDirectly] ❌ baseAddress 为 nil")
-                return
-            }
             Self.logger.info("📝[paintRedDirectly] ✅ baseAddress 非nil")
             
             // 填充红色 (BGRA: B=0, G=0, R=255, A=255)
@@ -175,81 +164,5 @@ public extension LumiInlinePreviewFacade {
             Self.logger.info("📝[paintRedDirectly] ✅ 像素填充完成")
         }
 
-        // MARK: - 私有绘制 (暂存)
-
-        private func paint(
-            into surface: IOSurfaceRef,
-            width: Int,
-            height: Int,
-            bytesPerRow: Int,
-            seq: UInt64
-        ) {
-            var seed: UInt32 = 0
-            let lockResult = IOSurfaceLock(surface, [], &seed)
-            guard lockResult == KERN_SUCCESS else {
-                if LumiInlinePreviewFacade.verbose {
-                    Self.logger.error("\(self.t)❌ IOSurfaceLock 失败：\(lockResult)")
-                }
-                return
-            }
-            defer { _ = IOSurfaceUnlock(surface, [], &seed) }
-
-            guard let baseAddress = IOSurfaceGetBaseAddressOfPlane(surface, 0) as UnsafeMutableRawPointer?,
-                  let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
-                  let context = CGContext(
-                      data: baseAddress,
-                      width: width,
-                      height: height,
-                      bitsPerComponent: 8,
-                      bytesPerRow: bytesPerRow,
-                      space: colorSpace,
-                      bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
-                  ) else {
-                if LumiInlinePreviewFacade.verbose {
-                    Self.logger.error("\(self.t)❌ CGContext 创建失败")
-                }
-                return
-            }
-
-            let phase = Double(seq % 360) / 360.0
-            let bg = CGColor(srgbRed: 0.10 + 0.4 * phase, green: 0.10, blue: 0.30 + 0.5 * (1 - phase), alpha: 1)
-            context.setFillColor(bg)
-            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-
-            let stripeColor = CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.18)
-            context.setFillColor(stripeColor)
-            let stripeCount = 12
-            for i in 0..<stripeCount where (i + Int(seq)) % 2 == 0 {
-                let stripeWidth = CGFloat(width) / CGFloat(stripeCount)
-                context.fill(CGRect(
-                    x: CGFloat(i) * stripeWidth,
-                    y: 0,
-                    width: stripeWidth,
-                    height: CGFloat(height)
-                ))
-            }
-
-            // 中央方块
-            let cellSize = CGFloat(min(width, height)) / 16
-            context.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.9))
-            for bit in 0..<8 {
-                let on = (seq >> bit) & 1 == 1
-                guard on else { continue }
-                context.fill(CGRect(
-                    x: CGFloat(width) / 2 - cellSize * 4 + cellSize * CGFloat(bit),
-                    y: CGFloat(height) / 2 - cellSize / 2,
-                    width: cellSize - 2,
-                    height: cellSize
-                ))
-            }
-
-            context.setStrokeColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.6))
-            context.setLineWidth(2)
-            context.stroke(CGRect(x: 1, y: 1, width: CGFloat(width) - 2, height: CGFloat(height) - 2))
-
-            if LumiInlinePreviewFacade.verbose {
-                Self.logger.info("\(self.t)🎨 已绘制 seq=\(seq): phase=\(String(format: "%.2f", phase))")
-            }
-        }
     }
 }

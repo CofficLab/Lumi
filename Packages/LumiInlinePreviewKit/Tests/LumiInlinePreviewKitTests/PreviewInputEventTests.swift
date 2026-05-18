@@ -124,6 +124,33 @@ final class PreviewInputEventTests: XCTestCase {
         }
     }
 
+    func test_cursorShape_appKitRoundTrip_preservesKnownShapes() {
+        var seenCursors: [NSCursor] = []
+
+        for shape in LumiInlinePreviewFacade.PreviewCursorShape.allCases {
+            let cursor = shape.appKitCursor
+            if shape != .arrow, cursor === NSCursor.arrow {
+                continue
+            }
+            if seenCursors.contains(where: { $0 === cursor }) {
+                continue
+            }
+            seenCursors.append(cursor)
+
+            let roundTripped = LumiInlinePreviewFacade.PreviewCursorShape(appKit: cursor)
+            XCTAssertEqual(roundTripped, shape, "cursor shape \(shape) did not round-trip via AppKit")
+        }
+    }
+
+    func test_cursorShape_appKitInitializer_defaultsUnknownCursorToArrow() {
+        let customCursor = NSCursor(
+            image: NSImage(size: NSSize(width: 8, height: 8)),
+            hotSpot: .zero
+        )
+
+        XCTAssertEqual(LumiInlinePreviewFacade.PreviewCursorShape(appKit: customCursor), .arrow)
+    }
+
     // MARK: - HostCommand 编解码
 
     func test_hostCommand_forwardInputEvent_roundTrip() throws {
@@ -144,7 +171,7 @@ final class PreviewInputEventTests: XCTestCase {
 
     private func roundTrip<T: Codable & Equatable>(
         _ value: T,
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
         let data = try JSONEncoder().encode(value)

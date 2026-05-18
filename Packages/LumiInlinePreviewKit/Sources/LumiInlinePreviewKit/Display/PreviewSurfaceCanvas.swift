@@ -44,13 +44,7 @@ public extension LumiInlinePreviewFacade {
                 Self.logger.info("\(self.t)📺 创建 NSView — surfaceID: \(surfaceID.map { String($0) } ?? "nil")")
             }
             let view = PreviewSurfaceView()
-            view.onSizeChange = onSizeChange
-            view.onInputEvent = onInputEvent
-            view.isInteractive = isInteractive
-            view.setCursorShape(cursorShape)
-            if let surfaceID {
-                view.attach(surfaceID: surfaceID)
-            }
+            configure(view)
             if LumiInlinePreviewFacade.verbose {
                 Self.logger.info("\(self.t) NSView 已创建：frame=\(view.frame.width)×\(view.frame.height), bounds=\(view.bounds.width)×\(view.bounds.height), superview=\(view.superview != nil)")
             }
@@ -58,14 +52,20 @@ public extension LumiInlinePreviewFacade {
         }
 
         public func updateNSView(_ nsView: PreviewSurfaceView, context: Context) {
+            Self.logger.info("\(self.t)📝 PreviewSurfaceCanvas.updateNSView: incomingSurfaceID=\(surfaceID.map { String($0) } ?? "nil", privacy: .public) currentSurfaceID=\(nsView.currentSurfaceID.map { String($0) } ?? "nil", privacy: .public) interactive=\(isInteractive, privacy: .public) frame=\(nsView.frame.width, privacy: .public)×\(nsView.frame.height, privacy: .public) bounds=\(nsView.bounds.width, privacy: .public)×\(nsView.bounds.height, privacy: .public) window=\(nsView.window != nil, privacy: .public) hidden=\(nsView.isHidden, privacy: .public) alpha=\(nsView.alphaValue, privacy: .public)")
             if LumiInlinePreviewFacade.verbose {
                 Self.logger.info("\(self.t)🔄 更新 NSView — surfaceID: \(surfaceID.map { String($0) } ?? "nil"), 可交互: \(isInteractive), view.frame=\(nsView.frame.width)×\(nsView.frame.height), view.bounds=\(nsView.bounds.width)×\(nsView.bounds.height)")
             }
+            configure(nsView)
+        }
+
+        func configure(_ nsView: PreviewSurfaceView) {
             nsView.onSizeChange = onSizeChange
             nsView.onInputEvent = onInputEvent
             nsView.isInteractive = isInteractive
             nsView.setCursorShape(cursorShape)
             if let surfaceID {
+                Self.logger.info("\(self.t)📝 PreviewSurfaceCanvas.configure attach: surfaceID=\(surfaceID, privacy: .public) frame=\(nsView.frame.width, privacy: .public)×\(nsView.frame.height, privacy: .public) bounds=\(nsView.bounds.width, privacy: .public)×\(nsView.bounds.height, privacy: .public) window=\(nsView.window != nil, privacy: .public)")
                 nsView.attach(surfaceID: surfaceID)
                 // 🔍 诊断：检查视图层级和 layer 状态
                 if LumiInlinePreviewFacade.verbose {
@@ -77,6 +77,7 @@ public extension LumiInlinePreviewFacade {
                     Self.logger.info("\(self.t) 层级诊断：window=\(winStr), superview=\(supStr), layer=\(layerStr), hidden=\(hiddenStr), alpha=\(alphaStr), frame=\(nsView.frame.width)×\(nsView.frame.height)")
                 }
             } else {
+                Self.logger.info("\(self.t)📝 PreviewSurfaceCanvas.configure detach: no surfaceID currentSurfaceID=\(nsView.currentSurfaceID.map { String($0) } ?? "nil", privacy: .public)")
                 nsView.detach()
             }
         }

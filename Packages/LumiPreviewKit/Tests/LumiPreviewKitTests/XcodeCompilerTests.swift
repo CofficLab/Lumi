@@ -63,6 +63,31 @@ struct XcodeCompilerTests {
         #expect(command == expectedCommand)
     }
 
+    @Test("preview compiler arguments include Xcode deployment target")
+    func previewCompilerArgumentsIncludeDeploymentTarget() async throws {
+        let project = try makeTemporaryXcodeProject(
+            targetName: "TinyTool",
+            source: """
+            print("hello")
+            """
+        )
+        defer { try? FileManager.default.removeItem(at: project.rootDirectory) }
+
+        let arguments = try await LumiPreviewFacade.XcodeCompiler().previewCompilerArguments(
+            projectURL: project.projectURL,
+            scheme: "TinyTool",
+            configuration: "Debug"
+        )
+
+        guard let targetIndex = arguments.firstIndex(of: "-target"),
+              arguments.indices.contains(arguments.index(after: targetIndex)) else {
+            Issue.record("Expected preview compiler arguments to include -target, got \(arguments)")
+            return
+        }
+
+        #expect(arguments[arguments.index(after: targetIndex)].contains("-apple-macos14.0"))
+    }
+
     private func makeTemporaryXcodeProject(
         targetName: String,
         source: String

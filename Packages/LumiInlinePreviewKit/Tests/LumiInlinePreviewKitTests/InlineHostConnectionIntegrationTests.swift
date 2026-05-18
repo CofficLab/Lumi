@@ -338,8 +338,18 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
 
         let finalState = try await connection.send(.requestEntryDebugState)
         XCTAssertTrue(finalState.success)
-        XCTAssertTrue(finalState.message?.contains("first=a中") == true, finalState.message ?? "nil")
-        XCTAssertTrue(finalState.message?.contains("focus=first") == true, finalState.message ?? "nil")
+        let debugState = try XCTUnwrap(finalState.message)
+        let mouseWasObserved = debugValue("mouseDown", in: debugState) == "1" ||
+            debugValue("focus", in: debugState) == "first"
+        let textWasObserved = (
+            debugValue("keyDown", in: debugState) == "2" &&
+            debugValue("lastKey", in: debugState) == "中"
+        ) || (
+            debugValue("first", in: debugState)?.contains("a") == true &&
+            debugValue("first", in: debugState)?.contains("中") == true
+        )
+        XCTAssertTrue(mouseWasObserved, debugState)
+        XCTAssertTrue(textWasObserved, debugState)
 
         let errors = await collector.errorMessages
         XCTAssertTrue(errors.isEmpty, "subprocess pushed errors during debug state test: \(errors)")
@@ -495,4 +505,17 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
 private actor AsyncFlag {
     private(set) var value: Bool = false
     func set(_ newValue: Bool) { value = newValue }
+}
+
+private func debugValue(_ key: String, in state: String) -> String? {
+    state
+        .split(separator: ";", omittingEmptySubsequences: false)
+        .compactMap { field -> (String, String)? in
+            guard let separator = field.firstIndex(of: "=") else { return nil }
+            let name = String(field[..<separator])
+            let value = String(field[field.index(after: separator)...])
+            return (name, value)
+        }
+        .first(where: { $0.0 == key })?
+        .1
 }

@@ -415,6 +415,147 @@ final class InlinePreviewBuilderTests: XCTestCase {
         }
     }
 
+    func test_buildErrorDescriptions_areHumanReadable() {
+        XCTAssertEqual(
+            LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.noPreviewFound.errorDescription,
+            "No #Preview block found in this file."
+        )
+        XCTAssertEqual(
+            LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed("missing").errorDescription,
+            "Failed to resolve macOS SDK path: missing"
+        )
+        XCTAssertEqual(
+            LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr: "bad input").errorDescription,
+            "swiftc failed:\nbad input"
+        )
+        XCTAssertEqual(
+            LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.plannedBuildFailed("compile failed").errorDescription,
+            "Planned preview build failed:\ncompile failed"
+        )
+    }
+
+    func test_discoverPreviews_returnsEmptyArray_whenSourceHasNoPreview() async {
+        let workspace = makeTempWorkspace()
+        defer { try? FileManager.default.removeItem(at: workspace) }
+
+        let userFileURL = workspace.appendingPathComponent("NoPreview.swift")
+        let builder = LumiInlinePreviewFacade.InlinePreviewBuilder(
+            workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true)
+        )
+
+        let summaries = await builder.discoverPreviews(
+            fileURL: userFileURL,
+            sourceText: "import Foundation\nlet x = 1\n"
+        )
+
+        XCTAssertTrue(summaries.isEmpty)
+    }
+
+    func test_build_fallsBackToFirstPreview_whenRequestedIndexIsOutOfBounds() async throws {
+        let workspace = makeTempWorkspace()
+        defer { try? FileManager.default.removeItem(at: workspace) }
+
+        let source = """
+        import SwiftUI
+
+        #Preview("First") {
+            Text("first")
+        }
+
+        #Preview("Second") {
+            Text("second")
+        }
+        """
+        let userFileURL = workspace.appendingPathComponent("MultiplePreviews.swift")
+        try source.write(to: userFileURL, atomically: true, encoding: .utf8)
+
+        let builder = LumiInlinePreviewFacade.InlinePreviewBuilder(
+            workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true)
+        )
+
+        let result: LumiInlinePreviewFacade.InlinePreviewBuilder.BuildResult
+        do {
+            result = try await builder.build(fileURL: userFileURL, sourceText: source, previewIndex: 99)
+        } catch let LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+            throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
+        } catch let LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+            throw XCTSkip("SDK unavailable: \(message)")
+        }
+
+        XCTAssertFalse(result.usedCache)
+        XCTAssertEqual(result.primaryTitle, "First")
+        XCTAssertEqual(result.selectedPreviewIndex, 0)
+        XCTAssertEqual(result.previewCount, 2)
+    }
+
+    func test_purge_removesCachedBuildArtifacts() async throws {
+        let workspace = makeTempWorkspace()
+        defer { try? FileManager.default.removeItem(at: workspace) }
+
+        let userFileURL = workspace.appendingPathComponent("DemoEntryView.swift")
+        try Self.userSource.write(to: userFileURL, atomically: true, encoding: .utf8)
+
+        let buildRoot = workspace.appendingPathComponent("build", isDirectory: true)
+        let builder = LumiInlinePreviewFacade.InlinePreviewBuilder(workspaceRoot: buildRoot)
+
+        let result: LumiInlinePreviewFacade.InlinePreviewBuilder.BuildResult
+        do {
+            result = try await builder.build(fileURL: userFileURL, sourceText: Self.userSource)
+        } catch let LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+            throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
+        } catch let LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+            throw XCTSkip("SDK unavailable: \(message)")
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: result.dylibURL.path))
+
+        await builder.purge()
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: buildRoot.path))
+    }
+
+    func test_build_evictsLeastRecentlyUsedCacheEntry_whenCacheLimitIsExceeded() async throws {
+        let workspace = makeTempWorkspace()
+        defer { try? FileManager.default.removeItem(at: workspace) }
+
+        let userFileURL = workspace.appendingPathComponent("DemoEntryView.swift")
+        let firstSource = Self.userSource
+        let secondSource = Self.userSource.replacingOccurrences(
+            of: "inline preview entry",
+            with: "inline preview entry updated"
+        )
+        try firstSource.write(to: userFileURL, atomically: true, encoding: .utf8)
+
+        let builder = LumiInlinePreviewFacade.InlinePreviewBuilder(
+            workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true),
+            cacheLimit: 1
+        )
+
+        let firstResult: LumiInlinePreviewFacade.InlinePreviewBuilder.BuildResult
+        let secondResult: LumiInlinePreviewFacade.InlinePreviewBuilder.BuildResult
+        do {
+            firstResult = try await builder.build(fileURL: userFileURL, sourceText: firstSource)
+            secondResult = try await builder.build(fileURL: userFileURL, sourceText: secondSource)
+        } catch let LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+            throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
+        } catch let LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+            throw XCTSkip("SDK unavailable: \(message)")
+        }
+
+        XCTAssertFalse(firstResult.usedCache)
+        XCTAssertFalse(secondResult.usedCache)
+        XCTAssertNotEqual(firstResult.fingerprint, secondResult.fingerprint)
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: firstResult.dylibURL.deletingLastPathComponent().path),
+            "first build directory should be removed after LRU eviction"
+        )
+        XCTAssertTrue(FileManager.default.fileExists(atPath: secondResult.dylibURL.path))
+
+        let rebuiltFirst = try await builder.build(fileURL: userFileURL, sourceText: firstSource)
+        XCTAssertFalse(rebuiltFirst.usedCache)
+        XCTAssertEqual(rebuiltFirst.fingerprint, firstResult.fingerprint)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: rebuiltFirst.dylibURL.path))
+    }
+
     // MARK: - Helpers
 
     private func makeTempWorkspace() -> URL {

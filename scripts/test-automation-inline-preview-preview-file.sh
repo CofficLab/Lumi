@@ -22,10 +22,18 @@ set -uo pipefail
 # ── 配置 ──────────────────────────────────────────────────────────────
 
 BASE_URL="http://localhost:18765/api/action"
-LOG_DIR="$HOME/Library/Application Support/com.coffic.Lumi/logs_debug_v2"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DEBUG_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_debug_v2"
+PRODUCTION_LOG_DIR="$HOME/Library/Application Support/com.coffic.lumi/logs_production_v2"
+if find "$DEBUG_LOG_DIR" -maxdepth 1 -type f -name '*.log' -print -quit 2>/dev/null | grep -q .; then
+    LOG_DIR="$DEBUG_LOG_DIR"
+else
+    LOG_DIR="$PRODUCTION_LOG_DIR"
+fi
+UNIFIED_LOG_LAST="20m"
 
 # 测试文件（含 #Preview 的自包含 SwiftUI 视图）
-TEST_FILE="/Users/angel/Code/Coffic/Lumi/Packages/LumiUI/Sources/LumiUI/Components/AppAvatar.swift"
+TEST_FILE="$ROOT_DIR/Packages/LumiUI/Sources/LumiUI/Components/AppAvatar.swift"
 
 # 各步骤等待时间
 NAVIGATE_WAIT=2
@@ -97,7 +105,18 @@ grep_log_count() {
         return
     fi
 
-    grep -c "$keyword" "$LOG_DIR/$log_file" 2>/dev/null || echo "0"
+    local count
+    count=$(grep -c "$keyword" "$LOG_DIR/$log_file" 2>/dev/null || true)
+    if [ "${count:-0}" -gt 0 ]; then
+        echo "$count"
+        return
+    fi
+
+    count=$(/usr/bin/log show \
+        --predicate 'subsystem == "com.coffic.lumi"' \
+        --last "$UNIFIED_LOG_LAST" \
+        --style compact 2>/dev/null | grep -c "$keyword" || true)
+    echo "${count:-0}"
 }
 
 # 断言日志包含关键词（不因 set -e 而终止）
@@ -108,10 +127,10 @@ assert_log_contains() {
 
     count=$(grep_log_count "$keyword")
     if [ "$count" -gt 0 ]; then
-        ok "$description（找到 $count 条匹配）"
+        ok "${description}（找到 ${count} 条匹配）"
         return 0
     else
-        fail "$description（未找到关键词: $keyword）"
+        fail "${description}（未找到关键词: ${keyword}）"
         return 1
     fi
 }
@@ -127,14 +146,14 @@ wait_for_log() {
         local count
         count=$(grep_log_count "$keyword")
         if [ "$count" -gt 0 ]; then
-            ok "$description（等待 ${elapsed}s，找到 $count 条匹配）"
+            ok "${description}（等待 ${elapsed}s，找到 ${count} 条匹配）"
             return 0
         fi
         sleep 1
         elapsed=$((elapsed + 1))
     done
 
-    fail "$description（等待 ${max_wait}s 后仍未出现关键词: $keyword）"
+    fail "${description}（等待 ${max_wait}s 后仍未出现关键词: ${keyword}）"
     return 1
 }
 

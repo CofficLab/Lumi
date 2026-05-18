@@ -146,12 +146,6 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                 statusBadge
 
                 entryDebugControls
-
-                if let frame = viewModel.currentFrame {
-                    Text("seq \(frame.seq) · \(frame.width)×\(frame.height) @\(String(format: "%.0fx", frame.scale))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
         }
         .padding(.horizontal, 12)
@@ -380,68 +374,75 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
     @ViewBuilder
     private var swiftPreviewCanvas: some View {
         let hasFrame = viewModel.currentFrame != nil
-        ZStack {
-            EditorInlinePreviewBoardGrid()
+        let _ = Self.logger.warning("\(self.t)📝 swiftPreviewCanvas render: hasFrame=\(hasFrame, privacy: .public) surfaceID=\(viewModel.currentFrame?.surfaceID.description ?? "nil", privacy: .public) frameSeq=\(viewModel.currentFrame?.seq.description ?? "nil", privacy: .public) status=\(viewModel.status.description, privacy: .public) entry=\(viewModel.entryStatus.description, privacy: .public) policy=\(viewModel.policy.rawValue, privacy: .public) currentFile=\(currentFileURL?.path ?? "nil", privacy: .public)")
+        GeometryReader { proxy in
+            let _ = Self.logger.warning("\(self.t)📝 swiftPreviewCanvas geometry: size=\(proxy.size.width, privacy: .public)×\(proxy.size.height, privacy: .public) hasFrame=\(hasFrame, privacy: .public) surfaceID=\(viewModel.currentFrame?.surfaceID.description ?? "nil", privacy: .public) entry=\(viewModel.entryStatus.description, privacy: .public)")
+            ZStack {
+                EditorInlinePreviewBoardGrid()
 
-            if !hasFrame {
-                VStack(spacing: 12) {
-                    if viewModel.entryStatus == .noPreview, currentFileURL?.pathExtension == "swift" {
-                        Image(systemName: "bolt.slash")
-                            .font(.system(size: 36))
-                            .foregroundStyle(.secondary)
-                        Text(String(localized: "No #Preview in the current Swift file.", table: "EditorInlinePreview"))
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                    } else {
-                        Image(systemName: "rectangle.dashed")
-                            .font(.system(size: 36))
-                            .foregroundStyle(.secondary)
-                        Text(String(localized: "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save.", table: "EditorInlinePreview"))
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
+                if !hasFrame {
+                    let _ = Self.logger.warning("\(self.t)📝 swiftPreviewCanvas placeholder branch: entry=\(viewModel.entryStatus.description, privacy: .public) fileExt=\(currentFileURL?.pathExtension ?? "nil", privacy: .public) status=\(viewModel.status.description, privacy: .public)")
+                    VStack(spacing: 12) {
+                        if viewModel.entryStatus == .noPreview, currentFileURL?.pathExtension == "swift" {
+                            Image(systemName: "bolt.slash")
+                                .font(.system(size: 36))
+                                .foregroundStyle(.secondary)
+                            Text(String(localized: "No #Preview in the current Swift file.", table: "EditorInlinePreview"))
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                        } else {
+                            Image(systemName: "rectangle.dashed")
+                                .font(.system(size: 36))
+                                .foregroundStyle(.secondary)
+                            Text(String(localized: "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save.", table: "EditorInlinePreview"))
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                        }
                     }
                 }
-            }
 
-            LumiInlinePreviewFacade.PreviewSurfaceCanvas(
-                surfaceID: viewModel.currentFrame?.surfaceID,
-                isInteractive: viewModel.isInteractive,
-                cursorShape: viewModel.cursorShape,
-                onSizeChange: { size, scale in
-                    viewModel.canvasDidResize(size, scale: scale)
-                },
-                onInputEvent: { event in
-                    viewModel.forwardInputEvent(event)
-                }
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(hasFrame ? Color.clear : Color.black.opacity(0.01))
+                LumiInlinePreviewFacade.PreviewSurfaceCanvas(
+                    surfaceID: viewModel.currentFrame?.surfaceID,
+                    isInteractive: viewModel.isInteractive,
+                    cursorShape: viewModel.cursorShape,
+                    onSizeChange: { size, scale in
+                        viewModel.canvasDidResize(size, scale: scale)
+                    },
+                    onInputEvent: { event in
+                        viewModel.forwardInputEvent(event)
+                    }
+                )
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .background(hasFrame ? Color.clear : Color.black.opacity(0.01))
 
-            if let failure = entryFailure {
-                VStack {
-                    Spacer()
-                    EditorInlinePreviewFailureDetailsView(failure: failure)
-                        .padding(16)
-                }
-            }
-
-            if let debugState = viewModel.entryDebugState, !debugState.isEmpty {
-                VStack {
-                    HStack {
+                if let failure = entryFailure {
+                    VStack {
                         Spacer()
-                        EditorInlinePreviewDebugStateView(state: debugState)
+                        EditorInlinePreviewFailureDetailsView(failure: failure)
                             .padding(16)
                     }
-                    Spacer()
+                }
+
+                if let debugState = viewModel.entryDebugState, !debugState.isEmpty {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            EditorInlinePreviewDebugStateView(state: debugState)
+                                .padding(16)
+                        }
+                        Spacer()
+                    }
+                }
+
+                if let file = buildingFileName {
+                    EditorInlinePreviewBuildingOverlay(fileName: file)
                 }
             }
-
-            if let file = buildingFileName {
-                EditorInlinePreviewBuildingOverlay(fileName: file)
-            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var entryFailure: EditorInlinePreviewViewModel.EntryFailure? {
@@ -593,35 +594,188 @@ private enum MarkdownTODOScanner {
     }
 }
 
+private struct MarkdownTOCHeading: Identifiable, Hashable {
+    let id: String
+    let level: Int
+    let title: String
+    let lineNumber: Int
+}
+
+private struct MarkdownTOCSection: Identifiable {
+    let id: String
+    let markdown: String
+}
+
+private enum MarkdownTOCScanner {
+    static func scan(_ markdown: String) -> (headings: [MarkdownTOCHeading], sections: [MarkdownTOCSection]) {
+        let lines = markdown.components(separatedBy: .newlines)
+        var headings: [MarkdownTOCHeading] = []
+        var sectionStarts: [(lineIndex: Int, heading: MarkdownTOCHeading)] = []
+        var isInFence = false
+
+        for (index, line) in lines.enumerated() {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+                isInFence.toggle()
+                continue
+            }
+            guard !isInFence, let parsed = parseATXHeading(trimmed) else { continue }
+
+            let heading = MarkdownTOCHeading(
+                id: "markdown-heading-\(index)",
+                level: parsed.level,
+                title: parsed.title,
+                lineNumber: index
+            )
+            headings.append(heading)
+            sectionStarts.append((index, heading))
+        }
+
+        guard !sectionStarts.isEmpty else {
+            return (
+                headings: [],
+                sections: [.init(id: "markdown-section-root", markdown: markdown)]
+            )
+        }
+
+        var sections: [MarkdownTOCSection] = []
+        if sectionStarts[0].lineIndex > 0 {
+            let prefix = lines[..<sectionStarts[0].lineIndex].joined(separator: "\n")
+            if !prefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                sections.append(.init(id: "markdown-section-root", markdown: prefix))
+            }
+        }
+
+        for index in sectionStarts.indices {
+            let start = sectionStarts[index].lineIndex
+            let end = index + 1 < sectionStarts.count ? sectionStarts[index + 1].lineIndex : lines.count
+            let sectionMarkdown = lines[start..<end].joined(separator: "\n")
+            sections.append(.init(id: sectionStarts[index].heading.id, markdown: sectionMarkdown))
+        }
+
+        return (headings, sections)
+    }
+
+    private static func parseATXHeading(_ trimmedLine: String) -> (level: Int, title: String)? {
+        guard trimmedLine.hasPrefix("#") else { return nil }
+        let hashes = trimmedLine.prefix { $0 == "#" }
+        let level = hashes.count
+        guard (1...6).contains(level) else { return nil }
+
+        let remainder = trimmedLine.dropFirst(level)
+        guard remainder.first == " " || remainder.first == "\t" else { return nil }
+
+        let rawTitle = remainder
+            .trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(
+                of: #"\s+#+\s*$"#,
+                with: "",
+                options: .regularExpression
+            )
+        guard !rawTitle.isEmpty else { return nil }
+        return (level, rawTitle)
+    }
+}
+
 private struct EditorInlinePreviewMarkdownView: View {
     @EnvironmentObject private var themeVM: ThemeVM
 
     let markdown: String
 
+    private var toc: (headings: [MarkdownTOCHeading], sections: [MarkdownTOCSection]) {
+        MarkdownTOCScanner.scan(markdown)
+    }
+
     var body: some View {
-        ScrollView {
+        let scannedTOC = toc
+        Group {
             if markdown.isEmpty {
-                VStack(spacing: 10) {
-                    Image(systemName: "doc.richtext")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.secondary)
-                    Text(String(localized: "No Markdown content to preview.", table: "EditorInlinePreview"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, minHeight: 240)
-                .padding(24)
+                emptyMarkdownView
+            } else if scannedTOC.headings.isEmpty {
+                markdownScrollView(sections: scannedTOC.sections)
             } else {
-                MarkdownBlockRenderer(
-                    markdown: markdown,
-                    theme: previewTheme
-                )
-                .environment(\.codeHighlightProvider, currentHighlightProvider)
-                .padding(24)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                ScrollViewReader { proxy in
+                    HStack(spacing: 0) {
+                        markdownTOCSidebar(headings: scannedTOC.headings, proxy: proxy)
+                        Divider()
+                        markdownScrollView(sections: scannedTOC.sections)
+                    }
+                }
             }
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
+    }
+
+    private var emptyMarkdownView: some View {
+        ScrollView {
+            VStack(spacing: 10) {
+                Image(systemName: "doc.richtext")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.secondary)
+                Text(String(localized: "No Markdown content to preview.", table: "EditorInlinePreview"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 240)
+            .padding(24)
+        }
+    }
+
+    private func markdownScrollView(sections: [MarkdownTOCSection]) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(sections) { section in
+                    MarkdownBlockRenderer(
+                        markdown: section.markdown,
+                        theme: previewTheme
+                    )
+                    .environment(\.codeHighlightProvider, currentHighlightProvider)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .id(section.id)
+                }
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func markdownTOCSidebar(
+        headings: [MarkdownTOCHeading],
+        proxy: ScrollViewProxy
+    ) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("TOC")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(themeVM.activeAppTheme.workspaceSecondaryTextColor())
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 6)
+
+                ForEach(headings) { heading in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            proxy.scrollTo(heading.id, anchor: .top)
+                        }
+                    } label: {
+                        Text(heading.title)
+                            .font(.system(size: 12, weight: heading.level <= 2 ? .semibold : .regular))
+                            .foregroundStyle(themeVM.activeAppTheme.workspaceTextColor())
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 5)
+                            .padding(.leading, CGFloat(max(0, heading.level - 1)) * 10)
+                            .padding(.trailing, 8)
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    .help(heading.title)
+                }
+            }
+            .padding(.vertical, 14)
+        }
+        .frame(width: 220)
+        .background(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.72))
     }
 
     private var previewTheme: MarkdownTheme {

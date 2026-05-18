@@ -116,6 +116,7 @@ final class HotStdioPreviewHost {
         case let .loadDylib(path, symbolName):
             do {
                 try renderer.loadDylib(path: path, symbolName: symbolName)
+                renderLoop.startInteractiveBurst()
                 sendEvent(.entryLoaded(success: true, message: nil))
                 return .init(success: true, message: "dylib loaded")
             } catch {

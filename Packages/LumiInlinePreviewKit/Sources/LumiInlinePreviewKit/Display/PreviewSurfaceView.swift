@@ -215,7 +215,7 @@ public extension LumiInlinePreviewFacade {
                 x: Double(location.x),
                 y: Double(location.y),
                 items: Self.dragItems(from: sender.draggingPasteboard),
-                modifiers: ModifierFlags.fromAppKitImported(NSApp.currentEvent?.modifierFlags ?? [])
+                modifiers: ModifierFlags.fromAppKitImported(NSApplication.shared.currentEvent?.modifierFlags ?? [])
             )))
         }
 
@@ -259,11 +259,13 @@ public extension LumiInlinePreviewFacade {
             let winStr = (window != nil) ? "yes" : "no"
             let boundsStr = "\(self.bounds.width)×\(self.bounds.height)"
             let scaleVal = window?.backingScaleFactor ?? 1
+            Self.logger.info("\(self.t)📝 PreviewSurfaceView.attach start: surfaceID=\(surfaceID, privacy: .public) current=\(curIDStr, privacy: .public) bounds=\(boundsStr, privacy: .public) frame=\(self.frame.width, privacy: .public)×\(self.frame.height, privacy: .public) window=\(winStr, privacy: .public) layerExists=\(self.layer != nil, privacy: .public) hidden=\(self.isHidden, privacy: .public) alpha=\(self.alphaValue, privacy: .public) scale=\(scaleVal, privacy: .public)")
             if LumiInlinePreviewFacade.verbose {
                 Self.logger.info("\(self.t)绑定 surfaceID=\(surfaceID) — 当前=\(curIDStr) bounds=\(boundsStr) window=\(winStr) scale=\(scaleVal)")
             }
 
             guard let surface = IOSurfaceLookup(IOSurfaceID(surfaceID)) else {
+                Self.logger.error("\(self.t)📝 PreviewSurfaceView.attach failed: IOSurfaceLookup returned nil for surfaceID=\(surfaceID, privacy: .public)")
                 if LumiInlinePreviewFacade.verbose {
                     Self.logger.error("\(self.t)IOSurfaceLookup 失败：surfaceID=\(surfaceID)")
                 }
@@ -276,17 +278,23 @@ public extension LumiInlinePreviewFacade {
 
             let surfaceWidth = IOSurfaceGetWidth(surface)
             let surfaceHeight = IOSurfaceGetHeight(surface)
+            let stats = sampleSurface(surface: surface, width: surfaceWidth, height: surfaceHeight)
+            Self.logger.info("\(self.t)📝 PreviewSurfaceView.attach surface: id=\(surfaceID, privacy: .public) size=\(surfaceWidth, privacy: .public)×\(surfaceHeight, privacy: .public) \(stats, privacy: .public)")
+            if LumiInlinePreviewFacade.verbose {
+                Self.logger.info("\(self.t)📝 surface 像素采样：\(stats, privacy: .public)")
+            }
             let ciImage = CIImage(ioSurface: surface)
             let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
             if let cgImage {
                 layer?.contents = cgImage
-                layer?.setNeedsDisplay()
+                Self.logger.info("\(self.t)📝 PreviewSurfaceView.attach rendered: cgImage=\(cgImage.width, privacy: .public)×\(cgImage.height, privacy: .public) layerContentsSet=\(self.layer?.contents != nil, privacy: .public) layerBounds=\(self.layer?.bounds.width ?? -1, privacy: .public)×\(self.layer?.bounds.height ?? -1, privacy: .public) contentsScale=\(self.layer?.contentsScale ?? -1, privacy: .public)")
                 if LumiInlinePreviewFacade.verbose {
                     let logicalWidth = CGFloat(surfaceWidth) / scaleVal
                     let logicalHeight = CGFloat(surfaceHeight) / scaleVal
                     Self.logger.info("\(self.t)渲染完成：\(surfaceWidth)×\(surfaceHeight) px → \(String(format: "%.0f", logicalWidth))×\(String(format: "%.0f", logicalHeight)) pt @\(String(format: "%.1f", scaleVal))x")
                 }
             } else {
+                Self.logger.error("\(self.t)📝 PreviewSurfaceView.attach failed: CGImage creation failed for surfaceID=\(surfaceID, privacy: .public) size=\(surfaceWidth, privacy: .public)×\(surfaceHeight, privacy: .public)")
                 if LumiInlinePreviewFacade.verbose {
                     Self.logger.error("\(self.t)CGImage 创建失败")
                 }
@@ -353,6 +361,51 @@ public extension LumiInlinePreviewFacade {
         private func notifySize() {
             let scale = window?.backingScaleFactor ?? 1
             onSizeChange?(bounds.size, scale)
+        }
+
+        private func sampleSurface(surface: IOSurfaceRef, width: Int, height: Int) -> String {
+            guard width > 0, height > 0 else {
+                return "empty-size"
+            }
+
+            var seed: UInt32 = 0
+            guard IOSurfaceLock(surface, [.readOnly], &seed) == KERN_SUCCESS else {
+                return "lock-failed"
+            }
+            defer { _ = IOSurfaceUnlock(surface, [.readOnly], &seed) }
+
+            let baseAddress = IOSurfaceGetBaseAddress(surface)
+
+            let bytesPerRow = IOSurfaceGetBytesPerRow(surface)
+            let maxSamples = 4096
+            let pixelCount = width * height
+            let stride = max(1, pixelCount / maxSamples)
+            let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
+            var sampled = 0
+            var nonZeroAlpha = 0
+            var nonZeroColor = 0
+            var totalAlpha = 0
+
+            var pixelIndex = 0
+            while pixelIndex < pixelCount {
+                let x = pixelIndex % width
+                let y = pixelIndex / width
+                let offset = y * bytesPerRow + x * 4
+                let b = Int(bytes[offset])
+                let g = Int(bytes[offset + 1])
+                let r = Int(bytes[offset + 2])
+                let a = Int(bytes[offset + 3])
+                if a > 0 { nonZeroAlpha += 1 }
+                if r > 0 || g > 0 || b > 0 { nonZeroColor += 1 }
+                totalAlpha += a
+                sampled += 1
+                pixelIndex += stride
+            }
+
+            let alphaRatio = sampled > 0 ? Double(nonZeroAlpha) / Double(sampled) : 0
+            let colorRatio = sampled > 0 ? Double(nonZeroColor) / Double(sampled) : 0
+            let averageAlpha = sampled > 0 ? Double(totalAlpha) / Double(sampled) : 0
+            return "sampled=\(sampled) alphaPixels=\(nonZeroAlpha) (\(String(format: "%.3f", alphaRatio))) colorPixels=\(nonZeroColor) (\(String(format: "%.3f", colorRatio))) avgAlpha=\(String(format: "%.1f", averageAlpha)) bytesPerRow=\(bytesPerRow)"
         }
 
         // MARK: - NSTextInputClient

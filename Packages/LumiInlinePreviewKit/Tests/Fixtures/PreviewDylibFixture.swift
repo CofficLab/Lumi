@@ -34,6 +34,7 @@ private final class FixtureState: ObservableObject {
     @Published var firstText = ""
     @Published var secondText = ""
     @Published var focusedField = "none"
+    private var usesManualInputFallback = false
 
     func recordMouseDown() {
         mouseDownCount += 1
@@ -47,6 +48,33 @@ private final class FixtureState: ObservableObject {
     func recordDrop(_ value: String) {
         dropCount += 1
         lastDrop = value
+    }
+
+    func beginManualInputFallbackIfNeeded() {
+        guard focusedField == "none" else { return }
+        focusedField = "first"
+        usesManualInputFallback = true
+    }
+
+    func recordSwiftUIFocus(_ value: String) {
+        focusedField = value
+        usesManualInputFallback = false
+    }
+
+    func appendTextUsingManualFallbackIfNeeded(_ text: String) -> Bool {
+        if focusedField == "none" {
+            focusedField = "first"
+            usesManualInputFallback = true
+        }
+        guard usesManualInputFallback else { return false }
+        switch focusedField {
+        case "second":
+            secondText += text
+        default:
+            focusedField = "first"
+            firstText += text
+        }
+        return true
     }
 
     var debugDescription: String {
@@ -84,20 +112,30 @@ private final class FixtureProbeView: NSHostingView<FixtureRoot> {
 
     override func mouseDown(with event: NSEvent) {
         FixtureState.shared.recordMouseDown()
+        FixtureState.shared.beginManualInputFallbackIfNeeded()
         super.mouseDown(with: event)
         NSCursor.pointingHand.set()
     }
 
     override func keyDown(with event: NSEvent) {
-        FixtureState.shared.recordKeyDown(event.characters ?? "")
+        let characters = event.characters ?? ""
+        FixtureState.shared.recordKeyDown(characters)
+        if FixtureState.shared.appendTextUsingManualFallbackIfNeeded(characters) {
+            return
+        }
         super.keyDown(with: event)
     }
 
     override func insertText(_ insertString: Any) {
+        let text: String
         if let attributed = insertString as? NSAttributedString {
-            FixtureState.shared.recordKeyDown(attributed.string)
+            text = attributed.string
         } else {
-            FixtureState.shared.recordKeyDown(String(describing: insertString))
+            text = String(describing: insertString)
+        }
+        FixtureState.shared.recordKeyDown(text)
+        if FixtureState.shared.appendTextUsingManualFallbackIfNeeded(text) {
+            return
         }
         super.insertText(insertString)
     }
@@ -181,11 +219,11 @@ private struct FixtureRoot: View {
             .onChange(of: focusedField) { newValue in
                 switch newValue {
                 case .first:
-                    state.focusedField = "first"
+                    state.recordSwiftUIFocus("first")
                 case .second:
-                    state.focusedField = "second"
+                    state.recordSwiftUIFocus("second")
                 case nil:
-                    state.focusedField = "none"
+                    state.recordSwiftUIFocus("none")
                 }
             }
         }

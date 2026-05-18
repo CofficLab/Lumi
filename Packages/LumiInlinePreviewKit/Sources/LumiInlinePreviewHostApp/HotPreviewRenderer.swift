@@ -52,7 +52,8 @@ final class HotPreviewRenderer {
         UInt32(UInt8(ascii: "R")) << 8 |
         UInt32(UInt8(ascii: "A"))
 
-    private static let recentSurfaceLimit = 8
+    private static let recentSurfaceLimit = 96
+    private static let recentSurfaceByteBudget = 512 * 1024 * 1024
 
     /// 离屏窗口子类，强制 `canBecomeKey` / `canBecomeMain` 为 true。
     /// borderless 风格的 NSWindow 默认两者都为 false，会让 `sendEvent` 注入的
@@ -66,7 +67,13 @@ final class HotPreviewRenderer {
     private var previewView: NSView?
     private var loadedDylibHandle: UnsafeMutableRawPointer?
     private var debugStateProvider: (@MainActor () -> String?)?
-    private var recentSurfaces: [IOSurfaceRef] = []
+    private struct RetainedSurface {
+        let surface: IOSurfaceRef
+        let byteCount: Int
+    }
+
+    private var recentSurfaces: [RetainedSurface] = []
+    private var recentSurfaceBytes = 0
     private var seq: UInt64 = 0
     private var isDirty = true
 
@@ -84,6 +91,7 @@ final class HotPreviewRenderer {
     init() {
         ensureWindow()
         installDemoView()
+        diagnostic("init pointSize=\(format(pointSize)) scale=\(format(scale))")
     }
 
     // MARK: - 公开方法
@@ -92,6 +100,7 @@ final class HotPreviewRenderer {
     func resize(width: Int, height: Int, scale: CGFloat) {
         let pointWidth = max(1, CGFloat(width) / max(scale, 1))
         let pointHeight = max(1, CGFloat(height) / max(scale, 1))
+        diagnostic("resize request pixels=\(width)x\(height) scale=\(format(scale)) oldPointSize=\(format(pointSize)) previewBefore=\(describe(previewView)) windowBefore=\(describe(window))")
         pointSize = CGSize(width: pointWidth, height: pointHeight)
         self.scale = max(scale, 1)
         let frame = NSRect(x: 0, y: 0, width: pointWidth, height: pointHeight)
@@ -100,6 +109,7 @@ final class HotPreviewRenderer {
         previewView?.needsLayout = true
         previewView?.needsDisplay = true
         markDirty()
+        diagnostic("resize applied pointSize=\(format(pointSize)) scale=\(format(self.scale)) previewAfter=\(describe(previewView)) windowAfter=\(describe(window))")
     }
 
     /// 加载用户预览 dylib，并把其导出的 `NSView` 挂为当前 `previewView`。
@@ -107,6 +117,7 @@ final class HotPreviewRenderer {
     /// 符号约定：`@_cdecl(symbolName) func -> UnsafeMutableRawPointer?`，
     /// 返回 `Unmanaged.passRetained(view).toOpaque()`（+1 retained `NSView`）。
     func loadDylib(path: String, symbolName: String) throws {
+        diagnostic("loadDylib begin path=\((path as NSString).lastPathComponent) pointSize=\(format(pointSize)) previewBefore=\(describe(previewView)) window=\(describe(window))")
         guard FileManager.default.fileExists(atPath: path) else {
             throw LoadDylibError.fileNotFound(path)
         }
@@ -149,10 +160,12 @@ final class HotPreviewRenderer {
         loadedDylibHandle = handle
         debugStateProvider = makeDebugStateProvider(handle: handle)
         installView(view)
+        diagnostic("loadDylib installed path=\((path as NSString).lastPathComponent) previewAfter=\(describe(previewView)) fitting=\(format(view.fittingSize)) intrinsic=\(format(view.intrinsicContentSize))")
     }
 
     /// 卸载当前用户 dylib，恢复内置空白视图。
     func unloadDylib() {
+        diagnostic("unloadDylib previewBefore=\(describe(previewView))")
         installDemoView()
         debugStateProvider = nil
         if let handle = loadedDylibHandle {
@@ -199,6 +212,7 @@ final class HotPreviewRenderer {
         view.displayIfNeeded()
 
         let pointBounds = view.bounds
+        diagnostic("snapshot begin seqNext=\(seq + 1) view=\(describe(view)) fitting=\(format(view.fittingSize)) intrinsic=\(format(view.intrinsicContentSize)) window=\(describe(window)) pointSize=\(format(pointSize)) scale=\(format(scale))")
         guard pointBounds.width > 0, pointBounds.height > 0 else { return nil }
 
         let pixelWidth = max(1, Int((pointBounds.width * scale).rounded()))
@@ -250,8 +264,10 @@ final class HotPreviewRenderer {
         guard let cgImage = bitmap.cgImage else { return nil }
 
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
+        let surfaceStats = sampleSurface(surface: surface, width: pixelWidth, height: pixelHeight)
+        diagnostic("snapshot surface seqNext=\(seq + 1) pixels=\(pixelWidth)x\(pixelHeight) stats=\(surfaceStats)")
 
-        retain(surface)
+        retain(surface, byteCount: bytesPerRow * pixelHeight)
         seq &+= 1
 
         return LumiInlinePreviewFacade.IOSurfaceFrame(
@@ -306,6 +322,7 @@ final class HotPreviewRenderer {
         // 让 hosting view 成为 firstResponder：键盘事件能直达 SwiftUI TextField。
         // NSHostingView 通过 _NSResponderChain 内部转发到具体控件。
         window.makeFirstResponder(view)
+        diagnostic("installView type=\(String(describing: type(of: view))) frame=\(format(view.frame.size)) bounds=\(format(view.bounds.size)) fitting=\(format(view.fittingSize)) intrinsic=\(format(view.intrinsicContentSize)) window=\(describe(window))")
     }
 
     private func updateExistingPreviewIfPossible(with handle: UnsafeMutableRawPointer) throws -> Bool {
@@ -324,6 +341,7 @@ final class HotPreviewRenderer {
         window?.setContentSize(pointSize)
         markDirty()
         prepareForInputDispatch()
+        diagnostic("updateExistingPreview applied preview=\(describe(previewView)) fitting=\(format(previewView.fittingSize)) intrinsic=\(format(previewView.intrinsicContentSize))")
         return true
     }
 
@@ -366,10 +384,74 @@ final class HotPreviewRenderer {
         return IOSurfaceCreate(properties as CFDictionary)
     }
 
-    private func retain(_ surface: IOSurfaceRef) {
-        recentSurfaces.append(surface)
-        if recentSurfaces.count > Self.recentSurfaceLimit {
-            recentSurfaces.removeFirst(recentSurfaces.count - Self.recentSurfaceLimit)
+    private func retain(_ surface: IOSurfaceRef, byteCount: Int) {
+        recentSurfaces.append(RetainedSurface(surface: surface, byteCount: byteCount))
+        recentSurfaceBytes += byteCount
+
+        while recentSurfaces.count > 1 &&
+              (recentSurfaces.count > Self.recentSurfaceLimit ||
+               recentSurfaceBytes > Self.recentSurfaceByteBudget) {
+            let removed = recentSurfaces.removeFirst()
+            recentSurfaceBytes -= removed.byteCount
         }
+    }
+
+    private func diagnostic(_ message: String) {
+        fputs("[HotPreviewRenderer] \(message)\n", stderr)
+        fflush(stderr)
+    }
+
+    private func describe(_ view: NSView?) -> String {
+        guard let view else { return "nil" }
+        return "\(String(describing: type(of: view))) frame=\(format(view.frame.size)) bounds=\(format(view.bounds.size)) hidden=\(view.isHidden) alpha=\(format(view.alphaValue)) layer=\(view.layer != nil)"
+    }
+
+    private func describe(_ window: NSWindow?) -> String {
+        guard let window else { return "nil" }
+        return "frame=\(format(window.frame.size)) content=\(format(window.contentView?.bounds.size ?? .zero)) visible=\(window.isVisible) key=\(window.isKeyWindow)"
+    }
+
+    private func format(_ size: CGSize) -> String {
+        "\(String(format: "%.1f", size.width))x\(String(format: "%.1f", size.height))"
+    }
+
+    private func format(_ value: CGFloat) -> String {
+        String(format: "%.2f", value)
+    }
+
+    private func sampleSurface(surface: IOSurfaceRef, width: Int, height: Int) -> String {
+        guard width > 0, height > 0 else { return "empty-size" }
+
+        let baseAddress = IOSurfaceGetBaseAddress(surface)
+        let bytesPerRow = IOSurfaceGetBytesPerRow(surface)
+        let maxSamples = 4096
+        let pixelCount = width * height
+        let stride = max(1, pixelCount / maxSamples)
+        let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
+        var sampled = 0
+        var nonZeroAlpha = 0
+        var nonZeroColor = 0
+        var totalAlpha = 0
+
+        var pixelIndex = 0
+        while pixelIndex < pixelCount {
+            let x = pixelIndex % width
+            let y = pixelIndex / width
+            let offset = y * bytesPerRow + x * 4
+            let b = Int(bytes[offset])
+            let g = Int(bytes[offset + 1])
+            let r = Int(bytes[offset + 2])
+            let a = Int(bytes[offset + 3])
+            if a > 0 { nonZeroAlpha += 1 }
+            if r > 0 || g > 0 || b > 0 { nonZeroColor += 1 }
+            totalAlpha += a
+            sampled += 1
+            pixelIndex += stride
+        }
+
+        let alphaRatio = sampled > 0 ? Double(nonZeroAlpha) / Double(sampled) : 0
+        let colorRatio = sampled > 0 ? Double(nonZeroColor) / Double(sampled) : 0
+        let averageAlpha = sampled > 0 ? Double(totalAlpha) / Double(sampled) : 0
+        return "sampled=\(sampled) alphaPixels=\(nonZeroAlpha) (\(String(format: "%.3f", alphaRatio))) colorPixels=\(nonZeroColor) (\(String(format: "%.3f", colorRatio))) avgAlpha=\(String(format: "%.1f", averageAlpha)) bytesPerRow=\(bytesPerRow)"
     }
 }

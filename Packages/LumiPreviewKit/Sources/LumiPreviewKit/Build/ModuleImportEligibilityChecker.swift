@@ -24,26 +24,26 @@ public extension LumiPreviewFacade {
             let privateSymbols = privateOrFileprivateSymbols(in: sourceText)
             let privateExtensionMembers = privateOrFileprivateExtensionMembers(in: sourceText)
             guard !privateSymbols.isEmpty else {
-                guard !bodyReferencesSymbols(bodySource, symbols: privateExtensionMembers) else {
+                guard !bodyReferencesSymbols(bodySource, symbols: privateExtensionMembers, allowMemberAccess: true) else {
                     return false
                 }
-                return !bodyConstructsTypesWithPrivateInitializer(
-                    bodySource,
-                    typeNames: typesWithPrivateInitializer(in: sourceText)
-                )
+            return !bodyConstructsTypesWithPrivateInitializer(
+                bodySource,
+                typeNames: typesWithOnlyPrivateInitializers(in: sourceText)
+            )
             }
 
-            guard !bodyReferencesSymbols(bodySource, symbols: privateSymbols) else {
+            guard !bodyReferencesSymbols(bodySource, symbols: privateSymbols, allowMemberAccess: false) else {
                 return false
             }
 
-            guard !bodyReferencesSymbols(bodySource, symbols: privateExtensionMembers) else {
+            guard !bodyReferencesSymbols(bodySource, symbols: privateExtensionMembers, allowMemberAccess: true) else {
                 return false
             }
 
             return !bodyConstructsTypesWithPrivateInitializer(
                 bodySource,
-                typeNames: typesWithPrivateInitializer(in: sourceText)
+                typeNames: typesWithOnlyPrivateInitializers(in: sourceText)
             )
         }
 
@@ -75,10 +75,12 @@ public extension LumiPreviewFacade {
 
         private func bodyReferencesSymbols(
             _ bodySource: String,
-            symbols: Set<String>
+            symbols: Set<String>,
+            allowMemberAccess: Bool
         ) -> Bool {
             for symbol in symbols {
-                let pattern = #"(?<![A-Za-z0-9_])\#(symbol)(?![A-Za-z0-9_])"#
+                let leadingBoundary = allowMemberAccess ? #"(?<![A-Za-z0-9_])"# : #"(?<![A-Za-z0-9_\.])"#
+                let pattern = #"\#(leadingBoundary)\#(symbol)(?![A-Za-z0-9_])"#
                 if bodySource.range(of: pattern, options: .regularExpression) != nil {
                     return true
                 }
@@ -86,7 +88,7 @@ public extension LumiPreviewFacade {
             return false
         }
 
-        private func typesWithPrivateInitializer(in sourceText: String) -> Set<String> {
+        private func typesWithOnlyPrivateInitializers(in sourceText: String) -> Set<String> {
             let typePattern = #"(?:^|\n)\s*(?:public|internal|package)?\s*(?:final\s+)?(?:class|struct|actor)\s+([A-Za-z_][A-Za-z0-9_]*)"# 
             guard let typeRegex = try? NSRegularExpression(pattern: typePattern, options: []) else {
                 return []
@@ -109,10 +111,16 @@ public extension LumiPreviewFacade {
                     continue
                 }
 
-                if body.range(
-                    of: #"(?:private|fileprivate)\s+init\s*\("#,
+                let hasPrivateInitializer = body.range(
+                    of: #"(?:^|\n)\s*(?:private|fileprivate)\s+init\s*\("#,
                     options: .regularExpression
-                ) != nil {
+                ) != nil
+                let hasAccessibleInitializer = body.range(
+                    of: #"(?:^|\n)\s*(?:(?:public|internal|package)\s+)?init\s*\("#,
+                    options: .regularExpression
+                ) != nil
+
+                if hasPrivateInitializer && !hasAccessibleInitializer {
                     matchingTypes.insert(typeName)
                 }
             }
