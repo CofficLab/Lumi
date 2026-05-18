@@ -3,6 +3,11 @@ import CoreGraphics
 import Foundation
 import LumiInlinePreviewKit
 
+extension Notification.Name {
+    static let lumiInlinePreviewSyntheticMouseLocationDidChange =
+        Notification.Name("com.coffic.lumi.inline-preview.syntheticMouseLocationDidChange")
+}
+
 /// 把跨进程的 `PreviewInputEvent` 合成为本机 `NSEvent`，注入子进程离屏窗口。
 ///
 /// 设计要点：
@@ -72,6 +77,8 @@ final class HotPreviewEventDispatcher {
 
         let location = NSPoint(x: event.x, y: event.y)
         lastEventNumber &+= 1
+        renderer?.setSyntheticMouseLocation(location)
+        postSyntheticMouseLocation(location, in: window, inside: event.phase != .exited)
 
         if type == .mouseEntered || type == .mouseExited {
             guard let nsEvent = NSEvent.enterExitEvent(
@@ -88,6 +95,9 @@ final class HotPreviewEventDispatcher {
                 return
             }
             window.sendEvent(nsEvent)
+            if type == .mouseExited {
+                renderer?.setSyntheticMouseLocation(nil)
+            }
             return
         }
 
@@ -106,6 +116,17 @@ final class HotPreviewEventDispatcher {
         }
 
         window.sendEvent(nsEvent)
+    }
+
+    private func postSyntheticMouseLocation(_ location: NSPoint, in window: NSWindow, inside: Bool) {
+        NotificationCenter.default.post(
+            name: .lumiInlinePreviewSyntheticMouseLocationDidChange,
+            object: window,
+            userInfo: [
+                "location": NSValue(point: location),
+                "inside": inside
+            ]
+        )
     }
 
     // MARK: - 私有 — 滚轮

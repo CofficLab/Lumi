@@ -59,8 +59,14 @@ final class HotPreviewRenderer {
     /// borderless 风格的 NSWindow 默认两者都为 false，会让 `sendEvent` 注入的
     /// keyDown 找不到 key window，TextField 等需要 firstResponder 的控件无法接键盘输入。
     final class InvisibleHostWindow: NSWindow {
+        var syntheticMouseLocationInWindow: NSPoint?
+
         override var canBecomeKey: Bool { true }
         override var canBecomeMain: Bool { true }
+
+        override var mouseLocationOutsideOfEventStream: NSPoint {
+            syntheticMouseLocationInWindow ?? super.mouseLocationOutsideOfEventStream
+        }
     }
 
     private var window: InvisibleHostWindow?
@@ -192,6 +198,11 @@ final class HotPreviewRenderer {
         if window.firstResponder == nil, let previewView {
             window.makeFirstResponder(previewView)
         }
+    }
+
+    /// 让离屏窗口用主进程转发过来的鼠标位置参与 AppKit/SwiftUI hover tracking。
+    func setSyntheticMouseLocation(_ location: NSPoint?) {
+        window?.syntheticMouseLocationInWindow = location
     }
 
     func markDirty() {

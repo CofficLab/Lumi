@@ -1,8 +1,10 @@
+import AppKit
 import SwiftUI
 
 public struct AppButton: View {
     @LumiTheme private var theme
     @State private var isHovered = false
+    @State private var isSyntheticHovered = false
 
     public enum Style {
         case primary
@@ -101,6 +103,13 @@ public struct AppButton: View {
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.5 : 1.0)
+        .background {
+            InlinePreviewSyntheticHoverReader { hovering in
+                withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
+                    isSyntheticHovered = hovering && !isDisabled
+                }
+            }
+        }
         .onHover { hovering in
             withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
                 isHovered = hovering && !isDisabled
@@ -157,18 +166,22 @@ public struct AppButton: View {
             switch style {
             case .primary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? theme.primary.opacity(0.85) : theme.primary.opacity(0.5))
+                    .fill(isEffectivelyHovered ? theme.primary.opacity(0.85) : theme.primary.opacity(0.5))
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? Color.white.opacity(0.12) : theme.primarySecondary)
+                    .fill(isEffectivelyHovered ? Color.white.opacity(0.12) : theme.primarySecondary)
             case .ghost:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? theme.primary : Color.clear)
+                    .fill(isEffectivelyHovered ? theme.primary : Color.clear)
             case .tonal:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                    .fill(isHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
+                    .fill(isEffectivelyHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
             }
         }
+    }
+
+    private var isEffectivelyHovered: Bool {
+        (isHovered || isSyntheticHovered) && !isDisabled
     }
 
     private var border: some View {
@@ -177,13 +190,13 @@ public struct AppButton: View {
             case .secondary:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .stroke(
-                        isHovered ? Color.white.opacity(0.20) : Color.white.opacity(0.12),
+                        isEffectivelyHovered ? Color.white.opacity(0.20) : Color.white.opacity(0.12),
                         lineWidth: 1
                     )
             case .ghost:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .stroke(
-                        isHovered ? theme.primary.opacity(0.45) : theme.primary.opacity(0.25),
+                        isEffectivelyHovered ? theme.primary.opacity(0.45) : theme.primary.opacity(0.25),
                         lineWidth: 1
                     )
             default:
@@ -191,6 +204,74 @@ public struct AppButton: View {
             }
         }
     }
+}
+
+private struct InlinePreviewSyntheticHoverReader: NSViewRepresentable {
+    let onHoverChange: (Bool) -> Void
+
+    func makeNSView(context: Context) -> SyntheticHoverView {
+        let view = SyntheticHoverView()
+        view.onHoverChange = onHoverChange
+        return view
+    }
+
+    func updateNSView(_ nsView: SyntheticHoverView, context: Context) {
+        nsView.onHoverChange = onHoverChange
+    }
+}
+
+private final class SyntheticHoverView: NSView {
+    var onHoverChange: ((Bool) -> Void)?
+    private var isHovering = false
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSyntheticMouse(_:)),
+            name: .lumiInlinePreviewSyntheticMouseLocationDidChange,
+            object: nil
+        )
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported for SyntheticHoverView.")
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    @objc private func handleSyntheticMouse(_ notification: Notification) {
+        guard let window, notification.object as? NSWindow === window else {
+            updateHover(false)
+            return
+        }
+        guard notification.userInfo?["inside"] as? Bool == true,
+              let value = notification.userInfo?["location"] as? NSValue else {
+            updateHover(false)
+            return
+        }
+
+        let point = convert(value.pointValue, from: nil)
+        updateHover(bounds.contains(point))
+    }
+
+    private func updateHover(_ hovering: Bool) {
+        guard isHovering != hovering else { return }
+        isHovering = hovering
+        onHoverChange?(hovering)
+    }
+}
+
+private extension Notification.Name {
+    static let lumiInlinePreviewSyntheticMouseLocationDidChange =
+        Notification.Name("com.coffic.lumi.inline-preview.syntheticMouseLocationDidChange")
 }
 
 #Preview {
