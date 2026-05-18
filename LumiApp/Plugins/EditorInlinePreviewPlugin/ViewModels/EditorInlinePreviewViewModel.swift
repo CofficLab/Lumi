@@ -123,19 +123,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
 
     // MARK: - 已发布状态
 
-    @Published private(set) var currentFrame: LumiInlinePreviewFacade.IOSurfaceFrame? {
-        didSet {
-            if let frame = currentFrame {
-                if Self.verbose {
-                                    Self.logger.info("\(self.t)✅ 已设置 currentFrame：surfaceID=\(frame.surfaceID) seq=\(frame.seq) \(frame.width)×\(frame.height) @\(String(format: "%.1fx", frame.scale))")
-                }
-            } else {
-                if Self.verbose {
-                                    Self.logger.info("\(self.t)⚠️ currentFrame 设为 nil")
-                }
-            }
-        }
-    }
+    @Published private(set) var currentFrame: LumiInlinePreviewFacade.IOSurfaceFrame?
     @Published private(set) var canvasSize: CGSize = .zero {
         didSet {
             let oldStr = "\(oldValue.width)×\(oldValue.height)"
@@ -737,13 +725,8 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         session.onFrame = { [weak self] frame in
             Task { @MainActor in
                 guard let self else { return }
-                let previousSeq = self.lastFrameSeq
                 self.lastFrameSeq = frame.seq
                 self.receivedFrameCount &+= 1
-                if Self.verbose {
-                    let previous = previousSeq.map(String.init) ?? "nil"
-                    Self.logger.info("\(Self.t)🎞 收到帧 #\(self.receivedFrameCount, privacy: .public)：seq=\(frame.seq, privacy: .public) prev=\(previous, privacy: .public) surfaceID=\(frame.surfaceID, privacy: .public) \(frame.width, privacy: .public)×\(frame.height, privacy: .public) @\(String(format: "%.1f", frame.scale), privacy: .public) entry=\(self.entryStatus.description, privacy: .public)")
-                }
                 self.currentFrame = frame
             }
         }

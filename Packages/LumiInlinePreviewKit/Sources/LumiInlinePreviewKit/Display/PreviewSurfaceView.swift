@@ -255,15 +255,6 @@ public extension LumiInlinePreviewFacade {
         /// - 重复绑定同一个 surface ID 时仍然会触发一次 `setNeedsDisplay()`，
         ///   因为子进程可能用同一个 surface 写了新像素而 ID 没变。
         public func attach(surfaceID: UInt32) {
-            let curIDStr = currentSurfaceID.map { String($0) } ?? "nil"
-            let winStr = (window != nil) ? "yes" : "no"
-            let boundsStr = "\(self.bounds.width)×\(self.bounds.height)"
-            let scaleVal = window?.backingScaleFactor ?? 1
-
-            if LumiInlinePreviewFacade.verbose {
-                Self.logger.info("\(self.t)📝 attach: surfaceID=\(surfaceID) current=\(curIDStr) bounds=\(boundsStr) window=\(winStr) scale=\(scaleVal)")
-            }
-
             guard let surface = IOSurfaceLookup(IOSurfaceID(surfaceID)) else {
                 Self.logger.error("\(self.t)❌ attach failed: IOSurfaceLookup nil for surfaceID=\(surfaceID)")
                 return
@@ -271,6 +262,7 @@ public extension LumiInlinePreviewFacade {
 
             currentSurfaceID = surfaceID
             retainedSurface = surface
+            let scaleVal = window?.backingScaleFactor ?? 1
             layer?.contentsScale = scaleVal
 
             let surfaceWidth = IOSurfaceGetWidth(surface)
@@ -279,11 +271,6 @@ public extension LumiInlinePreviewFacade {
             let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
             if let cgImage {
                 layer?.contents = cgImage
-                if LumiInlinePreviewFacade.verbose {
-                    let logicalWidth = CGFloat(surfaceWidth) / scaleVal
-                    let logicalHeight = CGFloat(surfaceHeight) / scaleVal
-                    Self.logger.info("\(self.t)✅ attach rendered: \(surfaceWidth)×\(surfaceHeight) px → \(String(format: "%.0f", logicalWidth))×\(String(format: "%.0f", logicalHeight)) pt @\(String(format: "%.1f", scaleVal))x")
-                }
             } else {
                 Self.logger.error("\(self.t)❌ attach failed: CGImage creation failed for surfaceID=\(surfaceID) size=\(surfaceWidth)×\(surfaceHeight)")
             }

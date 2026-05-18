@@ -223,7 +223,6 @@ final class HotPreviewRenderer {
         view.displayIfNeeded()
 
         let pointBounds = view.bounds
-        diagnostic("snapshot begin seqNext=\(seq + 1) view=\(describe(view)) fitting=\(format(view.fittingSize)) intrinsic=\(format(view.intrinsicContentSize)) window=\(describe(window)) pointSize=\(format(pointSize)) scale=\(format(scale))")
         guard pointBounds.width > 0, pointBounds.height > 0 else { return nil }
 
         let pixelWidth = max(1, Int((pointBounds.width * scale).rounded()))
@@ -275,8 +274,6 @@ final class HotPreviewRenderer {
         guard let cgImage = bitmap.cgImage else { return nil }
 
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
-        let surfaceStats = sampleSurface(surface: surface, width: pixelWidth, height: pixelHeight)
-        diagnostic("snapshot surface seqNext=\(seq + 1) pixels=\(pixelWidth)x\(pixelHeight) stats=\(surfaceStats)")
 
         retain(surface, byteCount: bytesPerRow * pixelHeight)
         seq &+= 1
@@ -428,41 +425,5 @@ final class HotPreviewRenderer {
 
     private func format(_ value: CGFloat) -> String {
         String(format: "%.2f", value)
-    }
-
-    private func sampleSurface(surface: IOSurfaceRef, width: Int, height: Int) -> String {
-        guard width > 0, height > 0 else { return "empty-size" }
-
-        let baseAddress = IOSurfaceGetBaseAddress(surface)
-        let bytesPerRow = IOSurfaceGetBytesPerRow(surface)
-        let maxSamples = 4096
-        let pixelCount = width * height
-        let stride = max(1, pixelCount / maxSamples)
-        let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
-        var sampled = 0
-        var nonZeroAlpha = 0
-        var nonZeroColor = 0
-        var totalAlpha = 0
-
-        var pixelIndex = 0
-        while pixelIndex < pixelCount {
-            let x = pixelIndex % width
-            let y = pixelIndex / width
-            let offset = y * bytesPerRow + x * 4
-            let b = Int(bytes[offset])
-            let g = Int(bytes[offset + 1])
-            let r = Int(bytes[offset + 2])
-            let a = Int(bytes[offset + 3])
-            if a > 0 { nonZeroAlpha += 1 }
-            if r > 0 || g > 0 || b > 0 { nonZeroColor += 1 }
-            totalAlpha += a
-            sampled += 1
-            pixelIndex += stride
-        }
-
-        let alphaRatio = sampled > 0 ? Double(nonZeroAlpha) / Double(sampled) : 0
-        let colorRatio = sampled > 0 ? Double(nonZeroColor) / Double(sampled) : 0
-        let averageAlpha = sampled > 0 ? Double(totalAlpha) / Double(sampled) : 0
-        return "sampled=\(sampled) alphaPixels=\(nonZeroAlpha) (\(String(format: "%.3f", alphaRatio))) colorPixels=\(nonZeroColor) (\(String(format: "%.3f", colorRatio))) avgAlpha=\(String(format: "%.1f", averageAlpha)) bytesPerRow=\(bytesPerRow)"
     }
 }

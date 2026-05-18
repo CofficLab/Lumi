@@ -54,9 +54,6 @@ public extension LumiInlinePreviewFacade {
         public func updateNSView(_ nsView: PreviewSurfaceView, context: Context) {
             // 去重：surfaceID 和 isInteractive 都没变化时跳过 configure
             let unchanged = surfaceID == nsView.currentSurfaceID && isInteractive == nsView.isInteractive
-            if LumiInlinePreviewFacade.verbose {
-                Self.logger.info("\(self.t)🔄 updateNSView: incoming=\(surfaceID.map { String($0) } ?? "nil") current=\(nsView.currentSurfaceID.map { String($0) } ?? "nil") interactive=\(isInteractive) unchanged=\(unchanged)")
-            }
             guard !unchanged else { return }
             configure(nsView)
         }
@@ -67,14 +64,8 @@ public extension LumiInlinePreviewFacade {
             nsView.isInteractive = isInteractive
             nsView.setCursorShape(cursorShape)
             if let surfaceID {
-                if LumiInlinePreviewFacade.verbose {
-                    Self.logger.info("\(self.t)📝 configure attach: surfaceID=\(surfaceID) frame=\(nsView.frame.width)×\(nsView.frame.height) bounds=\(nsView.bounds.width)×\(nsView.bounds.height) window=\(nsView.window != nil ? "yes" : "no") hidden=\(nsView.isHidden) alpha=\(String(format: "%.2f", nsView.alphaValue))")
-                }
                 nsView.attach(surfaceID: surfaceID)
             } else {
-                if LumiInlinePreviewFacade.verbose {
-                    Self.logger.info("\(self.t)📝 configure detach: currentSurfaceID=\(nsView.currentSurfaceID.map { String($0) } ?? "nil")")
-                }
                 nsView.detach()
             }
         }
