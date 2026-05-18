@@ -162,6 +162,33 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         NotificationCenter.postApplicationDidResignActive()
     }
 
+    // MARK: - Dock Menu
+
+    /// 提供 Dock 右键菜单
+    ///
+    /// 当用户右键点击 Dock 图标时显示的菜单。
+    /// 添加"新建窗口"选项，类似 VS Code 的行为。
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        let menu = NSMenu()
+        let newItem = NSMenuItem(
+            title: "新建窗口",
+            action: #selector(openNewWindowFromDock),
+            keyEquivalent: "n"
+        )
+        newItem.keyEquivalentModifierMask = [.command, .shift]
+        menu.addItem(newItem)
+        return menu
+    }
+
+    /// 从 Dock 菜单打开新窗口
+    @objc private func openNewWindowFromDock() {
+        NotificationCenter.default.post(
+            name: .openWindowWithRoute,
+            object: nil,
+            userInfo: ["route": LumiWindowRoute()]
+        )
+    }
+
     // MARK: - Open Files/Folders
 
     /// 处理打开文件/文件夹请求
