@@ -34,7 +34,7 @@ final class TaskItem: @unchecked Sendable {
     /// 任务状态枚举
     enum TaskStatus: String, Codable {
         case pending
-        case inProgress
+        case inProgress = "in_progress"
         case completed
         case skipped
     }
