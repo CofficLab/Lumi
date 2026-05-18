@@ -458,7 +458,7 @@ final class BuildPlanner: Sendable {
             .resolvingSymlinksInPath()
     }
 
-    fileprivate static func swiftSourceFiles(in roots: [URL], excluding excludedRoots: [URL] = []) -> [URL] {
+    static func swiftSourceFiles(in roots: [URL], excluding excludedRoots: [URL] = []) -> [URL] {
         var files: Set<URL> = []
         let fileManager = FileManager.default
         let excludedPaths = excludedRoots
@@ -491,7 +491,13 @@ final class BuildPlanner: Sendable {
 
             for case let fileURL as URL in enumerator {
                 if isExcluded(fileURL, by: excludedPaths) {
-                    enumerator.skipDescendants()
+                    // Only call skipDescendants() for directories.
+                    // Calling it on a regular file can cause the enumerator
+                    // to skip subsequent sibling directories on macOS.
+                    let values = try? fileURL.resourceValues(forKeys: [.isDirectoryKey])
+                    if values?.isDirectory == true {
+                        enumerator.skipDescendants()
+                    }
                     continue
                 }
 
@@ -509,7 +515,7 @@ final class BuildPlanner: Sendable {
         return files.sorted { $0.path < $1.path }
     }
 
-    fileprivate static func isExcluded(_ url: URL, by excludedPaths: [String]) -> Bool {
+    static func isExcluded(_ url: URL, by excludedPaths: [String]) -> Bool {
         let path = url.standardizedFileURL.resolvingSymlinksInPath().path
         return excludedPaths.contains { excludedPath in
             path == excludedPath || path.hasPrefix(excludedPath + "/")

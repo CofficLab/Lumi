@@ -651,6 +651,183 @@ struct BuildPlannerTests {
         """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: .utf8)
     }
 
+    // MARK: - skipDescendants 回归测试
+
+    @Test("排除普通文件时 skipDescendants 不应影响同级目录遍历")
+    func excludingRegularFileShouldNotSkipSiblingDirectories() throws {
+        // 直接验证：当 excludedPaths 指向一个普通文件（Info.plist）时，
+        // 遍历仍应收集到字母序排在其后的目录（Plugins/）中的 Swift 文件。
+        //
+        // 此测试验证 swiftSourceFiles(in:excluding:) 的核心行为——
+        // 对普通文件不应调用 skipDescendants()，因为在 macOS 上
+        // skipDescendants() 对文件调用会产生副作用，导致后续同级目录被跳过。
+        //
+        // 目录结构（模拟 Lumi 项目）：
+        //   root/
+        //     Core/
+        //       Bootstrap/
+        //         AutomationController.swift
+        //     Info.plist              ← 排除项
+        //     Plugins/
+        //       EditorPanelPlugin.swift
+
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-SkipDescendants-\(UUID().uuidString)", isDirectory: true)
+        let coreBootstrap = rootDirectory.appendingPathComponent("Core/Bootstrap", isDirectory: true)
+        let pluginsDirectory = rootDirectory.appendingPathComponent("Plugins", isDirectory: true)
+
+        let automationFile = coreBootstrap.appendingPathComponent("AutomationController.swift")
+        let editorPluginFile = pluginsDirectory.appendingPathComponent("EditorPanelPlugin.swift")
+        let infoPlist = rootDirectory.appendingPathComponent("Info.plist")
+
+        try FileManager.default.createDirectory(at: coreBootstrap, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: pluginsDirectory, withIntermediateDirectories: true)
+        try "struct AutomationController {}\n".write(to: automationFile, atomically: true, encoding: .utf8)
+        try "struct EditorPlugin {}\n".write(to: editorPluginFile, atomically: true, encoding: .utf8)
+        try "<plist/>".write(to: infoPlist, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        let root = rootDirectory.standardizedFileURL.resolvingSymlinksInPath()
+        let excluded = [infoPlist.standardizedFileURL.resolvingSymlinksInPath()]
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            in: [root],
+            excluding: excluded
+        )
+
+        let names = Set(sources.map { $0.lastPathComponent })
+        #expect(names.contains("AutomationController.swift"),
+                "Core/Bootstrap/AutomationController.swift should be collected")
+        #expect(names.contains("EditorPanelPlugin.swift"),
+                "Plugins/EditorPanelPlugin.swift should be collected even though Info.plist (excluded regular file) precedes it alphabetically")
+        #expect(sources.count == 2)
+    }
+
+    @Test("Xcode synchronized group 排除普通文件时收集所有子目录源码")
+    func xcodeSyncedGroupExcludingPlainFileCollectsAllSubdirectories() throws {
+        // 端到端测试：通过 Xcode 项目结构验证排除普通文件后仍能收集所有子目录
+        //   APP/
+        //     Core/
+        //       AutomationController.swift  (引用 EditorPlugin)
+        //     Info.plist                    ← 排除项
+        //     Plugins/
+        //       EditorPanelPlugin.swift     (定义 EditorPlugin)
+
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-XcodeSyncSkip-\(UUID().uuidString)", isDirectory: true)
+        let projectURL = rootDirectory.appendingPathComponent("SyncedApp.xcodeproj", isDirectory: true)
+        let appDirectory = rootDirectory.appendingPathComponent("APP", isDirectory: true)
+        let coreDirectory = appDirectory.appendingPathComponent("Core", isDirectory: true)
+        let pluginsDirectory = appDirectory.appendingPathComponent("Plugins", isDirectory: true)
+
+        let automationFile = coreDirectory.appendingPathComponent("AutomationController.swift")
+        let editorPluginFile = pluginsDirectory.appendingPathComponent("EditorPanelPlugin.swift")
+        let infoPlist = appDirectory.appendingPathComponent("Info.plist")
+
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: coreDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: pluginsDirectory, withIntermediateDirectories: true)
+        try "import Foundation\nstruct AutomationController { let icon = EditorPlugin.iconName }\n"
+            .write(to: automationFile, atomically: true, encoding: .utf8)
+        try "import Foundation\nstruct EditorPlugin { static let iconName = \"editor\" }\n"
+            .write(to: editorPluginFile, atomically: true, encoding: .utf8)
+        try "<plist/>".write(to: infoPlist, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        try """
+        // !$*UTF8*$!
+        {
+        \tarchiveVersion = 1;
+        \tclasses = {};
+        \tobjectVersion = 77;
+        \tobjects = {
+        \t\t000000000000000000000001 = {
+        \t\t\tisa = PBXNativeTarget;
+        \t\t\tbuildPhases = ();
+        \t\t\tfileSystemSynchronizedGroups = (
+        \t\t\t\t000000000000000000000002,
+        \t\t\t);
+        \t\t\tname = SyncedApp;
+        \t\t};
+        \t\t000000000000000000000002 /* APP */ = {
+        \t\t\tisa = PBXFileSystemSynchronizedRootGroup;
+        \t\t\texceptions = (
+        \t\t\t\t000000000000000000000003,
+        \t\t\t);
+        \t\t\tpath = APP;
+        \t\t\tsourceTree = "<group>";
+        \t\t};
+        \t\t000000000000000000000003 = {
+        \t\t\tisa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+        \t\t\tmembershipExceptions = (
+        \t\t\t\tInfo.plist,
+        \t\t\t);
+        \t\t\ttarget = 000000000000000000000001;
+        \t\t};
+        \t};
+        \trootObject = 000000000000000000000001;
+        }
+        """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: .utf8)
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            projectURL: projectURL,
+            scheme: "SyncedApp",
+            containing: automationFile
+        )
+
+        let names = Set(sources.map { $0.lastPathComponent })
+        #expect(names.contains("AutomationController.swift"),
+                "Core/AutomationController.swift should be collected")
+        #expect(names.contains("EditorPanelPlugin.swift"),
+                "Plugins/EditorPanelPlugin.swift must be collected")
+        #expect(sources.count == 2)
+    }
+
+    @Test("排除目录时仍然正确调用 skipDescendants")
+    func excludingDirectoryShouldStillSkipDescendants() throws {
+        // 验证修复后，排除目录时 skipDescendants 仍然生效
+        // 使用 swiftSourceFiles(in:excluding:) 直接验证，
+        // 不走 Xcode 项目路径（augmentedXcodeSources 会绕过排除列表）
+        //
+        //   APP/
+        //     A.swift
+        //     Excluded/
+        //       ignored.swift
+        //     Kept/
+        //       B.swift
+
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-SkipDir-\(UUID().uuidString)", isDirectory: true)
+        let appDirectory = rootDirectory.appendingPathComponent("APP", isDirectory: true)
+        let excludedDirectory = appDirectory.appendingPathComponent("Excluded", isDirectory: true)
+        let keptDirectory = appDirectory.appendingPathComponent("Kept", isDirectory: true)
+
+        let fileA = appDirectory.appendingPathComponent("A.swift")
+        let ignoredFile = excludedDirectory.appendingPathComponent("ignored.swift")
+        let fileB = keptDirectory.appendingPathComponent("B.swift")
+
+        try FileManager.default.createDirectory(at: excludedDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: keptDirectory, withIntermediateDirectories: true)
+        try "struct A {}\n".write(to: fileA, atomically: true, encoding: .utf8)
+        try "struct Ignored {}\n".write(to: ignoredFile, atomically: true, encoding: .utf8)
+        try "struct B {}\n".write(to: fileB, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        let root = appDirectory.standardizedFileURL.resolvingSymlinksInPath()
+        let excluded = [excludedDirectory.standardizedFileURL.resolvingSymlinksInPath()]
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            in: [root],
+            excluding: excluded
+        )
+
+        let names = Set(sources.map { $0.lastPathComponent })
+        #expect(names.contains("A.swift"), "A.swift should be collected")
+        #expect(names.contains("B.swift"), "Kept/B.swift should be collected")
+        #expect(!names.contains("ignored.swift"), "Excluded/ignored.swift should NOT be collected")
+        #expect(sources.count == 2)
+    }
+
     @Test("5.4 bare directory without Package.swift returns nil")
     func bareDirectoryWithoutPackageReturnsNil() throws {
         let directory = try TemporaryProjectFixtures.makeTemporaryDirectory()
