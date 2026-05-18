@@ -106,7 +106,6 @@ final class HotPreviewRenderer {
     func resize(width: Int, height: Int, scale: CGFloat) {
         let pointWidth = max(1, CGFloat(width) / max(scale, 1))
         let pointHeight = max(1, CGFloat(height) / max(scale, 1))
-        diagnostic("resize request pixels=\(width)x\(height) scale=\(format(scale)) oldPointSize=\(format(pointSize)) previewBefore=\(describe(previewView)) windowBefore=\(describe(window))")
         pointSize = CGSize(width: pointWidth, height: pointHeight)
         self.scale = max(scale, 1)
         let frame = NSRect(x: 0, y: 0, width: pointWidth, height: pointHeight)
