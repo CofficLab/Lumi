@@ -4,15 +4,21 @@ import SwiftUI
 
 /// 对话列表视图
 /// 使用分页方式渲染会话列表，避免一次性加载全部历史记录
+///
+/// 支持多窗口模式，优先从 WindowState 获取和设置当前窗口的会话选择。
 struct ConversationListView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "🐶"
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
-    /// 会话管理 ViewModel
+    
+    /// 窗口级状态（多窗口支持）
+    @Environment(\.windowState) private var windowState
+    
+    /// 会话管理 ViewModel（全局）
     @EnvironmentObject var conversationVM: ConversationVM
     
-    /// 项目管理 ViewModel
+    /// 项目管理 ViewModel（全局）
     @EnvironmentObject var projectVM: ProjectVM
     
     private let selectionStore = ConversationListLocalStore.shared
@@ -124,13 +130,24 @@ extension ConversationListView {
 // MARK: - Action
 
 extension ConversationListView {
+    /// 获取当前选中的会话 ID（优先从 WindowState 获取）
+    private var currentSelectedConversationId: UUID? {
+        // 优先使用窗口级状态
+        if let windowState = windowState,
+           let conversationId = windowState.selectedConversationId {
+            return conversationId
+        }
+        // 回退到全局 VM
+        return conversationVM.selectedConversationId
+    }
+    
     /// 同步 VM 的选中状态到本地 List
     /// 在分页加载后调用，确保 List 的选中状态与 VM 一致
     private func syncSelectionFromViewModel() {
-        let vmId = conversationVM.selectedConversationId
+        let selectedId = currentSelectedConversationId
 
-        // 如果 VM 有选中的会话，同步到本地
-        if let selectedId = vmId {
+        // 如果有选中的会话，同步到本地
+        if let selectedId = selectedId {
             // 检查选中的会话是否存在于当前列表中
             if conversations.first(where: { $0.id == selectedId }) != nil {
                 if localSelectedConversationId != selectedId {
@@ -146,7 +163,7 @@ extension ConversationListView {
                 localSelectedConversationId = nil
             }
         } else {
-            // VM 没有选中会话，清除本地选择
+            // 没有选中会话，清除本地选择
             if localSelectedConversationId != nil {
                 localSelectedConversationId = nil
             }
@@ -361,10 +378,11 @@ extension ConversationListView {
         }
     }
 
-    /// 处理选择变化：同步到 ConversationVM
+    /// 处理选择变化：同步到 ConversationVM 和 WindowState
     func handleLocalSelectionChange() {
         // 只在值确实不同时才更新，避免循环
-        guard localSelectedConversationId != conversationVM.selectedConversationId else {
+        let currentSelected = currentSelectedConversationId
+        guard localSelectedConversationId != currentSelected else {
             return
         }
 
@@ -374,6 +392,11 @@ extension ConversationListView {
                                     ConversationListPlugin.logger.info("\(self.t)👉 [\(newId)] 从 List 选择会话")
                 }
             }
+            
+            // 同步到窗口级状态
+            windowState?.switchToConversation(newId)
+            
+            // 同步到全局 VM（向后兼容）
             self.conversationVM.setSelectedConversation(newId)
             
             // 选择会话时，切换到关联的项目
@@ -386,6 +409,11 @@ extension ConversationListView {
                                     ConversationListPlugin.logger.info("\(self.t)👉 清除会话选择")
                 }
             }
+            
+            // 同步到窗口级状态
+            windowState?.switchToConversation(nil)
+            
+            // 同步到全局 VM（向后兼容）
             self.conversationVM.setSelectedConversation(nil)
         }
     }

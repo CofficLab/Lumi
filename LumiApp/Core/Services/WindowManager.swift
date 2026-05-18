@@ -109,6 +109,22 @@ final class WindowManager: ObservableObject, SuperLog {
         return getWindowState(id)
     }
 
+    /// 查找已打开指定项目的窗口
+    ///
+    /// - Parameter projectPath: 项目路径
+    /// - Returns: 窗口 ID，如果未找到返回 nil
+    func findWindow(withProject projectPath: String) -> UUID? {
+        windowStates.first { $0.projectPath == projectPath }?.id
+    }
+
+    /// 查找已打开指定会话的窗口
+    ///
+    /// - Parameter conversationId: 会话 ID
+    /// - Returns: 窗口 ID，如果未找到返回 nil
+    func findWindow(withConversation conversationId: UUID) -> UUID? {
+        windowStates.first { $0.selectedConversationId == conversationId }?.id
+    }
+
     // MARK: - Window Operations
 
     /// 根据 ID 查找关联的 NSWindow
@@ -226,6 +242,37 @@ final class WindowManager: ObservableObject, SuperLog {
         // 应用重新激活时，确保有活跃窗口
         if activeWindowId == nil, let firstWindow = windowStates.first {
             setActiveWindow(firstWindow.id)
+        }
+    }
+
+    // MARK: - Window State Persistence
+
+    /// 保存当前所有窗口的状态
+    ///
+    /// 在应用即将终止时调用，保存所有窗口的状态快照。
+    func saveWindowStates() {
+        let snapshots = windowStates.map { $0.snapshot() }
+        AppSettingStore.saveWindowStates(snapshots)
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)💾 保存 \(snapshots.count) 个窗口状态")
+        }
+    }
+
+    /// 恢复保存的窗口状态
+    ///
+    /// 在应用启动时调用，恢复上次保存的窗口状态。
+    /// 返回需要恢复的窗口路由列表。
+    func loadSavedWindowStates() -> [LumiWindowRoute] {
+        let snapshots = AppSettingStore.loadWindowStates()
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)📂 加载 \(snapshots.count) 个保存的窗口状态")
+        }
+        return snapshots.map { snapshot in
+            LumiWindowRoute(
+                id: snapshot.windowId,
+                conversationId: snapshot.conversationId,
+                projectPath: snapshot.projectPath
+            )
         }
     }
 

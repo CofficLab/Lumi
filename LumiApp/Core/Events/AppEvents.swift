@@ -36,6 +36,14 @@ extension Notification.Name {
     /// 文件拖放到聊天框的通知
     /// userInfo: ["fileURL": URL]
     static let fileDroppedToChat = Notification.Name("fileDroppedToChat")
+
+    /// 请求使用指定路由打开新窗口
+    /// userInfo: ["route": LumiWindowRoute]
+    static let openWindowWithRoute = Notification.Name("openWindowWithRoute")
+
+    /// 请求在当前活跃窗口的编辑器中打开文件
+    /// userInfo: ["url": URL]
+    static let openFileInEditor = Notification.Name("openFileInEditor")
 }
 
 // MARK: - NotificationCenter Extension

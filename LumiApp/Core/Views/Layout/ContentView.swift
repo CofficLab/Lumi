@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import MagicKit
 import SwiftUI
 
@@ -6,6 +7,13 @@ import SwiftUI
 ///
 /// 布局完全由各插件自行决定，核心只提供活动栏 + 面板内容区。
 /// 不再有全局右侧栏，右侧栏由各插件在自己的面板视图内自行管理。
+///
+/// ## 多窗口状态同步
+///
+/// ContentView 负责同步 WindowState（窗口级）与全局 VM（应用级）的状态：
+/// - 窗口创建时：从全局 VM 或 route 参数初始化 WindowState
+/// - 窗口活跃时：WindowState 变更会同步回全局 VM
+/// - 全局 VM 变更时：如果当前窗口是活跃窗口，会同步到 WindowState
 struct ContentView: View, SuperLog {
     nonisolated static let emoji = "📱"
     nonisolated static let verbose: Bool = false
@@ -14,12 +22,17 @@ struct ContentView: View, SuperLog {
     @EnvironmentObject var themeVM: ThemeVM
     @EnvironmentObject var providerRegistry: LLMProviderRegistry
     @EnvironmentObject var layoutVM: LayoutVM
+    @EnvironmentObject var conversationVM: ConversationVM
+    @EnvironmentObject var projectVM: ProjectVM
 
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
 
     /// 窗口级状态（每个窗口独立）
     @StateObject private var windowState: WindowState
+
+    /// 用于取消订阅
+    @State private var syncCancellables = Set<AnyCancellable>()
 
     /// 默认侧边栏可见性
     var defaultSidebarVisibility: Bool?
@@ -289,7 +302,157 @@ extension ContentView {
             windowState.sidebarVisibility = defaultSidebarVisibility
         }
 
+        // 初始化窗口状态：从全局 VM 或 route 参数同步
+        initializeWindowState()
+
+        // 设置双向状态同步
+        setupStateSync()
+
+        // 设置标题同步
         setupWindowTitleObserver()
+    }
+
+    /// 初始化窗口状态
+    ///
+    /// 如果 route 提供了初始参数，使用 route 参数；
+    /// 否则从全局 VM 获取当前状态（仅在第一个窗口时）。
+    private func initializeWindowState() {
+        // 如果 route 提供了初始会话或项目，已经在 WindowState init 中处理
+        if initialConversationId != nil || initialProjectPath != nil {
+            if Self.verbose {
+                AppLogger.core.info("\(Self.t)🪟 窗口 \(windowState.id.uuidString.prefix(8)) 使用 route 初始参数")
+            }
+            return
+        }
+
+        // 否则，如果是第一个窗口，从全局 VM 同步当前状态
+        let isFirstWindow = WindowManager.shared.windowStates.count <= 1
+        if isFirstWindow {
+            // 同步当前会话
+            if let currentConversationId = conversationVM.selectedConversationId {
+                windowState.selectedConversationId = currentConversationId
+                if Self.verbose {
+                    AppLogger.core.info("\(Self.t)🪟 窗口 \(windowState.id.uuidString.prefix(8)) 从全局 VM 同步会话: \(currentConversationId.uuidString.prefix(8))")
+                }
+            }
+
+            // 同步当前项目
+            if let currentProject = projectVM.currentProject {
+                windowState.projectPath = currentProject.path
+                if Self.verbose {
+                    AppLogger.core.info("\(Self.t)🪟 窗口 \(windowState.id.uuidString.prefix(8)) 从全局 VM 同步项目: \(currentProject.name)")
+                }
+            }
+        }
+    }
+
+    /// 设置双向状态同步
+    ///
+    /// - WindowState -> 全局 VM：当窗口活跃时，WindowState 变更同步到全局 VM
+    /// - 全局 VM -> WindowState：当窗口活跃时，全局 VM 变更同步到 WindowState
+    private func setupStateSync() {
+        let windowId = windowState.id
+
+        // MARK: - WindowState -> 全局 VM
+
+        // 同步会话选择到 ConversationVM
+        windowState.$selectedConversationId
+            .receive(on: DispatchQueue.main)
+            .sink { [weak windowState] newConversationId in
+                guard let windowState = windowState else { return }
+                // 只有活跃窗口才同步到全局 VM
+                guard windowState.isActive else { return }
+
+                // 避免循环同步
+                if conversationVM.selectedConversationId != newConversationId {
+                    conversationVM.setSelectedConversation(newConversationId)
+                    if Self.verbose {
+                        AppLogger.core.info("\(Self.t)🔄 窗口 \(windowId.uuidString.prefix(8)) -> 全局会话: \(newConversationId?.uuidString.prefix(8) ?? "nil")")
+                    }
+                }
+            }
+            .store(in: &syncCancellables)
+
+        // 同步项目选择到 ProjectVM
+        windowState.$projectPath
+            .receive(on: DispatchQueue.main)
+            .sink { [weak windowState] newPath in
+                guard let windowState = windowState else { return }
+                // 只有活跃窗口才同步到全局 VM
+                guard windowState.isActive else { return }
+
+                let currentPath = projectVM.currentProject?.path
+                // 避免循环同步
+                if currentPath != newPath {
+                    if let path = newPath {
+                        let projectName = URL(fileURLWithPath: path).lastPathComponent
+                        let project = Project(name: projectName, path: path, lastUsed: Date())
+                        projectVM.switchProject(to: project)
+                    } else {
+                        projectVM.clearProject()
+                    }
+                    if Self.verbose {
+                        AppLogger.core.info("\(Self.t)🔄 窗口 \(windowId.uuidString.prefix(8)) -> 全局项目: \(newPath ?? "nil")")
+                    }
+                }
+            }
+            .store(in: &syncCancellables)
+
+        // MARK: - 全局 VM -> WindowState
+
+        // 监听全局会话变化，同步到活跃窗口
+        conversationVM.$selectedConversationId
+            .receive(on: DispatchQueue.main)
+            .sink { [weak windowState] globalConversationId in
+                guard let windowState = windowState else { return }
+                // 只有活跃窗口才接收全局变更
+                guard windowState.isActive else { return }
+
+                // 避免循环同步
+                if windowState.selectedConversationId != globalConversationId {
+                    windowState.selectedConversationId = globalConversationId
+                    if Self.verbose {
+                        AppLogger.core.info("\(Self.t)🔄 全局会话 -> 窗口 \(windowId.uuidString.prefix(8)): \(globalConversationId?.uuidString.prefix(8) ?? "nil")")
+                    }
+                }
+            }
+            .store(in: &syncCancellables)
+
+        // 监听全局项目变化，同步到活跃窗口
+        projectVM.$currentProject
+            .receive(on: DispatchQueue.main)
+            .sink { [weak windowState] globalProject in
+                guard let windowState = windowState else { return }
+                // 只有活跃窗口才接收全局变更
+                guard windowState.isActive else { return }
+
+                let newPath = globalProject?.path
+                // 避免循环同步
+                if windowState.projectPath != newPath {
+                    windowState.projectPath = newPath
+                    if Self.verbose {
+                        AppLogger.core.info("\(Self.t)🔄 全局项目 -> 窗口 \(windowId.uuidString.prefix(8)): \(newPath ?? "nil")")
+                    }
+                }
+            }
+            .store(in: &syncCancellables)
+
+        // 监听窗口活跃状态变化
+        windowState.$isActive
+            .receive(on: DispatchQueue.main)
+            .sink { [weak windowState] isActive in
+                guard let windowState = windowState else { return }
+                if isActive {
+                    // 窗口变为活跃时，立即同步全局状态到窗口
+                    if conversationVM.selectedConversationId != windowState.selectedConversationId {
+                        windowState.selectedConversationId = conversationVM.selectedConversationId
+                    }
+                    if projectVM.currentProject?.path != windowState.projectPath {
+                        windowState.projectPath = projectVM.currentProject?.path
+                    }
+                }
+            }
+            .store(in: &syncCancellables)
     }
 
     private func setupWindowTitleObserver() {
