@@ -145,24 +145,42 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
 
     @ViewBuilder
     private var entryControls: some View {
+        if viewModel.availablePreviews.count > 1 {
+            Picker(
+                String(localized: "Preview", table: "EditorInlinePreview"),
+                selection: Binding(
+                    get: { viewModel.selectedPreviewIndex },
+                    set: { viewModel.selectPreview(index: $0) }
+                )
+            ) {
+                ForEach(viewModel.availablePreviews) { preview in
+                    Text(preview.title).tag(preview.index)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .frame(maxWidth: 180)
+            .help(String(localized: "Choose which #Preview in the current Swift file to build and render.", table: "EditorInlinePreview"))
+        }
+
         Button {
             pickDylibAndLoad()
         } label: {
-            Label("Load Dylib…", systemImage: "tray.and.arrow.down.fill")
+            Label(String(localized: "Load Dylib…", table: "EditorInlinePreview"), systemImage: "tray.and.arrow.down.fill")
         }
         .buttonStyle(.borderless)
         .disabled(viewModel.status != .running)
-        .help("Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it.")
+        .help(String(localized: "Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it.", table: "EditorInlinePreview"))
 
         if isEntryActive {
             Button {
                 viewModel.unloadDylib()
             } label: {
-                Label("Reset", systemImage: "arrow.counterclockwise")
+                Label(String(localized: "Reset", table: "EditorInlinePreview"), systemImage: "arrow.counterclockwise")
             }
             .buttonStyle(.borderless)
             .disabled(viewModel.status != .running)
-            .help("Unload the user dylib.")
+            .help(String(localized: "Unload the user dylib.", table: "EditorInlinePreview"))
         }
     }
 
@@ -174,25 +192,25 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         case let .building(file):
             HStack(spacing: 4) {
                 ProgressView().controlSize(.small)
-                Text("building \(file)")
+                Text(String(localized: "building \(file)", table: "EditorInlinePreview"))
             }
             .font(.caption)
             .foregroundStyle(.orange)
             .lineLimit(1)
         case let .loading(path):
-            Text("loading \((path as NSString).lastPathComponent)")
+            Text(String(localized: "loading \((path as NSString).lastPathComponent)", table: "EditorInlinePreview"))
                 .font(.caption)
                 .foregroundStyle(.orange)
                 .lineLimit(1)
                 .truncationMode(.middle)
         case let .loaded(_, title):
-            Text("entry · \(title)")
+            Text(String(localized: "entry · \(title)", table: "EditorInlinePreview"))
                 .font(.caption)
                 .foregroundStyle(.green)
                 .lineLimit(1)
                 .truncationMode(.middle)
         case let .failed(message):
-            Text("entry failed: \(message)")
+            Text(String(localized: "entry failed: \(message)", table: "EditorInlinePreview"))
                 .font(.caption)
                 .foregroundStyle(.red)
                 .lineLimit(1)
@@ -214,8 +232,8 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = []
         panel.allowsOtherFileTypes = true
-        panel.message = "Select a preview .dylib that exports lumi_preview_make_nsview"
-        panel.prompt = "Load"
+        panel.message = String(localized: "Select a preview .dylib that exports lumi_preview_make_nsview", table: "EditorInlinePreview")
+        panel.prompt = String(localized: "Load", table: "EditorInlinePreview")
         if panel.runModal() == .OK, let url = panel.url {
             viewModel.loadDylib(at: url)
         }
@@ -228,12 +246,12 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                 Button {
                     viewModel.startSession()
                 } label: {
-                    Label("Start Stream", systemImage: "play.fill")
+                    Label(String(localized: "Start Stream", table: "EditorInlinePreview"), systemImage: "play.fill")
                 }
                 .buttonStyle(.borderless)
             case .starting:
                 Button {} label: {
-                    Label("Starting", systemImage: "hourglass")
+                    Label(String(localized: "Starting", table: "EditorInlinePreview"), systemImage: "hourglass")
                 }
                 .disabled(true)
                 .buttonStyle(.borderless)
@@ -241,12 +259,12 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                 Button {
                     viewModel.stopSession()
                 } label: {
-                    Label("Stop Stream", systemImage: "stop.fill")
+                    Label(String(localized: "Stop Stream", table: "EditorInlinePreview"), systemImage: "stop.fill")
                 }
                 .buttonStyle(.borderless)
             case .stopping:
                 Button {} label: {
-                    Label("Stopping", systemImage: "hourglass")
+                    Label(String(localized: "Stopping", table: "EditorInlinePreview"), systemImage: "hourglass")
                 }
                 .disabled(true)
                 .buttonStyle(.borderless)
@@ -260,13 +278,13 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
         case .idle:
             EmptyView()
         case .starting:
-            Text("starting").font(.caption).foregroundStyle(.orange)
+            Text(String(localized: "starting", table: "EditorInlinePreview")).font(.caption).foregroundStyle(.orange)
         case .running:
-            Text("running · \(viewModel.policy.rawValue)").font(.caption).foregroundStyle(.green)
+            Text(String(localized: "running · \(viewModel.policy.rawValue)", table: "EditorInlinePreview")).font(.caption).foregroundStyle(.green)
         case .stopping:
-            Text("stopping").font(.caption).foregroundStyle(.orange)
+            Text(String(localized: "stopping", table: "EditorInlinePreview")).font(.caption).foregroundStyle(.orange)
         case let .failed(message):
-            Text("failed: \(message)")
+            Text(String(localized: "failed: \(message)", table: "EditorInlinePreview"))
                 .font(.caption)
                 .foregroundStyle(.red)
                 .lineLimit(1)
@@ -288,7 +306,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
                     Image(systemName: "rectangle.dashed")
                         .font(.system(size: 36))
                         .foregroundStyle(.secondary)
-                    Text("Click \"Start Stream\" to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it.")
+                    Text(String(localized: "Click \"Start Stream\" to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it.", table: "EditorInlinePreview"))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)

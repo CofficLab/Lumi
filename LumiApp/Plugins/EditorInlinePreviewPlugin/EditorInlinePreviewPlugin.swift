@@ -19,8 +19,8 @@ actor EditorInlinePreviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let enable: Bool = true
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorInlinePreview"
-    static let displayName: String = "Inline Preview"
-    static let description: String = "Embedded preview powered by LumiInlinePreviewKit"
+    static let displayName: String = String(localized: "Inline Preview", table: "EditorInlinePreview")
+    static let description: String = String(localized: "Embedded preview powered by LumiInlinePreviewKit", table: "EditorInlinePreview")
     static let iconName: String = "rectangle.inset.filled"
     static var isConfigurable: Bool { false }
     static var order: Int { 84 }
@@ -34,7 +34,7 @@ actor EditorInlinePreviewPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [BottomPanelTab(
             id: "editor-bottom-inline-preview",
-            title: "Inline Preview",
+            title: String(localized: "Inline Preview", table: "EditorInlinePreview"),
             systemImage: Self.iconName,
             priority: 84
         )]
