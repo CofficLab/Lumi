@@ -30,6 +30,11 @@ extension SuperPlugin {
         return content
     }
 
+    /// 默认实现：不包裹右侧栏根视图
+    @MainActor func wrapRightSidebarRoot(_ content: AnyView, activeIcon: String?) -> AnyView {
+        content
+    }
+
     /// 默认实现：不提供工具栏前导视图
     @MainActor func addToolBarLeadingView(activeIcon: String?) -> AnyView? { nil }
 
@@ -62,6 +67,12 @@ extension SuperPlugin {
 
     /// 默认实现：不提供右侧栏 Section 视图
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] { [] }
+
+    /// 默认实现：不提供右侧栏底部工具栏项
+    @MainActor func addSidebarToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] { [] }
+
+    /// 默认实现：不提供右侧栏工具栏项的自定义按钮视图
+    @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? { nil }
 
     /// 默认实现：不提供设置视图
     @MainActor func addSettingsView() -> AnyView? { nil }

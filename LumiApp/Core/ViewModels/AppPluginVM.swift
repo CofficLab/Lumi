@@ -110,6 +110,8 @@ final class AppPluginVM: ObservableObject, SuperLog {
     private var railTabsCache: (key: String, tabs: [RailTab])?
     private var railContentViewCache: [String: AnyView] = [:]
     private var sidebarSectionsCache: (key: String, sections: [AnyView])?
+    private var sidebarToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
+    private var sidebarToolbarItemViewCache: [String: AnyView] = [:]
     private var menuBarContentViewsCache: [AnyView]?
     private var statusBarLeadingViewsCache: (key: String, views: [AnyView])?
     private var statusBarCenterViewsCache: (key: String, views: [AnyView])?
@@ -168,6 +170,8 @@ final class AppPluginVM: ObservableObject, SuperLog {
         railTabsCache = nil
         railContentViewCache.removeAll()
         sidebarSectionsCache = nil
+        sidebarToolbarItemsCache = nil
+        sidebarToolbarItemViewCache.removeAll()
         menuBarContentViewsCache = nil
         statusBarLeadingViewsCache = nil
         statusBarCenterViewsCache = nil
@@ -408,6 +412,23 @@ final class AppPluginVM: ObservableObject, SuperLog {
 
         for plugin in plugins {
             wrapped = plugin.wrapRoot(wrapped)
+        }
+
+        return wrapped
+    }
+
+    /// 获取右侧栏根视图包裹
+    ///
+    /// 将所有启用插件提供的右侧栏包装器依次应用于右侧栏内容。
+    /// 用于右侧栏范围内的拖放检测、浮层提示等局部能力。
+    func getRightSidebarRootWrapper<Content: View>(
+        activeIcon: String?,
+        @ViewBuilder content: () -> Content
+    ) -> AnyView {
+        var wrapped: AnyView = AnyView(content())
+
+        for plugin in plugins where isPluginEnabled(plugin) {
+            wrapped = plugin.wrapRightSidebarRoot(wrapped, activeIcon: activeIcon)
         }
 
         return wrapped
@@ -668,6 +689,48 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// 当前是否有右侧栏 Section 视图
     func hasSidebars() -> Bool {
         !getSidebarSections().isEmpty
+    }
+
+    // MARK: - Sidebar Toolbar Items
+
+    /// 聚合所有插件提供的右侧栏底部工具栏项
+    ///
+    /// 收集所有启用插件通过 `addSidebarToolbarItems()` 提供的工具栏项，
+    /// 按 `priority` 升序排列（数字越小越靠左）。
+    func getSidebarToolbarItems() -> [SidebarToolbarItem] {
+        let activeIcon = activePanelIcon
+        let key = activeIconCacheKey()
+        if let cached = sidebarToolbarItemsCache, cached.key == key {
+            return cached.items
+        }
+        let items = plugins
+            .filter { isPluginEnabled($0) }
+            .flatMap { $0.addSidebarToolbarItems(activeIcon: activeIcon) }
+            .sorted { $0.priority < $1.priority }
+        sidebarToolbarItemsCache = (key, items)
+        return items
+    }
+
+    /// 获取指定右侧栏工具栏项对应的自定义按钮视图
+    func getSidebarToolbarItemView(itemId: String) -> AnyView? {
+        let activeIcon = activePanelIcon
+        let key = activeIconCacheKey(itemId)
+        if let cached = sidebarToolbarItemViewCache[key] {
+            return cached
+        }
+        let view = plugins
+            .filter { isPluginEnabled($0) }
+            .compactMap { $0.addSidebarToolbarItemView(itemId: itemId, activeIcon: activeIcon) }
+            .first
+        if let view {
+            sidebarToolbarItemViewCache[key] = view
+        }
+        return view
+    }
+
+    /// 当前是否有右侧栏工具栏项
+    func hasSidebarToolbarItems() -> Bool {
+        !getSidebarToolbarItems().isEmpty
     }
 
     /// 获取所有插件提供的菜单栏弹窗视图
