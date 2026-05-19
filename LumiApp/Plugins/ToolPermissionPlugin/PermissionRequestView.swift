@@ -29,7 +29,7 @@ extension PermissionRequestView {
     }
 
     private func permissionCard(for request: PermissionRequest) -> some View {
-        GlassCard {
+        AppCard {
             VStack(spacing: 16) {
                 headerView(for: request)
                 contentView(for: request)

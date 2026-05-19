@@ -6,7 +6,7 @@ struct MenuBarSettingsView: View {
     @StateObject private var service = MenuBarManagerService.shared
     
     var body: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 20) {
                 // Header
                 HStack {

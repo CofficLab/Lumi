@@ -33,7 +33,7 @@ struct TextActionsSettingsView: View {
 
 extension TextActionsSettingsView {
     private var generalSettingsCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text(String(localized: "General Settings", table: "TextActions"))
                     .font(.system(size: 20, weight: .semibold))
@@ -71,7 +71,7 @@ extension TextActionsSettingsView {
     }
 
     private var supportedActionsCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text(String(localized: "Supported Actions", table: "TextActions"))
                     .font(.system(size: 20, weight: .semibold))

@@ -230,7 +230,7 @@ extension View {
     ScrollView(.vertical) {
         VStack(spacing: 24) {
             ForEach(Themes.Variant.allCases, id: \.self) { variant in
-                GlassCard {
+                AppCard {
                     HStack {
                         // 使用每个主题的特定颜色
                         ZStack {

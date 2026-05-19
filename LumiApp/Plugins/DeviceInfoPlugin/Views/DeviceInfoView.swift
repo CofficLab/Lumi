@@ -12,7 +12,7 @@ struct DeviceInfoView: View {
                 // Section 1: Overview
                 VStack(spacing: 16) {
                     // Header
-                    GlassCard(cornerRadius: 20, padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
+                    AppCard(cornerRadius: 20, padding: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)) {
                         HStack(spacing: 16) {
                             ZStack {
                                 Circle()
@@ -163,7 +163,7 @@ struct DeviceInfoCard<Content: View>: View {
     }
 
     var body: some View {
-        GlassCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+        AppCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label {

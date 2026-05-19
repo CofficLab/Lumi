@@ -29,7 +29,7 @@ struct ThemeSettingView: View {
     // MARK: - Header Card
 
     private var headerCard: some View {
-        GlassCard {
+        AppCard {
             GlassSectionHeader(
                 icon: "paintbrush.fill",
                 title: "主题风格",
@@ -41,7 +41,7 @@ struct ThemeSettingView: View {
     // MARK: - Theme Selector Card
 
     private var themeSelectorCard: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "swatchpalette",

@@ -206,7 +206,7 @@ struct HostAddView: View {
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             
-            GlassCard {
+            AppCard {
                 VStack(alignment: .leading, spacing: 8) {
                     GlassTextField(title: "IP Address", text: $ip, placeholder: "127.0.0.1")
                     if showIPError {

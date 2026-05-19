@@ -40,7 +40,7 @@ struct GeneralSettingView: View {
     // MARK: - Header Card
 
     private var headerCard: some View {
-        GlassCard {
+        AppCard {
             GlassSectionHeader(
                 icon: "gearshape.2",
                 title: "通用设置",
@@ -52,7 +52,7 @@ struct GeneralSettingView: View {
     // MARK: - 启动选项
 
     private var startupSection: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "power",
@@ -118,7 +118,7 @@ struct GeneralSettingView: View {
     // MARK: - Onboarding
 
     private var onboardingSection: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "graduationcap",
@@ -142,7 +142,7 @@ struct GeneralSettingView: View {
     // MARK: - Support
 
     private var supportSection: some View {
-        GlassCard {
+        AppCard {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "lifepreserver",

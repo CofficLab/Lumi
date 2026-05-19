@@ -3,6 +3,7 @@ import LumiUI
 
 typealias AppButton = LumiUI.AppButton
 typealias AppAvatar = LumiUI.AppAvatar
+typealias AppCard<Content: View> = LumiUI.AppCard<Content>
 typealias AppImageThumbnail = LumiUI.AppImageThumbnail
 typealias AppContextMenuRow = LumiUI.AppContextMenuRow
 typealias CopyMessageButton = LumiUI.CopyMessageButton
@@ -28,7 +29,6 @@ typealias DropOverlayCard = LumiUI.DropOverlayCard
 typealias ErrorIconView = LumiUI.ErrorIconView
 typealias GlassBadge = LumiUI.GlassBadge
 typealias GlassButton = LumiUI.GlassButton
-typealias GlassCard<Content: View> = LumiUI.GlassCard<Content>
 typealias GlassDivider = LumiUI.GlassDivider
 typealias GlassInfoCard<Content: View> = LumiUI.GlassInfoCard<Content>
 typealias GlassKeyValueRow = LumiUI.GlassKeyValueRow

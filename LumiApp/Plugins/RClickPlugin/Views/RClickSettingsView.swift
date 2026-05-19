@@ -26,7 +26,7 @@ struct RClickSettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    GlassCard {
+                    AppCard {
                         VStack(spacing: 8) {
                             HStack(spacing: 8) {
                                 Image(systemName: "puzzlepiece.extension")
@@ -60,7 +60,7 @@ struct RClickSettingsView: View {
                         }
                     }
 
-                    GlassCard {
+                    AppCard {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(String(localized: "General Actions", table: "RClick"))
                                 .font(.system(size: 20, weight: .semibold))
@@ -90,7 +90,7 @@ struct RClickSettingsView: View {
                         }
                     }
 
-                    GlassCard {
+                    AppCard {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text(String(localized: "New File Menu", table: "RClick"))
@@ -149,7 +149,7 @@ struct RClickSettingsView: View {
                         }
                     }
 
-                    GlassCard {
+                    AppCard {
                         HStack {
                             Text(String(localized: "Reset to Defaults", table: "RClick"))
                                 .font(.system(size: 15, weight: .medium))

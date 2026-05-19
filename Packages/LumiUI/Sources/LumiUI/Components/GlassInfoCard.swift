@@ -31,7 +31,7 @@ public struct GlassInfoCard<Content: View>: View {
     }
 
     public var body: some View {
-        GlassCard(cornerRadius: cornerRadius, padding: padding) {
+        AppCard(cornerRadius: cornerRadius, padding: padding) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                 header
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
