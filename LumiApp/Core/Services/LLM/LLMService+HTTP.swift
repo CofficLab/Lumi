@@ -82,20 +82,21 @@ extension LLMService {
                 throw LLMServiceError.requestFailed(error.localizedDescription)
             }
 
-            let (content, toolCalls) = try provider.parseResponse(data: data)
+            let response = try provider.parseResponseWithMetadata(data: data)
 
             let endTime = CFAbsoluteTimeGetCurrent()
             let latency = (endTime - startTime) * 1000.0
 
             return ChatMessage(
                 role: .assistant, conversationId: conversationId,
-                content: content,
-                toolCalls: toolCalls,
+                content: response.content,
+                toolCalls: response.toolCalls,
                 providerId: config.providerId,
                 modelName: config.model,
                 latency: latency,
                 temperature: config.temperature,
-                maxTokens: config.maxTokens
+                maxTokens: config.maxTokens,
+                thinkingContent: response.thinkingContent
             )
 
         } catch let e as LLMServiceError {

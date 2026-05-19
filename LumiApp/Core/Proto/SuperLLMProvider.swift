@@ -52,6 +52,18 @@ struct LLMModelCatalogItem: Sendable, Equatable {
     }
 }
 
+struct LLMProviderResponse: Sendable, Equatable {
+    let content: String
+    let toolCalls: [ToolCall]?
+    let thinkingContent: String?
+
+    init(content: String, toolCalls: [ToolCall]?, thinkingContent: String? = nil) {
+        self.content = content
+        self.toolCalls = toolCalls
+        self.thinkingContent = thinkingContent
+    }
+}
+
 /// LLM 供应商协议
 ///
 /// 定义 LLM 供应商必须实现的接口，用于统一不同供应商的接入方式。
@@ -188,6 +200,11 @@ protocol SuperLLMProvider: Sendable {
     /// - Throws: 解析错误
     func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?)
 
+    /// 解析 API 响应及可选元数据。
+    ///
+    /// 默认兼容旧的 `parseResponse`，供应商可覆盖以返回思考内容等额外字段。
+    func parseResponseWithMetadata(data: Data) throws -> LLMProviderResponse
+
     /// 解析流式响应数据块
     ///
     /// 将 SSE (Server-Sent Events) 格式的数据块解析为文本片段。
@@ -261,5 +278,10 @@ extension SuperLLMProvider {
     /// 要求 `availableModels` 中每个模型都必须有能力声明。
     static var modelCapabilities: [String: LLMModelCapabilities] {
         Dictionary(uniqueKeysWithValues: modelSpecs.map { ($0.key, $0.value.capabilities) })
+    }
+
+    func parseResponseWithMetadata(data: Data) throws -> LLMProviderResponse {
+        let result = try parseResponse(data: data)
+        return LLMProviderResponse(content: result.content, toolCalls: result.toolCalls)
     }
 }

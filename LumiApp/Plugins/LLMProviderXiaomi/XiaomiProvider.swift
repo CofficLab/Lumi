@@ -38,7 +38,8 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 
     private let adapter = OpenAICompatibleProviderAdapter(
         configuration: OpenAICompatibleProviderConfiguration(
-            baseURL: "https://token-plan-cn.xiaomimimo.com/v1/chat/completions"
+            baseURL: "https://token-plan-cn.xiaomimimo.com/v1/chat/completions",
+            includesReasoningContentInMessages: true
         )
     )
 
@@ -71,6 +72,16 @@ final class XiaomiProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
         let result = try adapter.parseResponse(data: data)
         let kitToolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
         return (result.content, kitToolCalls)
+    }
+
+    func parseResponseWithMetadata(data: Data) throws -> LLMProviderResponse {
+        let result = try adapter.parseResponse(data: data)
+        let toolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
+        return LLMProviderResponse(
+            content: result.content,
+            toolCalls: toolCalls,
+            thinkingContent: result.reasoningContent
+        )
     }
 
     func buildStreamingRequestBody(

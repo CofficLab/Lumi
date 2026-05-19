@@ -65,19 +65,22 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     public var content: String
     public var toolCalls: [ToolCall]?
     public var toolCallID: String?
+    public var reasoningContent: String?
 
     public init(
         id: UUID = UUID(),
         role: MessageRole,
         content: String,
         toolCalls: [ToolCall]? = nil,
-        toolCallID: String? = nil
+        toolCallID: String? = nil,
+        reasoningContent: String? = nil
     ) {
         self.id = id
         self.role = role
         self.content = content
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
+        self.reasoningContent = reasoningContent
     }
 }
 

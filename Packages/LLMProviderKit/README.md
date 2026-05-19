@@ -134,6 +134,7 @@ final class YourNameProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 | `includeUsageInStreamOptions` | `false` | 流式请求是否添加 `stream_options: { include_usage: true }` |
 | `returnsEmptyChunkWhenNoDelta` | `false` | 无内容增量时是否返回空 chunk（某些供应商需要） |
 | `acceptsFunctionScopedToolCallID` | `false` | 是否从 `function` 对象中读取 tool call ID |
+| `includesReasoningContentInMessages` | `false` | 是否在 assistant 历史消息中回传 `reasoning_content` |
 
 ### 已有供应商
 
@@ -148,7 +149,7 @@ final class YourNameProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
 | FlyMux | OpenAI兼容 | api.flymux.com | `includeUsageInStreamOptions: true` |
 | HyperAPI | OpenAI兼容 | hyperapi.cc | `includeUsageInStreamOptions: true` |
 | MegaLLM | OpenAI兼容 | ai.megallm.io | — |
-| Xiaomi | OpenAI兼容 | token-plan-cn.xiaomimimo.com | — |
+| Xiaomi | OpenAI兼容 | token-plan-cn.xiaomimimo.com | `includesReasoningContentInMessages: true` |
 | Xybbz | OpenAI兼容 | sub2api.xybbz.xyz | `includeUsageInStreamOptions: true` |
 | Anthropic | Anthropic兼容 | api.anthropic.com | 使用 `AnthropicCompatibleProviderAdapter` |
 | Zhipu | OpenAI兼容 | open.bigmodel.cn | 尚未迁移 |

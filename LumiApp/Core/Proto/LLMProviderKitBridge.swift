@@ -77,7 +77,8 @@ extension LLMProviderKit.ChatMessage {
             role: LLMProviderKit.MessageRole(app: message.role),
             content: message.content,
             toolCalls: message.toolCalls?.map { LLMProviderKit.ToolCall(app: $0) },
-            toolCallID: message.toolCallID
+            toolCallID: message.toolCallID,
+            reasoningContent: message.thinkingContent
         )
     }
 }
