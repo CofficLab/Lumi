@@ -59,6 +59,10 @@ final class PreviewRenderer {
     /// 离屏窗口子类，强制 `canBecomeKey` / `canBecomeMain` 为 true。
     /// borderless 风格的 NSWindow 默认两者都为 false，会让 `sendEvent` 注入的
     /// keyDown 找不到 key window，TextField 等需要 firstResponder 的控件无法接键盘输入。
+    ///
+    /// 重写 `sendEvent` 以支持 SwiftUI 的 `.onHover`：
+    /// 当收到 `mouseMoved` 事件时，手动触发 tracking area 的检查，
+    /// 让 SwiftUI 的 `.onHover` 在离屏窗口中也能正常工作。
     final class InvisibleHostWindow: NSWindow {
         var syntheticMouseLocationInWindow: NSPoint?
 
@@ -67,6 +71,21 @@ final class PreviewRenderer {
 
         override var mouseLocationOutsideOfEventStream: NSPoint {
             syntheticMouseLocationInWindow ?? super.mouseLocationOutsideOfEventStream
+        }
+
+        override func sendEvent(_ event: NSEvent) {
+            // 对于 mouseMoved 事件，手动触发 tracking area 检查
+            // 让 SwiftUI 的 .onHover 能够正常工作
+            if event.type == .mouseMoved {
+                // 先让正常的事件分发进行
+                super.sendEvent(event)
+
+                // 然后手动触发 content view 的 tracking area 更新
+                // 这会让 AppKit 检查所有 tracking area 并触发 mouseEntered/mouseExited
+                contentView?.updateTrackingAreas()
+            } else {
+                super.sendEvent(event)
+            }
         }
     }
 

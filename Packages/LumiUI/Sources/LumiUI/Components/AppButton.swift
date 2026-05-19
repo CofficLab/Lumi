@@ -1,10 +1,8 @@
-import AppKit
 import SwiftUI
 
 public struct AppButton: View {
     @LumiTheme private var theme
     @State private var isHovered = false
-    @State private var isSyntheticHovered = false
 
     public enum Style {
         case primary
@@ -103,13 +101,6 @@ public struct AppButton: View {
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.5 : 1.0)
-        .background {
-            InlinePreviewSyntheticHoverReader { hovering in
-                withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
-                    isSyntheticHovered = hovering && !isDisabled
-                }
-            }
-        }
         .onHover { hovering in
             withAnimation(.easeInOut(duration: DesignTokens.Duration.micro)) {
                 isHovered = hovering && !isDisabled
@@ -181,7 +172,7 @@ public struct AppButton: View {
     }
 
     private var isEffectivelyHovered: Bool {
-        (isHovered || isSyntheticHovered) && !isDisabled
+        isHovered && !isDisabled
     }
 
     private var border: some View {
@@ -204,74 +195,6 @@ public struct AppButton: View {
             }
         }
     }
-}
-
-private struct InlinePreviewSyntheticHoverReader: NSViewRepresentable {
-    let onHoverChange: (Bool) -> Void
-
-    func makeNSView(context: Context) -> SyntheticHoverView {
-        let view = SyntheticHoverView()
-        view.onHoverChange = onHoverChange
-        return view
-    }
-
-    func updateNSView(_ nsView: SyntheticHoverView, context: Context) {
-        nsView.onHoverChange = onHoverChange
-    }
-}
-
-private final class SyntheticHoverView: NSView {
-    var onHoverChange: ((Bool) -> Void)?
-    private var isHovering = false
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleSyntheticMouse(_:)),
-            name: .lumiPreviewSyntheticMouseLocationDidChange,
-            object: nil
-        )
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) is not supported for SyntheticHoverView.")
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        nil
-    }
-
-    @objc private func handleSyntheticMouse(_ notification: Notification) {
-        guard let window, notification.object as? NSWindow === window else {
-            updateHover(false)
-            return
-        }
-        guard notification.userInfo?["inside"] as? Bool == true,
-              let value = notification.userInfo?["location"] as? NSValue else {
-            updateHover(false)
-            return
-        }
-
-        let point = convert(value.pointValue, from: nil)
-        updateHover(bounds.contains(point))
-    }
-
-    private func updateHover(_ hovering: Bool) {
-        guard isHovering != hovering else { return }
-        isHovering = hovering
-        onHoverChange?(hovering)
-    }
-}
-
-private extension Notification.Name {
-    static let lumiPreviewSyntheticMouseLocationDidChange =
-        Notification.Name("com.coffic.lumi.inline-preview.syntheticMouseLocationDidChange")
 }
 
 #Preview {
