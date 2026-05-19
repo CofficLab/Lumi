@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import ChatInputEditorKit
 import MagicAlert
 import MagicKit
 
@@ -32,7 +33,7 @@ struct InputView: View, SuperLog {
     @State private var isInputFocused: Bool = false
 
     /// 编辑器动态高度
-    @State private var editorHeight: CGFloat = MacEditorView.minHeight
+    @State private var editorHeight: CGFloat = ChatInputEditorView.minHeight
 
     /// 图片文件正拖过输入框（显示「松开可添加」提示，由 `NSTextView` 更新）
     @State private var isImageDragHovering = false
@@ -97,14 +98,21 @@ extension InputView {
 extension InputView {
     /// 编辑器视图（提取以避免类型检查超时）
     private var macEditorView: some View {
-        MacEditorView(
+        ChatInputEditorView(
             text: $chatDraftVM.text,
             height: $editorHeight,
             textColor: NSColor(themeVM.activeAppTheme.workspaceTextColor()),
+            isVerbose: Self.verbose,
+            log: { message in
+                ChatInputPlugin.logger.info("\(Self.t)\(message)")
+            },
             onSubmit: handleSubmit,
             onArrowUp: handleArrowUp,
             onArrowDown: handleArrowDown,
             onEnter: handleEnter,
+            onFileDrop: { url in
+                NotificationCenter.postFileDroppedToChat(fileURL: url)
+            },
             isFocused: $isInputFocused,
             cursorPosition: $chatDraftVM.cursorPosition,
             isImageDragHovering: $isImageDragHovering
@@ -160,7 +168,7 @@ extension InputView {
         let text = chatDraftVM.text
         chatDraftVM.clear()
         activeInputQueueVM.enqueueText(text)
-        editorHeight = MacEditorView.minHeight
+        editorHeight = ChatInputEditorView.minHeight
     }
 
     /// 处理上箭头键
@@ -204,7 +212,7 @@ extension InputView {
             }
             chatDraftVM.clear()
             activeInputQueueVM.enqueueText(text)
-            editorHeight = MacEditorView.minHeight
+            editorHeight = ChatInputEditorView.minHeight
         }
     }
 }
