@@ -32,14 +32,15 @@ struct RootView<Content>: View, SuperLog where Content: View {
     /// 全局服务容器（单例）。
     @StateObject var container = RootContainer.shared
 
-    /// 发送与回合管线（与 `container` 同源，见 `SendController.init(container:)`）。
-    @StateObject var sendController = SendController(container: RootContainer.shared)
+    /// 发送与回合管线（每窗口独立，直接访问窗口级 VM）。
+    /// 从 WindowScope 获取，不自行创建。
+    private var sendController: SendController { scope.sendController }
 
-    /// 项目上下文与系统提示词（与 `container` 同源，见 `ProjectController.init(container:)`）。
-    @StateObject var projectController = ProjectController(container: RootContainer.shared)
+    /// 项目上下文与系统提示词（每窗口独立）。
+    private var projectController: ProjectController { scope.projectController }
 
-    /// 会话控制器（创建、删除、重命名等会话操作）。
-    @StateObject var conversationController = ConversationController(container: RootContainer.shared)
+    /// 会话控制器（每窗口独立）。
+    private var conversationController: ConversationController { scope.conversationController }
 
     init(scope: WindowScope, @ViewBuilder content: () -> Content) {
         self._scope = ObservedObject(wrappedValue: scope)

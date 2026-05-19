@@ -82,6 +82,20 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     /// 编辑器（每窗口独立的 EditorService，文件打开/切换互不影响）
     let editorVM: WindowEditorVM
 
+    // MARK: - Window-Level Controllers
+
+    /// 发送控制器（每窗口独立，直接访问窗口级 VM）
+    lazy var sendController: SendController = SendController(scope: self, global: self._container)
+
+    /// 会话控制器
+    lazy var conversationController: ConversationController = ConversationController(scope: self, global: self._container)
+
+    /// 项目控制器
+    lazy var projectController: ProjectController = ProjectController(scope: self, global: self._container)
+
+    /// 全局容器引用（供 lazy Controller 使用）
+    private let _container: RootContainer
+
     // MARK: - Window-Level State (from WindowState)
 
     /// 窗口标题
@@ -182,6 +196,7 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         self.editorVM = WindowEditorVM(
             service: EditorService(editorExtensionRegistry: container.createEditorExtensionRegistry())
         )
+        self._container = container
 
         // ========================================
         // 初始化会话和项目
