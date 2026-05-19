@@ -1,14 +1,14 @@
 import MagicKit
 import SwiftUI
 
-/// 聊天工具栏视图 - 包含图片上传和发送/停止按钮
+/// 聊天发送/停止按钮
 ///
-/// 模式切换（ChatModePlugin）、模型选择器（ModelSelectorPlugin）和截图（ScreenshotPlugin）
-/// 已拆分为独立插件，通过右侧栏底部工具栏注入。
-/// 本视图仅保留发送/停止和图片上传按钮。
+/// 模式切换（ChatModePlugin）、模型选择器（ModelSelectorPlugin）、截图（ScreenshotPlugin）和图片上传（ChatAttachmentPlugin）
+/// 均已拆分为独立插件，通过右侧栏底部工具栏注入。
+/// 本视图仅保留发送和停止按钮。
 struct ChatToolbarView: View, SuperLog {
     /// 日志标识 emoji
-    nonisolated static let emoji = "🧰"
+    nonisolated static let emoji = "🚀"
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
     @EnvironmentObject var projectVM: WindowProjectVM
@@ -40,9 +40,6 @@ struct ChatToolbarView: View, SuperLog {
     var body: some View {
         VStack {
             HStack(alignment: .center, spacing: 8) {
-                // 图片上传按钮
-                imageUploadButton
-
                 Spacer()
 
                 // 发送/停止按钮
@@ -105,39 +102,6 @@ extension ChatToolbarView {
             .keyboardShortcut(.return, modifiers: [.command])
             .accessibilityLabel(String(localized: "Send Message", table: "AgentChat"))
             .accessibilityHint(String(localized: "Send Message Hint", table: "AgentChat"))
-        }
-    }
-
-    /// 图片上传按钮视图
-    private var imageUploadButton: some View {
-        Button(action: {
-            selectImage()
-        }) {
-            Image(systemName: "photo")
-                .font(.system(size: 14))
-                .foregroundColor(themeVM.activeAppTheme.workspaceSecondaryTextColor())
-                .frame(width: 28, height: 28)
-                .background(themeVM.activeAppTheme.workspaceTextColor().opacity(0.06))
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .help(String(localized: "Upload Image", table: "AgentChat"))
-        .accessibilityLabel(String(localized: "Upload Image", table: "AgentChat"))
-        .accessibilityHint(String(localized: "Upload Image Hint", table: "AgentChat"))
-    }
-
-    /// 选择图片文件
-    private func selectImage() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.image]
-
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
-                agentAttachmentsVM.handleImageUpload(url: url)
-            }
         }
     }
 }
