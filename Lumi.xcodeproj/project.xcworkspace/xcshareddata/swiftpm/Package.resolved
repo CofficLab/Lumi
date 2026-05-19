@@ -92,15 +92,6 @@
         }
       },
       {
-        "package": "ID3TagEditor",
-        "repositoryURL": "https://github.com/chicio/ID3TagEditor",
-        "state": {
-          "branch": null,
-          "revision": "3ccc31eafae0ded1fea8c9acd5e7ef7dfdbf1e8e",
-          "version": "4.6.0"
-        }
-      },
-      {
         "package": "JSONRPC",
         "repositoryURL": "https://github.com/ChimeHQ/JSONRPC",
         "state": {
@@ -137,29 +128,11 @@
         }
       },
       {
-        "package": "MagicAlert",
-        "repositoryURL": "https://github.com/nookery/MagicAlert.git",
-        "state": {
-          "branch": null,
-          "revision": "c01ea99ac87530ecc804f082c9311d884bc53418",
-          "version": "1.0.1"
-        }
-      },
-      {
         "package": "MagicDiffView",
         "repositoryURL": "https://github.com/nookery/MagicDiffView",
         "state": {
           "branch": "main",
           "revision": "edca869e5ae1b273cbed12df4a33599831083dfd",
-          "version": null
-        }
-      },
-      {
-        "package": "MagicKit",
-        "repositoryURL": "https://github.com/CofficLab/MagicKit",
-        "state": {
-          "branch": "main",
-          "revision": "ad6bc183adde0cbf22cdfe805deb5efd45f9a371",
           "version": null
         }
       },
@@ -638,15 +611,6 @@
           "branch": null,
           "revision": "8b4a38dc994a110abaec8a400615567bd996105f",
           "version": "0.12.0"
-        }
-      },
-      {
-        "package": "ZIPFoundation",
-        "repositoryURL": "https://github.com/weichsel/ZIPFoundation.git",
-        "state": {
-          "branch": null,
-          "revision": "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
-          "version": "0.9.20"
         }
       }
     ]
