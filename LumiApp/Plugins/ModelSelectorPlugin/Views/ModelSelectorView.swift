@@ -87,7 +87,7 @@ struct ModelSelectorView: View, SuperLog {
                 .listStyle(.sidebar)
             }
         }
-        .frame(width: 520, height: 400)
+        .frame(width: 520, height: 800)
         .background(Material.regularMaterial)
         .task {
             await loadAllStats()
