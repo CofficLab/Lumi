@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import MagicKit
 
 /// LLM 可用性状态栏视图

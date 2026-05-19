@@ -1,3 +1,4 @@
+import LumiUI
 import AppKit
 import MagicKit
 import SwiftUI

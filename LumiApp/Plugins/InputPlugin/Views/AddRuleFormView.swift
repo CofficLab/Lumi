@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import LumiUI
 
 /// 添加新规则表单视图
 struct AddRuleFormView: View {

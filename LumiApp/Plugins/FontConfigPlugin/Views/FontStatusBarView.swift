@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import AppKit
 
 /// 字体配置状态栏入口视图

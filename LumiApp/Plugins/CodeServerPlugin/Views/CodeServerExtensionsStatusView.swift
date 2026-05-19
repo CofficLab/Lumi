@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// Code Server 扩展状态栏视图
 ///

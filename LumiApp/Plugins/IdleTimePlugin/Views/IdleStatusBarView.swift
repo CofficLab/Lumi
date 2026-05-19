@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct IdleStatusBarView: View {
     @EnvironmentObject private var idleTimeVM: AppIdleTimeVM

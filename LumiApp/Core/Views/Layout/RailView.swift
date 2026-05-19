@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// Rail 视图：位于活动栏与面板内容区之间的辅助栏
 ///

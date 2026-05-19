@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 统一主题选择器（全局状态栏入口）：
 /// 直接操作 AppThemeVM 的单一主题状态。

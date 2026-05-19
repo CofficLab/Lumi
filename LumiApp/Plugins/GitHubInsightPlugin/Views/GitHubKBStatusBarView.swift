@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 import AppKit
 
 @MainActor

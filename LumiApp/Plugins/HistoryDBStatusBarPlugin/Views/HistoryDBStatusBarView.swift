@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 struct HistoryDBStatusBarView: View {
     @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM

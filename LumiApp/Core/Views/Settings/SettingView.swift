@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 设置界面视图，使用 HStack 实现左右并排布局

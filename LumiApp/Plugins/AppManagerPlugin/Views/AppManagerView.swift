@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// 应用管理器视图

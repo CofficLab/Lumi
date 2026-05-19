@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 import MagicKit
 import os
