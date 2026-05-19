@@ -142,32 +142,31 @@ struct SkillRow: View {
     let skill: SkillMetadata
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // 图标
-            Image(systemName: "sparkle")
-                .font(.system(size: 12))
-                .foregroundColor(Color(hex: "7C6FFF"))
-                .padding(.top, 2)
+        AppListRow {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "sparkle")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "7C6FFF"))
+                    .padding(.top, 2)
 
-            // 信息
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(skill.title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(skill.title)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Text("v\(skill.version)")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(hex: "98989E"))
+                        Text("v\(skill.version)")
+                            .font(.system(size: 10))
+                            .foregroundColor(Color(hex: "98989E"))
+                    }
+
+                    Text(skill.description)
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .lineLimit(2)
                 }
-
-                Text(skill.description)
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    .lineLimit(2)
             }
         }
-        .padding(.vertical, 4)
     }
 }
 
