@@ -1,5 +1,4 @@
 import AppKit
-import MagicKit
 import SwiftUI
 import MagicAlert
 
@@ -7,12 +6,7 @@ import MagicAlert
 ///
 /// 模式切换、模型选择器、发送控制和附件已拆分为独立插件。
 /// 本视图仅管理输入编辑器相关状态。
-struct InputView: View, SuperLog {
-    /// 日志标识 emoji
-    nonisolated static let emoji = "💬"
-    /// 是否输出详细日志
-    nonisolated static let verbose: Bool = true
-
+struct InputView: View {
     /// 入队器：只负责把输入入队
     @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
 
@@ -41,10 +35,10 @@ struct InputView: View, SuperLog {
     @State private var isImageDragHovering = false
 
     /// 是否允许输入/发送（必须先选中会话）
-    @EnvironmentObject var WindowConversationVM: WindowConversationVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
 
     private var canChat: Bool {
-        WindowConversationVM.selectedConversationId != nil
+        conversationVM.selectedConversationId != nil
     }
 
     private var activeInputQueueVM: WindowInputQueueVM {
@@ -188,7 +182,6 @@ extension InputView {
     /// 处理回车键
     private func handleEnter() {
         guard canChat else {
-            Self.logger.info("\(Self.emoji)⚠️ Enter pressed but no active conversation, showing alert")
             alert_info(
                 String(localized: "Please create or select a conversation first", table: "AgentChat"),
                 subtitle: String(localized: "No active conversation", table: "AgentChat")
@@ -198,12 +191,10 @@ extension InputView {
 
         if commandSuggestionViewModel.isVisible,
            let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
-            Self.logger.info("\(Self.emoji)🔖 Command suggestion selected: \(suggestion.command)")
             chatDraftVM.set(suggestion.command + " ")
             commandSuggestionViewModel.setIsVisible(false)
         } else {
             let text = chatDraftVM.text
-            Self.logger.info("\(Self.emoji)🚀 Submitting chat message (\(text.count) chars)")
             chatDraftVM.clear()
             activeInputQueueVM.enqueueText(text)
             editorHeight = MacEditorView.minHeight

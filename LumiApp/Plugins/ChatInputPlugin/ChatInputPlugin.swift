@@ -15,25 +15,11 @@ actor ChatInputPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose: Bool = false
     static let id = "ChatInput"
     static let displayName = String(localized: "Chat Input", table: "AgentChat")
-    static let description = String(localized: "Chat input area with editor, toolbar and model selector", table: "AgentChat")
+    static let description = String(localized: "Chat input area with editor and command suggestions", table: "AgentChat")
     static let iconName = "keyboard"
     static var order: Int { 96 }
     nonisolated static let enable: Bool = true
     static let shared = ChatInputPlugin()
-
-    // MARK: - Lifecycle
-
-    nonisolated func onRegister() {
-        // Init
-    }
-
-    nonisolated func onEnable() {
-        // Init
-    }
-
-    nonisolated func onDisable() {
-        // Cleanup
-    }
 
     // MARK: - UI Contributions
 

@@ -330,9 +330,7 @@ class EditorTextView: NSTextView, SuperLog {
         let pasteboard = sender.draggingPasteboard
         
         if Self.verbose {
-            if ChatInputPlugin.verbose {
-                            ChatInputPlugin.logger.info("\(Self.t)📎 performDragOperation 被调用")
-            }
+            Self.logger.info("\(Self.t)📎 performDragOperation 被调用")
         }
 
         // 首先尝试读取文件 URL
@@ -340,9 +338,7 @@ class EditorTextView: NSTextView, SuperLog {
            !urls.isEmpty
         {
             if Self.verbose {
-                if ChatInputPlugin.verbose {
-                                    ChatInputPlugin.logger.info("\(Self.t)📎 读取到 \(urls.count) 个 URL: \(urls.first?.path ?? "unknown")")
-                }
+                Self.logger.info("\(Self.t)📎 读取到 \(urls.count) 个 URL: \(urls.first?.path ?? "unknown")")
             }
             // 发送通知让右侧栏拖放入口处理
             NotificationCenter.postFileDroppedToChat(fileURL: urls.first!)
@@ -355,9 +351,7 @@ class EditorTextView: NSTextView, SuperLog {
            let firstString = strings.first
         {
             if Self.verbose {
-                if ChatInputPlugin.verbose {
-                                    ChatInputPlugin.logger.info("\(Self.t)📎 读取到字符串: \(firstString)")
-                }
+                Self.logger.info("\(Self.t)📎 读取到字符串: \(firstString)")
             }
             // 如果是绝对路径，发送通知
             if firstString.hasPrefix("/") {
@@ -367,9 +361,7 @@ class EditorTextView: NSTextView, SuperLog {
         }
         
         if Self.verbose {
-            if ChatInputPlugin.verbose {
-                            ChatInputPlugin.logger.info("\(Self.t)⚠️ 没有读取到有效的拖放数据")
-            }
+            Self.logger.info("\(Self.t)⚠️ 没有读取到有效的拖放数据")
         }
 
         return super.performDragOperation(sender)
