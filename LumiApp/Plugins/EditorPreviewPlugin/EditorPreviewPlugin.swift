@@ -1,5 +1,5 @@
 import Foundation
-import LumiInlinePreviewKit
+import LumiPreviewKit
 import MagicKit
 import SwiftUI
 import os
@@ -7,7 +7,7 @@ import os
 /// 预览插件。
 ///
 /// 技术核心为：IOSurface 帧流 + Lumi 面板内 `CALayer` 显示。
-/// 通过子进程 `LumiInlinePreviewHostApp` 运行用户编译的预览 dylib，
+/// 通过子进程 `LumiPreviewHostApp` 运行用户编译的预览 dylib，
 /// 自动扫描 `#Preview` 宏并构建渲染。
 actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
@@ -20,7 +20,7 @@ actor EditorPreviewPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose: Bool = true
     static let id: String = "EditorPreview"
     static let displayName: String = String(localized: "Inline Preview", table: "EditorPreview")
-    static let description: String = String(localized: "Embedded preview powered by LumiInlinePreviewKit", table: "EditorPreview")
+    static let description: String = String(localized: "Embedded preview powered by LumiPreviewKit", table: "EditorPreview")
     static let iconName: String = "rectangle.inset.filled"
     static var isConfigurable: Bool { false }
     static var order: Int { 84 }

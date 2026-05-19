@@ -11,17 +11,13 @@ let package = Package(
             name: "LumiPreviewKit",
             targets: ["LumiPreviewKit"]
         ),
-        .library(
-            name: "LumiInlinePreviewKit",
-            targets: ["LumiInlinePreviewKit"]
-        ),
         .executable(
             name: "LumiHotPreviewHostApp",
             targets: ["LumiHotPreviewHostApp"]
         ),
         .executable(
-            name: "LumiInlinePreviewHostApp",
-            targets: ["LumiInlinePreviewHostApp"]
+            name: "LumiPreviewHostApp",
+            targets: ["LumiPreviewHostApp"]
         )
     ],
     dependencies: [
@@ -30,15 +26,10 @@ let package = Package(
     targets: [
         .target(
             name: "LumiPreviewKit",
-            path: "Sources/LumiPreviewKit"
-        ),
-        .target(
-            name: "LumiInlinePreviewKit",
             dependencies: [
-                "LumiPreviewKit",
                 .product(name: "MagicKit", package: "MagicKit")
             ],
-            path: "Sources/LumiInlinePreviewKit"
+            path: "Sources/LumiPreviewKit"
         ),
         .executableTarget(
             name: "LumiHotPreviewHostApp",
@@ -46,19 +37,14 @@ let package = Package(
             path: "Sources/LumiHotPreviewHostApp"
         ),
         .executableTarget(
-            name: "LumiInlinePreviewHostApp",
-            dependencies: ["LumiInlinePreviewKit"],
-            path: "Sources/LumiInlinePreviewHostApp"
+            name: "LumiPreviewHostApp",
+            dependencies: ["LumiPreviewKit"],
+            path: "Sources/LumiPreviewHostApp"
         ),
         .testTarget(
             name: "LumiPreviewKitTests",
             dependencies: ["LumiPreviewKit"],
             path: "Tests/LumiPreviewKitTests"
-        ),
-        .testTarget(
-            name: "LumiInlinePreviewKitTests",
-            dependencies: ["LumiInlinePreviewKit"],
-            path: "Tests/LumiInlinePreviewKitTests"
         )
     ]
 )

@@ -229,7 +229,7 @@ private final class SyntheticHoverView: NSView {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleSyntheticMouse(_:)),
-            name: .lumiInlinePreviewSyntheticMouseLocationDidChange,
+            name: .lumiPreviewSyntheticMouseLocationDidChange,
             object: nil
         )
     }
@@ -270,7 +270,7 @@ private final class SyntheticHoverView: NSView {
 }
 
 private extension Notification.Name {
-    static let lumiInlinePreviewSyntheticMouseLocationDidChange =
+    static let lumiPreviewSyntheticMouseLocationDidChange =
         Notification.Name("com.coffic.lumi.inline-preview.syntheticMouseLocationDidChange")
 }
 

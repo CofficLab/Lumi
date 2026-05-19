@@ -1,5 +1,5 @@
 import AppKit
-import LumiInlinePreviewKit
+import LumiPreviewKit
 import MagicAlert
 import MagicKit
 import MarkdownKit
@@ -10,7 +10,7 @@ import StringCatalogKit
 /// 预览插件的底部面板内容视图。
 ///
 /// 提供以下功能：
-/// - 自动启动 `LumiInlinePreviewHostApp` 子进程，订阅帧流，实时显示预览。
+/// - 自动启动 `LumiPreviewHostApp` 子进程，订阅帧流，实时显示预览。
 /// - 自动构建：打开 Swift 文件并保存时自动扫描 `#Preview`，编译并加载。
 /// - 图片预览：图片文件直接在主进程显示，不启动预览子进程。
 struct EditorPreviewDetailView: View, SuperLog {
@@ -400,7 +400,7 @@ struct EditorPreviewDetailView: View, SuperLog {
                     }
                 }
 
-                LumiInlinePreviewFacade.PreviewSurfaceCanvas(
+                LumiPreviewFacade.PreviewSurfaceCanvas(
                     surfaceID: viewModel.currentFrame?.surfaceID,
                     isInteractive: viewModel.isInteractive,
                     cursorShape: viewModel.cursorShape,

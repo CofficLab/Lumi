@@ -1,8 +1,18 @@
+import os
+
 /// 统一公共命名空间。
 ///
 /// 所有 LumiPreviewKit 的公开类型都挂载在这个 `enum` 下，
 /// 避免全局命名冲突，同时提供统一的导入入口。
-public enum LumiPreviewFacade {}
+public enum LumiPreviewFacade {
+    /// 包内共享 Logger，供 PreviewSurfaceCanvas 等使用。
+    public static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "LumiPreviewKit"
+    )
+    /// 是否启用日志输出，由宿主 App 的插件 verbose 控制。
+    nonisolated(unsafe) public static var verbose: Bool = false
+}
 
 typealias PreviewSession = LumiPreviewFacade.PreviewSession
 typealias PreviewPerformanceMetrics = LumiPreviewFacade.PreviewPerformanceMetrics

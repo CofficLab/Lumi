@@ -8,9 +8,9 @@ SwiftUI preview discovery, build planning, rendering, and host process support f
 
 - Products:
   - `LumiPreviewKit`
-  - `LumiInlinePreviewKit`
+  - `LumiPreviewKit`
   - `LumiHotPreviewHostApp`
-  - `LumiInlinePreviewHostApp`
+  - `LumiPreviewHostApp`
 - Platform: macOS 14+
 - Swift tools: 6.0
 
@@ -24,9 +24,9 @@ SwiftUI preview discovery, build planning, rendering, and host process support f
 - `Sources/LumiPreviewKit/Frames`: image loading, frame transport, and shared-memory frame storage.
 - `Sources/LumiPreviewKit/LiveCanvas`: live canvas window/frame coordination helpers.
 - `Sources/LumiPreviewKit/Runtime`: `HotPreviewEngine` runtime orchestration and prewarm ranking.
-- `Sources/LumiInlinePreviewKit`: embedded inline preview surface, session, host connection, and input forwarding support.
+- `Sources/LumiPreviewKit`: embedded inline preview surface, session, host connection, and input forwarding support.
 - `Sources/LumiHotPreviewHostApp`: executable hot preview host app that renders preview entries and communicates over stdio.
-- `Sources/LumiInlinePreviewHostApp`: executable inline preview host app for embedded live rendering.
+- `Sources/LumiPreviewHostApp`: executable inline preview host app for embedded live rendering.
 
 ## Main Concepts
 

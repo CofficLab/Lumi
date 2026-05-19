@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import LumiInlinePreviewKit
 import LumiPreviewKit
 import MagicKit
 import os
@@ -124,7 +123,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     // MARK: - 已发布状态
 
-    @Published private(set) var currentFrame: LumiInlinePreviewFacade.IOSurfaceFrame?
+    @Published private(set) var currentFrame: LumiPreviewFacade.IOSurfaceFrame?
     @Published private(set) var canvasSize: CGSize = .zero {
         didSet {
             let oldStr = "\(oldValue.width)×\(oldValue.height)"
@@ -144,7 +143,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
             }
         }
     }
-    @Published private(set) var policy: LumiInlinePreviewFacade.FrameStreamPolicy = .stopped
+    @Published private(set) var policy: LumiPreviewFacade.FrameStreamPolicy = .stopped
     @Published private(set) var entryStatus: EntryStatus = .noPreview {
         didSet {
             let desc = entryStatus.description
@@ -154,18 +153,18 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         }
     }
     @Published private(set) var previewMode: PreviewMode = .unsupported(nil)
-    @Published private(set) var availablePreviews: [LumiInlinePreviewFacade.InlinePreviewBuilder.PreviewSummary] = []
+    @Published private(set) var availablePreviews: [LumiPreviewFacade.InlinePreviewBuilder.PreviewSummary] = []
     @Published private(set) var selectedPreviewIndex: Int = 0
     @Published private(set) var lastBuildInfo: BuildInfo?
     @Published private(set) var cacheSummary: EditorPreviewStorage.CacheSummary = .init(fileCount: 0, byteCount: 0)
     @Published private(set) var entryDebugState: String?
     @Published private(set) var isRequestingEntryDebugState = false
-    @Published private(set) var cursorShape: LumiInlinePreviewFacade.PreviewCursorShape = .arrow
+    @Published private(set) var cursorShape: LumiPreviewFacade.PreviewCursorShape = .arrow
 
     // MARK: - 私有
 
-    private let session: LumiInlinePreviewFacade.InlinePreviewSession
-    private let builder: LumiInlinePreviewFacade.InlinePreviewBuilder
+    private let session: LumiPreviewFacade.InlinePreviewSession
+    private let builder: LumiPreviewFacade.InlinePreviewBuilder
     private var lastSentPixelSize: (width: Int, height: Int, scale: Double)?
     /// 最近一次从编辑器收到的 (currentFileURL, source)。用于 startSession / saveRevision 时取最新内容重建。
     private var activeFileURL: URL?
@@ -188,18 +187,18 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     init() {
         EditorPreviewStorage.installIfNeeded()
-        session = LumiInlinePreviewFacade.InlinePreviewSession()
+        session = LumiPreviewFacade.InlinePreviewSession()
         let xcodeCompiler = LumiPreviewFacade.XcodeCompiler(
             derivedDataPath: EditorPreviewStorage.derivedDataDirectory
         )
-        builder = LumiInlinePreviewFacade.InlinePreviewBuilder(
+        builder = LumiPreviewFacade.InlinePreviewBuilder(
             workspaceRoot: EditorPreviewStorage.inlineBuilderWorkspaceDirectory,
             xcodeCompiler: xcodeCompiler
         )
         if Self.verbose {
                     Self.logger.info("\(Self.t)🚩 初始化 EditorPreviewViewModel")
         }
-        LumiInlinePreviewFacade.verbose = Self.verbose
+        LumiPreviewFacade.verbose = Self.verbose
         wireSessionCallbacks()
         refreshCacheSummary()
         warmupSessionIfPossible()
@@ -355,7 +354,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     /// 由 `PreviewSurfaceCanvas` 在 `isInteractive == true` 时回调；把事件转发给子进程。
     /// 高频事件（mouseMoved / dragged / scrollWheel / keyDown 重复）走 best-effort 不阻塞。
-    func forwardInputEvent(_ event: LumiInlinePreviewFacade.PreviewInputEvent) {
+    func forwardInputEvent(_ event: LumiPreviewFacade.PreviewInputEvent) {
         guard status == .running else { return }
         session.sendInputEventBestEffort(event)
     }
@@ -590,7 +589,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)✅ 构建后已加载 Dylib")
                 }
-            } catch let error as LumiInlinePreviewFacade.InlinePreviewBuilder.BuildError {
+            } catch let error as LumiPreviewFacade.InlinePreviewBuilder.BuildError {
                 guard self.isCurrentPreviewGeneration(generation, fileURL: url) else { return }
                 switch error {
                 case .noPreviewFound:

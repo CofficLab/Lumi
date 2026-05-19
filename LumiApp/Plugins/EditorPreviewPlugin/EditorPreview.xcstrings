@@ -105,24 +105,24 @@
     "Dependency planning failed" : {
 
     },
-    "Embedded preview powered by LumiInlinePreviewKit" : {
+    "Embedded preview powered by LumiPreviewKit" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Embedded preview powered by LumiInlinePreviewKit"
+            "value" : "Embedded preview powered by LumiPreviewKit"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 LumiInlinePreviewKit 驱动的预览"
+            "value" : "由 LumiPreviewKit 驱动的预览"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 LumiInlinePreviewKit 驅動的內嵌預覽"
+            "value" : "由 LumiPreviewKit 驅動的內嵌預覽"
           }
         }
       }

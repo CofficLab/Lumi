@@ -19,7 +19,7 @@
 		0B1A4F8F2F662D8500F15618 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F8E2F662D8500F15618 /* MLXLMCommon */; };
 		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		0B462A922FB976B4007E52B1 /* LumiInlinePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */; };
+		0B462A922FB976B4007E52B1 /* LumiPreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B462A912FB976B4007E52B1 /* LumiPreviewKit */; };
 		0B52000330C3000000AA0001 /* RAGKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B52000230C3000000AA0001 /* RAGKit */; };
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */; };
@@ -341,7 +341,7 @@
 				0B1A4F872F662D8500F15618 /* MLXNN in Frameworks */,
 				0B0073C22F2F1ABF001B3789 /* MagicKit in Frameworks */,
 				A1B2C4152F70000100AAA101 /* DeviceMonitorKit in Frameworks */,
-				0B462A922FB976B4007E52B1 /* LumiInlinePreviewKit in Frameworks */,
+				0B462A922FB976B4007E52B1 /* LumiPreviewKit in Frameworks */,
 				A1B2C4172F70000100AAA102 /* DockerKit in Frameworks */,
 				A1B2C4202F70000100AAA103 /* DiskManagerKit in Frameworks */,
 				A1B2C4302F70000100AAA104 /* BrewKit in Frameworks */,
@@ -891,7 +891,7 @@
 				0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */,
 				0B9A100230C9000000CE0001 /* ChatInputEditorKit */,
 				F1E2A3022FC2000100000001 /* FileTreeKit */,
-				0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */,
+				0B462A912FB976B4007E52B1 /* LumiPreviewKit */,
 				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
 				0B52000230C3000000AA0001 /* RAGKit */,
 			);
@@ -1273,19 +1273,19 @@
 			);
 			inputPaths = (
 				"$(SRCROOT)/Packages/LumiPreviewKit/Package.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/main.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderer.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderLoop.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewDemoView.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotStdioPreviewHost.swift",
-				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewEventDispatcher.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/main.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewRenderer.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewRenderLoop.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewDemoView.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotStdioPreviewHost.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiPreviewHostApp/HotPreviewEventDispatcher.swift",
 				"$(SRCROOT)/scripts/embed-inline-preview-host.sh",
 			);
 			name = "Embed Inline Preview Host";
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiInlinePreviewHostApp",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiPreviewHostApp",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
@@ -2140,10 +2140,10 @@
 			package = 0B1A4F922F662D8500F15618 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
 			productName = MLXVLM;
 		};
-		0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */ = {
+		0B462A912FB976B4007E52B1 /* LumiPreviewKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */;
-			productName = LumiInlinePreviewKit;
+			productName = LumiPreviewKit;
 		};
 		0B52000230C3000000AA0001 /* RAGKit */ = {
 			isa = XCSwiftPackageProductDependency;
