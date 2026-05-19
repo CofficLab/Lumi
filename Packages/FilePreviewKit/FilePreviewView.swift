@@ -3,6 +3,32 @@ import Foundation
 import PDFKit
 import QuickLookUI
 import SwiftUI
+import UniformTypeIdentifiers
+
+// MARK: - Preview Kind
+
+private enum FilePreviewKind: Equatable {
+    case image
+    case pdf
+    case quickLook
+}
+
+private enum FilePreviewResolver {
+    static func previewKind(for fileURL: URL) -> FilePreviewKind {
+        let ext = fileURL.pathExtension.lowercased()
+        let utType = ext.isEmpty ? nil : UTType(filenameExtension: ext)
+
+        if utType?.conforms(to: .image) == true {
+            return .image
+        }
+        if utType?.conforms(to: .pdf) == true || ext == "pdf" {
+            return .pdf
+        }
+        return .quickLook
+    }
+}
+
+// MARK: - FilePreviewView
 
 /// 本地文件的 SwiftUI 预览（图片 / PDF / QuickLook 支持的其它类型）。
 public struct FilePreviewView: View {
