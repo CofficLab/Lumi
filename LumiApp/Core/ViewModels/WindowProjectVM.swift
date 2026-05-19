@@ -59,6 +59,7 @@ final class WindowProjectVM: ObservableObject, SuperLog {
 
     /// 清除当前项目，恢复到未选择任何项目的状态
     func clearProject() {
+        currentProject = nil
         codeSelectionRange = nil
 
         Task {

@@ -231,6 +231,31 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         )
     }
 
+    /// 将保存的窗口路由应用到已存在的窗口作用域。
+    ///
+    /// SwiftUI 的 `WindowGroup` 会在启动时先创建一个默认窗口；恢复窗口状态时复用
+    /// 这个窗口承载第一条保存状态，避免“默认窗口 + 恢复窗口”重复出现。
+    func applyRoute(_ route: LumiWindowRoute) {
+        conversationVM.setSelectedConversation(route.conversationId)
+
+        if let projectPath = route.projectPath {
+            let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
+            projectVM.switchProject(to: Project(name: projectName, path: projectPath, lastUsed: Date()))
+        } else {
+            projectVM.clearProject()
+        }
+
+        if route.conversationId != nil {
+            activePanel = .chat
+        } else if route.projectPath != nil {
+            activePanel = .fileTree
+        } else {
+            activePanel = .chat
+        }
+
+        updateTitle()
+    }
+
     // MARK: - Conversation Management
 
     /// 切换到指定会话

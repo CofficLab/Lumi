@@ -72,6 +72,7 @@ final class WindowManager: ObservableObject, SuperLog {
         }
 
         NotificationCenter.postWindowClosed(windowId)
+        saveWindowStates()
 
         if Self.verbose {
             let count = self.windowScopes.count
@@ -249,6 +250,29 @@ final class WindowManager: ObservableObject, SuperLog {
                 conversationId: snapshot.conversationId,
                 projectPath: snapshot.projectPath
             )
+        }
+    }
+
+    /// 恢复保存的窗口状态。
+    ///
+    /// 启动时 SwiftUI 已经创建了一个默认窗口，因此第一条保存的状态会应用到现有窗口；
+    /// 只有多余的状态才需要再打开新窗口。
+    func restoreSavedWindowStates(openAdditionalWindow: (LumiWindowRoute) -> Void) {
+        let routes = loadSavedWindowStates()
+        guard !routes.isEmpty else { return }
+
+        var remainingRoutes = routes
+        if let firstScope = windowScopes.first {
+            let firstRoute = remainingRoutes.removeFirst()
+            firstScope.applyRoute(firstRoute)
+        }
+
+        for route in remainingRoutes {
+            openAdditionalWindow(route)
+        }
+
+        if Self.verbose {
+            AppLogger.core.info("\(Self.t)📂 已恢复 \(routes.count) 个窗口状态，额外打开 \(remainingRoutes.count) 个窗口")
         }
     }
 

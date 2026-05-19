@@ -93,8 +93,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             return
         }
 
-        // 恢复保存的窗口
-        for route in routes {
+        WindowManager.shared.restoreSavedWindowStates { route in
             NotificationCenter.default.post(
                 name: .openWindowWithRoute,
                 object: nil,
@@ -103,7 +102,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         }
 
         if Self.verbose {
-            AppLogger.core.info("\(self.t)📂 已恢复 \(routes.count) 个窗口")
+            AppLogger.core.info("\(self.t)📂 已恢复 \(routes.count) 个窗口状态")
         }
     }
 
