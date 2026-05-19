@@ -458,7 +458,11 @@ final class BuildPlanner: Sendable {
             .resolvingSymlinksInPath()
     }
 
-    static func swiftSourceFiles(in roots: [URL], excluding excludedRoots: [URL] = []) -> [URL] {
+    static func swiftSourceFiles(
+        in roots: [URL],
+        excluding excludedRoots: [URL] = [],
+        excludingNestedPackages: Bool = false
+    ) -> [URL] {
         var files: Set<URL> = []
         let fileManager = FileManager.default
         let excludedPaths = excludedRoots
@@ -490,6 +494,12 @@ final class BuildPlanner: Sendable {
             }
 
             for case let fileURL as URL in enumerator {
+                if excludingNestedPackages,
+                   isNestedPackageDirectory(fileURL, root: root, fileManager: fileManager) {
+                    enumerator.skipDescendants()
+                    continue
+                }
+
                 if isExcluded(fileURL, by: excludedPaths) {
                     // Only call skipDescendants() for directories.
                     // Calling it on a regular file can cause the enumerator
@@ -524,6 +534,21 @@ final class BuildPlanner: Sendable {
 
     private static func isCompilableSwiftSource(_ url: URL) -> Bool {
         url.pathExtension == "swift" && url.lastPathComponent != "Package.swift"
+    }
+
+    private static func isNestedPackageDirectory(
+        _ url: URL,
+        root: URL,
+        fileManager: FileManager
+    ) -> Bool {
+        let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
+        guard values?.isDirectory == true else { return false }
+
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        let rootPath = root.standardizedFileURL.resolvingSymlinksInPath().path
+        guard path != rootPath else { return false }
+
+        return fileManager.fileExists(atPath: url.appendingPathComponent("Package.swift").path)
     }
 
     private static func defaultPath(for target: TargetInfo) -> String {
@@ -693,7 +718,11 @@ private struct XcodeProjectSourceIndex {
                 }
             }
 
-        return BuildPlanner.swiftSourceFiles(in: [rootURL], excluding: excludedURLs)
+        return BuildPlanner.swiftSourceFiles(
+            in: [rootURL],
+            excluding: excludedURLs,
+            excludingNestedPackages: true
+        )
     }
 
     private func sourceURL(fileRefID: String) -> URL? {

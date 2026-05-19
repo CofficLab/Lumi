@@ -331,8 +331,8 @@ struct BuildPlannerTests {
         #expect(!sources.contains(ignoredFile.standardizedFileURL.resolvingSymlinksInPath()))
     }
 
-    @Test("Xcode synchronized group 不应把嵌套 Package.swift 当作预览源码")
-    func xcodeSynchronizedGroupExcludesNestedPackageManifest() throws {
+    @Test("Xcode synchronized group 不应把嵌套 Swift package 当作预览源码")
+    func xcodeSynchronizedGroupExcludesNestedPackageSources() throws {
         let rootDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiPreviewKit-XcodeNestedPackage-\(UUID().uuidString)", isDirectory: true)
         let projectURL = rootDirectory.appendingPathComponent("SyncedApp.xcodeproj", isDirectory: true)
@@ -341,13 +341,18 @@ struct BuildPlannerTests {
         let packageSourceDirectory = packageDirectory
             .appendingPathComponent("Sources", isDirectory: true)
             .appendingPathComponent("CisumDeviceData", isDirectory: true)
+        let packageTestsDirectory = packageDirectory
+            .appendingPathComponent("Tests", isDirectory: true)
+            .appendingPathComponent("CisumDeviceDataTests", isDirectory: true)
         let appFile = appDirectory.appendingPathComponent("BootApp.swift")
         let packageManifest = packageDirectory.appendingPathComponent("Package.swift")
         let packageSourceFile = packageSourceDirectory.appendingPathComponent("DeviceData.swift")
+        let packageTestFile = packageTestsDirectory.appendingPathComponent("DeviceDataTests.swift")
 
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: appDirectory, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: packageSourceDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: packageTestsDirectory, withIntermediateDirectories: true)
         try "import SwiftUI\nstruct BootApp {}\n".write(to: appFile, atomically: true, encoding: .utf8)
         try """
         // swift-tools-version: 6.0
@@ -359,6 +364,7 @@ struct BuildPlannerTests {
         )
         """.write(to: packageManifest, atomically: true, encoding: .utf8)
         try "public struct DeviceData {}\n".write(to: packageSourceFile, atomically: true, encoding: .utf8)
+        try "import Testing\n@Test func deviceDataDefaults() {}\n".write(to: packageTestFile, atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: rootDirectory) }
 
         try """
@@ -393,9 +399,15 @@ struct BuildPlannerTests {
         )
 
         let normalizedManifest = packageManifest.standardizedFileURL.resolvingSymlinksInPath()
+        let normalizedPackageSource = packageSourceFile.standardizedFileURL.resolvingSymlinksInPath()
+        let normalizedPackageTest = packageTestFile.standardizedFileURL.resolvingSymlinksInPath()
         #expect(sources.contains(appFile.standardizedFileURL.resolvingSymlinksInPath()))
         #expect(!sources.contains(normalizedManifest),
                 "Package.swift is a SwiftPM manifest and cannot be compiled as a normal Swift source in preview entry builds.")
+        #expect(!sources.contains(normalizedPackageSource),
+                "Nested Swift package sources should be built through their package product, not copied into the app preview entry.")
+        #expect(!sources.contains(normalizedPackageTest),
+                "Nested Swift package tests require SwiftPM test plugin context and must not be compiled as app preview sources.")
     }
 
     @Test("Xcode workspace 根据 contents.xcworkspacedata 解析 project 源码")
