@@ -50,6 +50,9 @@
         }
       }
     },
+    "--" : {
+
+    },
     ":" : {
       "extractionState" : "stale",
       "localizations" : {
