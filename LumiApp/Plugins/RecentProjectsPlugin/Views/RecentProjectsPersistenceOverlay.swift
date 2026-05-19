@@ -13,6 +13,7 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
+    @EnvironmentObject private var recentProjectsVM: AppRecentProjectsVM
 
     let content: Content
 
@@ -29,7 +30,7 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
             // 未选择项目时显示引导遮罩
             if restored && !projectVM.isProjectSelected {
                 NoProjectOverlay(
-                    recentProjects: AppRecentProjectsVM.shared.recentProjects,
+                    recentProjects: recentProjectsVM.recentProjects,
                     isFileImporterPresented: $isFileImporterPresented,
                     onSelectProject: { project in
                         projectVM.switchProject(to: project)
@@ -77,7 +78,7 @@ extension RecentProjectsPersistenceOverlay {
 
             guard !Task.isCancelled else { return }
 
-            AppRecentProjectsVM.shared.setRecentProjects(snapshot.projects)
+            recentProjectsVM.setRecentProjects(snapshot.projects)
 
             if let currentProject = snapshot.currentProject {
                 projectVM.switchProject(to: currentProject)
@@ -151,9 +152,9 @@ extension RecentProjectsPersistenceOverlay {
             lastUsed: Date()
         )
         store.addProject(name: project.name, path: project.path)
-        var projects = AppRecentProjectsVM.shared.recentProjects.filter { $0.path != project.path }
+        var projects = recentProjectsVM.recentProjects.filter { $0.path != project.path }
         projects.insert(project, at: 0)
-        AppRecentProjectsVM.shared.setRecentProjects(projects)
+        recentProjectsVM.setRecentProjects(projects)
         projectVM.switchProject(to: project)
     }
 }

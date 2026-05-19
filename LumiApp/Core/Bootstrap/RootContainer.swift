@@ -48,6 +48,7 @@ final class RootContainer: ObservableObject, SuperLog {
     let messageRendererVM: AppMessageRendererVM
     let themeVM: AppThemeVM
     let chatHistoryVM: AppChatHistoryVM
+    let recentProjectsVM: AppRecentProjectsVM
     let gitVM: AppGitVM
     let agentSessionConfig: AppLLMVM
     let captureThinkingContent: Bool
@@ -197,6 +198,7 @@ final class RootContainer: ObservableObject, SuperLog {
         )
         
         self.chatHistoryVM = AppChatHistoryVM(chatHistoryService: chatHistoryService)
+        self.recentProjectsVM = AppRecentProjectsVM()
         
         // ========================================
         // Agent 配置

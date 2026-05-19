@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import SwiftUI
 
 /// 请求日志插件
 ///
@@ -23,5 +24,10 @@ actor RequestLogPlugin: SuperPlugin, SuperLog {
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(RequestLogSuperSendMiddleware())]
+    }
+
+    @MainActor
+    func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
+        AnyView(RequestLogStatusBarView())
     }
 }

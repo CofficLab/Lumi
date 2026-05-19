@@ -34,7 +34,7 @@ final class AgentContextSyncSuperSendMiddleware: SuperSendMiddleware, SuperLog {
         let projectName = ctx.projectVM.currentProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
         let selectedFileURL = ctx.currentFileURL
         let codeSelectionRange = ctx.projectVM.codeSelectionRange
-        let recentProjects = AppRecentProjectsVM.shared.getRecentProjects()
+        let recentProjects = ctx.recentProjectsVM.getRecentProjects()
 
         if Self.verbose {
             if AgentContextSyncPlugin.verbose {

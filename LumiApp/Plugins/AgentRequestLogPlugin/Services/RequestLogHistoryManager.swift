@@ -69,6 +69,10 @@ actor RequestLogHistoryManager: SuperLog {
         return items.map { RequestLogItemDTO(from: $0) }
     }
 
+    nonisolated func getContext() -> ModelContext {
+        ModelContext(container)
+    }
+
     func getLatest(limit: Int = 100) async -> [RequestLogItemDTO] {
         let context = ModelContext(container)
         var descriptor = FetchDescriptor<RequestLogItem>(

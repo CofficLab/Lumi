@@ -5,6 +5,7 @@ import SwiftUI
 
 struct ProjectDropdownMenu: View {
     @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var recentProjectsVM: AppRecentProjectsVM
     @Environment(\.openWindow) private var openWindow
     @Binding var isPresented: Bool
 
@@ -15,7 +16,7 @@ struct ProjectDropdownMenu: View {
     private let store = RecentProjectsStore()
 
     private var recentProjects: [Project] {
-        Array(AppRecentProjectsVM.shared.recentProjects
+        Array(recentProjectsVM.recentProjects
             .prefix(10)
             .filter { $0.path != projectVM.currentProjectPath })
     }

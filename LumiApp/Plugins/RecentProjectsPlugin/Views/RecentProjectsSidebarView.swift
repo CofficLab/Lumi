@@ -4,6 +4,7 @@ import MagicKit
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var recentProjectsVM: AppRecentProjectsVM
     @Environment(\.openWindow) private var openWindow
     @StateObject private var branchCache = GitBranchCache()
     @State private var isFileImporterPresented = false
@@ -163,7 +164,7 @@ struct RecentProjectsSidebarView: View {
     // MARK: - Computed Properties
 
     private var recentProjects: [Project] {
-        AppRecentProjectsVM.shared.recentProjects
+        recentProjectsVM.recentProjects
     }
 
     private var tipsCard: some View {
@@ -218,7 +219,7 @@ struct RecentProjectsSidebarView: View {
         )
 
         store.addProject(name: project.name, path: project.path)
-        AppRecentProjectsVM.shared.setRecentProjects(store.loadProjects())
+        recentProjectsVM.setRecentProjects(store.loadProjects())
         projectVM.switchProject(to: project)
     }
 

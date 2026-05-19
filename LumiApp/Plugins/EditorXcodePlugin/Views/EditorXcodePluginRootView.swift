@@ -11,6 +11,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
     let content: Content
 
     @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var recentProjectsVM: AppRecentProjectsVM
 
     @State private var hasTriggeredPreload = false
     @State private var preloadStatus: PreloadStatus = .idle
@@ -58,7 +59,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
                             XcodePluginLog.logger.info("\(Self.t)开始扫描最近项目用于 Xcode 预加载")
             }
         }
-        let recentProjects = AppRecentProjectsVM.shared.getRecentProjects()
+        let recentProjects = recentProjectsVM.getRecentProjects()
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
                             XcodePluginLog.logger.info("\(Self.t)最近项目数量：\(recentProjects.count)")

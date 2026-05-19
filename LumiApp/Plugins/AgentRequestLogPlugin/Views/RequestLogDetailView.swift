@@ -1,0 +1,350 @@
+import SwiftUI
+import MagicKit
+
+/// 请求日志详情视图 - 展示数据库原始数据
+struct RequestLogDetailView: View {
+    @ObservedObject var viewModel: RequestLogBrowserViewModel
+    @EnvironmentObject private var themeVM: AppThemeVM
+
+    var body: some View {
+        let theme = themeVM.activeAppTheme
+
+        VStack(alignment: .leading, spacing: 0) {
+            header(theme: theme)
+
+            if viewModel.isLoading {
+                Spacer()
+                ProgressView(String(localized: "Loading...", table: "RequestLog"))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Spacer()
+            } else {
+                contentView
+            }
+
+            footer(theme: theme)
+        }
+        .frame(height: 600)
+        .task {
+            await viewModel.reload()
+        }
+    }
+
+    // MARK: - Header
+
+    private func header(theme: AppTheme) -> some View {
+        VStack(spacing: 0) {
+            // 标题行
+            HStack {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 13))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                Text(String(localized: "Request Log", table: "RequestLog"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+
+                Spacer()
+
+                // Stats summary
+                HStack(spacing: 12) {
+                    statBadge(
+                        label: String(localized: "Total", table: "RequestLog"),
+                        value: "\(viewModel.stats.totalRequests)",
+                        color: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+                    )
+                    statBadge(
+                        label: String(localized: "Success", table: "RequestLog"),
+                        value: "\(viewModel.stats.successCount)",
+                        color: .green
+                    )
+                    statBadge(
+                        label: String(localized: "Failed", table: "RequestLog"),
+                        value: "\(viewModel.stats.failedCount)",
+                        color: .red
+                    )
+                    statBadge(
+                        label: String(localized: "Avg", table: "RequestLog"),
+                        value: String(format: "%.1fs", viewModel.stats.averageDuration),
+                        color: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+                    )
+                }
+
+                Divider()
+                    .frame(height: 16)
+
+                // Reload button
+                Button {
+                    Task { await viewModel.reload() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "Reload", table: "RequestLog"))
+            }
+
+            Divider()
+                .padding(.vertical, 6)
+
+            // Filter tabs
+            HStack(spacing: 0) {
+                filterTab(
+                    title: String(localized: "All", table: "RequestLog"),
+                    icon: "list.bullet",
+                    filter: nil
+                )
+
+                filterTab(
+                    title: String(localized: "Success", table: "RequestLog"),
+                    icon: "checkmark.circle",
+                    filter: true
+                )
+
+                filterTab(
+                    title: String(localized: "Failed", table: "RequestLog"),
+                    icon: "xmark.circle",
+                    filter: false
+                )
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+    }
+
+    private func statBadge(label: String, value: String, color: Color) -> some View {
+        VStack(spacing: 1) {
+            Text(value)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(color)
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
+        }
+    }
+
+    private func filterTab(title: String, icon: String, filter: Bool?) -> some View {
+        let isActive: Bool
+        switch filter {
+        case nil:
+            isActive = viewModel.filterSuccess == nil
+        case true:
+            isActive = viewModel.filterSuccess == true
+        case false:
+            isActive = viewModel.filterSuccess == false
+        }
+
+        return Button {
+            viewModel.filterSuccess = filter
+            viewModel.currentPage = 1
+            Task { await viewModel.reload() }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
+            .foregroundColor(isActive ? Color.accentColor : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Content
+
+    @ViewBuilder
+    private var contentView: some View {
+        if viewModel.items.isEmpty {
+            emptyView
+        } else {
+            requestLogTable
+        }
+    }
+
+    // MARK: - Table
+
+    @ViewBuilder
+    private var requestLogTable: some View {
+        Table(viewModel.items) { item in
+            TableColumn(String(localized: "Time", table: "RequestLog")) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.timestamp, style: .date)
+                        .font(.system(size: 10))
+                    Text(item.timestamp, style: .time)
+                        .font(.system(size: 10))
+                }
+                .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+            }
+            .width(min: 100, max: 120)
+
+            TableColumn(String(localized: "Method", table: "RequestLog")) {
+                Text(item.method.uppercased())
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+            }
+            .width(min: 50, max: 70)
+
+            TableColumn(String(localized: "URL", table: "RequestLog")) {
+                Text(item.requestURL)
+                    .font(.system(size: 10))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+            }
+            .width(min: 150)
+
+            TableColumn(String(localized: "Body Size", table: "RequestLog")) {
+                Text(formatBytes(item.requestBodySize))
+                    .font(.system(size: 10))
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            }
+            .width(min: 60, max: 80)
+
+            TableColumn(String(localized: "Status", table: "RequestLog")) {
+                if let code = item.responseStatusCode {
+                    Text("\(code)")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(statusColor(code: code))
+                } else {
+                    Text("--")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
+                }
+            }
+            .width(min: 50, max: 70)
+
+            TableColumn(String(localized: "Duration", table: "RequestLog")) {
+                if let duration = item.duration {
+                    Text(String(format: "%.2fs", duration))
+                        .font(.system(size: 10))
+                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                } else {
+                    Text("--")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
+                }
+            }
+            .width(min: 60, max: 80)
+
+            TableColumn(String(localized: "Result", table: "RequestLog")) {
+                if item.isSuccess {
+                    Label(String(localized: "Success", table: "RequestLog"), systemImage: "checkmark.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(.green)
+                } else {
+                    Label(String(localized: "Failed", table: "RequestLog"), systemImage: "xmark.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(.red)
+                }
+            }
+            .width(min: 70, max: 90)
+
+            TableColumn(String(localized: "Error", table: "RequestLog")) {
+                if let error = item.errorMessage {
+                    Text(error)
+                        .font(.system(size: 10))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .foregroundColor(.red)
+                } else {
+                    Text("--")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
+                }
+            }
+            .width(min: 150)
+
+            TableColumn(String(localized: "Request ID", table: "RequestLog")) {
+                Text(item.requestId.uuidString.prefix(8))
+                    .font(.system(size: 9))
+                    .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
+            }
+            .width(min: 80, max: 100)
+        }
+        .tableStyle(.inset(alternatesRowBackgrounds: true))
+        .background(Color.clear)
+    }
+
+    // MARK: - Footer
+
+    private func footer(theme: AppTheme) -> some View {
+        HStack(spacing: 12) {
+            Text(
+                String(
+                    format: String(localized: "Showing: %d", table: "RequestLog"),
+                    viewModel.totalDisplayCount
+                )
+            )
+            .font(.system(size: 11))
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+
+            Spacer()
+
+            Button(String(localized: "Prev", table: "RequestLog")) {
+                viewModel.previousPage()
+            }
+            .font(.system(size: 11))
+            .disabled(viewModel.currentPage <= 1)
+
+            Text(
+                String(
+                    format: String(localized: "Page %d / %d", table: "RequestLog"),
+                    viewModel.currentPage,
+                    viewModel.totalPages
+                )
+            )
+            .font(.system(size: 11))
+            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+
+            Button(String(localized: "Next", table: "RequestLog")) {
+                viewModel.nextPage()
+            }
+            .font(.system(size: 11))
+            .disabled(viewModel.currentPage >= viewModel.totalPages)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Empty
+
+    private var emptyView: some View {
+        VStack(spacing: 8) {
+            Spacer()
+            Image(systemName: "tray")
+                .font(.system(size: 24))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            Text(String(localized: "No request logs", table: "RequestLog"))
+                .font(.system(size: 12))
+                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Helpers
+
+    private func formatBytes(_ bytes: Int) -> String {
+        if bytes < 1024 {
+            return "\(bytes) B"
+        } else if bytes < 1024 * 1024 {
+            return String(format: "%.1f KB", Double(bytes) / 1024)
+        } else {
+            return String(format: "%.1f MB", Double(bytes) / (1024 * 1024))
+        }
+    }
+
+    private func statusColor(code: Int) -> Color {
+        if code >= 200 && code < 300 {
+            return .green
+        } else if code >= 400 {
+            return .red
+        } else {
+            return Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+        }
+    }
+}

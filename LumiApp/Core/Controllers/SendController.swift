@@ -115,6 +115,7 @@ final class SendController: ObservableObject, SuperLog {
             chatHistoryService: global.chatHistoryService,
             agentSessionConfig: global.agentSessionConfig,
             projectVM: scope.projectVM,
+            recentProjectsVM: global.recentProjectsVM,
             currentFileURL: scope.editorVM.service.currentFileURL
         )
         ctx.abortTurn = { [weak self] in

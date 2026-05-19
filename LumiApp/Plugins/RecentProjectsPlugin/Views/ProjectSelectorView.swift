@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct ProjectSelectorView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject private var projectContextRequestVM: WindowProjectContextRequestVM
+    @EnvironmentObject var recentProjectsVM: AppRecentProjectsVM
     @Environment(\.openWindow) private var openWindow
 
     @Binding var isPresented: Bool
@@ -92,7 +93,7 @@ struct ProjectSelectorView: View {
     // MARK: - Computed Properties
 
     private var recentProjects: [Project] {
-        Array(AppRecentProjectsVM.shared.recentProjects
+        Array(recentProjectsVM.recentProjects
             .prefix(maxRecentProjects)
             .filter { project in
                 project.path != projectVM.currentProjectPath
@@ -271,7 +272,7 @@ extension ProjectSelectorView {
         withAnimation {
             store.removeProject(project)
             // 更新 projectVM 中的列表
-            AppRecentProjectsVM.shared.setRecentProjects(store.loadProjects())
+            recentProjectsVM.setRecentProjects(store.loadProjects())
         }
     }
 
