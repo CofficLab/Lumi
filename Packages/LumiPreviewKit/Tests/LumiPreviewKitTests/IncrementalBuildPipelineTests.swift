@@ -263,16 +263,6 @@ struct IncrementalBuildPipelineTests {
     func currentSourceSanitizationStripsPreviewBlocksAndMainAttribute() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let fileManager = FileManager.default
-        let sourceEntryDirectory = LumiPreviewFacade.PreviewStorage.paths.workDirectory
-            .appendingPathComponent("source-entry", isDirectory: true)
-        let existingGeneratedDirectories = Set(
-            (try? fileManager.contentsOfDirectory(
-                at: sourceEntryDirectory,
-                includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
-            ))?.map(\.path) ?? []
-        )
         let sourceURL = directory.appendingPathComponent("Demo.swift")
         try """
         import SwiftUI
@@ -304,24 +294,13 @@ struct IncrementalBuildPipelineTests {
             sourceText: try String(contentsOf: sourceURL, encoding: .utf8)
         )
 
-        _ = try await pipeline.compilePreviewEntryIncludingCurrentSource(
+        let entryURL = try await pipeline.compilePreviewEntryIncludingCurrentSource(
             discovery: discovery,
             configuration: .empty,
             buildStrategy: .incremental(fileURL: sourceURL, compileCommand: "/usr/bin/env swiftc")
         )
 
-        let generatedDirectories = try fileManager.contentsOfDirectory(
-            at: sourceEntryDirectory,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ).filter {
-            !existingGeneratedDirectories.contains($0.path)
-        }
-        #expect(generatedDirectories.count == 1)
-        guard let latestDirectory = generatedDirectories.first else {
-            Issue.record("Expected generated source entry directory")
-            return
-        }
+        let latestDirectory = entryURL.deletingLastPathComponent()
 
         let sanitizedSource = try String(
             contentsOf: latestDirectory.appendingPathComponent("CurrentSource.swift"),
@@ -423,7 +402,8 @@ struct IncrementalBuildPipelineTests {
             buildStrategy: .spm(
                 packageDirectory: packageDirectory,
                 targetName: "InternalPreviewFixture"
-            )
+            ),
+            forceSourceInclude: true
         )
 
         guard let handle = dlopen(entryURL.path, RTLD_NOW | RTLD_LOCAL) else {

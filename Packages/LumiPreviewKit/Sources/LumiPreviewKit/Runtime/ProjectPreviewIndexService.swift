@@ -111,7 +111,7 @@ extension LumiPreviewFacade {
       entriesByPath[fileURL.standardizedFileURL.path] = Entry(
         fileURL: fileURL,
         modifiedAt: metadata.modifiedAt,
-        fileSize: Int64(sourceText.utf8.count),
+        fileSize: metadata.fileSize > 0 ? metadata.fileSize : Int64(sourceText.utf8.count),
         sourceFingerprint: Self.sourceFingerprint(sourceText),
         previews: previews.strippingSourceText()
       )

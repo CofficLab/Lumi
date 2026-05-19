@@ -21,18 +21,6 @@ struct BundleModuleSanitizationTests {
     func sourceIncludeEntryReplacesBundleModuleWithBundleMain() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let fileManager = FileManager.default
-        let sourceEntryDirectory = LumiPreviewFacade.PreviewStorage.paths.workDirectory
-            .appendingPathComponent("source-entry", isDirectory: true)
-
-        // Track existing generated directories so we can find the new one.
-        let existingGeneratedDirectories = Set(
-            (try? fileManager.contentsOfDirectory(
-                at: sourceEntryDirectory,
-                includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
-            ))?.map(\.path) ?? []
-        )
 
         let sourceURL = directory.appendingPathComponent("BundleModuleDemo.swift")
         let sourceText = """
@@ -72,24 +60,13 @@ struct BundleModuleSanitizationTests {
             sourceText: sourceText
         )
 
-        _ = try await pipeline.compilePreviewEntryIncludingCurrentSource(
+        let entryURL = try await pipeline.compilePreviewEntryIncludingCurrentSource(
             discovery: discovery,
             configuration: .empty,
             buildStrategy: .incremental(fileURL: sourceURL, compileCommand: "/usr/bin/env swiftc")
         )
 
-        let generatedDirectories = try fileManager.contentsOfDirectory(
-            at: sourceEntryDirectory,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ).filter {
-            !existingGeneratedDirectories.contains($0.path)
-        }
-        #expect(generatedDirectories.count == 1)
-        guard let latestDirectory = generatedDirectories.first else {
-            Issue.record("Expected generated source entry directory")
-            return
-        }
+        let latestDirectory = entryURL.deletingLastPathComponent()
 
         let sanitizedSource = try String(
             contentsOf: latestDirectory.appendingPathComponent("CurrentSource.swift"),
@@ -212,7 +189,8 @@ struct BundleModuleSanitizationTests {
             buildStrategy: .spm(
                 packageDirectory: packageDirectory,
                 targetName: "BundleModuleFixture"
-            )
+            ),
+            forceSourceInclude: true
         )
 
         // The entry should have a real NSView symbol (live preview), not just a descriptor

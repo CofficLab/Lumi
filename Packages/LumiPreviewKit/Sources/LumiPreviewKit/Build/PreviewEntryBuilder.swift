@@ -342,7 +342,6 @@ final class PreviewEntryBuilder: Sendable {
         let currentSourceURL = discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
 
         if !forceSourceInclude,
-           !isSPMBuildStrategy(buildStrategy),
            buildStrategy != nil,
            LumiPreviewFacade.ModuleImportEligibilityChecker().shouldUseModuleImport(discovery: discovery) {
             return []
@@ -375,13 +374,6 @@ final class PreviewEntryBuilder: Sendable {
             .uniqued()
             .filter { $0 == currentSourceURL || $0.lastPathComponent != "main.swift" }
             .sorted { $0.path < $1.path }
-    }
-
-    private func isSPMBuildStrategy(_ buildStrategy: BuildStrategy?) -> Bool {
-        if case .spm = buildStrategy {
-            return true
-        }
-        return false
     }
 
     private func spmTargetSourceFiles(

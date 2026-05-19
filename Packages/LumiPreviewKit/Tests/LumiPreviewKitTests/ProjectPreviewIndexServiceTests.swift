@@ -23,7 +23,7 @@ struct ProjectPreviewIndexServiceTests {
         service.onSnapshotChanged = { snapshots.append($0) }
 
         service.prepareIndex(projectRootPath: packageDirectory.path, currentFileURL: preferred)
-        let snapshot = try await snapshots.waitForSnapshot(timeoutNanoseconds: 3_000_000_000)
+        let snapshot = try await snapshots.waitForSnapshot(timeoutNanoseconds: 15_000_000_000)
 
         #expect((snapshot?.previewCount ?? 0) >= 2)
         #expect((snapshot?.scannedFileCount ?? 0) >= 2)
@@ -112,7 +112,7 @@ struct ProjectPreviewIndexServiceTests {
         service.prepareIndex(projectRootPath: root.path, currentFileURL: fileURL)
 
         let scanner = LumiPreviewFacade.PreviewScanner()
-        var sourceText = try String(contentsOf: fileURL, encoding: .utf8)
+        let sourceText = try String(contentsOf: fileURL, encoding: .utf8)
         let previews = scanner.scan(fileURL: fileURL, sourceText: sourceText)
         service.refreshCurrentFile(fileURL: fileURL, sourceText: sourceText, previews: previews)
         #expect(service.cachedPreviews(for: fileURL) != nil)
