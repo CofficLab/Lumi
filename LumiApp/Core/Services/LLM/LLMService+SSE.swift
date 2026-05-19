@@ -1,5 +1,7 @@
 import Foundation
 import MagicKit
+import LLMKit
+import HttpKit
 
 extension LLMService {
     /// 流式发送消息（SSE），通过 `onChunk` 回调增量内容。
@@ -11,7 +13,7 @@ extension LLMService {
         config: LLMConfig,
         tools: [SuperAgentTool]? = nil,
         onChunk: @Sendable @escaping (StreamChunk) async -> Void,
-        onRequestStart: @Sendable @escaping (RequestMetadata) async -> Void = { _ in }
+        onRequestStart: @Sendable @escaping (HTTPRequestMetadata) async -> Void = { _ in }
     ) async throws -> ChatMessage {
         let startTime = CFAbsoluteTimeGetCurrent()
 
@@ -77,7 +79,7 @@ extension LLMService {
         // 构建 URLRequest
         let request = provider.buildRequest(url: url, apiKey: config.apiKey)
 
-        let state = StreamingState(startTime: startTime)
+        let state = StreamingState(startTime: startTime, maxThinkingLength: AgentConfig.maxThinkingTextLength)
         let chunkCounter = ChunkCounter() // 用于调试计数
 
         do {
@@ -118,7 +120,12 @@ extension LLMService {
 
                             if let firstToolCall = toolCalls.first {
                                 let hasPartialJson = chunk.partialJson != nil
-                                await state.startNewToolCall(firstToolCall, hasPartialJson: hasPartialJson)
+                                await state.startNewToolCall(
+                                    id: firstToolCall.id,
+                                    name: firstToolCall.name,
+                                    hasPartialJson: hasPartialJson,
+                                    arguments: firstToolCall.arguments
+                                )
                             }
                         }
 
@@ -161,7 +168,7 @@ extension LLMService {
             throw LLMServiceError.cancelled
         } catch let e as LLMServiceError {
             throw e
-        } catch let apiError as APIError {
+        } catch let apiError as HTTPClientError {
             // 确保 HTTP 错误包含状态码信息
             let errorMessage: String
             if case let .httpError(statusCode, message) = apiError {
@@ -183,11 +190,15 @@ extension LLMService {
         // 计算流式传输耗时
         let streamingDuration = await state.getStreamingDuration()
 
+        // 桥接 KitToolCall → App ToolCall
+        let kitToolCalls = await state.getFinalToolCalls()
+        let appToolCalls = kitToolCalls?.map { ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
+
         return ChatMessage(
             role: .assistant,
             conversationId: conversationId,
             content: await state.accumulatedContentChunks.joined(),
-            toolCalls: await state.getFinalToolCalls(),
+            toolCalls: appToolCalls,
             providerId: config.providerId,
             modelName: config.model,
             latency: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,

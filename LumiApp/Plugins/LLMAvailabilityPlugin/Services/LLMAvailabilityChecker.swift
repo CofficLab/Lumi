@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import LLMKit
 import os
 
 /// LLM 可用性检测服务

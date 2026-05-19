@@ -22,33 +22,33 @@ import Foundation
 ///     providerId: "openai"
 /// )
 /// ```
-struct LLMConfig: Codable, Sendable, Equatable {
+public struct LLMConfig: Codable, Sendable, Equatable {
     /// API 密钥
-    var apiKey: String
-    
+    public var apiKey: String
+
     /// 模型名称
-    var model: String
-    
+    public var model: String
+
     /// 供应商 ID
-    var providerId: String
-    
+    public var providerId: String
+
     /// 温度参数
     ///
     /// 控制生成文本的随机性。
     /// - 较低值（如 0.0-0.3）：更确定、更保守的输出
     /// - 较高值（如 0.7-1.0）：更随机、更有创意的输出
-    var temperature: Double?
-    
+    public var temperature: Double?
+
     /// 最大生成 token 数
     ///
     /// 限制模型生成的最大 token 数量。
     /// 不同供应商有不同的默认值和上限。
-    var maxTokens: Int?
-    
+    public var maxTokens: Int?
+
     /// 默认配置
     ///
     /// 使用 Anthropic Claude 作为默认供应商。
-    static let `default` = LLMConfig(
+    public static let `default` = LLMConfig(
         apiKey: "",
         model: "claude-sonnet-4-20250514",
         providerId: "anthropic",
@@ -56,9 +56,23 @@ struct LLMConfig: Codable, Sendable, Equatable {
         maxTokens: nil
     )
 
+    public init(
+        apiKey: String,
+        model: String,
+        providerId: String,
+        temperature: Double? = nil,
+        maxTokens: Int? = nil
+    ) {
+        self.apiKey = apiKey
+        self.model = model
+        self.providerId = providerId
+        self.temperature = temperature
+        self.maxTokens = maxTokens
+    }
+
     /// 校验配置完整性，在发起请求前调用以便给出明确错误提示。
     /// - Throws: `LLMServiceError` 当必填项为空或参数超出合理范围时
-    func validate() throws {
+    public func validate() throws {
         if apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             throw LLMServiceError.apiKeyEmpty
         }
@@ -76,4 +90,3 @@ struct LLMConfig: Codable, Sendable, Equatable {
         }
     }
 }
-

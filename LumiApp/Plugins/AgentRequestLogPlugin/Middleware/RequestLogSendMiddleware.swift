@@ -1,4 +1,5 @@
 import Foundation
+import HttpKit
 import MagicKit
 
 /// 请求日志发送中间件
@@ -20,7 +21,7 @@ struct RequestLogSuperSendMiddleware: SuperSendMiddleware {
     }
 
     func handlePost(
-        metadata: RequestMetadata,
+        metadata: HTTPRequestMetadata,
         response: ChatMessage?
     ) async {
         _ = response

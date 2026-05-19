@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 
 struct ReviewEngine: Sendable {
     let llmService: LLMService

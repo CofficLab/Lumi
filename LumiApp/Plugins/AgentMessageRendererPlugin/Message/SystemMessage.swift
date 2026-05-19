@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import LLMKit
 import LumiUI
 
 // MARK: - System Message

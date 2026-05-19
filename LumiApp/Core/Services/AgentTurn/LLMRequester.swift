@@ -1,5 +1,7 @@
 import Foundation
 import MagicKit
+import LLMKit
+import HttpKit
 
 // MARK: - 重试策略
 
@@ -201,7 +203,7 @@ final class LLMRequester: SuperLog {
     private func makeRequestStartHandler(
         conversationId: UUID,
         metadataHolder: MetadataHolder
-    ) -> @Sendable (RequestMetadata) async -> Void {
+    ) -> @Sendable (HTTPRequestMetadata) async -> Void {
         let statusVM = self.statusVM
         return { metadata in
             await metadataHolder.set(metadata)
@@ -254,7 +256,7 @@ final class LLMRequester: SuperLog {
         mutableMetadata.duration = CFAbsoluteTimeGetCurrent() - startTime
         if let error {
             mutableMetadata.error = error
-            if let apiError = error as? APIError,
+            if let apiError = error as? HTTPClientError,
                case let .httpError(statusCode, _) = apiError {
                 mutableMetadata.responseStatusCode = statusCode
             }
@@ -285,8 +287,8 @@ final class LLMRequester: SuperLog {
             }
         }
 
-        // ── APIError（由 LLMAPIService 直接抛出）──
-        if let apiError = error as? APIError {
+        // ── HTTPClientError（由 LLMAPIService 直接抛出）──
+        if let apiError = error as? HTTPClientError {
             switch apiError {
             case let .httpError(statusCode, _):
                 if statusCode == 429 { return true }

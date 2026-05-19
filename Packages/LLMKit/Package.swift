@@ -1,0 +1,32 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "LLMKit",
+    platforms: [
+        .macOS(.v14),
+    ],
+    products: [
+        .library(
+            name: "LLMKit",
+            targets: ["LLMKit"]
+        ),
+    ],
+    dependencies: [
+        .package(name: "HttpKit", path: "../HttpKit"),
+    ],
+    targets: [
+        .target(
+            name: "LLMKit",
+            dependencies: [
+                "HttpKit",
+            ],
+            path: "Sources/LLMKit"
+        ),
+        .testTarget(
+            name: "LLMKitTests",
+            dependencies: ["LLMKit"],
+            path: "Tests/LLMKitTests"
+        ),
+    ]
+)

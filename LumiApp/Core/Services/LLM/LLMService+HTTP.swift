@@ -1,5 +1,7 @@
 import Foundation
 import MagicKit
+import LLMKit
+import HttpKit
 
 extension LLMService {
     /// 发送消息到指定的 LLM 供应商（单次 HTTP 请求）。
@@ -101,7 +103,7 @@ extension LLMService {
 
         } catch let e as LLMServiceError {
             throw e
-        } catch let apiError as APIError {
+        } catch let apiError as HTTPClientError {
             // 确保 HTTP 错误包含状态码信息
             let errorMessage: String
             if case let .httpError(statusCode, message) = apiError {

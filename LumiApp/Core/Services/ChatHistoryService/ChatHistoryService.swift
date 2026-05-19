@@ -1,6 +1,7 @@
 import Foundation
 import MagicKit
 import SwiftData
+import LLMKit
 
 /// 聊天历史服务 - 使用 SwiftData 存储对话
 ///

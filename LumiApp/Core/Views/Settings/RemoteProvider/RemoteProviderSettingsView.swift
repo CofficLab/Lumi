@@ -1,4 +1,5 @@
 import os
+import LLMKit
 import SwiftUI
 import LumiUI
 import MagicKit
@@ -185,7 +186,7 @@ extension RemoteProviderSettingsView {
             VStack(spacing: 0) {
                 let models = selectedProvider?.availableModels ?? []
                 ForEach(models, id: \.self) { model in
-                    let capabilities = selectedProvider?.modelCapabilities[model]
+                    let capabilities = selectedProviderType?.modelCapabilities[model]
                     RemoteModelRow(
                         model: model,
                         isDefault: selectedModel == model,

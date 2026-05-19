@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import LLMKit
 
 @MainActor
 final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {

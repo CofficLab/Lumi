@@ -1,4 +1,5 @@
 import SwiftUI
+import LLMKit
 import LumiUI
 
 /// 供应商选择按钮组件

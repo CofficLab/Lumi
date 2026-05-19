@@ -19,7 +19,7 @@ actor SSEClientTransport: Transport, SuperLog {
     private let messageContinuation: AsyncThrowingStream<Data, Error>.Continuation
 
     private let client: HTTPClient
-    private var endpointURL: URL?
+    nonisolated(unsafe) private var endpointURL: URL?
 
     init(url: URL, headers: [String: String] = [:], logger: Logging.Logger? = nil) {
         self.url = url

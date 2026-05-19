@@ -1,5 +1,7 @@
 import Foundation
 import MagicKit
+import LLMKit
+import HttpKit
 
 /// 回合收尾工具
 ///
@@ -62,7 +64,7 @@ final class TurnFinalizer: SuperLog {
 
     /// 从 Error 中提取原始 HTTP 错误详情（状态码 + 响应体），用于 UI 折叠展示。
     private static func extractRawErrorDetail(from error: Error) -> String? {
-        if let apiError = error as? APIError,
+        if let apiError = error as? HTTPClientError,
            case let .httpError(statusCode, message) = apiError {
             return "HTTP \(statusCode)\n\(message)"
         }

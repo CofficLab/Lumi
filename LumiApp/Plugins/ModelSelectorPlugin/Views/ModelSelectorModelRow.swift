@@ -1,5 +1,6 @@
 import AppKit
 import MagicKit
+import LLMKit
 import SwiftUI
 
 /// 模型选择器中的单行模型视图

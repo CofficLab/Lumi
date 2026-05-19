@@ -1,5 +1,6 @@
 import AppKit
 import MagicKit
+import LLMKit
 import SwiftData
 import SwiftUI
 
@@ -568,7 +569,8 @@ extension ModelSelectorView {
             return (nil, nil)
         }
 
-        guard let caps = provider.modelCapabilities[model] else {
+        guard let providerType = llmVM.providerType(forId: provider.id),
+              let caps = providerType.modelCapabilities[model] else {
             if ChatInputPlugin.verbose {
                             ChatInputPlugin.logger.error("\(Self.t) 远程模型缺少能力声明: provider=\(provider.id), model=\(model)")
             }

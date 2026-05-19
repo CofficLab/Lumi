@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import LLMKit
 import LumiUI
 
 /// Commit 输入视图

@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import LLMKit
 
 /// 供应商注册表
 ///
@@ -78,7 +79,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
             .map { type in
                 let instance = createProvider(id: type.id)
                 let isLocal = (instance as? any SuperLocalLLMProvider) != nil
-                let capabilities = validatedCapabilities(for: type, isLocal: isLocal)
+                _ = validatedCapabilities(for: type, isLocal: isLocal)
                 return LLMProviderInfo(
                     id: type.id,
                     displayName: type.displayName,
@@ -88,8 +89,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                     defaultModel: type.defaultModel,
                     isLocal: isLocal,
                     isEnabled: type.isEnabled,
-                    contextWindowSizes: type.contextWindowSizes,
-                    modelCapabilities: capabilities
+                    contextWindowSizes: type.contextWindowSizes
                 )
             }
             .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
@@ -102,7 +102,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
         providerTypes.map { type in
             let instance = createProvider(id: type.id)
             let isLocal = (instance as? any SuperLocalLLMProvider) != nil
-            let capabilities = validatedCapabilities(for: type, isLocal: isLocal)
+            _ = validatedCapabilities(for: type, isLocal: isLocal)
             return LLMProviderInfo(
                 id: type.id,
                 displayName: type.displayName,
@@ -112,8 +112,7 @@ class LLMProviderRegistry: SuperLog, ObservableObject, @unchecked Sendable {
                 defaultModel: type.defaultModel,
                 isLocal: isLocal,
                 isEnabled: type.isEnabled,
-                contextWindowSizes: type.contextWindowSizes,
-                modelCapabilities: capabilities
+                contextWindowSizes: type.contextWindowSizes
             )
         }
     }

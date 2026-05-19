@@ -1,4 +1,5 @@
 import Foundation
+import HttpKit
 
 /// 消息发送中间件协议
 ///
@@ -19,7 +20,7 @@ import Foundation
 ///     }
 ///
 ///     // 发送后：记录日志
-///     func handlePost(metadata: RequestMetadata, response: ChatMessage?) async {
+///     func handlePost(metadata: HTTPRequestMetadata, response: ChatMessage?) async {
 ///         print("HTTP 请求完成：\(metadata.method) \(metadata.url)")
 ///     }
 /// }
@@ -53,7 +54,7 @@ protocol SuperSendMiddleware {
     ///   - metadata: 请求元数据，包含完整的请求和响应信息
     ///   - response: LLM 响应消息（如果请求失败则为 nil）
     func handlePost(
-        metadata: RequestMetadata,
+        metadata: HTTPRequestMetadata,
         response: ChatMessage?
     ) async
 }
@@ -61,7 +62,7 @@ protocol SuperSendMiddleware {
 /// 默认实现：发送后处理为空操作
 extension SuperSendMiddleware {
     func handlePost(
-        metadata: RequestMetadata,
+        metadata: HTTPRequestMetadata,
         response: ChatMessage?
     ) async {
         // 默认不执行任何操作，子类可重写

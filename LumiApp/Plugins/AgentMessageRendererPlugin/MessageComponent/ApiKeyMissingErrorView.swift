@@ -1,6 +1,7 @@
 import LumiUI
 import MagicKit
 import SwiftUI
+import LLMKit
 
 /// API Key 缺失错误视图
 ///

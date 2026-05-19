@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import HttpKit
 import SwiftData
 
 /// 请求日志历史管理器（HTTP 视角）
@@ -33,7 +34,7 @@ actor RequestLogHistoryManager: SuperLog {
         }
     }
 
-    func add(metadata: RequestMetadata) async {
+    func add(metadata: HTTPRequestMetadata) async {
         let context = ModelContext(container)
         let item = RequestLogItem(
             requestId: metadata.requestId,

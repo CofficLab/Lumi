@@ -1,4 +1,5 @@
 import Foundation
+import HttpKit
 
 /// 聊天消息模型
 struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
@@ -139,7 +140,7 @@ struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     static func isTimeoutError(_ error: Error) -> Bool {
         let nse = error as NSError
         if nse.domain == NSURLErrorDomain && nse.code == NSURLErrorTimedOut { return true }
-        if let apiError = error as? APIError, case let .requestFailed(underlying) = apiError {
+        if let apiError = error as? HTTPClientError, case let .requestFailed(underlying) = apiError {
             let inner = underlying as NSError
             return inner.domain == NSURLErrorDomain && inner.code == NSURLErrorTimedOut
         }

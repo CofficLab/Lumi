@@ -1,4 +1,5 @@
 import SwiftUI
+import LLMKit
 import LumiUI
 
 /// 模型选择器 Tab 侧边栏

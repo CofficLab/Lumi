@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import LLMKit
 
 /// LLM 服务
 ///

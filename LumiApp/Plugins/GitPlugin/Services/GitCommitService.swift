@@ -1,6 +1,7 @@
 import Foundation
 import LibGit2Swift
 import MagicKit
+import LLMKit
 import ShellKit
 
 /// Git Commit 服务
