@@ -1,4 +1,5 @@
 import Foundation
+import HttpKit
 import MagicKit
 import os
 
@@ -336,12 +337,11 @@ final class CodeServerManager: ObservableObject, SuperLog {
         var request = URLRequest(url: url)
         request.timeoutInterval = 2.0
 
+        let client = HTTPClient(timeoutIntervalForRequest: 2, timeoutIntervalForResource: 2)
+
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse {
-                return httpResponse.statusCode < 500
-            }
-            return false
+            let (_, response) = try await client.sendRequestWithResponse(request: request)
+            return response.statusCode < 500
         } catch {
             return false
         }
@@ -1023,21 +1023,9 @@ final class CodeServerManager: ObservableObject, SuperLog {
             }
 
             do {
-                let (data, response) = try await URLSession.shared.data(from: url)
-
-                guard let httpResponse = response as? HTTPURLResponse,
-                      httpResponse.statusCode == 200 else {
-                    await MainActor.run { [weak self] in
-                        if isSearch {
-                            self?.searchError = "搜索请求失败"
-                            self?.isSearching = false
-                        } else {
-                            self?.popularError = "加载热门扩展失败"
-                            self?.isLoadingPopular = false
-                        }
-                    }
-                    return
-                }
+                let client = HTTPClient()
+                let request = URLRequest(url: url)
+                let data = try await client.sendRequest(request: request)
 
                 // 解析 JSON 响应
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],

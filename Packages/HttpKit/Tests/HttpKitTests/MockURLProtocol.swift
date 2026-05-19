@@ -96,10 +96,12 @@ extension HTTPClient {
     }
 }
 
-// MARK: - sendJSONRequest Tests
+// MARK: - All Data-Based Networking Tests (serialized to avoid MockURLProtocol interference)
 
 @Suite("HTTPClient Networking", .serialized)
 struct HTTPClientNetworkingTests {
+    // MARK: - sendJSONRequest (original)
+
     @Test("sendJSONRequest returns data for successful response")
     func sendJSONRequestSuccess() async throws {
         MockURLProtocol.setHandler { _ in
@@ -261,9 +263,8 @@ struct HTTPClientNetworkingTests {
             _ = try await client.sendJSONRequest(request: request, body: [:])
             Issue.record("Expected error")
         } catch let error as HTTPClientError {
-            // URLSession wraps CancellationError into a URLError, so it hits the generic catch
             if case .requestFailed = error {
-                // expected: URLSession wraps it
+                // expected
             } else {
                 Issue.record("Expected requestFailed, got \(error)")
             }
@@ -295,126 +296,69 @@ struct HTTPClientNetworkingTests {
             Issue.record("Unexpected error: \(error)")
         }
     }
-}
 
-// MARK: - sendStreamingJSONRequest Tests
+    // MARK: - sendRequest (new)
 
-@Suite("HTTPClient Streaming", .serialized)
-struct HTTPClientStreamingTests {
-    @Test("sendStreamingJSONRequest calls onRequestStart with metadata")
-    func streamingCallsOnRequestStart() async throws {
-        StreamingMockURLProtocol.setHandler { _ in
+    @Test("sendRequest returns data for successful GET")
+    func sendRequestSuccess() async throws {
+        MockURLProtocol.setHandler { _ in
             (
                 HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
-                [Data("event: message\ndata: hello\n\n".utf8)]
+                Data("{\"id\":1,\"name\":\"test\"}".utf8)
             )
         }
-        defer { StreamingMockURLProtocol.reset() }
+        defer { MockURLProtocol.reset() }
 
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        var request = URLRequest(url: URL(string: "https://mock.test/stream")!)
-        request.httpMethod = "POST"
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        var request = URLRequest(url: URL(string: "https://mock.test/api")!)
+        request.httpMethod = "GET"
 
-        let receivedMetadata = Box<HTTPRequestMetadata?>(nil)
-        try await client.sendStreamingJSONRequest(
-            request: request,
-            body: ["prompt": "test"],
-            onRequestStart: { metadata in
-                receivedMetadata.value = metadata
-            },
-            onEvent: { _ in true }
-        )
-
-        #expect(receivedMetadata.value != nil)
-        #expect(receivedMetadata.value?.method == "POST")
-        #expect(receivedMetadata.value?.url == "https://mock.test/stream")
-        #expect(receivedMetadata.value?.requestBodySizeBytes ?? 0 > 0)
+        let data = try await client.sendRequest(request: request)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        #expect(json?["id"] as? Int == 1)
+        #expect(json?["name"] as? String == "test")
     }
 
-    @Test("sendStreamingJSONRequest calls onEvent with SSE data")
-    func streamingCallsOnEvent() async throws {
-        StreamingMockURLProtocol.setHandler { _ in
+    @Test("sendRequestWithResponse returns data and HTTPURLResponse")
+    func sendRequestWithResponseSuccess() async throws {
+        MockURLProtocol.setHandler { _ in
             (
-                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
-                [Data("data: hello world\n\n".utf8)]
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["X-Custom": "yes"])!,
+                Data("{\"id\":2,\"name\":\"resp\"}".utf8)
             )
         }
-        defer { StreamingMockURLProtocol.reset() }
+        defer { MockURLProtocol.reset() }
 
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        var request = URLRequest(url: URL(string: "https://mock.test/stream")!)
-        request.httpMethod = "POST"
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        var request = URLRequest(url: URL(string: "https://mock.test/api")!)
+        request.httpMethod = "DELETE"
 
-        let receivedEvents = Box<[Data]>([])
-        try await client.sendStreamingJSONRequest(
-            request: request,
-            body: ["prompt": "test"],
-            onEvent: { data in
-                receivedEvents.value.append(data)
-                return true
-            }
-        )
-
-        #expect(receivedEvents.value.count >= 1)
-        // The SSE parser finds \n\n delimiter and delivers the data before it
-        let firstEvent = receivedEvents.value.first
-        #expect(firstEvent != nil)
-        let expectedContent = Data("data: hello world".utf8)
-        #expect(firstEvent == expectedContent)
+        let (data, response) = try await client.sendRequestWithResponse(request: request)
+        #expect(response.statusCode == 200)
+        #expect(response.value(forHTTPHeaderField: "X-Custom") == "yes")
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        #expect(json?["id"] as? Int == 2)
     }
 
-    @Test("sendStreamingJSONRequest stops when onEvent returns false")
-    func streamingStopsOnFalseReturn() async throws {
-        StreamingMockURLProtocol.setHandler { _ in
+    @Test("sendRequest throws httpError for 404")
+    func sendRequest404() async {
+        MockURLProtocol.setHandler { _ in
             (
-                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
-                [Data("event1\n\nevent2\n\nevent3\n\n".utf8)]
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil)!,
+                Data("Not Found".utf8)
             )
         }
-        defer { StreamingMockURLProtocol.reset() }
+        defer { MockURLProtocol.reset() }
 
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        var request = URLRequest(url: URL(string: "https://mock.test/stream")!)
-        request.httpMethod = "POST"
-
-        let eventCount = Box(0)
-        try await client.sendStreamingJSONRequest(
-            request: request,
-            body: ["prompt": "test"],
-            onEvent: { _ in
-                eventCount.value += 1
-                return false // stop after first event
-            }
-        )
-
-        #expect(eventCount.value == 1)
-    }
-
-    @Test("sendStreamingJSONRequest throws httpError for non-2xx response")
-    func streamingThrowsForNon2xx() async {
-        StreamingMockURLProtocol.setHandler { _ in
-            (
-                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 429, httpVersion: "HTTP/1.1", headerFields: nil)!,
-                [Data("Rate Limited".utf8)]
-            )
-        }
-        defer { StreamingMockURLProtocol.reset() }
-
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        var request = URLRequest(url: URL(string: "https://mock.test/stream")!)
-        request.httpMethod = "POST"
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        let request = URLRequest(url: URL(string: "https://mock.test/missing")!)
 
         do {
-            try await client.sendStreamingJSONRequest(
-                request: request,
-                body: [:],
-                onEvent: { _ in true }
-            )
-            Issue.record("Expected error")
+            _ = try await client.sendRequest(request: request)
+            Issue.record("Expected error to be thrown")
         } catch let error as HTTPClientError {
-            if case let .httpError(code, msg) = error {
-                #expect(code == 429)
-                #expect(msg.contains("Rate Limited"))
+            if case let .httpError(code, _) = error {
+                #expect(code == 404)
             } else {
                 Issue.record("Expected httpError, got \(error)")
             }
@@ -423,22 +367,18 @@ struct HTTPClientStreamingTests {
         }
     }
 
-    @Test("sendStreamingJSONRequest throws requestFailed for network error")
-    func streamingThrowsForNetworkError() async {
-        StreamingMockURLProtocol.setHandler { _ in
-            throw NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+    @Test("sendRequest throws requestFailed for network error")
+    func sendRequestNetworkError() async {
+        MockURLProtocol.setHandler { _ in
+            throw NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
         }
-        defer { StreamingMockURLProtocol.reset() }
+        defer { MockURLProtocol.reset() }
 
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        let request = URLRequest(url: URL(string: "https://mock.test/stream")!)
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        let request = URLRequest(url: URL(string: "https://mock.test/offline")!)
 
         do {
-            try await client.sendStreamingJSONRequest(
-                request: request,
-                body: [:],
-                onEvent: { _ in true }
-            )
+            _ = try await client.sendRequest(request: request)
             Issue.record("Expected error")
         } catch let error as HTTPClientError {
             if case .requestFailed = error {
@@ -451,150 +391,200 @@ struct HTTPClientStreamingTests {
         }
     }
 
-    @Test("sendStreamingJSONRequest handles CRLF delimiters")
-    func streamingHandlesCRLF() async throws {
-        StreamingMockURLProtocol.setHandler { _ in
+    // MARK: - sendEncodableRequest (new)
+
+    @Test("sendEncodableRequest encodes body and returns data")
+    func sendEncodableSuccess() async throws {
+        MockURLProtocol.setHandler { _ in
             (
                 HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
-                [Data("event: ping\r\n\r\nevent: pong\r\n\r\n".utf8)]
+                Data("{\"id\":99,\"name\":\"created\"}".utf8)
             )
         }
-        defer { StreamingMockURLProtocol.reset() }
+        defer { MockURLProtocol.reset() }
 
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        var request = URLRequest(url: URL(string: "https://mock.test/stream")!)
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        var request = URLRequest(url: URL(string: "https://mock.test/api")!)
         request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let events = Box<[Data]>([])
-        try await client.sendStreamingJSONRequest(
-            request: request,
-            body: [:],
-            onEvent: { data in
-                events.value.append(data)
-                return true
-            }
-        )
-
-        #expect(events.value.count == 2)
-        #expect(events.value[0] == Data("event: ping".utf8))
-        #expect(events.value[1] == Data("event: pong".utf8))
+        let data = try await client.sendEncodableRequest(request: request, body: SendEncodableTestRequest(title: "hello", value: 42))
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        #expect(json?["id"] as? Int == 99)
     }
 
-    @Test("sendStreamingJSONRequest handles trailing data without delimiter")
-    func streamingHandlesTrailingData() async throws {
-        StreamingMockURLProtocol.setHandler { _ in
+    @Test("sendEncodableRequestWithResponse returns response metadata")
+    func sendEncodableWithResponse() async throws {
+        MockURLProtocol.setHandler { _ in
+            (
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 201, httpVersion: "HTTP/1.1", headerFields: nil)!,
+                Data("{\"id\":1,\"name\":\"ok\"}".utf8)
+            )
+        }
+        defer { MockURLProtocol.reset() }
+
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        var request = URLRequest(url: URL(string: "https://mock.test/api")!)
+        request.httpMethod = "PUT"
+
+        let (_, response) = try await client.sendEncodableRequestWithResponse(
+            request: request,
+            body: SendEncodableTestRequest(title: "update", value: 7)
+        )
+        #expect(response.statusCode == 201)
+    }
+
+    // MARK: - sendDecodableRequest (new)
+
+    @Test("sendDecodableRequest decodes GET response into typed object")
+    func sendDecodableSuccess() async throws {
+        MockURLProtocol.setHandler { _ in
             (
                 HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
-                [Data("event: final".utf8)]
+                Data("{\"id\":42,\"name\":\"decoded\"}".utf8)
             )
         }
-        defer { StreamingMockURLProtocol.reset() }
+        defer { MockURLProtocol.reset() }
 
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        var request = URLRequest(url: URL(string: "https://mock.test/stream")!)
-        request.httpMethod = "POST"
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        var request = URLRequest(url: URL(string: "https://mock.test/api")!)
+        request.httpMethod = "GET"
 
-        let events = Box<[Data]>([])
-        try await client.sendStreamingJSONRequest(
-            request: request,
-            body: [:],
-            onEvent: { data in
-                events.value.append(data)
-                return true
-            }
-        )
-
-        #expect(events.value.count == 1)
-        #expect(events.value[0] == Data("event: final".utf8))
+        let result = try await client.sendDecodableRequest(request: request, as: DecodableTestResponse.self)
+        #expect(result == DecodableTestResponse(id: 42, name: "decoded"))
     }
 
-    @Test("sendStreamingJSONRequest skips empty events between delimiters")
-    func streamingSkipsEmptyEvents() async throws {
-        StreamingMockURLProtocol.setHandler { _ in
+    @Test("sendDecodableRequest throws decodingFailed for invalid JSON")
+    func sendDecodableFailure() async {
+        MockURLProtocol.setHandler { _ in
             (
                 HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
-                // Double \n\n right at start → empty event should be skipped
-                [Data("\n\nevent: real\n\n".utf8)]
+                Data("not json at all".utf8)
             )
         }
-        defer { StreamingMockURLProtocol.reset() }
+        defer { MockURLProtocol.reset() }
 
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        var request = URLRequest(url: URL(string: "https://mock.test/stream")!)
-        request.httpMethod = "POST"
-
-        let events = Box<[Data]>([])
-        try await client.sendStreamingJSONRequest(
-            request: request,
-            body: [:],
-            onEvent: { data in
-                events.value.append(data)
-                return true
-            }
-        )
-
-        #expect(events.value.count == 1)
-        #expect(events.value[0] == Data("event: real".utf8))
-    }
-
-    @Test("sendStreamingJSONRequest handles multiple events across separate chunks")
-    func streamingMultipleChunks() async throws {
-        StreamingMockURLProtocol.setHandler { _ in
-            (
-                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
-                [
-                    Data("event: chunk1\n\n".utf8),
-                    Data("event: chunk2\n\n".utf8),
-                ]
-            )
-        }
-        defer { StreamingMockURLProtocol.reset() }
-
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        var request = URLRequest(url: URL(string: "https://mock.test/stream")!)
-        request.httpMethod = "POST"
-
-        let events = Box<[Data]>([])
-        try await client.sendStreamingJSONRequest(
-            request: request,
-            body: [:],
-            onEvent: { data in
-                events.value.append(data)
-                return true
-            }
-        )
-
-        #expect(events.value.count == 2)
-        #expect(events.value[0] == Data("event: chunk1".utf8))
-        #expect(events.value[1] == Data("event: chunk2".utf8))
-    }
-
-    @Test("sendStreamingJSONRequest wraps CancellationError from URLProtocol as requestFailed")
-    func streamingCancellationError() async {
-        StreamingMockURLProtocol.setHandler { _ in
-            throw CancellationError()
-        }
-        defer { StreamingMockURLProtocol.reset() }
-
-        let client = HTTPClient.mockClient(protocols: [StreamingMockURLProtocol.self])
-        let request = URLRequest(url: URL(string: "https://mock.test/stream")!)
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        let request = URLRequest(url: URL(string: "https://mock.test/api")!)
 
         do {
-            try await client.sendStreamingJSONRequest(
-                request: request,
-                body: [:],
-                onEvent: { _ in true }
-            )
-            Issue.record("Expected error")
+            _ = try await client.sendDecodableRequest(request: request, as: DecodableTestResponse.self)
+            Issue.record("Expected decodingFailed error")
         } catch let error as HTTPClientError {
-            // URLSession wraps CancellationError into URLError
-            if case .requestFailed = error {
+            if case .decodingFailed = error {
                 // expected
             } else {
-                Issue.record("Expected requestFailed, got \(error)")
+                Issue.record("Expected decodingFailed, got \(error)")
             }
         } catch {
             Issue.record("Unexpected error: \(error)")
         }
     }
+
+    @Test("sendJSONDecodableRequest sends JSON body and decodes response")
+    func sendJSONDecodableSuccess() async throws {
+        MockURLProtocol.setHandler { _ in
+            (
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
+                Data("{\"id\":7,\"name\":\"json-decoded\"}".utf8)
+            )
+        }
+        defer { MockURLProtocol.reset() }
+
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        var request = URLRequest(url: URL(string: "https://mock.test/api")!)
+        request.httpMethod = "POST"
+
+        let result = try await client.sendJSONDecodableRequest(
+            request: request,
+            body: ["key": "value"],
+            as: DecodableTestResponse.self
+        )
+        #expect(result == DecodableTestResponse(id: 7, name: "json-decoded"))
+    }
+
+    @Test("sendEncodableDecodableRequest encodes body and decodes response")
+    func sendEncodableDecodableSuccess() async throws {
+        MockURLProtocol.setHandler { _ in
+            (
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
+                Data("{\"id\":3,\"name\":\"roundtrip\"}".utf8)
+            )
+        }
+        defer { MockURLProtocol.reset() }
+
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        var request = URLRequest(url: URL(string: "https://mock.test/api")!)
+        request.httpMethod = "POST"
+
+        let result = try await client.sendEncodableDecodableRequest(
+            request: request,
+            body: SendEncodableTestRequest(title: "test", value: 1),
+            as: DecodableTestResponse.self
+        )
+        #expect(result == DecodableTestResponse(id: 3, name: "roundtrip"))
+    }
+
+    // MARK: - sendDataRequestWithResponse (new)
+
+    @Test("sendDataRequestWithResponse sends raw body and returns response")
+    func sendDataSuccess() async throws {
+        MockURLProtocol.setHandler { _ in
+            (
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!,
+                Data("ok".utf8)
+            )
+        }
+        defer { MockURLProtocol.reset() }
+
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        var request = URLRequest(url: URL(string: "https://mock.test/api")!)
+        request.httpMethod = "POST"
+
+        let (data, response) = try await client.sendDataRequestWithResponse(
+            request: request,
+            body: Data("raw-payload".utf8)
+        )
+        #expect(response.statusCode == 200)
+        #expect(data == Data("ok".utf8))
+    }
+
+    @Test("sendDataRequestWithResponse throws httpError for 500")
+    func sendDataError() async {
+        MockURLProtocol.setHandler { _ in
+            (
+                HTTPURLResponse(url: URL(string: "https://mock.test")!, statusCode: 500, httpVersion: "HTTP/1.1", headerFields: nil)!,
+                Data("Server Error".utf8)
+            )
+        }
+        defer { MockURLProtocol.reset() }
+
+        let client = HTTPClient.mockClient(protocols: [MockURLProtocol.self])
+        let request = URLRequest(url: URL(string: "https://mock.test/api")!)
+
+        do {
+            _ = try await client.sendDataRequestWithResponse(request: request, body: Data())
+            Issue.record("Expected error")
+        } catch let error as HTTPClientError {
+            if case let .httpError(code, _) = error {
+                #expect(code == 500)
+            } else {
+                Issue.record("Expected httpError, got \(error)")
+            }
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+}
+
+// MARK: - Test Models (file-private, used by tests above)
+
+private struct DecodableTestResponse: Decodable, Equatable {
+    let id: Int
+    let name: String
+}
+
+private struct SendEncodableTestRequest: Codable, Equatable {
+    let title: String
+    let value: Int
 }

@@ -12,9 +12,15 @@ let package = Package(
             targets: ["WebFetchKit"]
         )
     ],
+    dependencies: [
+        .package(path: "../HttpKit"),
+    ],
     targets: [
         .target(
             name: "WebFetchKit",
+            dependencies: [
+                .product(name: "HttpKit", package: "HttpKit"),
+            ],
             path: "Sources/WebFetchKit"
         ),
         .testTarget(
