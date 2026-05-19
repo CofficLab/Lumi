@@ -3,7 +3,7 @@ import Foundation
 public extension LumiPreviewFacade {
     /// 主进程侧的高层会话对象。
     ///
-    /// 内部组合 `InlineHostExecutableResolver` + `InlineHostConnection`，
+    /// 内部组合 `HostExecutableResolver` + `HostConnection`，
     /// 暴露最简单的"启动→订阅帧→停止"接口，给上层 ViewModel 使用。
     /// 不直接持有 UI 状态——`@Published` 由 ViewModel 自己维护。
     @MainActor
@@ -27,7 +27,7 @@ public extension LumiPreviewFacade {
 
         // MARK: - 私有
 
-        private var connection: InlineHostConnection?
+        private var connection: HostConnection?
         private var eventTask: Task<Void, Never>?
 
         public var onFrame: ((IOSurfaceFrame) -> Void)?
@@ -51,13 +51,13 @@ public extension LumiPreviewFacade {
         /// 启动子进程并开始订阅事件。重复调用是 noop。
         public func start() async throws {
             guard connection == nil else { return }
-            guard let executableURL = InlineHostExecutableResolver.resolve() else {
+            guard let executableURL = HostExecutableResolver.resolve() else {
                 throw SessionError.executableNotFound
             }
 
-            let connection: InlineHostConnection
+            let connection: HostConnection
             do {
-                connection = try ProcessInlineHostConnection.launch(executableURL: executableURL)
+                connection = try ProcessHostConnection.launch(executableURL: executableURL)
             } catch {
                 throw SessionError.underlying(error)
             }
@@ -145,7 +145,7 @@ public extension LumiPreviewFacade {
             return try await connection.send(command)
         }
 
-        private func subscribeEvents(_ connection: InlineHostConnection) {
+        private func subscribeEvents(_ connection: HostConnection) {
             let stream = connection.events
             eventTask = Task { [weak self] in
                 for await event in stream {

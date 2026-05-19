@@ -40,15 +40,15 @@ private actor FrameCollector {
 /// 验证 ping、startFrameStream、frameProduced 事件、surface 跨进程可解析。
 ///
 /// 依赖：测试运行前必须先 `swift build` 产出 host 二进制。
-/// `InlineHostExecutableResolver` 的 SPM `.build` 解析路径会自动找到它。
-final class InlineHostConnectionIntegrationTests: XCTestCase {
+/// `HostExecutableResolver` 的 SPM `.build` 解析路径会自动找到它。
+final class HostConnectionIntegrationTests: XCTestCase {
 
     func test_endToEnd_pingAndFrameStream() async throws {
-        guard let url = LumiPreviewFacade.InlineHostExecutableResolver.resolve() else {
+        guard let url = LumiPreviewFacade.HostExecutableResolver.resolve() else {
             throw XCTSkip("LumiPreviewHostApp binary not found; run `swift build` first.")
         }
 
-        let connection = try LumiPreviewFacade.ProcessInlineHostConnection.launch(executableURL: url)
+        let connection = try LumiPreviewFacade.ProcessHostConnection.launch(executableURL: url)
 
         // 1. ping
         let pong = try await connection.send(.ping)
@@ -120,11 +120,11 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
     /// - 子进程推送一条 `.entryLoaded(success: false, …)` 事件
     /// - 子进程不会因此崩溃，后续 `ping` 仍可正常往返
     func test_loadDylib_missingFile_returnsErrorEvent() async throws {
-        guard let url = LumiPreviewFacade.InlineHostExecutableResolver.resolve() else {
+        guard let url = LumiPreviewFacade.HostExecutableResolver.resolve() else {
             throw XCTSkip("LumiPreviewHostApp binary not found; run `swift build` first.")
         }
 
-        let connection = try LumiPreviewFacade.ProcessInlineHostConnection.launch(executableURL: url)
+        let connection = try LumiPreviewFacade.ProcessHostConnection.launch(executableURL: url)
 
         let collector = FrameCollector()
         let entryFailExpectation = expectation(description: "received entryLoaded(success: false)")
@@ -179,14 +179,14 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
     /// 编译开销 ~5s；如果 `swiftc` 不可用或编译失败，会被 `XCTSkip` 跳过，
     /// 不阻塞日常迭代。
     func test_loadDylib_fixture_loadsAndProducesFrames() async throws {
-        guard let hostURL = LumiPreviewFacade.InlineHostExecutableResolver.resolve() else {
+        guard let hostURL = LumiPreviewFacade.HostExecutableResolver.resolve() else {
             throw XCTSkip("LumiPreviewHostApp binary not found; run `swift build` first.")
         }
 
         let dylibURL = try compileFixtureDylib()
         defer { try? FileManager.default.removeItem(at: dylibURL) }
 
-        let connection = try LumiPreviewFacade.ProcessInlineHostConnection.launch(executableURL: hostURL)
+        let connection = try LumiPreviewFacade.ProcessHostConnection.launch(executableURL: hostURL)
 
         let collector = FrameCollector()
         let entryLoadedExpectation = expectation(description: "received entryLoaded(success: true)")
@@ -249,14 +249,14 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
     /// load fixture → 读取初始状态 → 转发输入事件 → 再读取状态，
     /// 证明跨进程输入确实改变了 entry 内部状态。
     func test_entryDebugState_reflectsForwardedInput() async throws {
-        guard let hostURL = LumiPreviewFacade.InlineHostExecutableResolver.resolve() else {
+        guard let hostURL = LumiPreviewFacade.HostExecutableResolver.resolve() else {
             throw XCTSkip("LumiPreviewHostApp binary not found; run `swift build` first.")
         }
 
         let dylibURL = try compileFixtureDylib()
         defer { try? FileManager.default.removeItem(at: dylibURL) }
 
-        let connection = try LumiPreviewFacade.ProcessInlineHostConnection.launch(executableURL: hostURL)
+        let connection = try LumiPreviewFacade.ProcessHostConnection.launch(executableURL: hostURL)
 
         let collector = FrameCollector()
         let entryLoadedExpectation = expectation(description: "fixture entry loaded")
@@ -359,14 +359,14 @@ final class InlineHostConnectionIntegrationTests: XCTestCase {
     }
 
     func test_dragAndDropEvent_reachesLoadedFixture() async throws {
-        guard let hostURL = LumiPreviewFacade.InlineHostExecutableResolver.resolve() else {
+        guard let hostURL = LumiPreviewFacade.HostExecutableResolver.resolve() else {
             throw XCTSkip("LumiPreviewHostApp binary not found; run `swift build` first.")
         }
 
         let dylibURL = try compileFixtureDylib()
         defer { try? FileManager.default.removeItem(at: dylibURL) }
 
-        let connection = try LumiPreviewFacade.ProcessInlineHostConnection.launch(executableURL: hostURL)
+        let connection = try LumiPreviewFacade.ProcessHostConnection.launch(executableURL: hostURL)
 
         let collector = FrameCollector()
         let entryLoadedExpectation = expectation(description: "fixture entry loaded for drop")

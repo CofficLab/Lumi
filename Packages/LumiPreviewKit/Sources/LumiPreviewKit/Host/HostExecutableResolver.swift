@@ -10,7 +10,7 @@ public extension LumiPreviewFacade {
     /// 4. 主 bundle 的 `Resources/` 目录（备用：嵌入资源拷贝）。
     /// 5. 包目录（Xcode 本地 SPM 构建产物）。
     /// 6. SwiftPM 默认构建目录（仅用于本地 `swift test`）。
-    enum InlineHostExecutableResolver {
+    enum HostExecutableResolver {
         public static let executableName = "LumiPreviewHostApp"
         public static let environmentKey = "LUMI_INLINE_PREVIEW_HOST_PATH"
         static let packagePathEnvironmentKey = "LUMI_INLINE_PREVIEW_PACKAGE_PATH"

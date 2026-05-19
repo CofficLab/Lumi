@@ -1,6 +1,50 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Automation: start preview stream" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automation: start preview stream"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动化测试：启动预览流"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動化測試：啟動預覽串流"
+          }
+        }
+      }
+    },
+    "Automation: stop preview stream" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automation: stop preview stream"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动化测试：停止预览流"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動化測試：停止預覽串流"
+          }
+        }
+      }
+    },
     "building %@" : {
       "localizations" : {
         "en" : {
@@ -24,7 +68,26 @@
       }
     },
     "cache" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cache"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取"
+          }
+        }
+      }
     },
     "Clear Inline Preview build cache" : {
       "localizations" : {
@@ -70,40 +133,93 @@
         }
       }
     },
-    "Click \"Start Stream\" to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it." : {
-      "extractionState" : "stale",
+    "Compilation failed" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Click \"Start Stream\" to launch the preview subprocess. Open a Swift file with a `#Preview` and press ⌘S to auto-build & render it."
+            "value" : "Compilation failed"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "点击「Start Stream」启动预览子进程。打开包含 `#Preview` 的 Swift 文件，按 ⌘S 自动构建并渲染。"
+            "value" : "编译失败"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點擊「Start Stream」啟動預覽子程序。開啟包含 `#Preview` 的 Swift 檔案，按 ⌘S 自動建置並算繪。"
+            "value" : "編譯失敗"
           }
         }
       }
     },
-    "Compilation failed" : {
-
-    },
     "Default Localization" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Localization"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认本地化"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設本地化"
+          }
+        }
+      }
     },
     "Default Localization (%@)" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Localization (%@)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认本地化（%@）"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設本地化（%@）"
+          }
+        }
+      }
     },
     "Dependency planning failed" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dependency planning failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依赖规划失败"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依賴規劃失敗"
+          }
+        }
+      }
     },
     "Embedded preview powered by LumiPreviewKit" : {
       "localizations" : {
@@ -171,31 +287,49 @@
         }
       }
     },
-    "entry failed: %@" : {
-      "extractionState" : "stale",
+    "Failed to load image: %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "entry failed: %@"
+            "value" : "Failed to load image: %@"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "入口失败：%@"
+            "value" : "加载图片失败：%@"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "入口失敗：%@"
+            "value" : "載入圖片失敗：%@"
           }
         }
       }
     },
     "Failed to load string catalog: %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load string catalog: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载字符串目录失败：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入字串目錄失敗：%@"
+          }
+        }
+      }
     },
     "failed: %@" : {
       "localizations" : {
@@ -219,8 +353,49 @@
         }
       }
     },
+    "File not found: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File not found: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件未找到：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到檔案：%@"
+          }
+        }
+      }
+    },
     "Image Preview" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图片预览"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片預覽"
+          }
+        }
+      }
     },
     "Inline Preview" : {
       "localizations" : {
@@ -245,50 +420,23 @@
       }
     },
     "Key" : {
-
-    },
-    "Load" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Load"
+            "value" : "Key"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加载"
+            "value" : "键"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "載入"
-          }
-        }
-      }
-    },
-    "Load Dylib…" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Load Dylib…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加载 Dylib…"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入 Dylib…"
+            "value" : "鍵"
           }
         }
       }
@@ -316,7 +464,26 @@
       }
     },
     "Markdown Preview" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown Preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown 预览"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown 預覽"
+          }
+        }
+      }
     },
     "Markdown TODO completion" : {
       "localizations" : {
@@ -363,36 +530,89 @@
       }
     },
     "No Markdown content to preview." : {
-
-    },
-    "No String Catalog content to preview." : {
-
-    },
-    "Open a Swift file with a `#Preview`, an image, Markdown, or String Catalog file to preview it here." : {
-
-    },
-    "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save." : {
-
-    },
-    "Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pick a .dylib that exports lumi_preview_make_nsview and let the subprocess render it."
+            "value" : "No Markdown content to preview."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择一个导出 lumi_preview_make_nsview 的 .dylib，让子进程渲染它。"
+            "value" : "没有 Markdown 内容可预览。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇一個匯出 lumi_preview_make_nsview 的 .dylib，讓子程序算繪它。"
+            "value" : "沒有 Markdown 內容可預覽。"
+          }
+        }
+      }
+    },
+    "No String Catalog content to preview." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No String Catalog content to preview."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有字符串目录内容可预览。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有字串目錄內容可預覽。"
+          }
+        }
+      }
+    },
+    "Open a Swift file with a `#Preview`, an image, Markdown, or String Catalog file to preview it here." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a Swift file with a `#Preview`, an image, Markdown, or String Catalog file to preview it here."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开包含 `#Preview` 的 Swift 文件、图片、Markdown 或字符串目录文件即可在此预览。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟包含 `#Preview` 的 Swift 檔案、圖片、Markdown 或字串目錄檔案即可在此預覽。"
+          }
+        }
+      }
+    },
+    "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a Swift file with a `#Preview`; Inline Preview starts automatically and refreshes when you save."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开包含 `#Preview` 的 Swift 文件，内嵌预览会自动启动并在保存时刷新。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟包含 `#Preview` 的 Swift 檔案，內嵌預覽會自動啟動並在儲存時重新整理。"
           }
         }
       }
@@ -420,13 +640,92 @@
       }
     },
     "Preview dylib failed to load" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview dylib failed to load"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览 dylib 加载失败"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽 dylib 載入失敗"
+          }
+        }
+      }
     },
     "Preview failed" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览失败"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽失敗"
+          }
+        }
+      }
     },
     "ready" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ready"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "就绪"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "就緒"
+          }
+        }
+      }
+    },
+    "rebuilt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rebuilt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新构建"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新建置"
+          }
+        }
+      }
     },
     "Refresh entry debug state" : {
       "localizations" : {
@@ -446,32 +745,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新整理入口除錯狀態"
-          }
-        }
-      }
-    },
-    "rebuilt" : {
-
-    },
-    "Reset" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重置"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重置"
           }
         }
       }
@@ -499,33 +772,48 @@
       }
     },
     "SDK resolution failed" : {
-
-    },
-    "Select a preview .dylib that exports lumi_preview_make_nsview" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select a preview .dylib that exports lumi_preview_make_nsview"
+            "value" : "SDK resolution failed"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择导出 lumi_preview_make_nsview 的预览 .dylib"
+            "value" : "SDK 解析失败"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇匯出 lumi_preview_make_nsview 的預覽 .dylib"
+            "value" : "SDK 解析失敗"
           }
         }
       }
     },
     "Show error details" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show error details"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示错误详情"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示錯誤詳情"
+          }
+        }
+      }
     },
     "Show entry debug state" : {
       "localizations" : {
@@ -545,29 +833,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示入口除錯狀態"
-          }
-        }
-      }
-    },
-    "Start Stream" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start Stream"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启动流"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟動串流"
           }
         }
       }
@@ -594,52 +859,6 @@
         }
       }
     },
-    "Starting" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starting"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启动中"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟動中"
-          }
-        }
-      }
-    },
-    "Stop Stream" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stop Stream"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止流"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止串流"
-          }
-        }
-      }
-    },
     "stopping" : {
       "localizations" : {
         "en" : {
@@ -662,60 +881,71 @@
         }
       }
     },
-    "Stopping" : {
-      "extractionState" : "stale",
+    "String Catalog Preview" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stopping"
+            "value" : "String Catalog Preview"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "停止中"
+            "value" : "字符串目录预览"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "停止中"
+            "value" : "字串目錄預覽"
           }
         }
       }
     },
-    "String Catalog Preview" : {
-
-    },
     "This file type is not supported by Inline Preview yet." : {
-
-    },
-    "Unload the user dylib." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unload the user dylib."
+            "value" : "This file type is not supported by Inline Preview yet."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "卸载用户 dylib。"
+            "value" : "内嵌预览暂不支持此文件类型。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "卸載使用者 dylib。"
+            "value" : "內嵌預覽暫不支援此檔案類型。"
           }
         }
       }
     },
     "warming" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "warming"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预热中"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預熱中"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

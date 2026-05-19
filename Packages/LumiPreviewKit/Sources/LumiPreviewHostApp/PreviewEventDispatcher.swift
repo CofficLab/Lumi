@@ -15,16 +15,16 @@ extension Notification.Name {
 /// - 滚轮没有 `NSEvent` 工厂，只能借 `CGEvent(scrollWheelEvent2Source:...)` 创建后包成 `NSEvent`。
 /// - 所有事件用真实 `windowNumber`，让 first responder 链路正常工作。
 @MainActor
-final class HotPreviewEventDispatcher {
+final class PreviewEventDispatcher {
 
     // MARK: - 私有
 
-    private weak var renderer: HotPreviewRenderer?
+    private weak var renderer: PreviewRenderer?
     private var lastEventNumber: Int = 0
 
     // MARK: - 初始化
 
-    init(renderer: HotPreviewRenderer) {
+    init(renderer: PreviewRenderer) {
         self.renderer = renderer
     }
 

@@ -34,11 +34,11 @@ private actor InputProbe {
 final class InputForwardingIntegrationTests: XCTestCase {
 
     func test_forwardInputEvent_acceptsAllShapes_andKeepsSubprocessAlive() async throws {
-        guard let url = LumiPreviewFacade.InlineHostExecutableResolver.resolve() else {
+        guard let url = LumiPreviewFacade.HostExecutableResolver.resolve() else {
             throw XCTSkip("LumiPreviewHostApp binary not found; run `swift build` first.")
         }
 
-        let connection = try LumiPreviewFacade.ProcessInlineHostConnection.launch(executableURL: url)
+        let connection = try LumiPreviewFacade.ProcessHostConnection.launch(executableURL: url)
 
         let probe = InputProbe()
         let events = connection.events
@@ -129,11 +129,11 @@ final class InputForwardingIntegrationTests: XCTestCase {
     }
 
     func test_forwardInputEvent_promotesIdleStreamBackToInteractive() async throws {
-        guard let url = LumiPreviewFacade.InlineHostExecutableResolver.resolve() else {
+        guard let url = LumiPreviewFacade.HostExecutableResolver.resolve() else {
             throw XCTSkip("LumiPreviewHostApp binary not found; run `swift build` first.")
         }
 
-        let connection = try LumiPreviewFacade.ProcessInlineHostConnection.launch(executableURL: url)
+        let connection = try LumiPreviewFacade.ProcessHostConnection.launch(executableURL: url)
 
         let probe = InputProbe()
         let idleExpectation = expectation(description: "stream cooled down to idle")

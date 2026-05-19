@@ -1,13 +1,13 @@
 import XCTest
 @testable import LumiPreviewKit
 
-final class InlineHostExecutableResolverTests: XCTestCase {
+final class HostExecutableResolverTests: XCTestCase {
 
     func test_candidates_includeEnvironmentMainBundleResourcesPackageAndCwdPathsInOrder() {
-        let candidates = LumiPreviewFacade.InlineHostExecutableResolver.candidates(
+        let candidates = LumiPreviewFacade.HostExecutableResolver.candidates(
             environment: [
-                LumiPreviewFacade.InlineHostExecutableResolver.environmentKey: "/custom/host",
-                LumiPreviewFacade.InlineHostExecutableResolver.packagePathEnvironmentKey: "/package"
+                LumiPreviewFacade.HostExecutableResolver.environmentKey: "/custom/host",
+                LumiPreviewFacade.HostExecutableResolver.packagePathEnvironmentKey: "/package"
             ],
             mainExecutableURL: URL(fileURLWithPath: "/App/Lumi.app/Contents/MacOS/Lumi"),
             bundleURL: URL(fileURLWithPath: "/App/Lumi.app"),
@@ -26,10 +26,10 @@ final class InlineHostExecutableResolverTests: XCTestCase {
     }
 
     func test_candidates_omitEmptyOptionalInputs() {
-        let candidates = LumiPreviewFacade.InlineHostExecutableResolver.candidates(
+        let candidates = LumiPreviewFacade.HostExecutableResolver.candidates(
             environment: [
-                LumiPreviewFacade.InlineHostExecutableResolver.environmentKey: "",
-                LumiPreviewFacade.InlineHostExecutableResolver.packagePathEnvironmentKey: ""
+                LumiPreviewFacade.HostExecutableResolver.environmentKey: "",
+                LumiPreviewFacade.HostExecutableResolver.packagePathEnvironmentKey: ""
             ],
             mainExecutableURL: nil,
             bundleURL: URL(fileURLWithPath: "/App/Lumi.app"),
@@ -46,9 +46,9 @@ final class InlineHostExecutableResolverTests: XCTestCase {
     func test_resolve_returnsFirstExecutableCandidate() {
         let executablePath = "/App/Lumi.app/Contents/Helpers/LumiPreviewHostApp"
 
-        let resolved = LumiPreviewFacade.InlineHostExecutableResolver.resolve(
+        let resolved = LumiPreviewFacade.HostExecutableResolver.resolve(
             environment: [
-                LumiPreviewFacade.InlineHostExecutableResolver.environmentKey: "/custom/non-executable"
+                LumiPreviewFacade.HostExecutableResolver.environmentKey: "/custom/non-executable"
             ],
             mainExecutableURL: URL(fileURLWithPath: "/App/Lumi.app/Contents/MacOS/Lumi"),
             bundleURL: URL(fileURLWithPath: "/App/Lumi.app"),
@@ -61,7 +61,7 @@ final class InlineHostExecutableResolverTests: XCTestCase {
     }
 
     func test_resolve_returnsNilWhenNoCandidateIsExecutable() {
-        let resolved = LumiPreviewFacade.InlineHostExecutableResolver.resolve(
+        let resolved = LumiPreviewFacade.HostExecutableResolver.resolve(
             environment: [:],
             mainExecutableURL: nil,
             bundleURL: URL(fileURLWithPath: "/App/Lumi.app"),

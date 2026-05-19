@@ -59,7 +59,7 @@ final class InlinePreviewSessionTests: XCTestCase {
     }
 
     func test_startAndFrameStream_deliversCallbacks() async throws {
-        guard LumiPreviewFacade.InlineHostExecutableResolver.resolve() != nil else {
+        guard LumiPreviewFacade.HostExecutableResolver.resolve() != nil else {
             throw XCTSkip("LumiPreviewHostApp binary not found; run `swift build` first.")
         }
 

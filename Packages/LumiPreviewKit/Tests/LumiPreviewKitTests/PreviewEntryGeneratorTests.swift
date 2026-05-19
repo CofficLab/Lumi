@@ -2,7 +2,7 @@ import LumiPreviewKit
 import XCTest
 @testable import LumiPreviewKit
 
-final class InlinePreviewEntryGeneratorTests: XCTestCase {
+final class PreviewEntryGeneratorTests: XCTestCase {
 
     func test_generate_emitsExpectedSymbol() {
         let discovery = LumiPreviewFacade.PreviewDiscovery(
@@ -16,7 +16,7 @@ final class InlinePreviewEntryGeneratorTests: XCTestCase {
             sourceText: nil
         )
 
-        let source = LumiPreviewFacade.InlinePreviewEntryGenerator.generate(for: discovery)
+        let source = LumiPreviewFacade.PreviewEntryGenerator.generate(for: discovery)
 
         XCTAssertTrue(source.contains("@_cdecl(\"lumi_preview_make_nsview\")"))
         XCTAssertTrue(source.contains("public func lumi_preview_make_nsview() -> UnsafeMutableRawPointer?"))
@@ -40,7 +40,7 @@ final class InlinePreviewEntryGeneratorTests: XCTestCase {
             sourceText: nil
         )
 
-        let source = LumiPreviewFacade.InlinePreviewEntryGenerator.generate(for: discovery)
+        let source = LumiPreviewFacade.PreviewEntryGenerator.generate(for: discovery)
 
         // 模板中 body 的缩进基线是 8 空格；首行至少应有 8 空格前缀。
         XCTAssertTrue(source.contains("        VStack {"))
@@ -59,7 +59,7 @@ final class InlinePreviewEntryGeneratorTests: XCTestCase {
             sourceText: nil
         )
 
-        let source = LumiPreviewFacade.InlinePreviewEntryGenerator.generate(for: discovery)
+        let source = LumiPreviewFacade.PreviewEntryGenerator.generate(for: discovery)
         XCTAssertTrue(source.contains("EmptyView()"))
     }
 }

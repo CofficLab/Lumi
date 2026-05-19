@@ -17,7 +17,7 @@ public extension LumiPreviewFacade {
     ///
     /// **范围**：支持 standalone Swift 文件和基础 SPM/Xcode target 上下文；复杂 workspace
     /// 的外部 package link inputs 仍需要真实项目压测继续收敛。
-    actor InlinePreviewBuilder {
+    actor PreviewBuilder {
 
         // MARK: - 错误
 
@@ -244,7 +244,7 @@ public extension LumiPreviewFacade {
         private func copyToWorkspace(_ sourceURL: URL, fingerprint: String) throws -> URL {
             let buildDir = workspaceRoot.appendingPathComponent(fingerprint, isDirectory: true)
             try FileManager.default.createDirectory(at: buildDir, withIntermediateDirectories: true)
-            let dylibURL = buildDir.appendingPathComponent("InlinePreviewEntry.dylib")
+            let dylibURL = buildDir.appendingPathComponent("PreviewEntry.dylib")
             if FileManager.default.fileExists(atPath: dylibURL.path) {
                 try FileManager.default.removeItem(at: dylibURL)
             }
@@ -277,11 +277,11 @@ public extension LumiPreviewFacade {
             try FileManager.default.createDirectory(at: buildDir, withIntermediateDirectories: true)
 
             let userSourceURL = buildDir.appendingPathComponent("UserSource.swift")
-            let entrySourceURL = buildDir.appendingPathComponent("InlinePreviewEntry.swift")
-            let dylibURL = buildDir.appendingPathComponent("InlinePreviewEntry.dylib")
+            let entrySourceURL = buildDir.appendingPathComponent("PreviewEntry.swift")
+            let dylibURL = buildDir.appendingPathComponent("PreviewEntry.dylib")
 
             try sourceText.write(to: userSourceURL, atomically: true, encoding: .utf8)
-            let entrySource = LumiPreviewFacade.InlinePreviewEntryGenerator.generate(for: discovery)
+            let entrySource = LumiPreviewFacade.PreviewEntryGenerator.generate(for: discovery)
             try entrySource.write(to: entrySourceURL, atomically: true, encoding: .utf8)
 
             // 收集编译输入：用户源文件 + entry + 同包内的其他 Swift 文件。

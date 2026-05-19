@@ -10,7 +10,7 @@ import SwiftUI
 /// 职责：
 /// - 管理 `InlinePreviewSession` 启动/停止；frame 转 `@Published`；canvas resize forward。
 /// - 自动构建：直接订阅 `EditorService` 的 `currentFileURL` / `saveRevision` / `contentRevision`，
-///   按 Xcode 风格"保存触发"重建 dylib（`InlinePreviewBuilder`）并自动 `loadDylib`。
+///   按 Xcode 风格"保存触发"重建 dylib（`PreviewBuilder`）并自动 `loadDylib`。
 ///   **不依赖 View 层的 `onAppear`/`onChange`**——即使 Inline Preview tab 未被选中也能感知文件变化。
 @MainActor
 final class EditorPreviewViewModel: ObservableObject, SuperLog {
@@ -153,7 +153,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         }
     }
     @Published private(set) var previewMode: PreviewMode = .unsupported(nil)
-    @Published private(set) var availablePreviews: [LumiPreviewFacade.InlinePreviewBuilder.PreviewSummary] = []
+    @Published private(set) var availablePreviews: [LumiPreviewFacade.PreviewBuilder.PreviewSummary] = []
     @Published private(set) var selectedPreviewIndex: Int = 0
     @Published private(set) var lastBuildInfo: BuildInfo?
     @Published private(set) var cacheSummary: EditorPreviewStorage.CacheSummary = .init(fileCount: 0, byteCount: 0)
@@ -164,7 +164,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
     // MARK: - 私有
 
     private let session: LumiPreviewFacade.InlinePreviewSession
-    private let builder: LumiPreviewFacade.InlinePreviewBuilder
+    private let builder: LumiPreviewFacade.PreviewBuilder
     private var lastSentPixelSize: (width: Int, height: Int, scale: Double)?
     /// 最近一次从编辑器收到的 (currentFileURL, source)。用于 startSession / saveRevision 时取最新内容重建。
     private var activeFileURL: URL?
@@ -191,7 +191,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
         let xcodeCompiler = LumiPreviewFacade.XcodeCompiler(
             derivedDataPath: EditorPreviewStorage.derivedDataDirectory
         )
-        builder = LumiPreviewFacade.InlinePreviewBuilder(
+        builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: EditorPreviewStorage.inlineBuilderWorkspaceDirectory,
             xcodeCompiler: xcodeCompiler
         )
@@ -589,7 +589,7 @@ final class EditorPreviewViewModel: ObservableObject, SuperLog {
                 if Self.verbose {
                                     Self.logger.info("\(Self.t)✅ 构建后已加载 Dylib")
                 }
-            } catch let error as LumiPreviewFacade.InlinePreviewBuilder.BuildError {
+            } catch let error as LumiPreviewFacade.PreviewBuilder.BuildError {
                 guard self.isCurrentPreviewGeneration(generation, fileURL: url) else { return }
                 switch error {
                 case .noPreviewFound:

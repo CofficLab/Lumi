@@ -5,7 +5,7 @@ public extension LumiPreviewFacade {
     /// 跨进程的输入事件 envelope。
     ///
     /// 主进程在 `PreviewSurfaceView` 捕获 `NSEvent`，转成此结构通过 stdio 送给子进程；
-    /// 子进程 `HotPreviewEventDispatcher` 把它合成 `NSEvent` 并注入离屏窗口。
+    /// 子进程 `PreviewEventDispatcher` 把它合成 `NSEvent` 并注入离屏窗口。
     ///
     /// 坐标说明：
     /// - `(x, y)` 都是 **bottom-left 原点**、单位为 **point**，相对于子进程的 hosting view bounds。

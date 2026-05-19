@@ -9,7 +9,7 @@ import SwiftUI
 /// 子进程内的离屏 SwiftUI 渲染器。
 ///
 /// 维护一个常驻的离屏 `NSWindow`（位置在 (-100000, -100000)），里面挂一个
-/// `previewView`（默认是内置 `HotPreviewPlaceholderView` 的 `NSHostingView`，
+/// `previewView`（默认是内置 `PreviewPlaceholderView` 的 `NSHostingView`，
 /// 也可以通过 `loadDylib(path:symbolName:)` 替换为用户编译产出的 `NSView`）。
 /// 每次 `snapshot()` 把当前画面写入一张 BGRA `IOSurface`，并返回 `IOSurfaceFrame`。
 ///
@@ -17,7 +17,7 @@ import SwiftUI
 /// 跨进程拿到。最近 `recentSurfaceLimit` 帧由本类强引用以避开 ARC 回收，
 /// 给主进程留出消费时间窗口。
 @MainActor
-final class HotPreviewRenderer {
+final class PreviewRenderer {
 
     // MARK: - 类型
 
@@ -84,7 +84,7 @@ final class HotPreviewRenderer {
     private var seq: UInt64 = 0
     private var isDirty = true
 
-    /// 暴露给 `HotPreviewEventDispatcher` 用于合成 `NSEvent.windowNumber` 与
+    /// 暴露给 `PreviewEventDispatcher` 用于合成 `NSEvent.windowNumber` 与
     /// 调用 `sendEvent(_:)`。子进程内部使用，不跨进程。
     var hostWindow: NSWindow? { window }
 
@@ -316,7 +316,7 @@ final class HotPreviewRenderer {
     }
 
     private func installDemoView() {
-        let hosting = NSHostingView(rootView: AnyView(HotPreviewPlaceholderView()))
+        let hosting = NSHostingView(rootView: AnyView(PreviewPlaceholderView()))
         usesDefaultCanvasForUnconstrainedPreview = false
         installView(hosting)
     }
@@ -445,7 +445,7 @@ final class HotPreviewRenderer {
     }
 
     private func diagnostic(_ message: String) {
-        fputs("[HotPreviewRenderer] \(message)\n", stderr)
+        fputs("[PreviewRenderer] \(message)\n", stderr)
         fflush(stderr)
     }
 

@@ -90,13 +90,13 @@ struct EditorPreviewDetailView: View, SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(self.t)🤖 自动化：收到 start_stream 动作")
                 }
-                alert_info("自动化测试：启动预览流")
+                alert_info(String(localized: "Automation: start preview stream", table: "EditorPreview"))
                 viewModel.startSession()
             case "inline_preview.stop_stream", "inline_preview.stopStream":
                 if Self.verbose {
                     Self.logger.info("\(self.t)🤖 自动化：收到 stop_stream 动作")
                 }
-                alert_info("自动化测试：停止预览流")
+                alert_info(String(localized: "Automation: stop preview stream", table: "EditorPreview"))
                 viewModel.stopSession()
             default:
                 break
@@ -111,13 +111,13 @@ struct EditorPreviewDetailView: View, SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(self.t)🤖 自动化状态：消费 sessionAction=.start")
                 }
-                alert_info("自动化测试：启动预览流")
+                alert_info(String(localized: "Automation: start preview stream", table: "EditorPreview"))
                 viewModel.startSession()
             case .stop:
                 if Self.verbose {
                     Self.logger.info("\(self.t)🤖 自动化状态：消费 sessionAction=.stop")
                 }
-                alert_info("自动化测试：停止预览流")
+                alert_info(String(localized: "Automation: stop preview stream", table: "EditorPreview"))
                 viewModel.stopSession()
             }
         }
@@ -1269,11 +1269,11 @@ private struct EditorPreviewImageView: View {
         image = nil
         loadError = nil
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            loadError = "File not found: \(fileURL.lastPathComponent)"
+            loadError = String(format: String(localized: "File not found: %@", table: "EditorPreview"), fileURL.lastPathComponent)
             return
         }
         guard let loadedImage = NSImage(contentsOf: fileURL) else {
-            loadError = "Failed to load image: \(fileURL.lastPathComponent)"
+            loadError = String(format: String(localized: "Failed to load image: %@", table: "EditorPreview"), fileURL.lastPathComponent)
             return
         }
         image = loadedImage

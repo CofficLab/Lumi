@@ -8,7 +8,7 @@ import LumiPreviewKit
 /// idle 策略下只在 renderer dirty 后产帧，避免静止画面持续 snapshot。
 /// 后续若动画同步精度不足，仍可把 interactive/animating 替换为 `CVDisplayLink`。
 @MainActor
-final class HotPreviewRenderLoop {
+final class PreviewRenderLoop {
 
     // MARK: - 公开属性
 
@@ -19,14 +19,14 @@ final class HotPreviewRenderLoop {
 
     // MARK: - 私有属性
 
-    private weak var renderer: HotPreviewRenderer?
+    private weak var renderer: PreviewRenderer?
     private var timer: Timer?
     private var idleWorkItem: DispatchWorkItem?
     private let interactiveCooldown: TimeInterval = 1.5
 
     // MARK: - 初始化
 
-    init(renderer: HotPreviewRenderer) {
+    init(renderer: PreviewRenderer) {
         self.renderer = renderer
     }
 

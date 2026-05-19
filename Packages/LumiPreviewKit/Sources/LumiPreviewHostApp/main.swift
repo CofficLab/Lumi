@@ -12,7 +12,7 @@ import Foundation
 NSApplication.shared.setActivationPolicy(.accessory)
 NSApplication.shared.finishLaunching()
 
-let host = HotStdioPreviewHost()
+let host = StdioPreviewHost()
 host.start()
 
 NSApplication.shared.run()

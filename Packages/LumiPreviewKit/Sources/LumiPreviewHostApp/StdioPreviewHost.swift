@@ -5,16 +5,16 @@ import LumiPreviewKit
 /// 子进程的 stdio 主控。
 ///
 /// - 通过 stdin 按行读取 `HostRequest`。
-/// - 派发给 `HotPreviewRenderer` / `HotPreviewRenderLoop`。
+/// - 派发给 `PreviewRenderer` / `PreviewRenderLoop`。
 /// - 把响应（同步）和帧事件（异步）以 `HostOutbound` envelope 形式按行写出 stdout。
 @MainActor
-final class HotStdioPreviewHost {
+final class StdioPreviewHost {
 
     // MARK: - 私有属性
 
-    private let renderer: HotPreviewRenderer
-    private let renderLoop: HotPreviewRenderLoop
-    private let eventDispatcher: HotPreviewEventDispatcher
+    private let renderer: PreviewRenderer
+    private let renderLoop: PreviewRenderLoop
+    private let eventDispatcher: PreviewEventDispatcher
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let stdoutLock = NSLock()
@@ -25,10 +25,10 @@ final class HotStdioPreviewHost {
     // MARK: - 初始化
 
     init() {
-        let renderer = HotPreviewRenderer()
+        let renderer = PreviewRenderer()
         self.renderer = renderer
-        self.renderLoop = HotPreviewRenderLoop(renderer: renderer)
-        self.eventDispatcher = HotPreviewEventDispatcher(renderer: renderer)
+        self.renderLoop = PreviewRenderLoop(renderer: renderer)
+        self.eventDispatcher = PreviewEventDispatcher(renderer: renderer)
         wireRenderLoopCallbacks()
     }
 

@@ -11,7 +11,7 @@ public extension LumiPreviewFacade {
     /// - 每条 `HostCommand` 经 `send(_:)` 异步发出，等待对应 `HostResponse`。
     /// - 服务端事件（如 `frameProduced`）通过 `events` 异步序列广播。
     /// - 实现需保证 stdin/stdout 的全双工独立运行。
-    protocol InlineHostConnection: AnyObject, Sendable {
+    protocol HostConnection: AnyObject, Sendable {
         var events: AsyncStream<HostEvent> { get }
         var processID: Int32 { get async }
         var isRunning: Bool { get async }
@@ -24,7 +24,7 @@ public extension LumiPreviewFacade {
 
     // MARK: - 错误
 
-    enum InlineHostConnectionError: Error, LocalizedError, Equatable {
+    enum HostConnectionError: Error, LocalizedError, Equatable {
         case launchFailed(String)
         case alreadyTerminated
         case writeFailed
@@ -42,11 +42,11 @@ public extension LumiPreviewFacade {
 
     // MARK: - 进程实现
 
-    /// 基于 `Process` + 管道的 `InlineHostConnection` 实现。
-    final class ProcessInlineHostConnection: InlineHostConnection, @unchecked Sendable {
+    /// 基于 `Process` + 管道的 `HostConnection` 实现。
+    final class ProcessHostConnection: HostConnection, @unchecked Sendable {
         private nonisolated static let logger = Logger(
             subsystem: "com.coffic.lumi",
-            category: "LumiPreviewKit.InlineHostConnection"
+            category: "LumiPreviewKit.HostConnection"
         )
 
         // MARK: 属性
@@ -74,9 +74,9 @@ public extension LumiPreviewFacade {
 
         // MARK: 初始化
 
-        public static func launch(executableURL: URL) throws -> ProcessInlineHostConnection {
+        public static func launch(executableURL: URL) throws -> ProcessHostConnection {
             guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
-                throw InlineHostConnectionError.launchFailed("Not an executable file: \(executableURL.path)")
+                throw HostConnectionError.launchFailed("Not an executable file: \(executableURL.path)")
             }
 
             let process = Process()
@@ -93,10 +93,10 @@ public extension LumiPreviewFacade {
             do {
                 try process.run()
             } catch {
-                throw InlineHostConnectionError.launchFailed(error.localizedDescription)
+                throw HostConnectionError.launchFailed(error.localizedDescription)
             }
 
-            return ProcessInlineHostConnection(
+            return ProcessHostConnection(
                 process: process,
                 stdin: stdin.fileHandleForWriting,
                 stdout: stdout.fileHandleForReading,
@@ -167,7 +167,7 @@ public extension LumiPreviewFacade {
         @discardableResult
         public func send(_ command: HostCommand) async throws -> HostResponse {
             guard process.isRunning else {
-                throw InlineHostConnectionError.alreadyTerminated
+                throw HostConnectionError.alreadyTerminated
             }
 
             let id = nextID()
@@ -187,7 +187,7 @@ public extension LumiPreviewFacade {
                     lock.lock()
                     pendingRequests.removeValue(forKey: id)
                     lock.unlock()
-                    continuation.resume(throwing: InlineHostConnectionError.writeFailed)
+                    continuation.resume(throwing: HostConnectionError.writeFailed)
                 }
             }
         }
@@ -324,7 +324,7 @@ public extension LumiPreviewFacade {
             continuation?.resume(returning: response)
         }
 
-        private func failPendingRequests(with error: InlineHostConnectionError) {
+        private func failPendingRequests(with error: HostConnectionError) {
             lock.lock()
             let continuations = pendingRequests
             pendingRequests.removeAll()

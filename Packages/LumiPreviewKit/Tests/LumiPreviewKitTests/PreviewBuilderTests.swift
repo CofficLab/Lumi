@@ -19,14 +19,14 @@ private actor BuilderProbe {
     }
 }
 
-/// 端到端验证 `InlinePreviewBuilder` + 子进程 dlopen 路径：
+/// 端到端验证 `PreviewBuilder` + 子进程 dlopen 路径：
 ///
 /// 1. 写一段含 `#Preview { Text("hello") }` 的源到临时文件。
-/// 2. `InlinePreviewBuilder.build` 编译为 dylib。
-/// 3. `ProcessInlineHostConnection` spawn 子进程；`startFrameStream`；`loadDylib`。
+/// 2. `PreviewBuilder.build` 编译为 dylib。
+/// 3. `ProcessHostConnection` spawn 子进程；`startFrameStream`；`loadDylib`。
 /// 4. 收到 `entryLoaded(success: true)` + 至少一帧。
 /// 5. 复用同一份 source 再 build 一次，验证缓存命中（`usedCache == true`）。
-final class InlinePreviewBuilderTests: XCTestCase {
+final class PreviewBuilderTests: XCTestCase {
 
     private static let userSource = """
     import SwiftUI
@@ -43,7 +43,7 @@ final class InlinePreviewBuilderTests: XCTestCase {
     """
 
     func test_build_thenLoadDylib_endToEnd() async throws {
-        guard let hostURL = LumiPreviewFacade.InlineHostExecutableResolver.resolve() else {
+        guard let hostURL = LumiPreviewFacade.HostExecutableResolver.resolve() else {
             throw XCTSkip("LumiPreviewHostApp binary not found; run `swift build` first.")
         }
 
@@ -53,16 +53,16 @@ final class InlinePreviewBuilderTests: XCTestCase {
         let userFileURL = workspace.appendingPathComponent("DemoEntryView.swift")
         try Self.userSource.write(to: userFileURL, atomically: true, encoding: .utf8)
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true)
         )
 
-        let firstResult: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
+        let firstResult: LumiPreviewFacade.PreviewBuilder.BuildResult
         do {
             firstResult = try await builder.build(fileURL: userFileURL, sourceText: Self.userSource)
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr) {
             throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed(message) {
             throw XCTSkip("SDK unavailable: \(message)")
         }
         XCTAssertFalse(firstResult.usedCache)
@@ -78,7 +78,7 @@ final class InlinePreviewBuilderTests: XCTestCase {
         XCTAssertEqual(cachedResult.dylibURL, firstResult.dylibURL)
 
         // 让子进程加载 dylib 并验证产帧。
-        let connection = try LumiPreviewFacade.ProcessInlineHostConnection.launch(executableURL: hostURL)
+        let connection = try LumiPreviewFacade.ProcessHostConnection.launch(executableURL: hostURL)
 
         let probe = BuilderProbe()
         let loadedExpectation = expectation(description: "entryLoaded(success: true) received")
@@ -141,7 +141,7 @@ final class InlinePreviewBuilderTests: XCTestCase {
         let userFileURL = workspace.appendingPathComponent("MultiplePreviews.swift")
         try source.write(to: userFileURL, atomically: true, encoding: .utf8)
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true)
         )
 
@@ -170,16 +170,16 @@ final class InlinePreviewBuilderTests: XCTestCase {
         let userFileURL = workspace.appendingPathComponent("MultiplePreviews.swift")
         try source.write(to: userFileURL, atomically: true, encoding: .utf8)
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true)
         )
 
-        let secondResult: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
+        let secondResult: LumiPreviewFacade.PreviewBuilder.BuildResult
         do {
             secondResult = try await builder.build(fileURL: userFileURL, sourceText: source, previewIndex: 1)
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr) {
             throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed(message) {
             throw XCTSkip("SDK unavailable: \(message)")
         }
         XCTAssertFalse(secondResult.usedCache)
@@ -208,18 +208,18 @@ final class InlinePreviewBuilderTests: XCTestCase {
             .appendingPathComponent("Sources/App/AppPreviewView.swift")
         let source = try String(contentsOf: previewFileURL, encoding: .utf8)
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: packageDirectory.appendingPathComponent("inline-build", isDirectory: true)
         )
 
-        let result: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
+        let result: LumiPreviewFacade.PreviewBuilder.BuildResult
         do {
             result = try await builder.build(fileURL: previewFileURL, sourceText: source)
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.plannedBuildFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.plannedBuildFailed(message) {
             throw XCTSkip("planned SPM build failed, likely toolchain/environment issue:\n\(message)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr) {
             throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed(message) {
             throw XCTSkip("SDK unavailable: \(message)")
         }
 
@@ -248,18 +248,18 @@ final class InlinePreviewBuilderTests: XCTestCase {
             .appendingPathComponent("Sources/App/ResourcePreviewView.swift")
         let source = try String(contentsOf: previewFileURL, encoding: .utf8)
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: packageDirectory.appendingPathComponent("inline-build", isDirectory: true)
         )
 
-        let result: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
+        let result: LumiPreviewFacade.PreviewBuilder.BuildResult
         do {
             result = try await builder.build(fileURL: previewFileURL, sourceText: source)
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.plannedBuildFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.plannedBuildFailed(message) {
             throw XCTSkip("planned SPM resource bundle build failed, likely toolchain/environment issue:\n\(message)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr) {
             throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed(message) {
             throw XCTSkip("SDK unavailable: \(message)")
         }
 
@@ -314,18 +314,18 @@ final class InlinePreviewBuilderTests: XCTestCase {
         let workspace = makeTempWorkspace()
         defer { try? FileManager.default.removeItem(at: workspace) }
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: workspace.appendingPathComponent("inline-build", isDirectory: true)
         )
 
-        let result: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
+        let result: LumiPreviewFacade.PreviewBuilder.BuildResult
         do {
             result = try await builder.build(fileURL: previewFileURL, sourceText: source)
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.plannedBuildFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.plannedBuildFailed(message) {
             throw XCTSkip("real LumiUI planned build failed; keep this diagnostic for workspace dependency follow-up:\n\(message)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr) {
             throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed(message) {
             throw XCTSkip("SDK unavailable: \(message)")
         }
 
@@ -364,18 +364,18 @@ final class InlinePreviewBuilderTests: XCTestCase {
         let workspace = makeTempWorkspace()
         defer { try? FileManager.default.removeItem(at: workspace) }
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: workspace.appendingPathComponent("inline-build", isDirectory: true)
         )
 
-        let result: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
+        let result: LumiPreviewFacade.PreviewBuilder.BuildResult
         do {
             result = try await builder.build(fileURL: previewFileURL, sourceText: source, previewIndex: 0)
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.plannedBuildFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.plannedBuildFailed(message) {
             throw XCTSkip("real Lumi app target planned build failed; keep this diagnostic for Xcode workspace dependency follow-up:\n\(message)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr) {
             throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed(message) {
             throw XCTSkip("SDK unavailable: \(message)")
         }
 
@@ -401,14 +401,14 @@ final class InlinePreviewBuilderTests: XCTestCase {
         let source = "import Foundation\nlet x = 1\n"
         try source.write(to: userFileURL, atomically: true, encoding: .utf8)
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true)
         )
 
         do {
             _ = try await builder.build(fileURL: userFileURL, sourceText: source)
             XCTFail("expected BuildError.noPreviewFound")
-        } catch LumiPreviewFacade.InlinePreviewBuilder.BuildError.noPreviewFound {
+        } catch LumiPreviewFacade.PreviewBuilder.BuildError.noPreviewFound {
             // expected
         } catch {
             XCTFail("unexpected error: \(error)")
@@ -417,19 +417,19 @@ final class InlinePreviewBuilderTests: XCTestCase {
 
     func test_buildErrorDescriptions_areHumanReadable() {
         XCTAssertEqual(
-            LumiPreviewFacade.InlinePreviewBuilder.BuildError.noPreviewFound.errorDescription,
+            LumiPreviewFacade.PreviewBuilder.BuildError.noPreviewFound.errorDescription,
             "No #Preview block found in this file."
         )
         XCTAssertEqual(
-            LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed("missing").errorDescription,
+            LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed("missing").errorDescription,
             "Failed to resolve macOS SDK path: missing"
         )
         XCTAssertEqual(
-            LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr: "bad input").errorDescription,
+            LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr: "bad input").errorDescription,
             "swiftc failed:\nbad input"
         )
         XCTAssertEqual(
-            LumiPreviewFacade.InlinePreviewBuilder.BuildError.plannedBuildFailed("compile failed").errorDescription,
+            LumiPreviewFacade.PreviewBuilder.BuildError.plannedBuildFailed("compile failed").errorDescription,
             "Planned preview build failed:\ncompile failed"
         )
     }
@@ -439,7 +439,7 @@ final class InlinePreviewBuilderTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: workspace) }
 
         let userFileURL = workspace.appendingPathComponent("NoPreview.swift")
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true)
         )
 
@@ -469,16 +469,16 @@ final class InlinePreviewBuilderTests: XCTestCase {
         let userFileURL = workspace.appendingPathComponent("MultiplePreviews.swift")
         try source.write(to: userFileURL, atomically: true, encoding: .utf8)
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true)
         )
 
-        let result: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
+        let result: LumiPreviewFacade.PreviewBuilder.BuildResult
         do {
             result = try await builder.build(fileURL: userFileURL, sourceText: source, previewIndex: 99)
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr) {
             throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed(message) {
             throw XCTSkip("SDK unavailable: \(message)")
         }
 
@@ -496,14 +496,14 @@ final class InlinePreviewBuilderTests: XCTestCase {
         try Self.userSource.write(to: userFileURL, atomically: true, encoding: .utf8)
 
         let buildRoot = workspace.appendingPathComponent("build", isDirectory: true)
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(workspaceRoot: buildRoot)
+        let builder = LumiPreviewFacade.PreviewBuilder(workspaceRoot: buildRoot)
 
-        let result: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
+        let result: LumiPreviewFacade.PreviewBuilder.BuildResult
         do {
             result = try await builder.build(fileURL: userFileURL, sourceText: Self.userSource)
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr) {
             throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed(message) {
             throw XCTSkip("SDK unavailable: \(message)")
         }
         XCTAssertTrue(FileManager.default.fileExists(atPath: result.dylibURL.path))
@@ -525,19 +525,19 @@ final class InlinePreviewBuilderTests: XCTestCase {
         )
         try firstSource.write(to: userFileURL, atomically: true, encoding: .utf8)
 
-        let builder = LumiPreviewFacade.InlinePreviewBuilder(
+        let builder = LumiPreviewFacade.PreviewBuilder(
             workspaceRoot: workspace.appendingPathComponent("build", isDirectory: true),
             cacheLimit: 1
         )
 
-        let firstResult: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
-        let secondResult: LumiPreviewFacade.InlinePreviewBuilder.BuildResult
+        let firstResult: LumiPreviewFacade.PreviewBuilder.BuildResult
+        let secondResult: LumiPreviewFacade.PreviewBuilder.BuildResult
         do {
             firstResult = try await builder.build(fileURL: userFileURL, sourceText: firstSource)
             secondResult = try await builder.build(fileURL: userFileURL, sourceText: secondSource)
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.swiftcFailed(stderr) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.swiftcFailed(stderr) {
             throw XCTSkip("swiftc failed (likely toolchain issue):\n\(stderr)")
-        } catch let LumiPreviewFacade.InlinePreviewBuilder.BuildError.sdkResolutionFailed(message) {
+        } catch let LumiPreviewFacade.PreviewBuilder.BuildError.sdkResolutionFailed(message) {
             throw XCTSkip("SDK unavailable: \(message)")
         }
 
@@ -560,7 +560,7 @@ final class InlinePreviewBuilderTests: XCTestCase {
 
     private func makeTempWorkspace() -> URL {
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("InlinePreviewBuilderTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("PreviewBuilderTests-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
