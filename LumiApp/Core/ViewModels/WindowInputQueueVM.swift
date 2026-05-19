@@ -28,6 +28,9 @@ final class WindowInputQueueVM: ObservableObject, SuperLog {
     /// 显式输入请求事件。RootView 直接消费事件，避免依赖 `@Published` 版本号再回读状态。
     let enqueueRequests = PassthroughSubject<InputEnqueueRequest, Never>()
 
+    /// 直接输入处理回调，由 WindowScope 绑定，避免依赖 SwiftUI `.onReceive` 事件桥。
+    var onEnqueueRequest: ((InputEnqueueRequest) -> Void)?
+
     /// 输入入队请求版本号，每次发布新请求时递增，用于外部监听
     @Published private(set) var queueVersion: Int = 0
 
@@ -39,7 +42,6 @@ final class WindowInputQueueVM: ObservableObject, SuperLog {
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || !images.isEmpty else {
-            AppLogger.core.info("\(self.t) 用户提供的消息文字和图片都是空，什么都不做")
             return
         }
         let request = InputEnqueueRequest(
@@ -49,6 +51,7 @@ final class WindowInputQueueVM: ObservableObject, SuperLog {
         )
         pendingRequest = request
         queueVersion += 1
+        onEnqueueRequest?(request)
         enqueueRequests.send(request)
         NotificationCenter.postUserDidSendMessage()
     }

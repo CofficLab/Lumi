@@ -21,6 +21,9 @@ struct InputAreaView: View, SuperLog {
     /// 入队器：只负责把输入入队
     @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
 
+    /// 当前窗口作用域。发送输入时优先使用 scope 持有的队列，避免多窗口环境对象错位。
+    @Environment(\.windowScope) private var windowScope
+
     /// 主题管理器
     @EnvironmentObject private var themeVM: AppThemeVM
 
@@ -51,6 +54,10 @@ struct InputAreaView: View, SuperLog {
     /// 是否允许输入/发送（必须先选中会话）
     private var canChat: Bool {
         WindowConversationVM.selectedConversationId != nil
+    }
+
+    private var activeInputQueueVM: WindowInputQueueVM {
+        windowScope?.inputQueueVM ?? inputQueueVM
     }
 
     var body: some View {
@@ -270,7 +277,7 @@ extension InputAreaView {
             // 发送消息
             let text = inputViewModel.text
             inputViewModel.clear()
-            inputQueueVM.enqueueText(text)
+            activeInputQueueVM.enqueueText(text)
             // 发送后重置高度
             editorHeight = MacEditorView.minHeight
         }

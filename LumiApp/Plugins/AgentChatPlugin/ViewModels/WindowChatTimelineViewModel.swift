@@ -127,6 +127,7 @@ final class WindowChatTimelineViewModel: ObservableObject {
 
     func handleMessageSaved(_ message: ChatMessage, conversationId: UUID) {
         guard conversationId == state.selectedConversationId else { return }
+        objectWillChange.send()
         state.queuedMessages.removeAll { $0.id == message.id }
         if message.role == .tool || message.isToolOutput {
             if let toolCallID = message.toolCallID,
@@ -156,10 +157,17 @@ final class WindowChatTimelineViewModel: ObservableObject {
     }
 
     func handleMessageQueued(_ message: ChatMessage) {
-        guard message.conversationId == state.selectedConversationId else { return }
-        guard message.shouldDisplayInChatList() else { return }
-        guard !state.persistedMessages.contains(where: { $0.id == message.id }) else { return }
+        guard message.conversationId == state.selectedConversationId else {
+            return
+        }
+        guard message.shouldDisplayInChatList() else {
+            return
+        }
+        guard !state.persistedMessages.contains(where: { $0.id == message.id }) else {
+            return
+        }
 
+        objectWillChange.send()
         if let idx = state.queuedMessages.firstIndex(where: { $0.id == message.id }) {
             state.queuedMessages[idx] = message
         } else if let insertIndex = state.queuedMessages.firstIndex(where: { $0.timestamp > message.timestamp }) {
@@ -244,6 +252,17 @@ final class WindowChatTimelineViewModel: ObservableObject {
                 Task { @MainActor in
                     await self.didSelectConversation(conversationId)
                 }
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .messageSaved)
+            .sink { [weak self] notification in
+                guard let self,
+                      let message = notification.object as? ChatMessage,
+                      let conversationId = notification.userInfo?["conversationId"] as? UUID
+                else { return }
+
+                self.handleMessageSaved(message, conversationId: conversationId)
             }
             .store(in: &cancellables)
     }

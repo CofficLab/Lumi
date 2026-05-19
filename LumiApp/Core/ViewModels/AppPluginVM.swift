@@ -658,9 +658,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
     func getSidebarSections() -> [AnyView] {
         let activeIcon = activePanelIcon
         let key = activeIconCacheKey()
-        if let cached = sidebarSectionsCache, cached.key == key {
-            return cached.sections
-        }
         let sections = plugins
             .filter { isPluginEnabled($0) }
             .flatMap { $0.addSidebarSections(activeIcon: activeIcon) }

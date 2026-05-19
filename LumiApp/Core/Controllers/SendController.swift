@@ -58,7 +58,9 @@ final class SendController: ObservableObject, SuperLog {
 
     /// 尝试从队列中出队一条"可处理"的消息并开始发送。
     func attemptBeginNextQueuedSend() async {
-        guard let message = scope.messageQueueVM.dequeueNextEligibleMessage() else { return }
+        guard let message = scope.messageQueueVM.dequeueNextEligibleMessage() else {
+            return
+        }
         let conversationId = message.conversationId
 
         // 如果该会话已有活跃任务，将消息状态改回 pending，避免卡住

@@ -198,6 +198,10 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         )
         self._container = container
 
+        self.inputQueueVM.onEnqueueRequest = { [weak self] request in
+            self?.handleInputEnqueueRequest(request)
+        }
+
         // ========================================
         // 初始化会话和项目
         // ========================================
@@ -254,6 +258,37 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         }
 
         updateTitle()
+    }
+
+    /// 处理当前窗口的用户输入请求。
+    ///
+    /// 输入框位于插件侧栏里，SwiftUI 的 `.onReceive` 在多窗口和缓存 AnyView 组合下可能失效；
+    /// 因此发送入口绑定在 WindowScope 上，确保输入请求直接进入当前窗口的消息队列。
+    func handleInputEnqueueRequest(_ request: WindowInputQueueVM.InputEnqueueRequest) {
+
+        _ = inputQueueVM.consumePendingRequest(id: request.id)
+        guard let conversationId = conversationVM.selectedConversationId else {
+            return
+        }
+
+        let pendingImages = agentAttachmentsVM.drainPendingImageAttachments()
+        let allImages = request.images + pendingImages
+        guard !request.text.isEmpty || !allImages.isEmpty else {
+            return
+        }
+
+        let message = ChatMessage(
+            role: .user,
+            conversationId: conversationId,
+            content: request.text,
+            images: allImages
+        )
+        messageQueueVM.enqueueMessage(message)
+        chatTimelineViewModel.handleMessageQueued(message)
+
+        Task {
+            await self.sendController.attemptBeginNextQueuedSend()
+        }
     }
 
     // MARK: - Conversation Management

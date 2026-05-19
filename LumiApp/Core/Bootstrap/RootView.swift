@@ -149,16 +149,16 @@ extension RootView {
 
     @MainActor
     func onInputQueueRequested(_ request: WindowInputQueueVM.InputEnqueueRequest) {
-        _ = scope.inputQueueVM.consumePendingRequest(id: request.id)
+        guard scope.inputQueueVM.consumePendingRequest(id: request.id) != nil else {
+            return
+        }
         guard let conversationId = scope.conversationVM.selectedConversationId else {
-            if Self.verbose { AppLogger.core.warning("\(Self.t) 用户输入了数据，但没有选择对话，忽略") }
             return
         }
 
         let pendingImages = scope.agentAttachmentsVM.drainPendingImageAttachments()
         let allImages = request.images + pendingImages
         guard !request.text.isEmpty || !allImages.isEmpty else {
-            if Self.verbose { AppLogger.core.warning("\(Self.t) 用户输入了数据，但是文本和图片都为空，忽略") }
             return
         }
         
