@@ -15,7 +15,7 @@ struct ProjectDropdownMenu: View {
     private let store = RecentProjectsStore()
 
     private var recentProjects: [Project] {
-        Array(projectVM.recentProjects
+        Array(AppRecentProjectsVM.shared.recentProjects
             .prefix(10)
             .filter { $0.path != projectVM.currentProjectPath })
     }

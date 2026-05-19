@@ -6,7 +6,11 @@ final class XcodeCompiler: Sendable {
     public let derivedDataPath: URL?
 
     /// 创建 Xcode 编译器。
-    public init(derivedDataPath: URL? = nil) {
+    public convenience init() {
+        self.init(derivedDataPath: nil)
+    }
+
+    public init(derivedDataPath: URL?) {
         self.derivedDataPath = derivedDataPath
     }
 

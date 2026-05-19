@@ -58,7 +58,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
                             XcodePluginLog.logger.info("\(Self.t)开始扫描最近项目用于 Xcode 预加载")
             }
         }
-        let recentProjects = projectVM.getRecentProjects()
+        let recentProjects = AppRecentProjectsVM.shared.getRecentProjects()
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
                             XcodePluginLog.logger.info("\(Self.t)最近项目数量：\(recentProjects.count)")

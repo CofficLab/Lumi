@@ -163,7 +163,7 @@ struct RecentProjectsSidebarView: View {
     // MARK: - Computed Properties
 
     private var recentProjects: [Project] {
-        projectVM.recentProjects
+        AppRecentProjectsVM.shared.recentProjects
     }
 
     private var tipsCard: some View {
@@ -218,7 +218,7 @@ struct RecentProjectsSidebarView: View {
         )
 
         store.addProject(name: project.name, path: project.path)
-        projectVM.setRecentProjects(store.loadProjects())
+        AppRecentProjectsVM.shared.setRecentProjects(store.loadProjects())
         projectVM.switchProject(to: project)
     }
 

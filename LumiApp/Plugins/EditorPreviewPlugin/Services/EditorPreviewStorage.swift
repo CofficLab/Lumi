@@ -23,7 +23,7 @@ enum EditorPreviewStorage {
 
     static var rootDirectory: URL {
         installIfNeeded()
-        return LumiPreviewFacade.PreviewStorage.paths.rootDirectory
+        return AppConfig.getPluginDBFolderURL(pluginName: pluginName)
     }
 
     static var projectPreviewHistoryURL: URL {

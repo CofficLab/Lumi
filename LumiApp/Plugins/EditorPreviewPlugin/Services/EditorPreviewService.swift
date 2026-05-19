@@ -1974,6 +1974,25 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         modeStatusMessage = nil
     }
 
+    private func makePreviewEngine(hostExecutableURL: URL) -> LumiPreviewFacade.HotPreviewEngine {
+        let xcodeCompiler = LumiPreviewFacade.XcodeCompiler(
+            derivedDataPath: EditorPreviewStorage.derivedDataDirectory
+        )
+        let previewEntryBuilder = LumiPreviewFacade.PreviewEntryBuilder(
+            xcodeCompiler: xcodeCompiler
+        )
+        let incrementalBuildPipeline = LumiPreviewFacade.IncrementalBuildPipeline(
+            xcodeCompiler: xcodeCompiler
+        )
+
+        return LumiPreviewFacade.HotPreviewEngine(
+            hostExecutableURL: hostExecutableURL,
+            xcodeCompiler: xcodeCompiler,
+            previewEntryBuilder: previewEntryBuilder,
+            incrementalBuildPipeline: incrementalBuildPipeline
+        )
+    }
+
     private func syncModeStatusMessage() {
         if livePreviewInfo.state == .failed,
            let reason = livePreviewInfo.unavailableReason,

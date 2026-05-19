@@ -20,9 +20,6 @@ final class WindowProjectVM: ObservableObject, SuperLog {
     // 自动批准风险
     @Published var autoApproveRisk: Bool = false
 
-    /// 最近使用的项目列表
-    @Published public fileprivate(set) var recentProjects: [Project] = []
-
     /// 当前项目名称
     var currentProjectName: String {
         self.currentProject?.name ?? ""
@@ -67,16 +64,6 @@ final class WindowProjectVM: ObservableObject, SuperLog {
     func switchProject(to project: Project) {
         self.currentProject = project
         codeSelectionRange = nil
-    }
-
-    /// 设置最近项目列表
-    func setRecentProjects(_ projects: [Project]) {
-        recentProjects = projects
-    }
-
-    /// 获取最近项目列表
-    func getRecentProjects() -> [Project] {
-        recentProjects
     }
 
     /// 将指定文件或目录移到废纸篓

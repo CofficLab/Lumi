@@ -92,7 +92,7 @@ struct ProjectSelectorView: View {
     // MARK: - Computed Properties
 
     private var recentProjects: [Project] {
-        Array(projectVM.recentProjects
+        Array(AppRecentProjectsVM.shared.recentProjects
             .prefix(maxRecentProjects)
             .filter { project in
                 project.path != projectVM.currentProjectPath
@@ -271,7 +271,7 @@ extension ProjectSelectorView {
         withAnimation {
             store.removeProject(project)
             // 更新 projectVM 中的列表
-            projectVM.setRecentProjects(store.loadProjects())
+            AppRecentProjectsVM.shared.setRecentProjects(store.loadProjects())
         }
     }
 
