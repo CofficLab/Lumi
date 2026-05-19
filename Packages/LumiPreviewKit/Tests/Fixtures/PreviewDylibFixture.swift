@@ -11,7 +11,7 @@
 //       -sdk "$SDK" \
 //       -target arm64-apple-macosx14.0 \
 //       -o /tmp/PreviewDylibFixture.dylib \
-//       Packages/LumiInlinePreviewKit/Tests/Fixtures/PreviewDylibFixture.swift
+//       Packages/LumiPreviewKit/Tests/Fixtures/PreviewDylibFixture.swift
 //
 // 然后在 Lumi 中点 "Start Stream" → "Load Dylib…" 选择 `/tmp/PreviewDylibFixture.dylib`，
 // 应当看到一个青色背景上跳动黄色圆点的视图。

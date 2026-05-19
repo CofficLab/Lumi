@@ -984,7 +984,6 @@
 				B1C2D3522F80000200BBB201 /* XCLocalSwiftPackageReference "Packages/XcodeKit" */,
 				0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */,
 				F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */,
-				0B462A902FB976B4007E52B1 /* XCLocalSwiftPackageReference "Packages/LumiInlinePreviewKit" */,
 				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
 				0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */,
 			);
@@ -1265,13 +1264,13 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Package.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/main.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderer.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderLoop.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewDemoView.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotStdioPreviewHost.swift",
-				"$(SRCROOT)/Packages/LumiInlinePreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewEventDispatcher.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Package.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/main.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderer.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewRenderLoop.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewDemoView.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotStdioPreviewHost.swift",
+				"$(SRCROOT)/Packages/LumiPreviewKit/Sources/LumiInlinePreviewHostApp/HotPreviewEventDispatcher.swift",
 				"$(SRCROOT)/scripts/embed-inline-preview-host.sh",
 			);
 			name = "Embed Inline Preview Host";
@@ -1869,10 +1868,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		0B462A902FB976B4007E52B1 /* XCLocalSwiftPackageReference "Packages/LumiInlinePreviewKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiInlinePreviewKit;
-		};
 		0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/RAGKit;
@@ -2131,6 +2126,7 @@
 		};
 		0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */;
 			productName = LumiInlinePreviewKit;
 		};
 		0B52000230C3000000AA0001 /* RAGKit */ = {
