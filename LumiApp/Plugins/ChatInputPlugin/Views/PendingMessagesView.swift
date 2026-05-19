@@ -11,6 +11,7 @@ struct PendingMessagesView: View, SuperLog {
     nonisolated static let verbose: Bool = false
     @EnvironmentObject var messageQueueVM: WindowMessageQueueVM
     @EnvironmentObject var conversationVM: WindowConversationVM
+    @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
 
     /// 数据上下文
     @Environment(\.modelContext) private var modelContext
@@ -67,6 +68,7 @@ struct PendingMessagesView: View, SuperLog {
                                 message: message,
                                 onRemove: {
                                     messageQueueVM.removeMessage(id: message.id)
+                                    timelineViewModel.removeQueuedMessage(id: message.id)
                                 }
                             )
                         }

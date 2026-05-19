@@ -174,12 +174,14 @@ extension RootView {
             AppLogger.core.info("\(Self.t)将用户的输入加入消息队列")
         }
 
-        scope.messageQueueVM.enqueueMessage(ChatMessage(
+        let message = ChatMessage(
             role: .user,
             conversationId: conversationId,
             content: request.text,
-            images: allImages)
+            images: allImages
         )
+        scope.messageQueueVM.enqueueMessage(message)
+        scope.chatTimelineViewModel.handleMessageQueued(message)
     }
 
     func onConversationCreationRequested() {

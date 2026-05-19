@@ -41,7 +41,7 @@ struct MessageListView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.persistedMessages)
+            let windowedPersistedRows = windowedHistoryRows(from: timelineViewModel.visibleMessages)
             let hiddenLoadedHistoryCount = max(0, timelineViewModel.persistedMessages.count - windowedPersistedRows.count)
             let displayRows = buildDisplayRows(from: windowedPersistedRows, statusRow: statusDisplayRow)
             let lastMessageID = displayRows.last?.id
@@ -274,7 +274,7 @@ extension MessageListView {
     }
 
     private func handleLastMessageChanged(proxy: ScrollViewProxy, isStreamingContentUpdate: Bool) {
-        guard !windowedHistoryRows(from: timelineViewModel.persistedMessages).isEmpty else { return }
+        guard !windowedHistoryRows(from: timelineViewModel.visibleMessages).isEmpty else { return }
 
         if forceScrollToBottomOnNextChange {
             forceScrollToBottomOnNextChange = false
@@ -324,7 +324,7 @@ extension MessageListView {
     }
 
     private func latestVisibleUserMessageId() -> UUID? {
-        windowedHistoryRows(from: timelineViewModel.persistedMessages)
+        windowedHistoryRows(from: timelineViewModel.visibleMessages)
             .last(where: { $0.role == .user })?
             .id
     }

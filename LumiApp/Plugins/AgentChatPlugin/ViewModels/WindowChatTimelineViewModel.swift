@@ -22,7 +22,7 @@ final class WindowChatTimelineViewModel: ObservableObject {
     }
 
     var messages: [ChatMessage] {
-        var rows = state.persistedMessages
+        var rows = mergedVisibleMessages()
         if let active = state.activeStreamingMessage, !rows.contains(where: { $0.id == active.id }) {
             rows.append(active)
         }
@@ -30,6 +30,7 @@ final class WindowChatTimelineViewModel: ObservableObject {
     }
 
     var persistedMessages: [ChatMessage] { state.persistedMessages }
+    var visibleMessages: [ChatMessage] { mergedVisibleMessages() }
     var activeStreamingMessage: ChatMessage? { state.activeStreamingMessage }
 
     var selectedConversationId: UUID? { state.selectedConversationId }
@@ -126,6 +127,7 @@ final class WindowChatTimelineViewModel: ObservableObject {
 
     func handleMessageSaved(_ message: ChatMessage, conversationId: UUID) {
         guard conversationId == state.selectedConversationId else { return }
+        state.queuedMessages.removeAll { $0.id == message.id }
         if message.role == .tool || message.isToolOutput {
             if let toolCallID = message.toolCallID,
                state.loadedToolCallIDs.contains(toolCallID) {
@@ -150,6 +152,27 @@ final class WindowChatTimelineViewModel: ObservableObject {
         if let first = state.persistedMessages.first {
             state.oldestLoadedTimestamp = first.timestamp
         }
+        refreshActiveStreamingMessage()
+    }
+
+    func handleMessageQueued(_ message: ChatMessage) {
+        guard message.conversationId == state.selectedConversationId else { return }
+        guard message.shouldDisplayInChatList() else { return }
+        guard !state.persistedMessages.contains(where: { $0.id == message.id }) else { return }
+
+        if let idx = state.queuedMessages.firstIndex(where: { $0.id == message.id }) {
+            state.queuedMessages[idx] = message
+        } else if let insertIndex = state.queuedMessages.firstIndex(where: { $0.timestamp > message.timestamp }) {
+            state.queuedMessages.insert(message, at: insertIndex)
+        } else {
+            state.queuedMessages.append(message)
+        }
+
+        refreshActiveStreamingMessage()
+    }
+
+    func removeQueuedMessage(id messageId: UUID) {
+        state.queuedMessages.removeAll { $0.id == messageId }
         refreshActiveStreamingMessage()
     }
 
@@ -238,6 +261,7 @@ final class WindowChatTimelineViewModel: ObservableObject {
     private func loadMessagesForSelection() async {
         guard let conversationId = state.selectedConversationId else {
             state.persistedMessages = []
+            state.queuedMessages = []
             state.activeStreamingMessage = nil
             state.hasMoreMessages = false
             state.totalMessageCount = 0
@@ -266,8 +290,21 @@ final class WindowChatTimelineViewModel: ObservableObject {
             state.oldestLoadedTimestamp = nil
         }
         state.persistedMessages = result.messages
+        state.queuedMessages.removeAll()
         state.hasMoreMessages = result.hasMore
         refreshActiveStreamingMessage()
+    }
+
+    private func mergedVisibleMessages() -> [ChatMessage] {
+        var rows = state.persistedMessages
+        for message in state.queuedMessages where !rows.contains(where: { $0.id == message.id }) {
+            if let insertIndex = rows.firstIndex(where: { $0.timestamp > message.timestamp }) {
+                rows.insert(message, at: insertIndex)
+            } else {
+                rows.append(message)
+            }
+        }
+        return rows
     }
 
     private func mergeToolOutputs(_ messages: [ChatMessage]) {
