@@ -331,6 +331,73 @@ struct BuildPlannerTests {
         #expect(!sources.contains(ignoredFile.standardizedFileURL.resolvingSymlinksInPath()))
     }
 
+    @Test("Xcode synchronized group 不应把嵌套 Package.swift 当作预览源码")
+    func xcodeSynchronizedGroupExcludesNestedPackageManifest() throws {
+        let rootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiPreviewKit-XcodeNestedPackage-\(UUID().uuidString)", isDirectory: true)
+        let projectURL = rootDirectory.appendingPathComponent("SyncedApp.xcodeproj", isDirectory: true)
+        let appDirectory = rootDirectory.appendingPathComponent("APP", isDirectory: true)
+        let packageDirectory = rootDirectory.appendingPathComponent("Packages/DeviceData", isDirectory: true)
+        let packageSourceDirectory = packageDirectory
+            .appendingPathComponent("Sources", isDirectory: true)
+            .appendingPathComponent("CisumDeviceData", isDirectory: true)
+        let appFile = appDirectory.appendingPathComponent("BootApp.swift")
+        let packageManifest = packageDirectory.appendingPathComponent("Package.swift")
+        let packageSourceFile = packageSourceDirectory.appendingPathComponent("DeviceData.swift")
+
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: appDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: packageSourceDirectory, withIntermediateDirectories: true)
+        try "import SwiftUI\nstruct BootApp {}\n".write(to: appFile, atomically: true, encoding: .utf8)
+        try """
+        // swift-tools-version: 6.0
+        import PackageDescription
+
+        let package = Package(
+            name: "DeviceData",
+            targets: [.target(name: "CisumDeviceData")]
+        )
+        """.write(to: packageManifest, atomically: true, encoding: .utf8)
+        try "public struct DeviceData {}\n".write(to: packageSourceFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: rootDirectory) }
+
+        try """
+        // !$*UTF8*$!
+        {
+        \tarchiveVersion = 1;
+        \tclasses = {};
+        \tobjectVersion = 77;
+        \tobjects = {
+        \t\t000000000000000000000001 = {
+        \t\t\tisa = PBXNativeTarget;
+        \t\t\tbuildPhases = ();
+        \t\t\tfileSystemSynchronizedGroups = (
+        \t\t\t\t000000000000000000000002,
+        \t\t\t);
+        \t\t\tname = SyncedApp;
+        \t\t};
+        \t\t000000000000000000000002 /* root */ = {
+        \t\t\tisa = PBXFileSystemSynchronizedRootGroup;
+        \t\t\tpath = "";
+        \t\t\tsourceTree = "<group>";
+        \t\t};
+        \t};
+        \trootObject = 000000000000000000000001;
+        }
+        """.write(to: projectURL.appendingPathComponent("project.pbxproj"), atomically: true, encoding: .utf8)
+
+        let sources = LumiPreviewFacade.BuildPlanner.swiftSourceFiles(
+            projectURL: projectURL,
+            scheme: "SyncedApp",
+            containing: appFile
+        )
+
+        let normalizedManifest = packageManifest.standardizedFileURL.resolvingSymlinksInPath()
+        #expect(sources.contains(appFile.standardizedFileURL.resolvingSymlinksInPath()))
+        #expect(!sources.contains(normalizedManifest),
+                "Package.swift is a SwiftPM manifest and cannot be compiled as a normal Swift source in preview entry builds.")
+    }
+
     @Test("Xcode workspace 根据 contents.xcworkspacedata 解析 project 源码")
     func xcodeWorkspaceUsesReferencedProjects() throws {
         let rootDirectory = FileManager.default.temporaryDirectory

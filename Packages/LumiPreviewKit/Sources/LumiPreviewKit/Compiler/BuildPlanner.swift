@@ -475,7 +475,7 @@ final class BuildPlanner: Sendable {
             }
 
             if !isDirectory.boolValue {
-                if root.pathExtension == "swift" {
+                if isCompilableSwiftSource(root) {
                     files.insert(root.standardizedFileURL.resolvingSymlinksInPath())
                 }
                 continue
@@ -501,7 +501,7 @@ final class BuildPlanner: Sendable {
                     continue
                 }
 
-                guard fileURL.pathExtension == "swift" else {
+                guard isCompilableSwiftSource(fileURL) else {
                     continue
                 }
 
@@ -520,6 +520,10 @@ final class BuildPlanner: Sendable {
         return excludedPaths.contains { excludedPath in
             path == excludedPath || path.hasPrefix(excludedPath + "/")
         }
+    }
+
+    private static func isCompilableSwiftSource(_ url: URL) -> Bool {
+        url.pathExtension == "swift" && url.lastPathComponent != "Package.swift"
     }
 
     private static func defaultPath(for target: TargetInfo) -> String {
@@ -822,4 +826,3 @@ private extension Array where Element == URL {
         return result
     }
 }
-
