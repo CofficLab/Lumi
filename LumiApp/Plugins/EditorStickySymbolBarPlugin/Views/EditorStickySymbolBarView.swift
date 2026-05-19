@@ -3,7 +3,7 @@ import MagicKit
 
 /// 编辑器符号面包屑头部视图。
 struct EditorStickySymbolBarHeaderView: View {
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

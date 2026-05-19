@@ -43,7 +43,7 @@ actor EditorCallHierarchyRailPlugin: SuperPlugin, SuperLog {
 
 /// Call Hierarchy 标签页内容视图
 struct EditorCallHierarchyRailContentView: View {
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

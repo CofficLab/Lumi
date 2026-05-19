@@ -47,7 +47,7 @@ actor EditorBottomSymbolsPlugin: SuperPlugin, SuperLog {
 
 /// Workspace Symbols 底部面板内容视图
 struct EditorBottomSymbolsContentView: View {
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

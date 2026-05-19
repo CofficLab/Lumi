@@ -14,7 +14,7 @@ struct EditorPanelView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @EnvironmentObject private var layoutVM: WindowLayoutVM
     @EnvironmentObject private var themeVM: AppThemeVM
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     /// 便利访问
     private var service: EditorService { editorVM.service }

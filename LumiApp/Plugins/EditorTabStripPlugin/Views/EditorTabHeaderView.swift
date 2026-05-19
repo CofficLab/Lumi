@@ -9,7 +9,7 @@ struct EditorTabHeaderView: View {
 
     // MARK: - 属性
 
-    @EnvironmentObject var editorVM: AppEditorVM
+    @EnvironmentObject var editorVM: WindowEditorVM
     @EnvironmentObject var projectVM: WindowProjectVM
     @EnvironmentObject private var themeVM: AppThemeVM
 

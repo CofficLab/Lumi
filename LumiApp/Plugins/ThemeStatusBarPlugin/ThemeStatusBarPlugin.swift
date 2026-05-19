@@ -52,7 +52,7 @@ actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
 /// 此视图不渲染任何可见内容，仅作为生命周期锚点。
 private struct ThemePersistenceAnchor<Content: View>: View {
     @EnvironmentObject private var themeVM: AppThemeVM
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
     let content: Content
 
     /// 标记是否已完成首次恢复，避免恢复触发 didSet 又写回存储

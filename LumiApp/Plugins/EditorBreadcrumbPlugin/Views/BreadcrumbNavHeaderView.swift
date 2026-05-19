@@ -8,7 +8,7 @@ import SwiftUI
 /// 仅显示文件路径段，符号面包屑由 EditorStickySymbolBarPlugin 负责。
 struct BreadcrumbNavHeaderView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     var body: some View {
         // 仅在有文件打开时显示
@@ -23,7 +23,7 @@ struct BreadcrumbNavHeaderView: View {
 /// 面包屑路径视图
 struct BreadcrumbNavPathView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     let fileURL: URL
 

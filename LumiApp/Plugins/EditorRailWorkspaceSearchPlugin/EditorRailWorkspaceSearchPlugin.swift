@@ -43,7 +43,7 @@ actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {
 
 /// Search 标签页内容视图
 struct EditorWorkspaceSearchRailContentView: View {
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

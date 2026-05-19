@@ -45,11 +45,13 @@ struct HotPreviewCanvas: View {
                 if viewModel.effectiveDisplayMode == .image, let renderImage = viewModel.renderImage {
                     Image(nsImage: renderImage)
                         .resizable()
+                        .scaledToFit()
                         .interpolation(.high)
                         .overlay(
                             RoundedRectangle(cornerRadius: 0)
                                 .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.18), lineWidth: 1)
                         )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
 
                 if let liveFailureMessage {

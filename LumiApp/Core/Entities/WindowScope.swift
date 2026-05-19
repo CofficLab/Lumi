@@ -79,6 +79,9 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     /// 聊天时间线（依赖 WindowConversationVM，窗口级）
     let chatTimelineViewModel: WindowChatTimelineViewModel
 
+    /// 编辑器（每窗口独立的 EditorService，文件打开/切换互不影响）
+    let editorVM: WindowEditorVM
+
     // MARK: - Window-Level State (from WindowState)
 
     /// 窗口标题
@@ -175,6 +178,9 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         self.chatTimelineViewModel = WindowChatTimelineViewModel(
             chatHistoryService: container.chatHistoryService,
             conversationVM: conversationVM
+        )
+        self.editorVM = WindowEditorVM(
+            service: EditorService(editorExtensionRegistry: container.createEditorExtensionRegistry())
         )
 
         // ========================================

@@ -43,7 +43,7 @@ actor EditorOutlineRailPlugin: SuperPlugin, SuperLog {
 
 /// Outline 标签页内容视图
 struct EditorOutlineRailContentView: View {
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

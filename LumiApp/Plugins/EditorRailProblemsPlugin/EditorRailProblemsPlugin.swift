@@ -43,7 +43,7 @@ actor EditorRailProblemsPlugin: SuperPlugin, SuperLog {
 
 /// Problems 标签页内容视图
 struct EditorProblemsRailContentView: View {
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
 
     private var service: EditorService { editorVM.service }
 

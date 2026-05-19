@@ -9,22 +9,22 @@ import SwiftUI
 ///
 /// ## 架构说明
 ///
-/// AppEditorVM 持有一个 `EditorService` 实例，所有编辑器能力通过它访问。
+/// WindowEditorVM 持有一个 `EditorService` 实例，所有编辑器能力通过它访问。
 /// 同时订阅 service 内部 `sessionStore` 的变化通知并转发，
-/// 确保所有通过 `@EnvironmentObject` 观察 AppEditorVM 的视图（如 Tab 栏）
+/// 确保所有通过 `@EnvironmentObject` 观察 WindowEditorVM 的视图（如 Tab 栏）
 /// 都能在 session/tab 变更时自动刷新，而不依赖 `selectedFileURL` 间接驱动。
 ///
 /// ## 使用方式
 ///
 /// ```swift
-/// @EnvironmentObject private var editorVM: AppEditorVM
+/// @EnvironmentObject private var editorVM: WindowEditorVM
 ///
 /// editorVM.service.currentFileURL
 /// editorVM.service.open(at: url)
 /// editorVM.service.performCommand(id: "builtin.find")
 /// ```
 @MainActor
-final class AppEditorVM: ObservableObject {
+final class WindowEditorVM: ObservableObject {
 
     /// 编辑器统一服务（对外门面）
     let service: EditorService
@@ -37,7 +37,7 @@ final class AppEditorVM: ObservableObject {
     init(service: EditorService) {
         self.service = service
 
-        // 将 sessionStore 的 objectWillChange 转发到 AppEditorVM，
+        // 将 sessionStore 的 objectWillChange 转发到 WindowEditorVM，
         // 使依赖 @EnvironmentObject editorVM 的视图能感知 tabs/session 的增删改。
         // ⚠️ 此处仍需直接访问 sessionStore，因为 objectWillChange 是 Combine 管道，
         // 无法通过门面方法转发（门面不暴露 ObservableObject 协议）。
@@ -46,7 +46,7 @@ final class AppEditorVM: ObservableObject {
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
 
-        // 将 EditorState 的 objectWillChange 转发到 AppEditorVM，
+        // 将 EditorState 的 objectWillChange 转发到 WindowEditorVM，
         // 使依赖 editorVM 的视图（如文件树高亮）能响应 currentFileURL 等状态变化。
         service.state.objectWillChange
             .receive(on: RunLoop.main)

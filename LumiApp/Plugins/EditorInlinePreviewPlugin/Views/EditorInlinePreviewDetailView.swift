@@ -21,7 +21,7 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
     nonisolated static let emoji = "👁"
     nonisolated static let verbose: Bool = true
 
-    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var editorVM: WindowEditorVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @StateObject private var viewModel = EditorInlinePreviewViewModel()
     @StateObject private var automationState = InlinePreviewAutomationState.shared

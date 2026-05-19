@@ -58,9 +58,9 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(container.agentSessionConfig)
             .environmentObject(container.chatHistoryVM)
             .environmentObject(container.gitVM)
-            .environmentObject(container.editorVM)
             .environmentObject(container.idleTimeVM)
             // 窗口级 VM（每窗口独立）
+            .environmentObject(scope.editorVM)
             .environmentObject(scope.conversationVM)
             .environmentObject(scope.projectVM)
             .environmentObject(scope.layoutVM)

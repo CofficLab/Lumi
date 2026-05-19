@@ -52,10 +52,10 @@ final class FontConfigViewModel: ObservableObject {
 
     // MARK: - Editor Sync
 
-    private weak var editorVM: AppEditorVM?
+    private weak var editorVM: WindowEditorVM?
 
-    /// 由视图 onAppear 调用，建立与 AppEditorVM 的关联
-    func syncFromEditor(editorVM: AppEditorVM) {
+    /// 由视图 onAppear 调用，建立与 WindowEditorVM 的关联
+    func syncFromEditor(editorVM: WindowEditorVM) {
         self.editorVM = editorVM
         scanFonts()
         restore()
