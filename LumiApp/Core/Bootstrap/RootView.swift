@@ -83,8 +83,8 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .onReceive(scope.messageQueueVM.$queueVersion.dropFirst()) { _ in
                 onMessageQueueChanged()
             }
-            .onReceive(scope.inputQueueVM.$queueVersion.dropFirst()) { _ in
-                onInputQueueRequested()
+            .onReceive(scope.inputQueueVM.enqueueRequests) { request in
+                onInputQueueRequested(request)
             }
             .onReceive(scope.conversationCreationVM.$pendingRequest.compactMap { $0 }) { _ in
                 onConversationCreationRequested()
@@ -148,16 +148,8 @@ extension RootView {
     }
 
     @MainActor
-    func onInputQueueRequested() {
-        guard let requestId = scope.inputQueueVM.pendingRequest?.id else {
-            if Self.verbose { AppLogger.core.warning("\(Self.t) 收到输入队列版本变化，但没有待处理输入请求") }
-            return
-        }
-        guard let request = scope.inputQueueVM.consumePendingRequest(id: requestId) else {
-            if Self.verbose { AppLogger.core.warning("\(Self.t) 输入请求已不存在或 ID 不匹配，忽略：\(requestId)") }
-            return
-        }
-
+    func onInputQueueRequested(_ request: WindowInputQueueVM.InputEnqueueRequest) {
+        _ = scope.inputQueueVM.consumePendingRequest(id: request.id)
         guard let conversationId = scope.conversationVM.selectedConversationId else {
             if Self.verbose { AppLogger.core.warning("\(Self.t) 用户输入了数据，但没有选择对话，忽略") }
             return
@@ -182,6 +174,9 @@ extension RootView {
         )
         scope.messageQueueVM.enqueueMessage(message)
         scope.chatTimelineViewModel.handleMessageQueued(message)
+        Task {
+            await sendController.attemptBeginNextQueuedSend()
+        }
     }
 
     func onConversationCreationRequested() {

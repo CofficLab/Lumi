@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import MagicKit
 
@@ -16,16 +17,19 @@ final class WindowInputQueueVM: ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔄" }
     nonisolated static var verbose: Bool { false }
 
-    @Published private(set) var pendingRequest: InputEnqueueRequest?
-    
-    /// 输入入队请求版本号，每次发布新请求时递增，用于外部监听
-    @Published private(set) var queueVersion: Int = 0
-
     struct InputEnqueueRequest: Identifiable, Equatable {
         let id: UUID
         let text: String
         let images: [ImageAttachment]
     }
+
+    @Published private(set) var pendingRequest: InputEnqueueRequest?
+
+    /// 显式输入请求事件。RootView 直接消费事件，避免依赖 `@Published` 版本号再回读状态。
+    let enqueueRequests = PassthroughSubject<InputEnqueueRequest, Never>()
+
+    /// 输入入队请求版本号，每次发布新请求时递增，用于外部监听
+    @Published private(set) var queueVersion: Int = 0
 
     /// 发布输入入队请求
     func enqueueText(_ text: String, images: [ImageAttachment] = []) {
@@ -38,12 +42,14 @@ final class WindowInputQueueVM: ObservableObject, SuperLog {
             AppLogger.core.info("\(self.t) 用户提供的消息文字和图片都是空，什么都不做")
             return
         }
-        pendingRequest = InputEnqueueRequest(
+        let request = InputEnqueueRequest(
             id: UUID(),
             text: trimmed,
             images: images
         )
+        pendingRequest = request
         queueVersion += 1
+        enqueueRequests.send(request)
         NotificationCenter.postUserDidSendMessage()
     }
 
