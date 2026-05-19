@@ -274,13 +274,6 @@ protocol SuperPlugin: Actor {
     /// 典型用例：聊天消息列表、输入区域、预览面板、属性检查器等。
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView]
 
-    /// 添加聊天输入区域浮层视图
-    ///
-    /// 插件通过此方法提供一个或多个覆盖在聊天输入区域上的浮层视图。
-    /// 内核负责在 `ChatInputPlugin` 的输入区域内聚合渲染，插件只负责具体浮层内容。
-    ///
-    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
-    @MainActor func addChatInputOverlayViews(activeIcon: String?) -> [AnyView]
 
     /// 提供右侧栏底部工具栏左侧项列表
     ///

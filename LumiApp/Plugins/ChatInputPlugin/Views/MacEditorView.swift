@@ -8,7 +8,7 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "✏️"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     /// 最小高度
     static let minHeight: CGFloat = 64
     /// 最大高度
@@ -58,6 +58,9 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
         let textView = EditorTextView()
         textView.autoresizingMask = [.width]
         textView.delegate = context.coordinator
+        textView.keyDownHandler = { [weak coordinator = context.coordinator] event in
+            coordinator?.handleKeyDown(event) ?? false
+        }
         textView.drawsBackground = false
         textView.font = font
         textView.isRichText = false
@@ -89,6 +92,12 @@ struct MacEditorView: NSViewRepresentable, SuperLog {
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? EditorTextView else { return }
+
+        context.coordinator.parent = self
+        textView.delegate = context.coordinator
+        textView.keyDownHandler = { [weak coordinator = context.coordinator] event in
+            coordinator?.handleKeyDown(event) ?? false
+        }
 
         textView.imageDragHoverHandler = { [weak coordinator = context.coordinator] hovering in
             guard let coordinator else { return }
@@ -236,15 +245,18 @@ extension MacEditorView {
         ///   - commandSelector: 命令选择器
         /// - Returns: 是否已处理该命令
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-            if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+            if isEnterCommand(commandSelector) {
+                if let event = NSApp.currentEvent,
+                   event.modifierFlags.contains(.shift) || event.modifierFlags.contains(.option)
+                {
+                    return false // 允许换行 (Shift/Option + Enter)
+                }
+                if MacEditorView.verbose {
+                    ChatInputPlugin.logger.info("\(MacEditorView.t)doCommandBy 捕获回车：\(NSStringFromSelector(commandSelector))")
+                }
                 if let onEnter = parent.onEnter {
                     onEnter()
                     return true
-                }
-                if let event = NSApp.currentEvent,
-                   event.modifierFlags.contains(.shift)
-                {
-                    return false // 允许换行 (Shift + Enter)
                 }
                 parent.onSubmit()
                 return true // 阻止换行并触发提交
@@ -260,6 +272,36 @@ extension MacEditorView {
                 }
             }
             return false
+        }
+
+        private func isEnterCommand(_ commandSelector: Selector) -> Bool {
+            commandSelector == #selector(NSResponder.insertNewline(_:))
+                || commandSelector == #selector(NSResponder.insertLineBreak(_:))
+                || commandSelector == #selector(NSResponder.insertParagraphSeparator(_:))
+        }
+
+        @MainActor
+        func handleKeyDown(_ event: NSEvent) -> Bool {
+            guard isReturnKey(event) else { return false }
+            guard event.modifierFlags.intersection([.shift, .option]).isEmpty else {
+                return false
+            }
+            guard event.modifierFlags.intersection([.command, .control]).isEmpty else {
+                return false
+            }
+            if MacEditorView.verbose {
+                ChatInputPlugin.logger.info("\(MacEditorView.t)keyDown 捕获普通回车")
+            }
+            if let onEnter = parent.onEnter {
+                onEnter()
+                return true
+            }
+            parent.onSubmit()
+            return true
+        }
+
+        private func isReturnKey(_ event: NSEvent) -> Bool {
+            event.keyCode == 36 || event.keyCode == 76 || event.charactersIgnoringModifiers == "\r"
         }
     }
 }
@@ -281,6 +323,16 @@ class EditorTextView: NSTextView, SuperLog {
 
     /// 拖放悬停状态回调（主线程更新 SwiftUI）
     var imageDragHoverHandler: ((Bool) -> Void)?
+
+    /// 原生 keyDown 兜底处理，避免部分 Return 事件不进入 doCommandBy。
+    var keyDownHandler: ((NSEvent) -> Bool)?
+
+    override func keyDown(with event: NSEvent) {
+        if !hasMarkedText(), keyDownHandler?(event) == true {
+            return
+        }
+        super.keyDown(with: event)
+    }
 
     /// 拖放数据是否为「会按图片附件处理」的文件
     private func draggingInfoContainsChatImageFile(_ sender: NSDraggingInfo) -> Bool {

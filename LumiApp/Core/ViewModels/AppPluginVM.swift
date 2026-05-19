@@ -110,7 +110,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
     private var railTabsCache: (key: String, tabs: [RailTab])?
     private var railContentViewCache: [String: AnyView] = [:]
     private var sidebarSectionsCache: (key: String, sections: [AnyView])?
-    private var chatInputOverlayViewsCache: (key: String, views: [AnyView])?
     private var sidebarLeadingToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
     private var sidebarTrailingToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
     private var sidebarToolbarItemViewCache: [String: AnyView] = [:]
@@ -172,7 +171,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
         railTabsCache = nil
         railContentViewCache.removeAll()
         sidebarSectionsCache = nil
-        chatInputOverlayViewsCache = nil
         sidebarLeadingToolbarItemsCache = nil
         sidebarTrailingToolbarItemsCache = nil
         sidebarToolbarItemViewCache.removeAll()
@@ -694,22 +692,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
     /// 当前是否有右侧栏 Section 视图
     func hasSidebars() -> Bool {
         !getSidebarSections().isEmpty
-    }
-
-    // MARK: - Chat Input Overlay Views
-
-    /// 聚合所有插件提供的聊天输入区域浮层视图。
-    func getChatInputOverlayViews() -> [AnyView] {
-        let activeIcon = activePanelIcon
-        let key = activeIconCacheKey()
-        if let cached = chatInputOverlayViewsCache, cached.key == key {
-            return cached.views
-        }
-        let views = plugins
-            .filter { isPluginEnabled($0) }
-            .flatMap { $0.addChatInputOverlayViews(activeIcon: activeIcon) }
-        chatInputOverlayViewsCache = (key, views)
-        return views
     }
 
     // MARK: - Sidebar Toolbar Items

@@ -1037,6 +1037,8 @@ private struct EditorInlinePreviewStringCatalogView: View {
                 } header: {
                     tableHeader
                 }
+
+                Spacer()
             }
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())

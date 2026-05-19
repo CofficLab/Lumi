@@ -11,7 +11,7 @@ struct InputView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     /// 入队器：只负责把输入入队
     @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
@@ -21,9 +21,6 @@ struct InputView: View, SuperLog {
 
     /// 主题管理器
     @EnvironmentObject private var themeVM: AppThemeVM
-
-    /// 插件管理器，用于聚合输入区浮层。
-    @EnvironmentObject private var pluginProvider: AppPluginVM
 
     /// 命令建议 ViewModel
     @EnvironmentObject var commandSuggestionViewModel: WindowCommandSuggestionVM
@@ -66,11 +63,6 @@ struct InputView: View, SuperLog {
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .overlay(RoundedRectangle(cornerRadius: 0)
             .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.1), lineWidth: 1))
-        .overlay {
-            ForEach(Array(pluginProvider.getChatInputOverlayViews().enumerated()), id: \.offset) { _, view in
-                view
-            }
-        }
         .shadow(color: themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08), radius: 8, x: 0, y: 4)
         .overlay(alignment: .bottomLeading) {
             commandSuggestionOverlay
