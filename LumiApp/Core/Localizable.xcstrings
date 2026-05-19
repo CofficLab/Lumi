@@ -6723,9 +6723,6 @@
         }
       }
     },
-    "已取消" : {
-
-    },
     "已复制" : {
       "extractionState" : "stale",
       "localizations" : {
