@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 本地模型加载状态渲染器
 struct LoadingLocalModelRenderer: SuperMessageRenderer {
