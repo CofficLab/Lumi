@@ -20,6 +20,7 @@
 		0B1A4F912F662D8500F15618 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 0B1A4F902F662D8500F15618 /* MLXVLM */; };
 		0B2F7D682F3A301D00AD7E94 /* LumiFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B2F7D612F3A301C00AD7E94 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0B462A922FB976B4007E52B1 /* LumiInlinePreviewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */; };
+		0B52000330C3000000AA0001 /* RAGKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B52000230C3000000AA0001 /* RAGKit */; };
 		0B6DF8592F8E780800FA0CAC /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6DF8582F8E780800FA0CAC /* LanguageClient */; };
 		0B6ED5C82FB20E7800F4EE25 /* EditorOverlayKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B6ED5C72FB20E7800F4EE25 /* EditorOverlayKit */; };
 		0B8027C42F6C4E7F007FD39D /* MagicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8027C32F6C4E7F007FD39D /* MagicKit */; };
@@ -322,6 +323,7 @@
 				0BC2F1DB2F8A931C00B45F10 /* MagicDiffView in Frameworks */,
 				F5A640872F3ED72C0039A761 /* MySQLNIO in Frameworks */,
 				0BE8D34B2FB9D87F00FBC0EC /* LLMProviderKit in Frameworks */,
+				0B52000330C3000000AA0001 /* RAGKit in Frameworks */,
 				0B1A4F832F662D8500F15618 /* MLXFast in Frameworks */,
 				F5A640802F3ED7060039A761 /* PostgresNIO in Frameworks */,
 				F5826C862F35731C0079B285 /* MagicKit in Frameworks */,
@@ -885,6 +887,7 @@
 				F1E2A3022FC2000100000001 /* FileTreeKit */,
 				0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */,
 				0BE8D34A2FB9D87F00FBC0EC /* LLMProviderKit */,
+				0B52000230C3000000AA0001 /* RAGKit */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -983,6 +986,7 @@
 				F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */,
 				0B462A902FB976B4007E52B1 /* XCLocalSwiftPackageReference "Packages/LumiInlinePreviewKit" */,
 				0BE8D3492FB9D87F00FBC0EC /* XCLocalSwiftPackageReference "Packages/LLMProviderKit" */,
+				0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1869,6 +1873,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LumiInlinePreviewKit;
 		};
+		0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/RAGKit;
+		};
 		0B6ED5C62FB20E7800F4EE25 /* XCLocalSwiftPackageReference "Packages/EditorOverlayKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/EditorOverlayKit;
@@ -2124,6 +2132,11 @@
 		0B462A912FB976B4007E52B1 /* LumiInlinePreviewKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LumiInlinePreviewKit;
+		};
+		0B52000230C3000000AA0001 /* RAGKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B52000130C3000000AA0001 /* XCLocalSwiftPackageReference "Packages/RAGKit" */;
+			productName = RAGKit;
 		};
 		0B6DF8582F8E780800FA0CAC /* LanguageClient */ = {
 			isa = XCSwiftPackageProductDependency;

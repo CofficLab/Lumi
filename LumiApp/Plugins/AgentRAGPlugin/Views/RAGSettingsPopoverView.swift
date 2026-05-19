@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import RAGKit
 
 @MainActor
 struct RAGSettingsPopoverView: View, SuperLog {

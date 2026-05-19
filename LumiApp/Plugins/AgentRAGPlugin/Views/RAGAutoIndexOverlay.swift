@@ -1,4 +1,5 @@
 import MagicKit
+import RAGKit
 import SwiftUI
 
 /// RAG 自动索引覆盖层

@@ -1,5 +1,6 @@
 import SwiftUI
 import MagicKit
+import RAGKit
 
 @MainActor
 struct RAGSettingsView: View, SuperLog {

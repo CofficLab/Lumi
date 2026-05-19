@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import RAGKit
 import os
 
 /// RAG 中间件
@@ -203,7 +204,7 @@ final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
                 query: userMessage,
                 results: response.results,
                 projectPath: projectPath,
-                languagePreference: ctx.projectVM.languagePreference
+                languagePreference: ctx.projectVM.languagePreference.ragPreference
             )
             ctx.transientSystemPrompts.append(augmentedPrompt)
 
@@ -233,5 +234,16 @@ final class RAGSuperSendMiddleware: SuperSendMiddleware, SuperLog {
         }
 
         await next(ctx)
+    }
+}
+
+private extension LanguagePreference {
+    var ragPreference: RAGLanguagePreference {
+        switch self {
+        case .chinese:
+            return .chinese
+        case .english:
+            return .english
+        }
     }
 }

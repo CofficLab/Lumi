@@ -1,4 +1,5 @@
 import MagicKit
+import RAGKit
 import SwiftUI
 import os
 
@@ -31,7 +32,15 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     ///
     /// 在插件启用时自动初始化
     @MainActor
-    private(set) static var service: RAGService = RAGService()
+    private(set) static var service: RAGKit.RAGService = RAGKit.RAGService(
+        databaseDirectoryProvider: {
+            AppConfig.getPluginDBFolderURL(pluginName: "RAGPlugin")
+        },
+        logger: RAGPluginLogger(),
+        onProgress: { event in
+            NotificationCenter.postRAGIndexProgress(event)
+        }
+    )
 
     // MARK: - Lifecycle
 
@@ -87,7 +96,24 @@ actor RAGPlugin: SuperPlugin, SuperLog {
     /// 获取 RAG 服务实例
     /// - Returns: RAGService 单例
     @MainActor
-    static func getService() -> RAGService {
+    static func getService() -> RAGKit.RAGService {
         service
+    }
+}
+
+private struct RAGPluginLogger: RAGLogger {
+    func info(_ message: String) {
+        guard RAGPlugin.verbose else { return }
+        RAGPlugin.logger.info("\(message)")
+    }
+
+    func error(_ message: String) {
+        guard RAGPlugin.verbose else { return }
+        RAGPlugin.logger.error("\(message)")
+    }
+
+    func warning(_ message: String) {
+        guard RAGPlugin.verbose else { return }
+        RAGPlugin.logger.warning("\(message)")
     }
 }
