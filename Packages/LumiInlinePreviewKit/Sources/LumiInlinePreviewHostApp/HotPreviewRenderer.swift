@@ -87,8 +87,11 @@ final class HotPreviewRenderer {
     /// 调用 `sendEvent(_:)`。子进程内部使用，不跨进程。
     var hostWindow: NSWindow? { window }
 
-    /// 当前承载的视图尺寸（点）。
+    /// 当前离屏画布尺寸（点）。用户预览有明确 fitting size 时使用预览自身尺寸；
+    /// 没有明确尺寸的弹性预览才回退到外层 viewport。
     private(set) var pointSize: CGSize = CGSize(width: 320, height: 180)
+    /// 主进程预览面板可用尺寸（点）。
+    private var viewportSize: CGSize = CGSize(width: 320, height: 180)
     /// 当前 backing scale。
     private(set) var scale: CGFloat = 2
 
@@ -106,11 +109,9 @@ final class HotPreviewRenderer {
     func resize(width: Int, height: Int, scale: CGFloat) {
         let pointWidth = max(1, CGFloat(width) / max(scale, 1))
         let pointHeight = max(1, CGFloat(height) / max(scale, 1))
-        pointSize = CGSize(width: pointWidth, height: pointHeight)
+        viewportSize = CGSize(width: pointWidth, height: pointHeight)
         self.scale = max(scale, 1)
-        let frame = NSRect(x: 0, y: 0, width: pointWidth, height: pointHeight)
-        previewView?.frame = frame
-        window?.setContentSize(frame.size)
+        applyRenderSize()
         previewView?.needsLayout = true
         previewView?.needsDisplay = true
         markDirty()
@@ -316,6 +317,7 @@ final class HotPreviewRenderer {
 
     private func installView(_ view: NSView) {
         guard let window else { return }
+        pointSize = resolvedRenderSize(for: view)
         let frame = NSRect(origin: .zero, size: pointSize)
         view.frame = frame
         view.wantsLayer = true
@@ -331,6 +333,35 @@ final class HotPreviewRenderer {
         diagnostic("installView type=\(String(describing: type(of: view))) frame=\(format(view.frame.size)) bounds=\(format(view.bounds.size)) fitting=\(format(view.fittingSize)) intrinsic=\(format(view.intrinsicContentSize)) window=\(describe(window))")
     }
 
+    private func applyRenderSize() {
+        guard let previewView else { return }
+        pointSize = resolvedRenderSize(for: previewView)
+        let frame = NSRect(origin: .zero, size: pointSize)
+        previewView.frame = frame
+        window?.setContentSize(frame.size)
+    }
+
+    private func resolvedRenderSize(for view: NSView) -> CGSize {
+        let preferred = view.fittingSize
+        if isUsablePreferredSize(preferred) {
+            return preferred
+        }
+        let intrinsic = view.intrinsicContentSize
+        if isUsablePreferredSize(intrinsic) {
+            return intrinsic
+        }
+        return viewportSize
+    }
+
+    private func isUsablePreferredSize(_ size: CGSize) -> Bool {
+        size.width.isFinite &&
+        size.height.isFinite &&
+        size.width > 1 &&
+        size.height > 1 &&
+        size.width != NSView.noIntrinsicMetric &&
+        size.height != NSView.noIntrinsicMetric
+    }
+
     private func updateExistingPreviewIfPossible(with handle: UnsafeMutableRawPointer) throws -> Bool {
         guard let previewView,
               let updateSymbol = dlsym(handle, "lumi_preview_update_nsview") else {
@@ -340,7 +371,7 @@ final class HotPreviewRenderer {
         let updateView = unsafeBitCast(updateSymbol, to: UpdateViewFn.self)
         let updated = updateView(Unmanaged.passUnretained(previewView).toOpaque())
         guard updated else { return false }
-        previewView.frame = NSRect(origin: .zero, size: pointSize)
+        applyRenderSize()
         previewView.wantsLayer = true
         previewView.needsLayout = true
         previewView.needsDisplay = true

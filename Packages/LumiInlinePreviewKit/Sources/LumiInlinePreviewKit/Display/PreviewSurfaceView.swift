@@ -36,6 +36,7 @@ public extension LumiInlinePreviewFacade {
 
         /// 强引用最近一帧的 IOSurface，避免被 ARC 回收。
         private var retainedSurface: IOSurfaceRef?
+        private var contentPointSize: CGSize?
         private var hasIMEMarkedText = false
         private var markedText = ""
         private var inputTrackingArea: NSTrackingArea?
@@ -114,9 +115,10 @@ public extension LumiInlinePreviewFacade {
         public override func scrollWheel(with event: NSEvent) {
             guard isInteractive else { super.scrollWheel(with: event); return }
             let local = convert(event.locationInWindow, from: nil)
+            let contentPoint = contentPoint(fromCanvasPoint: local)
             let model = ScrollWheelEvent(
-                x: Double(local.x),
-                y: Double(local.y),
+                x: Double(contentPoint.x),
+                y: Double(contentPoint.y),
                 deltaX: Double(event.deltaX),
                 deltaY: Double(event.deltaY),
                 scrollingDeltaX: Double(event.scrollingDeltaX),
@@ -181,11 +183,12 @@ public extension LumiInlinePreviewFacade {
             button: MouseEvent.Button
         ) {
             let local = self.convert(event.locationInWindow, from: nil)
+            let contentPoint = self.contentPoint(fromCanvasPoint: local)
             let model = MouseEvent(
                 phase: phase,
                 button: button,
-                x: Double(local.x),
-                y: Double(local.y),
+                x: Double(contentPoint.x),
+                y: Double(contentPoint.y),
                 clickCount: Self.usesSyntheticClickCount(phase) ? 0 : event.clickCount,
                 modifiers: ModifierFlags.fromAppKitImported(event.modifierFlags)
             )
@@ -210,10 +213,11 @@ public extension LumiInlinePreviewFacade {
 
         private func forwardDrag(_ sender: NSDraggingInfo, phase: DragDropEvent.Phase) {
             let location = convert(sender.draggingLocation, from: nil)
+            let contentPoint = contentPoint(fromCanvasPoint: location)
             onInputEvent?(.dragAndDrop(.init(
                 phase: phase,
-                x: Double(location.x),
-                y: Double(location.y),
+                x: Double(contentPoint.x),
+                y: Double(contentPoint.y),
                 items: Self.dragItems(from: sender.draggingPasteboard),
                 modifiers: ModifierFlags.fromAppKitImported(NSApplication.shared.currentEvent?.modifierFlags ?? [])
             )))
@@ -240,7 +244,7 @@ public extension LumiInlinePreviewFacade {
 
         public override func makeBackingLayer() -> CALayer {
             let layer = CALayer()
-            layer.contentsGravity = .resize
+            layer.contentsGravity = .resizeAspect
             layer.magnificationFilter = .linear
             layer.minificationFilter = .linear
             // 恢复为 false，让 layer 支持透明合成
@@ -267,6 +271,11 @@ public extension LumiInlinePreviewFacade {
 
             let surfaceWidth = IOSurfaceGetWidth(surface)
             let surfaceHeight = IOSurfaceGetHeight(surface)
+            let contentScale = scaleVal > 0 ? scaleVal : 1
+            contentPointSize = CGSize(
+                width: CGFloat(surfaceWidth) / contentScale,
+                height: CGFloat(surfaceHeight) / contentScale
+            )
             let ciImage = CIImage(ioSurface: surface)
             let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
             if let cgImage {
@@ -280,6 +289,7 @@ public extension LumiInlinePreviewFacade {
         public func detach() {
             currentSurfaceID = nil
             retainedSurface = nil
+            contentPointSize = nil
             layer?.contents = nil
         }
 
@@ -336,6 +346,39 @@ public extension LumiInlinePreviewFacade {
         private func notifySize() {
             let scale = window?.backingScaleFactor ?? 1
             onSizeChange?(bounds.size, scale)
+        }
+
+        private var contentDisplayRect: CGRect {
+            guard let contentPointSize,
+                  contentPointSize.width > 0,
+                  contentPointSize.height > 0,
+                  bounds.width > 0,
+                  bounds.height > 0 else {
+                return bounds
+            }
+            let fitScale = min(bounds.width / contentPointSize.width, bounds.height / contentPointSize.height)
+            let fittedSize = CGSize(
+                width: contentPointSize.width * fitScale,
+                height: contentPointSize.height * fitScale
+            )
+            return CGRect(
+                x: bounds.midX - fittedSize.width / 2,
+                y: bounds.midY - fittedSize.height / 2,
+                width: fittedSize.width,
+                height: fittedSize.height
+            )
+        }
+
+        private func contentPoint(fromCanvasPoint point: CGPoint) -> CGPoint {
+            guard let contentPointSize else { return point }
+            let displayRect = contentDisplayRect
+            guard displayRect.width > 0, displayRect.height > 0 else { return point }
+            let normalizedX = (point.x - displayRect.minX) / displayRect.width
+            let normalizedY = (point.y - displayRect.minY) / displayRect.height
+            return CGPoint(
+                x: max(0, min(contentPointSize.width, normalizedX * contentPointSize.width)),
+                y: max(0, min(contentPointSize.height, normalizedY * contentPointSize.height))
+            )
         }
 
         // MARK: - NSTextInputClient

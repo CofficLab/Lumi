@@ -141,6 +141,30 @@ final class PreviewSurfaceViewTests: XCTestCase {
         XCTAssertEqual(event.momentumPhase, .none)
     }
 
+    func test_mouseEvents_mapThroughAspectFitContentRect() throws {
+        let frame = try XCTUnwrap(
+            LumiInlinePreviewFacade.DemoSurfaceFactory.makeFrame(
+                width: 100, height: 100, scale: 1, seq: 1
+            )
+        )
+        let view = LumiInlinePreviewFacade.PreviewSurfaceView(frame: NSRect(x: 0, y: 0, width: 200, height: 100))
+        view.isInteractive = true
+        view.attach(surfaceID: frame.surfaceID)
+        var forwardedEvent: LumiInlinePreviewFacade.PreviewInputEvent?
+        view.onInputEvent = { forwardedEvent = $0 }
+
+        view.mouseDown(with: try makeMouseEvent(type: .leftMouseDown, location: NSPoint(x: 100, y: 50), clickCount: 1))
+
+        XCTAssertEqual(forwardedEvent, .mouse(.init(
+            phase: .down,
+            button: .left,
+            x: 50,
+            y: 50,
+            clickCount: 1,
+            modifiers: [.shift]
+        )))
+    }
+
     func test_dragEvents_whenInteractive_forwardModels() {
         let view = LumiInlinePreviewFacade.PreviewSurfaceView(frame: NSRect(x: 0, y: 0, width: 100, height: 80))
         view.isInteractive = true
