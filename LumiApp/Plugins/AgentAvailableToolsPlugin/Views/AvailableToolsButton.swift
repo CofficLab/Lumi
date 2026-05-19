@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 状态栏上的可用工具按钮
 struct AvailableToolsButton: View {
-    @EnvironmentObject var conversationTurnServices: ConversationTurnServicesVM
+    @EnvironmentObject var conversationTurnServices: AppConversationTurnServicesVM
 
     var body: some View {
         StatusBarHoverContainer(

@@ -56,7 +56,7 @@ public extension LumiPreviewFacade {
                     xcodeCompiler: xcodeCompiler
                 )
             self.moduleNameResolver = moduleNameResolver
-                ?? Self.defaultModuleNameResolver()
+                ?? Self.defaultModuleNameResolver(xcodeCompiler: xcodeCompiler)
             self.moduleImportPlanCache = moduleImportPlanCache
         }
 
@@ -497,7 +497,9 @@ public extension LumiPreviewFacade {
             }
         }
 
-        private static func defaultModuleNameResolver() -> @Sendable (LumiPreviewFacade.BuildStrategy) async throws -> String? {
+        private static func defaultModuleNameResolver(
+            xcodeCompiler: LumiPreviewFacade.XcodeCompiler
+        ) -> @Sendable (LumiPreviewFacade.BuildStrategy) async throws -> String? {
             { buildStrategy in
                 switch buildStrategy {
                 case .spm(_, let targetName):
@@ -506,7 +508,8 @@ public extension LumiPreviewFacade {
                     return try await resolveXcodeModuleName(
                         projectURL: projectURL,
                         scheme: scheme,
-                        configuration: configuration
+                        configuration: configuration,
+                        derivedDataPath: xcodeCompiler.derivedDataPath
                     )
                 case .incremental:
                     return nil
@@ -579,7 +582,8 @@ public extension LumiPreviewFacade {
         private static func resolveXcodeModuleName(
             projectURL: URL,
             scheme: String,
-            configuration: String
+            configuration: String,
+            derivedDataPath: URL?
         ) async throws -> String? {
             try await Task.detached {
                 let process = Process()
@@ -588,7 +592,7 @@ public extension LumiPreviewFacade {
                     projectURL: projectURL,
                     scheme: scheme,
                     configuration: configuration,
-                    derivedDataPath: xcodeCompiler.derivedDataPath
+                    derivedDataPath: derivedDataPath
                 )
                 process.currentDirectoryURL = projectURL.deletingLastPathComponent()
 
