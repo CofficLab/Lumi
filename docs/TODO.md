@@ -707,3 +707,66 @@
 3. **插件零改动或极小改动** — `@EnvironmentObject` 类型不变，只是实例从全局变成窗口级
 4. **SendController 自然隔离** — 不再需要判断"当前活跃窗口是哪个"
 5. **窗口关闭自动释放** — `WindowScope` 随窗口销毁，内存自然回收
+
+---
+
+## 19. LLMAvailabilityPlugin 视图剥离 → ModelSelectorPlugin 整合
+
+> 目标：LLMAvailabilityPlugin 仅负责数据（Store + Checker + Tools），不再提供任何视图。其视图功能整合到 ModelSelectorPlugin，实现「模型选择 + 可用性」统一视图。
+>
+> **不需要改内核**（`AppLLMVM` / `LLMProviderInfo`），`LLMAvailabilityStore` 作为独立 `ObservableObject` 单例，ModelSelectorView 直接 `@ObservedObject` 引用即可。
+
+### Phase 1: LLMAvailabilityPlugin 删除视图
+
+> 风险：低。纯删除操作。
+
+- [ ] 删除 `Views/LLMAvailabilityOverlay.swift`
+- [ ] 删除 `Views/LLMAvailabilityStatusBarView.swift`
+- [ ] 删除 `Views/LLMAvailabilityDetailView.swift`
+- [ ] 修改 `LLMAvailabilityPlugin.swift`：删除 `addRootView()` 方法
+- [ ] 修改 `LLMAvailabilityPlugin.swift`：删除 `addStatusBarTrailingView()` 方法
+- [ ] 清理 `LLMAvailability.xcstrings` 中不再由本插件使用的本地化 key（如有迁移到 ModelSelectorPlugin 的 key 则保留原文件不删）
+
+### Phase 2: ModelSelectorPlugin 接收初始化职责
+
+> 风险：低。Overlay 逻辑极简（初始化 Store + 启动 checkAll）。
+
+- [ ] 修改 `ModelSelectorPlugin.swift`：新增 `addRootView()` 方法，返回含可用性初始化逻辑的视图
+- [ ] 将 `LLMAvailabilityOverlay` 的 `.task` 逻辑（`store.initialize(from:)` + `checker.checkAll()`）迁移至新 `addRootView()` 或新的 `AvailabilityOverlay.swift`
+- [ ] 确认 Agent Tools（`ListAvailableModelsTool`、`CheckModelAvailabilityTool`）仍正常工作（它们通过 `LLMAvailabilityStore.shared` 读数据，与视图层无关）
+
+### Phase 3: ModelSelectorPlugin 接收状态栏指示器
+
+> 风险：低。独立 toolbar item，不影响现有 model-selector 按钮。
+
+- [ ] 从 `LLMAvailabilityStatusBarView` 迁移视图逻辑，新建 `Views/AvailabilityIndicatorButton.swift`（sidebar toolbar 按钮，显示 `可用数/总数`，点击弹出可用性详情 popover）
+- [ ] 修改 `ModelSelectorPlugin.swift`：`addSidebarLeadingToolbarItems()` 新增 `availability-indicator` item
+- [ ] 修改 `ModelSelectorPlugin.swift`：`addSidebarToolbarItemView()` 扩展支持 `model-selector` 和 `availability-indicator` 两个 item
+- [ ] 从 `LLMAvailabilityDetailView` 迁移视图逻辑，新建 `Views/AvailabilityDetailView.swift`（独立 popover 版本，保留搜索、刷新、按供应商展示的能力）
+
+### Phase 4: ModelSelectorView 新增可用性 Tab
+
+> 风险：低。纯新增功能，不改现有 Tab 逻辑。
+
+- [ ] 修改 `Models/ModelSelectorTab.swift`：新增 `.availability` case 及其 `displayTitle`
+- [ ] 修改 `Views/ModelSelectorTabSidebar.swift`：在快捷 Tab 区新增「可用性」按钮（显示可用数 badge）
+- [ ] 修改 `ModelSelectorView.swift`：`body` 的 `switch selectedTab` 新增 `.availability` 分支
+- [ ] 新建 `Views/AvailabilityTabContent.swift`（复用 `AvailabilityDetailView` 的内容，适配 ModelSelectorView 的布局风格）
+
+### Phase 5: 模型行新增可用状态指示
+
+> 风险：低。新增可选参数，不影响现有行为。
+
+- [ ] 修改 `Views/ModelSelectorModelRow.swift`：新增 `availabilityStatus: LLMAvailabilityStatus?` 参数
+- [ ] 在模型名旁显示可用状态小图标（🟢 available / 🔴 unavailable / 🟡 checking / ⚪ unknown）
+- [ ] 修改 `ModelSelectorView.swift`：所有 `modelRow()` 调用处传入从 `LLMAvailabilityStore` 查询的 status
+- [ ] `ModelSelectorTabSidebar.swift` 中供应商行旁显示可用模型数（如 `3/5`）
+
+### Phase 6: 清理与验证
+
+- [ ] 确认 `LLMAvailabilityPlugin` 目录下无任何 `import SwiftUI` 的文件（除 Tools 中可能的间接引用）
+- [ ] 确认 ModelSelectorPlugin 的 popover 尺寸和布局在新增 Tab 后仍合理（520×800 可能需要微调）
+- [ ] 确认状态栏 `availability-indicator` 与 `model-selector` 按钮视觉风格一致
+- [ ] 确认 Agent Tools（`list_available_models`、`check_model_availability`）功能不受影响
+- [ ] 👤 需要用户参与：验证可用性检测自动启动、状态栏指示器实时更新、详情面板搜索/刷新/重检正常
+- [ ] 👤 需要用户参与：验证 ModelSelectorView 中可用性 Tab 展示正确，模型行状态指示器实时反映检测结果
