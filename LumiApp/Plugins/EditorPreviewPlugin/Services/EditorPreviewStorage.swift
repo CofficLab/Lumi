@@ -18,12 +18,20 @@ enum EditorPreviewStorage {
         let root = AppConfig.getPluginDBFolderURL(pluginName: pluginName)
         let paths = LumiPreviewFacade.PreviewStoragePaths(rootDirectory: root)
         try? paths.ensureDirectoriesExist()
+        try? FileManager.default.createDirectory(
+            at: root.appendingPathComponent("DerivedData", isDirectory: true),
+            withIntermediateDirectories: true
+        )
         LumiPreviewFacade.PreviewStorage.configure(paths)
     }
 
     static var rootDirectory: URL {
         installIfNeeded()
         return AppConfig.getPluginDBFolderURL(pluginName: pluginName)
+    }
+
+    static var derivedDataDirectory: URL {
+        rootDirectory.appendingPathComponent("DerivedData", isDirectory: true)
     }
 
     static var projectPreviewHistoryURL: URL {
