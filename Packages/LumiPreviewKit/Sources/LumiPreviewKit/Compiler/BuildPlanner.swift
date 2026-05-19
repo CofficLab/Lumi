@@ -336,14 +336,14 @@ final class BuildPlanner: Sendable {
 
     private static func targetDeclarations(
         in characters: [Character]
-    ) -> [(kind: TargetInfo.Kind, bodyRange: Range<Int>)] {
+    ) -> [(kind: TargetInfo.Kind, bodyRange: Swift.Range<Int>)] {
         let starters: [(text: String, kind: TargetInfo.Kind)] = [
             (".executableTarget(", .executable),
             (".testTarget(", .test),
             (".target(", .regular)
         ]
 
-        var declarations: [(kind: TargetInfo.Kind, bodyRange: Range<Int>)] = []
+        var declarations: [(kind: TargetInfo.Kind, bodyRange: Swift.Range<Int>)] = []
         var offset = 0
 
         while offset < characters.count {

@@ -106,8 +106,8 @@ public extension LumiPreviewFacade {
                       range: NSRange(signature.startIndex..<signature.endIndex, in: signature)
                   ),
                   match.numberOfRanges == 3,
-                  let widthRange = Range(match.range(at: 1), in: signature),
-                  let heightRange = Range(match.range(at: 2), in: signature),
+                  let widthRange = Swift.Range(match.range(at: 1), in: signature),
+                  let heightRange = Swift.Range(match.range(at: 2), in: signature),
                   let width = Double(signature[widthRange]),
                   let height = Double(signature[heightRange]) else {
                 return .automatic
@@ -341,7 +341,7 @@ public extension LumiPreviewFacade {
                 && characters[safe: offset + 2] == "\""
         }
 
-        private static func markNonCode(in range: Range<Int>, mask: inout [Bool]) {
+        private static func markNonCode(in range: Swift.Range<Int>, mask: inout [Bool]) {
             for offset in range where offset < mask.count {
                 mask[offset] = false
             }

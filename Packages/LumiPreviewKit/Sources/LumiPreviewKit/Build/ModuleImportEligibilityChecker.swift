@@ -63,7 +63,7 @@ public extension LumiPreviewFacade {
                 let range = NSRange(sourceText.startIndex..<sourceText.endIndex, in: sourceText)
                 for match in regex.matches(in: sourceText, options: [], range: range) {
                     guard match.numberOfRanges > 1,
-                          let captureRange = Range(match.range(at: 1), in: sourceText) else {
+                          let captureRange = Swift.Range(match.range(at: 1), in: sourceText) else {
                         continue
                     }
                     symbols.insert(String(sourceText[captureRange]))
@@ -100,7 +100,7 @@ public extension LumiPreviewFacade {
 
             for match in typeMatches {
                 guard match.numberOfRanges > 1,
-                      let typeRange = Range(match.range(at: 1), in: sourceText) else {
+                      let typeRange = Swift.Range(match.range(at: 1), in: sourceText) else {
                     continue
                 }
                 let typeName = String(sourceText[typeRange])
@@ -132,7 +132,7 @@ public extension LumiPreviewFacade {
             in sourceText: String,
             declarationRange: NSRange
         ) -> String? {
-            guard let declarationStart = Range(declarationRange, in: sourceText)?.lowerBound else {
+            guard let declarationStart = Swift.Range(declarationRange, in: sourceText)?.lowerBound else {
                 return nil
             }
             guard let openBrace = sourceText[declarationStart...].firstIndex(of: "{") else {
@@ -207,7 +207,7 @@ public extension LumiPreviewFacade {
                 let range = NSRange(sourceText.startIndex..<sourceText.endIndex, in: sourceText)
                 for match in regex.matches(in: sourceText, options: [], range: range) {
                     guard match.numberOfRanges > 1,
-                          let captureRange = Range(match.range(at: 1), in: sourceText) else {
+                          let captureRange = Swift.Range(match.range(at: 1), in: sourceText) else {
                         continue
                     }
                     symbols.insert(String(sourceText[captureRange]))
