@@ -3,6 +3,13 @@ import Foundation
 public extension LumiPreviewFacade {
 /// 预览发现结果：从源码中检测到的单个 #Preview 宏信息。
 struct PreviewDiscovery: Identifiable, Codable, Sendable {
+    /// Xcode-style preview layout declared in `#Preview(..., traits:)`.
+    public enum Layout: Codable, Equatable, Sendable {
+        case automatic
+        case sizeThatFits
+        case fixed(width: Double, height: Double)
+    }
+
     /// 稳定标识符，用于在 UI 和宿主请求之间关联同一个预览。
     public let id: String
 
@@ -23,6 +30,9 @@ struct PreviewDiscovery: Identifiable, Codable, Sendable {
 
     /// `#Preview` 闭包内的源码文本。
     public let bodySource: String?
+
+    /// 预览宏声明的布局意图。未声明 traits 时为 `.automatic`。
+    public let layout: Layout
 
     /// 发现该预览时的完整源码文本。
     ///
@@ -48,6 +58,7 @@ struct PreviewDiscovery: Identifiable, Codable, Sendable {
         endLineNumber: Int,
         primaryTypeName: String? = nil,
         bodySource: String? = nil,
+        layout: Layout = .automatic,
         sourceText: String? = nil
     ) {
         self.id = id
@@ -57,6 +68,7 @@ struct PreviewDiscovery: Identifiable, Codable, Sendable {
         self.endLineNumber = endLineNumber
         self.primaryTypeName = primaryTypeName
         self.bodySource = bodySource
+        self.layout = layout
         self.sourceText = sourceText
     }
 
@@ -69,6 +81,7 @@ struct PreviewDiscovery: Identifiable, Codable, Sendable {
             endLineNumber: endLineNumber,
             primaryTypeName: primaryTypeName,
             bodySource: bodySource,
+            layout: layout,
             sourceText: nil
         )
     }

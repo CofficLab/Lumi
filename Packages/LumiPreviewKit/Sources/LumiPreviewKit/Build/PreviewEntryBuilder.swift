@@ -16,7 +16,11 @@ final class PreviewEntryBuilder: Sendable {
     private let incrementalCompiler: IncrementalCompiler
     private let spmCompiler: SPMCompiler
     private let xcodeCompiler: XcodeCompiler
-    private let encoder = JSONEncoder()
+    private let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return encoder
+    }()
 
     /// Creates a preview entry builder.
     public init(
@@ -152,7 +156,9 @@ final class PreviewEntryBuilder: Sendable {
     }
 
     private static func configurationFingerprint(_ configuration: PreviewRenderConfiguration) -> String {
-        guard let data = try? JSONEncoder().encode(configuration),
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(configuration),
               let text = String(data: data, encoding: .utf8) else {
             return String(describing: configuration)
         }
@@ -254,6 +260,7 @@ final class PreviewEntryBuilder: Sendable {
         let bodySource = discovery.bodySource?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let viewBody = (bodySource?.isEmpty == false) ? bodySource! : #"Text("Empty Preview")"#
+        let rootViewSource = Self.rootViewSource(for: viewBody, layout: discovery.layout)
         // When force-including source files, don't import the module —
         // all types are available via inlined source files.
         let importLine: String
@@ -272,9 +279,7 @@ final class PreviewEntryBuilder: Sendable {
 
         @_cdecl("\(Self.viewSymbolName)")
         public func lumiPreviewMakeNSView() -> UnsafeMutableRawPointer? {
-            let rootView = AnyView({
-        \(Self.indented(viewBody, spaces: 8))
-            }())
+            let rootView = \(rootViewSource)
             let view = NSHostingView(rootView: rootView)
             view.frame = NSRect(x: 0, y: 0, width: 320, height: 180)
             return Unmanaged.passRetained(view).toOpaque()
@@ -482,6 +487,24 @@ final class PreviewEntryBuilder: Sendable {
             .split(separator: "\n", omittingEmptySubsequences: false)
             .map { "\(padding)\($0)" }
             .joined(separator: "\n")
+    }
+
+    private static func rootViewSource(
+        for body: String,
+        layout: PreviewDiscovery.Layout
+    ) -> String {
+        let expression: String
+        switch layout {
+        case .automatic, .sizeThatFits:
+            expression = "{\n\(indented(body, spaces: 8))\n}()"
+        case let .fixed(width, height):
+            expression = "{\n\(indented(body, spaces: 8))\n}()\n.frame(width: \(literal(width)), height: \(literal(height)))"
+        }
+        return "AnyView(\(expression))"
+    }
+
+    private static func literal(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(value)
     }
 
     private static func swiftStringLiteralContents(_ value: String) -> String {

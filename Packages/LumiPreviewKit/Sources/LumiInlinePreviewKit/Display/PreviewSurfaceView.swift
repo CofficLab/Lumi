@@ -36,16 +36,22 @@ public extension LumiInlinePreviewFacade {
 
         /// 强引用最近一帧的 IOSurface，避免被 ARC 回收。
         private var retainedSurface: IOSurfaceRef?
+        private let contentLayer = CALayer()
         private var contentPointSize: CGSize?
         private var hasIMEMarkedText = false
         private var markedText = ""
         private var inputTrackingArea: NSTrackingArea?
+
+        var debugContentLayerFrame: CGRect {
+            contentLayer.frame
+        }
 
         // MARK: - 初始化
 
         public override init(frame frameRect: NSRect) {
             super.init(frame: frameRect)
             wantsLayer = true
+            configureContentLayer()
             registerForDraggedTypes([.fileURL, .URL, .string])
         }
 
@@ -244,11 +250,11 @@ public extension LumiInlinePreviewFacade {
 
         public override func makeBackingLayer() -> CALayer {
             let layer = CALayer()
-            layer.contentsGravity = .resizeAspect
             layer.magnificationFilter = .linear
             layer.minificationFilter = .linear
             // 恢复为 false，让 layer 支持透明合成
             layer.isOpaque = false
+            layer.masksToBounds = true
             return layer
         }
 
@@ -268,6 +274,7 @@ public extension LumiInlinePreviewFacade {
             retainedSurface = surface
             let scaleVal = window?.backingScaleFactor ?? 1
             layer?.contentsScale = scaleVal
+            ensureContentLayerAttached()
 
             let surfaceWidth = IOSurfaceGetWidth(surface)
             let surfaceHeight = IOSurfaceGetHeight(surface)
@@ -276,10 +283,11 @@ public extension LumiInlinePreviewFacade {
                 width: CGFloat(surfaceWidth) / contentScale,
                 height: CGFloat(surfaceHeight) / contentScale
             )
+            updateContentLayerFrame()
             let ciImage = CIImage(ioSurface: surface)
             let cgImage = CIContext().createCGImage(ciImage, from: CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight))
             if let cgImage {
-                layer?.contents = cgImage
+                contentLayer.contents = cgImage
             } else {
                 Self.logger.error("\(self.t)❌ attach failed: CGImage creation failed for surfaceID=\(surfaceID) size=\(surfaceWidth)×\(surfaceHeight)")
             }
@@ -290,25 +298,33 @@ public extension LumiInlinePreviewFacade {
             currentSurfaceID = nil
             retainedSurface = nil
             contentPointSize = nil
-            layer?.contents = nil
+            contentLayer.contents = nil
+            contentLayer.frame = .zero
         }
 
         // MARK: - 尺寸通知
 
         public override func layout() {
             super.layout()
+            ensureContentLayerAttached()
+            updateContentLayerFrame()
             notifySize()
         }
 
         public override func viewDidChangeBackingProperties() {
             super.viewDidChangeBackingProperties()
             layer?.contentsScale = window?.backingScaleFactor ?? 1
+            contentLayer.contentsScale = window?.backingScaleFactor ?? 1
+            updateContentLayerFrame()
             notifySize()
         }
 
         public override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             layer?.contentsScale = window?.backingScaleFactor ?? 1
+            contentLayer.contentsScale = window?.backingScaleFactor ?? 1
+            ensureContentLayerAttached()
+            updateContentLayerFrame()
             window?.acceptsMouseMovedEvents = true
             notifySize()
         }
@@ -348,6 +364,30 @@ public extension LumiInlinePreviewFacade {
             onSizeChange?(bounds.size, scale)
         }
 
+        private func configureContentLayer() {
+            contentLayer.contentsGravity = .resize
+            contentLayer.magnificationFilter = .linear
+            contentLayer.minificationFilter = .linear
+            contentLayer.isOpaque = false
+            contentLayer.masksToBounds = true
+        }
+
+        private func ensureContentLayerAttached() {
+            guard let layer else { return }
+            layer.contents = nil
+            if contentLayer.superlayer !== layer {
+                contentLayer.removeFromSuperlayer()
+                layer.addSublayer(contentLayer)
+            }
+        }
+
+        private func updateContentLayerFrame() {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            contentLayer.frame = contentDisplayRect
+            CATransaction.commit()
+        }
+
         private var contentDisplayRect: CGRect {
             guard let contentPointSize,
                   contentPointSize.width > 0,
@@ -356,7 +396,7 @@ public extension LumiInlinePreviewFacade {
                   bounds.height > 0 else {
                 return bounds
             }
-            let fitScale = min(bounds.width / contentPointSize.width, bounds.height / contentPointSize.height)
+            let fitScale = min(bounds.width / contentPointSize.width, bounds.height / contentPointSize.height, 1)
             let fittedSize = CGSize(
                 width: contentPointSize.width * fitScale,
                 height: contentPointSize.height * fitScale

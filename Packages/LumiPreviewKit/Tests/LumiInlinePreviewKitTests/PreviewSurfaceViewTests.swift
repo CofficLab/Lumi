@@ -17,7 +17,8 @@ final class PreviewSurfaceViewTests: XCTestCase {
         view.attach(surfaceID: frame.surfaceID)
 
         XCTAssertEqual(view.currentSurfaceID, frame.surfaceID)
-        XCTAssertNotNil(view.layer?.contents)
+        XCTAssertNil(view.layer?.contents)
+        XCTAssertNotEqual(view.debugContentLayerFrame, .zero)
         XCTAssertTrue(view.subviews.isEmpty)
     }
 
@@ -34,6 +35,7 @@ final class PreviewSurfaceViewTests: XCTestCase {
 
         XCTAssertNil(view.currentSurfaceID)
         XCTAssertNil(view.layer?.contents)
+        XCTAssertEqual(view.debugContentLayerFrame, .zero)
     }
 
     func test_attach_invalidSurfaceID_doesNotMutateState() {

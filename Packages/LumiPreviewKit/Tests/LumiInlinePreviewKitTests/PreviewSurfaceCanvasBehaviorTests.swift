@@ -136,7 +136,8 @@ final class PreviewSurfaceCanvasBehaviorTests: XCTestCase {
 
         view.attach(surfaceID: surfaceID)
 
-        XCTAssertNotNil(view.layer?.contents, "layer.contents 应在 attach 后被设置")
+        XCTAssertNil(view.layer?.contents, "root layer 不应直接承载 surface")
+        XCTAssertNotEqual(view.debugContentLayerFrame, .zero, "content layer 应在 attach 后被设置")
     }
 
     func test_detachSurface_clearsCurrentSurfaceID() throws {
@@ -157,6 +158,7 @@ final class PreviewSurfaceCanvasBehaviorTests: XCTestCase {
         view.detach()
 
         XCTAssertNil(view.layer?.contents, "detach 后 layer.contents 应为 nil")
+        XCTAssertEqual(view.debugContentLayerFrame, .zero, "detach 后 content layer frame 应为空")
     }
 
     // MARK: - Swift 6 Regression Tests

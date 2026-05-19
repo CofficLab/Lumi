@@ -343,7 +343,27 @@ struct PreviewScannerTests {
         )
         #expect(results.count == 1)
         #expect(results[0].title == "Sized")
+        #expect(results[0].layout == .sizeThatFits)
         #expect(results[0].bodySource?.contains("Text(\"Hello\")") == true)
+    }
+
+    @Test("5.1.1 extracts fixed layout trait literals")
+    func scanPreviewWithFixedLayoutTraits() {
+        let scanner = LumiPreviewFacade.PreviewScanner()
+        let source = """
+        import SwiftUI
+
+        #Preview("Fixed", traits: .fixedLayout(width: 350, height: 360)) {
+            Text("Hello")
+        }
+        """
+        let results = scanner.scan(
+            fileURL: URL(fileURLWithPath: "/tmp/FixedTraitsPreview.swift"),
+            sourceText: source
+        )
+        #expect(results.count == 1)
+        #expect(results[0].title == "Fixed")
+        #expect(results[0].layout == .fixed(width: 350, height: 360))
     }
 
     @Test("5.2 unclosed brace does not crash scanner")

@@ -38,10 +38,10 @@ final class PreviewSurfaceViewLayerTests: XCTestCase {
         let view = makeSurfaceView()
         let layer = view.makeBackingLayer()
 
-        XCTAssertEqual(layer.contentsGravity, .resizeAspect, "contentsGravity 应为 .resizeAspect")
         XCTAssertEqual(layer.magnificationFilter, .linear, "magnificationFilter 应为 .linear")
         XCTAssertEqual(layer.minificationFilter, .linear, "minificationFilter 应为 .linear")
         XCTAssertFalse(layer.isOpaque, "isOpaque 应为 false")
+        XCTAssertTrue(layer.masksToBounds, "root layer 应裁剪内部 content layer")
     }
 
     func test_attach_setsContentsScale_toWindowBackingScale() throws {
@@ -52,7 +52,8 @@ final class PreviewSurfaceViewLayerTests: XCTestCase {
 
         XCTAssertNotNil(view.layer, "layer 不应为 nil")
         XCTAssertEqual(view.currentSurfaceID, surfaceID, "currentSurfaceID 应被设置")
-        XCTAssertNotNil(view.layer?.contents, "layer.contents 应被设置")
+        XCTAssertNil(view.layer?.contents, "root layer 不应直接承载 surface，避免被拉伸")
+        XCTAssertNotEqual(view.debugContentLayerFrame, .zero, "content layer 应被设置")
     }
 
     func test_attach_retainsSurface() throws {
@@ -187,8 +188,34 @@ final class PreviewSurfaceViewLayerTests: XCTestCase {
             view.attach(surfaceID: surfaceID)
 
             XCTAssertEqual(view.currentSurfaceID, surfaceID, "表面 \(idx) 的 currentSurfaceID 不正确")
-            XCTAssertNotNil(view.layer?.contents, "表面 \(idx) 的 layer.contents 不应为 nil")
+            XCTAssertNotEqual(view.debugContentLayerFrame, .zero, "表面 \(idx) 的 content layer frame 不应为空")
         }
+    }
+
+    func test_squareSurfaceKeepsNaturalSizeInsideWideView() throws {
+        let view = makeSurfaceView(frame: NSRect(x: 0, y: 0, width: 400, height: 200))
+        let surfaceID = try makeTestSurface(width: 100, height: 100)
+
+        view.attach(surfaceID: surfaceID)
+        view.layout()
+
+        XCTAssertEqual(Double(view.debugContentLayerFrame.width), 100, accuracy: 0.01)
+        XCTAssertEqual(Double(view.debugContentLayerFrame.height), 100, accuracy: 0.01)
+        XCTAssertEqual(Double(view.debugContentLayerFrame.minX), 150, accuracy: 0.01)
+        XCTAssertEqual(Double(view.debugContentLayerFrame.minY), 50, accuracy: 0.01)
+    }
+
+    func test_largeSurfaceShrinksToFitInsideView() throws {
+        let view = makeSurfaceView(frame: NSRect(x: 0, y: 0, width: 200, height: 100))
+        let surfaceID = try makeTestSurface(width: 400, height: 400)
+
+        view.attach(surfaceID: surfaceID)
+        view.layout()
+
+        XCTAssertEqual(Double(view.debugContentLayerFrame.width), 100, accuracy: 0.01)
+        XCTAssertEqual(Double(view.debugContentLayerFrame.height), 100, accuracy: 0.01)
+        XCTAssertEqual(Double(view.debugContentLayerFrame.minX), 50, accuracy: 0.01)
+        XCTAssertEqual(Double(view.debugContentLayerFrame.minY), 0, accuracy: 0.01)
     }
 
     // MARK: - Edge Cases

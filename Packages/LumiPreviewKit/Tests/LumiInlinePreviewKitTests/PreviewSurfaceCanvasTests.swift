@@ -67,7 +67,8 @@ final class PreviewSurfaceCanvasTests: XCTestCase {
         canvas.configure(view)
 
         XCTAssertEqual(view.currentSurfaceID, frame.surfaceID)
-        XCTAssertNotNil(view.layer?.contents)
+        XCTAssertNil(view.layer?.contents)
+        XCTAssertNotEqual(view.debugContentLayerFrame, .zero)
         XCTAssertTrue(view.isInteractive)
         XCTAssertEqual(view.cursorShape, .crosshair)
 
@@ -97,6 +98,7 @@ final class PreviewSurfaceCanvasTests: XCTestCase {
 
         XCTAssertNil(view.currentSurfaceID)
         XCTAssertNil(view.layer?.contents)
+        XCTAssertEqual(view.debugContentLayerFrame, .zero)
         XCTAssertFalse(view.isInteractive)
         XCTAssertEqual(view.cursorShape, .arrow)
     }

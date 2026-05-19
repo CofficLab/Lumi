@@ -54,6 +54,7 @@ final class HotPreviewRenderer {
 
     private static let recentSurfaceLimit = 96
     private static let recentSurfaceByteBudget = 512 * 1024 * 1024
+    private static let defaultPreviewCanvasSize = CGSize(width: 600, height: 900)
 
     /// 离屏窗口子类，强制 `canBecomeKey` / `canBecomeMain` 为 true。
     /// borderless 风格的 NSWindow 默认两者都为 false，会让 `sendEvent` 注入的
@@ -88,10 +89,13 @@ final class HotPreviewRenderer {
     var hostWindow: NSWindow? { window }
 
     /// 当前离屏画布尺寸（点）。用户预览有明确 fitting size 时使用预览自身尺寸；
-    /// 没有明确尺寸的弹性预览才回退到外层 viewport。
+    /// 没有明确尺寸的弹性预览回退到固定 preview canvas，而不是外层面板尺寸。
     private(set) var pointSize: CGSize = CGSize(width: 320, height: 180)
     /// 主进程预览面板可用尺寸（点）。
     private var viewportSize: CGSize = CGSize(width: 320, height: 180)
+    /// 用户预览没有明确 fitting/intrinsic size 时使用固定 canvas；
+    /// 内置 placeholder/demo 仍使用外层 viewport，保持启动态行为。
+    private var usesDefaultCanvasForUnconstrainedPreview = false
     /// 当前 backing scale。
     private(set) var scale: CGFloat = 2
 
@@ -164,6 +168,7 @@ final class HotPreviewRenderer {
         unloadDylib()  // 卸老
         loadedDylibHandle = handle
         debugStateProvider = makeDebugStateProvider(handle: handle)
+        usesDefaultCanvasForUnconstrainedPreview = true
         installView(view)
         diagnostic("loadDylib installed path=\((path as NSString).lastPathComponent) previewAfter=\(describe(previewView)) fitting=\(format(view.fittingSize)) intrinsic=\(format(view.intrinsicContentSize))")
     }
@@ -312,6 +317,7 @@ final class HotPreviewRenderer {
 
     private func installDemoView() {
         let hosting = NSHostingView(rootView: AnyView(HotPreviewPlaceholderView()))
+        usesDefaultCanvasForUnconstrainedPreview = false
         installView(hosting)
     }
 
@@ -342,6 +348,10 @@ final class HotPreviewRenderer {
     }
 
     private func resolvedRenderSize(for view: NSView) -> CGSize {
+        guard usesDefaultCanvasForUnconstrainedPreview else {
+            return viewportSize
+        }
+
         let preferred = view.fittingSize
         if isUsablePreferredSize(preferred) {
             return preferred
@@ -350,7 +360,7 @@ final class HotPreviewRenderer {
         if isUsablePreferredSize(intrinsic) {
             return intrinsic
         }
-        return viewportSize
+        return Self.defaultPreviewCanvasSize
     }
 
     private func isUsablePreferredSize(_ size: CGSize) -> Bool {
@@ -371,6 +381,7 @@ final class HotPreviewRenderer {
         let updateView = unsafeBitCast(updateSymbol, to: UpdateViewFn.self)
         let updated = updateView(Unmanaged.passUnretained(previewView).toOpaque())
         guard updated else { return false }
+        usesDefaultCanvasForUnconstrainedPreview = true
         applyRenderSize()
         previewView.wantsLayer = true
         previewView.needsLayout = true
