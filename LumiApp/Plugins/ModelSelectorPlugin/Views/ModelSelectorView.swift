@@ -55,7 +55,7 @@ struct ModelSelectorView: View, SuperLog {
                 providers: llmVM.allProviders,
                 selectedTab: $selectedTab
             )
-            .frame(width: 240)
+            .frame(width: 300)
             .background(Color(nsColor: .controlBackgroundColor))
 
             Divider()
@@ -88,7 +88,7 @@ struct ModelSelectorView: View, SuperLog {
                 .listStyle(.sidebar)
             }
         }
-        .frame(width: 520, height: 800)
+        .frame(width: 600, height: 800)
         .background(Material.regularMaterial)
         .task {
             await loadAllStats()
