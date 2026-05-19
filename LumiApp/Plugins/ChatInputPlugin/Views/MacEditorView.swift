@@ -344,7 +344,7 @@ class EditorTextView: NSTextView, SuperLog {
                                     ChatInputPlugin.logger.info("\(Self.t)📎 读取到 \(urls.count) 个 URL: \(urls.first?.path ?? "unknown")")
                 }
             }
-            // 发送通知让 InputAreaView 处理
+            // 发送通知让右侧栏拖放入口处理
             NotificationCenter.postFileDroppedToChat(fileURL: urls.first!)
             return true
         }
