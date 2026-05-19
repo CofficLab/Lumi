@@ -1,6 +1,7 @@
 import AppKit
 import MagicKit
 import SwiftUI
+import MagicAlert
 
 /// Agent 输入包装视图 - 管理输入区域所需的状态
 ///
@@ -10,7 +11,7 @@ struct InputView: View, SuperLog {
     /// 日志标识 emoji
     nonisolated static let emoji = "💬"
     /// 是否输出详细日志
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     /// 入队器：只负责把输入入队
     @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
@@ -20,6 +21,9 @@ struct InputView: View, SuperLog {
 
     /// 主题管理器
     @EnvironmentObject private var themeVM: AppThemeVM
+
+    /// 插件管理器，用于聚合输入区浮层。
+    @EnvironmentObject private var pluginProvider: AppPluginVM
 
     /// 命令建议 ViewModel
     @EnvironmentObject var commandSuggestionViewModel: WindowCommandSuggestionVM
@@ -63,8 +67,8 @@ struct InputView: View, SuperLog {
         .overlay(RoundedRectangle(cornerRadius: 0)
             .stroke(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.1), lineWidth: 1))
         .overlay {
-            if !canChat {
-                noConversationOverlay
+            ForEach(Array(pluginProvider.getChatInputOverlayViews().enumerated()), id: \.offset) { _, view in
+                view
             }
         }
         .shadow(color: themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.08), radius: 8, x: 0, y: 4)
@@ -85,28 +89,6 @@ struct InputView: View, SuperLog {
 // MARK: - View
 
 extension InputView {
-    /// 无会话时的遮罩层
-    private var noConversationOverlay: some View {
-        let theme = themeVM.activeAppTheme
-        return ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(theme.workspaceBackgroundColor().opacity(0.9))
-
-            VStack(spacing: 8) {
-                Image(systemName: "bubble.left.and.bubble.right")
-                    .font(.system(size: 18))
-                    .foregroundStyle(theme.workspaceTertiaryTextColor())
-
-                Text(String(localized: "Please create or select a conversation first", table: "AgentChat"))
-                    .font(.subheadline)
-                    .foregroundStyle(theme.workspaceSecondaryTextColor())
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
-            }
-            .padding(.horizontal, 16)
-        }
-    }
-
     /// 命令建议浮层
     private var commandSuggestionOverlay: some View {
         CommandSuggestionView { suggestion in
@@ -206,6 +188,7 @@ extension InputView {
     /// 处理回车键
     private func handleEnter() {
         guard canChat else {
+            Self.logger.info("\(Self.emoji)⚠️ Enter pressed but no active conversation, showing alert")
             alert_info(
                 String(localized: "Please create or select a conversation first", table: "AgentChat"),
                 subtitle: String(localized: "No active conversation", table: "AgentChat")
@@ -215,10 +198,12 @@ extension InputView {
 
         if commandSuggestionViewModel.isVisible,
            let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
+            Self.logger.info("\(Self.emoji)🔖 Command suggestion selected: \(suggestion.command)")
             chatDraftVM.set(suggestion.command + " ")
             commandSuggestionViewModel.setIsVisible(false)
         } else {
             let text = chatDraftVM.text
+            Self.logger.info("\(Self.emoji)🚀 Submitting chat message (\(text.count) chars)")
             chatDraftVM.clear()
             activeInputQueueVM.enqueueText(text)
             editorHeight = MacEditorView.minHeight
