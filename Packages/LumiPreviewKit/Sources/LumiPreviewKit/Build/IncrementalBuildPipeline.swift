@@ -759,7 +759,7 @@ public extension LumiPreviewFacade {
             previewID: String,
             importedModuleName: String
         ) -> String {
-            let raw = "LumiHotPreview_\(importedModuleName)_\(previewID)"
+            let raw = "LumiPreview_\(importedModuleName)_\(previewID)"
             let sanitizedScalars = raw.unicodeScalars.map { scalar -> Character in
                 if CharacterSet.alphanumerics.contains(scalar) || scalar == "_" {
                     return Character(scalar)

@@ -12,10 +12,6 @@ let package = Package(
             targets: ["LumiPreviewKit"]
         ),
         .executable(
-            name: "LumiHotPreviewHostApp",
-            targets: ["LumiHotPreviewHostApp"]
-        ),
-        .executable(
             name: "LumiPreviewHostApp",
             targets: ["LumiPreviewHostApp"]
         )
@@ -30,11 +26,6 @@ let package = Package(
                 .product(name: "MagicKit", package: "MagicKit")
             ],
             path: "Sources/LumiPreviewKit"
-        ),
-        .executableTarget(
-            name: "LumiHotPreviewHostApp",
-            dependencies: ["LumiPreviewKit"],
-            path: "Sources/LumiHotPreviewHostApp"
         ),
         .executableTarget(
             name: "LumiPreviewHostApp",
