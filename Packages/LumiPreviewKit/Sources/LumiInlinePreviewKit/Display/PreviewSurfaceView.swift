@@ -5,7 +5,7 @@ import MagicKit
 import os
 
 public extension LumiInlinePreviewFacade {
-    /// 内嵌预览的核心 NSView：
+    /// 预览的核心 NSView：
     ///
     /// - 显示路径：把 `IOSurfaceID` 解析为 `IOSurfaceRef` 后赋给 `layer.contents`。
     /// - 输入路径（`isInteractive == true` 时）：捕获鼠标 / 滚轮 / 键盘事件，

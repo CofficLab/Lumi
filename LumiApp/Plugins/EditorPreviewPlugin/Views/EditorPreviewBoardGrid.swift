@@ -1,10 +1,11 @@
+import AppKit
 import SwiftUI
 
-/// 画布的背景网格。
+/// 预览画布的背景网格。
 ///
-/// 在 `HotPreviewCanvas` 的实时预览区域底层绘制等间距的浅色参考线，
+/// 在 `PreviewSurfaceCanvas` 的实时预览区域底层绘制等间距的浅色参考线，
 /// 模拟设计稿画板上的网格背景，便于对齐预览帧。不响应点击（`allowsHitTesting(false)`）。
-struct HotPreviewBoardGrid: View {
+struct EditorPreviewBoardGrid: View {
     private let spacing: CGFloat = 24
 
     var body: some View {
@@ -52,7 +53,7 @@ struct HotPreviewBoardGrid: View {
 // MARK: - Preview
 
 #Preview {
-    HotPreviewBoardGrid()
+    EditorPreviewBoardGrid()
         .frame(width: 400, height: 300)
         .background(Color(nsColor: .windowBackgroundColor))
 }

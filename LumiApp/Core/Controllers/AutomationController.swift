@@ -140,8 +140,8 @@ final class AutomationController: SuperLog {
 
         // 直接通过 EditorService 打开文件，触发完整流程：
         // 1. EditorService.open(at:) → 创建/激活 session + 加载内容
-        // 2. EditorInlinePreviewDetailView.onChange(of: currentFileURL) → setActiveFile
-        // 3. EditorInlinePreviewViewModel.autoBuildIfPossible → 扫描 #Preview + 自动编译
+        // 2. EditorPreviewDetailView.onChange(of: currentFileURL) → setActiveFile
+        // 3. EditorPreviewViewModel.autoBuildIfPossible → 扫描 #Preview + 自动编译
         let editorService = RootContainer.shared.editorVM.service
         editorService.open(at: url)
 
@@ -189,7 +189,7 @@ final class AutomationController: SuperLog {
 
 /// 自动化测试专用的共享状态
 ///
-/// 供 `AutomationController` 写入操作结果，供 `EditorInlinePreviewDetailView` 读取并响应。
+/// 供 `AutomationController` 写入操作结果，供 `EditorPreviewDetailView` 读取并响应。
 /// 这样即使 View 层在 AutomationController 之后才渲染，也能获取到之前的操作结果。
 @MainActor
 final class InlinePreviewAutomationState: ObservableObject {
