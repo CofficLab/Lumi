@@ -27,7 +27,7 @@ actor ChatModePlugin: SuperPlugin, SuperLog {
 
     // MARK: - Sidebar Toolbar
 
-    @MainActor func addSidebarToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
+    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [
             SidebarToolbarItem(
