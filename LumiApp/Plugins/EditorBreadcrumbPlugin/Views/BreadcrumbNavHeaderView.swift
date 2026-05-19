@@ -7,8 +7,8 @@ import SwiftUI
 /// 在编辑器面板中显示当前文件的路径面包屑导航。
 /// 仅显示文件路径段，符号面包屑由 EditorStickySymbolBarPlugin 负责。
 struct BreadcrumbNavHeaderView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var editorVM: AppEditorVM
 
     var body: some View {
         // 仅在有文件打开时显示
@@ -22,8 +22,8 @@ struct BreadcrumbNavHeaderView: View {
 
 /// 面包屑路径视图
 struct BreadcrumbNavPathView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var editorVM: AppEditorVM
 
     let fileURL: URL
 
@@ -157,7 +157,7 @@ struct BreadcrumbNavPathView: View {
         }
     }
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     // MARK: - Truncation Logic
 
@@ -213,7 +213,7 @@ struct BreadcrumbNavComponent: View {
     @Binding var truncatedCrumbWidth: CGFloat?
     let onSelectFile: (URL) -> Void
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isHovering = false
     @State private var isMenuVisible = false
 

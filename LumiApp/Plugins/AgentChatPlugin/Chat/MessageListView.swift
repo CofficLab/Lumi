@@ -8,8 +8,8 @@ struct MessageListView: View {
     nonisolated static let defaultHistoryWindowLimit = 80
     nonisolated static let historyWindowStep = 40
 
-    @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
-    @EnvironmentObject var conversationSendStatusVM: ConversationStatusVM
+    @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
+    @EnvironmentObject var conversationSendStatusVM: WindowConversationStatusVM
 
     private let bottomAnchorId = "chat_message_list_bottom_anchor"
     @State private var historyWindowLimit = Self.defaultHistoryWindowLimit
@@ -620,14 +620,16 @@ private struct ScrollPositionObserver: NSViewRepresentable {
 // MARK: - Preview
 
 #Preview("MessageListView - Small") {
-    RootView { MessageListView() }
+    MessageListView()
+        .inRootView()
         .padding()
         .background(Color.black)
         .frame(width: 800, height: 600)
 }
 
 #Preview("MessageListView - Large") {
-    RootView { MessageListView() }
+    MessageListView()
+        .inRootView()
         .padding()
         .background(Color.black)
         .frame(width: 1200, height: 1200)

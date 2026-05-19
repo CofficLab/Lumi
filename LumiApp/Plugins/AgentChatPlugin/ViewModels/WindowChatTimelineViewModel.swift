@@ -2,18 +2,18 @@ import Combine
 import Foundation
 
 @MainActor
-final class ChatTimelineViewModel: ObservableObject {
+final class WindowChatTimelineViewModel: ObservableObject {
     nonisolated static let pageSize: Int = 10
 
     @Published private(set) var state = ConversationRenderState()
 
     private let chatHistoryService: ChatHistoryService
-    private let conversationVM: ConversationVM
+    private let conversationVM: WindowConversationVM
     private var cancellables = Set<AnyCancellable>()
 
     init(
         chatHistoryService: ChatHistoryService,
-        conversationVM: ConversationVM
+        conversationVM: WindowConversationVM
     ) {
         self.chatHistoryService = chatHistoryService
         self.conversationVM = conversationVM

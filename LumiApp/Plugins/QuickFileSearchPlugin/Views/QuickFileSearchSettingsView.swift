@@ -3,7 +3,7 @@ import MagicKit
 
 /// 快速文件搜索设置视图
 struct QuickFileSearchSettingsView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @StateObject private var searchService = FileSearchService.shared
 
     var body: some View {

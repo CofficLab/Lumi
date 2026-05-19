@@ -3,8 +3,8 @@ import SwiftUI
 
 /// 新会话按钮视图组件
 struct NewChatButton: View {
-    @EnvironmentObject var conversationCreationVM: ConversationCreationVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject var conversationCreationVM: WindowConversationCreationVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     private let iconSize: CGFloat = 14
     private let iconButtonSize: CGFloat = 28

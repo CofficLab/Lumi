@@ -31,7 +31,7 @@ struct AutoConversationTitleSuperSendMiddleware: SuperSendMiddleware {
         userText: String,
         role: MessageRole,
         chatHistoryService: ChatHistoryService,
-        agentSessionConfig: LLMVM
+        agentSessionConfig: AppLLMVM
     ) async {
         guard let conversation = chatHistoryService.fetchConversation(id: conversationId) else { return }
 

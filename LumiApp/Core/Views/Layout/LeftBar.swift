@@ -4,13 +4,13 @@ import SwiftUI
 /// 活动栏：最左侧的窄图标导航栏（48px 固定宽度）
 ///
 /// 聚合所有提供 `addPanelIcon()` 的插件图标，
-/// 点击后更新 `PluginVM.activePanelIcon`，驱动内容面板切换。
+/// 点击后更新 `AppPluginVM.activePanelIcon`，驱动内容面板切换。
 ///
 /// 主题适配：背景、图标颜色、选中指示条均跟随当前主题。
 struct ActivityBar: View {
-    @EnvironmentObject var pluginProvider: PluginVM
-    @EnvironmentObject var layoutVM: LayoutVM
-    @EnvironmentObject var themeVM: ThemeVM
+    @EnvironmentObject var pluginProvider: AppPluginVM
+    @EnvironmentObject var layoutVM: WindowLayoutVM
+    @EnvironmentObject var themeVM: AppThemeVM
 
     /// 图标栏宽度
     static let width: CGFloat = 48
@@ -77,7 +77,7 @@ struct ActivityBarButton: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isHovered = false
 
     var body: some View {

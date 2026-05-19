@@ -9,7 +9,7 @@ struct CommandSuggestionView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
     /// 环境对象：命令建议视图模型
-    @EnvironmentObject var viewModel: CommandSuggestionVM
+    @EnvironmentObject var viewModel: WindowCommandSuggestionVM
 
     /// 命令选择回调：当用户选择建议命令时触发
     var onSelect: (CommandSuggestion) -> Void

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Canvas 上叠加的错误浮层：标题 + 错误描述。
 struct HotPreviewErrorOverlayView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let title: String
     let message: String

@@ -45,20 +45,20 @@ final class LLMRequester: SuperLog {
     nonisolated static let emoji = "🧠"
 
     private let llmService: LLMService
-    let agentSessionConfig: LLMVM
+    let agentSessionConfig: AppLLMVM
     private let toolService: ToolService
-    private let pluginVM: PluginVM
-    private let statusVM: ConversationStatusVM
+    private let pluginVM: AppPluginVM
+    private let statusVM: WindowConversationStatusVM
     private let retryPolicy: StreamRetryPolicy
-    private let projectVM: ProjectVM
+    private let projectVM: WindowProjectVM
 
     init(
         llmService: LLMService,
-        agentSessionConfig: LLMVM,
+        agentSessionConfig: AppLLMVM,
         toolService: ToolService,
-        pluginVM: PluginVM,
-        statusVM: ConversationStatusVM,
-        projectVM: ProjectVM,
+        pluginVM: AppPluginVM,
+        statusVM: WindowConversationStatusVM,
+        projectVM: WindowProjectVM,
         retryPolicy: StreamRetryPolicy = .default
     ) {
         self.llmService = llmService

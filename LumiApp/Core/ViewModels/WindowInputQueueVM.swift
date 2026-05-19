@@ -3,7 +3,7 @@ import MagicKit
 
 /// 负责收集用户输入并发布入队请求
 @MainActor
-final class InputQueueVM: ObservableObject, SuperLog {
+final class WindowInputQueueVM: ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔄" }
     nonisolated static var verbose: Bool { false }
 

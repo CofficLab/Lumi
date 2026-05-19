@@ -13,7 +13,7 @@ import MagicKit
 ///
 /// ## 设计原则
 ///
-/// - **Controller 只编排**：不直接操作数据库，而是委托给 `ChatHistoryService` / `ConversationVM` 等服务
+/// - **Controller 只编排**：不直接操作数据库，而是委托给 `ChatHistoryService` / `WindowConversationVM` 等服务
 /// - **可扩展**：后续会话删除、重命名、复制等操作都可以加在这里
 @MainActor
 final class ConversationController: ObservableObject, SuperLog {

@@ -48,7 +48,7 @@ actor AgentOpenInGitHubDesktopPlugin: SuperPlugin {
 
 /// GitHub Desktop 打开状态栏视图
 struct OpenInGitHubDesktopStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
         Group {
@@ -109,7 +109,7 @@ struct OpenInGitHubDesktopStatusBarView: View {
 
 /// GitHub Desktop 打开详情视图（在 popover 中显示）
 struct OpenInGitHubDesktopDetailView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

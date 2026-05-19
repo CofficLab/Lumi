@@ -12,7 +12,7 @@ final class ProjectController: ObservableObject, SuperLog {
         self.container = container
     }
 
-    /// 响应 `ProjectContextRequestVM` 的请求
+    /// 响应 `WindowProjectContextRequestVM` 的请求
     func handleProjectContextRequest(_ request: ProjectContextRequest) async {
         switch request {
         case let .switchProject(path):

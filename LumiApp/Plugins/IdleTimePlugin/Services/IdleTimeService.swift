@@ -39,7 +39,7 @@ actor IdleTimeService {
         }
     }
 
-    /// 获取当前推断快照。仅供 `IdleTimeVM` 调用。
+    /// 获取当前推断快照。仅供 `AppIdleTimeVM` 调用。
     func currentSnapshot(for date: Date = Date()) async -> IdleInferenceSnapshot {
         if let cachedSnapshot,
            date.timeIntervalSince(cachedSnapshot.restWindow?.generatedAt ?? .distantPast) < 6 * 60 * 60 {

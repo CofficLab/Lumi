@@ -7,7 +7,7 @@ extension Notification.Name {
     /// object: ProjectConfig (项目配置)
     static let projectConfigApplied = Notification.Name("ProjectConfigApplied")
 
-    /// 同步选中文件到 ProjectVM 的通知
+    /// 同步选中文件到 WindowProjectVM 的通知
     /// userInfo: ["path": String]
     static let syncSelectedFile = Notification.Name("SyncSelectedFile")
 }
@@ -24,7 +24,7 @@ extension NotificationCenter {
         )
     }
 
-    /// 发送同步选中文件到 ProjectVM 的通知
+    /// 发送同步选中文件到 WindowProjectVM 的通知
     /// - Parameter path: 文件路径
     static func postSyncSelectedFile(path: String) {
         NotificationCenter.default.post(

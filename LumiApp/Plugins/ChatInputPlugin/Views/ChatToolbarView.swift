@@ -8,22 +8,22 @@ struct ChatToolbarView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
     @EnvironmentObject var conversationTurnServices: ConversationTurnServices
-    @EnvironmentObject var llmVM: LLMVM
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject var conversationVM: ConversationVM
-    @EnvironmentObject var agentTaskCancellationVM: TaskCancellationVM
+    @EnvironmentObject var llmVM: AppLLMVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var conversationVM: WindowConversationVM
+    @EnvironmentObject var agentWindowTaskCancellationVM: WindowTaskCancellationVM
 
     /// 待发送附件
-    @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
+    @EnvironmentObject private var agentAttachmentsVM: WindowAttachmentsVM
 
     /// 入队器：只负责把输入入队到发送队列
-    @EnvironmentObject private var inputQueueVM: InputQueueVM
+    @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
 
     /// 主题管理器
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     /// 消息队列状态（用于判断是否真的在处理）
-    @EnvironmentObject private var messageQueueVM: MessageQueueVM
+    @EnvironmentObject private var messageQueueVM: WindowMessageQueueVM
 
     @StateObject private var screenshotState = ScreenshotState.shared
 
@@ -75,7 +75,7 @@ extension ChatToolbarView {
             // 停止按钮 - 在处理中显示（仅图标）
             Button(action: {
                 if let conversationId = conversationVM.selectedConversationId {
-                    agentTaskCancellationVM.requestCancel(conversationId: conversationId)
+                    agentWindowTaskCancellationVM.requestCancel(conversationId: conversationId)
                 }
             }) {
                 Image(systemName: "stop.fill")

@@ -6,9 +6,9 @@ import SwiftUI
 /// 主题状态栏插件
 ///
 /// 负责主题的持久化（保存/恢复）以及在状态栏展示主题切换入口。
-/// 通过 `addRootView` 注入 `ThemePersistenceAnchor`，利用环境中的 `ThemeVM`：
+/// 通过 `addRootView` 注入 `ThemePersistenceAnchor`，利用环境中的 `AppThemeVM`：
 /// - **恢复**：视图 onAppear 时读取本地存储并调用 `selectTheme()` 恢复上次选择。
-/// - **保存**：监听 `ThemeVM.currentThemeId` 变化，自动写入本地存储。
+/// - **保存**：监听 `AppThemeVM.currentThemeId` 变化，自动写入本地存储。
 actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-theme-status")
     nonisolated static let emoji = "🎨"
@@ -46,13 +46,13 @@ actor ThemeStatusBarPlugin: SuperPlugin, SuperLog {
 /// 主题持久化锚点视图
 ///
 /// 作为 `addRootView` 注入的全局透明视图，承担两个职责：
-/// 1. **恢复**：首次出现时从本地存储读取已保存的主题 ID，调用 `ThemeVM.selectTheme()` 恢复。
-/// 2. **保存**：监听 `ThemeVM.currentThemeId` 变化，自动持久化到本地存储。
+/// 1. **恢复**：首次出现时从本地存储读取已保存的主题 ID，调用 `AppThemeVM.selectTheme()` 恢复。
+/// 2. **保存**：监听 `AppThemeVM.currentThemeId` 变化，自动持久化到本地存储。
 ///
 /// 此视图不渲染任何可见内容，仅作为生命周期锚点。
 private struct ThemePersistenceAnchor<Content: View>: View {
-    @EnvironmentObject private var themeVM: ThemeVM
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var themeVM: AppThemeVM
+    @EnvironmentObject private var editorVM: AppEditorVM
     let content: Content
 
     /// 标记是否已完成首次恢复，避免恢复触发 didSet 又写回存储
@@ -62,10 +62,10 @@ private struct ThemePersistenceAnchor<Content: View>: View {
         content
             .onAppear {
                 restoreSavedTheme()
-                // 主动将 ThemeVM 当前主题同步到 EditorState。
-                // ThemeVM.init() 在 EditorState 之前创建，其发送的 .lumiThemeDidChange
+                // 主动将 AppThemeVM 当前主题同步到 EditorState。
+                // AppThemeVM.init() 在 EditorState 之前创建，其发送的 .lumiThemeDidChange
                 // 通知在 EditorState 注册监听之前就已经发出，导致 EditorState 错过了初始通知。
-                // 此处由插件（外层）主动向 EditorState（内层）推送，而非 EditorState 反向读取 ThemeVM。
+                // 此处由插件（外层）主动向 EditorState（内层）推送，而非 EditorState 反向读取 AppThemeVM。
                 let editorThemeId = themeVM.activeEditorThemeId
                 if ThemeStatusBarPlugin.verbose {
                     ThemeStatusBarPlugin.logger.info("\(ThemeStatusBarPlugin.t)onAppear: 同步初始编辑器主题 → \(editorThemeId, privacy: .public)")

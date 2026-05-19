@@ -18,11 +18,11 @@ struct InputView: View, SuperLog {
     @State private var isModelSelectorPresented = false
 
     /// 是否允许输入/发送（必须先选中会话）
-    @EnvironmentObject var ConversationVM: ConversationVM
-    @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
+    @EnvironmentObject var WindowConversationVM: WindowConversationVM
+    @EnvironmentObject private var agentAttachmentsVM: WindowAttachmentsVM
 
     private var canChat: Bool {
-        ConversationVM.selectedConversationId != nil
+        WindowConversationVM.selectedConversationId != nil
     }
 
     var body: some View {

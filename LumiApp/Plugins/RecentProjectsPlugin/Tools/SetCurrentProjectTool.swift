@@ -61,7 +61,7 @@ struct SetCurrentProjectTool: SuperAgentTool, SuperLog {
         let store = RecentProjectsStore()
         store.setCurrentProject(name: projectName, path: path)
         
-        // 发送通知，告知 RootView 同步到 ProjectVM
+        // 发送通知，告知 RootView 同步到 WindowProjectVM
         NotificationCenter.postCurrentProjectDidChange(name: projectName, path: path)
 
         return """

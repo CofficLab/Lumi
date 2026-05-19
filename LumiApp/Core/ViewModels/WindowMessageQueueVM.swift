@@ -3,7 +3,7 @@ import MagicKit
 
 /// 消息发送队列 ViewModel
 @MainActor
-final class MessageQueueVM: ObservableObject, SuperLog {
+final class WindowMessageQueueVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"
     nonisolated static let verbose: Bool = false
 

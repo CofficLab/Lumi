@@ -4,7 +4,7 @@ import Foundation
 ///
 /// 将 OpenRouterProvider 注册到 LLM 供应商注册表。
 /// 通过 `SuperPlugin` 的 `llmProviderType()` 方法暴露供应商类型，
-/// 由 PluginVM 统一发现并注册。
+/// 由 AppPluginVM 统一发现并注册。
 actor OpenRouterPlugin: SuperPlugin {
     static let shared = OpenRouterPlugin()
     static let id = "LLMProviderOpenRouter"

@@ -13,7 +13,7 @@ struct SkillStatusBarView: View, SuperLog {
     nonisolated static var verbose: Bool { SkillPlugin.verbose }
     nonisolated static var logger: Logger { SkillPlugin.logger }
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var skills: [SkillMetadata] = []
     @State private var refreshTask: Task<Void, Never>?
 
@@ -174,7 +174,7 @@ struct SkillRow: View {
 
 #Preview("SkillStatusBarView") {
     SkillStatusBarView()
-        .environmentObject(ProjectVM(
+        .environmentObject(WindowProjectVM(
             contextService: ContextService(),
             llmService: LLMService(registry: LLMProviderRegistry())
         ))

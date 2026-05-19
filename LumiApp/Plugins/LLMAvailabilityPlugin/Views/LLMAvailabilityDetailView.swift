@@ -6,7 +6,7 @@ import MagicKit
 /// 显示所有供应商和模型的可用性状态，支持刷新和搜索
 struct LLMAvailabilityDetailView: View {
     @ObservedObject private var store = LLMAvailabilityStore.shared
-    @EnvironmentObject private var llmVM: LLMVM
+    @EnvironmentObject private var llmVM: AppLLMVM
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var searchText = ""

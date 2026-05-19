@@ -12,18 +12,18 @@ final class ToolCallExecutor: SuperLog {
 
     private let toolExecutionService: ToolExecutionService
     private let toolService: ToolService
-    private let projectVM: ProjectVM
-    private let permissionRequestVM: PermissionRequestVM
-    private let conversationSendStatusVM: ConversationStatusVM
-    private let conversationVM: ConversationVM
+    private let projectVM: WindowProjectVM
+    private let permissionRequestVM: WindowPermissionRequestVM
+    private let conversationSendStatusVM: WindowConversationStatusVM
+    private let conversationVM: WindowConversationVM
 
     init(
         toolExecutionService: ToolExecutionService,
         toolService: ToolService,
-        projectVM: ProjectVM,
-        permissionRequestVM: PermissionRequestVM,
-        conversationSendStatusVM: ConversationStatusVM,
-        conversationVM: ConversationVM
+        projectVM: WindowProjectVM,
+        permissionRequestVM: WindowPermissionRequestVM,
+        conversationSendStatusVM: WindowConversationStatusVM,
+        conversationVM: WindowConversationVM
     ) {
         self.toolExecutionService = toolExecutionService
         self.toolService = toolService

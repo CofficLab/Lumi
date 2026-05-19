@@ -3,8 +3,8 @@ import UniformTypeIdentifiers
 
 /// 项目选择器视图
 struct ProjectSelectorView: View {
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var projectContextRequestVM: ProjectContextRequestVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject private var projectContextRequestVM: WindowProjectContextRequestVM
     @Environment(\.openWindow) private var openWindow
 
     @Binding var isPresented: Bool

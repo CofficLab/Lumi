@@ -30,7 +30,7 @@ import SwiftUI
 struct CoreApp: App {
     init() {
         EditorSettingsLifecycle.hostPersistenceRootURL = { AppConfig.getDBFolderURL() }
-        EditorSettingsLifecycle.editorThemeIDForAppThemeID = { ThemeVM.editorThemeID(for: $0) }
+        EditorSettingsLifecycle.editorThemeIDForAppThemeID = { AppThemeVM.editorThemeID(for: $0) }
         EditorSettingsLifecycle.loadEditorRecentCommandIDs = { AppSettingStore.loadEditorRecentCommandIDs() }
         EditorSettingsLifecycle.saveEditorRecentCommandIDs = { AppSettingStore.saveEditorRecentCommandIDs($0) }
         EditorSettingsLifecycle.loadEditorCommandUsageCounts = { AppSettingStore.loadEditorCommandUsageCounts() }
@@ -38,7 +38,7 @@ struct CoreApp: App {
         EditorSettingsLifecycle.loadEditorCommandPaletteCategory = { AppSettingStore.loadEditorCommandPaletteCategory() }
         EditorSettingsLifecycle.saveEditorCommandPaletteCategory = { AppSettingStore.saveEditorCommandPaletteCategory($0) }
         EditorSettingsLifecycle.setEditorFeaturePluginEnabled = { pluginID, enabled in
-            PluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
+            AppPluginSettingsVM.shared.setPluginEnabled(pluginID, enabled: enabled)
         }
     }
 
@@ -59,12 +59,17 @@ struct CoreApp: App {
         //
         // 使用隐藏标题栏的窗口风格，提供现代简洁的外观。
         // 工具栏使用统一样式，不显示传统标题。
+        // 每个窗口创建独立的 WindowScope，实现窗口级状态隔离。
         WindowGroup("Lumi", id: MainWindowID.main, for: LumiWindowRoute.self) { route in
+            let scope = WindowScope(
+                route: route.wrappedValue ?? LumiWindowRoute(),
+                container: RootContainer.shared
+            )
             ContentLayout(
                 conversationId: route.wrappedValue?.conversationId,
                 projectPath: route.wrappedValue?.projectPath
             )
-                .inRootView()
+                .inRootView(scope: scope)
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -88,7 +93,7 @@ struct CoreApp: App {
         // 使用紧凑型工具栏样式，节省空间。
         Window("设置", id: SettingsWindowID.settings) {
             SettingView()
-                .inRootView()
+                .inRootView(scope: WindowScope(container: RootContainer.shared))
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -149,6 +154,6 @@ final class CheckForUpdatesViewModel: ObservableObject {
 
 #Preview("App") {
     ContentLayout()
-        .inRootView()
+        .inRootView(scope: WindowScope(container: RootContainer.shared))
         .withDebugBar()
 }

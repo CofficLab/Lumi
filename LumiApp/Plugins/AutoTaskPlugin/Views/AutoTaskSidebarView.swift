@@ -5,8 +5,8 @@ import MagicKit
 ///
 /// 展示当前会话的任务列表，由 AutoTaskPlugin 通过 `addSidebarSections()` 注册。
 struct AutoTaskSidebarView: View {
-    @EnvironmentObject var conversationVM: ConversationVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject var conversationVM: WindowConversationVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @StateObject private var viewModel = AutoTaskSidebarViewModel()
     @State private var isCollapsed = false
 

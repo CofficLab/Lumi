@@ -7,7 +7,7 @@ import os
 struct ZhipuQuotaStatusBarView: View, SuperLog {
     nonisolated static let emoji = "📊"
     nonisolated static let verbose: Bool = false
-    @EnvironmentObject private var llmVM: LLMVM
+    @EnvironmentObject private var llmVM: AppLLMVM
     @State private var quotaStatus: ZhipuQuotaStatus = .loading
     @State private var lastUpdateTime: Date?
     @State private var timer: Timer?

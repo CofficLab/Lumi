@@ -5,7 +5,7 @@ import SwiftUI
 /// AutoTask 右侧栏视图模型
 ///
 /// 负责获取并展示当前会话的任务列表。
-/// 通过观察 ConversationVM 的变化来切换显示的任务，
+/// 通过观察 WindowConversationVM 的变化来切换显示的任务，
 /// 并监听任务变更通知自动刷新 UI。
 @MainActor
 final class AutoTaskSidebarViewModel: ObservableObject, SuperLog {

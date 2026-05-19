@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Agent 模式不可用时的提示视图
 struct AgentModeUnavailableGuideView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         let theme = themeVM.activeAppTheme

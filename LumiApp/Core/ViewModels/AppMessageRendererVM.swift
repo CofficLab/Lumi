@@ -6,12 +6,12 @@ import SwiftUI
 /// 消息渲染器 ViewModel
 ///
 /// 全局单例，管理所有注册的消息渲染器。
-/// 渲染器由 `PluginVM` 在插件发现阶段自动收集（通过 `SuperPlugin.messageRenderers()`），
+/// 渲染器由 `AppPluginVM` 在插件发现阶段自动收集（通过 `SuperPlugin.messageRenderers()`），
 /// 无需手动注册。
 ///
 /// ## 架构说明
 ///
-/// MessageRendererVM 是核心 ViewModel，通过 RootView 注入环境变量。
+/// AppMessageRendererVM 是核心 ViewModel，通过 RootView 注入环境变量。
 /// 所有插件视图通过 `@EnvironmentObject` 访问此 VM，而不是直接使用单例。
 ///
 /// ## 使用示例
@@ -26,7 +26,7 @@ import SwiftUI
 ///
 /// // 在视图中使用
 /// struct MyView: View {
-///     @EnvironmentObject var messageRendererVM: MessageRendererVM
+///     @EnvironmentObject var messageRendererVM: AppMessageRendererVM
 ///     
 ///     var body: some View {
 ///         if let renderer = messageRendererVM.findRenderer(for: message) {
@@ -36,12 +36,12 @@ import SwiftUI
 /// }
 /// ```
 @MainActor
-final class MessageRendererVM: ObservableObject {
+final class AppMessageRendererVM: ObservableObject {
     /// 全局单例
     ///
-    /// 整个应用共享同一个 MessageRendererVM 实例。
+    /// 整个应用共享同一个 AppMessageRendererVM 实例。
     /// 在插件初始化阶段可以使用此单例注册渲染器。
-    static let shared = MessageRendererVM()
+    static let shared = AppMessageRendererVM()
     
     /// 已注册的渲染器列表
     ///

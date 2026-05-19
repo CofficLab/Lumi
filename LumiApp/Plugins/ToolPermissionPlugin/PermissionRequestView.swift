@@ -3,8 +3,8 @@ import LumiUI
 
 /// 权限请求视图，用于显示工具执行请求并获取用户批准
 struct PermissionRequestView: View {
-    @EnvironmentObject private var permissionHandlingVM: PermissionHandlingVM
-    @EnvironmentObject private var permissionRequestViewModel: PermissionRequestVM
+    @EnvironmentObject private var permissionHandlingVM: WindowPermissionHandlingVM
+    @EnvironmentObject private var permissionRequestViewModel: WindowPermissionRequestVM
 
     var body: some View {
         if let request = permissionRequestViewModel.pendingPermissionRequest {

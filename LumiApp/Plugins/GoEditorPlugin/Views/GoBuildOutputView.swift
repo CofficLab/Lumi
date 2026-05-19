@@ -5,7 +5,7 @@ import MagicKit
 ///
 /// 显示 go build 的实时输出和解析后的构建问题列表。
 struct GoBuildOutputView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject var buildManager: GoBuildManager
     let projectRoot: String?
 

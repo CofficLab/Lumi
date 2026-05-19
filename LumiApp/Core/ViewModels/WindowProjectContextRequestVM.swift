@@ -5,7 +5,7 @@ import SwiftUI
 /// - handler 执行复杂副作用
 /// - RootView 监听并触发 handler
 @MainActor
-final class ProjectContextRequestVM: ObservableObject {
+final class WindowProjectContextRequestVM: ObservableObject {
     @Published var request: ProjectContextRequest?
 }
 

@@ -11,10 +11,10 @@ import UniformTypeIdentifiers
 /// 纯布局职责：组合编辑器内容区域、Banner、Sheet 等 UI 组件。
 /// 所有业务逻辑委托给 `EditorPanelService`，生命周期和事件路由由 `EditorPanelCoordinator` 管理。
 struct EditorPanelView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var layoutVM: LayoutVM
-    @EnvironmentObject private var themeVM: ThemeVM
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
+    @EnvironmentObject private var themeVM: AppThemeVM
+    @EnvironmentObject private var editorVM: AppEditorVM
 
     /// 便利访问
     private var service: EditorService { editorVM.service }

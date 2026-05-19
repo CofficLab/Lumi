@@ -6,20 +6,20 @@ import MagicKit
 
 /// 布局持久化插件
 ///
-/// 负责观察 LayoutVM 和 PluginVM 中的布局状态变化并持久化到磁盘，
+/// 负责观察 WindowLayoutVM 和 AppPluginVM 中的布局状态变化并持久化到磁盘，
 /// 以及在应用启动时自动恢复上次的布局状态。
 ///
 /// ## 数据流
 ///
-/// 1. **恢复**：应用启动 → `LayoutPersistenceAnchor.onAppear` → 从 LocalStore 读取 → 写入 LayoutVM / PluginVM
-/// 2. **保存**：用户操作 / SplitView 拖拽 → LayoutVM / PluginVM 属性变化 → `onChange` 监听 → 写入 LocalStore
+/// 1. **恢复**：应用启动 → `LayoutPersistenceAnchor.onAppear` → 从 LocalStore 读取 → 写入 WindowLayoutVM / AppPluginVM
+/// 2. **保存**：用户操作 / SplitView 拖拽 → WindowLayoutVM / AppPluginVM 属性变化 → `onChange` 监听 → 写入 LocalStore
 ///
 /// ## 观察的数据
 ///
-/// - `PluginVM.activePanelIcon`：活动栏选中的图标
-/// - `LayoutVM.selectedAgentSidebarTabId`：Agent 模式侧边栏 Tab
-/// - `LayoutVM.selectedAgentDetailId`：Agent 模式 Detail 视图
-/// - `LayoutVM.layoutRatios`：分栏布局宽度比例（由 SplitViewPersistence 组件更新）
+/// - `AppPluginVM.activePanelIcon`：活动栏选中的图标
+/// - `WindowLayoutVM.selectedAgentSidebarTabId`：Agent 模式侧边栏 Tab
+/// - `WindowLayoutVM.selectedAgentDetailId`：Agent 模式 Detail 视图
+/// - `WindowLayoutVM.layoutRatios`：分栏布局宽度比例（由 SplitViewPersistence 组件更新）
 actor LayoutPlugin: SuperPlugin, SuperLog {
     static let shared = LayoutPlugin()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
@@ -49,13 +49,13 @@ actor LayoutPlugin: SuperPlugin, SuperLog {
 /// 布局持久化锚点视图
 ///
 /// 作为 `addRootView` 注入的全局透明视图，承担两个职责：
-/// 1. **恢复**：首次出现时从本地存储读取已保存的布局状态，写入 LayoutVM / PluginVM。
-/// 2. **保存**：监听 LayoutVM / PluginVM 的属性变化，自动持久化到本地存储。
+/// 1. **恢复**：首次出现时从本地存储读取已保存的布局状态，写入 WindowLayoutVM / AppPluginVM。
+/// 2. **保存**：监听 WindowLayoutVM / AppPluginVM 的属性变化，自动持久化到本地存储。
 ///
 /// 此视图不渲染任何可见内容，仅作为生命周期锚点。
 private struct LayoutPersistenceAnchor<Content: View>: View {
-    @EnvironmentObject private var layoutVM: LayoutVM
-    @EnvironmentObject private var pluginVM: PluginVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
+    @EnvironmentObject private var pluginVM: AppPluginVM
 
     let content: Content
 
@@ -164,7 +164,7 @@ private struct LayoutPersistenceAnchor<Content: View>: View {
 
     // MARK: - Observe
 
-    /// 开始观察 PluginVM 和 LayoutVM 的变化
+    /// 开始观察 AppPluginVM 和 WindowLayoutVM 的变化
     private func startObserving() {
         guard cancellables.isEmpty else { return }
 

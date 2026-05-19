@@ -290,7 +290,7 @@ public final class EditorState: ObservableObject, SuperLog {
     public private(set) var lspClient: any SuperEditorLSPClient
     /// 已安装的编辑器插件信息（从 registry.installedPlugins 派生）
     var editorFeaturePlugins: [EditorPluginInfo] {
-        // 已安装的插件均已通过 PluginVM 启用过滤，因此 isEnabled 恒为 true
+        // 已安装的插件均已通过 AppPluginVM 启用过滤，因此 isEnabled 恒为 true
         editorExtensions.installedPlugins.map { plugin in
             EditorPluginInfo(
                 id: plugin.id,
@@ -1622,9 +1622,9 @@ public final class EditorState: ObservableObject, SuperLog {
 
     /// 由外层（ThemeStatusBarPlugin）在视图就绪后调用，确保编辑器使用正确的初始主题。
     ///
-    /// ThemeVM.init() 在 EditorState 之前创建，其发送的 .lumiThemeDidChange
+    /// AppThemeVM.init() 在 EditorState 之前创建，其发送的 .lumiThemeDidChange
     /// 通知在 EditorState 注册监听之前就已经发出，导致 EditorState 错过了初始通知。
-    /// 此方法由 ThemeStatusBarPlugin 在视图层主动调用，将 ThemeVM 当前主题同步到 EditorState。
+    /// 此方法由 ThemeStatusBarPlugin 在视图层主动调用，将 AppThemeVM 当前主题同步到 EditorState。
     func syncInitialThemeFromExternal(_ editorThemeId: String) {
         let before = self.currentThemeId
         guard before != editorThemeId else {

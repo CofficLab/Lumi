@@ -4,8 +4,8 @@ import SwiftUI
 
 /// Editor Rail 文件树根视图
 struct EditorFileTreeView: View, SuperLog {
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject var editorVM: EditorVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var editorVM: AppEditorVM
 
     // MARK: - Logging Configuration
 

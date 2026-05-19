@@ -6,8 +6,8 @@ struct MessageWithToolCallsView: View {
     let message: ChatMessage
     let toolOutputMessages: [ChatMessage]
 
-    @EnvironmentObject var permissionRequestViewModel: PermissionRequestVM
-    @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
+    @EnvironmentObject var permissionRequestViewModel: WindowPermissionRequestVM
+    @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
 
     @State private var showRawMessage: Bool = false
     @State private var expandedParameterToolCallIDs = Set<String>()

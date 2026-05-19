@@ -17,7 +17,7 @@ final class DelayMessageState: ObservableObject {
     private(set) var cachedConversationId: UUID?
     
     /// 消息队列 VM 引用，由 DelayMessageOverlay 同步
-    private(set) var messageQueueVM: MessageQueueVM?
+    private(set) var messageQueueVM: WindowMessageQueueVM?
     
     // MARK: - Sync Methods
     
@@ -27,7 +27,7 @@ final class DelayMessageState: ObservableObject {
     }
     
     /// 同步消息队列 VM
-    func syncMessageQueueVM(_ vm: MessageQueueVM) {
+    func syncWindowMessageQueueVM(_ vm: WindowMessageQueueVM) {
         messageQueueVM = vm
     }
     

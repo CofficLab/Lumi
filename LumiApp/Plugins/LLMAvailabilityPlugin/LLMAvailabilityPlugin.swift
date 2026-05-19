@@ -5,7 +5,7 @@ import SwiftUI
 /// LLM 可用性检测插件
 /// 通过向每个供应商的每个模型发送 ping 请求，维护实际可用的供应商+模型列表
 ///
-/// 该插件通过 addRootView 注入，利用环境中的 LLMVM 和 LLMService 获取所有供应商和模型，
+/// 该插件通过 addRootView 注入，利用环境中的 AppLLMVM 和 LLMService 获取所有供应商和模型，
 /// 然后逐一检测可用性，将结果存储到 LLMAvailabilityStore 中。
 actor LLMAvailabilityPlugin: SuperPlugin {
     /// 插件专用 Logger

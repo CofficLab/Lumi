@@ -7,7 +7,7 @@ struct RAGSettingsPopoverView: View, SuperLog {
     nonisolated static var emoji: String { "🦞" }
     nonisolated static var verbose: Bool { true }
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @Environment(\.dismiss) private var dismiss
     private let recentProjectsStore = RecentProjectsStore()
 

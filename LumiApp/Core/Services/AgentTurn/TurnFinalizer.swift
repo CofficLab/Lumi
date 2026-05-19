@@ -8,14 +8,14 @@ import MagicKit
 final class TurnFinalizer: SuperLog {
     nonisolated static let emoji = "🏁"
 
-    private let conversationVM: ConversationVM
-    private let conversationSendStatusVM: ConversationStatusVM
-    private let messageQueueVM: MessageQueueVM
+    private let conversationVM: WindowConversationVM
+    private let conversationSendStatusVM: WindowConversationStatusVM
+    private let messageQueueVM: WindowMessageQueueVM
 
     init(
-        conversationVM: ConversationVM,
-        conversationSendStatusVM: ConversationStatusVM,
-        messageQueueVM: MessageQueueVM
+        conversationVM: WindowConversationVM,
+        conversationSendStatusVM: WindowConversationStatusVM,
+        messageQueueVM: WindowMessageQueueVM
     ) {
         self.conversationVM = conversationVM
         self.conversationSendStatusVM = conversationSendStatusVM

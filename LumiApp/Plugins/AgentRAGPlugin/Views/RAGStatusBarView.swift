@@ -12,7 +12,7 @@ struct RAGStatusBarView: View, SuperLog {
     nonisolated static let verbose: Bool = false
     // MARK: - 属性
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var indexStatus: RAGIndexStatus?
     @State private var isIndexing = false
     @State private var progressEvent: RAGIndexProgressEvent?

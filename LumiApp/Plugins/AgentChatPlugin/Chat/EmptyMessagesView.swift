@@ -2,8 +2,8 @@ import SwiftUI
 
 /// 空消息视图 - 已选择会话但没有消息时显示
 struct EmptyMessagesView: View {
-    @EnvironmentObject private var ConversationVM: ConversationVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var WindowConversationVM: WindowConversationVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         let theme = themeVM.activeAppTheme
@@ -50,7 +50,7 @@ struct EmptyMessagesView: View {
             .padding(.horizontal, 40)
 
             // 当前对话 ID
-            if let id = ConversationVM.selectedConversationId {
+            if let id = WindowConversationVM.selectedConversationId {
                 Text(id.uuidString)
                     .font(.caption)
                     .fontDesign(.monospaced)

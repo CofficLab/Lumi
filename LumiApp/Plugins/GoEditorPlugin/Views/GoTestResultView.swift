@@ -5,7 +5,7 @@ import MagicKit
 ///
 /// 显示 go test 的结果列表。
 struct GoTestResultView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject var buildManager: GoBuildManager
 
     var body: some View {

@@ -10,8 +10,8 @@ struct ConversationTimelineDetailView: View, SuperLog {
     nonisolated static let verbose: Bool = false
 
     let conversationId: UUID
-    @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
-    @EnvironmentObject private var llmVM: LLMVM
+    @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM
+    @EnvironmentObject private var llmVM: AppLLMVM
     @State private var timelineItems: [MessageTimelineItem] = []
     private let timelineService = ConversationTimelineService()
 

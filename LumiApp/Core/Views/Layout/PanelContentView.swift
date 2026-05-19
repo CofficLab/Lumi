@@ -6,7 +6,7 @@ import SwiftUI
 /// - 上半部分：Header + 主内容区
 /// - 下半部分：底部面板区（可拖拽分隔线调节高度）
 struct PanelContentView: View {
-    @EnvironmentObject var pluginProvider: PluginVM
+    @EnvironmentObject var pluginProvider: AppPluginVM
 
     var body: some View {
         let activeItem = pluginProvider.getActivePanelItem()

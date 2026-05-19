@@ -71,7 +71,7 @@ final class FileSearchService: ObservableObject, SuperLog {
         searchQuery = ""
     }
 
-    /// 选择文件并更新 ProjectVM
+    /// 选择文件并更新 WindowProjectVM
     func selectFile(_ result: FileResult) {
         if Self.verbose {
             AppLogger.core.info("\(Self.t)📄 选择文件: \(result.relativePath)")

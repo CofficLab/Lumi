@@ -12,14 +12,14 @@ struct ConversationListView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
     
-    /// 窗口级状态（多窗口支持）
-    @Environment(\.windowState) private var windowState
+    /// 窗口作用域（多窗口支持）
+    @Environment(\.windowScope) private var windowScope
     
     /// 会话管理 ViewModel（全局）
-    @EnvironmentObject var conversationVM: ConversationVM
+    @EnvironmentObject var conversationVM: WindowConversationVM
     
     /// 项目管理 ViewModel（全局）
-    @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var projectVM: WindowProjectVM
     
     private let selectionStore = ConversationListLocalStore.shared
 
@@ -133,8 +133,8 @@ extension ConversationListView {
     /// 获取当前选中的会话 ID（优先从 WindowState 获取）
     private var currentSelectedConversationId: UUID? {
         // 优先使用窗口级状态
-        if let windowState = windowState,
-           let conversationId = windowState.selectedConversationId {
+        if let windowScope = windowScope,
+           let conversationId = windowScope.selectedConversationId {
             return conversationId
         }
         // 回退到全局 VM
@@ -378,7 +378,7 @@ extension ConversationListView {
         }
     }
 
-    /// 处理选择变化：同步到 ConversationVM 和 WindowState
+    /// 处理选择变化：同步到 WindowConversationVM 和 WindowState
     func handleLocalSelectionChange() {
         // 只在值确实不同时才更新，避免循环
         let currentSelected = currentSelectedConversationId
@@ -394,7 +394,7 @@ extension ConversationListView {
             }
             
             // 同步到窗口级状态
-            windowState?.switchToConversation(newId)
+            windowScope?.switchToConversation(newId)
             
             // 同步到全局 VM（向后兼容）
             self.conversationVM.setSelectedConversation(newId)
@@ -411,7 +411,7 @@ extension ConversationListView {
             }
             
             // 同步到窗口级状态
-            windowState?.switchToConversation(nil)
+            windowScope?.switchToConversation(nil)
             
             // 同步到全局 VM（向后兼容）
             self.conversationVM.setSelectedConversation(nil)

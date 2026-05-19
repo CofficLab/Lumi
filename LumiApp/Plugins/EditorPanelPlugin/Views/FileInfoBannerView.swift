@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// 显示文件相关的警告信息，如大文件截断提示、只读模式、项目上下文警告等。
 struct FileInfoBannerView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let service: EditorService
     let warningMessage: String?

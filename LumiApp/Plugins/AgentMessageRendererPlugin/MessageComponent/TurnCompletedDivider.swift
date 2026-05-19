@@ -9,7 +9,7 @@ import LumiUI
 struct TurnCompletedDivider: View {
     let message: ChatMessage
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     private var endText: String {
         switch projectVM.languagePreference {

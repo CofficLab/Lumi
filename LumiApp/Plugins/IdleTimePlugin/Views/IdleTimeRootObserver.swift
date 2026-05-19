@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct IdleTimeRootObserver<Content: View>: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     let content: Content
 
     var body: some View {

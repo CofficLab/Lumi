@@ -332,8 +332,8 @@ struct MarketingBreadcrumb: View {
 struct MarketingCodeEditor: View {
     private let lines: [(String, Color)] = [
         ("struct ContentView: View {", MarketingPalette.text),
-        ("    @EnvironmentObject var pluginProvider: PluginVM", Color(red: 0.66, green: 0.84, blue: 1.00)),
-        ("    @EnvironmentObject var themeVM: ThemeVM", Color(red: 0.66, green: 0.84, blue: 1.00)),
+        ("    @EnvironmentObject var pluginProvider: AppPluginVM", Color(red: 0.66, green: 0.84, blue: 1.00)),
+        ("    @EnvironmentObject var themeVM: AppThemeVM", Color(red: 0.66, green: 0.84, blue: 1.00)),
         ("", MarketingPalette.text),
         ("    var body: some View {", MarketingPalette.text),
         ("        HSplitView {", Color(red: 0.86, green: 0.72, blue: 1.00)),

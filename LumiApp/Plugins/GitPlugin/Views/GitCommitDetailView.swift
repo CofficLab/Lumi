@@ -12,9 +12,9 @@ struct GitCommitDetailView: View {
 
     // MARK: - 属性
 
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject var gitVM: GitVM
-    @EnvironmentObject private var layoutVM: LayoutVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject var gitVM: AppGitVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
 
     /// 当前加载的 commit 详情
     @State private var commitDetail: GitCommitDetail?

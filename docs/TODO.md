@@ -552,3 +552,158 @@
 ### Phase 4: 调试与工具链
 
 - [ ] Vue DevTools 桥接、Vite 联动优化
+
+---
+
+## 18. 多窗口作用域重构
+
+> 目标：将 VM 分为全局共享层和窗口作用域层，彻底消除多窗口状态竞争。
+>
+> **核心原则**：Service 全局共享，VM 分两级。
+> **判断标准**：这个状态换了窗口还有意义吗？有 → 全局；没有 → 窗口级。
+
+### 现状问题
+
+当前 `RootContainer.shared` 持有所有 VM 的全局单例。多窗口通过 `WindowState` + Combine 双向同步做隔离，但这只是补丁：
+
+1. **消息发送管线**（`SendController`、`MessagePendingVM`）直接读全局 `ConversationVM.selectedConversationId`，非活跃窗口发消息会串窗口
+2. **权限请求**（`PermissionRequestVM`）全局唯一，两个窗口同时请求权限会冲突
+3. `ConversationVM.saveMessage()` 无参版直接用全局 `selectedConversationId`，多窗口会写错会话
+4. `ContentView.setupStateSync()` 里 100+ 行 Combine 双向同步代码脆弱且难以维护
+
+### VM 分类
+
+**全局共享（留在 RootContainer）：**
+
+| VM | 原因 |
+|---|---|
+| `PluginVM` | 插件列表所有窗口一致 |
+| `ThemeVM` | 主题所有窗口一致 |
+| `EditorVM` | 编辑器服务全局单例 |
+| `LLMVM` (agentSessionConfig) | LLM 配置全局共享 |
+| `ChatHistoryVM` | 只读列表，所有窗口共享 |
+| `GitVM` | Git 状态全局 |
+| `IdleTimeVM` | 空闲检测全局 |
+| `MessageRendererVM` | 渲染器全局 |
+| `ConversationTurnServices` | 回合服务无状态 |
+
+**窗口作用域（移入 WindowScope）：**
+
+| VM | 原因 |
+|---|---|
+| `ConversationVM` | 每窗口选中不同会话 |
+| `ProjectVM` | 每窗口打开不同项目 |
+| `MessagePendingVM` | 每窗口显示不同会话的消息 |
+| `MessageQueueVM` | 每窗口独立的消息发送队列 |
+| `InputQueueVM` | 每窗口独立的用户输入 |
+| `AttachmentsVM` | 每窗口独立的图片附件 |
+| `LayoutVM` | 每窗口独立的侧边栏/布局 |
+| `PermissionRequestVM` | 每窗口独立的权限弹窗 |
+| `PermissionHandlingVM` | 跟随 PermissionRequestVM |
+| `ConversationStatusVM` | 已按 conversationId 隔离，跟随窗口更自然 |
+| `ConversationCreationVM` | 跟随当前窗口 |
+| `TaskCancellationVM` | 跟随当前窗口 |
+| `CommandSuggestionVM` | 跟随当前窗口上下文 |
+| `ProjectContextRequestVM` | 跟随当前窗口项目 |
+
+### 架构图
+
+```
+┌─────────────────────────────────────────────────┐
+│                  App Layer                       │
+│  RootContainer (shared)                          │
+│  ├── 全局 Service: LLMService, ChatHistory..     │
+│  ├── 全局 VM: PluginVM, ThemeVM, EditorVM...     │
+│  └── WindowManager                               │
+└───────────────────────┬─────────────────────────┘
+                        │ 创建
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+    ┌──────────┐  ┌──────────┐  ┌──────────┐
+    │ Window A │  │ Window B │  │ Window C │
+    │WindowScope│ │WindowScope│ │WindowScope│
+    │ ┌──────┐ │  │ ┌──────┐ │  │ ┌──────┐ │
+    │ │ConvVM│ │  │ │ConvVM│ │  │ │ConvVM│ │
+    │ │ProjVM│ │  │ │ProjVM│ │  │ │ProjVM│ │
+    │ │MsgVM │ │  │ │MsgVM │ │  │ │MsgVM │ │
+    │ │Input │ │  │ │Input │ │  │ │Input │ │
+    │ │Permit│ │  │ │Permit│ │  │ │Permit│ │
+    │ │Layout│ │  │ │Layout│ │  │ │Layout│ │
+    │ │...   │ │  │ │...   │ │  │ │...   │ │
+    │ └──────┘ │  │ └──────┘ │  │ └──────┘ │
+    └──────────┘  └──────────┘  └──────────┘
+```
+
+### Phase 1: 创建 WindowScope + 移入核心 VM
+
+> 风险：低。这三个 VM 已有 WindowState 做了部分隔离，改动范围可控。
+
+- [ ] 新建 `LumiApp/Core/Entities/WindowScope.swift`
+- [ ] `WindowScope` 持有窗口级 VM 实例，接受全局 Service 注入
+- [ ] 将 `ConversationVM`、`ProjectVM`、`LayoutVM` 移入 `WindowScope`
+- [ ] 修改 `RootView`：接收 `WindowScope` 参数，注入窗口级 VM 到 `.environmentObject()`
+- [ ] 修改 `ContentView`：从 `WindowScope` 获取 VM，删除 `WindowState` 中对这三个 VM 的冗余字段
+- [ ] 删除 `ContentView.setupStateSync()` 中 ConversationVM / ProjectVM 的双向同步代码
+- [ ] 修改 `WindowManager`：`registerWindow` 改为创建 `WindowScope`
+
+### Phase 2: 移入消息队列与输入 VM
+
+> 风险：中。涉及 `SendController` 和 `RootView` 事件处理逻辑。
+
+- [ ] 将 `MessageQueueVM`、`MessagePendingVM`、`InputQueueVM`、`AttachmentsVM` 移入 `WindowScope`
+- [ ] 修改 `SendController`：从 `WindowScope`（而非 `RootContainer`）读取消息队列和会话
+  - `SendController.init(scope:global:)` 替代 `SendController.init(container:)`
+  - `attemptBeginNextQueuedSend()` 从 `scope.messageQueueVM` 取消息
+  - `beginSendFromQueue()` 中 `messagePendingVM` 和 `conversationVM` 从 `scope` 读取
+- [ ] 修改 `RootView`：`onMessageQueueChanged` / `onInputQueueRequested` 等事件处理改为从 `WindowScope` 读取
+- [ ] 修改 `ConversationController`：接受 `WindowScope` 参数
+- [ ] 验证：单窗口发消息、多窗口各自发消息互不干扰
+
+### Phase 3: 移入权限与状态 VM
+
+> 风险：中。涉及插件引用 `PermissionRequestVM` 的代码。
+
+- [ ] 将 `PermissionRequestVM`、`PermissionHandlingVM`、`ConversationStatusVM` 移入 `WindowScope`
+- [ ] 将 `ConversationCreationVM`、`TaskCancellationVM`、`CommandSuggestionVM`、`ProjectContextRequestVM` 移入 `WindowScope`
+- [ ] 审计所有 `@EnvironmentObject var permissionRequestVM` 引用，确认通过 environment 注入自动生效
+- [ ] 修改 `ToolCallExecutor`：从 `WindowScope` 获取 `PermissionRequestVM` 和 `ConversationStatusVM`
+- [ ] 修改 `AgentTurnService` 及其依赖：接受 `WindowScope` 参数
+- [ ] 验证：两个窗口同时请求工具权限，弹窗不冲突
+
+### Phase 4: 清理与整合
+
+> 风险：低。纯清理工作。
+
+- [ ] 删除 `ContentView.setupStateSync()` 中所有剩余的双向同步 Combine 代码
+- [ ] 将 `WindowState` 的剩余字段（`activePanel`、`sidebarVisibility`、`editorState`、`isActive`、`title`）合并到 `WindowScope`
+- [ ] 删除 `WindowState.swift`，所有引用改为 `WindowScope`
+- [ ] 删除 `WindowStateKey` EnvironmentKey，替换为 `WindowScopeKey`
+- [ ] 更新 `WindowManager`：`windowStates` 改为 `windowScopes: [WindowScope]`
+- [ ] 更新窗口持久化（`saveWindowStates` / `loadSavedWindowStates`）：从 `WindowScope` 生成快照
+- [ ] 更新 `WindowCommand`：创建新窗口时构造 `WindowScope`
+- [ ] 更新 `App.swift`：`WindowGroup` 闭包中创建并注入 `WindowScope`
+- [ ] 审计所有 `RootContainer.shared.xxxVM` 直接访问：窗口级 VM 改为通过 `WindowScope` 访问
+
+### Phase 5: SendController 多实例化
+
+> 风险：中。需要确保每个窗口的发送管线完全独立。
+
+- [ ] `SendController` 改为每窗口一个实例，持有 `WindowScope` 引用
+- [ ] `ProjectController`、`ConversationController` 同理改为每窗口一个实例
+- [ ] `RootView` 中 `@StateObject var sendController` 改为从 `WindowScope` 获取
+- [ ] 验证：窗口 A 发送长任务，窗口 B 同时发消息，两者互不阻塞
+- [ ] 验证：窗口 A 取消任务不影响窗口 B
+
+### 插件兼容性
+
+- 插件中 `@EnvironmentObject var conversationVM: ConversationVM` 等 **不需要改动**——SwiftUI environment 机制自动注入窗口作用域的实例
+- 只有直接引用 `RootContainer.shared.xxxVM`（而非通过 `@EnvironmentObject`）的代码需要改为通过 `WindowScope` 访问
+- 审计命令：`grep -rn "container\.\|RootContainer\.shared\." Plugins/`
+
+### 关键收益
+
+1. **彻底消除多窗口状态竞争** — 每个窗口的会话、项目、消息队列完全独立
+2. **删除双向同步补丁** — 不再需要 `setupStateSync()` 的 Combine 代码
+3. **插件零改动或极小改动** — `@EnvironmentObject` 类型不变，只是实例从全局变成窗口级
+4. **SendController 自然隔离** — 不再需要判断"当前活跃窗口是哪个"
+5. **窗口关闭自动释放** — `WindowScope` 随窗口销毁，内存自然回收

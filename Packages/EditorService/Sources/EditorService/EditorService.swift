@@ -48,7 +48,7 @@ public final class EditorService: ObservableObject {
     /// 会话管理（打开的文件标签页、导航历史）
     public let sessionStore: EditorSessionStore
 
-    /// 将 `sessionStore` 的 `objectWillChange` 暴露给宿主（例如 `EditorVM`），而不放宽 `sessionStore` 的访问级别。
+    /// 将 `sessionStore` 的 `objectWillChange` 暴露给宿主（例如 `AppEditorVM`），而不放宽 `sessionStore` 的访问级别。
     public var sessionObjectWillChange: AnyPublisher<Void, Never> {
         sessionStore.objectWillChange.map { _ in () }.eraseToAnyPublisher()
     }

@@ -6,7 +6,7 @@ struct MessageHeaderView<Leading: View, Trailing: View>: View {
     let leading: Leading
     let trailing: Trailing
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isHovered = false
 
     init(

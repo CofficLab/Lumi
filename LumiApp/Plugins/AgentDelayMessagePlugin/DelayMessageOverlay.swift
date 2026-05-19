@@ -16,8 +16,8 @@ struct DelayMessageOverlay<Content: View>: View, SuperLog {
 
     let content: Content
 
-    @EnvironmentObject private var conversationVM: ConversationVM
-    @EnvironmentObject private var messageQueueVM: MessageQueueVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
+    @EnvironmentObject private var messageQueueVM: WindowMessageQueueVM
 
     @State private var hasAppeared = false
 
@@ -35,7 +35,7 @@ struct DelayMessageOverlay<Content: View>: View, SuperLog {
 
     private func syncAll() {
         // 同步 VM 引用（只需一次）
-        DelayMessageState.shared.syncMessageQueueVM(messageQueueVM)
+        DelayMessageState.shared.syncWindowMessageQueueVM(messageQueueVM)
         // 同步当前会话 ID
         DelayMessageState.shared.syncConversationId(conversationVM.selectedConversationId)
 

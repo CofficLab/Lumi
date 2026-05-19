@@ -36,7 +36,7 @@ final class EditorConfigController {
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showGutterKey) { snapshot.showGutter = value }
         if let value = EditorConfigStore.loadBool(forKey: EditorConfigStore.showFoldingRibbonKey) { snapshot.showFoldingRibbon = value }
 
-        // 注意：主题 ID 不在此恢复，由 ThemeStatusBarPlugin 通过 ThemeVM 驱动
+        // 注意：主题 ID 不在此恢复，由 ThemeStatusBarPlugin 通过 AppThemeVM 驱动
         // EditorState 通过 observeThemeChanges() 监听通知来同步编辑器主题
 
         return snapshot

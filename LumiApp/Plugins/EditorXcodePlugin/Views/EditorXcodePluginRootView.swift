@@ -10,7 +10,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
 
     let content: Content
 
-    @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var projectVM: WindowProjectVM
 
     @State private var hasTriggeredPreload = false
     @State private var preloadStatus: PreloadStatus = .idle

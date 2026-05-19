@@ -2,7 +2,7 @@ import Foundation
 import MagicKit
 
 @MainActor
-final class LLMVM: ObservableObject, SuperLLMConfigProvider {
+final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
     @Published var selectedProviderId: String = "" {
         didSet {
             guard selectedProviderId != oldValue else { return }

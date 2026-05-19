@@ -3,7 +3,7 @@ import StringCatalogKit
 import SwiftUI
 
 struct EditorRemoteHotPreviewDetailView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: AppEditorVM
     @StateObject private var viewModel = EditorRemoteHotPreviewViewModel()
 
     private var sourceText: String? {
@@ -82,7 +82,7 @@ struct EditorRemoteHotPreviewDetailView: View {
         }
     }
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     @ViewBuilder
     private var content: some View {

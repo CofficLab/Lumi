@@ -7,7 +7,7 @@ struct RAGSettingsView: View, SuperLog {
     nonisolated static var emoji: String { "🦞" }
     nonisolated static var verbose: Bool { true }
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     private let recentProjectsStore = RecentProjectsStore()
 
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]

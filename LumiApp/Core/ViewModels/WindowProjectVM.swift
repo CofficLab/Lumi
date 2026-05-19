@@ -6,7 +6,7 @@ import SwiftUI
 /// 项目管理 ViewModel
 /// 负责管理项目状态、文件选择和项目配置
 @MainActor
-final class ProjectVM: ObservableObject, SuperLog {
+final class WindowProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"
     nonisolated static let verbose: Bool = false
     @Published private(set) var currentProject: Project? = nil
@@ -41,7 +41,7 @@ final class ProjectVM: ObservableObject, SuperLog {
     private let contextService: ContextService
     private let llmService: LLMService
 
-    /// 初始化 ProjectVM
+    /// 初始化 WindowProjectVM
     /// - Parameters:
     ///   - contextService: 上下文服务（必须由外部传入）
     ///   - llmService: LLM 服务（必须由外部传入，不允许自行创建）

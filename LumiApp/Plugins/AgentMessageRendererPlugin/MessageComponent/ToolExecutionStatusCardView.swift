@@ -5,7 +5,7 @@ import SwiftUI
 struct ToolExecutionStatusCardView: View {
     let snapshot: ToolExecutionStatusSnapshot
     let conversationId: UUID
-    @EnvironmentObject private var taskCancellationVM: TaskCancellationVM
+    @EnvironmentObject private var taskCancellationVM: WindowTaskCancellationVM
     @State private var isExpanded: Bool
     @State private var didRequestStop = false
 

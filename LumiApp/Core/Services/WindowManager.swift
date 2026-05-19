@@ -109,6 +109,35 @@ final class WindowManager: ObservableObject, SuperLog {
         return getWindowState(id)
     }
 
+    /// 获取当前活跃窗口的 WindowScope
+    var activeWindowScope: WindowScope? {
+        guard let id = activeWindowId else { return nil }
+        return windowScopes[id]
+    }
+
+    /// 窗口作用域映射（窗口 ID -> WindowScope）
+    private var windowScopes: [UUID: WindowScope] = [:]
+
+    /// 注册窗口作用域
+    /// - Parameter scope: 窗口作用域实例
+    func registerScope(_ scope: WindowScope) {
+        windowScopes[scope.id] = scope
+        registerWindow(WindowState(id: scope.id))
+    }
+
+    /// 注销窗口作用域
+    /// - Parameter windowId: 窗口 ID
+    func unregisterScope(_ windowId: UUID) {
+        windowScopes.removeValue(forKey: windowId)
+    }
+
+    /// 获取指定窗口的 WindowScope
+    /// - Parameter windowId: 窗口 ID
+    /// - Returns: WindowScope
+    func getScope(_ windowId: UUID) -> WindowScope? {
+        windowScopes[windowId]
+    }
+
     /// 查找已打开指定项目的窗口
     ///
     /// - Parameter projectPath: 项目路径
@@ -217,6 +246,7 @@ final class WindowManager: ObservableObject, SuperLog {
         guard let window = notification.object as? NSWindow,
               let windowId = windowIdMap[window] else { return }
 
+        unregisterScope(windowId)
         unregisterWindow(windowId)
         windowIdMap.removeValue(forKey: window)
     }

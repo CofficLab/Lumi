@@ -5,8 +5,8 @@ import SwiftUI
 /// 内核负责渲染 Tab Bar 和内容区布局，插件通过 `addRailTabs()` 提供 tab 定义，
 /// 通过 `addRailContentView(tabId:)` 提供对应的内容视图。
 struct RailView: View {
-    @EnvironmentObject private var pluginProvider: PluginVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var pluginProvider: AppPluginVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     @State private var selectedTabId: String?
 

@@ -5,8 +5,8 @@ import SwiftUI
 /// 项目控制视图
 /// 默认显示当前项目名 + Git 分支 badge，点击后弹出最近项目 Popover
 struct ProjectControlView: View {
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     @State private var isPopoverPresented = false
     @State private var branch: String?

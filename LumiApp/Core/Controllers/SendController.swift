@@ -162,7 +162,7 @@ final class SendController: ObservableObject, SuperLog {
 
     /// 用户授权工具后，恢复 Agent 循环。
     ///
-    /// 由 UI 层（PermissionHandlingVM）在用户点击"允许"后调用。
+    /// 由 UI 层（WindowPermissionHandlingVM）在用户点击"允许"后调用。
     func resumeAfterPermissionGranted(conversationId: UUID) async {
         await agentTurnService.run(conversationId: conversationId)
     }

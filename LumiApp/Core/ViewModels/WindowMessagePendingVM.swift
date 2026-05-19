@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 当前选中会话在 UI 中的消息列表
 @MainActor
-final class MessagePendingVM: ObservableObject, SuperLog {
+final class WindowMessagePendingVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"
     nonisolated static let verbose: Bool = false
     /// 当前会话的消息列表

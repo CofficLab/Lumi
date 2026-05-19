@@ -4,7 +4,7 @@ import Foundation
 ///
 /// 管理聊天历史的服务访问，提供统一的聊天历史操作接口。
 @MainActor
-final class ChatHistoryVM: ObservableObject {
+final class AppChatHistoryVM: ObservableObject {
     // MARK: - Properties
 
     /// 聊天历史服务

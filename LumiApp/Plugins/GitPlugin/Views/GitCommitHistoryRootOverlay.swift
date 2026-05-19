@@ -5,8 +5,8 @@ import SwiftUI
 ///
 /// 监听 commit 选中事件，自动激活当前面板。
 struct GitCommitHistoryRootOverlay<Content: View>: View {
-    @EnvironmentObject private var gitVM: GitVM
-    @EnvironmentObject private var layoutVM: LayoutVM
+    @EnvironmentObject private var gitVM: AppGitVM
+    @EnvironmentObject private var layoutVM: WindowLayoutVM
 
     let content: Content
 

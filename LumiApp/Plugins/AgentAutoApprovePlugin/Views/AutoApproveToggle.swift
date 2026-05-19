@@ -3,8 +3,8 @@ import SwiftUI
 
 /// 自动批准开关：控制是否自动批准高风险命令
 struct AutoApproveToggle: View {
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     private let store = AgentAutoApprovePluginLocalStore.shared
 

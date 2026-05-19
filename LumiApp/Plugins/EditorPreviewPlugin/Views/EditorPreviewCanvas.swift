@@ -2,7 +2,7 @@ import LumiPreviewKit
 import SwiftUI
 
 struct HotPreviewCanvas: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject var viewModel: EditorRemoteHotPreviewViewModel
 
     var body: some View {

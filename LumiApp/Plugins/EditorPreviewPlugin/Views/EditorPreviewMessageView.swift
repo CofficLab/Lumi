@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HotPreviewMessageView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let systemImage: String
     let message: String

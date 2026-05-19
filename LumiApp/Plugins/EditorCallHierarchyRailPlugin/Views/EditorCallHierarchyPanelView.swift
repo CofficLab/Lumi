@@ -2,7 +2,7 @@ import SwiftUI
 import MagicKit
 
 struct EditorCallHierarchyPanelView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject var service: EditorService
     var showsHeader: Bool = true
 

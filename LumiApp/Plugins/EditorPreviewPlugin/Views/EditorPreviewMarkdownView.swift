@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Markdown file preview view.
 struct EditorPreviewMarkdownView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let markdown: String
 

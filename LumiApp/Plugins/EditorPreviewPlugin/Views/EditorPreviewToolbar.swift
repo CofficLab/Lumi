@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HotPreviewToolbar: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject var viewModel: EditorRemoteHotPreviewViewModel
     let currentFileURL: URL?
     let deleteStaleStringCatalogEntries: () -> Void
@@ -161,7 +161,7 @@ struct HotPreviewToolbar: View {
 }
 
 private struct HotPreviewDisplayModePickerView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject var viewModel: EditorRemoteHotPreviewViewModel
 
     var body: some View {

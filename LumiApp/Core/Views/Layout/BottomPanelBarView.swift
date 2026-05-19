@@ -7,8 +7,8 @@ import SwiftUI
 /// 渲染统一的 Tab 栏 + 内容切换器。各插件只需提供 Tab 入口
 /// （图标 + 标题 + 内容视图），无需关心 Tab 栏的渲染和切换逻辑。
 struct BottomPanelBarView: View {
-    @EnvironmentObject private var pluginProvider: PluginVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var pluginProvider: AppPluginVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     /// 当前选中的 Tab ID
     @State private var activeTabId: String?
@@ -87,7 +87,7 @@ struct BottomPanelBarView: View {
 
 /// 底部面板的单个标签按钮，支持 hover 高亮效果
 private struct BottomPanelTabButton: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let tab: BottomPanelTab
     let isActive: Bool

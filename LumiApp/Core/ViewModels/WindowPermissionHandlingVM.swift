@@ -2,13 +2,13 @@ import Foundation
 
 /// 处理工具权限浮层：写回 `ToolCall.authorizationState`，多工具依次询问，结束后通知继续发送管线。
 @MainActor
-final class PermissionHandlingVM: ObservableObject {
-    private let permissionRequestViewModel: PermissionRequestVM
+final class WindowPermissionHandlingVM: ObservableObject {
+    private let permissionRequestViewModel: WindowPermissionRequestVM
     private let chatHistoryService: ChatHistoryService
     private let toolExecutionService: ToolExecutionService
 
     init(
-        permissionRequestViewModel: PermissionRequestVM,
+        permissionRequestViewModel: WindowPermissionRequestVM,
         chatHistoryService: ChatHistoryService,
         toolExecutionService: ToolExecutionService
     ) {

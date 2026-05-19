@@ -7,7 +7,7 @@ import SwiftUI
 /// 管理 Git 相关的全局状态，包括当前选中的 commit ID、未推送 commit 等。
 /// 作为 Git 数据的中心化存储，供多个插件和视图共享。
 @MainActor
-final class GitVM: ObservableObject, SuperLog {
+final class AppGitVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔀"
     nonisolated static let verbose: Bool = false
     // MARK: - Commit Selection

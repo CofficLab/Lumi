@@ -9,7 +9,7 @@ import os
 /// 让大模型知道应该用什么语言回复。
 ///
 /// ## 设计决策
-/// - 语言偏好从 ProjectVM 读取，来源统一
+/// - 语言偏好从 WindowProjectVM 读取，来源统一
 /// - 使用 `LanguagePreference.systemPromptDescription` 作为注入内容
 /// - order 设为 -10（很低），确保在其他中间件之前注入，使后续中间件能看到语言上下文
 @MainActor

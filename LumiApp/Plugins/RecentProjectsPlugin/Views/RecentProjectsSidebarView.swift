@@ -3,7 +3,7 @@ import MagicKit
 
 /// 最近项目侧边栏视图
 struct RecentProjectsSidebarView: View {
-    @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var projectVM: WindowProjectVM
     @Environment(\.openWindow) private var openWindow
     @StateObject private var branchCache = GitBranchCache()
     @State private var isFileImporterPresented = false

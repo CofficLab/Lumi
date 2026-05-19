@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ThemePickerDetailView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

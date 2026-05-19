@@ -43,7 +43,7 @@ actor EditorRailReferencesPlugin: SuperPlugin, SuperLog {
 
 /// References 标签页内容视图
 struct EditorReferencesRailContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: AppEditorVM
 
     private var service: EditorService { editorVM.service }
 

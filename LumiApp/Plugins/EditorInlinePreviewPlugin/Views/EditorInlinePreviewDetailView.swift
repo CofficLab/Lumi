@@ -21,8 +21,8 @@ struct EditorInlinePreviewDetailView: View, SuperLog {
     nonisolated static let emoji = "👁"
     nonisolated static let verbose: Bool = true
 
-    @EnvironmentObject private var editorVM: EditorVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var editorVM: AppEditorVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @StateObject private var viewModel = EditorInlinePreviewViewModel()
     @StateObject private var automationState = InlinePreviewAutomationState.shared
 
@@ -675,7 +675,7 @@ private enum MarkdownTOCScanner {
 }
 
 private struct EditorInlinePreviewMarkdownView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let markdown: String
 
@@ -862,7 +862,7 @@ private struct EditorInlinePreviewFailureDetailsView: View {
 }
 
 private struct EditorInlinePreviewStringCatalogContainer: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let sourceText: String
 
@@ -916,7 +916,7 @@ private struct EditorInlinePreviewStringCatalogContainer: View {
 }
 
 private struct EditorInlinePreviewStringCatalogView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let catalog: StringCatalog
     @State private var selectedLanguageID: String?

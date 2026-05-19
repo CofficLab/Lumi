@@ -44,7 +44,7 @@ final class GitHubKBStatusBarViewModel: ObservableObject {
 }
 
 struct GitHubKBStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @StateObject private var viewModel = GitHubKBStatusBarViewModel()
 
     var body: some View {

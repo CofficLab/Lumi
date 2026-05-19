@@ -13,9 +13,9 @@ struct ChatBubble: View {
 
     @State private var showRawMessage: Bool = false
     @State private var showDeleteConfirmation: Bool = false
-    @EnvironmentObject var messageRendererVM: MessageRendererVM
-    @EnvironmentObject var timelineViewModel: ChatTimelineViewModel
-    @EnvironmentObject private var inputQueueVM: InputQueueVM
+    @EnvironmentObject var messageRendererVM: AppMessageRendererVM
+    @EnvironmentObject var timelineViewModel: WindowChatTimelineViewModel
+    @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
 
     /// 初始化
     /// - Parameters:

@@ -5,12 +5,22 @@ import MagicKit
 import SwiftData
 import os
 
-/// RootView 容器：管理所有服务和 ViewModel 的单例实例。
+/// RootView 容器：管理全局共享的服务和 ViewModel 的单例实例。
 ///
 /// ## 架构原则
-/// - 内核只管理通用服务
-/// - 插件内部服务由插件自己管理
-/// - 内核不知道具体插件的内部实现
+/// - **全局共享层**：Service 和应用级 VM 留在此容器（如 AppPluginVM、AppThemeVM）
+/// - **窗口作用域层**：窗口级 VM 由 `WindowScope` 持有（如 WindowConversationVM、WindowProjectVM）
+///
+/// ## VM 分类
+///
+/// **全局共享（留在 RootContainer）：**
+/// AppPluginVM, AppThemeVM, AppEditorVM, AppLLMVM, AppChatHistoryVM, AppGitVM, AppIdleTimeVM, AppMessageRendererVM
+///
+/// **窗口作用域（在 WindowScope 中）：**
+/// WindowConversationVM, WindowProjectVM, WindowLayoutVM, WindowMessagePendingVM, WindowMessageQueueVM,
+/// WindowInputQueueVM, WindowAttachmentsVM, WindowPermissionRequestVM, WindowPermissionHandlingVM,
+/// WindowConversationStatusVM, WindowConversationCreationVM, WindowTaskCancellationVM,
+/// WindowCommandSuggestionVM, WindowProjectContextRequestVM, WindowChatTimelineViewModel
 @MainActor
 final class RootContainer: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔌"
@@ -19,7 +29,7 @@ final class RootContainer: ObservableObject, SuperLog {
     /// 共享实例
     static let shared = RootContainer()
 
-    // MARK: - 服务
+    // MARK: - 服务（全局共享）
 
     let modelContainer: ModelContainer
     let contextService: ContextService
@@ -32,32 +42,115 @@ final class RootContainer: ObservableObject, SuperLog {
     let conversationTurnServices: ConversationTurnServices
     let toolExecutionService: ToolExecutionService
 
-    // MARK: - ViewModel
+    // MARK: - 全局 ViewModel（应用级，所有窗口共享）
 
-    let pluginVM: PluginVM
-    let messageRendererVM: MessageRendererVM
-    let themeVM: ThemeVM
-    let projectVM: ProjectVM
-    let layoutVM: LayoutVM
-    let chatHistoryVM: ChatHistoryVM
-    let commandSuggestionVM: CommandSuggestionVM
-    let permissionRequestVM: PermissionRequestVM
-    let taskCancellationVM: TaskCancellationVM
-    let messagePendingVM: MessagePendingVM
-    let conversationVM: ConversationVM
-    let messageQueueVM: MessageQueueVM
-    let agentAttachmentsVM: AttachmentsVM
-    let inputQueueVM: InputQueueVM
-    let permissionHandlingVM: PermissionHandlingVM
-    let conversationCreationVM: ConversationCreationVM
-    let chatTimelineViewModel: ChatTimelineViewModel
-    let conversationSendStatusVM: ConversationStatusVM
-    let projectContextRequestVM: ProjectContextRequestVM
-    let gitVM: GitVM
-    let agentSessionConfig: LLMVM
+    let pluginVM: AppPluginVM
+    let messageRendererVM: AppMessageRendererVM
+    let themeVM: AppThemeVM
+    let chatHistoryVM: AppChatHistoryVM
+    let gitVM: AppGitVM
+    let agentSessionConfig: AppLLMVM
     let captureThinkingContent: Bool
-    let editorVM: EditorVM
-    let idleTimeVM: IdleTimeVM
+    let editorVM: AppEditorVM
+    let idleTimeVM: AppIdleTimeVM
+
+    // MARK: - 窗口级 ViewModel 兼容属性
+    //
+    // 这些属性在 Phase 1-3 过渡期间保留，通过 WindowManager 获取活跃窗口的 WindowScope。
+    // Phase 4 完成后将删除这些兼容属性，所有访问改为通过 WindowScope。
+    // ⚠️ 新代码请勿使用这些属性，应通过 WindowScope 直接访问。
+
+    /// 活跃窗口的 WindowConversationVM（过渡兼容，新代码用 WindowScope）
+    var conversationVM: Lumi.WindowConversationVM {
+        WindowManager.shared.activeWindowScope?.conversationVM ?? _fallbackWindowConversationVM
+    }
+
+    /// 活跃窗口的 WindowProjectVM（过渡兼容，新代码用 WindowScope）
+    var projectVM: Lumi.WindowProjectVM {
+        WindowManager.shared.activeWindowScope?.projectVM ?? _fallbackWindowProjectVM
+    }
+
+    /// 活跃窗口的 WindowLayoutVM（过渡兼容，新代码用 WindowScope）
+    var layoutVM: WindowLayoutVM {
+        WindowManager.shared.activeWindowScope?.layoutVM ?? _fallbackWindowLayoutVM
+    }
+
+    /// 活跃窗口的 WindowMessagePendingVM（过渡兼容，新代码用 WindowScope）
+    var messagePendingVM: WindowMessagePendingVM {
+        WindowManager.shared.activeWindowScope?.messagePendingVM ?? _fallbackWindowMessagePendingVM
+    }
+
+    /// 活跃窗口的 WindowMessageQueueVM（过渡兼容，新代码用 WindowScope）
+    var messageQueueVM: Lumi.WindowMessageQueueVM {
+        WindowManager.shared.activeWindowScope?.messageQueueVM ?? _fallbackWindowMessageQueueVM
+    }
+
+    /// 活跃窗口的 WindowInputQueueVM（过渡兼容，新代码用 WindowScope）
+    var inputQueueVM: WindowInputQueueVM {
+        WindowManager.shared.activeWindowScope?.inputQueueVM ?? _fallbackWindowInputQueueVM
+    }
+
+    /// 活跃窗口的 WindowAttachmentsVM（过渡兼容，新代码用 WindowScope）
+    var agentAttachmentsVM: WindowAttachmentsVM {
+        WindowManager.shared.activeWindowScope?.agentAttachmentsVM ?? _fallbackAgentAttachmentsVM
+    }
+
+    /// 活跃窗口的 WindowPermissionRequestVM（过渡兼容，新代码用 WindowScope）
+    var permissionRequestVM: WindowPermissionRequestVM {
+        WindowManager.shared.activeWindowScope?.permissionRequestVM ?? _fallbackWindowPermissionRequestVM
+    }
+
+    /// 活跃窗口的 WindowTaskCancellationVM（过渡兼容，新代码用 WindowScope）
+    var taskCancellationVM: WindowTaskCancellationVM {
+        WindowManager.shared.activeWindowScope?.taskCancellationVM ?? _fallbackWindowTaskCancellationVM
+    }
+
+    /// 活跃窗口的 WindowPermissionHandlingVM（过渡兼容，新代码用 WindowScope）
+    var permissionHandlingVM: WindowPermissionHandlingVM {
+        WindowManager.shared.activeWindowScope?.permissionHandlingVM ?? _fallbackWindowPermissionHandlingVM
+    }
+
+    /// 活跃窗口的 WindowConversationCreationVM（过渡兼容，新代码用 WindowScope）
+    var conversationCreationVM: WindowConversationCreationVM {
+        WindowManager.shared.activeWindowScope?.conversationCreationVM ?? _fallbackWindowConversationCreationVM
+    }
+
+    /// 活跃窗口的 WindowChatTimelineViewModel（过渡兼容，新代码用 WindowScope）
+    var chatTimelineViewModel: WindowChatTimelineViewModel {
+        WindowManager.shared.activeWindowScope?.chatTimelineViewModel ?? _fallbackWindowChatTimelineViewModel
+    }
+
+    /// 活跃窗口的 WindowConversationStatusVM（过渡兼容，新代码用 WindowScope）
+    var conversationSendStatusVM: WindowConversationStatusVM {
+        WindowManager.shared.activeWindowScope?.conversationSendStatusVM ?? _fallbackWindowConversationSendStatusVM
+    }
+
+    /// 活跃窗口的 WindowProjectContextRequestVM（过渡兼容，新代码用 WindowScope）
+    var projectContextRequestVM: WindowProjectContextRequestVM {
+        WindowManager.shared.activeWindowScope?.projectContextRequestVM ?? _fallbackWindowProjectContextRequestVM
+    }
+
+    /// 活跃窗口的 WindowCommandSuggestionVM（过渡兼容，新代码用 WindowScope）
+    var commandSuggestionVM: WindowCommandSuggestionVM {
+        WindowManager.shared.activeWindowScope?.commandSuggestionVM ?? _fallbackWindowCommandSuggestionVM
+    }
+
+    // Fallback 实例（仅在无活跃窗口时使用，确保不崩溃）
+    private let _fallbackWindowConversationVM: Lumi.WindowConversationVM
+    private let _fallbackWindowProjectVM: Lumi.WindowProjectVM
+    private let _fallbackWindowLayoutVM: WindowLayoutVM
+    private let _fallbackWindowMessagePendingVM: WindowMessagePendingVM
+    private let _fallbackWindowMessageQueueVM: Lumi.WindowMessageQueueVM
+    private let _fallbackWindowInputQueueVM: WindowInputQueueVM
+    private let _fallbackAgentAttachmentsVM: WindowAttachmentsVM
+    private let _fallbackWindowPermissionRequestVM: WindowPermissionRequestVM
+    private let _fallbackWindowTaskCancellationVM: WindowTaskCancellationVM
+    private let _fallbackWindowPermissionHandlingVM: WindowPermissionHandlingVM
+    private let _fallbackWindowConversationCreationVM: WindowConversationCreationVM
+    private let _fallbackWindowChatTimelineViewModel: WindowChatTimelineViewModel
+    private let _fallbackWindowConversationSendStatusVM: WindowConversationStatusVM
+    private let _fallbackWindowProjectContextRequestVM: WindowProjectContextRequestVM
+    private let _fallbackWindowCommandSuggestionVM: WindowCommandSuggestionVM
 
     // MARK: - 初始化
 
@@ -69,26 +162,15 @@ final class RootContainer: ObservableObject, SuperLog {
         // 基础服务层（无依赖或依赖最少）
         // ========================================
 
-        // 初始化上下文服务
         self.contextService = ContextService()
+        self.pluginVM = AppPluginVM.shared
 
-        // 初始化插件 VM
-        self.pluginVM = PluginVM.shared
-
-        // 初始化供应商注册表（从插件中收集 LLM Provider）
         let providerRegistry = LLMProviderRegistry()
         pluginVM.registerLLMProviders(to: providerRegistry)
 
-        // 初始化 LLM 服务
         self.llmService = LLMService(registry: providerRegistry)
-
-        // 初始化提示词服务
         self.promptService = PromptService(contextService: contextService)
-
-        // 初始化 Slash 命令服务
         self.slashCommandService = SlashCommandService()
-
-        // 初始化工具服务
         self.toolService = ToolService(llmService: llmService)
 
         self.conversationTurnServices = ConversationTurnServices(
@@ -96,20 +178,14 @@ final class RootContainer: ObservableObject, SuperLog {
             toolService: toolService
         )
 
-        // 供应商注册表
         self.providerRegistry = providerRegistry
 
         // ========================================
-        // 基础 ViewModel
+        // 全局 ViewModel
         // ========================================
 
-        self.messageRendererVM = MessageRendererVM.shared
-        self.themeVM = ThemeVM()
-        self.projectVM = Lumi.ProjectVM(
-            contextService: contextService,
-            llmService: llmService
-        )
-        self.layoutVM = LayoutVM()
+        self.messageRendererVM = AppMessageRendererVM.shared
+        self.themeVM = AppThemeVM()
 
         // ========================================
         // 聊天历史服务
@@ -121,75 +197,43 @@ final class RootContainer: ObservableObject, SuperLog {
             reason: "RootViewContainer"
         )
 
-        // 聊天历史 ViewModel
-        self.chatHistoryVM = ChatHistoryVM(chatHistoryService: chatHistoryService)
-
-        // ========================================
-        // UI 状态 VM
-        // ========================================
-
-        self.permissionRequestVM = PermissionRequestVM()
-        self.taskCancellationVM = TaskCancellationVM()
-
-        // ========================================
-        // 消息相关 VM
-        // ========================================
-
-        self.messagePendingVM = MessagePendingVM()
-
-        self.conversationVM = Lumi.ConversationVM(
-            chatHistoryService: chatHistoryService
-        )
-
-        self.messageQueueVM = Lumi.MessageQueueVM()
-
-        // ========================================
-        // 输入与附件
-        // ========================================
-
-        self.agentAttachmentsVM = AttachmentsVM()
-        self.inputQueueVM = InputQueueVM()
-
-        // ========================================
-        // 命令建议
-        // ========================================
-
-        self.commandSuggestionVM = CommandSuggestionVM(slashCommandService: slashCommandService)
+        self.chatHistoryVM = AppChatHistoryVM(chatHistoryService: chatHistoryService)
 
         // ========================================
         // Agent 配置
         // ========================================
 
-        self.gitVM = GitVM()
-        self.agentSessionConfig = LLMVM(llmService: llmService)
-
+        self.gitVM = AppGitVM()
+        self.agentSessionConfig = AppLLMVM(llmService: llmService)
         self.toolExecutionService = ToolExecutionService(toolService: toolService)
         self.captureThinkingContent = true
 
         // ========================================
-        // 权限与对话创建
+        // Fallback 窗口级 VM（仅用于过渡期，无活跃窗口时兜底）
         // ========================================
 
-        self.permissionHandlingVM = PermissionHandlingVM(
-            permissionRequestViewModel: permissionRequestVM,
+        _fallbackWindowConversationVM = Lumi.WindowConversationVM(chatHistoryService: chatHistoryService)
+        _fallbackWindowProjectVM = Lumi.WindowProjectVM(contextService: contextService, llmService: llmService)
+        _fallbackWindowLayoutVM = WindowLayoutVM()
+        _fallbackWindowMessagePendingVM = WindowMessagePendingVM()
+        _fallbackWindowMessageQueueVM = Lumi.WindowMessageQueueVM()
+        _fallbackWindowInputQueueVM = WindowInputQueueVM()
+        _fallbackAgentAttachmentsVM = WindowAttachmentsVM()
+        _fallbackWindowPermissionRequestVM = WindowPermissionRequestVM()
+        _fallbackWindowTaskCancellationVM = WindowTaskCancellationVM()
+        _fallbackWindowPermissionHandlingVM = WindowPermissionHandlingVM(
+            permissionRequestViewModel: _fallbackWindowPermissionRequestVM,
             chatHistoryService: chatHistoryService,
             toolExecutionService: toolExecutionService
         )
-
-        self.conversationCreationVM = ConversationCreationVM()
-
-        self.projectContextRequestVM = ProjectContextRequestVM()
-
-        // ========================================
-        // 时间线
-        // ========================================
-
-        self.chatTimelineViewModel = ChatTimelineViewModel(
+        _fallbackWindowConversationCreationVM = WindowConversationCreationVM()
+        _fallbackWindowChatTimelineViewModel = WindowChatTimelineViewModel(
             chatHistoryService: chatHistoryService,
-            conversationVM: conversationVM
+            conversationVM: _fallbackWindowConversationVM
         )
-
-        self.conversationSendStatusVM = ConversationStatusVM()
+        _fallbackWindowConversationSendStatusVM = WindowConversationStatusVM()
+        _fallbackWindowProjectContextRequestVM = WindowProjectContextRequestVM()
+        _fallbackWindowCommandSuggestionVM = WindowCommandSuggestionVM(slashCommandService: slashCommandService)
 
         // ========================================
         // 编辑器
@@ -213,16 +257,13 @@ final class RootContainer: ObservableObject, SuperLog {
             )
         )
 
-        // 创建编辑器扩展注册中心
         let editorExtensionRegistry = EditorExtensionRegistry()
 
-        // 让所有已启用的插件自行注册 editor 扩展
-        let localPluginVM = pluginVM
-        let pluginsToRegister = localPluginVM.plugins.filter { localPluginVM.isPluginEnabled($0) }
+        let localAppPluginVM = pluginVM
+        let pluginsToRegister = localAppPluginVM.plugins.filter { localAppPluginVM.isPluginEnabled($0) }
         for plugin in pluginsToRegister {
             plugin.registerEditorExtensions(into: editorExtensionRegistry)
         }
-        // 将实际注册了的插件记录到 registry
         let pluginRecords = pluginsToRegister.map { plugin -> EditorInstalledPluginRecord in
             let t = type(of: plugin)
             return EditorInstalledPluginRecord(
@@ -236,7 +277,7 @@ final class RootContainer: ObservableObject, SuperLog {
         editorExtensionRegistry.recordInstalledPlugins(pluginRecords)
 
         EditorSettingsLifecycle.registerEditorThemeContributors = { registry in
-            for contribution in PluginVM.shared.getThemeContributions() {
+            for contribution in AppPluginVM.shared.getThemeContributions() {
                 if let c = contribution.editorThemeContributor as? any SuperEditorThemeContributor {
                     registry.registerThemeContributor(c)
                 }
@@ -247,13 +288,12 @@ final class RootContainer: ObservableObject, SuperLog {
             MultiCursorInputInstaller.shared.register(textView: textView, state: state)
         }
 
-        self.editorVM = EditorVM(service: EditorService(editorExtensionRegistry: editorExtensionRegistry))
+        self.editorVM = AppEditorVM(service: EditorService(editorExtensionRegistry: editorExtensionRegistry))
 
-        // 将 registry 注入到 EditorSettingsState，使其 settingsSuggestions 和 reinstallEditorPlugins 可用
         EditorSettingsState.shared.configureRegistry(editorExtensionRegistry)
 
         EditorSettingsLifecycle.onReinstallPlugins = { registry in
-            let plugins = PluginVM.shared.plugins.filter { PluginVM.shared.isPluginEnabled($0) }
+            let plugins = AppPluginVM.shared.plugins.filter { AppPluginVM.shared.isPluginEnabled($0) }
             for plugin in plugins {
                 plugin.registerEditorExtensions(into: registry)
             }
@@ -280,6 +320,6 @@ final class RootContainer: ObservableObject, SuperLog {
         // 空闲时间
         // ========================================
 
-        self.idleTimeVM = IdleTimeVM()
+        self.idleTimeVM = AppIdleTimeVM()
     }
 }

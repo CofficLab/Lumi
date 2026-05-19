@@ -2,9 +2,9 @@ import Foundation
 
 /// 插件设置 VM：管理插件的启用/禁用状态。
 @MainActor
-final class PluginSettingsVM: ObservableObject {
+final class AppPluginSettingsVM: ObservableObject {
     /// 全局单例
-    static let shared = PluginSettingsVM()
+    static let shared = AppPluginSettingsVM()
 
     /// 发布设置变化，让订阅者能够实时响应
     @Published private(set) var settings: [String: Bool] = [:]

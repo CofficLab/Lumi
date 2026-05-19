@@ -52,7 +52,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 弱引用避免循环引用。
     /// 用于获取插件提供的状态栏相关视图。
-    private weak var pluginProvider: PluginVM?
+    private weak var pluginProvider: AppPluginVM?
     
     /// 调整 popover 窗口的空间行为，避免在全屏 Space 下不可见
     private func configurePopoverWindowForSpaces() {
@@ -69,7 +69,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     /// 此方法应在应用启动后调用。
     ///
     /// - Parameter pluginProvider: 插件 VM实例
-    func setupMenuBar(pluginProvider: PluginVM?) {
+    func setupMenuBar(pluginProvider: AppPluginVM?) {
         self.pluginProvider = pluginProvider
 
         // 创建状态栏项，使用 variableLength 以便根据内容动态调整宽度

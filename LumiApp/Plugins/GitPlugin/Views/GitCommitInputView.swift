@@ -7,7 +7,7 @@ import LumiUI
 /// 提供手动输入 commit message 或 AI 自动生成的功能。
 /// 集成在 GitCommitDetailView 的底部，当处于工作状态时显示。
 struct GitCommitInputView: View {
-    @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var projectVM: WindowProjectVM
 
     /// 是否正在生成 AI commit message
     @State private var isGenerating = false

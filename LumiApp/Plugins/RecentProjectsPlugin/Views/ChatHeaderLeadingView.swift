@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 头部左侧视图：应用图标、当前项目名（支持下拉选择）
 struct ChatHeaderLeadingView: View {
-    @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var projectVM: WindowProjectVM
 
     @State private var isDropdownPresented = false
     @State private var hoverState = false

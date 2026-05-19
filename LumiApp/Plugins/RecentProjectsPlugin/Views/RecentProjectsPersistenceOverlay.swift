@@ -10,9 +10,9 @@ struct RecentProjectsPersistenceOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "📋" }
 
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var conversationVM: ConversationVM
-    @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
+    @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
 
     let content: Content
 
@@ -120,13 +120,13 @@ extension RecentProjectsPersistenceOverlay {
         switchConversationForProject(newPath)
     }
 
-    /// 处理 SetCurrentProjectTool 发出的事件，同步到 ProjectVM
+    /// 处理 SetCurrentProjectTool 发出的事件，同步到 WindowProjectVM
     private func handleCurrentProjectDidChange(name: String, path: String) {
         // 如果路径与当前项目相同，无需切换
         guard projectVM.currentProjectPath != path else { return }
 
         Task { @MainActor [store, path] in
-            // 同步到 ProjectVM：优先从最近项目列表中找到匹配 Project
+            // 同步到 WindowProjectVM：优先从最近项目列表中找到匹配 Project
             let projects = await Task.detached(priority: .utility) {
                 store.loadProjects()
             }.value

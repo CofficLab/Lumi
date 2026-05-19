@@ -47,7 +47,7 @@ actor EditorBottomCallHierarchyPlugin: SuperPlugin, SuperLog {
 
 /// Call Hierarchy 底部面板内容视图
 struct EditorBottomCallHierarchyContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: AppEditorVM
 
     private var service: EditorService { editorVM.service }
 

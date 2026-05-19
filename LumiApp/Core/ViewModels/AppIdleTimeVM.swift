@@ -9,10 +9,10 @@ import SwiftUI
 ///
 /// 其他插件只需：
 /// ```swift
-/// @EnvironmentObject var idleTimeVM: IdleTimeVM
+/// @EnvironmentObject var idleTimeVM: AppIdleTimeVM
 /// ```
 @MainActor
-final class IdleTimeVM: ObservableObject {
+final class AppIdleTimeVM: ObservableObject {
 
     // MARK: - Published State
 

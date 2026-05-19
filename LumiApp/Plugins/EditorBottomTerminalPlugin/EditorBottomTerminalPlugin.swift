@@ -53,8 +53,8 @@ actor EditorBottomTerminalPlugin: SuperPlugin, SuperLog {
 ///
 /// 使用独立的 ViewModel 实例，不与侧边栏 Terminal 共享会话。
 struct EditorBottomTerminalContentView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     /// 底部面板专用共享实例，避免 bottom tab 内容视图重建时丢失终端会话。
     @ObservedObject private var viewModel = TerminalTabsViewModel.editorBottomShared
@@ -173,13 +173,13 @@ struct EditorBottomTerminalContentView: View {
 private extension TerminalTabsViewModel {
     /// Editor bottom terminal 使用自己的共享实例，与侧边栏 Terminal 保持会话隔离。
     static let editorBottomShared = TerminalTabsViewModel(
-        themeIdProvider: { ThemeVM.currentEditorThemeId() }
+        themeIdProvider: { AppThemeVM.currentEditorThemeId() }
     )
 }
 
 /// 底部终端 Tab 项 - 紧凑样式
 struct BottomTerminalTabItem: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let title: String
     let isSelected: Bool

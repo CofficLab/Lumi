@@ -5,7 +5,7 @@ import SwiftUI
 
 /// 会话管理 ViewModel
 @MainActor
-final class ConversationVM: ObservableObject, SuperLog {
+final class WindowConversationVM: ObservableObject, SuperLog {
     /// 日志标识符
     nonisolated static let emoji = "💬"
 

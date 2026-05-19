@@ -8,7 +8,7 @@ import os
 
 /// 插件 VM，管理插件的生命周期和 UI 贡献
 ///
-/// PluginVM 是 Lumi 插件系统的核心管理器，负责：
+/// AppPluginVM 是 Lumi 插件系统的核心管理器，负责：
 /// - 自动发现并注册所有插件
 /// - 管理插件的生命周期（注册、启用、禁用）
 /// - 聚合所有插件提供的 UI 扩展点
@@ -16,7 +16,7 @@ import os
 ///
 /// ## 插件发现机制
 ///
-/// PluginVM 使用 Objective-C Runtime 扫描所有以 "Lumi." 开头
+/// AppPluginVM 使用 Objective-C Runtime 扫描所有以 "Lumi." 开头
 /// 且以 "Plugin" 结尾的类，自动创建实例并注册。
 /// 插件按 `order` 属性排序，确保按正确顺序加载。
 ///
@@ -25,7 +25,7 @@ import os
 /// ⚠️ 注意：此类标记为 `@MainActor`，所有成员访问都必须在主线程。
 /// 这确保了 UI 相关的操作（如插件注册、视图获取）的线程安全性。
 @MainActor
-final class PluginVM: ObservableObject, SuperLog {
+final class AppPluginVM: ObservableObject, SuperLog {
     /// 面板图标项（仅用于活动栏图标渲染，不包含视图）
     struct PanelIconItem: Identifiable, Equatable {
         let id: String
@@ -53,9 +53,9 @@ final class PluginVM: ObservableObject, SuperLog {
 
     /// 全局单例
     ///
-    /// 整个应用共享同一个 PluginVM 实例。
+    /// 整个应用共享同一个 AppPluginVM 实例。
     /// 使用 `shared` 属性访问全局实例。
-    @MainActor static let shared = PluginVM()
+    @MainActor static let shared = AppPluginVM()
 
     /// 日志标识符
     ///
@@ -80,14 +80,14 @@ final class PluginVM: ObservableObject, SuperLog {
     /// 当用户点击活动栏图标时更新。内核将其传递给 `addPanelView(activeIcon:)`，
     /// 插件通过比较 `activeIcon` 与自己的 `addPanelIcon()` 返回值来决定是否提供面板视图。
     ///
-    /// 持久化由 LayoutPlugin 插件负责，PluginVM 不直接读写磁盘。
+    /// 持久化由 LayoutPlugin 插件负责，AppPluginVM 不直接读写磁盘。
     @Published var activePanelIcon: String?
 
     /// 插件设置存储
     ///
     /// 负责持久化用户的插件配置（启用/禁用状态）。
     /// 当设置变化时，会触发 UI 更新。
-    private let settingsStore: PluginSettingsVM
+    private let settingsStore: AppPluginSettingsVM
     
     /// Combine 订阅集合
     ///
@@ -129,7 +129,7 @@ final class PluginVM: ObservableObject, SuperLog {
     ///
     /// 如果 `autoDiscover` 为 true，会立即扫描并注册所有插件。
     /// 设为 false 可以延迟加载，常用于测试场景。
-    private init(settingsStore: PluginSettingsVM = PluginSettingsVM.shared, autoDiscover: Bool = true) {
+    private init(settingsStore: AppPluginSettingsVM = AppPluginSettingsVM.shared, autoDiscover: Bool = true) {
         self.settingsStore = settingsStore
 
         // activePanelIcon 不再从磁盘恢复，由 LayoutPlugin 在视图出现时恢复
@@ -351,14 +351,14 @@ final class PluginVM: ObservableObject, SuperLog {
             }
         }
 
-        // 从插件中收集消息渲染器并注册到 MessageRendererVM
+        // 从插件中收集消息渲染器并注册到 AppMessageRendererVM
         var allRenderers: [any SuperMessageRenderer] = []
         for plugin in sortedPlugins {
             let pluginRenderers = plugin.messageRenderers()
             allRenderers.append(contentsOf: pluginRenderers)
         }
         if !allRenderers.isEmpty {
-            MessageRendererVM.shared.register(allRenderers)
+            AppMessageRendererVM.shared.register(allRenderers)
         }
         
         // 发送通知，告知其他组件插件加载完成
@@ -486,7 +486,7 @@ final class PluginVM: ObservableObject, SuperLog {
 
             if let existingPluginId = seenIcons[icon] {
                 fatalError(
-                    "[PluginVM] Duplicate panel icon \"\(icon)\" detected: " +
+                    "[AppPluginVM] Duplicate panel icon \"\(icon)\" detected: " +
                     "\(existingPluginId) and \(pluginId) both provide the same icon. " +
                     "Each plugin must provide a unique icon via addPanelIcon()."
                 )

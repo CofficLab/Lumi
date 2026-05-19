@@ -16,19 +16,19 @@ struct InputAreaView: View, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
     /// 待发送附件
-    @EnvironmentObject private var agentAttachmentsVM: AttachmentsVM
+    @EnvironmentObject private var agentAttachmentsVM: WindowAttachmentsVM
 
     /// 入队器：只负责把输入入队
-    @EnvironmentObject private var inputQueueVM: InputQueueVM
+    @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
 
     /// 主题管理器
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     /// 会话管理 ViewModel
-    @EnvironmentObject var ConversationVM: ConversationVM
+    @EnvironmentObject var WindowConversationVM: WindowConversationVM
 
     /// 命令建议 ViewModel
-    @EnvironmentObject var commandSuggestionViewModel: CommandSuggestionVM
+    @EnvironmentObject var commandSuggestionViewModel: WindowCommandSuggestionVM
 
     /// 输入框本地状态 ViewModel（与 agentProvider 解耦，避免击键触发全局重庆染）
     @ObservedObject var inputViewModel: InputViewModel
@@ -50,7 +50,7 @@ struct InputAreaView: View, SuperLog {
 
     /// 是否允许输入/发送（必须先选中会话）
     private var canChat: Bool {
-        ConversationVM.selectedConversationId != nil
+        WindowConversationVM.selectedConversationId != nil
     }
 
     var body: some View {

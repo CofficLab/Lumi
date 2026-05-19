@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct HistoryDBStatusBarView: View {
-    @EnvironmentObject private var chatHistoryVM: ChatHistoryVM
-    @EnvironmentObject private var conversationVM: ConversationVM
+    @EnvironmentObject private var chatHistoryVM: AppChatHistoryVM
+    @EnvironmentObject private var conversationVM: WindowConversationVM
 
     var body: some View {
         StatusBarHoverContainer(

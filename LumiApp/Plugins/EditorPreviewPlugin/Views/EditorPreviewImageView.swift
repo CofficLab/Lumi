@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Image file preview view.
 struct EditorPreviewImageView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let fileURL: URL
 

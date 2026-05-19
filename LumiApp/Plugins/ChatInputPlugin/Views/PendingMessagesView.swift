@@ -9,8 +9,8 @@ struct PendingMessagesView: View, SuperLog {
     nonisolated static let emoji = "📋"
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
-    @EnvironmentObject var messageQueueVM: MessageQueueVM
-    @EnvironmentObject var conversationVM: ConversationVM
+    @EnvironmentObject var messageQueueVM: WindowMessageQueueVM
+    @EnvironmentObject var conversationVM: WindowConversationVM
 
     /// 数据上下文
     @Environment(\.modelContext) private var modelContext

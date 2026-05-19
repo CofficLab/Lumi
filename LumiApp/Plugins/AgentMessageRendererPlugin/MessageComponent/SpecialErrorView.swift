@@ -7,8 +7,8 @@ import SwiftUI
 /// 便于用户或开发者排查问题。
 struct RawErrorDetailView: View {
     let rawDetail: String
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @State private var isExpanded = false
 
     private var zh: Bool {
@@ -101,7 +101,7 @@ struct SpecialErrorView: View {
     let suggestion: String?
     let rawErrorDetail: String?
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -134,7 +134,7 @@ struct DefaultErrorView: View {
     let message: String
     let rawErrorDetail: String?
 
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {

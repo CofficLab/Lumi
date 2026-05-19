@@ -10,6 +10,6 @@ extension TerminalTabsViewModel {
     /// 确保终端会话在整个应用生命周期中保持不变，
     /// 即使 SwiftUI 重建 TerminalMainView 也不会丢失状态。
     static let shared = TerminalTabsViewModel(
-        themeIdProvider: { ThemeVM.currentEditorThemeId() }
+        themeIdProvider: { AppThemeVM.currentEditorThemeId() }
     )
 }

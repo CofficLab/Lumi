@@ -10,7 +10,7 @@ struct PendingToolPermissionSession: Equatable, Sendable {
 
 /// 权限请求 ViewModel
 @MainActor
-final class PermissionRequestVM: ObservableObject, SuperLog {
+final class WindowPermissionRequestVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔐"
     nonisolated static let verbose: Bool = false
     /// 待处理权限请求

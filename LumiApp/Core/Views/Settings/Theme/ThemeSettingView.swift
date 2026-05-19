@@ -4,7 +4,7 @@ import LumiUI
 /// 主题设置视图
 struct ThemeSettingView: View {
     /// 主题管理器
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         VStack(spacing: 0) {

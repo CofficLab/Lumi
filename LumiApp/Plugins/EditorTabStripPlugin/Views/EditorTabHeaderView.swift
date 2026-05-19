@@ -9,9 +9,9 @@ struct EditorTabHeaderView: View {
 
     // MARK: - 属性
 
-    @EnvironmentObject var editorVM: EditorVM
-    @EnvironmentObject var projectVM: ProjectVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject var editorVM: AppEditorVM
+    @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     @State private var draggedTabSessionID: UUID?
 

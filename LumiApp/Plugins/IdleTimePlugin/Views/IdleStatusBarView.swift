@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct IdleStatusBarView: View {
-    @EnvironmentObject private var idleTimeVM: IdleTimeVM
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var idleTimeVM: AppIdleTimeVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
 
     var body: some View {
         Group {

@@ -6,8 +6,8 @@ import SwiftUI
 /// 当当前供应商未配置 API Key 时，在错误消息中渲染的专用视图。
 /// 提供一个简化的「生成式 UI」卡片，支持直接为当前会话所用的供应商填写 API Key。
 struct ApiKeyMissingErrorView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
-    @EnvironmentObject private var agentSessionConfig: LLMVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
+    @EnvironmentObject private var agentSessionConfig: AppLLMVM
     @EnvironmentObject private var providerRegistry: LLMProviderRegistry
 
     let message: ChatMessage

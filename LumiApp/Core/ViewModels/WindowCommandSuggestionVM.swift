@@ -5,7 +5,7 @@ import SwiftUI
 
 /// 命令建议视图模型 - 提供斜杠命令自动补全功能
 @MainActor
-class CommandSuggestionVM: ObservableObject, SuperLog {
+class WindowCommandSuggestionVM: ObservableObject, SuperLog {
     nonisolated static let verbose: Bool = false
     nonisolated static let emoji = "🔍"
 

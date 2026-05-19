@@ -68,9 +68,9 @@ final class LLMAvailabilityStore: ObservableObject, @unchecked Sendable {
         return _isCheckingAll
     }
 
-    /// 初始化可用性列表（从 LLMVM 获取所有供应商+模型）
+    /// 初始化可用性列表（从 AppLLMVM 获取所有供应商+模型）
     @MainActor
-    func initialize(from llmVM: LLMVM) {
+    func initialize(from llmVM: AppLLMVM) {
         let providersInfo = llmVM.allProviders
         let providers = providersInfo.map { info in
             LLMProviderAvailability(

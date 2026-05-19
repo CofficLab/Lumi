@@ -189,9 +189,9 @@ struct OnboardingRootOverlay<Content: View>: View {
 
 private struct OnboardingSheetView: View {
     @ObservedObject var viewModel: OnboardingPluginViewModel
-    @EnvironmentObject private var conversationCreationVM: ConversationCreationVM
-    @EnvironmentObject private var pluginVM: PluginVM
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
+    @EnvironmentObject private var pluginVM: AppPluginVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - 页面数据

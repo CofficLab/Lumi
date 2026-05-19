@@ -33,7 +33,7 @@ final class EditorPanelCoordinator: ObservableObject {
     private var service: EditorService?
 
     /// 项目 ViewModel（弱引用避免循环引用）
-    private weak var projectVM: ProjectVM?
+    private weak var projectVM: WindowProjectVM?
 
     /// Combine 订阅令牌
     private var cancellables = Set<AnyCancellable>()
@@ -44,7 +44,7 @@ final class EditorPanelCoordinator: ObservableObject {
     func configure(
         panelService: EditorPanelService,
         service: EditorService,
-        projectVM: ProjectVM
+        projectVM: WindowProjectVM
     ) {
         self.panelService = panelService
         self.service = service

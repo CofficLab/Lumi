@@ -47,7 +47,7 @@ actor EditorBottomSearchPlugin: SuperPlugin, SuperLog {
 
 /// Search 底部面板内容视图
 struct EditorBottomSearchContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: AppEditorVM
 
     private var service: EditorService { editorVM.service }
 

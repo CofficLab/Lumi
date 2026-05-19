@@ -30,7 +30,7 @@ struct ToolProgressShellStats: Sendable {
 
 /// 按会话维护一条「当前发送/流式/工具」状态
 @MainActor
-final class ConversationStatusVM: ObservableObject {
+final class WindowConversationStatusVM: ObservableObject {
     @Published private(set) var statusMessageByConversationId: [UUID: ChatMessage] = [:]
 
     private var stableStatusRowIdByConversationId: [UUID: UUID] = [:]

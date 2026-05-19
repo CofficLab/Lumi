@@ -9,7 +9,7 @@ struct RAGAutoIndexOverlay<Content: View>: View, SuperLog {
     nonisolated static var emoji: String { "🦞" }
     nonisolated static var verbose: Bool { true }
 
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var autoEnsureTask: Task<Void, Never>?
     @State private var lastAutoEnsureKey = ""
 

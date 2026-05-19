@@ -3,7 +3,7 @@ import MagicKit
 
 /// 负责待发送的图片附件管理
 @MainActor
-final class AttachmentsVM: ObservableObject, SuperLog {
+final class WindowAttachmentsVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📎"
     nonisolated static let verbose: Bool = false
     @Published private(set) var pendingAttachments: [AgentPendingImageAttachment] = []

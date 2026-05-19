@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Agent 模式下默认详情视图（当右侧栏无内容时显示）
 struct AgentDefaultDetailView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
         let theme = themeVM.activeAppTheme

@@ -31,10 +31,10 @@ final class HistoryDBBrowserViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    private let chatHistoryVM: ChatHistoryVM
-    private let conversationVM: ConversationVM
+    private let chatHistoryVM: AppChatHistoryVM
+    private let conversationVM: WindowConversationVM
 
-    init(chatHistoryVM: ChatHistoryVM, conversationVM: ConversationVM) {
+    init(chatHistoryVM: AppChatHistoryVM, conversationVM: WindowConversationVM) {
         self.chatHistoryVM = chatHistoryVM
         self.conversationVM = conversationVM
     }

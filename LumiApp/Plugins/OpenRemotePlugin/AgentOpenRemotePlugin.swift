@@ -40,7 +40,7 @@ actor AgentOpenRemotePlugin: SuperPlugin, SuperLog {
 
 /// 远程仓库状态栏视图
 struct OpenRemoteStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var remoteURL: URL?
     @State private var isLoading = false
 

@@ -2,7 +2,7 @@ import Foundation
 
 /// 负责收集“创建新会话”所需的数据并发布创建请求。
 @MainActor
-final class ConversationCreationVM: ObservableObject {
+final class WindowConversationCreationVM: ObservableObject {
     @Published private(set) var pendingRequest: UUID?
     private var requestContinuations: [UUID: CheckedContinuation<Void, Never>] = [:]
 

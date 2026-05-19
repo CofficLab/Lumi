@@ -79,7 +79,7 @@ struct BottomPanelTab: Identifiable, Equatable {
 protocol SuperPlugin: Actor {
     /// 插件共享实例。
     ///
-    /// PluginVM 的自动发现阶段通过类型暴露的共享实例拿到插件，
+    /// AppPluginVM 的自动发现阶段通过类型暴露的共享实例拿到插件，
     /// 避免使用 ObjC Runtime 的 `alloc/init` 或给 Actor 增加同步构造约束。
     static var shared: Self { get }
 
@@ -292,14 +292,14 @@ protocol SuperPlugin: Actor {
     /// 插件提供的 LLM 供应商类型
     ///
     /// 如果插件是一个 LLM 供应商插件，返回对应的 `SuperLLMProvider.Type`。
-    /// `PluginVM` 会在插件注册阶段自动收集并注册到 `LLMProviderRegistry`。
+    /// `AppPluginVM` 会在插件注册阶段自动收集并注册到 `LLMProviderRegistry`。
     /// 默认返回 `nil`，表示该插件不提供 LLM 供应商。
     nonisolated func llmProviderType() -> (any SuperLLMProvider.Type)?
 
     /// 插件提供的消息渲染器列表
     ///
     /// 如果插件提供自定义消息渲染器，返回 `SuperMessageRenderer` 实例数组。
-    /// `PluginVM` 会在插件注册阶段自动收集并注册到 `MessageRendererVM`。
+    /// `AppPluginVM` 会在插件注册阶段自动收集并注册到 `AppMessageRendererVM`。
     /// 默认返回空数组，表示该插件不提供消息渲染器。
     @MainActor func messageRenderers() -> [any SuperMessageRenderer]
 
@@ -309,7 +309,7 @@ protocol SuperPlugin: Actor {
     ///
     /// 返回 `true` 表示该插件会向 `EditorExtensionRegistry` 注入编辑器能力
     ///（如补全、hover、code action、LSP 服务等）。
-    /// `PluginVM` 会据此过滤出编辑器插件，交给 `EditorExtensionRegistry` 安装。
+    /// `AppPluginVM` 会据此过滤出编辑器插件，交给 `EditorExtensionRegistry` 安装。
     /// 默认返回 `false`。
     nonisolated var providesEditorExtensions: Bool { get }
 

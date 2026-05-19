@@ -43,7 +43,7 @@ actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {
 
 /// Symbols 标签页内容视图
 struct EditorWorkspaceSymbolsRailContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: AppEditorVM
 
     private var service: EditorService { editorVM.service }
 

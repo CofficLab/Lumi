@@ -5,7 +5,7 @@ import os
 /// LLM 可用性检测覆盖层
 /// 在 RootView 出现时初始化可用性存储，并启动可用性检测
 struct LLMAvailabilityOverlay<Content: View>: View {
-    @EnvironmentObject private var llmVM: LLMVM
+    @EnvironmentObject private var llmVM: AppLLMVM
 
     let content: Content
 
@@ -35,7 +35,7 @@ extension LLMAvailabilityOverlay {
             }
         }
 
-        // 初始化可用性列表（从当前 LLMVM 获取所有供应商+模型）
+        // 初始化可用性列表（从当前 AppLLMVM 获取所有供应商+模型）
         // .task modifier 本身已在 @MainActor 上执行，无需额外调度
         let store = LLMAvailabilityStore.shared
         store.initialize(from: llmVM)

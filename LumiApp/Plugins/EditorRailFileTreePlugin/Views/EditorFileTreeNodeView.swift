@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 文件树节点视图，负责单个文件或目录行的展示和交互
 struct EditorFileTreeNodeView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
     let url: URL
     let depth: Int
 

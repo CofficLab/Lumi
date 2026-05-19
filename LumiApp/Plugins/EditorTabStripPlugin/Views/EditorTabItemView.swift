@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 ///
 /// 封装了标签按钮、拖拽、放置排序以及右键上下文菜单。
 struct EditorTabItemView: View {
-    @EnvironmentObject var editorVM: EditorVM
+    @EnvironmentObject var editorVM: AppEditorVM
     @State private var isHovered = false
 
     let tab: EditorTab

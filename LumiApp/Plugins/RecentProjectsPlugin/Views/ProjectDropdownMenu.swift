@@ -4,7 +4,7 @@ import SwiftUI
 // MARK: - 项目下拉菜单
 
 struct ProjectDropdownMenu: View {
-    @EnvironmentObject var projectVM: ProjectVM
+    @EnvironmentObject var projectVM: WindowProjectVM
     @Environment(\.openWindow) private var openWindow
     @Binding var isPresented: Bool
 

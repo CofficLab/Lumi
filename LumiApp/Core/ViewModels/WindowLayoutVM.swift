@@ -6,9 +6,9 @@ import MagicKit
 /// 布局 ViewModel - 负责管理界面布局相关的状态（纯内存状态）
 ///
 /// 包括 Agent 模式侧边栏 Tab、Detail 视图、分栏宽度比例等。
-/// 持久化由 LayoutPlugin 插件负责，LayoutVM 不直接读写磁盘。
+/// 持久化由 LayoutPlugin 插件负责，WindowLayoutVM 不直接读写磁盘。
 @MainActor
-final class LayoutVM: ObservableObject, SuperLog {
+final class WindowLayoutVM: ObservableObject, SuperLog {
     
     nonisolated static let emoji = "🖥️"
     nonisolated static let verbose: Bool = false

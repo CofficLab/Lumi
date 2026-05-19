@@ -87,9 +87,9 @@ enum SplitViewFinder {
 /// 默认 `columnIndex = 0`，即控制第一个子视图（向后兼容）。
 ///
 /// 数据流：
-/// - 读取/写入通过 `LayoutVM.layoutRatios`（纯内存）
-/// - `LayoutPlugin` 观察 `LayoutVM` 变化并持久化到磁盘
-/// - 应用启动时，`LayoutPlugin` 将保存的比例写回 `LayoutVM`
+/// - 读取/写入通过 `WindowLayoutVM.layoutRatios`（纯内存）
+/// - `LayoutPlugin` 观察 `WindowLayoutVM` 变化并持久化到磁盘
+/// - 应用启动时，`LayoutPlugin` 将保存的比例写回 `WindowLayoutVM`
 ///
 /// 用法：
 /// ```swift
@@ -205,7 +205,7 @@ final class SplitViewWidthPersistenceView: NSView {
         let idx = columnIndex
         guard idx >= 0, splitView.arrangedSubviews.count > idx, splitView.arrangedSubviews.count >= 2 else { return }
 
-        // 从 LayoutVM 读取比例（由 LayoutPlugin 在启动时从磁盘恢复）
+        // 从 WindowLayoutVM 读取比例（由 LayoutPlugin 在启动时从磁盘恢复）
         let savedRatio = RootContainer.shared.layoutVM.layoutRatios[storageKey]
         guard let savedRatio, savedRatio > 0.0, savedRatio < 1.0 else {
             scheduleApplyRetry()
@@ -273,7 +273,7 @@ final class SplitViewWidthPersistenceView: NSView {
         let ratio = columnSizeValue / usableSize
         guard ratio > 0.0, ratio < 1.0 else { return }
 
-        // 写入 LayoutVM（LayoutPlugin 会观察变化并持久化到磁盘）
+        // 写入 WindowLayoutVM（LayoutPlugin 会观察变化并持久化到磁盘）
         RootContainer.shared.layoutVM.setLayoutRatio(ratio, forKey: storageKey)
     }
 

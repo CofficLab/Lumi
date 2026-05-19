@@ -47,7 +47,7 @@ actor EditorBottomReferencesPlugin: SuperPlugin, SuperLog {
 
 /// References 底部面板内容视图
 struct EditorBottomReferencesContentView: View {
-    @EnvironmentObject private var editorVM: EditorVM
+    @EnvironmentObject private var editorVM: AppEditorVM
 
     private var service: EditorService { editorVM.service }
 

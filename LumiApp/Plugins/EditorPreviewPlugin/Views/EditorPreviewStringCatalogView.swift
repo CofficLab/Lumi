@@ -2,7 +2,7 @@ import StringCatalogKit
 import SwiftUI
 
 struct EditorPreviewStringCatalogView: View {
-    @EnvironmentObject private var themeVM: ThemeVM
+    @EnvironmentObject private var themeVM: AppThemeVM
 
     let catalog: StringCatalog
     @State private var selectedLanguageID: String?

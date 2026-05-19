@@ -269,7 +269,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     private func setupControllers() {
         // 初始化菜单栏控制器
         statusBarController = MenuBarController()
-        statusBarController?.setupMenuBar(pluginProvider: PluginVM.shared)
+        statusBarController?.setupMenuBar(pluginProvider: AppPluginVM.shared)
     }
 
     // MARK: - Cleanup

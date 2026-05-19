@@ -48,7 +48,7 @@ actor AgentOpenInGitOKPlugin: SuperPlugin {
 
 /// GitOK 打开状态栏视图
 struct OpenInGitOKStatusBarView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var isGitOKInstalled: Bool = false
 
     var body: some View {
@@ -115,7 +115,7 @@ struct OpenInGitOKStatusBarView: View {
 
 /// GitOK 打开详情视图（在 popover 中显示）
 struct OpenInGitOKDetailView: View {
-    @EnvironmentObject private var projectVM: ProjectVM
+    @EnvironmentObject private var projectVM: WindowProjectVM
     @State private var isGitOKInstalled: Bool = false
 
     var body: some View {

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 主题 ViewModel
 @MainActor
-final class ThemeVM: ObservableObject {
+final class AppThemeVM: ObservableObject {
 
     // MARK: - 属性
 
@@ -104,7 +104,7 @@ final class ThemeVM: ObservableObject {
 
     /// 从插件加载主题贡献列表
     private static func loadThemesFromPlugins() -> [LumiThemeContribution] {
-        let pluginThemes = PluginVM.shared.getThemeContributions()
+        let pluginThemes = AppPluginVM.shared.getThemeContributions()
         if !pluginThemes.isEmpty {
             return pluginThemes
         }
@@ -135,7 +135,7 @@ final class ThemeVM: ObservableObject {
 
 // MARK: - 预览
 
-#Preview("ThemeVM") {
-    Text("ThemeVM")
-        .environmentObject(ThemeVM())
+#Preview("AppThemeVM") {
+    Text("AppThemeVM")
+        .environmentObject(AppThemeVM())
 }

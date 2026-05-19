@@ -7,7 +7,7 @@ import MagicKit
 /// 订阅 `EditorSessionStore` 的 tabs 变化，自动防抖保存到磁盘；
 /// 在项目路径变化时保存旧项目标签并恢复新项目标签。
 ///
-/// 通过 `@EnvironmentObject` 获取 `EditorVM` 和 `ProjectVM`，
+/// 通过 `@EnvironmentObject` 获取 `AppEditorVM` 和 `WindowProjectVM`，
 /// 不依赖任何其他插件。
 @MainActor
 final class EditorTabStripCoordinator: ObservableObject, SuperLog {
