@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// 聚合所有插件提供的右侧栏 Section 视图和底部工具栏项。
 /// 上半部分使用 VStack 垂直堆叠所有 Section（如消息列表、输入区域）；
-/// 底部固定渲染水平工具栏，聚合所有插件的 SidebarToolbarItem。
+/// 底部固定渲染水平工具栏，聚合所有插件的 leading/trailing SidebarToolbarItem。
 struct RightSidebarContainerView: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
@@ -31,10 +31,14 @@ struct RightSidebarContainerView: View {
                 }
 
                 // ── 下半部分：底部工具栏 ──
-                let toolbarItems = pluginProvider.getSidebarToolbarItems()
-                if !toolbarItems.isEmpty {
+                let leadingToolbarItems = pluginProvider.getSidebarLeadingToolbarItems()
+                let trailingToolbarItems = pluginProvider.getSidebarTrailingToolbarItems()
+                if !leadingToolbarItems.isEmpty || !trailingToolbarItems.isEmpty {
                     GlassDivider()
-                    SidebarToolbarBar(items: toolbarItems)
+                    SidebarToolbarBar(
+                        leadingItems: leadingToolbarItems,
+                        trailingItems: trailingToolbarItems
+                    )
                 }
             }
             .frame(maxHeight: .infinity)
@@ -47,22 +51,26 @@ struct RightSidebarContainerView: View {
 
 /// 右侧栏底部工具栏
 ///
-/// 水平排列所有插件提供的 SidebarToolbarItem。
+/// 水平排列所有插件提供的 leading/trailing SidebarToolbarItem。
 /// 优先使用插件自定义视图（`addSidebarToolbarItemView`），否则使用默认图标按钮。
-/// 最后一个位置留空给 Spacer，保持按钮靠左对齐。
 private struct SidebarToolbarBar: View {
     @EnvironmentObject private var pluginProvider: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
 
-    let items: [SidebarToolbarItem]
+    let leadingItems: [SidebarToolbarItem]
+    let trailingItems: [SidebarToolbarItem]
 
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(items) { item in
+            ForEach(leadingItems) { item in
                 toolbarButton(for: item)
             }
 
             Spacer(minLength: 0)
+
+            ForEach(trailingItems) { item in
+                toolbarButton(for: item)
+            }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)

@@ -68,8 +68,14 @@ extension SuperPlugin {
     /// 默认实现：不提供右侧栏 Section 视图
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView] { [] }
 
-    /// 默认实现：不提供右侧栏底部工具栏项
-    @MainActor func addSidebarToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] { [] }
+    /// 默认实现：不提供聊天输入区域浮层视图
+    @MainActor func addChatInputOverlayViews(activeIcon: String?) -> [AnyView] { [] }
+
+    /// 默认实现：不提供右侧栏底部工具栏左侧项
+    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] { [] }
+
+    /// 默认实现：不提供右侧栏底部工具栏右侧项
+    @MainActor func addSidebarTrailingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] { [] }
 
     /// 默认实现：不提供右侧栏工具栏项的自定义按钮视图
     @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? { nil }

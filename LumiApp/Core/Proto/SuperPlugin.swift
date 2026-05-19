@@ -23,7 +23,8 @@ struct RailTab: Identifiable, Equatable {
 
 /// 右侧栏底部工具栏项定义
 ///
-/// 插件通过 `addSidebarToolbarItems()` 返回此结构体，由内核聚合渲染为右侧栏底部的水平工具栏。
+/// 插件通过 `addSidebarLeadingToolbarItems()` 或 `addSidebarTrailingToolbarItems()` 返回此结构体，
+/// 由内核聚合渲染为右侧栏底部的水平工具栏。
 /// 每个工具栏项是一个小按钮（如模式切换、模型选择器），点击后可展示 Popover 或执行操作。
 /// 当工具栏项需要展示自定义内容时，内核会调用 `addSidebarToolbarItemView()` 获取对应视图。
 struct SidebarToolbarItem: Identifiable, Equatable {
@@ -273,21 +274,37 @@ protocol SuperPlugin: Actor {
     /// 典型用例：聊天消息列表、输入区域、预览面板、属性检查器等。
     @MainActor func addSidebarSections(activeIcon: String?) -> [AnyView]
 
-    /// 提供右侧栏底部工具栏项列表
+    /// 添加聊天输入区域浮层视图
     ///
-    /// 插件返回一个或多个 `SidebarToolbarItem`，由内核聚合渲染为右侧栏底部的水平工具栏。
-    /// 每个工具栏项是一个小按钮（如模式切换、模型选择器），按 `priority` 升序从左到右排列。
+    /// 插件通过此方法提供一个或多个覆盖在聊天输入区域上的浮层视图。
+    /// 内核负责在 `ChatInputPlugin` 的输入区域内聚合渲染，插件只负责具体浮层内容。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    @MainActor func addChatInputOverlayViews(activeIcon: String?) -> [AnyView]
+
+    /// 提供右侧栏底部工具栏左侧项列表
+    ///
+    /// 插件返回一个或多个 `SidebarToolbarItem`，由内核聚合渲染到右侧栏底部工具栏左侧。
+    /// 每个工具栏项是一个小按钮（如模式切换、模型选择器），按 `priority` 升序排列。
     ///
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
     ///   插件可据此判断是否提供工具栏项（例如仅在 Editor 模式激活时注入）。
-    @MainActor func addSidebarToolbarItems(activeIcon: String?) -> [SidebarToolbarItem]
+    @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem]
+
+    /// 提供右侧栏底部工具栏右侧项列表
+    ///
+    /// 插件返回一个或多个 `SidebarToolbarItem`，由内核聚合渲染到右侧栏底部工具栏右侧。
+    /// 每个工具栏项按 `priority` 升序排列。
+    ///
+    /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
+    @MainActor func addSidebarTrailingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem]
 
     /// 提供指定右侧栏工具栏项对应的自定义按钮视图
     ///
     /// 内核在渲染工具栏时，优先使用此方法返回的自定义视图作为按钮内容。
     /// 如果返回 nil，内核会使用 `SidebarToolbarItem` 的 `systemImage` 渲染默认图标按钮。
     ///
-    /// - Parameter itemId: 工具栏项 id，与 `addSidebarToolbarItems()` 返回的 `SidebarToolbarItem.id` 对应。
+    /// - Parameter itemId: 工具栏项 id，与 leading/trailing toolbar items 返回的 `SidebarToolbarItem.id` 对应。
     /// - Parameter activeIcon: 当前被激活的 ActivityBar 图标名称（SF Symbol）。
     @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView?
 

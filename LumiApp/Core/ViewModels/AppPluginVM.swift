@@ -110,7 +110,9 @@ final class AppPluginVM: ObservableObject, SuperLog {
     private var railTabsCache: (key: String, tabs: [RailTab])?
     private var railContentViewCache: [String: AnyView] = [:]
     private var sidebarSectionsCache: (key: String, sections: [AnyView])?
-    private var sidebarToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
+    private var chatInputOverlayViewsCache: (key: String, views: [AnyView])?
+    private var sidebarLeadingToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
+    private var sidebarTrailingToolbarItemsCache: (key: String, items: [SidebarToolbarItem])?
     private var sidebarToolbarItemViewCache: [String: AnyView] = [:]
     private var menuBarContentViewsCache: [AnyView]?
     private var statusBarLeadingViewsCache: (key: String, views: [AnyView])?
@@ -170,7 +172,9 @@ final class AppPluginVM: ObservableObject, SuperLog {
         railTabsCache = nil
         railContentViewCache.removeAll()
         sidebarSectionsCache = nil
-        sidebarToolbarItemsCache = nil
+        chatInputOverlayViewsCache = nil
+        sidebarLeadingToolbarItemsCache = nil
+        sidebarTrailingToolbarItemsCache = nil
         sidebarToolbarItemViewCache.removeAll()
         menuBarContentViewsCache = nil
         statusBarLeadingViewsCache = nil
@@ -691,23 +695,57 @@ final class AppPluginVM: ObservableObject, SuperLog {
         !getSidebarSections().isEmpty
     }
 
-    // MARK: - Sidebar Toolbar Items
+    // MARK: - Chat Input Overlay Views
 
-    /// 聚合所有插件提供的右侧栏底部工具栏项
-    ///
-    /// 收集所有启用插件通过 `addSidebarToolbarItems()` 提供的工具栏项，
-    /// 按 `priority` 升序排列（数字越小越靠左）。
-    func getSidebarToolbarItems() -> [SidebarToolbarItem] {
+    /// 聚合所有插件提供的聊天输入区域浮层视图。
+    func getChatInputOverlayViews() -> [AnyView] {
         let activeIcon = activePanelIcon
         let key = activeIconCacheKey()
-        if let cached = sidebarToolbarItemsCache, cached.key == key {
+        if let cached = chatInputOverlayViewsCache, cached.key == key {
+            return cached.views
+        }
+        let views = plugins
+            .filter { isPluginEnabled($0) }
+            .flatMap { $0.addChatInputOverlayViews(activeIcon: activeIcon) }
+        chatInputOverlayViewsCache = (key, views)
+        return views
+    }
+
+    // MARK: - Sidebar Toolbar Items
+
+    /// 聚合所有插件提供的右侧栏底部工具栏左侧项
+    ///
+    /// 收集所有启用插件通过 `addSidebarLeadingToolbarItems()` 提供的工具栏项，
+    /// 按 `priority` 升序排列。
+    func getSidebarLeadingToolbarItems() -> [SidebarToolbarItem] {
+        let activeIcon = activePanelIcon
+        let key = activeIconCacheKey()
+        if let cached = sidebarLeadingToolbarItemsCache, cached.key == key {
             return cached.items
         }
         let items = plugins
             .filter { isPluginEnabled($0) }
-            .flatMap { $0.addSidebarToolbarItems(activeIcon: activeIcon) }
+            .flatMap { $0.addSidebarLeadingToolbarItems(activeIcon: activeIcon) }
             .sorted { $0.priority < $1.priority }
-        sidebarToolbarItemsCache = (key, items)
+        sidebarLeadingToolbarItemsCache = (key, items)
+        return items
+    }
+
+    /// 聚合所有插件提供的右侧栏底部工具栏右侧项
+    ///
+    /// 收集所有启用插件通过 `addSidebarTrailingToolbarItems()` 提供的工具栏项，
+    /// 按 `priority` 升序排列。
+    func getSidebarTrailingToolbarItems() -> [SidebarToolbarItem] {
+        let activeIcon = activePanelIcon
+        let key = activeIconCacheKey()
+        if let cached = sidebarTrailingToolbarItemsCache, cached.key == key {
+            return cached.items
+        }
+        let items = plugins
+            .filter { isPluginEnabled($0) }
+            .flatMap { $0.addSidebarTrailingToolbarItems(activeIcon: activeIcon) }
+            .sorted { $0.priority < $1.priority }
+        sidebarTrailingToolbarItemsCache = (key, items)
         return items
     }
 
@@ -730,7 +768,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
 
     /// 当前是否有右侧栏工具栏项
     func hasSidebarToolbarItems() -> Bool {
-        !getSidebarToolbarItems().isEmpty
+        !getSidebarLeadingToolbarItems().isEmpty || !getSidebarTrailingToolbarItems().isEmpty
     }
 
     /// 获取所有插件提供的菜单栏弹窗视图
