@@ -70,6 +70,7 @@ struct RootView<Content>: View, SuperLog where Content: View {
             .environmentObject(scope.messageQueueVM)
             .environmentObject(scope.agentAttachmentsVM)
             .environmentObject(scope.inputQueueVM)
+            .environmentObject(scope.chatDraftVM)
             .environmentObject(scope.permissionHandlingVM)
             .environmentObject(scope.conversationCreationVM)
             .environmentObject(scope.commandSuggestionVM)

@@ -52,6 +52,9 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     /// 用户输入队列（每窗口独立的用户输入）
     let inputQueueVM: WindowInputQueueVM
 
+    /// 聊天草稿（每窗口独立，供输入框与右侧栏拖放插件共享）
+    let chatDraftVM: WindowChatDraftVM
+
     /// 图片附件（每窗口独立的附件）
     let agentAttachmentsVM: WindowAttachmentsVM
 
@@ -175,6 +178,7 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         self.messagePendingVM = WindowMessagePendingVM()
         self.messageQueueVM = WindowMessageQueueVM()
         self.inputQueueVM = WindowInputQueueVM()
+        self.chatDraftVM = WindowChatDraftVM()
         self.agentAttachmentsVM = WindowAttachmentsVM()
         self.permissionRequestVM = WindowPermissionRequestVM()
         self.taskCancellationVM = WindowTaskCancellationVM()
