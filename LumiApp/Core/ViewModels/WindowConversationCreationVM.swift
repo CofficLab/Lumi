@@ -1,6 +1,15 @@
 import Foundation
 
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nRootView 通过 `scope.conversationCreationVM` 监听创建请求。
 /// 负责收集“创建新会话”所需的数据并发布创建请求。
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// RootView 通过 `scope.conversationCreationVM` 监听创建请求。
 @MainActor
 final class WindowConversationCreationVM: ObservableObject {
     @Published private(set) var pendingRequest: UUID?

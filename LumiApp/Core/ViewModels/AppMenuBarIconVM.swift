@@ -1,4 +1,8 @@
 import Combine
+///
+/// ## 初始化规则
+///
+/// 在 `MenuBarController` 中直接实例化，不通过 `RootContainer` 管理。
 import SwiftUI
 
 /// 菜单栏图标视图模型

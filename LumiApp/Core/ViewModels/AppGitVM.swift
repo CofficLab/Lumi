@@ -6,6 +6,11 @@ import SwiftUI
 ///
 /// 管理 Git 相关的全局状态，包括当前选中的 commit ID、未推送 commit 等。
 /// 作为 Git 数据的中心化存储，供多个插件和视图共享。
+///
+/// ## 初始化规则
+///
+/// 由 `RootContainer` 持有并通过 `.environmentObject()` 注入。
+/// View 通过 `@EnvironmentObject var gitVM: AppGitVM` 访问。
 @MainActor
 final class AppGitVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🔀"

@@ -264,14 +264,14 @@ struct IncrementalBuildPipelineTests {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let fileManager = FileManager.default
-        let tempDirectory = fileManager.temporaryDirectory
+        let sourceEntryDirectory = LumiPreviewFacade.PreviewStorage.paths.workDirectory
+            .appendingPathComponent("source-entry", isDirectory: true)
         let existingGeneratedDirectories = Set(
             (try? fileManager.contentsOfDirectory(
-                at: tempDirectory,
+                at: sourceEntryDirectory,
                 includingPropertiesForKeys: nil,
                 options: [.skipsHiddenFiles]
-            ))?.filter { $0.lastPathComponent.hasPrefix("LumiPreviewKit-SourceEntry-") }
-            .map(\.path) ?? []
+            ))?.map(\.path) ?? []
         )
         let sourceURL = directory.appendingPathComponent("Demo.swift")
         try """
@@ -311,12 +311,11 @@ struct IncrementalBuildPipelineTests {
         )
 
         let generatedDirectories = try fileManager.contentsOfDirectory(
-            at: tempDirectory,
+            at: sourceEntryDirectory,
             includingPropertiesForKeys: nil,
             options: [.skipsHiddenFiles]
         ).filter {
-            $0.lastPathComponent.hasPrefix("LumiPreviewKit-SourceEntry-")
-                && !existingGeneratedDirectories.contains($0.path)
+            !existingGeneratedDirectories.contains($0.path)
         }
         #expect(generatedDirectories.count == 1)
         guard let latestDirectory = generatedDirectories.first else {

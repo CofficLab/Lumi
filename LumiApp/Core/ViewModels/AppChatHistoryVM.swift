@@ -3,6 +3,11 @@ import Foundation
 /// 聊天历史 ViewModel
 ///
 /// 管理聊天历史的服务访问，提供统一的聊天历史操作接口。
+///
+/// ## 初始化规则
+///
+/// 由 `RootContainer` 持有并通过 `.environmentObject()` 注入。
+/// View 通过 `@EnvironmentObject var chatHistoryVM: AppChatHistoryVM` 访问。
 @MainActor
 final class AppChatHistoryVM: ObservableObject {
     // MARK: - Properties

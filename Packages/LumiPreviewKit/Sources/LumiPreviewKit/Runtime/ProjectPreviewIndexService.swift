@@ -39,6 +39,7 @@ extension LumiPreviewFacade {
       let fileURL: URL
       let modifiedAt: Date?
       let fileSize: Int64
+      let sourceFingerprint: Int
       let previews: [LumiPreviewFacade.PreviewDiscovery]
     }
 
@@ -111,6 +112,7 @@ extension LumiPreviewFacade {
         fileURL: fileURL,
         modifiedAt: metadata.modifiedAt,
         fileSize: Int64(sourceText.utf8.count),
+        sourceFingerprint: Self.sourceFingerprint(sourceText),
         previews: previews.strippingSourceText()
       )
       rebuildPreviewCandidates()
@@ -124,9 +126,20 @@ extension LumiPreviewFacade {
       guard metadata.modifiedAt == entry.modifiedAt,
         metadata.fileSize == entry.fileSize
       else {
-        return nil
+        guard
+          metadata.fileSize == entry.fileSize,
+          let sourceText = try? String(contentsOf: fileURL, encoding: .utf8),
+          Self.sourceFingerprint(sourceText) == entry.sourceFingerprint
+        else {
+          return nil
+        }
+        return entry.previews
       }
       return entry.previews
+    }
+
+    nonisolated private static func sourceFingerprint(_ sourceText: String) -> Int {
+      sourceText.hashValue
     }
 
     public func bestPrewarmCandidate(preferredFileURL: URL?) -> LumiPreviewFacade.PreviewDiscovery?
@@ -304,6 +317,7 @@ extension LumiPreviewFacade {
               fileURL: fileURL,
               modifiedAt: metadata.modifiedAt,
               fileSize: metadata.fileSize,
+              sourceFingerprint: sourceFingerprint(sourceText),
               previews: previews
             )
           )

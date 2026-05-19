@@ -1,6 +1,6 @@
-import SwiftUI
 import MagicKit
 import os
+import SwiftUI
 import XcodeKit
 
 /// Xcode 插件根视图包裹器
@@ -27,13 +27,13 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
             .onAppear {
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.info("\(Self.t)RootView onAppear")
+                        XcodePluginLog.logger.info("\(Self.t)RootView onAppear")
                     }
                 }
                 guard !hasTriggeredPreload else {
                     if XcodePluginLog.verbose {
                         if XcodePluginLog.verbose {
-                                                    XcodePluginLog.logger.info("\(Self.t)预加载已触发过，跳过")
+                            XcodePluginLog.logger.info("\(Self.t)预加载已触发过，跳过")
                         }
                     }
                     return
@@ -41,11 +41,11 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
                 hasTriggeredPreload = true
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.info("\(Self.t)准备延迟 3 秒后预加载最近 Xcode 项目")
+                        XcodePluginLog.logger.info("\(Self.t)准备延迟 3 秒后预加载最近 Xcode 项目")
                     }
                 }
                 Task {
-                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    try? await Task.sleep(nanoseconds: 3000000000)
                     await preloadRecentXcodeProjects()
                 }
             }
@@ -56,13 +56,13 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
     private func preloadRecentXcodeProjects() async {
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(Self.t)开始扫描最近项目用于 Xcode 预加载")
+                XcodePluginLog.logger.info("\(Self.t)开始扫描最近项目用于 Xcode 预加载")
             }
         }
         let recentProjects = recentProjectsVM.getRecentProjects()
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(Self.t)最近项目数量：\(recentProjects.count)")
+                XcodePluginLog.logger.info("\(Self.t)最近项目数量：\(recentProjects.count)")
             }
         }
         let xcodeProjects = await EditorXcodeProjectPreloader.filterXcodeProjects(recentProjects)
@@ -70,7 +70,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
         guard !xcodeProjects.isEmpty else {
             if XcodePluginLog.verbose {
                 if XcodePluginLog.verbose {
-                                    XcodePluginLog.logger.info("\(Self.t)没有找到最近的 Xcode 项目，跳过预加载")
+                    XcodePluginLog.logger.info("\(Self.t)没有找到最近的 Xcode 项目，跳过预加载")
                 }
             }
             return
@@ -80,7 +80,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
 
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(Self.t)开始预加载 \(projectsToPreload.count) 个最近的 Xcode 项目：\(projectsToPreload.map(\.name).joined(separator: ", "))")
+                XcodePluginLog.logger.info("\(Self.t)开始预加载 \(projectsToPreload.count) 个最近的 Xcode 项目：\(projectsToPreload.map(\.name).joined(separator: ", "))")
             }
         }
 
@@ -96,7 +96,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
                 while activeTasks >= maxConcurrentTasks {
                     if XcodePluginLog.verbose {
                         if XcodePluginLog.verbose {
-                                                    XcodePluginLog.logger.info("\(Self.t)预加载并发达到上限，等待一个任务完成")
+                            XcodePluginLog.logger.info("\(Self.t)预加载并发达到上限，等待一个任务完成")
                         }
                     }
                     _ = await group.next()
@@ -105,7 +105,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
 
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.info("\(Self.t)添加预加载任务：\(project.name)")
+                        XcodePluginLog.logger.info("\(Self.t)添加预加载任务：\(project.name)")
                     }
                 }
                 group.addTask(priority: .background) {
@@ -127,7 +127,7 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
                 }
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.info("\(Self.t)预加载任务完成：\(project.name)，success=\(success)")
+                        XcodePluginLog.logger.info("\(Self.t)预加载任务完成：\(project.name)，success=\(success)")
                     }
                 }
             }
@@ -138,12 +138,11 @@ struct EditorXcodePluginRootView<Content: View>: View, SuperLog {
 
             if XcodePluginLog.verbose {
                 if XcodePluginLog.verbose {
-                                    XcodePluginLog.logger.info("\(Self.t)预加载完成：\(successCount) 成功，\(failedCount) 失败")
+                    XcodePluginLog.logger.info("\(Self.t)预加载完成：\(successCount) 成功，\(failedCount) 失败")
                 }
             }
         }
     }
-
 }
 
 private enum EditorXcodeProjectPreloader {
@@ -155,7 +154,7 @@ private enum EditorXcodeProjectPreloader {
                 let isXcodeProject = XcodeProjectResolver.isXcodeProjectRoot(URL(fileURLWithPath: project.path))
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.info("\(logPrefix)检查最近项目：\(project.name) -> isXcodeProject=\(isXcodeProject)")
+                        XcodePluginLog.logger.info("\(logPrefix)检查最近项目：\(project.name) -> isXcodeProject=\(isXcodeProject)")
                     }
                 }
                 return isXcodeProject
@@ -166,13 +165,13 @@ private enum EditorXcodeProjectPreloader {
     static func preloadProject(_ project: Project, store: XcodeBuildServerStore) async -> Bool {
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(logPrefix)开始预加载项目：\(project.name)，path=\(project.path)")
+                XcodePluginLog.logger.info("\(logPrefix)开始预加载项目：\(project.name)，path=\(project.path)")
             }
         }
         guard let workspaceURL = await XcodeProjectBackgroundQuery.findWorkspace(in: project.path) else {
             if XcodePluginLog.verbose {
                 if XcodePluginLog.verbose {
-                                    XcodePluginLog.logger.warning("\(logPrefix)预加载失败：未找到 workspace/xcodeproj，project=\(project.name)")
+                    XcodePluginLog.logger.warning("\(logPrefix)预加载失败：未找到 workspace/xcodeproj，project=\(project.name)")
                 }
             }
             return false
@@ -180,14 +179,14 @@ private enum EditorXcodeProjectPreloader {
 
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(logPrefix)找到 workspace：\(workspaceURL.path)")
+                XcodePluginLog.logger.info("\(logPrefix)找到 workspace：\(workspaceURL.path)")
             }
         }
 
         if store.validate(forWorkspace: workspaceURL.path) != nil {
             if XcodePluginLog.verbose {
                 if XcodePluginLog.verbose {
-                                    XcodePluginLog.logger.info("\(logPrefix)buildServer 已存在且有效，跳过生成：\(workspaceURL.path)")
+                    XcodePluginLog.logger.info("\(logPrefix)buildServer 已存在且有效，跳过生成：\(workspaceURL.path)")
                 }
             }
             return true
@@ -195,7 +194,7 @@ private enum EditorXcodeProjectPreloader {
 
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(logPrefix)buildServer 不存在或无效，开始后台生成：\(workspaceURL.path)")
+                XcodePluginLog.logger.info("\(logPrefix)buildServer 不存在或无效，开始后台生成：\(workspaceURL.path)")
             }
         }
         return await Task.detached(priority: .background) {
@@ -206,7 +205,7 @@ private enum EditorXcodeProjectPreloader {
     private static func generateBuildServer(for workspaceURL: URL, projectName: String, store: XcodeBuildServerStore) async -> Bool {
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(logPrefix)开始生成 buildServer：project=\(projectName)，workspace=\(workspaceURL.path)")
+                XcodePluginLog.logger.info("\(logPrefix)开始生成 buildServer：project=\(projectName)，workspace=\(workspaceURL.path)")
             }
         }
 
@@ -221,7 +220,7 @@ private enum EditorXcodeProjectPreloader {
                 xcodeBuildServerPath = path
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.info("\(logPrefix)找到 xcode-build-server：\(path)")
+                        XcodePluginLog.logger.info("\(logPrefix)找到 xcode-build-server：\(path)")
                     }
                 }
                 break
@@ -231,7 +230,7 @@ private enum EditorXcodeProjectPreloader {
         if xcodeBuildServerPath == nil {
             if XcodePluginLog.verbose {
                 if XcodePluginLog.verbose {
-                                    XcodePluginLog.logger.info("\(logPrefix)默认路径未找到 xcode-build-server，尝试 which")
+                    XcodePluginLog.logger.info("\(logPrefix)默认路径未找到 xcode-build-server，尝试 which")
                 }
             }
             let process = Process()
@@ -251,18 +250,18 @@ private enum EditorXcodeProjectPreloader {
                     xcodeBuildServerPath = path
                     if XcodePluginLog.verbose {
                         if XcodePluginLog.verbose {
-                                                    XcodePluginLog.logger.info("\(logPrefix)which 找到 xcode-build-server：\(path)")
+                            XcodePluginLog.logger.info("\(logPrefix)which 找到 xcode-build-server：\(path)")
                         }
                     }
                 } else if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.warning("\(logPrefix)which xcode-build-server 未找到，terminationStatus=\(process.terminationStatus)")
+                        XcodePluginLog.logger.warning("\(logPrefix)which xcode-build-server 未找到，terminationStatus=\(process.terminationStatus)")
                     }
                 }
             } catch {
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.error("\(logPrefix)执行 which xcode-build-server 失败：\(error.localizedDescription)")
+                        XcodePluginLog.logger.error("\(logPrefix)执行 which xcode-build-server 失败：\(error.localizedDescription)")
                     }
                 }
             }
@@ -271,7 +270,7 @@ private enum EditorXcodeProjectPreloader {
         guard let serverPath = xcodeBuildServerPath else {
             if XcodePluginLog.verbose {
                 if XcodePluginLog.verbose {
-                                    XcodePluginLog.logger.warning("\(logPrefix)生成 buildServer 失败：找不到 xcode-build-server")
+                    XcodePluginLog.logger.warning("\(logPrefix)生成 buildServer 失败：找不到 xcode-build-server")
                 }
             }
             return false
@@ -281,7 +280,7 @@ private enum EditorXcodeProjectPreloader {
         guard let scheme = schemes.first else {
             if XcodePluginLog.verbose {
                 if XcodePluginLog.verbose {
-                                    XcodePluginLog.logger.warning("\(logPrefix)生成 buildServer 失败：未找到可用 scheme，workspace=\(workspaceURL.path)")
+                    XcodePluginLog.logger.warning("\(logPrefix)生成 buildServer 失败：未找到可用 scheme，workspace=\(workspaceURL.path)")
                 }
             }
             return false
@@ -289,7 +288,7 @@ private enum EditorXcodeProjectPreloader {
 
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(logPrefix)使用 scheme 生成 buildServer：\(scheme)，schemesCount=\(schemes.count)")
+                XcodePluginLog.logger.info("\(logPrefix)使用 scheme 生成 buildServer：\(scheme)，schemesCount=\(schemes.count)")
             }
         }
 
@@ -301,7 +300,7 @@ private enum EditorXcodeProjectPreloader {
 
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(logPrefix)执行 xcode-build-server：\(serverPath) \(args.joined(separator: " "))，cwd=\(outputDirectory.path)")
+                XcodePluginLog.logger.info("\(logPrefix)执行 xcode-build-server：\(serverPath) \(args.joined(separator: " "))，cwd=\(outputDirectory.path)")
             }
         }
 
@@ -317,7 +316,7 @@ private enum EditorXcodeProjectPreloader {
                 let success = process.terminationStatus == 0
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.info("\(logPrefix)xcode-build-server 结束，success=\(success)，terminationStatus=\(process.terminationStatus)")
+                        XcodePluginLog.logger.info("\(logPrefix)xcode-build-server 结束，success=\(success)，terminationStatus=\(process.terminationStatus)")
                     }
                 }
                 continuation.resume(returning: success)
@@ -328,7 +327,7 @@ private enum EditorXcodeProjectPreloader {
             } catch {
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.error("\(logPrefix)xcode-build-server 启动失败：\(error.localizedDescription)")
+                        XcodePluginLog.logger.error("\(logPrefix)xcode-build-server 启动失败：\(error.localizedDescription)")
                     }
                 }
                 continuation.resume(returning: false)
@@ -341,13 +340,13 @@ private enum EditorXcodeProjectPreloader {
         let isProject = workspaceURL.pathExtension == "xcodeproj"
         let workspaceArg = isProject ? "-project" : "-workspace"
         args += [workspaceArg, workspaceURL.path]
-        
+
         if XcodePluginLog.verbose {
             if XcodePluginLog.verbose {
-                            XcodePluginLog.logger.info("\(logPrefix)开始获取 schemes：xcodebuild \(args.joined(separator: " "))")
+                XcodePluginLog.logger.info("\(logPrefix)开始获取 schemes：xcodebuild \(args.joined(separator: " "))")
             }
         }
-        
+
         return await withCheckedContinuation { continuation in
             let process = Process()
             process.executableURL = URL(filePath: "/usr/bin/xcodebuild")
@@ -355,19 +354,19 @@ private enum EditorXcodeProjectPreloader {
             let pipe = Pipe()
             process.standardOutput = pipe
             process.standardError = FileHandle.nullDevice
-            
+
             process.terminationHandler = { _ in
                 guard process.terminationStatus == 0,
                       let data = try? JSONSerialization.jsonObject(with: pipe.fileHandleForReading.readDataToEndOfFile()) as? [String: Any] else {
                     if XcodePluginLog.verbose {
                         if XcodePluginLog.verbose {
-                                                    XcodePluginLog.logger.warning("\(logPrefix)xcodebuild 获取 schemes 失败，terminationStatus=\(process.terminationStatus)")
+                            XcodePluginLog.logger.warning("\(logPrefix)xcodebuild 获取 schemes 失败，terminationStatus=\(process.terminationStatus)")
                         }
                     }
                     continuation.resume(returning: [])
                     return
                 }
-                
+
                 var schemes: [String] = []
                 if let project = data["project"] as? [String: Any],
                    let projectSchemes = project["schemes"] as? [String] {
@@ -377,22 +376,22 @@ private enum EditorXcodeProjectPreloader {
                    let workspaceSchemes = workspace["schemes"] as? [String] {
                     schemes.append(contentsOf: workspaceSchemes)
                 }
-                
+
                 let uniqueSchemes = Array(Set(schemes))
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.info("\(logPrefix)xcodebuild 获取 schemes 完成，count=\(uniqueSchemes.count)，schemes=\(uniqueSchemes.joined(separator: ", "))")
+                        XcodePluginLog.logger.info("\(logPrefix)xcodebuild 获取 schemes 完成，count=\(uniqueSchemes.count)，schemes=\(uniqueSchemes.joined(separator: ", "))")
                     }
                 }
                 continuation.resume(returning: uniqueSchemes)
             }
-            
+
             do {
                 try process.run()
             } catch {
                 if XcodePluginLog.verbose {
                     if XcodePluginLog.verbose {
-                                            XcodePluginLog.logger.error("\(logPrefix)xcodebuild 启动失败：\(error.localizedDescription)")
+                        XcodePluginLog.logger.error("\(logPrefix)xcodebuild 启动失败：\(error.localizedDescription)")
                     }
                 }
                 continuation.resume(returning: [])

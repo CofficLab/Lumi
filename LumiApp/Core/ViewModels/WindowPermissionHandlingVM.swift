@@ -1,6 +1,15 @@
 import Foundation
 
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。n处理工具权限授权流程。
 /// 处理工具权限浮层：写回 `ToolCall.authorizationState`，多工具依次询问，结束后通知继续发送管线。
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 处理工具权限授权流程。
 @MainActor
 final class WindowPermissionHandlingVM: ObservableObject {
     private let permissionRequestViewModel: WindowPermissionRequestVM

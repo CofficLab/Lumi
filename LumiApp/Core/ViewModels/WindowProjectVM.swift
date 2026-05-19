@@ -4,7 +4,17 @@ import MagicKit
 import SwiftUI
 
 /// 项目管理 ViewModel
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var projectVM: WindowProjectVM` 访问。n每个窗口有独立的当前项目状态。
 /// 负责管理项目状态、文件选择和项目配置
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// View 通过 `@EnvironmentObject var projectVM: WindowProjectVM` 访问。
+/// 每个窗口有独立的当前项目状态。
 @MainActor
 final class WindowProjectVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📁"

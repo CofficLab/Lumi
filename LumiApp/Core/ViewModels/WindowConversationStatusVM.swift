@@ -28,7 +28,16 @@ struct ToolProgressShellStats: Sendable {
     let latestOutputPreview: String
 }
 
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。n内部被 `SendController` 用于更新会话发送状态。
 /// 按会话维护一条「当前发送/流式/工具」状态
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 内部被 `SendController` 用于更新会话发送状态。
 @MainActor
 final class WindowConversationStatusVM: ObservableObject {
     @Published private(set) var statusMessageByConversationId: [UUID: ChatMessage] = [:]

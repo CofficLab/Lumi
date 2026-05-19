@@ -6,7 +6,16 @@ import MagicKit
 /// 布局 ViewModel - 负责管理界面布局相关的状态（纯内存状态）
 ///
 /// 包括 Agent 模式侧边栏 Tab、Detail 视图、分栏宽度比例等。
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var layoutVM: WindowLayoutVM` 访问。
 /// 持久化由 LayoutPlugin 插件负责，WindowLayoutVM 不直接读写磁盘。
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// View 通过 `@EnvironmentObject var layoutVM: WindowLayoutVM` 访问。
 @MainActor
 final class WindowLayoutVM: ObservableObject, SuperLog {
     

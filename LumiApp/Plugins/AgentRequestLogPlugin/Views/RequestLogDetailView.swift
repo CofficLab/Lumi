@@ -4,13 +4,10 @@ import MagicKit
 /// 请求日志详情视图 - 展示数据库原始数据
 struct RequestLogDetailView: View {
     @ObservedObject var viewModel: RequestLogBrowserViewModel
-    @EnvironmentObject private var themeVM: AppThemeVM
 
     var body: some View {
-        let theme = themeVM.activeAppTheme
-
         VStack(alignment: .leading, spacing: 0) {
-            header(theme: theme)
+            header
 
             if viewModel.isLoading {
                 Spacer()
@@ -21,7 +18,7 @@ struct RequestLogDetailView: View {
                 contentView
             }
 
-            footer(theme: theme)
+            footer
         }
         .frame(height: 600)
         .task {
@@ -31,7 +28,7 @@ struct RequestLogDetailView: View {
 
     // MARK: - Header
 
-    private func header(theme: AppTheme) -> some View {
+    private var header: some View {
         VStack(spacing: 0) {
             // 标题行
             HStack {
@@ -169,27 +166,27 @@ struct RequestLogDetailView: View {
 
     @ViewBuilder
     private var requestLogTable: some View {
-        Table(viewModel.items) { item in
-            TableColumn(String(localized: "Time", table: "RequestLog")) {
+        Table(viewModel.items) {
+            TableColumn(String(localized: "Time", table: "RequestLog")) { row in
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.timestamp, style: .date)
+                    Text(row.timestamp, style: .date)
                         .font(.system(size: 10))
-                    Text(item.timestamp, style: .time)
+                    Text(row.timestamp, style: .time)
                         .font(.system(size: 10))
                 }
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             }
             .width(min: 100, max: 120)
 
-            TableColumn(String(localized: "Method", table: "RequestLog")) {
-                Text(item.method.uppercased())
+            TableColumn(String(localized: "Method", table: "RequestLog")) { row in
+                Text(row.method.uppercased())
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             }
             .width(min: 50, max: 70)
 
-            TableColumn(String(localized: "URL", table: "RequestLog")) {
-                Text(item.requestURL)
+            TableColumn(String(localized: "URL", table: "RequestLog")) { row in
+                Text(row.requestURL)
                     .font(.system(size: 10))
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -197,15 +194,15 @@ struct RequestLogDetailView: View {
             }
             .width(min: 150)
 
-            TableColumn(String(localized: "Body Size", table: "RequestLog")) {
-                Text(formatBytes(item.requestBodySize))
+            TableColumn(String(localized: "Body Size", table: "RequestLog")) { row in
+                Text(formatBytes(row.requestBodySize))
                     .font(.system(size: 10))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
             .width(min: 60, max: 80)
 
-            TableColumn(String(localized: "Status", table: "RequestLog")) {
-                if let code = item.responseStatusCode {
+            TableColumn(String(localized: "Status", table: "RequestLog")) { row in
+                if let code = row.responseStatusCode {
                     Text("\(code)")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(statusColor(code: code))
@@ -217,8 +214,8 @@ struct RequestLogDetailView: View {
             }
             .width(min: 50, max: 70)
 
-            TableColumn(String(localized: "Duration", table: "RequestLog")) {
-                if let duration = item.duration {
+            TableColumn(String(localized: "Duration", table: "RequestLog")) { row in
+                if let duration = row.duration {
                     Text(String(format: "%.2fs", duration))
                         .font(.system(size: 10))
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
@@ -230,8 +227,8 @@ struct RequestLogDetailView: View {
             }
             .width(min: 60, max: 80)
 
-            TableColumn(String(localized: "Result", table: "RequestLog")) {
-                if item.isSuccess {
+            TableColumn(String(localized: "Result", table: "RequestLog")) { row in
+                if row.isSuccess {
                     Label(String(localized: "Success", table: "RequestLog"), systemImage: "checkmark.circle.fill")
                         .font(.system(size: 10))
                         .foregroundColor(.green)
@@ -243,8 +240,8 @@ struct RequestLogDetailView: View {
             }
             .width(min: 70, max: 90)
 
-            TableColumn(String(localized: "Error", table: "RequestLog")) {
-                if let error = item.errorMessage {
+            TableColumn(String(localized: "Error", table: "RequestLog")) { row in
+                if let error = row.errorMessage {
                     Text(error)
                         .font(.system(size: 10))
                         .lineLimit(1)
@@ -258,8 +255,8 @@ struct RequestLogDetailView: View {
             }
             .width(min: 150)
 
-            TableColumn(String(localized: "Request ID", table: "RequestLog")) {
-                Text(item.requestId.uuidString.prefix(8))
+            TableColumn(String(localized: "Request ID", table: "RequestLog")) { row in
+                Text(row.requestId.uuidString.prefix(8))
                     .font(.system(size: 9))
                     .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
             }
@@ -271,7 +268,7 @@ struct RequestLogDetailView: View {
 
     // MARK: - Footer
 
-    private func footer(theme: AppTheme) -> some View {
+    private var footer: some View {
         HStack(spacing: 12) {
             Text(
                 String(

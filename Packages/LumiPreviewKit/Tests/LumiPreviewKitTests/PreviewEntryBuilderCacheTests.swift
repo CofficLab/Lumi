@@ -67,7 +67,7 @@ struct PreviewEntryBuilderCacheTests {
         try FileManager.default.removeItem(at: firstURL)
 
         let secondURL = try await builder.buildEntry(for: discovery, configuration: .empty, buildStrategy: nil)
-        #expect(secondURL != firstURL)
+        #expect(secondURL == firstURL)
         #expect(FileManager.default.fileExists(atPath: secondURL.path))
     }
 }

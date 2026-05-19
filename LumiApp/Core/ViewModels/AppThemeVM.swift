@@ -1,6 +1,11 @@
 import SwiftUI
 
 /// 主题 ViewModel
+///
+/// ## 初始化规则
+///
+/// 由 `RootContainer` 持有并通过 `.environmentObject()` 注入。
+/// View 通过 `@EnvironmentObject var themeVM: AppThemeVM` 访问。
 @MainActor
 final class AppThemeVM: ObservableObject {
 

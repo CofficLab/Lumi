@@ -1,6 +1,10 @@
 import Foundation
 
 /// 插件设置 VM：管理插件的启用/禁用状态。
+///
+/// ## 初始化规则
+///
+/// 由 `PluginSettingsVM.shared` 单例管理，不通过 `RootContainer`。
 @MainActor
 final class AppPluginSettingsVM: ObservableObject {
     /// 全局单例

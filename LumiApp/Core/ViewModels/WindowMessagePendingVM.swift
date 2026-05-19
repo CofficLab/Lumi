@@ -2,7 +2,16 @@ import Foundation
 import MagicKit
 import SwiftUI
 
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。n用于显示当前会话的消息列表。
 /// 当前选中会话在 UI 中的消息列表
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// 用于显示当前会话的消息列表。
 @MainActor
 final class WindowMessagePendingVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "💬"

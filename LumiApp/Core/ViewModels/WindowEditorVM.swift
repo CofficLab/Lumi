@@ -22,7 +22,17 @@ import SwiftUI
 /// editorVM.service.currentFileURL
 /// editorVM.service.open(at: url)
 /// editorVM.service.performCommand(id: "builtin.find")
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var editorVM: WindowEditorVM` 访问。n每个窗口有独立的 `EditorService` 实例。
 /// ```
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// View 通过 `@EnvironmentObject var editorVM: WindowEditorVM` 访问。
+/// 每个窗口有独立的 `EditorService` 实例。
 @MainActor
 final class WindowEditorVM: ObservableObject {
 

@@ -1,7 +1,16 @@
 import Foundation
 import MagicKit
 
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nRootView 监听其 `queueVersion` 变化触发消息发送。
 /// 消息发送队列 ViewModel
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// RootView 监听其 `queueVersion` 变化触发消息发送。
 @MainActor
 final class WindowMessageQueueVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📤"

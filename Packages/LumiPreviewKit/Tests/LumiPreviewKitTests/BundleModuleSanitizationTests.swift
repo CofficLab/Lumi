@@ -22,16 +22,16 @@ struct BundleModuleSanitizationTests {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let fileManager = FileManager.default
-        let tempDirectory = fileManager.temporaryDirectory
+        let sourceEntryDirectory = LumiPreviewFacade.PreviewStorage.paths.workDirectory
+            .appendingPathComponent("source-entry", isDirectory: true)
 
         // Track existing generated directories so we can find the new one.
         let existingGeneratedDirectories = Set(
             (try? fileManager.contentsOfDirectory(
-                at: tempDirectory,
+                at: sourceEntryDirectory,
                 includingPropertiesForKeys: nil,
                 options: [.skipsHiddenFiles]
-            ))?.filter { $0.lastPathComponent.hasPrefix("LumiPreviewKit-SourceEntry-") }
-                .map(\.path) ?? []
+            ))?.map(\.path) ?? []
         )
 
         let sourceURL = directory.appendingPathComponent("BundleModuleDemo.swift")
@@ -79,12 +79,11 @@ struct BundleModuleSanitizationTests {
         )
 
         let generatedDirectories = try fileManager.contentsOfDirectory(
-            at: tempDirectory,
+            at: sourceEntryDirectory,
             includingPropertiesForKeys: nil,
             options: [.skipsHiddenFiles]
         ).filter {
-            $0.lastPathComponent.hasPrefix("LumiPreviewKit-SourceEntry-")
-                && !existingGeneratedDirectories.contains($0.path)
+            !existingGeneratedDirectories.contains($0.path)
         }
         #expect(generatedDirectories.count == 1)
         guard let latestDirectory = generatedDirectories.first else {

@@ -35,6 +35,11 @@ import SwiftUI
 ///     }
 /// }
 /// ```
+///
+/// ## 初始化规则
+///
+/// 由 `RootContainer` 持有（`.shared` 单例）并通过 `.environmentObject()` 注入。
+/// View 通过 `@EnvironmentObject var messageRendererVM: AppMessageRendererVM` 访问。
 @MainActor
 final class AppMessageRendererVM: ObservableObject {
     /// 全局单例

@@ -24,6 +24,11 @@ import os
 ///
 /// ⚠️ 注意：此类标记为 `@MainActor`，所有成员访问都必须在主线程。
 /// 这确保了 UI 相关的操作（如插件注册、视图获取）的线程安全性。
+///
+/// ## 初始化规则
+///
+/// 由 `RootContainer` 持有（`.shared` 单例）并通过 `.environmentObject()` 注入。
+/// View 通过 `@EnvironmentObject var pluginVM: AppPluginVM` 访问。
 @MainActor
 final class AppPluginVM: ObservableObject, SuperLog {
     /// 面板图标项（仅用于活动栏图标渲染，不包含视图）

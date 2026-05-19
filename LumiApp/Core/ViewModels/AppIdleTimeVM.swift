@@ -11,6 +11,11 @@ import SwiftUI
 /// ```swift
 /// @EnvironmentObject var idleTimeVM: AppIdleTimeVM
 /// ```
+///
+/// ## 初始化规则
+///
+/// 由 `RootContainer` 持有，不通过 `.environmentObject()` 注入。
+/// 插件按需直接访问 `RootContainer.shared.idleTimeVM`。
 @MainActor
 final class AppIdleTimeVM: ObservableObject {
 

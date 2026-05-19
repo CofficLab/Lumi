@@ -1,7 +1,16 @@
 import Foundation
 import MagicKit
 
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nView 通过 `@EnvironmentObject var agentAttachmentsVM: WindowAttachmentsVM` 访问。
 /// 负责待发送的图片附件管理
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// View 通过 `@EnvironmentObject var agentAttachmentsVM: WindowAttachmentsVM` 访问。
 @MainActor
 final class WindowAttachmentsVM: ObservableObject, SuperLog {
     nonisolated static let emoji = "📎"

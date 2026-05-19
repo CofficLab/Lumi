@@ -1,7 +1,16 @@
 import Foundation
 import MagicKit
 
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有，通过 `.environmentObject()` 注入。nRootView 监听其 `queueVersion` 变化处理用户输入。
 /// 负责收集用户输入并发布入队请求
+///
+/// ## 初始化规则
+///
+/// 由 `WindowScope` 持有并通过 `.environmentObject()` 注入。
+/// RootView 监听其 `queueVersion` 变化处理用户输入。
 @MainActor
 final class WindowInputQueueVM: ObservableObject, SuperLog {
     nonisolated static var emoji: String { "🔄" }

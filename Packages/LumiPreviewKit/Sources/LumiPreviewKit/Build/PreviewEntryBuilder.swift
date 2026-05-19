@@ -224,6 +224,7 @@ final class PreviewEntryBuilder: Sendable {
             )
         }
 
+        let inlinesTargetSources = !targetSourceURLs.isEmpty
         generatedSources.append(
             GeneratedSource(
                 fileName: "PreviewEntry.swift",
@@ -231,7 +232,7 @@ final class PreviewEntryBuilder: Sendable {
                     for: discovery,
                     configuration: configuration,
                     buildStrategy: buildStrategy,
-                    forceSourceInclude: forceSourceInclude
+                    forceSourceInclude: forceSourceInclude || inlinesTargetSources
                 )
             )
         )
@@ -341,6 +342,7 @@ final class PreviewEntryBuilder: Sendable {
         let currentSourceURL = discovery.sourceFileURL.standardizedFileURL.resolvingSymlinksInPath()
 
         if !forceSourceInclude,
+           !isSPMBuildStrategy(buildStrategy),
            buildStrategy != nil,
            LumiPreviewFacade.ModuleImportEligibilityChecker().shouldUseModuleImport(discovery: discovery) {
             return []
@@ -348,8 +350,12 @@ final class PreviewEntryBuilder: Sendable {
 
         var sourceURLs: [URL]
 
-        if case .spm = buildStrategy {
-            sourceURLs = [currentSourceURL]
+        if case .spm(let packageDirectory, let targetName) = buildStrategy {
+            sourceURLs = spmTargetSourceFiles(
+                packageDirectory: packageDirectory,
+                targetName: targetName,
+                currentSourceURL: currentSourceURL
+            )
         } else if case .xcode(let projectURL, let scheme, _) = buildStrategy {
             sourceURLs = BuildPlanner.swiftSourceFiles(
                 projectURL: projectURL,
@@ -369,6 +375,42 @@ final class PreviewEntryBuilder: Sendable {
             .uniqued()
             .filter { $0 == currentSourceURL || $0.lastPathComponent != "main.swift" }
             .sorted { $0.path < $1.path }
+    }
+
+    private func isSPMBuildStrategy(_ buildStrategy: BuildStrategy?) -> Bool {
+        if case .spm = buildStrategy {
+            return true
+        }
+        return false
+    }
+
+    private func spmTargetSourceFiles(
+        packageDirectory: URL,
+        targetName: String,
+        currentSourceURL: URL
+    ) -> [URL] {
+        let targetDirectory = packageDirectory
+            .appendingPathComponent("Sources", isDirectory: true)
+            .appendingPathComponent(targetName, isDirectory: true)
+        guard let enumerator = FileManager.default.enumerator(
+            at: targetDirectory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else {
+            return [currentSourceURL]
+        }
+
+        var sourceURLs: [URL] = []
+        for case let url as URL in enumerator where url.pathExtension == "swift" {
+            let values = try? url.resourceValues(forKeys: [.isRegularFileKey])
+            if values?.isRegularFile != false {
+                sourceURLs.append(url)
+            }
+        }
+        if sourceURLs.isEmpty {
+            sourceURLs.append(currentSourceURL)
+        }
+        return sourceURLs
     }
 
     private func linksPrebuiltModuleArtifacts(for buildStrategy: BuildStrategy) -> Bool {
