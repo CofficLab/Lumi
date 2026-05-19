@@ -274,7 +274,7 @@ class EditorTextView: NSTextView, SuperLog {
     /// 是否输出详细日志
     nonisolated static let verbose: Bool = false
 
-    /// 与 `InputAreaView.handleFileDrop` 中作为图片附件处理的扩展名一致
+    /// 与聊天附件拖放 root 中作为图片附件处理的扩展名一致
     private static let imagePathExtensions: Set<String> = [
         "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic",
     ]
@@ -282,7 +282,7 @@ class EditorTextView: NSTextView, SuperLog {
     /// 拖放悬停状态回调（主线程更新 SwiftUI）
     var imageDragHoverHandler: ((Bool) -> Void)?
 
-    /// 拖放数据是否为「会按图片附件处理」的文件（与 `performDragOperation` + `handleFileDrop` 对齐）
+    /// 拖放数据是否为「会按图片附件处理」的文件
     private func draggingInfoContainsChatImageFile(_ sender: NSDraggingInfo) -> Bool {
         let pasteboard = sender.draggingPasteboard
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
