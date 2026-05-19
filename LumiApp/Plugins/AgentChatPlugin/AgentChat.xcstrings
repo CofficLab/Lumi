@@ -168,6 +168,7 @@
 
     },
     "Chat Input" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -190,6 +191,7 @@
       }
     },
     "Chat input area with editor, toolbar and model selector" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -302,6 +304,9 @@
           }
         }
       }
+    },
+    "Chat No Conversation Overlay" : {
+
     },
     "Chat Pending Messages" : {
 
@@ -1047,9 +1052,6 @@
           }
         }
       }
-    },
-    "No active conversation" : {
-
     },
     "No Conversations" : {
       "extractionState" : "manual",
@@ -1981,6 +1983,9 @@
       }
     },
     "Send or stop chat messages" : {
+
+    },
+    "Show an overlay on the chat input when no conversation is selected" : {
 
     },
     "Show queued chat messages above the input area" : {

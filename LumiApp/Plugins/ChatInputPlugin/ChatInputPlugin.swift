@@ -14,8 +14,8 @@ actor ChatInputPlugin: SuperPlugin, SuperLog {
     nonisolated static let emoji = "⌨️"
     nonisolated static let verbose: Bool = false
     static let id = "ChatInput"
-    static let displayName = String(localized: "Chat Input", table: "AgentChat")
-    static let description = String(localized: "Chat input area with editor and command suggestions", table: "AgentChat")
+    static let displayName = String(localized: "Chat Input", table: "ChatInputPlugin")
+    static let description = String(localized: "Chat input area with editor and command suggestions", table: "ChatInputPlugin")
     static let iconName = "keyboard"
     static var order: Int { 96 }
     nonisolated static let enable: Bool = true

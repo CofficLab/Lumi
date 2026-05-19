@@ -1,12 +1,18 @@
 import AppKit
 import SwiftUI
 import MagicAlert
+import MagicKit
 
 /// Agent 输入包装视图 - 管理输入区域所需的状态
 ///
 /// 模式切换、模型选择器、发送控制和附件已拆分为独立插件。
 /// 本视图仅管理输入编辑器相关状态。
-struct InputView: View {
+struct InputView: View, SuperLog {
+    /// 日志标识 emoji
+    nonisolated static let emoji = "💬"
+    /// 是否输出详细日志
+    nonisolated static let verbose: Bool = false
+
     /// 入队器：只负责把输入入队
     @EnvironmentObject private var inputQueueVM: WindowInputQueueVM
 
@@ -54,8 +60,8 @@ struct InputView: View {
                 .padding(.bottom, 8)
                 .allowsHitTesting(canChat)
                 .opacity(canChat ? 1 : 0.6)
-                .accessibilityLabel(String(localized: "Message Input", table: "AgentChat"))
-                .accessibilityHint(String(localized: "Message Input Hint", table: "AgentChat"))
+                .accessibilityLabel(String(localized: "Message Input", table: "ChatInputPlugin"))
+                .accessibilityHint(String(localized: "Message Input Hint", table: "ChatInputPlugin"))
         }
         .background(themeVM.activeAppTheme.workspaceBackgroundColor())
         .overlay(RoundedRectangle(cornerRadius: 0)
@@ -70,7 +76,7 @@ struct InputView: View {
             commandSuggestionOverlay
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Input Area", table: "AgentChat"))
+        .accessibilityLabel(String(localized: "Input Area", table: "ChatInputPlugin"))
         .onAppear(perform: onAppear)
         // 监听「添加到聊天」事件：将文件选区信息插入输入框
         .onAddToChat { text in
@@ -141,7 +147,7 @@ extension InputView {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.secondary)
 
-                Text(String(localized: "Release to add image to chat", table: "AgentChat"))
+                Text(String(localized: "Release to add image to the chat", table: "ChatInputPlugin"))
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
@@ -182,19 +188,28 @@ extension InputView {
     /// 处理回车键
     private func handleEnter() {
         guard canChat else {
+            if Self.verbose {
+                ChatInputPlugin.logger.info("\(Self.t)回车提交被拦截：当前没有选中的会话")
+            }
             alert_info(
-                String(localized: "Please create or select a conversation first", table: "AgentChat"),
-                subtitle: String(localized: "No active conversation", table: "AgentChat")
+                String(localized: "Please create or select a conversation first", table: "ChatInputPlugin"),
+                subtitle: String(localized: "No active conversation", table: "ChatInputPlugin")
             )
             return
         }
 
         if commandSuggestionViewModel.isVisible,
            let suggestion = commandSuggestionViewModel.getCurrentSuggestion() {
+            if Self.verbose {
+                ChatInputPlugin.logger.info("\(Self.t)回车选择命令建议：\(suggestion.command)")
+            }
             chatDraftVM.set(suggestion.command + " ")
             commandSuggestionViewModel.setIsVisible(false)
         } else {
             let text = chatDraftVM.text
+            if Self.verbose {
+                ChatInputPlugin.logger.info("\(Self.t)回车发送输入：\(text.count) 字符")
+            }
             chatDraftVM.clear()
             activeInputQueueVM.enqueueText(text)
             editorHeight = MacEditorView.minHeight
