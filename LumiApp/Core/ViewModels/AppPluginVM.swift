@@ -335,6 +335,7 @@ final class AppPluginVM: ObservableObject, SuperLog {
         self.isLoaded = true
 
         // 插件已更新，清空聚合缓存，避免在插件加载前被读取后永久缓存为空。
+        clearUICaches()
         cachedAgentTools = nil
         cachedAgentToolFactories = nil
         cachedSuperSendMiddlewares = nil
