@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import LumiInlinePreviewKit
+import LumiPreviewKit
 import MagicKit
 import os
 import SwiftUI
@@ -188,8 +189,12 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
     init() {
         EditorInlinePreviewStorage.installIfNeeded()
         session = LumiInlinePreviewFacade.InlinePreviewSession()
+        let xcodeCompiler = LumiPreviewFacade.XcodeCompiler(
+            derivedDataPath: EditorInlinePreviewStorage.derivedDataDirectory
+        )
         builder = LumiInlinePreviewFacade.InlinePreviewBuilder(
-            workspaceRoot: EditorInlinePreviewStorage.inlineBuilderWorkspaceDirectory
+            workspaceRoot: EditorInlinePreviewStorage.inlineBuilderWorkspaceDirectory,
+            xcodeCompiler: xcodeCompiler
         )
         if Self.verbose {
                     Self.logger.info("\(Self.t)🚩 初始化 EditorInlinePreviewViewModel")
@@ -427,6 +432,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(self.t)🧹 清理 Inline Preview 构建缓存")
         }
+        EditorInlinePreviewStorage.installIfNeeded()
         Task { [weak self] in
             await self?.builder.purge()
             EditorInlinePreviewStorage.purgeBuildCaches()
@@ -513,6 +519,7 @@ final class EditorInlinePreviewViewModel: ObservableObject, SuperLog {
         }
 
         guard let url = activeFileURL, let source = latestSourceText else { return }
+        EditorInlinePreviewStorage.installIfNeeded()
         let displayName = url.lastPathComponent
         previewGeneration &+= 1
         let generation = previewGeneration

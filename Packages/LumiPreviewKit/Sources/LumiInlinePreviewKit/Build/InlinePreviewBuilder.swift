@@ -64,10 +64,10 @@ public extension LumiInlinePreviewFacade {
 
         private let scanner = LumiPreviewFacade.PreviewScanner()
         private let buildPlanner = LumiPreviewFacade.BuildPlanner()
-        private let previewEntryBuilder = LumiPreviewFacade.PreviewEntryBuilder()
         private let spmCompiler = LumiPreviewFacade.SPMCompiler()
-        private let xcodeCompiler = LumiPreviewFacade.XcodeCompiler()
-        private let incrementalBuildPipeline = LumiPreviewFacade.IncrementalBuildPipeline()
+        private let previewEntryBuilder: LumiPreviewFacade.PreviewEntryBuilder
+        private let xcodeCompiler: LumiPreviewFacade.XcodeCompiler
+        private let incrementalBuildPipeline: LumiPreviewFacade.IncrementalBuildPipeline
         private let moduleImportEligibilityChecker = LumiPreviewFacade.ModuleImportEligibilityChecker()
         private let workspaceRoot: URL
         private let cacheLimit: Int
@@ -81,8 +81,19 @@ public extension LumiInlinePreviewFacade {
         /// - Parameters:
         ///   - workspaceRoot: dylib 输出目录；默认 `$TMPDIR/LumiInlinePreviewKit-Builds-<pid>/`。
         ///   - cacheLimit: 同时保留的产物数；超过则删除最旧 dylib 文件。
-        public init(workspaceRoot: URL? = nil, cacheLimit: Int = 8) {
+        public init(
+            workspaceRoot: URL? = nil,
+            cacheLimit: Int = 8,
+            xcodeCompiler: LumiPreviewFacade.XcodeCompiler = .init(),
+            previewEntryBuilder: LumiPreviewFacade.PreviewEntryBuilder? = nil,
+            incrementalBuildPipeline: LumiPreviewFacade.IncrementalBuildPipeline? = nil
+        ) {
             self.cacheLimit = max(1, cacheLimit)
+            self.xcodeCompiler = xcodeCompiler
+            self.previewEntryBuilder = previewEntryBuilder
+                ?? LumiPreviewFacade.PreviewEntryBuilder(xcodeCompiler: xcodeCompiler)
+            self.incrementalBuildPipeline = incrementalBuildPipeline
+                ?? LumiPreviewFacade.IncrementalBuildPipeline(xcodeCompiler: xcodeCompiler)
             if let workspaceRoot {
                 self.workspaceRoot = workspaceRoot
             } else {

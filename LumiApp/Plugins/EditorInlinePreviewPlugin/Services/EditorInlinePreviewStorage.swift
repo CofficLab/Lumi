@@ -27,19 +27,24 @@ enum EditorInlinePreviewStorage {
 
     static func installIfNeeded() {
         installLock.lock()
-        defer { installLock.unlock() }
-        guard !didInstall else { return }
-        didInstall = true
-
         let root = AppConfig.getPluginDBFolderURL(pluginName: pluginName)
         let paths = LumiPreviewFacade.PreviewStoragePaths(rootDirectory: root)
-        try? paths.ensureDirectoriesExist()
-        LumiPreviewFacade.PreviewStorage.configure(paths)
+        if !didInstall {
+            didInstall = true
+            try? paths.ensureDirectoriesExist()
+            for directory in [
+                root.appendingPathComponent("inline-builder-workspace", isDirectory: true),
+                root.appendingPathComponent("DerivedData", isDirectory: true)
+            ] {
+                try? FileManager.default.createDirectory(
+                    at: directory,
+                    withIntermediateDirectories: true
+                )
+            }
+        }
+        installLock.unlock()
 
-        try? FileManager.default.createDirectory(
-            at: root.appendingPathComponent("inline-builder-workspace", isDirectory: true),
-            withIntermediateDirectories: true
-        )
+        LumiPreviewFacade.PreviewStorage.configure(paths)
     }
 
     static var rootDirectory: URL {
@@ -49,6 +54,10 @@ enum EditorInlinePreviewStorage {
 
     static var inlineBuilderWorkspaceDirectory: URL {
         rootDirectory.appendingPathComponent("inline-builder-workspace", isDirectory: true)
+    }
+
+    static var derivedDataDirectory: URL {
+        rootDirectory.appendingPathComponent("DerivedData", isDirectory: true)
     }
 
     static func cacheSummary() -> CacheSummary {
@@ -66,6 +75,7 @@ enum EditorInlinePreviewStorage {
         let paths = LumiPreviewFacade.PreviewStorage.paths
         return [
             inlineBuilderWorkspaceDirectory,
+            derivedDataDirectory,
             paths.previewEntryCacheDirectory,
             paths.entryCacheDirectory,
             paths.compileCommandCacheDirectory,
