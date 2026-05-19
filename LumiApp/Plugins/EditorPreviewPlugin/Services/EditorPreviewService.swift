@@ -94,6 +94,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
     private var pendingReloadReason: String?
     private var activeFileURL: URL?
     private var activeSourceText: String?
+    private var activeFileGeneration = 0
     private var lastRenderedPreviewFingerprint: String?
     private var lastPrewarmedPreviewFingerprint: String?
     private var scheduledPrewarmFingerprint: String?
@@ -143,6 +144,12 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         projectRootPath: String?,
         reloadPolicy: UpdateReloadPolicy = .reloadOnFingerprintChange
     ) {
+        let activeFileChanged = !Self.sameFile(activeFileURL, fileURL)
+        if activeFileChanged {
+            activeFileGeneration &+= 1
+            clearPreviewForActiveFileChange()
+        }
+
         activeSourceText = sourceText
         activeFileURL = fileURL
         updateProjectHistoryContext(projectRootPath: projectRootPath, fileURL: fileURL)
@@ -524,8 +531,9 @@ final class EditorPreviewService: ObservableObject, SuperLog {
     }
 
     private func startLivePreview(reason: String) {
+        let generation = activeFileGeneration
         Task { [weak self] in
-            await self?.startLivePreviewSession(reason: reason)
+            await self?.startLivePreviewSession(reason: reason, generation: generation)
         }
     }
 
@@ -544,14 +552,16 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             return
         }
 
+        let generation = activeFileGeneration
         commandTask?.cancel()
         commandTask = Task { [weak self] in
             guard let self else { return }
-            await execute(command)
+            await execute(command, generation: generation)
         }
     }
 
-    private func execute(_ command: EditorRemoteHotPreviewCommand) async {
+    private func execute(_ command: EditorRemoteHotPreviewCommand, generation: Int) async {
+        guard isCurrentFileGeneration(generation) else { return }
         isExecutingCommand = true
         defer {
             isExecutingCommand = false
@@ -560,11 +570,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
 
         switch command {
         case let .start(reason):
-            await startSession(reason: reason)
+            await startSession(reason: reason, generation: generation)
         case let .reload(reason):
-            await reloadSession(reason: reason)
+            await reloadSession(reason: reason, generation: generation)
         case let .stop(reason):
-            await stopSession(reason: reason)
+            await stopSession(reason: reason, generation: generation)
         }
     }
 
@@ -578,7 +588,8 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         run(.reload(reason: reason))
     }
 
-    private func startSession(reason: String) async {
+    private func startSession(reason: String, generation: Int) async {
+        guard isCurrentFileGeneration(generation) else { return }
         if EditorRemoteHotPreviewPlugin.verbose {
                     EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Starting hot preview: \(reason, privacy: .public)")
         }
@@ -632,7 +643,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
 
         do {
             let session = try await engine.startPreview(selectedPreview)
-            guard !Task.isCancelled else {
+            guard !Task.isCancelled, isCurrentFileGeneration(generation) else {
                 await engine.stopPreview(session)
                 return
             }
@@ -642,17 +653,20 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             recordSuccessfulPreviewFile(selectedPreview.sourceFileURL)
             handle(.frameRendered(makeFrame()))
             if preferredDisplayMode == .live, shouldRestorePreferredLiveMode {
-                await startLivePreviewSession(reason: "restoring preferred live mode after start")
+                await startLivePreviewSession(reason: "restoring preferred live mode after start", generation: generation)
             }
             updatePhase = .idle
         } catch let error as LumiPreviewFacade.PreviewError {
+            guard isCurrentFileGeneration(generation) else { return }
             handle(.failed(message: EditorPreviewFormatter.message(for: error)))
         } catch {
+            guard isCurrentFileGeneration(generation) else { return }
             handle(.failed(message: error.localizedDescription))
         }
     }
 
-    private func reloadSession(reason: String) async {
+    private func reloadSession(reason: String, generation: Int) async {
+        guard isCurrentFileGeneration(generation) else { return }
         scheduledRefreshTask?.cancel()
         scheduledRefreshTask = nil
         scheduledPrewarmTask?.cancel()
@@ -687,7 +701,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
                 await previewSession.updateDiscovery(selectedPreview)
             }
             try await previewEngine.refreshPreview(previewSession)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, isCurrentFileGeneration(generation) else { return }
             await syncPreviewState(from: previewSession)
             if let selectedPreview {
                 lastRenderedPreviewFingerprint = previewFingerprint(for: selectedPreview)
@@ -696,7 +710,8 @@ final class EditorPreviewService: ObservableObject, SuperLog {
                 await syncLiveFrameFromEngine(reason: "hot preview reload finished")
                 await capturePreviewFrameIfNeeded(
                     reason: "hot preview reload finished",
-                    preferFreshImage: true
+                    preferFreshImage: true,
+                    generation: generation
                 )
             }
             handle(.frameRendered(makeFrame()))
@@ -704,17 +719,19 @@ final class EditorPreviewService: ObservableObject, SuperLog {
                shouldRestorePreferredLiveMode,
                livePreviewInfo.state != .running,
                livePreviewInfo.state != .launching {
-                await startLivePreviewSession(reason: "restoring preferred live mode after reload")
+                await startLivePreviewSession(reason: "restoring preferred live mode after reload", generation: generation)
             }
             updatePhase = .idle
         } catch let error as LumiPreviewFacade.PreviewError {
+            guard isCurrentFileGeneration(generation) else { return }
             await handleRefreshFailure(EditorPreviewFormatter.message(for: error))
         } catch {
+            guard isCurrentFileGeneration(generation) else { return }
             await handleRefreshFailure(error.localizedDescription)
         }
     }
 
-    private func stopSession(reason: String) async {
+    private func stopSession(reason: String, generation: Int) async {
         scheduledRefreshTask?.cancel()
         scheduledRefreshTask = nil
         scheduledPrewarmTask?.cancel()
@@ -735,7 +752,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         }
         try? await engine.stopLivePreview(session)
         await engine.stopPreview(session)
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, isCurrentFileGeneration(generation) else { return }
         isLivePreviewShown = false
         handle(.sessionStopped(reason: reason))
         scheduleHostIdleShutdown(reason: reason)
@@ -908,6 +925,39 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         hostLifecycleSummary = previewEngine == nil ? "host lifecycle: cold" : "host lifecycle: idle"
         lastFrameSummary = String(localized: "No Frame", table: "EditorPreview")
         refreshDiagnosticSummary()
+    }
+
+    private func clearPreviewForActiveFileChange() {
+        commandTask?.cancel()
+        commandTask = nil
+        scheduledRefreshTask?.cancel()
+        scheduledRefreshTask = nil
+        scheduledPrewarmTask?.cancel()
+        scheduledPrewarmTask = nil
+        scheduledPrewarmFingerprint = nil
+        scheduledPrewarmPriority = nil
+        scheduledPrewarmFingerprints = []
+        pendingReloadReason = nil
+        liveCanvasService.cancelPendingFrameSync()
+
+        let oldSession = previewSession
+        let oldEngine = previewEngine
+        previews = []
+        selectedPreviewID = nil
+        resetRenderState()
+
+        guard let oldSession, let oldEngine else {
+            return
+        }
+
+        Task { [weak self] in
+            try? await oldEngine.stopLivePreview(oldSession)
+            await oldEngine.stopPreview(oldSession)
+            await MainActor.run {
+                guard self?.previewSession == nil else { return }
+                self?.scheduleHostIdleShutdown(reason: "active file changed")
+            }
+        }
     }
 
     private func clearPreviewForUnavailableSource() {
@@ -1554,6 +1604,21 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         return previewFingerprint(for: selectedPreview) != lastRenderedPreviewFingerprint
     }
 
+    private func isCurrentFileGeneration(_ generation: Int) -> Bool {
+        generation == activeFileGeneration
+    }
+
+    private static func sameFile(_ lhs: URL?, _ rhs: URL?) -> Bool {
+        switch (lhs, rhs) {
+        case (.none, .none):
+            return true
+        case let (.some(lhs), .some(rhs)):
+            return lhs.standardizedFileURL.path == rhs.standardizedFileURL.path
+        default:
+            return false
+        }
+    }
+
     private func previewFingerprint(for preview: LumiPreviewFacade.PreviewDiscovery) -> String {
         [
             preview.id,
@@ -1565,7 +1630,9 @@ final class EditorPreviewService: ObservableObject, SuperLog {
         ].joined(separator: "\u{1F}")
     }
 
-    private func startLivePreviewSession(reason: String) async {
+    private func startLivePreviewSession(reason: String, generation: Int? = nil) async {
+        let generation = generation ?? activeFileGeneration
+        guard isCurrentFileGeneration(generation) else { return }
         guard let session = previewSession, let engine = previewEngine else { return }
         if EditorRemoteHotPreviewPlugin.verbose {
                     EditorRemoteHotPreviewPlugin.logger.info("\(self.t)Starting hot live preview: \(reason, privacy: .public)")
@@ -1578,15 +1645,17 @@ final class EditorPreviewService: ObservableObject, SuperLog {
 
         do {
             try await engine.startLivePreview(session)
+            guard isCurrentFileGeneration(generation) else { return }
             isLivePreviewShown = false
             await syncLiveFrameFromEngine(reason: "hot live preview started")
             await showLivePreviewIfNeeded(reason: "hot live preview started")
-            await capturePreviewFrameIfNeeded(reason: "hot live preview started")
+            await capturePreviewFrameIfNeeded(reason: "hot live preview started", generation: generation)
             await syncPreviewState(from: session)
             isLiveLoading = false
             syncModeStatusMessage()
             refreshDiagnosticSummary()
         } catch let error as LumiPreviewFacade.PreviewError {
+            guard isCurrentFileGeneration(generation) else { return }
             livePreviewInfo = LumiPreviewFacade.LivePreviewInfo(
                 state: .failed,
                 unavailableReason: EditorPreviewFormatter.message(for: error)
@@ -1597,6 +1666,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
             syncModeStatusMessage()
             refreshDiagnosticSummary()
         } catch {
+            guard isCurrentFileGeneration(generation) else { return }
             livePreviewInfo = LumiPreviewFacade.LivePreviewInfo(
                 state: .failed,
                 unavailableReason: error.localizedDescription
@@ -1826,8 +1896,11 @@ final class EditorPreviewService: ObservableObject, SuperLog {
 
     private func capturePreviewFrameIfNeeded(
         reason: String,
-        preferFreshImage: Bool = false
+        preferFreshImage: Bool = false,
+        generation: Int? = nil
     ) async {
+        let generation = generation ?? activeFileGeneration
+        guard isCurrentFileGeneration(generation) else { return }
         guard let session = previewSession,
               let engine = previewEngine else {
             return
@@ -1845,6 +1918,7 @@ final class EditorPreviewService: ObservableObject, SuperLog {
 
         do {
             let response = try await engine.capturePreviewFrame(session)
+            guard isCurrentFileGeneration(generation) else { return }
             applyRenderResponse(response)
         } catch {
             if EditorRemoteHotPreviewPlugin.verbose {
