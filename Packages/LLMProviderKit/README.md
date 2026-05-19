@@ -1,40 +1,34 @@
 # LLMProviderKit
 
-可复用的 LLM 供应商适配层。将多个 OpenAI / Anthropic 兼容供应商的重复逻辑提取到独立的 Swift Package，避免每个 Provider 插件中维护相同的请求构建和响应解析代码。
+可复用的 LLM 供应商适配层。将 OpenAI / Anthropic 兼容 API 的请求构建、响应解析与流式分片处理提取到独立的 Swift Package，供任意宿主应用或插件复用。
 
----
+## Package
+
+- Product: `LLMProviderKit`
+- Platform: macOS 14+
+- Swift tools: 6.0
 
 ## 架构概览
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  LumiApp (Main Target)                          │
-│  ┌───────────────────────────────────────────┐  │
-│  │  SuperLLMProvider Protocol                │  │
-│  │  - buildRequest / buildRequestBody        │  │
-│  │  - parseResponse / parseStreamChunk       │  │
-│  └───────────────────────────────────────────┘  │
-│  ↕                                              │
-│  ┌───────────────────────────────────────────┐  │
-│  │  LLMProviderKitBridge.swift               │  │
-│  │  - SuperAgentToolBridge (→ LLMToolSchema) │  │
-│  │  - ChatMessage / ToolCall / StreamChunk   │  │
-│  │    App ↔ Kit 类型转换                      │  │
-│  └───────────────────────────────────────────┘  │
+│  Host App / Provider Plugin                     │
+│  - 供应商元数据（id、模型目录、API Key 存储）      │
+│  - HTTP 会话与错误映射                            │
+│  - 实现 LLMToolSchemaProviding（可选）           │
 └─────────────────────────────────────────────────┘
                         ↕
 ┌─────────────────────────────────────────────────┐
-│  LLMProviderKit (Swift Package)                 │
+│  LLMProviderKit                                 │
 │  ┌───────────────────────────────────────────┐  │
 │  │  OpenAICompatibleProviderAdapter          │  │
 │  │  - buildRequest / buildRequestBody        │  │
 │  │  - buildStreamingRequestBody              │  │
 │  │  - parseResponse / parseStreamChunk       │  │
-│  │  - transformMessage / formatTool          │  │
 │  └───────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────┐  │
 │  │  AnthropicCompatibleProviderAdapter       │  │
-│  │  (Claude API 适配)                         │  │
+│  │  (Claude Messages API 适配)                │  │
 │  └───────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────┐  │
 │  │  CoreModels                               │  │
@@ -43,114 +37,150 @@
 └─────────────────────────────────────────────────┘
 ```
 
-## 新增 OpenAI 兼容供应商
+## 依赖与集成
 
-1. 在 `LumiApp/Plugins/` 下创建新目录 `LLMProviderYourName/`
-2. 创建 Provider 文件（参考下面的模板）
-3. 创建 Plugin 文件注册供应商
-4. 在 Xcode 中将文件添加到 Lumi target
-
-### 最小 Provider模板
+在 `Package.swift` 中添加本地或远程依赖：
 
 ```swift
-import Foundation
+dependencies: [
+    .package(path: "../LLMProviderKit"),
+],
+targets: [
+    .target(
+        name: "YourTarget",
+        dependencies: ["LLMProviderKit"]
+    ),
+]
+```
+
+## 基本用法
+
+### OpenAI 兼容 API
+
+```swift
 import LLMProviderKit
-import MagicKit
 
-/// YourName API 供应商实现
-///
-/// 完全兼容 OpenAI 格式
-final class YourNameProvider: NSObject, SuperLLMProvider, @unchecked Sendable {
-    nonisolated static let emoji = "🔷"
-
-    // MARK: - 基础信息
-
-    static let id = "yourname"
-    static let displayName = String(localized: "YourName", table: "YourName")
-    static let description = String(localized: "LLM by YourName", table: "YourName")
-    static let websiteURL: String? = "https://yourname.com"
-
-    // MARK: - 配置
-
-    static let apiKeyStorageKey = "DevAssistant_ApiKey_YourName"
-    static let defaultModel = "your-model-id"
-
-    static let modelCatalog: [LLMModelCatalogItem] = [
-        .init(id: "your-model-id", spec: .init(contextWindowSize: 128_000, supportsVision: false, supportsTools: true)),
+struct MyTool: LLMToolSchemaProviding {
+    let name = "get_weather"
+    let toolDescription = "Get weather for a city"
+    let inputSchema: [String: Any] = [
+        "type": "object",
+        "properties": ["city": ["type": "string"]],
+        "required": ["city"],
     ]
+}
 
-    static let isEnabled = true
-
-    // MARK: - Adapter
-
-    private let adapter = OpenAICompatibleProviderAdapter(
-        configuration: OpenAICompatibleProviderConfiguration(
-            baseURL: "https://api.yourname.com/v1/chat/completions",
-            includeUsageInStreamOptions: true   // 如果你的 API 支持 usage 信息
-        )
+let adapter = OpenAICompatibleProviderAdapter(
+    configuration: .init(
+        baseURL: "https://api.example.com/v1/chat/completions",
+        includeUsageInStreamOptions: true
     )
+)
 
-    override init() { super.init() }
+let url = URL(string: adapter.configuration.baseURL)!
+var request = adapter.buildRequest(url: url, apiKey: "sk-...")
+let messages = [
+    ChatMessage(role: .user, content: "Hello"),
+]
+let body = try adapter.buildRequestBody(
+    messages: messages,
+    model: "gpt-4o",
+    tools: [MyTool()],
+    systemPrompt: "You are helpful."
+)
+request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-    var baseURL: String { adapter.configuration.baseURL }
+let (data, _) = try await URLSession.shared.data(for: request)
+let result = try adapter.parseResponse(data: data)
+// result.content, result.toolCalls
+```
 
-    func buildRequest(url: URL, apiKey: String) -> URLRequest {
-        adapter.buildRequest(url: url, apiKey: apiKey)
-    }
+### 流式响应
 
-    func buildRequestBody(messages: [ChatMessage], model: String, tools: [SuperAgentTool]?, systemPrompt: String) throws -> [String: Any] {
-        let kitMessages = messages.map { LLMProviderKit.ChatMessage(app: $0) }
-        let kitTools = tools?.map { SuperAgentToolBridge(tool: $0) }
-        return try adapter.buildRequestBody(messages: kitMessages, model: model, tools: kitTools, systemPrompt: systemPrompt)
-    }
+```swift
+var streamRequest = adapter.buildRequest(url: url, apiKey: apiKey)
+let streamBody = try adapter.buildStreamingRequestBody(
+    messages: messages,
+    model: "gpt-4o",
+    tools: nil,
+    systemPrompt: ""
+)
+streamRequest.httpBody = try JSONSerialization.data(withJSONObject: streamBody)
 
-    func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
-        let result = try adapter.parseResponse(data: data)
-        let kitToolCalls = result.toolCalls?.map { ToolCall(kit: $0) }
-        return (result.content, kitToolCalls)
-    }
-
-    func buildStreamingRequestBody(messages: [ChatMessage], model: String, tools: [SuperAgentTool]?, systemPrompt: String) throws -> [String: Any] {
-        let kitMessages = messages.map { LLMProviderKit.ChatMessage(app: $0) }
-        let kitTools = tools?.map { SuperAgentToolBridge(tool: $0) }
-        return try adapter.buildStreamingRequestBody(messages: kitMessages, model: model, tools: kitTools, systemPrompt: systemPrompt)
-    }
-
-    func parseStreamChunk(data: Data) throws -> StreamChunk? {
-        guard let kitChunk = try adapter.parseStreamChunk(data: data) else { return nil }
-        return StreamChunk(kit: kitChunk)
-    }
+// 对每个 SSE 数据块调用 parseStreamChunk
+if let chunk = try adapter.parseStreamChunk(data: sseData) {
+    // chunk.content, chunk.toolCalls, chunk.isDone, chunk.inputTokens ...
 }
 ```
 
-### 配置选项
+### Anthropic 兼容 API
 
-`OpenAICompatibleProviderConfiguration` 支持以下选项：
+```swift
+let adapter = AnthropicCompatibleProviderAdapter(
+    configuration: .init(
+        baseURL: "https://api.anthropic.com/v1/messages",
+        apiVersion: "2023-06-01"
+    )
+)
+
+var request = adapter.buildRequest(url: URL(string: adapter.configuration.baseURL)!, apiKey: apiKey)
+let body = try adapter.buildRequestBody(
+    messages: messages,
+    model: "claude-sonnet-4-20250514",
+    tools: [MyTool()],
+    systemPrompt: "You are helpful."
+)
+request.httpBody = try JSONSerialization.data(withJSONObject: body)
+```
+
+## 核心类型
+
+| 类型 | 说明 |
+|------|------|
+| `ChatMessage` | 对话消息（含 tool call / tool result / reasoning） |
+| `ToolCall` | 模型发起的工具调用 |
+| `StreamChunk` | 流式增量（文本、工具调用、用量、完成标记） |
+| `LLMToolSchemaProviding` | 工具 schema 协议，由宿主提供具体工具定义 |
+| `LLMModelCatalogItem` | 模型目录项（上下文窗口、能力标记） |
+
+## 配置选项
+
+### `OpenAICompatibleProviderConfiguration`
 
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
 | `baseURL` | *(必填)* | API 端点 URL |
 | `additionalHeaders` | `[:]` | 额外请求头（如 `HTTP-Referer`, `X-Title`） |
 | `includeUsageInStreamOptions` | `false` | 流式请求是否添加 `stream_options: { include_usage: true }` |
-| `returnsEmptyChunkWhenNoDelta` | `false` | 无内容增量时是否返回空 chunk（某些供应商需要） |
+| `returnsEmptyChunkWhenNoDelta` | `false` | 无内容增量时是否返回空 chunk |
 | `acceptsFunctionScopedToolCallID` | `false` | 是否从 `function` 对象中读取 tool call ID |
 | `includesReasoningContentInMessages` | `false` | 是否在 assistant 历史消息中回传 `reasoning_content` |
 
-### 已有供应商
+### `AnthropicCompatibleProviderConfiguration`
 
-| 供应商 | 类型 | baseURL | 特殊配置 |
-|--------|------|---------|----------|
-| OpenAI | OpenAI兼容 | api.openai.com | `includeUsageInStreamOptions: true` |
-| DeepSeek | OpenAI兼容 | api.deepseek.com | — |
-| OpenRouter | OpenAI兼容 | openrouter.ai | `additionalHeaders`, `returnsEmptyChunkWhenNoDelta: true`, `acceptsFunctionScopedToolCallID: true` |
-| AiRouter | OpenAI兼容 | api.airouter.org | `includeUsageInStreamOptions: true` |
-| FreeModel | OpenAI兼容 | api.freemodel.dev | `includeUsageInStreamOptions: true` |
-| Feifeimiao | OpenAI兼容 | api.feifeimiao.top | `includeUsageInStreamOptions: true` |
-| FlyMux | OpenAI兼容 | api.flymux.com | `includeUsageInStreamOptions: true` |
-| HyperAPI | OpenAI兼容 | hyperapi.cc | `includeUsageInStreamOptions: true` |
-| MegaLLM | OpenAI兼容 | ai.megallm.io | — |
-| Xiaomi | OpenAI兼容 | token-plan-cn.xiaomimimo.com | `includesReasoningContentInMessages: true` |
-| Xybbz | OpenAI兼容 | sub2api.xybbz.xyz | `includeUsageInStreamOptions: true` |
-| Anthropic | Anthropic兼容 | api.anthropic.com | 使用 `AnthropicCompatibleProviderAdapter` |
-| Zhipu | OpenAI兼容 | open.bigmodel.cn | 尚未迁移 |
-| Aliyun | OpenAI兼容 | dashscope.aliyuncs.com | 尚未迁移 |
+| 选项 | 默认值 | 说明 |
+|------|--------|------|
+| `baseURL` | *(必填)* | Messages API 端点 URL |
+| `additionalHeaders` | `[:]` | 额外请求头 |
+| `apiVersion` | `"2023-06-01"` | `anthropic-version` 请求头值 |
+| `defaultMaxTokens` | `8192` | 请求体默认 `max_tokens` |
+
+## 常见供应商配置示例
+
+| 场景 | Adapter | 典型配置 |
+|------|---------|----------|
+| OpenAI 官方 | OpenAI | `includeUsageInStreamOptions: true` |
+| OpenRouter | OpenAI | `additionalHeaders`, `returnsEmptyChunkWhenNoDelta: true`, `acceptsFunctionScopedToolCallID: true` |
+| 推理模型（reasoning_content） | OpenAI | `includesReasoningContentInMessages: true` |
+| Anthropic 官方 | Anthropic | 默认 `apiVersion` |
+| DashScope 等 Anthropic 兼容网关 | Anthropic | 自定义 `baseURL` 与 `additionalHeaders` |
+
+## Testing
+
+From this package directory:
+
+```sh
+swift test
+```
+
+Tests cover request building, response parsing, stream chunk handling, and configuration edge cases for both adapters.

@@ -7,8 +7,8 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
             configuration: .init(
                 baseURL: "https://example.com/v1/chat/completions",
                 additionalHeaders: [
-                    "HTTP-Referer": "Lumi",
-                    "X-Title": "Lumi",
+                    "HTTP-Referer": "ExampleApp",
+                    "X-Title": "ExampleApp",
                 ]
             )
         )
@@ -21,8 +21,8 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "POST")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer secret")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
-        XCTAssertEqual(request.value(forHTTPHeaderField: "HTTP-Referer"), "Lumi")
-        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Title"), "Lumi")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "HTTP-Referer"), "ExampleApp")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Title"), "ExampleApp")
     }
 
     func testBuildRequestBodyIncludesMessagesAndStreamFalse() throws {
