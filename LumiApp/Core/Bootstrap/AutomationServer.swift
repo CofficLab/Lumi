@@ -1,4 +1,5 @@
 import Foundation
+import MagicKit
 import Network
 import SwiftUI
 import os
@@ -130,7 +131,10 @@ extension View {
 ///     }
 ///     .store(in: &cancellables)
 /// ```
-final class AutomationServer: @unchecked Sendable {
+final class AutomationServer: @unchecked Sendable, SuperLog {
+    nonisolated static let emoji = "🌐"
+    nonisolated static let verbose = false
+
     // MARK: - Singleton
 
     /// 共享实例
@@ -164,7 +168,10 @@ final class AutomationServer: @unchecked Sendable {
 
     // MARK: - Logger
 
-    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.coffic.Lumi", category: "AutomationServer")
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.coffic.lumi",
+        category: "automation.server"
+    )
 
     private init() {}
 
@@ -175,12 +182,12 @@ final class AutomationServer: @unchecked Sendable {
     /// - Parameter port: 监听端口，默认使用 `defaultPort`
     func start(port: UInt16 = defaultPort) {
         guard Self.isEnabled else {
-            Self.logger.info("Automation server is disabled via environment variable")
+            Self.logger.info("\(Self.t)Automation server is disabled via environment variable")
             return
         }
 
         guard listener == nil || listener?.state == .cancelled else {
-            Self.logger.warning("Automation server is already running")
+            Self.logger.warning("\(Self.t)Automation server is already running")
             return
         }
 
@@ -190,22 +197,22 @@ final class AutomationServer: @unchecked Sendable {
             let parameters = NWParameters.tcp
             listener = try NWListener(using: parameters, on: NWEndpoint.Port(rawValue: port)!)
         } catch {
-            Self.logger.error("Failed to create listener on port \(port): \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)Failed to create listener on port \(port): \(error.localizedDescription)")
             return
         }
 
         listener?.stateUpdateHandler = { [weak self] state in
             switch state {
             case .ready:
-                Self.logger.info("Automation server started on port \(self?.port ?? 0)")
+                Self.logger.info("\(Self.t)Automation server started on port \(self?.port ?? 0)")
                 Task { @MainActor in
                     NotificationCenter.postAutomationServerDidStart(port: Int(self?.port ?? 0))
                 }
             case .failed(let error):
-                Self.logger.error("Automation server failed: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)Automation server failed: \(error.localizedDescription)")
                 self?.listener = nil
             case .cancelled:
-                Self.logger.info("Automation server stopped")
+                Self.logger.info("\(Self.t)Automation server stopped")
                 Task { @MainActor in
                     NotificationCenter.postAutomationServerDidStop()
                 }
@@ -258,7 +265,7 @@ final class AutomationServer: @unchecked Sendable {
     private func receiveData(on connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] content, _, isComplete, error in
             if let error {
-                Self.logger.warning("Receive error: \(error.localizedDescription)")
+                Self.logger.warning("\(Self.t)Receive error: \(error.localizedDescription)")
                 connection.cancel()
                 return
             }
@@ -286,7 +293,7 @@ final class AutomationServer: @unchecked Sendable {
     private func send(response: Data, on connection: NWConnection) {
         connection.send(content: response, completion: .contentProcessed { [weak self] error in
             if let error {
-                Self.logger.warning("Send error: \(error.localizedDescription)")
+                Self.logger.warning("\(Self.t)Send error: \(error.localizedDescription)")
             }
             self?.receiveData(on: connection)
         })
@@ -350,7 +357,7 @@ final class AutomationServer: @unchecked Sendable {
 
             let payload = jsonObject["payload"] as? [String: Any]
 
-            Self.logger.info("Received automation action: \(action, privacy: .public)")
+            Self.logger.info("\(Self.t)Received automation action: \(action, privacy: .public)")
 
             // 分发事件（在主线程上，以便 UI 组件可以响应）
             // 已在 Task { @MainActor } 中调用
