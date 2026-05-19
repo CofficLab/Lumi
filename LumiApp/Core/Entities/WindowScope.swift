@@ -35,10 +35,10 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     // MARK: - Window-Level ViewModel
 
     /// 会话管理（每窗口选中不同会话）
-    let conversationVM: Lumi.WindowConversationVM
+    let conversationVM: WindowConversationVM
 
     /// 项目管理（每窗口打开不同项目）
-    let projectVM: Lumi.WindowProjectVM
+    let projectVM: WindowProjectVM
 
     /// 布局管理（每窗口独立的侧边栏/布局状态）
     let layoutVM: WindowLayoutVM
@@ -47,7 +47,7 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     let messagePendingVM: WindowMessagePendingVM
 
     /// 消息发送队列（每窗口独立的消息发送队列）
-    let messageQueueVM: Lumi.WindowMessageQueueVM
+    let messageQueueVM: WindowMessageQueueVM
 
     /// 用户输入队列（每窗口独立的用户输入）
     let inputQueueVM: WindowInputQueueVM
@@ -164,16 +164,16 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
         // 创建窗口级 VM（用全局 Service 注入，VM 独立）
         // ========================================
 
-        self.conversationVM = Lumi.WindowConversationVM(
+        self.conversationVM = WindowConversationVM(
             chatHistoryService: container.chatHistoryService
         )
-        self.projectVM = Lumi.WindowProjectVM(
+        self.projectVM = WindowProjectVM(
             contextService: container.contextService,
             llmService: container.llmService
         )
         self.layoutVM = WindowLayoutVM()
         self.messagePendingVM = WindowMessagePendingVM()
-        self.messageQueueVM = Lumi.WindowMessageQueueVM()
+        self.messageQueueVM = WindowMessageQueueVM()
         self.inputQueueVM = WindowInputQueueVM()
         self.agentAttachmentsVM = WindowAttachmentsVM()
         self.permissionRequestVM = WindowPermissionRequestVM()

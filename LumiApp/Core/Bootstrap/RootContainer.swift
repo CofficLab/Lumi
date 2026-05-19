@@ -61,12 +61,12 @@ final class RootContainer: ObservableObject, SuperLog {
     // ⚠️ 新代码请勿使用这些属性，应通过 WindowScope 直接访问。
     
     /// 活跃窗口的 WindowConversationVM（过渡兼容，新代码用 WindowScope）
-    var conversationVM: Lumi.WindowConversationVM {
+    var conversationVM: WindowConversationVM {
         WindowManager.shared.activeWindowScope?.conversationVM ?? _fallbackWindowConversationVM
     }
     
     /// 活跃窗口的 WindowProjectVM（过渡兼容，新代码用 WindowScope）
-    var projectVM: Lumi.WindowProjectVM {
+    var projectVM: WindowProjectVM {
         WindowManager.shared.activeWindowScope?.projectVM ?? _fallbackWindowProjectVM
     }
     
@@ -81,7 +81,7 @@ final class RootContainer: ObservableObject, SuperLog {
     }
     
     /// 活跃窗口的 WindowMessageQueueVM（过渡兼容，新代码用 WindowScope）
-    var messageQueueVM: Lumi.WindowMessageQueueVM {
+    var messageQueueVM: WindowMessageQueueVM {
         WindowManager.shared.activeWindowScope?.messageQueueVM ?? _fallbackWindowMessageQueueVM
     }
     
@@ -136,11 +136,11 @@ final class RootContainer: ObservableObject, SuperLog {
     }
     
     // Fallback 实例（仅在无活跃窗口时使用，确保不崩溃）
-    private let _fallbackWindowConversationVM: Lumi.WindowConversationVM
-    private let _fallbackWindowProjectVM: Lumi.WindowProjectVM
+    private let _fallbackWindowConversationVM: WindowConversationVM
+    private let _fallbackWindowProjectVM: WindowProjectVM
     private let _fallbackWindowLayoutVM: WindowLayoutVM
     private let _fallbackWindowMessagePendingVM: WindowMessagePendingVM
-    private let _fallbackWindowMessageQueueVM: Lumi.WindowMessageQueueVM
+    private let _fallbackWindowMessageQueueVM: WindowMessageQueueVM
     private let _fallbackWindowInputQueueVM: WindowInputQueueVM
     private let _fallbackAgentAttachmentsVM: WindowAttachmentsVM
     private let _fallbackWindowPermissionRequestVM: WindowPermissionRequestVM
@@ -213,11 +213,11 @@ final class RootContainer: ObservableObject, SuperLog {
         // Fallback 窗口级 VM（仅用于过渡期，无活跃窗口时兜底）
         // ========================================
         
-        _fallbackWindowConversationVM = Lumi.WindowConversationVM(chatHistoryService: chatHistoryService)
-        _fallbackWindowProjectVM = Lumi.WindowProjectVM(contextService: contextService, llmService: llmService)
+        _fallbackWindowConversationVM = WindowConversationVM(chatHistoryService: chatHistoryService)
+        _fallbackWindowProjectVM = WindowProjectVM(contextService: contextService, llmService: llmService)
         _fallbackWindowLayoutVM = WindowLayoutVM()
         _fallbackWindowMessagePendingVM = WindowMessagePendingVM()
-        _fallbackWindowMessageQueueVM = Lumi.WindowMessageQueueVM()
+        _fallbackWindowMessageQueueVM = WindowMessageQueueVM()
         _fallbackWindowInputQueueVM = WindowInputQueueVM()
         _fallbackAgentAttachmentsVM = WindowAttachmentsVM()
         _fallbackWindowPermissionRequestVM = WindowPermissionRequestVM()
