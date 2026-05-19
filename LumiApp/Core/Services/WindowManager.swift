@@ -2,29 +2,34 @@ import AppKit
 import Combine
 import MagicKit
 import SwiftUI
+
 /// 窗口管理器
 ///
-/// 负责管理所有窗口的生命周期和状态同步
+/// 负责管理所有窗口的生命周期和状态同步。
+/// 直接管理 WindowScope 实例，不再使用 WindowState。
 @MainActor
 final class WindowManager: ObservableObject, SuperLog {
     static let shared = WindowManager()
     nonisolated static let emoji = "🪟"
     nonisolated static let verbose: Bool = false
+
     // MARK: - Published Properties
 
-    /// 所有窗口状态
-    @Published private(set) var windowStates: [WindowState] = []
+    /// 所有窗口作用域
+    @Published private(set) var windowScopes: [WindowScope] = []
 
     /// 当前活跃窗口 ID
     @Published private(set) var activeWindowId: UUID?
 
     /// 窗口计数（用于菜单显示）
-    var windowCount: Int { windowStates.count }
+    var windowCount: Int { windowScopes.count }
 
     // MARK: - Private Properties
 
-    private var cancellables = Set<AnyCancellable>()
     private var windowIdMap: [NSWindow: UUID] = [:]
+
+    /// 窗口作用域快速查找映射（窗口 ID -> WindowScope）
+    private var scopeMap: [UUID: WindowScope] = [:]
 
     // MARK: - Initialization
 
@@ -38,55 +43,54 @@ final class WindowManager: ObservableObject, SuperLog {
     // MARK: - Window Management
 
     /// 注册新窗口
-    /// - Parameter state: 窗口状态
-    func registerWindow(_ state: WindowState) {
-        guard !windowStates.contains(where: { $0.id == state.id }) else {
+    func registerScope(_ scope: WindowScope) {
+        guard !windowScopes.contains(where: { $0.id == scope.id }) else {
             if Self.verbose {
-                AppLogger.core.info("\(Self.t) 窗口已存在: \(state.id.uuidString.prefix(8))")
+                AppLogger.core.info("\(Self.t) 窗口已存在: \(scope.id.uuidString.prefix(8))")
             }
             return
         }
 
-        windowStates.append(state)
-        setActiveWindow(state.id)
+        windowScopes.append(scope)
+        scopeMap[scope.id] = scope
+        setActiveWindow(scope.id)
 
         if Self.verbose {
-            let count = self.windowStates.count
-            AppLogger.core.info("\(Self.t) 注册窗口: \(state.id.uuidString.prefix(8)), 总窗口数: \(count)")
+            let count = self.windowScopes.count
+            AppLogger.core.info("\(Self.t) 注册窗口: \(scope.id.uuidString.prefix(8)), 总窗口数: \(count)")
         }
     }
 
     /// 注销窗口
-    /// - Parameter windowId: 窗口 ID
-    func unregisterWindow(_ windowId: UUID) {
-        windowStates.removeAll { $0.id == windowId }
+    func unregisterScope(_ windowId: UUID) {
+        windowScopes.removeAll { $0.id == windowId }
+        scopeMap.removeValue(forKey: windowId)
 
         // 如果关闭的是活跃窗口，切换到下一个窗口
         if activeWindowId == windowId {
-            activeWindowId = windowStates.first?.id
+            activeWindowId = windowScopes.first?.id
         }
-        
+
         NotificationCenter.postWindowClosed(windowId)
 
         if Self.verbose {
-            let count = self.windowStates.count
+            let count = self.windowScopes.count
             AppLogger.core.info("\(Self.t) 注销窗口: \(windowId.uuidString.prefix(8)), 剩余窗口数: \(count)")
         }
     }
 
     /// 设置活跃窗口
-    /// - Parameter windowId: 窗口 ID
     func setActiveWindow(_ windowId: UUID) {
         // 更新之前活跃窗口的状态
         if let previousId = activeWindowId,
-           let previousWindow = windowStates.first(where: { $0.id == previousId }) {
-            previousWindow.setActive(false)
+           let previousScope = scopeMap[previousId] {
+            previousScope.setActive(false)
         }
 
         // 设置新的活跃窗口
         activeWindowId = windowId
-        if let window = windowStates.first(where: { $0.id == windowId }) {
-            window.setActive(true)
+        if let scope = scopeMap[windowId] {
+            scope.setActive(true)
         }
 
         NotificationCenter.postWindowActivated(windowId)
@@ -96,85 +100,42 @@ final class WindowManager: ObservableObject, SuperLog {
         }
     }
 
-    /// 获取窗口状态
-    /// - Parameter windowId: 窗口 ID
-    /// - Returns: 窗口状态
-    func getWindowState(_ windowId: UUID) -> WindowState? {
-        windowStates.first { $0.id == windowId }
-    }
-
-    /// 获取当前活跃窗口状态
-    var activeWindowState: WindowState? {
-        guard let id = activeWindowId else { return nil }
-        return getWindowState(id)
-    }
-
     /// 获取当前活跃窗口的 WindowScope
     var activeWindowScope: WindowScope? {
         guard let id = activeWindowId else { return nil }
-        return windowScopes[id]
-    }
-
-    /// 窗口作用域映射（窗口 ID -> WindowScope）
-    private var windowScopes: [UUID: WindowScope] = [:]
-
-    /// 注册窗口作用域
-    /// - Parameter scope: 窗口作用域实例
-    func registerScope(_ scope: WindowScope) {
-        windowScopes[scope.id] = scope
-        registerWindow(WindowState(id: scope.id))
-    }
-
-    /// 注销窗口作用域
-    /// - Parameter windowId: 窗口 ID
-    func unregisterScope(_ windowId: UUID) {
-        windowScopes.removeValue(forKey: windowId)
+        return scopeMap[id]
     }
 
     /// 获取指定窗口的 WindowScope
-    /// - Parameter windowId: 窗口 ID
-    /// - Returns: WindowScope
     func getScope(_ windowId: UUID) -> WindowScope? {
-        windowScopes[windowId]
+        scopeMap[windowId]
     }
 
     /// 查找已打开指定项目的窗口
-    ///
-    /// - Parameter projectPath: 项目路径
-    /// - Returns: 窗口 ID，如果未找到返回 nil
     func findWindow(withProject projectPath: String) -> UUID? {
-        windowStates.first { $0.projectPath == projectPath }?.id
+        windowScopes.first { $0.projectPath == projectPath }?.id
     }
 
     /// 查找已打开指定会话的窗口
-    ///
-    /// - Parameter conversationId: 会话 ID
-    /// - Returns: 窗口 ID，如果未找到返回 nil
     func findWindow(withConversation conversationId: UUID) -> UUID? {
-        windowStates.first { $0.selectedConversationId == conversationId }?.id
+        windowScopes.first { $0.selectedConversationId == conversationId }?.id
     }
 
     // MARK: - Window Operations
 
     /// 根据 ID 查找关联的 NSWindow
-    /// - Parameter windowId: 窗口状态 ID
-    /// - Returns: 关联的 NSWindow，如果未找到返回 nil
     func window(for windowId: UUID) -> NSWindow? {
         windowIdMap.first(where: { $0.value == windowId })?.key
     }
 
     /// 关闭指定窗口
-    /// - Parameter windowId: 窗口 ID
     func closeWindow(_ windowId: UUID) {
-        // 只调用 NSWindow.close()，注销由 windowWillClose(_:) 统一负责，
-        // 避免主动调用 unregisterWindow 导致与 windowWillClose 重复注销。
         if let window = window(for: windowId) {
             window.close()
         }
     }
 
     /// 激活指定窗口
-    /// - Parameter windowId: 窗口 ID
     func activateWindow(_ windowId: UUID) {
         guard let window = window(for: windowId) else { return }
 
@@ -185,16 +146,15 @@ final class WindowManager: ObservableObject, SuperLog {
 
     /// 关闭所有窗口
     func closeAllWindows() {
-        let windowsToClose = Array(windowStates)
-        for state in windowsToClose {
-            closeWindow(state.id)
+        let windowsToClose = Array(windowScopes)
+        for scope in windowsToClose {
+            closeWindow(scope.id)
         }
     }
 
     // MARK: - Window Synchronization
 
     /// 广播事件到所有窗口
-    /// - Parameter event: 窗口事件
     func broadcast(_ event: WindowEvent) {
         NotificationCenter.postWindowEvent(event, from: activeWindowId)
 
@@ -209,21 +169,16 @@ final class WindowManager: ObservableObject, SuperLog {
     }
 
     /// 同步会话内容更新
-    /// - Parameter conversationId: 会话 ID
     func syncConversationUpdate(_ conversationId: UUID) {
         broadcast(.conversationUpdated(conversationId))
     }
 
     // MARK: - NSWindow Tracking
 
-    /// 关联 NSWindow 和窗口状态 ID
-    /// - Parameters:
-    ///   - window: NSWindow 实例
-    ///   - windowId: 窗口状态 ID
+    /// 关联 NSWindow 和窗口 ID
     func associateWindow(_ window: NSWindow, with windowId: UUID) {
         windowIdMap[window] = windowId
 
-        // 监听窗口关闭
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(windowWillClose(_:)),
@@ -231,7 +186,6 @@ final class WindowManager: ObservableObject, SuperLog {
             object: window
         )
 
-        // 监听窗口成为关键窗口
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(windowDidBecomeKey(_:)),
@@ -247,7 +201,6 @@ final class WindowManager: ObservableObject, SuperLog {
               let windowId = windowIdMap[window] else { return }
 
         unregisterScope(windowId)
-        unregisterWindow(windowId)
         windowIdMap.removeValue(forKey: window)
     }
 
@@ -259,7 +212,6 @@ final class WindowManager: ObservableObject, SuperLog {
     }
 
     private func setupNotifications() {
-        // 监听应用激活状态
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(applicationDidBecomeActive),
@@ -269,19 +221,16 @@ final class WindowManager: ObservableObject, SuperLog {
     }
 
     @objc private func applicationDidBecomeActive() {
-        // 应用重新激活时，确保有活跃窗口
-        if activeWindowId == nil, let firstWindow = windowStates.first {
-            setActiveWindow(firstWindow.id)
+        if activeWindowId == nil, let firstScope = windowScopes.first {
+            setActiveWindow(firstScope.id)
         }
     }
 
     // MARK: - Window State Persistence
 
     /// 保存当前所有窗口的状态
-    ///
-    /// 在应用即将终止时调用，保存所有窗口的状态快照。
     func saveWindowStates() {
-        let snapshots = windowStates.map { $0.snapshot() }
+        let snapshots = windowScopes.map { $0.snapshot() }
         AppSettingStore.saveWindowStates(snapshots)
         if Self.verbose {
             AppLogger.core.info("\(Self.t)💾 保存 \(snapshots.count) 个窗口状态")
@@ -289,9 +238,6 @@ final class WindowManager: ObservableObject, SuperLog {
     }
 
     /// 恢复保存的窗口状态
-    ///
-    /// 在应用启动时调用，恢复上次保存的窗口状态。
-    /// 返回需要恢复的窗口路由列表。
     func loadSavedWindowStates() -> [LumiWindowRoute] {
         let snapshots = AppSettingStore.loadWindowStates()
         if Self.verbose {
