@@ -4,6 +4,19 @@ import MagicKit
 /// 请求日志详情视图 - 展示数据库原始数据
 struct RequestLogDetailView: View {
     @ObservedObject var viewModel: RequestLogBrowserViewModel
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var separatorColor: Color {
+        Color.adaptive(light: "D8D8DF", dark: "3A4649")
+    }
+
+    private var panelBackground: Color {
+        Color.adaptive(light: "F7F7FA", dark: "1B2A2D")
+    }
+
+    private var controlBackground: Color {
+        Color.adaptive(light: "ECECF2", dark: "243437")
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -20,7 +33,8 @@ struct RequestLogDetailView: View {
 
             footer
         }
-        .frame(height: 600)
+        .frame(minWidth: 960, minHeight: 560)
+        .background(panelBackground)
         .task {
             await viewModel.reload()
         }
@@ -29,8 +43,7 @@ struct RequestLogDetailView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(spacing: 0) {
-            // 标题行
+        VStack(spacing: 10) {
             HStack {
                 Image(systemName: "doc.text.magnifyingglass")
                     .font(.system(size: 13))
@@ -64,6 +77,7 @@ struct RequestLogDetailView: View {
                         color: Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
                     )
                 }
+                .fixedSize(horizontal: true, vertical: false)
 
                 Divider()
                     .frame(height: 16)
@@ -79,11 +93,8 @@ struct RequestLogDetailView: View {
                 .buttonStyle(.plain)
                 .help(String(localized: "Reload", table: "RequestLog"))
             }
+            .frame(height: 24)
 
-            Divider()
-                .padding(.vertical, 6)
-
-            // Filter tabs
             HStack(spacing: 0) {
                 filterTab(
                     title: String(localized: "All", table: "RequestLog"),
@@ -103,10 +114,18 @@ struct RequestLogDetailView: View {
                     filter: false
                 )
             }
+            .frame(width: 360, height: 30)
+            .padding(2)
+            .background(controlBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 7))
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 12)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
+        .overlay(alignment: .bottom) {
+            separatorColor.frame(height: 1)
+        }
     }
 
     private func statBadge(label: String, value: String, color: Color) -> some View {
@@ -138,15 +157,16 @@ struct RequestLogDetailView: View {
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: icon)
-                    .font(.system(size: 10))
+                    .font(.system(size: 10, weight: .medium))
                 Text(title)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
-            .background(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
+            .frame(height: 26)
+            .background(isActive ? Color.accentColor.opacity(colorScheme == .light ? 0.14 : 0.22) : Color.clear)
             .foregroundColor(isActive ? Color.accentColor : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .clipShape(RoundedRectangle(cornerRadius: 5))
         }
         .buttonStyle(.plain)
     }
@@ -176,14 +196,14 @@ struct RequestLogDetailView: View {
                 }
                 .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             }
-            .width(min: 100, max: 120)
+            .width(min: 108, max: 124)
 
             TableColumn(String(localized: "Method", table: "RequestLog")) { row in
                 Text(row.method.uppercased())
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             }
-            .width(min: 50, max: 70)
+            .width(min: 56, max: 68)
 
             TableColumn(String(localized: "URL", table: "RequestLog")) { row in
                 Text(row.requestURL)
@@ -192,14 +212,14 @@ struct RequestLogDetailView: View {
                     .truncationMode(.middle)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
             }
-            .width(min: 150)
+            .width(min: 240)
 
             TableColumn(String(localized: "Body Size", table: "RequestLog")) { row in
                 Text(formatBytes(row.requestBodySize))
                     .font(.system(size: 10))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
-            .width(min: 60, max: 80)
+            .width(min: 76, max: 90)
 
             TableColumn(String(localized: "Status", table: "RequestLog")) { row in
                 if let code = row.responseStatusCode {
@@ -212,12 +232,13 @@ struct RequestLogDetailView: View {
                         .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
                 }
             }
-            .width(min: 50, max: 70)
+            .width(min: 58, max: 72)
 
             TableColumn(String(localized: "Duration", table: "RequestLog")) { row in
                 if let duration = row.duration {
                     Text(String(format: "%.2fs", duration))
                         .font(.system(size: 10))
+                        .monospacedDigit()
                         .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 } else {
                     Text("--")
@@ -225,7 +246,7 @@ struct RequestLogDetailView: View {
                         .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
                 }
             }
-            .width(min: 60, max: 80)
+            .width(min: 76, max: 90)
 
             TableColumn(String(localized: "Result", table: "RequestLog")) { row in
                 if row.isSuccess {
@@ -238,7 +259,7 @@ struct RequestLogDetailView: View {
                         .foregroundColor(.red)
                 }
             }
-            .width(min: 70, max: 90)
+            .width(min: 82, max: 96)
 
             TableColumn(String(localized: "Error", table: "RequestLog")) { row in
                 if let error = row.errorMessage {
@@ -253,16 +274,17 @@ struct RequestLogDetailView: View {
                         .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
                 }
             }
-            .width(min: 150)
+            .width(min: 160)
 
             TableColumn(String(localized: "Request ID", table: "RequestLog")) { row in
                 Text(row.requestId.uuidString.prefix(8))
                     .font(.system(size: 9))
                     .foregroundColor(Color.adaptive(light: "8E8E9F", dark: "9898A8"))
             }
-            .width(min: 80, max: 100)
+            .width(min: 82, max: 96)
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
+        .controlSize(.small)
         .background(Color.clear)
     }
 
@@ -305,6 +327,9 @@ struct RequestLogDetailView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        .overlay(alignment: .top) {
+            separatorColor.frame(height: 1)
+        }
     }
 
     // MARK: - Empty

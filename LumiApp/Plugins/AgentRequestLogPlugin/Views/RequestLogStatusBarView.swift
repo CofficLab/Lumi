@@ -26,7 +26,7 @@ struct RequestLogStatusBarView: View {
         .help(String(localized: "Request Log", table: "RequestLog"))
         .popover(isPresented: $isPresented, arrowEdge: .top) {
             RequestLogDetailView(viewModel: viewModel)
-                .frame(width: 900, height: 560)
+                .frame(width: 980, height: 560)
         }
     }
 }
