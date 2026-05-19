@@ -1,8 +1,6 @@
 # EditorOverlayKit
 
-SwiftUI overlay components for Lumi editor surfaces.
-
-`EditorOverlayKit` contains reusable editor overlay views that render hover cards, code actions, peek panels, inline rename controls, gutter decorations, surface highlights, secondary cursors, and inline presentations.
+可复用的 SwiftUI 编辑器浮层组件包。提供悬停卡片、Code Action、Peek、行内重命名、装订线装饰、表面高亮、辅助光标与行内展示等 overlay 视图。
 
 ## Package
 
@@ -10,7 +8,6 @@ SwiftUI overlay components for Lumi editor surfaces.
 - Platform: macOS 14+
 - Swift tools: 6.0
 - Local dependencies: `EditorService`, `EditorKernel`, `MarkdownKit`, `LumiUI`
-- Remote dependency: `MagicKit`
 
 ## Source Layout
 
@@ -23,9 +20,9 @@ SwiftUI overlay components for Lumi editor surfaces.
 - `EditorSecondaryCursorOverlayView`
 - `EditorInlinePresentationsOverlayView`
 
-## App Integration
+## Host integration
 
-This package is UI-focused. It should depend on editor state and reusable UI packages, but it should not own app-level plugin registration, command routing, or persistence.
+This package is UI-focused. It depends on editor state and reusable UI packages, but does not own host-level plugin registration, command routing, or persistence.
 
 ## Testing
 

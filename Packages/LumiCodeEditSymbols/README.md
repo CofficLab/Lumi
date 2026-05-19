@@ -1,13 +1,32 @@
 # LumiCodeEditSymbols
 
-本仓库内维护的第三方包（源自 CodeEditApp 的 `CodeEditSymbols`），用于提供编辑器相关的自定义图标资源（`Symbols.xcassets`）及便捷访问 API。
+维护中的 CodeEdit 图标资源包（源自 CodeEditApp 的 `CodeEditSymbols`）。提供编辑器相关自定义图标（`Symbols.xcassets`）及便捷访问 API。
 
-## 我们用它做什么
+## Package
+
+- Product: `CodeEditSymbols`
+- Platform: macOS 12+
+- Swift tools: 5.5
+
+## 用途
 
 - **SwiftUI**：通过 `Image(symbol:)` 或静态属性（例如 `Image.vault`）创建图标
 - **AppKit**：通过 `NSImage.symbol(named:)` 获取图标
 
-## 使用方式
+## 依赖与集成
+
+```swift
+dependencies: [
+    .package(path: "../LumiCodeEditSymbols"),
+],
+targets: [
+    .target(name: "YourTarget", dependencies: [
+        .product(name: "CodeEditSymbols", package: "LumiCodeEditSymbols"),
+    ]),
+]
+```
+
+## 基本用法
 
 SwiftUI：
 
@@ -36,12 +55,12 @@ let nsImage = NSImage.symbol(named: "vault")
 
 并在 `Sources/CodeEditSymbols/CodeEditSymbols.swift` 里补齐对应的静态属性（可选，但更易用）。
 
-## 运行测试
+## Testing
 
-本仓库不维护上游的 snapshot tests（它们对 Lumi 的功能无关键且容易受上游变更影响）。
-我们只保留最小 smoke test 来保证包可被 SwiftPM 构建与引用。
+本包不维护上游的 snapshot tests（易受上游变更影响）。仅保留最小 smoke test 以保证 SwiftPM 可构建与引用。
 
-```bash
-cd Packages/LumiCodeEditSymbols
+From this package directory:
+
+```sh
 swift test
 ```

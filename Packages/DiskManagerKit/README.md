@@ -1,8 +1,6 @@
 # DiskManagerKit
 
-Disk analysis and cleanup logic for Lumi.
-
-`DiskManagerKit` contains reusable services for inspecting disk usage, building directory trees, locating large files, analyzing caches, cleaning project dependencies, and handling Xcode cleanup candidates.
+可复用的磁盘分析与清理逻辑包。支持目录树扫描、大文件定位、缓存分析、项目依赖清理与 Xcode 清理候选检测。
 
 ## Package
 
@@ -23,8 +21,8 @@ From this package directory:
 swift test
 ```
 
-The tests cover model behavior and service logic. Keep filesystem-heavy logic injectable or scoped to temporary directories so tests stay deterministic.
+Tests cover model behavior and service logic. Keep filesystem-heavy logic injectable or scoped to temporary directories so tests stay deterministic.
 
-## App Integration
+## Host integration
 
-Use this package for reusable disk management behavior. Keep confirmation flows, UI presentation, and destructive-action permissions in the app or plugin layer.
+Use this package for reusable disk management behavior. Keep confirmation flows, UI presentation, and destructive-action permissions in the host app or plugin layer.

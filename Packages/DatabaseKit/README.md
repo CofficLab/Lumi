@@ -1,6 +1,12 @@
 # DatabaseKit
 
-Lumi 内部使用的数据库抽象层（SwiftPM 包）。
+可复用的数据库抽象层（SwiftPM 包）。对不同数据库驱动做一致封装，供任意宿主应用复用。
+
+## Package
+
+- Product: `DatabaseKit`
+- Platform: macOS 14+
+- Swift tools: 6.0
 
 ## 提供什么
 
@@ -12,18 +18,15 @@ Lumi 内部使用的数据库抽象层（SwiftPM 包）。
 
 - **mysql-nio / postgres-nio / swift-nio / swift-log**（见 `Package.swift`）
 
-## 使用方式
-
-在其他 SwiftPM 包的 `Package.swift` 中添加依赖：
+## 依赖与集成
 
 ```swift
-.package(path: "../DatabaseKit")
-```
-
-然后在目标依赖中引入：
-
-```swift
-.product(name: "DatabaseKit", package: "DatabaseKit")
+dependencies: [
+    .package(path: "../DatabaseKit"),
+],
+targets: [
+    .target(name: "YourTarget", dependencies: ["DatabaseKit"]),
+]
 ```
 
 ## 基本示例
@@ -47,7 +50,7 @@ await manager.register(driver: RedisDriver())
 let config = DatabaseConfig(
     name: "Local SQLite",
     type: .sqlite,
-    database: "/tmp/lumi.sqlite"
+    database: "/tmp/example.sqlite"
 )
 
 let connection = try await manager.connect(config: config)
@@ -64,12 +67,12 @@ _ = try await connection.execute(
 
 let inserted = try await connection.execute(
     "INSERT INTO items (name) VALUES (?)",
-    params: [.string("lumi")]
+    params: [.string("example")]
 )
 
 let result = try await connection.query(
     "SELECT id, name FROM items WHERE name = ?",
-    params: [.string("lumi")]
+    params: [.string("example")]
 )
 ```
 
@@ -157,14 +160,15 @@ Redis 查询会把 RESP null bulk string 映射为 `DatabaseValue.null`，UTF-8 
 - MySQL、PostgreSQL、Redis 的真实服务覆盖依赖 opt-in 集成测试；默认 `swift test` 不要求本机有这些服务。
 - Redis 事务使用 `MULTI` / `EXEC` / `DISCARD` 实现；事务对象只支持通过 `execute` 排队命令。
 
-## 运行测试
+## Testing
 
-```bash
-cd Packages/DatabaseKit
+From this package directory:
+
+```sh
 swift test
 ```
 
-## 运行集成测试
+## Integration tests
 
 默认测试不连接外部数据库。需要验证真实驱动时，设置对应环境变量后再运行 `swift test`。
 

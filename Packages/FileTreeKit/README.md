@@ -1,6 +1,12 @@
 # FileTreeKit
 
-文件树核心逻辑包，从 EditorRailFileTreePlugin 提取而来。
+可复用的文件树核心逻辑包。提供目录读取与排序、文件系统监听、展开状态持久化等能力。
+
+## Package
+
+- Product: `FileTreeKit`
+- Platform: macOS 14+
+- Swift tools: 6.0
 
 ## 模块
 
@@ -36,21 +42,26 @@
 - `addExpandedPath(_:for:)` / `removeExpandedPath(_:for:)` — 增删展开路径
 - `lastProjectPath()` / `setLastProjectPath(_:)` — 最近项目路径
 
-## 使用
+## 基本用法
 
 ```swift
 import FileTreeKit
 
-// 文件操作
 let contents = try FileTreeService.loadContents(of: projectURL)
 
-// 目录监听
 let watcher = FileTreeWatcher { changedURL in
-    print("目录变化: \(changedURL)")
+    print("Directory changed: \(changedURL)")
 }
 watcher.startWatching(url: someDirectory)
 
-// 状态持久化
 let store = FileTreeStore(directory: storeDirectory)
 store.setExpandedPaths(["/src", "/lib"], for: projectRoot)
+```
+
+## Testing
+
+From this package directory:
+
+```sh
+swift test
 ```

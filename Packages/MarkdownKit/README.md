@@ -1,32 +1,37 @@
-## MarkdownKit
+# MarkdownKit
 
-Lumi 内部的 Markdown 渲染与解析组件（SwiftPM 包）。
+可复用的 Markdown 解析与渲染组件（SwiftPM 包）。
 
-### 结构
+## Package
+
+- Products: `MarkdownKitCore`, `MarkdownKit`
+- Platform: macOS 14+
+- Swift tools: 6.0
+
+## 结构
 
 - **MarkdownKitCore**：纯解析/模型层（依赖 `swift-markdown`）
 - **MarkdownKit**：UI 渲染层（含 Mermaid 渲染，依赖 `beautiful-mermaid-swift`）
 
-### 使用方式
-
-在其他 SwiftPM 包的 `Package.swift` 中添加依赖：
+## 依赖与集成
 
 ```swift
-.package(path: "../MarkdownKit")
+dependencies: [
+    .package(path: "../MarkdownKit"),
+],
+targets: [
+    .target(name: "YourTarget", dependencies: [
+        .product(name: "MarkdownKitCore", package: "MarkdownKit"),
+        // 或
+        .product(name: "MarkdownKit", package: "MarkdownKit"),
+    ]),
+]
 ```
 
-按需引入产品：
+## Testing
 
-```swift
-.product(name: "MarkdownKitCore", package: "MarkdownKit")
-// 或
-.product(name: "MarkdownKit", package: "MarkdownKit")
-```
+From this package directory:
 
-### 运行测试
-
-```bash
-cd Packages/MarkdownKit
+```sh
 swift test
 ```
-

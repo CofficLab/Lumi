@@ -1,8 +1,6 @@
 # BrewKit
 
-Homebrew package management primitives for Lumi.
-
-`BrewKit` is intended to hold reusable Homebrew-related models and services outside the app target. The current package exposes a small namespace and is ready for additional brew command, package, and cask management behavior.
+可复用的 Homebrew 包管理原语包。用于承载 Homebrew 相关的模型与服务逻辑，供宿主应用或插件复用。
 
 ## Package
 
@@ -26,6 +24,6 @@ From this package directory:
 swift test
 ```
 
-## App Integration
+## Host integration
 
-Keep UI, plugin registration, permissions, and app-specific workflows in the Lumi app target. Put reusable Homebrew command parsing, package metadata, and service logic in this package.
+Keep UI, plugin registration, permissions, and app-specific workflows in the host app. Put reusable Homebrew command parsing, package metadata, and service logic in this package.
