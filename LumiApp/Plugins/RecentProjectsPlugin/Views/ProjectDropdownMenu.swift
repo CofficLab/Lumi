@@ -1,5 +1,6 @@
 import MagicKit
 import SwiftUI
+import LumiUI
 
 // MARK: - 项目下拉菜单
 
@@ -127,10 +128,8 @@ private struct DropdownItemView: View {
     let isCurrent: Bool
     let action: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        Button(action: action) {
+        AppListRow(isSelected: isCurrent, action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 13))
@@ -160,27 +159,6 @@ private struct DropdownItemView: View {
                         .foregroundColor(.accentColor)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(hoverBackgroundColor)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-    }
-
-    private var hoverBackgroundColor: Color {
-        if isCurrent {
-            return isHovered ? Color.accentColor.opacity(0.12) : Color.accentColor.opacity(0.06)
-        } else {
-            return isHovered ? Color.black.opacity(0.08) : Color.clear
         }
     }
 }

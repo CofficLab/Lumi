@@ -22,9 +22,6 @@ struct ModelSelectorView: View, SuperLog {
     /// 当前选中的 Tab，默认显示当前供应商
     @State private var selectedTab: ModelSelectorTab = .current
 
-    /// 当前 hover 的 Tab
-    @State private var hoveringTab: ModelSelectorTab? = nil
-
     /// 当前 hover 的模型
     @State private var hoveringModelId: String? = nil
 
@@ -55,8 +52,7 @@ struct ModelSelectorView: View, SuperLog {
         HStack(spacing: 0) {
             ModelSelectorTabSidebar(
                 providers: llmVM.allProviders,
-                selectedTab: $selectedTab,
-                hoveringTab: $hoveringTab
+                selectedTab: $selectedTab
             )
             .frame(width: 240)
             .background(Color(nsColor: .controlBackgroundColor))

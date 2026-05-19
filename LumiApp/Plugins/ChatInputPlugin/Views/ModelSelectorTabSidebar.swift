@@ -1,4 +1,5 @@
 import SwiftUI
+import LumiUI
 
 /// 模型选择器 Tab 侧边栏
 struct ModelSelectorTabSidebar: View {
@@ -7,8 +8,6 @@ struct ModelSelectorTabSidebar: View {
 
     /// 当前选中的 Tab
     @Binding var selectedTab: ModelSelectorTab
-    /// 当前 hover 的 Tab
-    @Binding var hoveringTab: ModelSelectorTab?
 
     var body: some View {
         VStack(spacing: 4) {
@@ -27,7 +26,7 @@ struct ModelSelectorTabSidebar: View {
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(Color(hex: "98989E"))
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 10)
+                .padding()
 
             ScrollView {
                 VStack(spacing: 4) {
@@ -42,15 +41,15 @@ struct ModelSelectorTabSidebar: View {
 
             quickTabButton(tab: .all, icon: "globe", title: String(localized: "All", table: "AgentChat"))
         }
-        .padding(8)
+        .padding()
     }
 
     // MARK: - 快捷 Tab 按钮
 
     /// 快捷 Tab 按钮（当前/常用/较快/全部）
     private func quickTabButton(tab: ModelSelectorTab, icon: String, title: String) -> some View {
-        Button(action: { selectedTab = tab }) {
-            HStack(spacing: 8) {
+        AppListRow(isSelected: selectedTab == tab, action: { selectedTab = tab }) {
+            HStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
@@ -60,18 +59,6 @@ struct ModelSelectorTabSidebar: View {
                     .lineLimit(1)
                 Spacer()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(tabBackgroundColor(for: tab))
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            hoveringTab = hovering ? tab : nil
         }
     }
 
@@ -80,8 +67,8 @@ struct ModelSelectorTabSidebar: View {
     /// 单个供应商的 Tab 按钮
     private func providerTabButton(provider: LLMProviderInfo) -> some View {
         let tab = ModelSelectorTab.provider(provider.id)
-        return Button(action: { selectedTab = tab }) {
-            HStack(spacing: 8) {
+        return AppListRow(isSelected: selectedTab == tab, action: { selectedTab = tab }) {
+            HStack(spacing: 4) {
                 Image(systemName: provider.isLocal ? "laptopcomputer" : "cloud")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
@@ -104,31 +91,6 @@ struct ModelSelectorTabSidebar: View {
                     .help(websiteURL)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(tabBackgroundColor(for: tab))
-            )
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            hoveringTab = hovering ? tab : nil
-        }
-    }
-
-    // MARK: - Helper
-
-    /// Tab 背景色
-    private func tabBackgroundColor(for tab: ModelSelectorTab) -> Color {
-        if selectedTab == tab {
-            return Color.accentColor.opacity(0.15)
-        }
-        if hoveringTab == tab {
-            return Color.accentColor.opacity(0.08)
-        }
-        return Color.clear
     }
 }
