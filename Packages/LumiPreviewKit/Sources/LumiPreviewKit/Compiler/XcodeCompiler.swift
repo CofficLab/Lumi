@@ -3,8 +3,12 @@ import Foundation
 public extension LumiPreviewFacade {
 /// Xcode 编译器：使用 xcodebuild 编译 Xcode 项目中的预览。
 final class XcodeCompiler: Sendable {
+    public let derivedDataPath: URL?
+
     /// 创建 Xcode 编译器。
-    public init() {}
+    public init(derivedDataPath: URL? = nil) {
+        self.derivedDataPath = derivedDataPath
+    }
 
     /// 编译指定 scheme，返回编译产物路径。
     ///
@@ -23,6 +27,7 @@ final class XcodeCompiler: Sendable {
                 projectURL: projectURL,
                 scheme: scheme,
                 configuration: configuration,
+                derivedDataPath: self.derivedDataPath,
                 action: "build"
             )
 
@@ -34,6 +39,7 @@ final class XcodeCompiler: Sendable {
                 projectURL: projectURL,
                 scheme: scheme,
                 configuration: configuration,
+                derivedDataPath: self.derivedDataPath,
                 action: "-showBuildSettings"
             )
 
@@ -62,6 +68,7 @@ final class XcodeCompiler: Sendable {
                 projectURL: projectURL,
                 scheme: scheme,
                 configuration: configuration,
+                derivedDataPath: self.derivedDataPath,
                 action: "-showBuildSettings"
             )
 
@@ -100,6 +107,7 @@ final class XcodeCompiler: Sendable {
         projectURL: URL,
         scheme: String,
         configuration: String,
+        derivedDataPath: URL?,
         action: String
     ) throws -> BuildResult {
         let process = Process()
@@ -108,6 +116,7 @@ final class XcodeCompiler: Sendable {
             projectURL: projectURL,
             scheme: scheme,
             configuration: configuration,
+            derivedDataPath: derivedDataPath,
             action: action
         )
         process.currentDirectoryURL = projectURL.deletingLastPathComponent()
@@ -151,6 +160,7 @@ final class XcodeCompiler: Sendable {
         projectURL: URL,
         scheme: String,
         configuration: String,
+        derivedDataPath: URL?,
         action: String
     ) -> [String] {
         var arguments = ["xcodebuild"]
@@ -164,9 +174,14 @@ final class XcodeCompiler: Sendable {
         arguments.append(contentsOf: [
             "-scheme", scheme,
             "-configuration", configuration,
-            "-destination", "platform=macOS",
-            action
+            "-destination", "platform=macOS"
         ])
+
+        if let derivedDataPath {
+            arguments.append(contentsOf: ["-derivedDataPath", derivedDataPath.path])
+        }
+
+        arguments.append(action)
 
         return arguments
     }

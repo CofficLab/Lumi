@@ -68,7 +68,8 @@ public extension LumiPreviewFacade {
                 return try await captureXcodeBuildLog(
                     projectURL: projectURL,
                     scheme: scheme,
-                    configuration: configuration
+                    configuration: configuration,
+                    derivedDataPath: xcodeCompiler.derivedDataPath
                 )
             case .spm, .incremental:
                 return nil
@@ -358,7 +359,8 @@ public extension LumiPreviewFacade {
         private func captureXcodeBuildLog(
             projectURL: URL,
             scheme: String,
-            configuration: String
+            configuration: String,
+            derivedDataPath: URL?
         ) async throws -> String {
             try await Task.detached {
                 let process = Process()
@@ -366,7 +368,8 @@ public extension LumiPreviewFacade {
                 process.arguments = Self.xcodebuildArguments(
                     projectURL: projectURL,
                     scheme: scheme,
-                    configuration: configuration
+                    configuration: configuration,
+                    derivedDataPath: derivedDataPath
                 )
                 process.currentDirectoryURL = projectURL.deletingLastPathComponent()
 
@@ -408,7 +411,8 @@ public extension LumiPreviewFacade {
         private static func xcodebuildArguments(
             projectURL: URL,
             scheme: String,
-            configuration: String
+            configuration: String,
+            derivedDataPath: URL?
         ) -> [String] {
             var arguments = ["xcodebuild"]
 
@@ -421,9 +425,14 @@ public extension LumiPreviewFacade {
             arguments.append(contentsOf: [
                 "-scheme", scheme,
                 "-configuration", configuration,
-                "-destination", "platform=macOS",
-                "build"
+                "-destination", "platform=macOS"
             ])
+
+            if let derivedDataPath {
+                arguments.append(contentsOf: ["-derivedDataPath", derivedDataPath.path])
+            }
+
+            arguments.append("build")
 
             return arguments
         }
@@ -578,7 +587,8 @@ public extension LumiPreviewFacade {
                 process.arguments = xcodebuildSettingsArguments(
                     projectURL: projectURL,
                     scheme: scheme,
-                    configuration: configuration
+                    configuration: configuration,
+                    derivedDataPath: xcodeCompiler.derivedDataPath
                 )
                 process.currentDirectoryURL = projectURL.deletingLastPathComponent()
 
@@ -629,7 +639,8 @@ public extension LumiPreviewFacade {
         private static func xcodebuildSettingsArguments(
             projectURL: URL,
             scheme: String,
-            configuration: String
+            configuration: String,
+            derivedDataPath: URL?
         ) -> [String] {
             var arguments = ["xcodebuild"]
 
@@ -642,9 +653,14 @@ public extension LumiPreviewFacade {
             arguments.append(contentsOf: [
                 "-scheme", scheme,
                 "-configuration", configuration,
-                "-destination", "platform=macOS",
-                "-showBuildSettings"
+                "-destination", "platform=macOS"
             ])
+
+            if let derivedDataPath {
+                arguments.append(contentsOf: ["-derivedDataPath", derivedDataPath.path])
+            }
+
+            arguments.append("-showBuildSettings")
 
             return arguments
         }

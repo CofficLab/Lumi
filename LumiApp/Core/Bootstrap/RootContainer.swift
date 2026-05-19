@@ -39,7 +39,7 @@ final class RootContainer: ObservableObject, SuperLog {
     let toolService: ToolService
     let providerRegistry: LLMProviderRegistry
     let chatHistoryService: ChatHistoryService
-    let conversationTurnServices: ConversationTurnServices
+    let conversationTurnServices: ConversationTurnServicesVM
     let toolExecutionService: ToolExecutionService
     
     // MARK: - 全局 ViewModel（应用级，所有窗口共享）
@@ -172,7 +172,7 @@ final class RootContainer: ObservableObject, SuperLog {
         self.slashCommandService = SlashCommandService()
         self.toolService = ToolService(llmService: llmService)
         
-        self.conversationTurnServices = ConversationTurnServices(
+        self.conversationTurnServices = ConversationTurnServicesVM(
             promptService: promptService,
             toolService: toolService
         )

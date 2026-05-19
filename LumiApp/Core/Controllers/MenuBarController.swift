@@ -30,7 +30,7 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
     ///
     /// 管理图标的状态和内容视图。
     /// 使用 MVVM 模式管理 SwiftUI 视图的数据。
-    private var iconViewModel = MenuBarIconVM()
+    private var iconViewModel = AppMenuBarIconVM()
     
     /// 菜单栏图标的主机视图
     ///
@@ -455,6 +455,6 @@ class MenuBarController: NSObject, SuperLog, NSPopoverDelegate {
 // MARK: - Preview
 
 #Preview("MenuBar") {
-    MenuBarIconView(viewModel: MenuBarIconVM())
+    MenuBarIconView(viewModel: AppMenuBarIconVM())
         .frame(width: 20, height: 20)
 }

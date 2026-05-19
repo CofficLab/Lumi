@@ -2,7 +2,7 @@ import Combine
 import SwiftUI
 
 /// 菜单栏图标视图模型
-class MenuBarIconVM: ObservableObject {
+class AppMenuBarIconVM: ObservableObject {
     @Published var isActive: Bool = false
     @Published var activeSources: Set<String> = []
 
