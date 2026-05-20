@@ -41,7 +41,7 @@ actor CaffeinatePlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tools
 
     @MainActor
-    func agentTools() -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             CaffeinateActivateTool(),
             CaffeinateDeactivateTool(),

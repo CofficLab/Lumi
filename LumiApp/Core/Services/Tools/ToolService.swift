@@ -87,6 +87,9 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// LLM 服务（可选）
     private let llmService: LLMService?
 
+    /// LLM 配置 ViewModel（可选，由 RootContainer 注入）
+    weak var llmVM: AppLLMVM?
+
     /// Combine 订阅集合
     ///
     /// 存储所有 Combine 订阅，用于清理。
@@ -150,12 +153,8 @@ class ToolService: SuperLog, @unchecked Sendable {
     /// 合并内置工具、MCP 工具和插件工具，通知观察者。
     @MainActor
     private func refreshAllTools() {
-        let env = SuperAgentToolEnvironment(toolService: self, llmService: llmService)
-        let directTools = AppPluginVM.shared.getAgentTools()
-        let factories = AppPluginVM.shared.getAgentToolFactories()
-        let factoryTools = factories.flatMap { $0.makeTools(env: env) }
-
-        pluginTools = directTools + factoryTools
+        let context = ToolContext(toolService: self, llmService: llmService, llmVM: llmVM)
+        pluginTools = AppPluginVM.shared.collectAgentTools(context: context)
         allTools = builtInTools + pluginTools
     }
 

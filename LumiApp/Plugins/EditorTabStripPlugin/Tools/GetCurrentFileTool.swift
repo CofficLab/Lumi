@@ -42,7 +42,7 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
         }
 
         let store = EditorTabStripStore.shared
-        guard let fileInfo = store.getCurrentFilePath(forProject: project.path) else {
+        guard let fileInfo = store.getCurrentFilePath(forProject: projectPath) else {
             return """
             ## Current File Status
 

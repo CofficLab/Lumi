@@ -17,24 +17,46 @@ struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue 编号"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "issueNumber"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue number"
+                    ]
                 ],
-                "issueNumber": [
-                    "type": "number",
-                    "description": "Issue 编号"
-                ]
-            ],
-            "required": ["owner", "repo", "issueNumber"]
-        ]
+                "required": ["owner", "repo", "issueNumber"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

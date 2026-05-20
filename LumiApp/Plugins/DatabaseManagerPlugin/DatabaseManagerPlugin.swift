@@ -34,8 +34,13 @@ actor DatabaseManagerPlugin: SuperPlugin, SuperLog {
     nonisolated func addPanelIcon() -> String? { Self.iconName }
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(DatabaseAgentToolFactory())]
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [
+            DatabaseListConnectionsTool(),
+            DatabaseDescribeSchemaTool(),
+            DatabaseReadonlyQueryTool(),
+            DatabaseSampleTableTool(),
+        ]
     }
 }
 

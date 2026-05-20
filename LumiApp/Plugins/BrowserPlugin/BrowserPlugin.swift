@@ -29,19 +29,7 @@ actor BrowserPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(BrowserToolFactory())]
-    }
-}
-
-// MARK: - Tool Factory
-
-@MainActor
-private struct BrowserToolFactory: SuperAgentToolFactory {
-    let id: String = "browser.screenshot.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [BrowserScreenshotTool()]
     }
 }

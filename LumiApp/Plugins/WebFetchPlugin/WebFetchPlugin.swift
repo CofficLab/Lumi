@@ -28,19 +28,7 @@ actor WebFetchPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(WebFetchToolFactory())]
-    }
-}
-
-// MARK: - Tool Factory
-
-@MainActor
-private struct WebFetchToolFactory: SuperAgentToolFactory {
-    let id: String = "web.fetch.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [WebFetchTool()]
     }
 }

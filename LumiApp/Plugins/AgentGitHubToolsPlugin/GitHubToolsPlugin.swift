@@ -32,35 +32,15 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
         GitHubAPIService.shared.setTokenProvider(settingsStore)
     }
 
-    // MARK: - Agent Tool Factories
+    // MARK: - Agent Tools
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(GitHubToolsFactory())]
-    }
-
-    // MARK: - Settings View
-
-    @MainActor
-    func addSettingsView() -> AnyView? {
-        AnyView(GitHubPluginSettingsView())
-    }
-}
-
-// MARK: - Tools Factory
-
-@MainActor
-private struct GitHubToolsFactory: SuperAgentToolFactory {
-    let id: String = "github.tools.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             GitHubRepoInfoTool(),
             GitHubSearchTool(),
             GitHubFileContentTool(),
             GitHubTrendingTool(),
-            // Issue 相关工具
             GitHubIssueListTool(),
             GitHubIssueDetailTool(),
             GitHubCreateIssueTool(),
@@ -70,5 +50,12 @@ private struct GitHubToolsFactory: SuperAgentToolFactory {
             GitHubIssueCommentsTool(),
             GitHubAddIssueCommentTool(),
         ]
+    }
+
+    // MARK: - Settings View
+
+    @MainActor
+    func addSettingsView() -> AnyView? {
+        AnyView(GitHubPluginSettingsView())
     }
 }

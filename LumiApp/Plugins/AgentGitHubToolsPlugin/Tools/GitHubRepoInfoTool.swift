@@ -17,16 +17,26 @@ struct GitHubRepoInfoTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let ownerDesc: String
+        let repoDesc: String
+        switch language {
+        case .chinese:
+            ownerDesc = "仓库所有者（用户名或组织名）"
+            repoDesc = "仓库名称"
+        case .english:
+            ownerDesc = "Repository owner (username or organization)"
+            repoDesc = "Repository name"
+        }
+        return [
             "type": "object",
             "properties": [
                 "owner": [
                     "type": "string",
-                    "description": "仓库所有者（用户名或组织名）"
+                    "description": ownerDesc
                 ],
                 "repo": [
                     "type": "string",
-                    "description": "仓库名称"
+                    "description": repoDesc
                 ]
             ],
             "required": ["owner", "repo"]

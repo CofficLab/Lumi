@@ -37,7 +37,7 @@ actor GitHubInsightPlugin: SuperPlugin, SuperLog {
 
     /// 注册此插件暴露给 Agent 的工具。
     @MainActor
-    func agentTools() -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [QueryEcoKBTool()]
     }
 }

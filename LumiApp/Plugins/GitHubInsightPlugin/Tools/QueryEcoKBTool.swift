@@ -10,7 +10,12 @@ struct QueryEcoKBTool: SuperAgentTool {
 
     /// 返回展示给 Agent 的本地化工具描述。
     func description(for language: LanguagePreference) -> String {
-        String(localized: "Query the local cached GitHub ecosystem knowledge base for repositories related to the current project.", table: "GitHubInsight")
+        switch language {
+        case .chinese:
+            return "查询本地缓存的 GitHub 生态知识库，获取与当前项目相关的仓库。"
+        case .english:
+            return "Query the local cached GitHub ecosystem knowledge base for repositories related to the current project."
+        }
     }
 
     /// 定义工具接受的 JSON schema。

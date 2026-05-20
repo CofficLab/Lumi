@@ -337,11 +337,8 @@ protocol SuperPlugin: Actor {
 
     // MARK: - Agent Tools Hooks
 
-    /// 提供 Agent 工具列表。
-    @MainActor func agentTools() -> [SuperAgentTool]
-
-    /// 提供 Agent 工具工厂列表（带依赖注入）。
-    @MainActor func agentToolFactories() -> [AnySuperAgentToolFactory]
+    /// 提供 Agent 工具列表（可按需使用 `context` 注入依赖）。
+    @MainActor func agentTools(context: ToolContext) -> [SuperAgentTool]
 
     // MARK: - Send Pipeline
 

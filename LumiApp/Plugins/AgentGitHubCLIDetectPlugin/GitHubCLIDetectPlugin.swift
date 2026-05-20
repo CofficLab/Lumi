@@ -26,22 +26,8 @@ actor GitHubCLIDetectPlugin: SuperPlugin, SuperLog {
 
     private init() {}
 
-    // MARK: - Agent Tool Factories
-
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(CLIDetectToolsFactory())]
-    }
-}
-
-// MARK: - Tools Factory
-
-@MainActor
-private struct CLIDetectToolsFactory: SuperAgentToolFactory {
-    let id: String = "github.cli.detect.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [GitHubCLICheckTool()]
     }
 }

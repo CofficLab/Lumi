@@ -32,19 +32,7 @@ actor WebSearchPlugin: SuperPlugin, SuperLog {
     private init() {}
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(WebSearchToolFactory())]
-    }
-}
-
-// MARK: - Tool Factory
-
-@MainActor
-private struct WebSearchToolFactory: SuperAgentToolFactory {
-    let id: String = "web.search.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [WebSearchTool()]
     }
 }

@@ -80,22 +80,7 @@ actor DelayMessagePlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tools
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(DelayMessageToolFactory())]
-    }
-}
-
-// MARK: - Tool Factory
-
-@MainActor
-private struct DelayMessageToolFactory: SuperAgentToolFactory {
-    let id: String = "delay.message.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
-        [
-            GetCurrentConversationTool(),
-            DelayMessageTool(),
-        ]
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [GetCurrentConversationTool(), DelayMessageTool()]
     }
 }

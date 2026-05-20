@@ -17,51 +17,100 @@ struct GitHubUpdateIssueTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue 编号"
+                    ],
+                    "title": [
+                        "type": "string",
+                        "description": "新的标题（可选）"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "新的描述（可选）"
+                    ],
+                    "state": [
+                        "type": "string",
+                        "description": "状态：open 或 closed",
+                        "enum": ["open", "closed"]
+                    ],
+                    "labels": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "新的标签数组（可选）"
+                    ],
+                    "assignees": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "新的指派用户数组（可选）"
+                    ],
+                    "milestone": [
+                        "type": "number",
+                        "description": "里程碑编号（可选，null 表示移除）"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "issueNumber"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner (username or organization)"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue number"
+                    ],
+                    "title": [
+                        "type": "string",
+                        "description": "New title (optional)"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "New description (optional)"
+                    ],
+                    "state": [
+                        "type": "string",
+                        "description": "State: open or closed",
+                        "enum": ["open", "closed"]
+                    ],
+                    "labels": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "New labels array (optional)"
+                    ],
+                    "assignees": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "New assignees array (optional)"
+                    ],
+                    "milestone": [
+                        "type": "number",
+                        "description": "Milestone number (optional, null to remove)"
+                    ]
                 ],
-                "issueNumber": [
-                    "type": "number",
-                    "description": "Issue 编号"
-                ],
-                "title": [
-                    "type": "string",
-                    "description": "新的标题（可选）"
-                ],
-                "body": [
-                    "type": "string",
-                    "description": "新的描述（可选）"
-                ],
-                "state": [
-                    "type": "string",
-                    "description": "状态：open 或 closed",
-                    "enum": ["open", "closed"]
-                ],
-                "labels": [
-                    "type": "array",
-                    "items": ["type": "string"],
-                    "description": "新的标签数组（可选）"
-                ],
-                "assignees": [
-                    "type": "array",
-                    "items": ["type": "string"],
-                    "description": "新的指派用户数组（可选）"
-                ],
-                "milestone": [
-                    "type": "number",
-                    "description": "里程碑编号（可选，null 表示移除）"
-                ]
-            ],
-            "required": ["owner", "repo", "issueNumber"]
-        ]
+                "required": ["owner", "repo", "issueNumber"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

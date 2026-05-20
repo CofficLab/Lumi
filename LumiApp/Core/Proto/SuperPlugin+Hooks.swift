@@ -3,9 +3,7 @@ import Foundation
 // MARK: - Agent Tools Default Implementation
 
 extension SuperPlugin {
-    @MainActor func agentTools() -> [SuperAgentTool] { [] }
-
-    @MainActor func agentToolFactories() -> [AnySuperAgentToolFactory] { [] }
+    @MainActor func agentTools(context: ToolContext) -> [SuperAgentTool] { [] }
 
     @MainActor func sendMiddlewares() -> [AnySuperSendMiddleware] { [] }
 

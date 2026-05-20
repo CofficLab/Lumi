@@ -51,9 +51,8 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
             return "❌ Error: Path is a directory, not a file: \(path)"
         }
 
-        // 获取当前项目路径
-        let projectStore = RecentProjectsStore()
-        guard let project = projectStore.getCurrentProject() else {
+        // 获取当前活跃窗口的项目路径
+        guard let projectPath = WindowManager.shared.activeWindowScope?.projectPath else {
             return "❌ Error: No project selected. Use `set_current_project` first."
         }
 
@@ -61,7 +60,7 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
 
         // 通过 EditorTabStripStore 设置当前活跃文件
         let store = EditorTabStripStore.shared
-        store.setCurrentFilePath(path: path, forProject: project.path)
+        store.setCurrentFilePath(path: path, forProject: projectPath)
 
         // 发送通知，告知 UI 同步
         NotificationCenter.postCurrentFileDidChange(path: path)

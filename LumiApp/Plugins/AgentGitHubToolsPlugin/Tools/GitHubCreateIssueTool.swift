@@ -17,42 +17,82 @@ struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "title": [
+                        "type": "string",
+                        "description": "Issue 标题"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "Issue 描述（支持 Markdown 格式）"
+                    ],
+                    "labels": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "标签名称数组，如 [\"bug\", \"help wanted\"]"
+                    ],
+                    "assignees": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "指派的用户名数组"
+                    ],
+                    "milestone": [
+                        "type": "number",
+                        "description": "里程碑编号"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "title"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "title": [
+                        "type": "string",
+                        "description": "Issue title"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "Issue description (Markdown supported)"
+                    ],
+                    "labels": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "Array of label names, e.g. [\"bug\", \"help wanted\"]"
+                    ],
+                    "assignees": [
+                        "type": "array",
+                        "items": ["type": "string"],
+                        "description": "Array of usernames to assign"
+                    ],
+                    "milestone": [
+                        "type": "number",
+                        "description": "Milestone number"
+                    ]
                 ],
-                "title": [
-                    "type": "string",
-                    "description": "Issue 标题"
-                ],
-                "body": [
-                    "type": "string",
-                    "description": "Issue 描述（支持 Markdown 格式）"
-                ],
-                "labels": [
-                    "type": "array",
-                    "items": ["type": "string"],
-                    "description": "标签名称数组，如 [\"bug\", \"help wanted\"]"
-                ],
-                "assignees": [
-                    "type": "array",
-                    "items": ["type": "string"],
-                    "description": "指派的用户名数组"
-                ],
-                "milestone": [
-                    "type": "number",
-                    "description": "里程碑编号"
-                ]
-            ],
-            "required": ["owner", "repo", "title"]
-        ]
+                "required": ["owner", "repo", "title"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

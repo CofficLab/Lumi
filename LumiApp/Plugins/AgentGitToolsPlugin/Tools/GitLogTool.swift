@@ -16,24 +16,40 @@ struct GitLogTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let pathDesc: String
+        let countDesc: String
+        let branchDesc: String
+        let fileDesc: String
+        switch language {
+        case .chinese:
+            pathDesc = "Git 仓库路径，默认为当前工作目录"
+            countDesc = "显示的提交数量，默认 10"
+            branchDesc = "可选，查看特定分支的日志"
+            fileDesc = "可选，查看特定文件的提交历史"
+        case .english:
+            pathDesc = "Git repository path, defaults to current working directory"
+            countDesc = "Number of commits to display, default 10"
+            branchDesc = "Optional, view logs for a specific branch"
+            fileDesc = "Optional, view commit history for a specific file"
+        }
+        return [
             "type": "object",
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "Git 仓库路径，默认为当前工作目录"
+                    "description": pathDesc
                 ],
                 "count": [
                     "type": "number",
-                    "description": "显示的提交数量，默认 10"
+                    "description": countDesc
                 ],
                 "branch": [
                     "type": "string",
-                    "description": "可选，查看特定分支的日志"
+                    "description": branchDesc
                 ],
                 "file": [
                     "type": "string",
-                    "description": "可选，查看特定文件的提交历史"
+                    "description": fileDesc
                 ]
             ]
         ]

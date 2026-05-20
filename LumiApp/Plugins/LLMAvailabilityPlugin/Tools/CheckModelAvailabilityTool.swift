@@ -20,16 +20,26 @@ struct CheckModelAvailabilityTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let providerIdDesc: String
+        let modelIdDesc: String
+        switch language {
+        case .chinese:
+            providerIdDesc = "供应商 ID（如 openai、anthropic、deepseek、zhipu、aliyun 等）"
+            modelIdDesc = "模型 ID（如 gpt-4o、claude-sonnet-4-20250514、deepseek-chat 等）"
+        case .english:
+            providerIdDesc = "Provider ID (e.g., openai, anthropic, deepseek, zhipu, aliyun)"
+            modelIdDesc = "Model ID (e.g., gpt-4o, claude-sonnet-4-20250514, deepseek-chat)"
+        }
+        return [
             "type": "object",
             "properties": [
                 "providerId": [
                     "type": "string",
-                    "description": "供应商 ID（如 openai、anthropic、deepseek、zhipu、aliyun 等）",
+                    "description": providerIdDesc,
                 ],
                 "modelId": [
                     "type": "string",
-                    "description": "模型 ID（如 gpt-4o、claude-sonnet-4-20250514、deepseek-chat 等）",
+                    "description": modelIdDesc,
                 ],
             ],
             "required": ["providerId", "modelId"],

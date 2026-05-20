@@ -120,8 +120,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
 
     // MARK: - Tools Cache
 
-    private var cachedAgentTools: [SuperAgentTool]?
-    private var cachedAgentToolFactories: [AnySuperAgentToolFactory]?
     private var cachedSuperSendMiddlewares: [SuperSendMiddleware]?
     /// 已发现的 LLM 供应商类型
     ///
@@ -150,8 +148,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
         settingsStore.$settings
             .sink { [weak self] _ in
                 self?.clearUICaches()
-                self?.cachedAgentTools = nil
-                self?.cachedAgentToolFactories = nil
                 self?.cachedSuperSendMiddlewares = nil
                 self?.objectWillChange.send()
             }
@@ -186,55 +182,21 @@ final class AppPluginVM: ObservableObject, SuperLog {
 
     // MARK: - Agent Tools Aggregation
 
-    func getAgentTools() -> [SuperAgentTool] {
-        if let cachedAgentTools {
-            return cachedAgentTools
-        }
-
+    func collectAgentTools(context: ToolContext) -> [SuperAgentTool] {
         let enabledPlugins = plugins.filter { isPluginEnabled($0) }
         var tools: [(pluginOrder: Int, tool: SuperAgentTool)] = []
 
         for plugin in enabledPlugins {
             let pluginOrder = type(of: plugin).order
-            let pluginTools = plugin.agentTools()
-            for t in pluginTools {
-                tools.append((pluginOrder: pluginOrder, tool: t))
+            for tool in plugin.agentTools(context: context) {
+                tools.append((pluginOrder: pluginOrder, tool: tool))
             }
         }
 
-        let sorted = tools.sorted { a, b in
+        return tools.sorted { a, b in
             if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
             return a.tool.name < b.tool.name
         }.map(\.tool)
-
-        cachedAgentTools = sorted
-        return sorted
-    }
-
-    func getAgentToolFactories() -> [AnySuperAgentToolFactory] {
-        if let cachedAgentToolFactories {
-            return cachedAgentToolFactories
-        }
-
-        let enabledPlugins = plugins.filter { isPluginEnabled($0) }
-        var factories: [(pluginOrder: Int, f: AnySuperAgentToolFactory)] = []
-
-        for plugin in enabledPlugins {
-            let pluginOrder = type(of: plugin).order
-            let fs = plugin.agentToolFactories()
-            for f in fs {
-                factories.append((pluginOrder: pluginOrder, f: f))
-            }
-        }
-
-        let sorted = factories.sorted { a, b in
-            if a.pluginOrder != b.pluginOrder { return a.pluginOrder < b.pluginOrder }
-            if a.f.order != b.f.order { return a.f.order < b.f.order }
-            return a.f.id < b.f.id
-        }.map(\.f)
-
-        cachedAgentToolFactories = sorted
-        return sorted
     }
 
     // MARK: - Send Middleware
@@ -281,8 +243,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
     private func autoDiscoverAndRegisterPlugins() {
         // 插件列表将被重建，相关缓存一并清空
         clearUICaches()
-        cachedAgentTools = nil
-        cachedAgentToolFactories = nil
         cachedSuperSendMiddlewares = nil
 
         var count: UInt32 = 0
@@ -334,8 +294,6 @@ final class AppPluginVM: ObservableObject, SuperLog {
 
         // 插件已更新，清空聚合缓存，避免在插件加载前被读取后永久缓存为空。
         clearUICaches()
-        cachedAgentTools = nil
-        cachedAgentToolFactories = nil
         cachedSuperSendMiddlewares = nil
 
         // 从插件中收集 LLM 供应商类型

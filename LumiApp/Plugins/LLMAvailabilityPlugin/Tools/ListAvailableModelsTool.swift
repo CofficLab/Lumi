@@ -18,12 +18,19 @@ struct ListAvailableModelsTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let providerIdDesc: String
+        switch language {
+        case .chinese:
+            providerIdDesc = "可选，按供应商 ID 过滤（如 OpenAI、Anthropic）"
+        case .english:
+            providerIdDesc = "Optional, filter by provider ID (e.g., OpenAI, Anthropic)"
+        }
+        return [
             "type": "object",
             "properties": [
                 "providerId": [
                     "type": "string",
-                    "description": "可选，按供应商 ID 过滤（如 OpenAI、Anthropic）",
+                    "description": providerIdDesc,
                 ],
             ],
         ]

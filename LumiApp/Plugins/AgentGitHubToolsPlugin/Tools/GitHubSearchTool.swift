@@ -17,24 +17,40 @@ struct GitHubSearchTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let queryDesc: String
+        let languageDesc: String
+        let minStarsDesc: String
+        let limitDesc: String
+        switch language {
+        case .chinese:
+            queryDesc = "搜索关键词"
+            languageDesc = "编程语言过滤（可选）"
+            minStarsDesc = "最小 star 数（可选）"
+            limitDesc = "返回结果数量限制，默认 5"
+        case .english:
+            queryDesc = "Search query keyword"
+            languageDesc = "Programming language filter (optional)"
+            minStarsDesc = "Minimum number of stars (optional)"
+            limitDesc = "Maximum number of results, default 5"
+        }
+        return [
             "type": "object",
             "properties": [
                 "query": [
                     "type": "string",
-                    "description": "搜索关键词"
+                    "description": queryDesc
                 ],
                 "language": [
                     "type": "string",
-                    "description": "编程语言过滤（可选）"
+                    "description": languageDesc
                 ],
                 "minStars": [
                     "type": "number",
-                    "description": "最小 star 数（可选）"
+                    "description": minStarsDesc
                 ],
                 "limit": [
                     "type": "number",
-                    "description": "返回结果数量限制，默认 5"
+                    "description": limitDesc
                 ]
             ],
             "required": ["query"]

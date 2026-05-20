@@ -32,7 +32,7 @@ actor EditorTabStripPlugin: SuperPlugin {
     // MARK: - Agent Tools
 
     @MainActor
-    func agentTools() -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             GetCurrentFileTool(),
             SetCurrentFileTool(),

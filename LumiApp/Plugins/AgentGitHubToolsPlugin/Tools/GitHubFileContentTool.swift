@@ -17,28 +17,54 @@ struct GitHubFileContentTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "path": [
+                        "type": "string",
+                        "description": "文件路径（如 README.md、src/main.swift）"
+                    ],
+                    "branch": [
+                        "type": "string",
+                        "description": "分支名称，默认为 main"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "path"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "path": [
+                        "type": "string",
+                        "description": "File path (e.g., README.md, src/main.swift)"
+                    ],
+                    "branch": [
+                        "type": "string",
+                        "description": "Branch name, defaults to main"
+                    ]
                 ],
-                "path": [
-                    "type": "string",
-                    "description": "文件路径（如 README.md、src/main.swift）"
-                ],
-                "branch": [
-                    "type": "string",
-                    "description": "分支名称，默认为 main"
-                ]
-            ],
-            "required": ["owner", "repo", "path"]
-        ]
+                "required": ["owner", "repo", "path"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

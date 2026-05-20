@@ -45,7 +45,7 @@ actor AutoTaskPlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tools
 
     @MainActor
-    func agentTools() -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             CreateTaskTool(),
             UpdateTaskTool(),

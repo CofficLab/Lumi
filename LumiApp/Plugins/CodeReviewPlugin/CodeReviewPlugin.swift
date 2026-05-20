@@ -19,17 +19,7 @@ actor CodeReviewPlugin: SuperPlugin, SuperLog {
     static let shared = CodeReviewPlugin()
 
     @MainActor
-    func agentToolFactories() -> [AnySuperAgentToolFactory] {
-        [AnySuperAgentToolFactory(CodeReviewToolsFactory())]
-    }
-}
-
-@MainActor
-private struct CodeReviewToolsFactory: SuperAgentToolFactory {
-    let id: String = "code.review.tools.factory"
-    let order: Int = 0
-
-    func makeTools(env: SuperAgentToolEnvironment) -> [SuperAgentTool] {
-        [RunReviewTool(llmService: env.llmService)]
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
+        [RunReviewTool(llmService: context.llmService)]
     }
 }

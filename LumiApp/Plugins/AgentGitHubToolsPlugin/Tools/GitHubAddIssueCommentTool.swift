@@ -17,28 +17,54 @@ struct GitHubAddIssueCommentTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "owner": [
-                    "type": "string",
-                    "description": "仓库所有者"
+        switch language {
+        case .chinese:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "仓库所有者"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "仓库名称"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue 编号"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "评论内容（支持 Markdown 格式）"
+                    ]
                 ],
-                "repo": [
-                    "type": "string",
-                    "description": "仓库名称"
+                "required": ["owner", "repo", "issueNumber", "body"]
+            ]
+        case .english:
+            return [
+                "type": "object",
+                "properties": [
+                    "owner": [
+                        "type": "string",
+                        "description": "Repository owner"
+                    ],
+                    "repo": [
+                        "type": "string",
+                        "description": "Repository name"
+                    ],
+                    "issueNumber": [
+                        "type": "number",
+                        "description": "Issue number"
+                    ],
+                    "body": [
+                        "type": "string",
+                        "description": "Comment body (Markdown supported)"
+                    ]
                 ],
-                "issueNumber": [
-                    "type": "number",
-                    "description": "Issue 编号"
-                ],
-                "body": [
-                    "type": "string",
-                    "description": "评论内容（支持 Markdown 格式）"
-                ]
-            ],
-            "required": ["owner", "repo", "issueNumber", "body"]
-        ]
+                "required": ["owner", "repo", "issueNumber", "body"]
+            ]
+        }
     }
 
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {

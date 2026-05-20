@@ -17,20 +17,33 @@ struct GitDiffTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let pathDesc: String
+        let stagedDesc: String
+        let fileDesc: String
+        switch language {
+        case .chinese:
+            pathDesc = "Git 仓库路径，默认为当前工作目录"
+            stagedDesc = "是否查看暂存区的差异，false 表示查看工作区的差异"
+            fileDesc = "可选，只查看指定文件的差异"
+        case .english:
+            pathDesc = "Git repository path, defaults to current working directory"
+            stagedDesc = "Whether to view staged changes. false means viewing working tree changes"
+            fileDesc = "Optional, only view changes for the specified file"
+        }
+        return [
             "type": "object",
             "properties": [
                 "path": [
                     "type": "string",
-                    "description": "Git 仓库路径，默认为当前工作目录"
+                    "description": pathDesc
                 ],
                 "staged": [
                     "type": "boolean",
-                    "description": "是否查看暂存区的差异，false 表示查看工作区的差异"
+                    "description": stagedDesc
                 ],
                 "file": [
                     "type": "string",
-                    "description": "可选，只查看指定文件的差异"
+                    "description": fileDesc
                 ]
             ]
         ]

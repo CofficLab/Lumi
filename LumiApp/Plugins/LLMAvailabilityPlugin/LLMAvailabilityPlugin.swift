@@ -28,7 +28,7 @@ actor LLMAvailabilityPlugin: SuperPlugin {
     nonisolated func onDisable() {}
 
     @MainActor
-    func agentTools() -> [SuperAgentTool] {
+    func agentTools(context: ToolContext) -> [SuperAgentTool] {
         [
             ListAvailableModelsTool(),
             CheckModelAvailabilityTool(),

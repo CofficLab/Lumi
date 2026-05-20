@@ -17,20 +17,33 @@ struct GitHubIssueDetailTool: SuperAgentTool, SuperLog {
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
+        let ownerDesc: String
+        let repoDesc: String
+        let issueNumberDesc: String
+        switch language {
+        case .chinese:
+            ownerDesc = "仓库所有者"
+            repoDesc = "仓库名称"
+            issueNumberDesc = "Issue 编号（如 123）"
+        case .english:
+            ownerDesc = "Repository owner"
+            repoDesc = "Repository name"
+            issueNumberDesc = "Issue number (e.g., 123)"
+        }
+        return [
             "type": "object",
             "properties": [
                 "owner": [
                     "type": "string",
-                    "description": "仓库所有者"
+                    "description": ownerDesc
                 ],
                 "repo": [
                     "type": "string",
-                    "description": "仓库名称"
+                    "description": repoDesc
                 ],
                 "issueNumber": [
                     "type": "number",
-                    "description": "Issue 编号（如 123）"
+                    "description": issueNumberDesc
                 ]
             ],
             "required": ["owner", "repo", "issueNumber"]
