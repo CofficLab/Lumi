@@ -64,23 +64,16 @@ final class WindowManager: ObservableObject, SuperLog {
         }
     }
 
-    /// 注销窗口
+    /// 窗口关闭时注销，仅发出通知（存储由插件负责）
     func unregisterScope(_ windowId: UUID) {
         windowScopes.removeAll { $0.id == windowId }
         scopeMap.removeValue(forKey: windowId)
 
-        // 如果关闭的是活跃窗口，切换到下一个窗口
         if activeWindowId == windowId {
             activeWindowId = windowScopes.first?.id
         }
 
         NotificationCenter.postWindowClosed(windowId)
-        saveWindowStates()
-
-        if Self.verbose {
-            let count = self.windowScopes.count
-            AppLogger.core.info("\(Self.t) 注销窗口: \(windowId.uuidString.prefix(8)), 剩余窗口数: \(count)")
-        }
     }
 
     /// 设置活跃窗口
@@ -230,38 +223,17 @@ final class WindowManager: ObservableObject, SuperLog {
         }
     }
 
-    // MARK: - Window State Persistence
+    // MARK: - Window State Restoration
 
-    /// 保存当前所有窗口的状态
-    func saveWindowStates() {
-        let snapshots = windowScopes.map { $0.snapshot() }
-        AppSettingStore.saveWindowStates(snapshots)
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)💾 保存 \(snapshots.count) 个窗口状态")
-        }
-    }
-
-    /// 恢复保存的窗口状态
-    func loadSavedWindowStates() -> [LumiWindowRoute] {
-        let snapshots = AppSettingStore.loadWindowStates()
-        if Self.verbose {
-            AppLogger.core.info("\(Self.t)📂 加载 \(snapshots.count) 个保存的窗口状态")
-        }
-        return snapshots.map { snapshot in
-            LumiWindowRoute(
-                id: snapshot.windowId,
-                conversationId: snapshot.conversationId,
-                projectPath: snapshot.projectPath
-            )
-        }
-    }
-
-    /// 恢复保存的窗口状态。
+    /// 从路由列表恢复窗口状态（纯内存操作，不涉及磁盘）。
     ///
-    /// 启动时 SwiftUI 已经创建了一个默认窗口，因此第一条保存的状态会应用到现有窗口；
-    /// 只有多余的状态才需要再打开新窗口。
-    func restoreSavedWindowStates(openAdditionalWindow: (LumiWindowRoute) -> Void) {
-        let routes = loadSavedWindowStates()
+    /// 启动时插件读取磁盘并调用此方法。
+    /// SwiftUI 已创建了一个默认窗口，因此第一条路由应用到现有窗口；
+    /// 只有多余的路由才需要再打开新窗口。
+    func restoreSavedWindowStates(
+        routes: [LumiWindowRoute],
+        openAdditionalWindow: (LumiWindowRoute) -> Void
+    ) {
         guard !routes.isEmpty else {
             markInitialStateRestorationComplete()
             return

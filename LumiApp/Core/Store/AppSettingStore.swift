@@ -221,32 +221,4 @@ enum AppSettingStore {
 
         set(modelsDict, forKey: remoteProviderModelsKey)
     }
-
-    // MARK: - Window State Persistence
-
-    private static let windowStatesKey = "App_WindowStates"
-
-    /// 保存窗口状态快照列表
-    /// - Parameter snapshots: 窗口状态快照数组
-    static func saveWindowStates(_ snapshots: [WindowStateSnapshot]) {
-        guard let data = try? JSONEncoder().encode(snapshots) else { return }
-        let dict: [String: Any] = ["snapshots": data.base64EncodedString()]
-        set(dict, forKey: windowStatesKey)
-    }
-
-    /// 加载保存的窗口状态快照列表
-    /// - Returns: 窗口状态快照数组，如果没有保存则返回空数组
-    static func loadWindowStates() -> [WindowStateSnapshot] {
-        guard let dict = object(forKey: windowStatesKey) as? [String: Any],
-              let base64String = dict["snapshots"] as? String,
-              let data = Data(base64Encoded: base64String) else {
-            return []
-        }
-        return (try? JSONDecoder().decode([WindowStateSnapshot].self, from: data)) ?? []
-    }
-
-    /// 清除保存的窗口状态
-    static func clearWindowStates() {
-        set(nil, forKey: windowStatesKey)
-    }
 }

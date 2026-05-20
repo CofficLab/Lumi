@@ -1,5 +1,6 @@
 import Foundation
 import MagicKit
+import os
 
 /// 获取当前文件工具
 ///
@@ -29,9 +30,12 @@ struct GetCurrentFileTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        // 获取当前项目路径
-        let projectStore = RecentProjectsStore()
-        guard let project = projectStore.getCurrentProject() else {
+        // 获取当前活跃窗口的项目路径
+        let projectPath = await MainActor.run {
+            WindowManager.shared.activeWindowScope?.projectPath
+        }
+
+        guard let projectPath else {
             return """
             ## Current File Status
 

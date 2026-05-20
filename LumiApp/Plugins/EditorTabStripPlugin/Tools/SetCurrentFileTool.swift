@@ -52,7 +52,11 @@ struct SetCurrentFileTool: SuperAgentTool, SuperLog {
         }
 
         // 获取当前活跃窗口的项目路径
-        guard let projectPath = WindowManager.shared.activeWindowScope?.projectPath else {
+        let projectPath = await MainActor.run {
+            WindowManager.shared.activeWindowScope?.projectPath
+        }
+
+        guard let projectPath else {
             return "❌ Error: No project selected. Use `set_current_project` first."
         }
 

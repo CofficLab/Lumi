@@ -364,21 +364,6 @@ final class WindowScope: ObservableObject, Identifiable, SuperLog {
     func setActive(_ active: Bool) {
         isActive = active
     }
-
-    // MARK: - Snapshot (Persistence)
-
-    /// 获取当前状态快照（用于持久化）
-    func snapshot() -> WindowStateSnapshot {
-        WindowStateSnapshot(
-            windowId: id,
-            conversationId: conversationVM.selectedConversationId,
-            projectPath: projectVM.currentProject?.path,
-            activePanel: activePanel,
-            editorState: editorState,
-            sidebarVisibility: sidebarVisibility,
-            createdAt: createdAt
-        )
-    }
 }
 
 // MARK: - Environment Key

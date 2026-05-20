@@ -70,41 +70,12 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
         // 启动自动化控制器（用于路由和处理自动化动作）
         AutomationController.shared.start()
 
-        // 恢复保存的窗口状态（延迟执行，确保 SwiftUI 视图已准备好）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.restoreSavedWindowStates()
-        }
+        // 窗口状态恢复由 WindowPersistencePlugin 负责，内核不再处理。
+        // 插件会在 RootView appear 时自动触发恢复流程。
 
         // 发送应用启动完成的通知
         // 让其他组件知道应用已准备好接受交互
         NotificationCenter.postApplicationDidFinishLaunching()
-    }
-
-    /// 恢复保存的窗口状态
-    ///
-    /// 在应用启动时调用，恢复上次保存的窗口状态。
-    /// 如果没有保存的状态，则不执行任何操作（由 SwiftUI 自动创建默认窗口）。
-    private func restoreSavedWindowStates() {
-        let routes = WindowManager.shared.loadSavedWindowStates()
-        guard !routes.isEmpty else {
-            if Self.verbose {
-                AppLogger.core.info("\(self.t)📂 没有保存的窗口状态，使用默认窗口")
-            }
-            WindowManager.shared.markInitialStateRestorationComplete()
-            return
-        }
-
-        WindowManager.shared.restoreSavedWindowStates { route in
-            NotificationCenter.default.post(
-                name: .openWindowWithRoute,
-                object: nil,
-                userInfo: ["route": route]
-            )
-        }
-
-        if Self.verbose {
-            AppLogger.core.info("\(self.t)📂 已恢复 \(routes.count) 个窗口状态")
-        }
     }
 
     /// 应用即将终止
@@ -112,16 +83,14 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
     /// 在应用退出前调用。
     /// 执行清理操作：
     /// 1. 记录终止日志
-    /// 2. 保存窗口状态
-    /// 3. 清理各个控制器
-    /// 4. 发送终止通知
+    /// 2. 清理各个控制器
+    /// 3. 发送终止通知
     func applicationWillTerminate(_ notification: Notification) {
         if Self.verbose {
             AppLogger.core.info("\(self.t)应用即将终止")
         }
 
-        // 保存窗口状态，用于下次启动恢复
-        WindowManager.shared.saveWindowStates()
+        // 窗口状态保存由 WindowPersistencePlugin 负责，内核不再处理。
 
         // 停止磁盘日志收集，flush 剩余条目
         FileLogCoordinator.shared.stop()
