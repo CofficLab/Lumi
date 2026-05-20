@@ -1,20 +1,19 @@
 import Foundation
 import MagicKit
 
-/// Agent tool for searching the local GitHub ecosystem knowledge base.
+/// 用于搜索本地 GitHub 生态知识库的 Agent 工具。
 ///
-/// The tool performs an offline search over cached repository entries and returns
-/// matching alternatives, complementary projects, or example repositories.
+/// 该工具会对缓存仓库条目执行离线搜索，并返回匹配的替代方案、配套项目或示例仓库。
 struct QueryEcoKBTool: SuperAgentTool {
-    /// Tool name exposed to the agent.
+    /// 暴露给 Agent 的工具名称。
     let name = "query_eco_kb"
 
-    /// Returns the localized tool description shown to the agent.
+    /// 返回展示给 Agent 的本地化工具描述。
     func description(for language: LanguagePreference) -> String {
         String(localized: "Query the local cached GitHub ecosystem knowledge base for related repositories, alternatives, examples, and ecosystem tools.", table: "GitHubInsight")
     }
 
-    /// Defines the JSON schema accepted by the tool.
+    /// 定义工具接受的 JSON schema。
     func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
@@ -41,12 +40,12 @@ struct QueryEcoKBTool: SuperAgentTool {
         ]
     }
 
-    /// Declares the tool as low risk because it only reads local cached data.
+    /// 声明该工具为低风险，因为它只读取本地缓存数据。
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         .low
     }
 
-    /// Executes a keyword search against project-specific or global cached entries.
+    /// 对项目专属或全局缓存条目执行关键词搜索。
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let query = (arguments["query"]?.value as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {

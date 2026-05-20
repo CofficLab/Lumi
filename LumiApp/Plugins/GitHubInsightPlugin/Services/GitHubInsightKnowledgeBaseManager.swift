@@ -1,23 +1,23 @@
 import Foundation
 
-/// Manages persisted GitHub ecosystem knowledge base files for local projects.
+/// 管理本地项目持久化的 GitHub 生态知识库文件。
 ///
-/// Each project is stored as a JSON file named by a stable hash of its project path.
-/// The manager provides isolated reads, writes, and refresh checks for those stores.
+/// 每个项目都会保存为一个 JSON 文件，文件名由项目路径的稳定哈希生成。
+/// 管理器为这些存储提供隔离的读取、写入和刷新检查能力。
 actor GitHubInsightKnowledgeBaseManager {
-    /// Shared knowledge base manager used by the plugin.
+    /// 插件使用的共享知识库管理器。
     static let shared = GitHubInsightKnowledgeBaseManager()
 
-    /// File system helper used for cache directory and file operations.
+    /// 用于缓存目录和文件操作的文件系统工具。
     private let fileManager = FileManager.default
 
-    /// Root directory containing all project cache JSON files.
+    /// 存放所有项目缓存 JSON 文件的根目录。
     private let rootDirectory: URL
 
-    /// JSON decoder used for persisted project stores.
+    /// 用于持久化项目存储的 JSON 解码器。
     private let decoder = JSONDecoder()
 
-    /// JSON encoder used for persisted project stores.
+    /// 用于持久化项目存储的 JSON 编码器。
     private let encoder = JSONEncoder()
 
     private init() {
@@ -27,19 +27,19 @@ actor GitHubInsightKnowledgeBaseManager {
         try? fileManager.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
     }
 
-    /// Loads the full persisted store for a project path.
+    /// 加载某个项目路径对应的完整持久化存储。
     func loadStore(projectPath: String) -> GitHubInsightProjectStore? {
         let url = storeURL(for: projectPath)
         guard let data = try? Data(contentsOf: url) else { return nil }
         return try? decoder.decode(GitHubInsightProjectStore.self, from: data)
     }
 
-    /// Loads only the cached entries for a project path.
+    /// 仅加载某个项目路径对应的缓存条目。
     func loadEntries(projectPath: String) -> [GitHubInsightKBEntry] {
         loadStore(projectPath: projectPath)?.entries ?? []
     }
 
-    /// Loads cached entries across all project stores.
+    /// 加载所有项目存储中的缓存条目。
     func loadAllEntries() -> [GitHubInsightKBEntry] {
         guard let urls = try? fileManager.contentsOfDirectory(
             at: rootDirectory,
@@ -57,7 +57,7 @@ actor GitHubInsightKnowledgeBaseManager {
             }
     }
 
-    /// Persists a project's profile and discovered GitHub ecosystem entries.
+    /// 持久化项目画像和发现到的 GitHub 生态条目。
     func save(projectPath: String, profile: GitHubInsightProjectProfile, entries: [GitHubInsightKBEntry]) throws {
         let store = GitHubInsightProjectStore(
             projectPath: projectPath,
@@ -76,18 +76,18 @@ actor GitHubInsightKnowledgeBaseManager {
         }
     }
 
-    /// Returns whether the project cache is missing or older than the allowed age.
+    /// 判断项目缓存是否缺失或超过允许的最大年龄。
     func shouldRefresh(projectPath: String, maxAge: TimeInterval = 24 * 60 * 60) -> Bool {
         guard let store = loadStore(projectPath: projectPath) else { return true }
         return Date().timeIntervalSince(store.syncedAt) > maxAge
     }
 
-    /// Builds the JSON file URL for a project path.
+    /// 为项目路径构建对应的 JSON 文件 URL。
     private func storeURL(for projectPath: String) -> URL {
         rootDirectory.appendingPathComponent(stableHash(projectPath) + ".json")
     }
 
-    /// Computes a stable FNV-1a hash for cache file naming.
+    /// 计算用于缓存文件命名的稳定 FNV-1a 哈希。
     private func stableHash(_ input: String) -> String {
         var hash: UInt64 = 14695981039346656037
         for byte in input.utf8 {

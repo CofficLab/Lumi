@@ -2,19 +2,19 @@ import SwiftUI
 import LumiUI
 import AppKit
 
-/// View model that loads, syncs, and exposes GitHub ecosystem cache state for the UI.
+/// 为 UI 加载、同步并暴露 GitHub 生态缓存状态的视图模型。
 @MainActor
 final class GitHubKBStatusBarViewModel: ObservableObject {
-    /// Current sync state displayed by the status bar and popover.
+    /// 状态栏和弹窗显示的当前同步状态。
     @Published var state: GitHubInsightSyncState = .idle
 
-    /// Cached entries for the active project.
+    /// 当前项目的缓存条目。
     @Published var entries: [GitHubInsightKBEntry] = []
 
-    /// Cached project profile for the active project.
+    /// 当前项目的缓存项目画像。
     @Published var profile: GitHubInsightProjectProfile?
 
-    /// Loads cached data and synchronizes the project cache when needed.
+    /// 加载缓存数据，并在需要时同步项目缓存。
     func load(projectPath: String, force: Bool = false) {
         let path = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !path.isEmpty else {
@@ -36,7 +36,7 @@ final class GitHubKBStatusBarViewModel: ObservableObject {
         }
     }
 
-    /// Loads only the persisted cache without triggering GitHub discovery.
+    /// 仅加载持久化缓存，不触发 GitHub 发现。
     func loadCache(projectPath: String) async {
         guard let store = await GitHubInsightKnowledgeBaseManager.shared.loadStore(projectPath: projectPath) else {
             entries = []
@@ -52,10 +52,9 @@ final class GitHubKBStatusBarViewModel: ObservableObject {
     }
 }
 
-/// Status bar entry that shows GitHub ecosystem cache state for the current project.
+/// 展示当前项目 GitHub 生态缓存状态的状态栏入口。
 ///
-/// The view automatically attempts a cache sync when it appears, when the active
-/// project changes, and when the application becomes active.
+/// 视图会在出现、当前项目变化以及应用变为活跃时自动尝试同步缓存。
 struct GitHubKBStatusBarView: View {
     @EnvironmentObject private var projectVM: WindowProjectVM
     @StateObject private var viewModel = GitHubKBStatusBarViewModel()
@@ -130,11 +129,11 @@ struct GitHubKBStatusBarView: View {
     }
 }
 
-/// Popover displaying cached GitHub ecosystem entries and manual sync controls.
+/// 展示缓存 GitHub 生态条目和手动同步控件的弹窗。
 struct GitHubKBPopover: View {
     @ObservedObject var viewModel: GitHubKBStatusBarViewModel
 
-    /// Project path used when the user triggers a forced sync.
+    /// 用户触发强制同步时使用的项目路径。
     let projectPath: String
     @State private var selectedRelation: GitHubInsightRelationType?
 
@@ -157,7 +156,7 @@ struct GitHubKBPopover: View {
         .frame(minWidth: 620, minHeight: 360)
     }
 
-    /// Header showing the knowledge base title and project profile summary.
+    /// 显示知识库标题和项目画像摘要的头部区域。
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -179,7 +178,7 @@ struct GitHubKBPopover: View {
         }
     }
 
-    /// Segmented control for filtering entries by relation type.
+    /// 用于按关系类型过滤条目的分段控件。
     private var relationPicker: some View {
         Picker("Relation", selection: Binding(
             get: { selectedRelation?.rawValue ?? "all" },
@@ -193,7 +192,7 @@ struct GitHubKBPopover: View {
         .pickerStyle(.segmented)
     }
 
-    /// Scrollable list of filtered knowledge base entries.
+    /// 过滤后知识库条目的可滚动列表。
     private var entriesList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
@@ -211,7 +210,7 @@ struct GitHubKBPopover: View {
         }
     }
 
-    /// Footer showing sync state and the manual refresh button.
+    /// 显示同步状态和手动刷新按钮的底部区域。
     private var footer: some View {
         HStack {
             Text(statusText)
@@ -226,14 +225,14 @@ struct GitHubKBPopover: View {
         }
     }
 
-    /// Entries filtered by the selected relation and sorted by relevance.
+    /// 按选中关系过滤并按相关性排序后的条目。
     private var filteredEntries: [GitHubInsightKBEntry] {
         viewModel.entries
             .filter { selectedRelation == nil || $0.relationType == selectedRelation }
             .sorted { $0.relevanceScore > $1.relevanceScore }
     }
 
-    /// Empty-state text based on the current sync state.
+    /// 基于当前同步状态的空状态文本。
     private var emptyText: String {
         switch viewModel.state {
         case .syncing:
@@ -243,7 +242,7 @@ struct GitHubKBPopover: View {
         }
     }
 
-    /// Human-readable sync status shown in the popover footer.
+    /// 显示在弹窗底部的可读同步状态。
     private var statusText: String {
         switch viewModel.state {
         case .idle:
@@ -260,9 +259,9 @@ struct GitHubKBPopover: View {
     }
 }
 
-/// Row view for a single cached GitHub repository reference.
+/// 单个缓存 GitHub 仓库参考的行视图。
 private struct GitHubKBEntryRow: View {
-    /// Knowledge base entry rendered by this row.
+    /// 当前行渲染的知识库条目。
     let entry: GitHubInsightKBEntry
 
     private var primaryTextColor: Color {

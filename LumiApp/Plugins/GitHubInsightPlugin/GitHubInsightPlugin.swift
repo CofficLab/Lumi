@@ -3,11 +3,10 @@ import MagicKit
 import os
 import SwiftUI
 
-/// Registers GitHub ecosystem insight capabilities for the Lumi plugin system.
+/// 向 Lumi 插件系统注册 GitHub 生态洞察能力。
 ///
-/// The plugin contributes a status bar view, a send middleware that injects cached
-/// ecosystem references into prompts, and an agent tool for querying the local
-/// GitHub ecosystem knowledge base.
+/// 插件提供状态栏视图、用于注入缓存生态参考的发送中间件，以及查询本地
+/// GitHub 生态知识库的 Agent 工具。
 actor GitHubInsightPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.github-insight")
     nonisolated static let emoji = "🌐"
@@ -24,19 +23,19 @@ actor GitHubInsightPlugin: SuperPlugin, SuperLog {
 
     private init() {}
 
-    /// Adds the GitHub ecosystem knowledge base status indicator to the trailing status bar.
+    /// 在状态栏右侧添加 GitHub 生态知识库状态指示器。
     @MainActor
     func addStatusBarTrailingView(activeIcon: String?) -> AnyView? {
         AnyView(GitHubKBStatusBarView())
     }
 
-    /// Registers send middlewares that can enrich outgoing messages with cached GitHub context.
+    /// 注册可用缓存 GitHub 上下文增强外发消息的发送中间件。
     @MainActor
     func sendMiddlewares() -> [AnySuperSendMiddleware] {
         [AnySuperSendMiddleware(GitHubKBMiddleware())]
     }
 
-    /// Registers agent tools exposed by this plugin.
+    /// 注册此插件暴露给 Agent 的工具。
     @MainActor
     func agentTools() -> [SuperAgentTool] {
         [QueryEcoKBTool()]

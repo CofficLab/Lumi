@@ -1,19 +1,18 @@
 import Foundation
 
-/// Injects relevant cached GitHub ecosystem references into outgoing chat context.
+/// 将相关的缓存 GitHub 生态参考注入到外发聊天上下文中。
 ///
-/// The middleware only activates for recommendation, dependency, framework, or
-/// ecosystem-related prompts. It reads the current project's local knowledge base
-/// and appends a transient system prompt with the most relevant cached entries.
+/// 中间件仅在推荐、依赖、框架或生态相关提示中启用。它会读取当前项目的
+/// 本地知识库，并追加包含最相关缓存条目的临时系统提示。
 @MainActor
 final class GitHubKBMiddleware: SuperSendMiddleware {
-    /// Stable middleware identifier used by the send pipeline.
+    /// 发送流水线使用的稳定中间件标识。
     let id = "github-insight-kb"
 
-    /// Middleware execution order within the send pipeline.
+    /// 中间件在发送流水线中的执行顺序。
     let order = 60
 
-    /// Processes an outgoing message and appends GitHub ecosystem context when relevant.
+    /// 处理外发消息，并在相关时追加 GitHub 生态上下文。
     func handle(
         ctx: SendMessageContext,
         next: @escaping @MainActor (SendMessageContext) async -> Void
@@ -43,7 +42,7 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
         await next(ctx)
     }
 
-    /// Returns whether the message appears to need ecosystem or dependency guidance.
+    /// 判断消息是否看起来需要生态或依赖建议。
     private func shouldInject(for message: String) -> Bool {
         let lowercased = message.lowercased()
         let keywords = [
@@ -53,7 +52,7 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
         return keywords.contains { lowercased.contains($0) }
     }
 
-    /// Filters cached entries by requested relation type and sorts them by relevance.
+    /// 按请求的关系类型过滤缓存条目，并按相关性排序。
     private func filter(entries: [GitHubInsightKBEntry], for message: String) -> [GitHubInsightKBEntry] {
         let lowercased = message.lowercased()
         let relation: GitHubInsightRelationType?
@@ -70,7 +69,7 @@ final class GitHubKBMiddleware: SuperSendMiddleware {
             .sorted { $0.relevanceScore > $1.relevanceScore }
     }
 
-    /// Builds the transient system prompt that summarizes cached ecosystem references.
+    /// 构建用于概括缓存生态参考的临时系统提示。
     private func buildPrompt(entries: [GitHubInsightKBEntry], languagePreference: LanguagePreference) -> String {
         var lines: [String]
 

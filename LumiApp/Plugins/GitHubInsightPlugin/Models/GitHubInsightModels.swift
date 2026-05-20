@@ -1,41 +1,41 @@
 import Foundation
 
-/// High-level category inferred for a project based on its files and dependencies.
+/// 根据项目文件和依赖推断出的项目高层分类。
 enum GitHubInsightProjectType: String, Codable, Sendable {
-    /// Mobile or Apple-platform application project.
+    /// 移动端或 Apple 平台应用项目。
     case mobile
-    /// Web application or frontend project.
+    /// Web 应用或前端项目。
     case web
-    /// Command-line application project.
+    /// 命令行应用项目。
     case cli
-    /// Library, package, or SDK-style project.
+    /// 库、包或 SDK 类型项目。
     case sdk
-    /// General application project.
+    /// 通用应用项目。
     case app
-    /// Project type could not be inferred confidently.
+    /// 无法可靠推断项目类型。
     case unknown
 }
 
-/// Inferred profile for a local project used to build GitHub ecosystem queries.
+/// 为构建 GitHub 生态查询而推断出的本地项目画像。
 struct GitHubInsightProjectProfile: Codable, Sendable {
-    /// Standardized absolute path to the project root.
+    /// 标准化后的项目根目录绝对路径。
     let projectPath: String
-    /// Most likely primary programming language.
+    /// 最可能的主要编程语言。
     let primaryLanguage: String?
-    /// Detected frameworks, such as SwiftUI, React, or Vue.
+    /// 检测到的框架，例如 SwiftUI、React 或 Vue。
     let frameworks: [String]
-    /// Detected package or module dependencies.
+    /// 检测到的包或模块依赖。
     let dependencies: [String]
-    /// Inferred project category.
+    /// 推断出的项目分类。
     let projectType: GitHubInsightProjectType
-    /// Keywords extracted from README content.
+    /// 从 README 内容中提取的关键词。
     let keywords: [String]
-    /// Short project description extracted from README content.
+    /// 从 README 内容中提取的项目简短描述。
     let description: String
-    /// Optional platform hint, such as Apple platforms.
+    /// 可选平台提示，例如 Apple platforms。
     let platform: String?
 
-    /// Compact title for display in the knowledge base popover.
+    /// 用于知识库弹窗展示的紧凑标题。
     var shortTitle: String {
         let language = primaryLanguage ?? "Unknown"
         let framework = frameworks.first
@@ -46,16 +46,16 @@ struct GitHubInsightProjectProfile: Codable, Sendable {
     }
 }
 
-/// Relationship between a discovered repository and the current project.
+/// 发现仓库与当前项目之间的关系。
 enum GitHubInsightRelationType: String, Codable, CaseIterable, Sendable {
-    /// Repository may replace or compete with a current dependency.
+    /// 仓库可能替换当前依赖或与其竞争。
     case alternative
-    /// Repository may work alongside the current stack.
+    /// 仓库可能与当前技术栈配套使用。
     case complementary
-    /// Repository may demonstrate conventions or usage patterns.
+    /// 仓库可能展示约定或使用模式。
     case example
 
-    /// Localized display title for the relation type.
+    /// 关系类型的本地化展示标题。
     var title: String {
         switch self {
         case .alternative: return String(localized: "Alternative", table: "GitHubInsight")
@@ -65,56 +65,56 @@ enum GitHubInsightRelationType: String, Codable, CaseIterable, Sendable {
     }
 }
 
-/// Cached GitHub repository reference discovered for a project ecosystem.
+/// 为项目生态发现并缓存的 GitHub 仓库参考。
 struct GitHubInsightKBEntry: Identifiable, Codable, Sendable {
-    /// Stable identity for SwiftUI lists and persistence.
+    /// 用于 SwiftUI 列表和持久化的稳定标识。
     let id: UUID
-    /// Public GitHub repository URL.
+    /// 公开的 GitHub 仓库 URL。
     let repoURL: String
-    /// Repository full name in `owner/repo` format.
+    /// `owner/repo` 格式的仓库完整名称。
     let fullName: String
-    /// Repository description returned by GitHub.
+    /// GitHub 返回的仓库描述。
     let description: String
-    /// GitHub star count at sync time.
+    /// 同步时的 GitHub star 数。
     let stars: Int
-    /// Primary language reported by GitHub.
+    /// GitHub 报告的主要语言。
     let language: String?
-    /// GitHub topics assigned to the repository.
+    /// 仓库设置的 GitHub topics。
     let topics: [String]
-    /// Last push date parsed from the GitHub API response.
+    /// 从 GitHub API 响应中解析出的最后 push 时间。
     let lastPushedAt: Date?
-    /// Heuristic relevance score for the current project profile.
+    /// 针对当前项目画像的启发式相关性分数。
     let relevanceScore: Double
-    /// Discovered relationship to the current project.
+    /// 与当前项目的发现关系。
     let relationType: GitHubInsightRelationType
-    /// Human-readable signals explaining why this entry may be useful.
+    /// 解释该条目为什么可能有用的可读信号。
     let keyInsights: [String]
-    /// Date when this entry was synced.
+    /// 该条目的同步时间。
     let syncedAt: Date
 }
 
-/// Current synchronization state for a project's GitHub ecosystem knowledge base.
+/// 项目 GitHub 生态知识库的当前同步状态。
 enum GitHubInsightSyncState: Equatable, Sendable {
-    /// No sync is running and no visible cache is available.
+    /// 没有同步任务运行，且没有可见缓存。
     case idle
-    /// A sync task is currently running.
+    /// 同步任务正在运行。
     case syncing
-    /// Cache is available with the given entry count.
+    /// 缓存可用，并带有指定条目数。
     case ready(count: Int)
-    /// GitHub API rejected requests because of rate limiting.
+    /// GitHub API 因限流拒绝请求。
     case rateLimited
-    /// Sync failed with a user-displayable error message.
+    /// 同步失败，并带有可展示给用户的错误消息。
     case failed(String)
 }
 
-/// Persisted knowledge base payload for a single project.
+/// 单个项目持久化的知识库载荷。
 struct GitHubInsightProjectStore: Codable, Sendable {
-    /// Standardized absolute path to the project root.
+    /// 标准化后的项目根目录绝对路径。
     let projectPath: String
-    /// Project profile used to produce the cached entries.
+    /// 生成缓存条目时使用的项目画像。
     let profile: GitHubInsightProjectProfile
-    /// Cached GitHub ecosystem entries.
+    /// 缓存的 GitHub 生态条目。
     let entries: [GitHubInsightKBEntry]
-    /// Date when this store was last written.
+    /// 该存储最后写入的时间。
     let syncedAt: Date
 }

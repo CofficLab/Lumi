@@ -1,18 +1,17 @@
 import Foundation
 import MagicKit
 
-/// Discovers GitHub repositories related to a project's inferred technology ecosystem.
+/// 发现与项目推断技术生态相关的 GitHub 仓库。
 ///
-/// Discovery is driven by repository search queries built from frameworks,
-/// dependencies, language, and README keywords. Results are scored and categorized
-/// as alternatives, complementary projects, or examples.
+/// 发现过程由框架、依赖、语言和 README 关键词构建出的仓库搜索查询驱动。
+/// 结果会被评分，并归类为替代方案、配套项目或示例。
 struct GitHubInsightDiscoverer: SuperLog {
-    /// Searches GitHub and returns the most relevant repository references for a profile.
+    /// 搜索 GitHub，并返回与项目画像最相关的仓库参考。
     ///
     /// - Parameters:
-    ///   - profile: Project profile used to build search queries and relevance scores.
-    ///   - limitPerQuery: Maximum number of repositories requested per generated query.
-    /// - Returns: Deduplicated and relevance-sorted knowledge base entries.
+    ///   - profile: 用于构建搜索查询和相关性分数的项目画像。
+    ///   - limitPerQuery: 每个生成查询请求的最大仓库数量。
+    /// - Returns: 去重并按相关性排序后的知识库条目。
     func discover(profile: GitHubInsightProjectProfile, limitPerQuery: Int = 8) async throws -> [GitHubInsightKBEntry] {
         var entriesByRepo: [String: GitHubInsightKBEntry] = [:]
         let queries = buildQueries(profile: profile)
@@ -71,7 +70,7 @@ struct GitHubInsightDiscoverer: SuperLog {
         return entries
     }
 
-    /// Builds bounded GitHub repository search queries from the project profile.
+    /// 基于项目画像构建有数量上限的 GitHub 仓库搜索查询。
     private func buildQueries(profile: GitHubInsightProjectProfile) -> [(query: String, relationType: GitHubInsightRelationType)] {
         let language = profile.primaryLanguage.map { "language:\($0)" } ?? ""
         let recency = "pushed:>2024-01-01"
@@ -103,7 +102,7 @@ struct GitHubInsightDiscoverer: SuperLog {
         return Array(queries.prefix(8))
     }
 
-    /// Converts a GitHub API repository response into a cache entry.
+    /// 将 GitHub API 仓库响应转换为缓存条目。
     private func entry(
         from repo: GitHubRepository,
         relationType: GitHubInsightRelationType,
@@ -127,7 +126,7 @@ struct GitHubInsightDiscoverer: SuperLog {
         )
     }
 
-    /// Calculates a heuristic relevance score for a repository and project profile.
+    /// 为仓库和项目画像计算启发式相关性分数。
     private func relevanceScore(repo: GitHubRepository, profile: GitHubInsightProjectProfile) -> Double {
         let languageMatch = repo.language?.caseInsensitiveCompare(profile.primaryLanguage ?? "") == .orderedSame ? 1.0 : 0.0
         let text = ([repo.fullName, repo.description ?? ""] + (repo.topics ?? [])).joined(separator: " ").lowercased()
@@ -139,7 +138,7 @@ struct GitHubInsightDiscoverer: SuperLog {
         return languageMatch * 0.35 + overlap * 0.25 + starsScore * 0.20 + recencyScore * 0.20
     }
 
-    /// Builds short human-readable signals explaining why a repository was selected.
+    /// 构建简短可读信号，用于说明仓库为什么被选中。
     private func keyInsights(
         repo: GitHubRepository,
         relationType: GitHubInsightRelationType,
@@ -167,7 +166,7 @@ struct GitHubInsightDiscoverer: SuperLog {
         return insights
     }
 
-    /// Scores repository freshness using the last pushed or updated timestamp.
+    /// 使用最后 push 或更新时间评估仓库新鲜度。
     private func recencyScore(date: Date?) -> Double {
         guard let date else { return 0.3 }
         let ageDays = max(Date().timeIntervalSince(date) / 86_400, 0)
@@ -178,18 +177,18 @@ struct GitHubInsightDiscoverer: SuperLog {
         return 0.2
     }
 
-    /// Parses ISO-8601 dates returned by the GitHub API.
+    /// 解析 GitHub API 返回的 ISO-8601 日期。
     private func parseGitHubDate(_ value: String?) -> Date? {
         guard let value else { return nil }
         return ISO8601DateFormatter().date(from: value)
     }
 
-    /// Returns whether two dependency names refer to the same package after normalization.
+    /// 判断两个依赖名称在标准化后是否指向同一个包。
     private func sameDependency(_ lhs: String, _ rhs: String) -> Bool {
         normalizeDependency(lhs) == normalizeDependency(rhs)
     }
 
-    /// Normalizes package and repository names for dependency comparison.
+    /// 标准化包名和仓库名，用于依赖比较。
     private func normalizeDependency(_ value: String) -> String {
         value
             .lowercased()

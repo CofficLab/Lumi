@@ -1,32 +1,32 @@
 import Foundation
 import MagicKit
 
-/// Coordinates profiling, GitHub discovery, and local cache persistence for a project.
+/// 协调项目画像、GitHub 发现和本地缓存持久化。
 ///
-/// This actor serializes sync work per project path so repeated UI lifecycle events
-/// do not launch duplicate GitHub discovery tasks for the same project.
+/// 该 actor 按项目路径串行化同步工作，避免重复的 UI 生命周期事件为同一项目
+/// 启动重复的 GitHub 发现任务。
 actor GitHubInsightSyncService: SuperLog {
-    /// Shared sync coordinator used by the status bar view model.
+    /// 状态栏视图模型使用的共享同步协调器。
     static let shared = GitHubInsightSyncService()
 
-    /// Project profiler used to infer frameworks, dependencies, and keywords.
+    /// 用于推断框架、依赖和关键词的项目画像器。
     private let profiler = GitHubInsightProjectProfiler()
 
-    /// GitHub repository discoverer used to search ecosystem references.
+    /// 用于搜索生态参考的 GitHub 仓库发现器。
     private let discoverer = GitHubInsightDiscoverer()
 
-    /// Local knowledge base manager used for cache reads and writes.
+    /// 用于缓存读写的本地知识库管理器。
     private let knowledgeBase = GitHubInsightKnowledgeBaseManager.shared
 
-    /// Normalized project paths that are currently being synchronized.
+    /// 当前正在同步的标准化项目路径。
     private var syncingProjects = Set<String>()
 
-    /// Synchronizes a project's GitHub ecosystem cache when missing, stale, or forced.
+    /// 在项目 GitHub 生态缓存缺失、过期或被强制刷新时执行同步。
     ///
     /// - Parameters:
-    ///   - projectPath: Local project root path.
-    ///   - force: Whether to refresh even when the cache is still fresh.
-    /// - Returns: The resulting sync state for the project.
+    ///   - projectPath: 本地项目根目录路径。
+    ///   - force: 是否在缓存仍然新鲜时也强制刷新。
+    /// - Returns: 项目同步后的状态。
     func syncIfNeeded(projectPath: String, force: Bool = false) async -> GitHubInsightSyncState {
         let normalizedPath = URL(fileURLWithPath: projectPath).standardizedFileURL.path
         guard !normalizedPath.isEmpty else { return .idle }
@@ -70,15 +70,15 @@ actor GitHubInsightSyncService: SuperLog {
         }
     }
 
-    /// Returns the current cache state without triggering network discovery.
+    /// 返回当前缓存状态，不触发网络发现。
     func cachedState(projectPath: String) async -> GitHubInsightSyncState {
         let count = await knowledgeBase.loadEntries(projectPath: projectPath).count
         return count > 0 ? .ready(count: count) : .idle
     }
 }
 
-/// Notifications emitted by the GitHub insight sync workflow.
+/// GitHub 生态洞察同步流程发出的通知。
 extension Notification.Name {
-    /// Posted after a project's GitHub ecosystem cache has been successfully synced.
+    /// 在项目 GitHub 生态缓存成功同步后发出。
     static let githubInsightDidSync = Notification.Name("GitHubInsightDidSync")
 }
