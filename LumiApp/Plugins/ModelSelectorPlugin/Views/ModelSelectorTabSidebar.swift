@@ -9,6 +9,9 @@ struct ModelSelectorTabSidebar: View {
     /// 所有已注册的供应商
     let providers: [LLMProviderInfo]
 
+    /// 当前选中的供应商 ID
+    let selectedProviderId: String
+
     /// 当前选中的 Tab
     @Binding var selectedTab: ModelSelectorTab
 
@@ -99,6 +102,8 @@ struct ModelSelectorTabSidebar: View {
                     .lineLimit(1)
                 Spacer()
 
+                ProviderUsageStatusBadge(status: providerUsageStatus(for: provider.id))
+
                 if let countText = availabilityCountText(for: provider.id) {
                     Text(countText)
                         .font(.system(size: 11, weight: .medium))
@@ -128,5 +133,46 @@ struct ModelSelectorTabSidebar: View {
 
     private func availabilityCountText(for providerId: String) -> String? {
         AvailabilityService.providerCountText(providerId: providerId, store: availabilityStore)
+    }
+
+    private func providerUsageStatus(for providerId: String) -> LLMProviderUsageStatus {
+        AvailabilityService.providerUsageStatus(
+            providerId: providerId,
+            selectedProviderId: selectedProviderId,
+            store: availabilityStore
+        )
+    }
+}
+
+private struct ProviderUsageStatusBadge: View {
+    let status: LLMProviderUsageStatus
+
+    var body: some View {
+        Text(status.title)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(foregroundColor)
+            .lineLimit(1)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(foregroundColor.opacity(0.12))
+            )
+            .help(status.helpText)
+    }
+
+    private var foregroundColor: Color {
+        switch status {
+        case .active:
+            return Color.accentColor
+        case .idle:
+            return Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
+        case .checking:
+            return Color(hex: "FF9F0A")
+        case .unavailable:
+            return Color(hex: "FF3B30")
+        case .unknown:
+            return Color(hex: "98989E")
+        }
     }
 }

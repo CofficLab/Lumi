@@ -53,6 +53,7 @@ struct ModelSelectorView: View, SuperLog {
         HStack(spacing: 0) {
             ModelSelectorTabSidebar(
                 providers: llmVM.allProviders,
+                selectedProviderId: llmVM.selectedProviderId,
                 selectedTab: $selectedTab
             )
             .frame(width: 300)

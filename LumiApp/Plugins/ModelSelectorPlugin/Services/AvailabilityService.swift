@@ -15,6 +15,44 @@ struct AvailabilitySummary: Equatable {
     }
 }
 
+enum LLMProviderUsageStatus: Equatable {
+    case active
+    case idle
+    case checking
+    case unavailable(String?)
+    case unknown
+
+    var title: String {
+        switch self {
+        case .active:
+            return String(localized: "In Use", table: "LLMAvailability")
+        case .idle:
+            return String(localized: "Idle", table: "LLMAvailability")
+        case .checking:
+            return String(localized: "Checking", table: "LLMAvailability")
+        case .unavailable:
+            return String(localized: "Unavailable", table: "LLMAvailability")
+        case .unknown:
+            return String(localized: "Unknown", table: "LLMAvailability")
+        }
+    }
+
+    var helpText: String {
+        switch self {
+        case .active:
+            return String(localized: "Current selected provider", table: "LLMAvailability")
+        case .idle:
+            return String(localized: "Provider has available models", table: "LLMAvailability")
+        case .checking:
+            return String(localized: "Checking provider availability", table: "LLMAvailability")
+        case .unavailable(let reason):
+            return reason ?? String(localized: "Provider has no available models", table: "LLMAvailability")
+        case .unknown:
+            return String(localized: "Availability has not been checked", table: "LLMAvailability")
+        }
+    }
+}
+
 enum AvailabilityService {
     static func summary(store: LLMAvailabilityStore) -> AvailabilitySummary {
         let total = store.providers.reduce(0) { $0 + $1.models.count }
@@ -31,6 +69,38 @@ enum AvailabilityService {
             return nil
         }
         return "\(provider.availableModels.count)/\(provider.models.count)"
+    }
+
+    static func providerUsageStatus(
+        providerId: String,
+        selectedProviderId: String,
+        store: LLMAvailabilityStore
+    ) -> LLMProviderUsageStatus {
+        guard let provider = store.providers.first(where: { $0.providerId == providerId }),
+              !provider.models.isEmpty else {
+            return .unknown
+        }
+
+        if provider.models.contains(where: { $0.status == .checking }) {
+            return .checking
+        }
+
+        if provider.hasAvailableModels {
+            return providerId == selectedProviderId ? .active : .idle
+        }
+
+        let unavailableReasons = provider.models.compactMap { model -> String? in
+            if case .unavailable(let reason) = model.status {
+                return reason
+            }
+            return nil
+        }
+
+        if unavailableReasons.count == provider.models.count {
+            return .unavailable(unavailableReasons.first)
+        }
+
+        return .unknown
     }
 
     static func filteredProviders(
