@@ -2,17 +2,22 @@ import Foundation
 
 /// 通过检查常见清单文件为本地项目构建技术画像。
 ///
-/// 画像器会读取包清单和 README 内容，推断 GitHub 生态发现所需的语言、
-/// 框架、依赖、项目类型、关键词和平台提示。
-struct GitHubInsightProjectProfiler {
+/// 画像器会读取包清单和 README 内容，推断上层功能可复用的语言、框架、
+/// 依赖、项目类型、关键词和平台提示。
+public struct ProjectProfiler {
     /// 用于检查项目文件的文件系统工具。
-    private let fileManager = FileManager.default
+    private let fileManager: FileManager
+
+    /// 创建项目画像器。
+    public init(fileManager: FileManager = .default) {
+        self.fileManager = fileManager
+    }
 
     /// 为可读取的本地项目目录创建项目画像。
     ///
     /// - Parameter projectPath: 本地项目根目录路径。
     /// - Returns: 推断出的项目画像；当路径不是目录时返回 `nil`。
-    func profile(projectPath: String) -> GitHubInsightProjectProfile? {
+    public func profile(projectPath: String) -> ProjectProfile? {
         let root = URL(fileURLWithPath: projectPath).standardizedFileURL
         var isDirectory: ObjCBool = false
         guard fileManager.fileExists(atPath: root.path, isDirectory: &isDirectory), isDirectory.boolValue else {
@@ -72,7 +77,7 @@ struct GitHubInsightProjectProfiler {
             platform = platform ?? "Apple platforms"
         }
 
-        return GitHubInsightProjectProfile(
+        return ProjectProfile(
             projectPath: root.path,
             primaryLanguage: languages.sorted { $0.value > $1.value }.first?.key,
             frameworks: Array(frameworks).sorted(),
@@ -210,7 +215,7 @@ struct GitHubInsightProjectProfiler {
     }
 
     /// 根据文件、框架和依赖推断项目的大致类型。
-    private func inferProjectType(root: URL, frameworks: Set<String>, dependencies: Set<String>) -> GitHubInsightProjectType {
+    private func inferProjectType(root: URL, frameworks: Set<String>, dependencies: Set<String>) -> ProjectType {
         if frameworks.contains("SwiftUI") || fileManager.fileExists(atPath: root.appendingPathComponent("Podfile").path) {
             return .mobile
         }

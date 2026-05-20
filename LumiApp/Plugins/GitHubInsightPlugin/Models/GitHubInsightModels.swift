@@ -1,50 +1,14 @@
 import Foundation
+import ProjectProfileKit
 
-/// 根据项目文件和依赖推断出的项目高层分类。
-enum GitHubInsightProjectType: String, Codable, Sendable {
-    /// 移动端或 Apple 平台应用项目。
-    case mobile
-    /// Web 应用或前端项目。
-    case web
-    /// 命令行应用项目。
-    case cli
-    /// 库、包或 SDK 类型项目。
-    case sdk
-    /// 通用应用项目。
-    case app
-    /// 无法可靠推断项目类型。
-    case unknown
-}
+/// GitHubInsight 使用的项目分类兼容别名。
+typealias GitHubInsightProjectType = ProjectType
 
-/// 为构建 GitHub 生态查询而推断出的本地项目画像。
-struct GitHubInsightProjectProfile: Codable, Sendable {
-    /// 标准化后的项目根目录绝对路径。
-    let projectPath: String
-    /// 最可能的主要编程语言。
-    let primaryLanguage: String?
-    /// 检测到的框架，例如 SwiftUI、React 或 Vue。
-    let frameworks: [String]
-    /// 检测到的包或模块依赖。
-    let dependencies: [String]
-    /// 推断出的项目分类。
-    let projectType: GitHubInsightProjectType
-    /// 从 README 内容中提取的关键词。
-    let keywords: [String]
-    /// 从 README 内容中提取的项目简短描述。
-    let description: String
-    /// 可选平台提示，例如 Apple platforms。
-    let platform: String?
+/// GitHubInsight 使用的项目画像兼容别名。
+typealias GitHubInsightProjectProfile = ProjectProfile
 
-    /// 用于知识库弹窗展示的紧凑标题。
-    var shortTitle: String {
-        let language = primaryLanguage ?? "Unknown"
-        let framework = frameworks.first
-        if let framework {
-            return "\(language) / \(framework)"
-        }
-        return language
-    }
-}
+/// GitHubInsight 使用的项目画像器兼容别名。
+typealias GitHubInsightProjectProfiler = ProjectProfiler
 
 /// 发现仓库与当前项目之间的关系。
 enum GitHubInsightRelationType: String, Codable, CaseIterable, Sendable {
