@@ -9,6 +9,7 @@ import LumiUI
 /// 集成在 GitCommitDetailView 的底部，当处于工作状态时显示。
 struct GitCommitInputView: View {
     @EnvironmentObject var projectVM: WindowProjectVM
+    @EnvironmentObject private var llmVM: AppLLMVM
 
     /// 是否正在生成 AI commit message
     @State private var isGenerating = false
@@ -206,11 +207,11 @@ struct GitCommitInputView: View {
             let changes = try await GitCommitService.gatherChanges(at: path)
 
             // 2. 生成 commit message
-            let config = RootContainer.shared.agentSessionConfig.getCurrentConfig()
+            let config = llmVM.getCurrentConfig()
             let message = try await GitCommitService.generateCommitMessage(
                 changes: changes,
                 language: .english,
-                llmService: RootContainer.shared.llmService,
+                llmService: llmVM.llmService,
                 config: config
             )
 
