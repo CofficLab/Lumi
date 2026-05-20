@@ -37,7 +37,7 @@ final class WindowManagerVM: ObservableObject, SuperLog {
 
     // MARK: - Initialization
 
-    private init() {
+    init() {
         setupNotifications()
         if Self.verbose {
             AppLogger.core.info("\(Self.t)✅ 窗口管理器初始化完成")
