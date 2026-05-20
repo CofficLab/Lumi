@@ -25,6 +25,9 @@ final class WindowManagerVM: ObservableObject, SuperLog {
     /// 启动时保存的窗口状态是否已完成恢复
     @Published private(set) var hasCompletedInitialStateRestoration: Bool = false
 
+    /// 启动时保存的窗口状态是否已经开始恢复
+    @Published private(set) var hasStartedInitialStateRestoration: Bool = false
+
     /// 窗口计数（用于菜单显示）
     var windowCount: Int { windowScopes.count }
 
@@ -235,6 +238,9 @@ final class WindowManagerVM: ObservableObject, SuperLog {
         routes: [LumiWindowRoute],
         openAdditionalWindow: (LumiWindowRoute) -> Void
     ) {
+        guard !hasCompletedInitialStateRestoration else { return }
+        hasStartedInitialStateRestoration = true
+
         guard !routes.isEmpty else {
             markInitialStateRestorationComplete()
             return
@@ -257,8 +263,19 @@ final class WindowManagerVM: ObservableObject, SuperLog {
         markInitialStateRestorationComplete()
     }
 
+    func beginInitialStateRestorationIfNeeded() -> Bool {
+        guard !hasStartedInitialStateRestoration,
+              !hasCompletedInitialStateRestoration else {
+            return false
+        }
+
+        hasStartedInitialStateRestoration = true
+        return true
+    }
+
     func markInitialStateRestorationComplete() {
         guard !hasCompletedInitialStateRestoration else { return }
+        hasStartedInitialStateRestoration = true
         hasCompletedInitialStateRestoration = true
         NotificationCenter.postInitialWindowStateRestorationDidFinish()
     }

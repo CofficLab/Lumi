@@ -9,13 +9,14 @@ final class WindowStateStore: @unchecked Sendable {
     private static let settingsDirName = "settings"
     private static let statesFileName = "window_states.json"
     private static let tmpFileName = "window_states.tmp"
+    private static let maxPersistedWindowCount = 20
 
     // MARK: - Public API
 
     /// 从 WindowScope 列表保存窗口状态（异步）
     @MainActor
     func saveWindowStates(from scopes: [WindowScope]) {
-        let records = scopes.map { scope in
+        let records = scopes.prefix(Self.maxPersistedWindowCount).map { scope in
             WindowPersistenceRecord(
                 windowId: scope.id,
                 conversationId: scope.selectedConversationId,

@@ -12,6 +12,7 @@ struct WindowRestoreOverlay<Content: View>: View, SuperLog {
     @EnvironmentObject private var windowManagerVM: WindowManagerVM
     @State private var restored = false
 
+    private let maxRestoredWindowCount = 20
     private let store = WindowStateStore()
 
     var body: some View {
@@ -34,6 +35,10 @@ extension WindowRestoreOverlay {
     @MainActor
     private func handleOnAppear() {
         guard !restored else { return }
+        guard windowManagerVM.beginInitialStateRestorationIfNeeded() else {
+            restored = true
+            return
+        }
 
         let snapshots = store.loadWindowStates()
         guard !snapshots.isEmpty else {
@@ -42,7 +47,7 @@ extension WindowRestoreOverlay {
             return
         }
 
-        let routes = snapshots.map { snapshot in
+        let routes = snapshots.prefix(maxRestoredWindowCount).map { snapshot in
             LumiWindowRoute(
                 id: snapshot.windowId,
                 conversationId: snapshot.conversationId,
