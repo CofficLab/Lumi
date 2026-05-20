@@ -2,6 +2,15 @@ import Foundation
 import MagicKit
 import LLMKit
 
+/// LLM 配置与供应商管理 ViewModel
+///
+/// **生命周期约束：**
+/// - 必须且只能在 ``RootContainer`` 中初始化（全局唯一实例）。
+/// - 由 ``RootView`` 通过 `.environmentObject()` 注入到 SwiftUI 环境。
+///
+/// **插件获取方式：**
+/// - 在视图层通过 `@EnvironmentObject` 获取（如 `@EnvironmentObject var llmVM: AppLLMVM`）。
+/// - 可通过 `.llmService` 访问 LLM 服务，通过 `.getCurrentConfig()` 获取当前模型配置。
 @MainActor
 final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
     @Published var selectedProviderId: String = "" {
