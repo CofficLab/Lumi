@@ -20,7 +20,7 @@ actor ProjectIssueStore {
             .appendingPathComponent("ProjectIssueScanner", isDirectory: true)
         try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         self.issuesFileURL = dir.appendingPathComponent("issues.json")
-        self.issues = (try? loadFromDisk()) ?? []
+        self.issues = (try? Self.loadFromDisk(from: issuesFileURL)) ?? []
     }
 
     // MARK: - Public API
@@ -94,8 +94,8 @@ actor ProjectIssueStore {
 
     // MARK: - Private
 
-    private func loadFromDisk() throws -> [ProjectIssue] {
-        let data = try Data(contentsOf: issuesFileURL)
+    private static func loadFromDisk(from url: URL) throws -> [ProjectIssue] {
+        let data = try Data(contentsOf: url)
         return try JSONDecoder().decode([ProjectIssue].self, from: data)
     }
 
