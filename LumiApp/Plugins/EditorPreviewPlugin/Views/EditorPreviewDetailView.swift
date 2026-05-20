@@ -509,7 +509,7 @@ struct EditorPreviewDetailView: View, SuperLog {
         case let .image(url):
             EditorPreviewImageView(fileURL: url)
         case .markdown:
-            EditorPreviewMarkdownView(markdown: sourceText ?? "")
+            EditorPreviewMarkdownView(markdown: sourceText ?? "", fileURL: currentFileURL)
                 .environmentObject(themeVM)
         case .stringCatalog:
             EditorPreviewStringCatalogContainer(sourceText: sourceText ?? "")
@@ -826,6 +826,7 @@ private struct EditorPreviewMarkdownView: View {
     @EnvironmentObject private var themeVM: AppThemeVM
 
     let markdown: String
+    let fileURL: URL?
     @State private var scrollToID: String?
 
     private var toc: (headings: [MarkdownTOCHeading], sections: [MarkdownTOCSection]) {
@@ -921,12 +922,22 @@ private struct EditorPreviewMarkdownView: View {
                     .buttonStyle(.plain)
                     .contentShape(Rectangle())
                     .help(heading.title)
+                    .draggable(makeDragContent(for: heading))
                 }
             }
             .padding(.vertical, 14)
         }
         .frame(width: 220)
         .background(themeVM.activeAppTheme.workspaceBackgroundColor().opacity(0.72))
+    }
+
+    private func makeDragContent(for heading: MarkdownTOCHeading) -> String {
+        guard let fileURL else {
+            return heading.title
+        }
+        // 行号从 0 开始，显示时 +1
+        let lineNumber = heading.lineNumber + 1
+        return "\(fileURL.path):\(lineNumber) \(heading.title)"
     }
 
     private var previewTheme: MarkdownTheme {
