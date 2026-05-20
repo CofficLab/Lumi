@@ -193,11 +193,15 @@ private struct OnboardingSheetView: View {
     @EnvironmentObject private var pluginVM: AppPluginVM
     @EnvironmentObject private var themeVM: AppThemeVM
     @Environment(\.colorScheme) private var colorScheme
+    @State private var selectedPluginIDs: Set<String> = []
+    @State private var hasLoadedPluginSelection = false
+
+    private let pluginSettingsStore = AppPluginSettingsVM.shared
 
     // MARK: - 页面数据
 
     private struct OnboardingPage: Identifiable {
-        let id = UUID()
+        let id: String
         let icon: String
         let iconGradient: [Color]
         let title: String
@@ -206,15 +210,39 @@ private struct OnboardingSheetView: View {
         let tip: String?
     }
 
+    private struct OnboardingPluginOption: Identifiable {
+        let id: String
+        let name: String
+        let description: String
+        let icon: String
+        let defaultEnabled: Bool
+    }
+
     private struct Feature {
         let icon: String
         let title: String
         let description: String
     }
 
+    private var configurablePlugins: [OnboardingPluginOption] {
+        pluginVM.plugins
+            .filter { type(of: $0).isConfigurable }
+            .map { plugin in
+                let pluginType = type(of: plugin)
+                return OnboardingPluginOption(
+                    id: plugin.instanceLabel,
+                    name: pluginType.displayName,
+                    description: pluginType.description,
+                    icon: pluginType.iconName,
+                    defaultEnabled: pluginType.enable
+                )
+            }
+    }
+
     private var pages: [OnboardingPage] {
-        [
+        var items = [
             OnboardingPage(
+                id: "welcome",
                 icon: "sparkles",
                 iconGradient: [Color.blue, Color.purple],
                 title: "欢迎使用 Lumi",
@@ -239,6 +267,7 @@ private struct OnboardingSheetView: View {
                 tip: nil
             ),
             OnboardingPage(
+                id: "layout",
                 icon: "rectangle.3.group.bubble.left",
                 iconGradient: [Color.green, Color.teal],
                 title: "理解界面布局",
@@ -263,6 +292,7 @@ private struct OnboardingSheetView: View {
                 tip: "最左侧还有活动栏，可快速切换不同插件面板"
             ),
             OnboardingPage(
+                id: "project-context",
                 icon: "folder.badge.gearshape",
                 iconGradient: [Color.orange, Color.red],
                 title: "项目与上下文",
@@ -287,6 +317,7 @@ private struct OnboardingSheetView: View {
                 tip: "最近使用的项目会自动保存，方便快速切换"
             ),
             OnboardingPage(
+                id: "agent-tools",
                 icon: "wand.and.stars",
                 iconGradient: [Color.purple, Color.pink],
                 title: "Agent 工具执行",
@@ -311,6 +342,7 @@ private struct OnboardingSheetView: View {
                 tip: "高风险操作会请求你的确认，确保安全可靠"
             ),
             OnboardingPage(
+                id: "plugins",
                 icon: "puzzlepiece.extension",
                 iconGradient: [Color.cyan, Color.blue],
                 title: "插件系统",
@@ -335,6 +367,7 @@ private struct OnboardingSheetView: View {
                 tip: "更多插件可在设置中心的「插件」标签页管理"
             ),
             OnboardingPage(
+                id: "quick-start",
                 icon: "gearshape",
                 iconGradient: [Color.gray, Color.secondary],
                 title: "快速开始",
@@ -359,6 +392,24 @@ private struct OnboardingSheetView: View {
                 tip: "所有设置均可随时在设置中心调整"
             )
         ]
+
+        if !configurablePlugins.isEmpty,
+           let quickStartIndex = items.firstIndex(where: { $0.id == "quick-start" }) {
+            items.insert(
+                OnboardingPage(
+                    id: "plugin-selection",
+                    icon: "puzzlepiece.extension.fill",
+                    iconGradient: [Color.indigo, Color.cyan],
+                    title: String(localized: "选择你的插件", table: "AgentOnboardingPlugin"),
+                    subtitle: String(localized: "先启用常用扩展，之后也可以在设置中调整", table: "AgentOnboardingPlugin"),
+                    features: [],
+                    tip: String(localized: "插件选择会在完成引导后立即生效", table: "AgentOnboardingPlugin")
+                ),
+                at: quickStartIndex
+            )
+        }
+
+        return items
     }
 
     // MARK: - Body
@@ -420,6 +471,12 @@ private struct OnboardingSheetView: View {
             y: 20
         )
         .interactiveDismissDisabled()
+        .onAppear {
+            loadPluginSelectionIfNeeded()
+        }
+        .onChange(of: pluginVM.plugins.count) { _, _ in
+            loadPluginSelectionIfNeeded(force: true)
+        }
     }
 
     // MARK: - 子视图
@@ -499,9 +556,14 @@ private struct OnboardingSheetView: View {
             // 图标和标题
             headerSection(page)
 
-            // 功能特性列表
-            featuresSection(page)
-                .padding(.top, 28)
+            if page.id == "plugin-selection" {
+                pluginSelectionSection
+                    .padding(.top, 28)
+            } else {
+                // 功能特性列表
+                featuresSection(page)
+                    .padding(.top, 28)
+            }
 
             // 提示卡片
             if let tip = page.tip {
@@ -513,6 +575,56 @@ private struct OnboardingSheetView: View {
         }
         .opacity(viewModel.isTransitioning ? 0 : 1)
         .offset(x: viewModel.isTransitioning ? -20 : 0)
+    }
+
+    private var pluginSelectionSection: some View {
+        VStack(spacing: 12) {
+            ForEach(configurablePlugins) { plugin in
+                pluginSelectionRow(plugin)
+            }
+        }
+    }
+
+    private func pluginSelectionRow(_ plugin: OnboardingPluginOption) -> some View {
+        let isSelected = selectedPluginIDs.contains(plugin.id)
+
+        Button {
+            togglePluginSelection(plugin.id)
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(.quinary.opacity(0.5))
+                        .frame(width: 36, height: 36)
+
+                    Image(systemName: plugin.icon)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.primary)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(plugin.name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
+
+                    Text(plugin.description)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(isSelected ? .green : .secondary.opacity(0.6))
+            }
+            .padding(14)
+            .contentShape(Rectangle())
+            .background(.quinary.opacity(0.3))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     /// 头部区域
@@ -658,7 +770,7 @@ private struct OnboardingSheetView: View {
                     // 打开设置按钮
                     Button {
                         NotificationCenter.postOpenSettings()
-                        viewModel.complete()
+                        completeOnboarding()
                     } label: {
                         Label(String(localized: "打开设置", table: "AgentOnboardingPlugin"), systemImage: "gearshape")
                             .font(.system(size: 13, weight: .medium))
@@ -674,7 +786,7 @@ private struct OnboardingSheetView: View {
                     Button {
                         Task {
                             await conversationCreationVM.createNewConversation()
-                            viewModel.complete()
+                            completeOnboarding()
                         }
                     } label: {
                         Label(String(localized: "新建会话", table: "AgentOnboardingPlugin"), systemImage: "plus")
@@ -692,13 +804,15 @@ private struct OnboardingSheetView: View {
             // 下一步/开始使用按钮
             Button {
                 if isLastPage {
-                    viewModel.complete()
+                    completeOnboarding()
                 } else {
                     viewModel.nextStep(totalSteps: pages.count)
                 }
             } label: {
                 HStack(spacing: 6) {
-                    Text(isLastPage ? "开始使用" : "下一步")
+                    Text(isLastPage
+                        ? String(localized: "开始使用", table: "AgentOnboardingPlugin")
+                        : String(localized: "下一步", table: "AgentOnboardingPlugin"))
                         .font(.system(size: 13, weight: .semibold))
 
                     if !isLastPage {
@@ -722,6 +836,35 @@ private struct OnboardingSheetView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 16)
+    }
+
+    private func loadPluginSelectionIfNeeded(force: Bool = false) {
+        guard force || !hasLoadedPluginSelection else { return }
+        selectedPluginIDs = Set(
+            configurablePlugins
+                .filter { pluginSettingsStore.isPluginEnabled($0.id, defaultEnabled: $0.defaultEnabled) }
+                .map(\.id)
+        )
+        hasLoadedPluginSelection = true
+    }
+
+    private func togglePluginSelection(_ pluginID: String) {
+        if selectedPluginIDs.contains(pluginID) {
+            selectedPluginIDs.remove(pluginID)
+        } else {
+            selectedPluginIDs.insert(pluginID)
+        }
+    }
+
+    private func applyPluginSelection() {
+        for plugin in configurablePlugins {
+            pluginSettingsStore.setPluginEnabled(plugin.id, enabled: selectedPluginIDs.contains(plugin.id))
+        }
+    }
+
+    private func completeOnboarding() {
+        applyPluginSelection()
+        viewModel.complete()
     }
 }
 
