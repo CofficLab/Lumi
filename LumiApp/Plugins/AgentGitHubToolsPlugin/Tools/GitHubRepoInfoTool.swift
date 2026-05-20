@@ -1,4 +1,5 @@
 import Foundation
+import GitHubKit
 import MagicKit
 
 /// GitHub 仓库信息工具

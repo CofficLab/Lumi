@@ -1,4 +1,5 @@
 import Foundation
+import GitHubKit
 import MagicKit
 
 /// 发现与项目推断技术生态相关的 GitHub 仓库。

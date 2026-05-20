@@ -1,4 +1,5 @@
 import Foundation
+import GitHubKit
 import MagicKit
 
 /// GitHub Issue 列表工具

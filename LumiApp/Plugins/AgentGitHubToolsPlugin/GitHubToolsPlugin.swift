@@ -1,4 +1,5 @@
 import Foundation
+import GitHubKit
 import MagicKit
 import os
 import SwiftUI
@@ -25,7 +26,11 @@ actor GitHubToolsPlugin: SuperPlugin, SuperLog {
 
     static let shared = GitHubToolsPlugin()
 
-    private init() {}
+    private init() {
+        let settingsStore = GitHubPluginLocalStore()
+        settingsStore.migrateLegacyValueIfMissing(forKey: "GitHubToken")
+        GitHubAPIService.shared.setTokenProvider(settingsStore)
+    }
 
     // MARK: - Agent Tool Factories
 

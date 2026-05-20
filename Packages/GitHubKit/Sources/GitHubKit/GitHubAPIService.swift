@@ -1,31 +1,37 @@
 import Foundation
 import HttpKit
-import MagicKit
 
-/// GitHub API 服务
-///
-/// 封装 GitHub REST API v3 的网络请求，底层 HTTP 传输由 `HttpKit` 提供。
-final class GitHubAPIService: @unchecked Sendable, SuperLog {
-    nonisolated static let emoji = "🐙"
-    nonisolated static let verbose: Bool = false
-    static let shared = GitHubAPIService()
+/// 提供 GitHub Token 的对象。
+public protocol GitHubTokenProviding: Sendable {
+    /// 当前可用的 GitHub access token。
+    var accessToken: String? { get }
+}
 
-    /// API 基础 URL
-    private let baseURL = "https://api.github.com"
+/// GitHub REST API 客户端。
+public final class GitHubAPIService: @unchecked Sendable {
+    /// 共享客户端实例。
+    public static let shared = GitHubAPIService()
 
-    /// HTTP 客户端
+    /// API 基础 URL。
+    private let baseURL: String
+
+    /// HTTP 客户端。
     private let client: HTTPClient
 
-    private let settingsStore = GitHubPluginLocalStore()
-    private let tokenKey = "GitHubToken"
+    /// 可选 token provider。由上层插件注入，避免 package 依赖插件设置存储。
+    private var tokenProvider: GitHubTokenProviding?
 
-    /// GitHub Token（从插件设置读取）
-    private var accessToken: String? {
-        settingsStore.string(forKey: tokenKey)
-    }
-
-    private init() {
-        settingsStore.migrateLegacyValueIfMissing(forKey: tokenKey)
+    /// 创建 GitHub API 客户端。
+    ///
+    /// - Parameters:
+    ///   - baseURL: GitHub API 基础 URL。
+    ///   - tokenProvider: 可选 token provider。
+    public init(
+        baseURL: String = "https://api.github.com",
+        tokenProvider: GitHubTokenProviding? = nil
+    ) {
+        self.baseURL = baseURL
+        self.tokenProvider = tokenProvider
         self.client = HTTPClient { config in
             config.httpAdditionalHeaders = [
                 "Accept": "application/vnd.github.v3+json",
@@ -34,15 +40,18 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         }
     }
 
-    // MARK: - 公开方法
+    /// 更新共享客户端使用的 token provider。
+    public func setTokenProvider(_ tokenProvider: GitHubTokenProviding?) {
+        self.tokenProvider = tokenProvider
+    }
 
-    /// 获取仓库信息
-    func getRepoInfo(owner: String, repo: String) async throws -> GitHubRepository {
+    /// 获取仓库信息。
+    public func getRepoInfo(owner: String, repo: String) async throws -> GitHubRepository {
         try await fetch("/repos/\(owner)/\(repo)")
     }
 
-    /// 搜索仓库
-    func searchRepositories(
+    /// 搜索仓库。
+    public func searchRepositories(
         query: String,
         page: Int = 1,
         perPage: Int = 10
@@ -57,8 +66,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         )
     }
 
-    /// 获取文件内容
-    func getFileContent(
+    /// 获取文件内容。
+    public func getFileContent(
         owner: String,
         repo: String,
         path: String,
@@ -70,8 +79,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         )
     }
 
-    /// 获取趋势项目（通过搜索模拟）
-    func getTrendingRepositories(since: String = "daily") async throws -> [GitHubRepository] {
+    /// 获取趋势项目。当前通过仓库搜索模拟。
+    public func getTrendingRepositories(since: String = "daily") async throws -> [GitHubRepository] {
         let query = "stars:>1000"
         let sort: String
         switch since.lowercased() {
@@ -86,8 +95,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         return result.items
     }
 
-    /// 获取仓库 Issue 列表
-    func getIssues(
+    /// 获取仓库 Issue 列表。
+    public func getIssues(
         owner: String,
         repo: String,
         state: GitHubIssueState = .open,
@@ -105,8 +114,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         )
     }
 
-    /// 获取 Issue 详情
-    func getIssue(
+    /// 获取 Issue 详情。
+    public func getIssue(
         owner: String,
         repo: String,
         issueNumber: Int
@@ -114,8 +123,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         try await fetch("/repos/\(owner)/\(repo)/issues/\(issueNumber)")
     }
 
-    /// 创建 Issue
-    func createIssue(
+    /// 创建 Issue。
+    public func createIssue(
         owner: String,
         repo: String,
         title: String,
@@ -134,8 +143,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         return try await post("/repos/\(owner)/\(repo)/issues", body: request)
     }
 
-    /// 更新 Issue
-    func updateIssue(
+    /// 更新 Issue。
+    public func updateIssue(
         owner: String,
         repo: String,
         issueNumber: Int,
@@ -157,8 +166,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         return try await patch("/repos/\(owner)/\(repo)/issues/\(issueNumber)", body: request)
     }
 
-    /// 关闭 Issue
-    func closeIssue(
+    /// 关闭 Issue。
+    public func closeIssue(
         owner: String,
         repo: String,
         issueNumber: Int
@@ -166,8 +175,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         try await updateIssue(owner: owner, repo: repo, issueNumber: issueNumber, state: "closed")
     }
 
-    /// 重新打开 Issue
-    func reopenIssue(
+    /// 重新打开 Issue。
+    public func reopenIssue(
         owner: String,
         repo: String,
         issueNumber: Int
@@ -175,8 +184,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         try await updateIssue(owner: owner, repo: repo, issueNumber: issueNumber, state: "open")
     }
 
-    /// 获取 Issue 评论列表
-    func getIssueComments(
+    /// 获取 Issue 评论列表。
+    public func getIssueComments(
         owner: String,
         repo: String,
         issueNumber: Int,
@@ -192,8 +201,8 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         )
     }
 
-    /// 添加 Issue 评论
-    func addIssueComment(
+    /// 添加 Issue 评论。
+    public func addIssueComment(
         owner: String,
         repo: String,
         issueNumber: Int,
@@ -203,9 +212,7 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         return try await post("/repos/\(owner)/\(repo)/issues/\(issueNumber)/comments", body: request)
     }
 
-    // MARK: - 私有方法
-
-    /// 构建 GET URLRequest
+    /// 构建 GET URLRequest。
     private func buildGetRequest(endpoint: String, params: [String: String] = [:]) -> URLRequest {
         var components = URLComponents(string: baseURL + endpoint)!
         if !params.isEmpty {
@@ -217,7 +224,7 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         return request
     }
 
-    /// 构建带 body 的 URLRequest
+    /// 构建带 body 的 URLRequest。
     private func buildBodyRequest(endpoint: String, method: String) -> URLRequest {
         let url = URL(string: baseURL + endpoint)!
         var request = URLRequest(url: url)
@@ -227,14 +234,14 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
         return request
     }
 
-    /// 应用认证头
+    /// 应用认证头。
     private func applyAuth(request: inout URLRequest) {
-        if let token = accessToken {
+        if let token = tokenProvider?.accessToken, !token.isEmpty {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
     }
 
-    /// 将 HttpKit 错误映射为 GitHubAPIError
+    /// 将 HttpKit 错误映射为 GitHubAPIError。
     private func mapError(_ error: HTTPClientError) -> GitHubAPIError {
         if case let .httpError(statusCode, _) = error {
             switch statusCode {
@@ -244,89 +251,62 @@ final class GitHubAPIService: @unchecked Sendable, SuperLog {
             default: return .httpError(statusCode)
             }
         }
-        return .httpError(-1)
+        return .networkError(error)
     }
 
-    /// 发送 GET 请求并自动解码
+    /// 发送 GET 请求并自动解码。
     private func fetch<T: Decodable>(
         _ endpoint: String,
         params: [String: String] = [:]
     ) async throws -> T {
         let request = buildGetRequest(endpoint: endpoint, params: params)
 
-        if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                GitHubToolsPlugin.logger.info("\(self.t)GET \(request.url!)")
-            }
-        }
-
         do {
             return try await client.sendDecodableRequest(request: request, as: T.self)
         } catch let error as HTTPClientError {
-            if Self.verbose {
-                if GitHubToolsPlugin.verbose {
-                    GitHubToolsPlugin.logger.info("\(self.t)HTTP 错误: \(error)")
-                }
-            }
             throw mapError(error)
         } catch let error as DecodingError {
             throw GitHubAPIError.decodeError(error)
+        } catch {
+            throw GitHubAPIError.networkError(error)
         }
     }
 
-    /// 发送 POST 请求并自动解码
+    /// 发送 POST 请求并自动解码。
     private func post<T: Decodable, B: Encodable>(
         _ endpoint: String,
         body: B
     ) async throws -> T {
-        var request = buildBodyRequest(endpoint: endpoint, method: "POST")
-
-        if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                GitHubToolsPlugin.logger.info("\(self.t)POST \(request.url!)")
-            }
-        }
+        let request = buildBodyRequest(endpoint: endpoint, method: "POST")
 
         do {
             let data = try await client.sendEncodableRequest(request: request, body: body)
             return try JSONDecoder().decode(T.self, from: data)
         } catch let error as HTTPClientError {
-            if Self.verbose {
-                if GitHubToolsPlugin.verbose {
-                    GitHubToolsPlugin.logger.info("\(self.t)HTTP 错误: \(error)")
-                }
-            }
             throw mapError(error)
         } catch let error as DecodingError {
             throw GitHubAPIError.decodeError(error)
+        } catch {
+            throw GitHubAPIError.networkError(error)
         }
     }
 
-    /// 发送 PATCH 请求并自动解码
+    /// 发送 PATCH 请求并自动解码。
     private func patch<T: Decodable, B: Encodable>(
         _ endpoint: String,
         body: B
     ) async throws -> T {
-        var request = buildBodyRequest(endpoint: endpoint, method: "PATCH")
-
-        if Self.verbose {
-            if GitHubToolsPlugin.verbose {
-                GitHubToolsPlugin.logger.info("\(self.t)PATCH \(request.url!)")
-            }
-        }
+        let request = buildBodyRequest(endpoint: endpoint, method: "PATCH")
 
         do {
             let data = try await client.sendEncodableRequest(request: request, body: body)
             return try JSONDecoder().decode(T.self, from: data)
         } catch let error as HTTPClientError {
-            if Self.verbose {
-                if GitHubToolsPlugin.verbose {
-                    GitHubToolsPlugin.logger.info("\(self.t)HTTP 错误: \(error)")
-                }
-            }
             throw mapError(error)
         } catch let error as DecodingError {
             throw GitHubAPIError.decodeError(error)
+        } catch {
+            throw GitHubAPIError.networkError(error)
         }
     }
 }

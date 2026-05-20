@@ -49,6 +49,7 @@
 		B1C2D3502F80000200BBB201 /* XcodeKit in Frameworks */ = {isa = PBXBuildFile; productRef = B1C2D3512F80000200BBB201 /* XcodeKit */; };
 		C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C022FB3000000000001 /* WebFetchKit */; };
 		C0FF1C112FB4000000000001 /* HttpKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF1C122FB4000000000001 /* HttpKit */; };
+		C0FF2A102FB5000000000001 /* GitHubKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0FF2A112FB5000000000001 /* GitHubKit */; };
 		F1E2A3012FC2000100000001 /* FileTreeKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1E2A3022FC2000100000001 /* FileTreeKit */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F53C415A2F1A3E6500929321 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F53C41592F1A3E6500929321 /* Sparkle */; };
@@ -317,6 +318,7 @@
 				A1B2C4262F70000100AAA107 /* LumiPreviewKit in Frameworks */,
 				C0FF1C012FB3000000000001 /* WebFetchKit in Frameworks */,
 				C0FF1C112FB4000000000001 /* HttpKit in Frameworks */,
+				C0FF2A102FB5000000000001 /* GitHubKit in Frameworks */,
 				9B1E959D92BE43808AC7CA54 /* LLMKit in Frameworks */,
 				A1B2C3E02F70000100AAA101 /* MarkdownKit in Frameworks */,
 				A1B2C3D42F70000100AAA101 /* MarkdownKitCore in Frameworks */,
@@ -880,6 +882,7 @@
 				A1B2C4272F70000100AAA107 /* LumiPreviewKit */,
 				C0FF1C022FB3000000000001 /* WebFetchKit */,
 				C0FF1C122FB4000000000001 /* HttpKit */,
+				C0FF2A112FB5000000000001 /* GitHubKit */,
 				A1B2C3A12F70000200AAA101 /* SkillKit */,
 				A1B2C4162F70000100AAA101 /* DeviceMonitorKit */,
 				A1B2C4182F70000100AAA102 /* DockerKit */,
@@ -983,6 +986,7 @@
 				A1B2C4282F70000100AAA107 /* XCLocalSwiftPackageReference "Packages/LumiPreviewKit" */,
 				C0FF1C032FB3000000000001 /* XCLocalSwiftPackageReference "Packages/WebFetchKit" */,
 				C0FF1C132FB4000000000001 /* XCLocalSwiftPackageReference "Packages/HttpKit" */,
+				C0FF2A122FB5000000000001 /* XCLocalSwiftPackageReference "Packages/GitHubKit" */,
 				A1B2C3A32F70000200AAA101 /* XCLocalSwiftPackageReference "Packages/SkillKit" */,
 				A1B2C4142F70000100AAA101 /* XCLocalSwiftPackageReference "Packages/DeviceMonitorKit" */,
 				A1B2C4192F70000100AAA102 /* XCLocalSwiftPackageReference "Packages/DockerKit" */,
@@ -1939,6 +1943,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/HttpKit;
 		};
+		C0FF2A122FB5000000000001 /* XCLocalSwiftPackageReference "Packages/GitHubKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/GitHubKit;
+		};
 		F1E2A3032FC2000100000001 /* XCLocalSwiftPackageReference "Packages/FileTreeKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FileTreeKit;
@@ -2271,6 +2279,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C0FF1C132FB4000000000001 /* XCLocalSwiftPackageReference "Packages/HttpKit" */;
 			productName = HttpKit;
+		};
+		C0FF2A112FB5000000000001 /* GitHubKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0FF2A122FB5000000000001 /* XCLocalSwiftPackageReference "Packages/GitHubKit" */;
+			productName = GitHubKit;
 		};
 		F1E2A3022FC2000100000001 /* FileTreeKit */ = {
 			isa = XCSwiftPackageProductDependency;
