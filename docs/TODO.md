@@ -160,54 +160,159 @@
 ## 5. Auto 模型路由
 
 > 目标：用户选择 "Auto" 后，系统自动根据消息内容、任务类型和历史表现选择最合适的模型。参考 Cursor Auto 模式。
+>
+> **架构原则**：内核定义数据容器和路由决策，插件只负责通过内核暴露的接口写入数据。内核不依赖任何插件。
 
 ### 架构概述
 
-路由流程：用户消息 → 信号采集 → 候选过滤 → 评分排序 → 选择最佳 → 发送请求。
+```
+LLMAvailabilityPlugin（数据生产者）
+  │ 通过内核暴露的接口写入
+  ▼
+内核 LLMModelAvailabilityStore（数据容器）
+  │ AutoModelRouter 读取
+  ▼
+内核 AutoModelRouter（路由决策）
+  │ LLMRequester 消费
+  ▼
+实际 LLM 请求
+```
+
+路由信号：`hasImages`、`chatMode`、`messageLength`、`allowsTools`、`historicalStats`、`modelCapabilities`、`availabilityStatus`。
+
+硬过滤：有图片 → supportsVision；Build 模式 → supportsTools；API Key 已配置；模型可用性检测通过。
+
+### Phase 1: 内核 — 可用性数据容器
+
+> 风险：低。纯新增，不修改已有代码。
+
+**目标**：内核拥有自己的模型可用性数据模型和存储，插件通过接口写入。
+
+- [x] 新增 `LumiApp/Core/Models/LLMModelAvailability.swift`：
+  - `LLMModelAvailabilityStatus` 枚举（`unknown` / `checking` / `available` / `unavailable(String)`）
+  - `LLMModelAvailabilityEntry` 结构体（`modelId`、`status`）
+  - `LLMProviderAvailabilityEntry` 结构体（`providerId`、`displayName`、`models`）
+- [x] 新增 `LumiApp/Core/Services/LLMModelAvailabilityStore.swift`：
+  - `ObservableObject`，线程安全（`NSRecursiveLock`）
+  - 插件写入接口：`updateStatus(providerId:modelId:status:)`、`initialize(providers:)`、`resetAll()`
+  - 内核读取接口：`isAvailable(providerId:modelId:)`、`status(providerId:modelId:)`、`availablePairs()`、`providers`
+  - 持有方式：挂在 `LLMService` 或 `RootContainer` 上，全局单例
+- [ ] 编写单元测试：并发写入安全性、状态查询准确性
+
+### Phase 2: 插件 — 改写为写入内核 Store
+
+> 风险：中。删除插件自有 Store，改为调用内核接口。
+
+**目标**：`LLMAvailabilityPlugin` 的检测服务改为将结果写入内核的 Store，插件不再持有独立数据。
+
+- [x] 删除 `LLMAvailabilityPlugin/Store/LLMAvailabilityStore.swift`（插件自有 Store）
+  - 实际保留兼容 typealias，真实实现已迁移到内核 `LLMModelAvailabilityStore`
+- [x] 修改 `LLMAvailabilityPlugin/Services/LLMAvailabilityChecker.swift`：
+  - 通过兼容别名写入内核 `LLMModelAvailabilityStore`
+- [x] 修改 `LLMAvailabilityPlugin/Tools/ListAvailableModelsTool.swift`：
+  - 通过兼容别名从内核 Store 读取数据
+- [x] 修改 `LLMAvailabilityPlugin/Tools/CheckModelAvailabilityTool.swift`：
+  - 通过兼容别名写入内核 Store
+- [x] 修改 `LLMAvailabilityPlugin/LLMAvailabilityPlugin.swift`：
+  - 插件视图已迁移到 `ModelSelectorPlugin`，可用性数据使用内核 Store
+- [ ] 验证：插件禁用后内核 Store 为空，App 正常运行（无可用性数据，Auto 路由退化为默认行为）
+
+### Phase 3: 内核 — AutoModelRouter 路由引擎
+
+> 风险：中。新增路由逻辑，是 Auto 模式的核心。
+
+**目标**：纯读取内核数据（可用性 + 能力声明 + 历史性能），输出最佳 `LLMConfig`。
 
 新增文件：
-- `LumiApp/Core/Services/LLM/AutoModelRouter.swift` — 路由引擎（核心）。
-- `LumiApp/Core/Services/LLM/AutoModelScoring.swift` — 评分策略（可替换）。
-- `LumiApp/Plugins/ChatInputPlugin/Middlewares/AutoModelMiddleware.swift` — SendPipeline 中间件（order: 10，早期执行）。
+- `LumiApp/Core/Services/LLM/AutoModelRouter.swift` — 路由引擎
+- `LumiApp/Core/Services/LLM/AutoModelScoring.swift` — 评分策略（可替换）
 
-路由信号：`hasImages`、`chatMode`、`messageLength`、`allowsTools`、`historicalStats`、`modelCapabilities`、`apiKeyConfigured`。
+- [x] 定义路由输入信号结构体 `AutoRouteSignal`（`hasImages`、`chatMode`、`messageLength`、`allowsTools`、`currentProviderId`、`currentModel`）
+- [x] 实现 `AutoModelRouter`：
+  - 数据来源：`LLMModelAvailabilityStore`、供应商能力声明、当前请求上下文
+  - 硬过滤：有图片 → `supportsVision`；工具请求 → `supportsTools`；API Key 已配置；排除 `unavailable`
+  - 评分排序：可用性、当前选择、消息长度、工具倾向
+  - 输出：`LLMConfig`（或 `nil` 表示无可用模型，退化为用户手动选择）
+- [x] 实现 `AutoModelScoring`（评分策略协议 + 默认实现）
+- [ ] 编写单元测试：过滤逻辑、评分排序、边界场景（无可用模型、所有模型不支持工具等）
 
-硬过滤：有图片 → supportsVision；Build 模式 → supportsTools；API Key 已配置；模型存在。
+### Phase 4: 内核 — LLMRequester 接入 Auto 模式
 
-### Phase 1: 基础路由（最小可用）
+> 风险：中。修改发送管线的关键路径。
 
-- [ ] 新增 `AutoModelRouter`（能力过滤 + 模型强度评分）。
-- [ ] 新增 `AutoModelMiddleware`。
-- [ ] `LLMVM` 新增 `isAutoMode` 状态。
-- [ ] `LLMRequester` 支持 Auto 配置获取。
-- [ ] `ModelSelectorTab` 新增 `.auto`。
-- [ ] `ChatToolbarView` 支持 Auto UI 状态。
-- [ ] 👤 需要用户参与：验证模型选择器 Auto Tab 的 UI 文案和推荐理由展示是否合理。
+- [x] `AppLLMVM` 新增 `isAutoMode: Bool` 状态（`@Published`）
+- [x] `AppLLMVM` 新增 `lastAutoRouteSummary` 状态（`@Published`）
+- [x] 修改 `LLMRequester.request()`：
+  - 当 `agentSessionConfig.isAutoMode == true` 时，调用 `AutoModelRouter.route()` 获取 `LLMConfig`
+  - 路由返回 `nil` 时 fallback 到 `agentSessionConfig.getCurrentConfig()`
+  - 非 Auto 模式保持现有逻辑不变
+- [x] 路由失败或无可用模型时的错误处理和用户提示
+  - MVP：记录 `lastAutoRouteSummary`，请求继续 fallback 到当前选择
+- [ ] 验证：Auto 模式发消息，实际请求使用了路由选择的模型；手动模式行为不变
 
-### Phase 2: 历史数据驱动
+### Phase 5: UI — Auto Tab 和模型选择器
 
-- [ ] 路由引擎接入 `ChatHistoryService.getModelDetailedStats()`。
-- [ ] TPS 评分生效。
-- [ ] 可靠性评分生效。
-- [ ] 模型选择器 Auto Tab 展示评分详情。
+> 风险：低。纯 UI 新增。
 
-### Phase 3: 复杂度感知
+- [x] `ModelSelectorTab` 新增 `.auto` case
+- [x] `ModelSelectorView` 新增 Auto Tab 视图：展示 Auto 开关和最近一次路由推荐理由
+- [x] `ModelSelectorPlugin` 工具栏按钮支持 Auto UI 状态（显示 "Auto" 标签 + 当前使用的模型名）
+- [ ] Auto Tab 展示评分详情（模型强度、TPS、可靠性、推荐原因）
+- [ ] 👤 需要用户参与：验证模型选择器 Auto Tab 的 UI 文案和推荐理由展示是否合理
 
-- [ ] 消息长度分析（短消息偏向轻量模型）。
-- [ ] 对话轮数感知。
-- [ ] 代码检测（消息包含代码块时偏向编程能力强的模型）。
+### Phase 6: 历史数据驱动
 
-### Phase 4: 学习型路由
+> 风险：低。接入已有的 `ChatHistoryService`。
 
-- [ ] 用户手动切换模型后调整对应模型权重。
-- [ ] 路由失败时自动 fallback。
-- [ ] 基于对话类别的偏好学习。
+- [ ] 路由引擎接入 `ChatHistoryService.getModelDetailedStats()`（已在内核中）
+- [ ] TPS 评分生效
+- [ ] 可靠性评分生效（成功率、平均延迟）
+- [ ] 模型选择器 Auto Tab 展示历史评分详情
 
-### Phase 5: 成本优化
+### Phase 7: 复杂度感知
 
-- [ ] 模型定价数据接入。
-- [ ] 简单任务自动选便宜模型。
-- [ ] Token 用量预算控制。
+> 风险：低。在路由信号中增加维度。
+
+- [ ] 消息长度分析（短消息偏向轻量模型）
+- [ ] 对话轮数感知（多轮复杂对话偏向强模型）
+- [ ] 代码检测（消息包含代码块时偏向编程能力强的模型）
+
+### Phase 8: 学习型路由
+
+> 风险：中。需要持久化用户偏好。
+
+- [ ] 用户手动切换模型后调整对应模型权重（持久化到 UserDefaults）
+- [ ] 路由失败时自动 fallback 到下一个候选模型
+- [ ] 基于对话类别的偏好学习
+
+### Phase 9: 成本优化
+
+> 风险：低。新增定价维度。
+
+- [ ] 模型定价数据接入（供应商声明或配置文件）
+- [ ] 简单任务自动选便宜模型
+- [ ] Token 用量预算控制
+
+### 新增文件汇总
+
+| 文件 | 位置 | 说明 |
+|------|------|------|
+| `LLMModelAvailability.swift` | Core/Models/ | 可用性数据模型 |
+| `LLMModelAvailabilityStore.swift` | Core/Services/ | 可用性数据存储（内核） |
+| `AutoModelRouter.swift` | Core/Services/LLM/ | 路由引擎 |
+| `AutoModelScoring.swift` | Core/Services/LLM/ | 评分策略 |
+
+### 修改文件汇总
+
+| 文件 | 改动 |
+|------|------|
+| `LLMRequester.swift` | Auto 模式分支 |
+| `AppLLMVM.swift` | 新增 `isAutoMode` |
+| `LLMAvailabilityChecker.swift` | 写入内核 Store |
+| `ListAvailableModelsTool.swift` | 读内核 Store |
+| `CheckModelAvailabilityTool.swift` | 写入内核 Store |
+| `LLMAvailabilityPlugin.swift` | 删除自有 Store，获取内核 Store |
+| 删除 `LLMAvailabilityStore.swift`（插件侧） | 数据容器迁移到内核 |
 
 ---
 
@@ -707,66 +812,3 @@
 3. **插件零改动或极小改动** — `@EnvironmentObject` 类型不变，只是实例从全局变成窗口级
 4. **SendController 自然隔离** — 不再需要判断"当前活跃窗口是哪个"
 5. **窗口关闭自动释放** — `WindowScope` 随窗口销毁，内存自然回收
-
----
-
-## 19. LLMAvailabilityPlugin 视图剥离 → ModelSelectorPlugin 整合
-
-> 目标：LLMAvailabilityPlugin 仅负责数据（Store + Checker + Tools），不再提供任何视图。其视图功能整合到 ModelSelectorPlugin，实现「模型选择 + 可用性」统一视图。
->
-> **不需要改内核**（`AppLLMVM` / `LLMProviderInfo`），`LLMAvailabilityStore` 作为独立 `ObservableObject` 单例，ModelSelectorView 直接 `@ObservedObject` 引用即可。
-
-### Phase 1: LLMAvailabilityPlugin 删除视图
-
-> 风险：低。纯删除操作。
-
-- [ ] 删除 `Views/LLMAvailabilityOverlay.swift`
-- [ ] 删除 `Views/LLMAvailabilityStatusBarView.swift`
-- [ ] 删除 `Views/LLMAvailabilityDetailView.swift`
-- [ ] 修改 `LLMAvailabilityPlugin.swift`：删除 `addRootView()` 方法
-- [ ] 修改 `LLMAvailabilityPlugin.swift`：删除 `addStatusBarTrailingView()` 方法
-- [ ] 清理 `LLMAvailability.xcstrings` 中不再由本插件使用的本地化 key（如有迁移到 ModelSelectorPlugin 的 key 则保留原文件不删）
-
-### Phase 2: ModelSelectorPlugin 接收初始化职责
-
-> 风险：低。Overlay 逻辑极简（初始化 Store + 启动 checkAll）。
-
-- [ ] 修改 `ModelSelectorPlugin.swift`：新增 `addRootView()` 方法，返回含可用性初始化逻辑的视图
-- [ ] 将 `LLMAvailabilityOverlay` 的 `.task` 逻辑（`store.initialize(from:)` + `checker.checkAll()`）迁移至新 `addRootView()` 或新的 `AvailabilityOverlay.swift`
-- [ ] 确认 Agent Tools（`ListAvailableModelsTool`、`CheckModelAvailabilityTool`）仍正常工作（它们通过 `LLMAvailabilityStore.shared` 读数据，与视图层无关）
-
-### Phase 3: ModelSelectorPlugin 接收状态栏指示器
-
-> 风险：低。独立 toolbar item，不影响现有 model-selector 按钮。
-
-- [ ] 从 `LLMAvailabilityStatusBarView` 迁移视图逻辑，新建 `Views/AvailabilityIndicatorButton.swift`（sidebar toolbar 按钮，显示 `可用数/总数`，点击弹出可用性详情 popover）
-- [ ] 修改 `ModelSelectorPlugin.swift`：`addSidebarLeadingToolbarItems()` 新增 `availability-indicator` item
-- [ ] 修改 `ModelSelectorPlugin.swift`：`addSidebarToolbarItemView()` 扩展支持 `model-selector` 和 `availability-indicator` 两个 item
-- [ ] 从 `LLMAvailabilityDetailView` 迁移视图逻辑，新建 `Views/AvailabilityDetailView.swift`（独立 popover 版本，保留搜索、刷新、按供应商展示的能力）
-
-### Phase 4: ModelSelectorView 新增可用性 Tab
-
-> 风险：低。纯新增功能，不改现有 Tab 逻辑。
-
-- [ ] 修改 `Models/ModelSelectorTab.swift`：新增 `.availability` case 及其 `displayTitle`
-- [ ] 修改 `Views/ModelSelectorTabSidebar.swift`：在快捷 Tab 区新增「可用性」按钮（显示可用数 badge）
-- [ ] 修改 `ModelSelectorView.swift`：`body` 的 `switch selectedTab` 新增 `.availability` 分支
-- [ ] 新建 `Views/AvailabilityTabContent.swift`（复用 `AvailabilityDetailView` 的内容，适配 ModelSelectorView 的布局风格）
-
-### Phase 5: 模型行新增可用状态指示
-
-> 风险：低。新增可选参数，不影响现有行为。
-
-- [ ] 修改 `Views/ModelSelectorModelRow.swift`：新增 `availabilityStatus: LLMAvailabilityStatus?` 参数
-- [ ] 在模型名旁显示可用状态小图标（🟢 available / 🔴 unavailable / 🟡 checking / ⚪ unknown）
-- [ ] 修改 `ModelSelectorView.swift`：所有 `modelRow()` 调用处传入从 `LLMAvailabilityStore` 查询的 status
-- [ ] `ModelSelectorTabSidebar.swift` 中供应商行旁显示可用模型数（如 `3/5`）
-
-### Phase 6: 清理与验证
-
-- [ ] 确认 `LLMAvailabilityPlugin` 目录下无任何 `import SwiftUI` 的文件（除 Tools 中可能的间接引用）
-- [ ] 确认 ModelSelectorPlugin 的 popover 尺寸和布局在新增 Tab 后仍合理（520×800 可能需要微调）
-- [ ] 确认状态栏 `availability-indicator` 与 `model-selector` 按钮视觉风格一致
-- [ ] 确认 Agent Tools（`list_available_models`、`check_model_availability`）功能不受影响
-- [ ] 👤 需要用户参与：验证可用性检测自动启动、状态栏指示器实时更新、详情面板搜索/刷新/重检正常
-- [ ] 👤 需要用户参与：验证 ModelSelectorView 中可用性 Tab 展示正确，模型行状态指示器实时反映检测结果

@@ -1,7 +1,6 @@
 import AppKit
 import MagicKit
 import LLMKit
-import SwiftData
 import SwiftUI
 
 /// 模型选择器视图
@@ -16,6 +15,7 @@ struct ModelSelectorView: View, SuperLog {
 
     @EnvironmentObject var llmVM: AppLLMVM
     @EnvironmentObject var chatHistoryVM: AppChatHistoryVM
+    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
 
     /// 模型性能统计
     @State private var detailedStats: [String: ModelPerformanceStats] = [:]
@@ -76,9 +76,17 @@ struct ModelSelectorView: View, SuperLog {
                         frequentModelsList
                     case .fast:
                         fastModelsList
+                    case .auto:
+                        AutoTabContent()
+                    case .availability:
+                        AvailabilityTabContent()
                     case .all:
                         providerList(
-                            providers: filteredProviders(from: llmVM.allProviders),
+                            providers: ModelSelectorFilteringService.filteredProviders(
+                                from: llmVM.allProviders,
+                                searchText: searchText,
+                                localModelInfosByProvider: localModelInfosByProvider
+                            ),
                             emptyMessage: String(localized: "No Providers", table: "AgentChat")
                         )
                     case .provider(let providerId):
@@ -106,7 +114,7 @@ struct ModelSelectorView: View, SuperLog {
             case .all:
                 let localIds = llmVM.allProviders.filter(\.isLocal).map(\.id)
                 await loadLocalModelInfos(providerIds: localIds)
-            default:
+            case .auto, .availability, .frequent, .fast:
                 break
             }
         }
@@ -118,7 +126,11 @@ struct ModelSelectorView: View, SuperLog {
     @ViewBuilder
     private func singleProviderList(providerId: String) -> some View {
         if let provider = llmVM.allProviders.first(where: { $0.id == providerId }),
-           hasVisibleModels(provider: provider) {
+           ModelSelectorFilteringService.hasVisibleModels(
+               provider: provider,
+               searchText: searchText,
+               localModelInfosByProvider: localModelInfosByProvider
+           ) {
             List {
                 Section(header: sectionHeader(for: provider)) {
                     modelSectionContent(for: provider)
@@ -138,7 +150,11 @@ struct ModelSelectorView: View, SuperLog {
     @ViewBuilder
     private var currentProviderList: some View {
         if let provider = currentProvider {
-            if hasVisibleModels(provider: provider) {
+            if ModelSelectorFilteringService.hasVisibleModels(
+                provider: provider,
+                searchText: searchText,
+                localModelInfosByProvider: localModelInfosByProvider
+            ) {
                 List {
                     Section(header: sectionHeader(for: provider)) {
                         modelSectionContent(for: provider)
@@ -163,7 +179,7 @@ struct ModelSelectorView: View, SuperLog {
     /// 常用模型列表（跨供应商，按使用频率排序）
     @ViewBuilder
     private var frequentModelsList: some View {
-        let filteredEntries = filteredFrequentModels()
+        let filteredEntries = ModelSelectorFilteringService.filteredFrequentModels(frequentModels, searchText: searchText)
         if filteredEntries.isEmpty {
             ContentUnavailableView {
                 Label(String(localized: "No Frequent Models", table: "AgentChat"), systemImage: "clock.arrow.circlepath")
@@ -199,7 +215,7 @@ struct ModelSelectorView: View, SuperLog {
     /// TPS 较快模型列表（跨供应商，按 TPS 降序，最多 10 个）
     @ViewBuilder
     private var fastModelsList: some View {
-        let filteredEntries = filteredFastModels()
+        let filteredEntries = ModelSelectorFilteringService.filteredFastModels(fastModels, searchText: searchText)
         if filteredEntries.isEmpty {
             ContentUnavailableView {
                 Label(String(localized: "No Fast Models", table: "AgentChat"), systemImage: "bolt.fill")
@@ -255,9 +271,11 @@ struct ModelSelectorView: View, SuperLog {
     @ViewBuilder
     private func modelSectionContent(for provider: LLMProviderInfo) -> some View {
         if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
-            let filteredInfos = infos.filter {
-                matchesSearch(provider: provider, model: $0.id, displayName: $0.displayName, series: $0.series)
-            }
+            let filteredInfos = ModelSelectorFilteringService.filteredLocalModelInfos(
+                infos,
+                provider: provider,
+                searchText: searchText
+            )
             let fallbackSeries = String(localized: "Other", table: "AgentChat")
             let grouped = Dictionary(grouping: filteredInfos) { $0.series ?? fallbackSeries }
             ForEach(grouped.keys.sorted(), id: \.self) { seriesName in
@@ -274,11 +292,13 @@ struct ModelSelectorView: View, SuperLog {
                 }
             }
         } else {
-            let filteredModels = provider.availableModels.filter {
-                matchesSearch(provider: provider, model: $0)
-            }
+            let filteredModels = ModelSelectorFilteringService.filteredModels(for: provider, searchText: searchText)
             ForEach(filteredModels, id: \.self) { model in
-                let caps = capabilityValues(provider: provider, model: model)
+                let caps = ModelSelectorFilteringService.capabilityValues(
+                    provider: provider,
+                    model: model,
+                    providerType: llmVM.providerType(forId: provider.id)
+                )
                 modelRow(
                     provider: provider,
                     model: model,
@@ -309,6 +329,7 @@ struct ModelSelectorView: View, SuperLog {
             isSelected: isSelected(providerId: provider.id, model: model),
             isHovering: hoveringModelId == hoverKey,
             stat: findDetailedStat(providerId: provider.id, modelName: model),
+            availabilityStatus: availabilityStore.status(providerId: provider.id, modelId: model),
             onSelect: {
                 selectModel(providerId: provider.id, model: model)
             },
@@ -321,12 +342,6 @@ struct ModelSelectorView: View, SuperLog {
             }
         )
     }
-}
-
-private struct ModelSelectorStatsSnapshot: Sendable {
-    let detailedStats: [String: ModelPerformanceStats]
-    let frequentModels: [FrequentModelEntry]
-    let fastModels: [FastModelEntry]
 }
 
 // MARK: - View
@@ -357,6 +372,7 @@ extension ModelSelectorView {
     ///   - providerId: 供应商 ID
     ///   - model: 模型名称
     private func selectModel(providerId: String, model: String) {
+        llmVM.isAutoMode = false
         llmVM.selectedProviderId = providerId
         llmVM.currentModel = model
 
@@ -377,11 +393,10 @@ extension ModelSelectorView {
         isStatsLoaded = false
 
         let modelContainer = chatHistoryVM.chatHistoryService.getModelContainer()
-        let providers = llmVM.allProviders
-
-        let snapshot = await Task.detached(priority: .userInitiated) {
-            Self.buildStatsSnapshot(modelContainer: modelContainer, providers: providers)
-        }.value
+        let snapshot = await ModelSelectorStatsService.loadSnapshot(
+            modelContainer: modelContainer,
+            providers: llmVM.allProviders
+        )
 
         guard !Task.isCancelled else { return }
 
@@ -403,149 +418,15 @@ extension ModelSelectorView {
         }
     }
 
-    nonisolated private static func buildStatsSnapshot(
-        modelContainer: ModelContainer,
-        providers: [LLMProviderInfo]
-    ) -> ModelSelectorStatsSnapshot {
-        let context = ModelContext(modelContainer)
-        let descriptor = FetchDescriptor<ChatMessageEntity>(
-            predicate: #Predicate { msg in
-                msg.metrics != nil && msg.providerId != nil && msg.modelName != nil
-            }
-        )
-
-        guard let messageEntities = try? context.fetch(descriptor) else {
-            AppLogger.core.error("\(Self.t)❌ 获取模型统计消息失败")
-            return ModelSelectorStatsSnapshot(detailedStats: [:], frequentModels: [], fastModels: [])
-        }
-
-        var detailedStats: [String: ModelPerformanceStats] = [:]
-
-        for entity in messageEntities {
-            guard let providerId = entity.providerId,
-                  let modelName = entity.modelName,
-                  let metrics = entity.metrics,
-                  let latency = metrics.latency else {
-                continue
-            }
-
-            let key = "\(providerId)|\(modelName)"
-            var stats = detailedStats[key] ?? ModelPerformanceStats(
-                providerId: providerId,
-                modelName: modelName,
-                sampleCount: 0,
-                totalLatency: 0,
-                totalTTFT: 0,
-                totalInputTokens: 0,
-                totalOutputTokens: 0
-            )
-
-            stats.sampleCount += 1
-            stats.totalLatency += latency
-
-            if let ttft = metrics.timeToFirstToken {
-                stats.totalTTFT += ttft
-                stats.ttftCount += 1
-            }
-
-            if let inputTokens = metrics.inputTokens {
-                stats.totalInputTokens += inputTokens
-                stats.inputTokenCount += 1
-            }
-
-            if let outputTokens = metrics.outputTokens,
-               let streamingDuration = metrics.streamingDuration {
-                stats.totalOutputTokens += outputTokens
-                stats.outputTokenCount += 1
-                stats.totalStreamingDuration += streamingDuration
-                stats.streamingDurationCount += 1
-            }
-
-            detailedStats[key] = stats
-        }
-
-        let providerMap = Dictionary(uniqueKeysWithValues: providers.map { ($0.id, $0) })
-
-        let frequentModels = detailedStats.values
-            .filter { stat in
-                guard let provider = providerMap[stat.providerId] else { return false }
-                return provider.availableModels.contains(stat.modelName)
-            }
-            .map { stat -> FrequentModelEntry in
-                let provider = providerMap[stat.providerId]
-                return FrequentModelEntry(
-                    id: "\(stat.providerId)|\(stat.modelName)",
-                    providerId: stat.providerId,
-                    providerDisplayName: provider?.displayName ?? stat.providerId,
-                    modelName: stat.modelName,
-                    useCount: stat.sampleCount,
-                    lastUsedAt: Date()
-                )
-            }
-            .sorted { $0.useCount > $1.useCount }
-
-        let fastModels = detailedStats.values
-            .filter { stat in
-                stat.avgTPS > 0 && stat.sampleCount > 0
-            }
-            .filter { stat in
-                guard let provider = providerMap[stat.providerId] else { return false }
-                return provider.availableModels.contains(stat.modelName)
-            }
-            .map { stat -> FastModelEntry in
-                let provider = providerMap[stat.providerId]
-                return FastModelEntry(
-                    id: "\(stat.providerId)|\(stat.modelName)",
-                    providerId: stat.providerId,
-                    providerDisplayName: provider?.displayName ?? stat.providerId,
-                    modelName: stat.modelName,
-                    avgTPS: stat.avgTPS,
-                    sampleCount: stat.sampleCount
-                )
-            }
-            .sorted { lhs, rhs in
-                if lhs.avgTPS == rhs.avgTPS {
-                    return lhs.sampleCount > rhs.sampleCount
-                }
-                return lhs.avgTPS > rhs.avgTPS
-            }
-
-        return ModelSelectorStatsSnapshot(
-            detailedStats: detailedStats,
-            frequentModels: Array(frequentModels.prefix(10)),
-            fastModels: Array(fastModels.prefix(10))
-        )
-    }
-
     /// 加载指定供应商的模型详情（含系列），用于按系列展示
     /// 并行请求所有供应商，避免串行等待
     /// - Parameter providerIds: 需要加载模型详情的供应商 ID 列表
     private func loadLocalModelInfos(providerIds: [String]) async {
         isLoadingLocalModels = true
-
-        let providers: [(String, any SuperLocalLLMProvider)] = providerIds.compactMap { id in
-            guard let provider = llmVM.createProvider(id: id) as? any SuperLocalLLMProvider else { return nil }
-            return (id, provider)
-        }
-
-        let results = await withTaskGroup(of: (String, [LocalModelInfo]).self) { group in
-            for (id, provider) in providers {
-                group.addTask {
-                    let infos = await provider.getAvailableModels()
-                    return (id, infos)
-                }
-            }
-
-            var combined: [String: [LocalModelInfo]] = [:]
-            for await (id, infos) in group {
-                if !infos.isEmpty {
-                    combined[id] = infos
-                }
-            }
-            return combined
-        }
-
-        localModelInfosByProvider = results
+        localModelInfosByProvider = await ModelSelectorLocalModelService.loadModelInfos(
+            providerIds: providerIds,
+            llmVM: llmVM
+        )
         isLoadingLocalModels = false
     }
 
@@ -559,97 +440,6 @@ extension ModelSelectorView {
         return detailedStats[key]
     }
 
-    /// 读取模型能力声明（用于远程模型 badge 展示）
-    /// - Parameters:
-    ///   - provider: 供应商信息
-    ///   - model: 模型 ID
-    /// - Returns: (supportsVision, supportsTools)
-    private func capabilityValues(provider: LLMProviderInfo, model: String) -> (supportsVision: Bool?, supportsTools: Bool?) {
-        if provider.isLocal {
-            return (nil, nil)
-        }
-
-        guard let providerType = llmVM.providerType(forId: provider.id),
-              let caps = providerType.modelCapabilities[model] else {
-            if ChatInputPlugin.verbose {
-                            ChatInputPlugin.logger.error("\(Self.t) 远程模型缺少能力声明: provider=\(provider.id), model=\(model)")
-            }
-            return (nil, nil)
-        }
-
-        return (caps.supportsVision, caps.supportsTools)
-    }
-
-    /// 根据搜索词过滤供应商（保留至少有一个可见模型的供应商）
-    private func filteredProviders(from providers: [LLMProviderInfo]) -> [LLMProviderInfo] {
-        let keyword = normalizedSearchText
-        guard !keyword.isEmpty else { return providers }
-
-        return providers.filter { provider in
-            hasVisibleModels(provider: provider)
-        }
-    }
-
-    /// 判断供应商在当前搜索词下是否还有可见模型
-    private func hasVisibleModels(provider: LLMProviderInfo) -> Bool {
-        if matchesSearch(provider: provider, model: "") {
-            return true
-        }
-
-        if provider.isLocal, let infos = localModelInfosByProvider[provider.id], !infos.isEmpty {
-            return infos.contains { info in
-                matchesSearch(provider: provider, model: info.id, displayName: info.displayName, series: info.series)
-            }
-        }
-
-        return provider.availableModels.contains { model in
-            matchesSearch(provider: provider, model: model)
-        }
-    }
-
-    /// 根据搜索词过滤常用模型
-    private func filteredFrequentModels() -> [FrequentModelEntry] {
-        let keyword = normalizedSearchText
-        guard !keyword.isEmpty else { return frequentModels }
-
-        return frequentModels.filter { entry in
-            entry.modelName.localizedCaseInsensitiveContains(keyword)
-                || entry.providerDisplayName.localizedCaseInsensitiveContains(keyword)
-                || entry.providerId.localizedCaseInsensitiveContains(keyword)
-        }
-    }
-
-    /// 根据搜索词过滤 TPS 较快模型
-    private func filteredFastModels() -> [FastModelEntry] {
-        let keyword = normalizedSearchText
-        guard !keyword.isEmpty else { return fastModels }
-
-        return fastModels.filter { entry in
-            entry.modelName.localizedCaseInsensitiveContains(keyword)
-                || entry.providerDisplayName.localizedCaseInsensitiveContains(keyword)
-                || entry.providerId.localizedCaseInsensitiveContains(keyword)
-        }
-    }
-
-    /// 模型项是否匹配当前搜索词（匹配模型名、展示名、系列、供应商）
-    private func matchesSearch(provider: LLMProviderInfo, model: String, displayName: String? = nil, series: String? = nil) -> Bool {
-        let keyword = normalizedSearchText
-        guard !keyword.isEmpty else { return true }
-
-        return [
-            model,
-            displayName ?? "",
-            series ?? "",
-            provider.displayName,
-            provider.id,
-        ]
-        .contains { $0.localizedCaseInsensitiveContains(keyword) }
-    }
-
-    /// 规范化搜索词
-    private var normalizedSearchText: String {
-        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
 }
 
 // MARK: - Preview

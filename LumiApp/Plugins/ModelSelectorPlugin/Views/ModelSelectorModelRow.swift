@@ -24,6 +24,8 @@ struct ModelSelectorModelRow: View {
     let isHovering: Bool
     /// 详细性能统计
     let stat: ModelPerformanceStats?
+    /// 模型可用性检测状态
+    let availabilityStatus: LLMAvailabilityStatus?
 
     /// 点击选择回调
     let onSelect: () -> Void
@@ -40,6 +42,10 @@ struct ModelSelectorModelRow: View {
                                 Text(displayName ?? model)
                                     .font(.system(size: 15, weight: .regular))
                                     .lineLimit(1)
+
+                                if let availabilityStatus {
+                                    availabilityBadge(availabilityStatus)
+                                }
 
                                 if let providerDisplayName {
                                     providerBadge(providerDisplayName)
@@ -122,7 +128,7 @@ struct ModelSelectorModelRow: View {
 
     /// 上下文窗口大小标签
     private func contextSizeBadge(_ tokens: Int) -> some View {
-        Text(formatContextSize(tokens))
+        Text(ModelSelectorFormatService.contextSize(tokens))
             .font(.caption2)
             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             .padding(.horizontal, 4)
@@ -164,16 +170,55 @@ struct ModelSelectorModelRow: View {
             )
     }
 
-    /// 格式化上下文窗口大小
-    private func formatContextSize(_ tokens: Int) -> String {
-        if tokens >= 1_000_000 {
-            let value = Double(tokens) / 1_000_000.0
-            return value == floor(value) ? "\(Int(value))M" : String(format: "%.1fM", value)
-        } else if tokens >= 1_000 {
-            let value = Double(tokens) / 1_000.0
-            return value == floor(value) ? "\(Int(value))K" : String(format: "%.0fK", value)
-        } else {
-            return "\(tokens)"
+    /// 可用性状态图标。
+    private func availabilityBadge(_ status: LLMAvailabilityStatus) -> some View {
+        Image(systemName: availabilityIconName(for: status))
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundColor(availabilityColor(for: status))
+            .frame(width: 14, height: 14)
+            .background(
+                Circle()
+                    .fill(availabilityColor(for: status).opacity(0.12))
+            )
+            .help(availabilityHelpText(for: status))
+    }
+
+    private func availabilityIconName(for status: LLMAvailabilityStatus) -> String {
+        switch status {
+        case .available:
+            return "checkmark"
+        case .unavailable:
+            return "xmark"
+        case .checking:
+            return "ellipsis"
+        case .unknown:
+            return "questionmark"
+        }
+    }
+
+    private func availabilityColor(for status: LLMAvailabilityStatus) -> Color {
+        switch status {
+        case .available:
+            return Color(hex: "30D158")
+        case .unavailable:
+            return Color(hex: "FF3B30")
+        case .checking:
+            return Color(hex: "FF9F0A")
+        case .unknown:
+            return Color(hex: "98989E")
+        }
+    }
+
+    private func availabilityHelpText(for status: LLMAvailabilityStatus) -> String {
+        switch status {
+        case .available:
+            return String(localized: "Available", table: "LLMAvailability")
+        case .unavailable(let reason):
+            return reason
+        case .checking:
+            return String(localized: "Checking...", table: "LLMAvailability")
+        case .unknown:
+            return String(localized: "Unknown", table: "LLMAvailability")
         }
     }
 
@@ -182,7 +227,7 @@ struct ModelSelectorModelRow: View {
         HStack(spacing: 2) {
             Image(systemName: "speedometer")
                 .font(.system(size: 8, weight: .medium))
-            Text(formatTPS(tps))
+            Text(ModelSelectorFormatService.tps(tps))
                 .font(.caption2)
         }
         .foregroundColor(.green)
@@ -211,14 +256,4 @@ struct ModelSelectorModelRow: View {
         )
     }
 
-    /// 格式化 TPS
-    private func formatTPS(_ tps: Double) -> String {
-        if tps >= 100 {
-            return String(format: "%.0f t/s", tps)
-        } else if tps >= 10 {
-            return String(format: "%.1f t/s", tps)
-        } else {
-            return String(format: "%.2f t/s", tps)
-        }
-    }
 }

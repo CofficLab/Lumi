@@ -26,11 +26,24 @@ actor ModelSelectorPlugin: SuperPlugin, SuperLog {
     nonisolated func onEnable() {}
     nonisolated func onDisable() {}
 
+    // MARK: - Root View
+
+    @MainActor
+    func addRootView<Content>(@ViewBuilder content: () -> Content) -> AnyView? where Content: View {
+        AnyView(AvailabilityOverlay(content: content()))
+    }
+
     // MARK: - Sidebar Toolbar
 
     @MainActor func addSidebarLeadingToolbarItems(activeIcon: String?) -> [SidebarToolbarItem] {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [
+            SidebarToolbarItem(
+                id: "availability-indicator",
+                title: String(localized: "LLM Availability", table: "LLMAvailability"),
+                systemImage: "network",
+                priority: 19
+            ),
             SidebarToolbarItem(
                 id: "model-selector",
                 title: String(localized: "Select Model", table: "AgentChat"),
@@ -41,8 +54,14 @@ actor ModelSelectorPlugin: SuperPlugin, SuperLog {
     }
 
     @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? {
-        guard itemId == "model-selector" else { return nil }
-        return AnyView(ModelSelectorToolbarButton())
+        switch itemId {
+        case "availability-indicator":
+            return AnyView(AvailabilityIndicatorButton())
+        case "model-selector":
+            return AnyView(ModelSelectorToolbarButton())
+        default:
+            return nil
+        }
     }
 }
 
@@ -91,18 +110,27 @@ private struct ModelSelectorToolbarButton: View {
     private var currentModelDisplayText: String {
         let model = llmVM.currentModel
         guard !model.isEmpty else {
+            if llmVM.isAutoMode {
+                return "Auto"
+            }
             return String(localized: "No Model Selected", table: "AgentChat")
         }
-        guard let providerType = llmVM.providerType(forId: llmVM.selectedProviderId) else {
-            return model
-        }
-        let modelLabel: String
+
+        let displayModel: String
         if let localProvider = llmVM.createProvider(id: llmVM.selectedProviderId) as? any SuperLocalLLMProvider,
            let name = localProvider.displayName(forModelId: model) {
-            modelLabel = name
+            displayModel = name
         } else {
-            modelLabel = model
+            displayModel = model
         }
-        return "\(providerType.displayName) · \(modelLabel)"
+
+        if llmVM.isAutoMode {
+            return "Auto · \(displayModel)"
+        }
+
+        guard let providerType = llmVM.providerType(forId: llmVM.selectedProviderId) else {
+            return displayModel
+        }
+        return "\(providerType.displayName) · \(displayModel)"
     }
 }

@@ -1,13 +1,19 @@
 import SwiftUI
 import MagicKit
 
+enum AvailabilityDetailMode: Equatable {
+    case popover
+    case tab
+}
+
 /// LLM 可用性详情面板
 ///
 /// 显示所有供应商和模型的可用性状态，支持刷新和搜索
-struct LLMAvailabilityDetailView: View {
+struct AvailabilityDetailView: View {
     @ObservedObject private var store = LLMAvailabilityStore.shared
     @EnvironmentObject private var llmVM: AppLLMVM
-    @Environment(\.colorScheme) private var colorScheme
+
+    let mode: AvailabilityDetailMode
 
     @State private var searchText = ""
     @State private var isRefreshing = false
@@ -18,33 +24,26 @@ struct LLMAvailabilityDetailView: View {
 
     /// 过滤后的供应商列表
     private var filteredProviders: [LLMProviderAvailability] {
-        guard !searchText.isEmpty else { return store.providers }
-        return store.providers.filter { provider in
-            provider.displayName.localizedCaseInsensitiveContains(searchText) ||
-            provider.models.contains { model in
-                model.modelId.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-    }
-
-    /// 是否有可用模型
-    private var hasAvailableModels: Bool {
-        !store.availablePairs.isEmpty
+        AvailabilityService.filteredProviders(from: store.providers, searchText: searchText)
     }
 
     /// 可用模型数量
     private var availableModelCount: Int {
-        store.availablePairs.count
+        summary.availableModelCount
     }
 
     /// 总模型数量
     private var totalModelCount: Int {
-        store.providers.reduce(0) { $0 + $1.models.count }
+        summary.totalModelCount
     }
 
     /// 是否正在检测
     private var isChecking: Bool {
-        store.isCheckingAll
+        summary.isChecking
+    }
+
+    private var summary: AvailabilitySummary {
+        AvailabilityService.summary(store: store)
     }
 
     // MARK: - Adaptive Colors
@@ -90,7 +89,7 @@ struct LLMAvailabilityDetailView: View {
                 checkingFooterView
             }
         }
-        .frame(height: 500)
+        .frame(height: mode == .popover ? 500 : nil)
     }
 
     // MARK: - Header Section
@@ -393,8 +392,7 @@ struct LLMAvailabilityDetailView: View {
         errorMessage = nil
 
         Task { @MainActor in
-            let checker = LLMAvailabilityChecker(llmService: llmVM.llmService)
-            await checker.checkAll()
+            await AvailabilityService.refresh(llmVM: llmVM)
             isRefreshing = false
         }
     }
@@ -405,10 +403,7 @@ struct LLMAvailabilityDetailView: View {
         checkingProviderIds.insert(provider.providerId)
 
         Task { @MainActor in
-            let checker = LLMAvailabilityChecker(llmService: llmVM.llmService)
-            for model in provider.models {
-                await checker.checkModel(providerId: provider.providerId, modelId: model.modelId)
-            }
+            await AvailabilityService.recheckProvider(provider, llmVM: llmVM)
             checkingProviderIds.remove(provider.providerId)
         }
     }
@@ -416,7 +411,7 @@ struct LLMAvailabilityDetailView: View {
 
 // MARK: - Preview
 
-#Preview("LLM Availability Detail") {
-    LLMAvailabilityDetailView()
+#Preview("Availability Detail") {
+    AvailabilityDetailView(mode: .popover)
         .inRootView()
 }

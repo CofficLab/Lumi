@@ -33,7 +33,7 @@ struct ModelLatencyProgressBar: View {
                 HStack(spacing: 1) {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 6, weight: .medium))
-                    Text(formatTTFT(ttft))
+                    Text(ModelSelectorFormatService.durationMilliseconds(ttft))
                         .font(.caption2)
                 }
                 .foregroundColor(.orange)
@@ -41,7 +41,7 @@ struct ModelLatencyProgressBar: View {
                 HStack(spacing: 1) {
                     Image(systemName: "clock")
                         .font(.system(size: 6, weight: .medium))
-                    Text(formatLatency(totalLatency))
+                    Text(ModelSelectorFormatService.durationMilliseconds(totalLatency))
                         .font(.caption2)
                 }
                 .foregroundColor(.blue)
@@ -51,7 +51,7 @@ struct ModelLatencyProgressBar: View {
                     HStack(spacing: 1) {
                         Image(systemName: "speedometer")
                             .font(.system(size: 6, weight: .medium))
-                        Text(formatTPS(tps))
+                        Text(ModelSelectorFormatService.tps(tps))
                             .font(.caption2)
                     }
                     .foregroundColor(.green)
@@ -73,46 +73,17 @@ struct ModelLatencyProgressBar: View {
         return min(ttft / totalLatency, 1.0)
     }
 
-    /// 格式化 TTFT
-    private func formatTTFT(_ ttft: Double) -> String {
-        if ttft >= 1000 {
-            return String(format: "%.1fs", ttft / 1000.0)
-        } else {
-            return String(format: "%.0fms", ttft)
-        }
-    }
-
-    /// 格式化响应时间
-    private func formatLatency(_ latency: Double) -> String {
-        if latency >= 1000 {
-            return String(format: "%.1fs", latency / 1000.0)
-        } else {
-            return String(format: "%.0fms", latency)
-        }
-    }
-
-    /// 格式化 TPS
-    private func formatTPS(_ tps: Double) -> String {
-        if tps >= 100 {
-            return String(format: "%.0f t/s", tps)
-        } else if tps >= 10 {
-            return String(format: "%.1f t/s", tps)
-        } else {
-            return String(format: "%.2f t/s", tps)
-        }
-    }
-
     /// 帮助文本
     private var helpText: String {
         let ttftPercent = String(format: "%.1f", ttftRatio * 100)
         let responsePercent = String(format: "%.1f", (1 - ttftRatio) * 100)
         var text = """
-        ⚡ TTFT: \(formatTTFT(ttft)) (\(ttftPercent)%)
-        🕐 \(String(localized: "Response Time", table: "AgentChat")): \(formatLatency(totalLatency)) (\(responsePercent)%)
+        ⚡ TTFT: \(ModelSelectorFormatService.durationMilliseconds(ttft)) (\(ttftPercent)%)
+        🕐 \(String(localized: "Response Time", table: "AgentChat")): \(ModelSelectorFormatService.durationMilliseconds(totalLatency)) (\(responsePercent)%)
         """
 
         if tps > 0 {
-            text += "\n🚀 \(formatTPS(tps))"
+            text += "\n🚀 \(ModelSelectorFormatService.tps(tps))"
         }
 
         text += """

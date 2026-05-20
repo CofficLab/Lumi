@@ -4,6 +4,8 @@ import LumiUI
 
 /// 模型选择器 Tab 侧边栏
 struct ModelSelectorTabSidebar: View {
+    @ObservedObject private var availabilityStore = LLMAvailabilityStore.shared
+
     /// 所有已注册的供应商
     let providers: [LLMProviderInfo]
 
@@ -17,6 +19,13 @@ struct ModelSelectorTabSidebar: View {
             quickTabButton(tab: .current, icon: "scope", title: String(localized: "Current Provider", table: "AgentChat"))
             quickTabButton(tab: .frequent, icon: "clock.arrow.circlepath", title: String(localized: "Frequent", table: "AgentChat"))
             quickTabButton(tab: .fast, icon: "bolt.fill", title: String(localized: "Fast", table: "AgentChat"))
+            quickTabButton(tab: .auto, icon: "wand.and.sparkles", title: "Auto")
+            quickTabButton(
+                tab: .availability,
+                icon: "network",
+                title: String(localized: "Availability", table: "LLMAvailability"),
+                trailingText: availabilitySummaryText
+            )
 
             Divider()
                 .padding(.vertical, 4)
@@ -48,7 +57,12 @@ struct ModelSelectorTabSidebar: View {
     // MARK: - 快捷 Tab 按钮
 
     /// 快捷 Tab 按钮（当前/常用/较快/全部）
-    private func quickTabButton(tab: ModelSelectorTab, icon: String, title: String) -> some View {
+    private func quickTabButton(
+        tab: ModelSelectorTab,
+        icon: String,
+        title: String,
+        trailingText: String? = nil
+    ) -> some View {
         AppListRow(isSelected: selectedTab == tab, action: { selectedTab = tab }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
@@ -59,6 +73,12 @@ struct ModelSelectorTabSidebar: View {
                     .font(.system(size: 15, weight: .regular))
                     .lineLimit(1)
                 Spacer()
+                if let trailingText {
+                    Text(trailingText)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .lineLimit(1)
+                }
             }
         }
     }
@@ -79,6 +99,13 @@ struct ModelSelectorTabSidebar: View {
                     .lineLimit(1)
                 Spacer()
 
+                if let countText = availabilityCountText(for: provider.id) {
+                    Text(countText)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .lineLimit(1)
+                }
+
                 if let websiteURL = provider.websiteURL,
                    let url = URL(string: websiteURL) {
                     Button(action: {
@@ -93,5 +120,13 @@ struct ModelSelectorTabSidebar: View {
                 }
             }
         }
+    }
+
+    private var availabilitySummaryText: String? {
+        AvailabilityService.summary(store: availabilityStore).displayText
+    }
+
+    private func availabilityCountText(for providerId: String) -> String? {
+        AvailabilityService.providerCountText(providerId: providerId, store: availabilityStore)
     }
 }

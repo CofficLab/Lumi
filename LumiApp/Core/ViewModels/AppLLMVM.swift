@@ -21,6 +21,8 @@ final class AppLLMVM: ObservableObject, SuperLLMConfigProvider {
 
     /// 聊天模式
     @Published var chatMode: ChatMode = .build
+    @Published var isAutoMode: Bool = false
+    @Published var lastAutoRouteSummary: String?
 
     let llmService: LLMService
     private var isAutoSelecting = false
