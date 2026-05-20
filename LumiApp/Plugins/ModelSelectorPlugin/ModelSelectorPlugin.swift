@@ -39,12 +39,6 @@ actor ModelSelectorPlugin: SuperPlugin, SuperLog {
         guard activeIcon == EditorPlugin.iconName else { return [] }
         return [
             SidebarToolbarItem(
-                id: "availability-indicator",
-                title: String(localized: "LLM Availability", table: "LLMAvailability"),
-                systemImage: "network",
-                priority: 19
-            ),
-            SidebarToolbarItem(
                 id: "model-selector",
                 title: String(localized: "Select Model", table: "AgentChat"),
                 systemImage: "globe",
@@ -55,8 +49,6 @@ actor ModelSelectorPlugin: SuperPlugin, SuperLog {
 
     @MainActor func addSidebarToolbarItemView(itemId: String, activeIcon: String?) -> AnyView? {
         switch itemId {
-        case "availability-indicator":
-            return AnyView(AvailabilityIndicatorButton())
         case "model-selector":
             return AnyView(ModelSelectorToolbarButton())
         default:
