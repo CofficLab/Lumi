@@ -90,6 +90,7 @@ class MacAgent: NSObject, NSApplicationDelegate, SuperLog {
             if Self.verbose {
                 AppLogger.core.info("\(self.t)📂 没有保存的窗口状态，使用默认窗口")
             }
+            WindowManager.shared.markInitialStateRestorationComplete()
             return
         }
 

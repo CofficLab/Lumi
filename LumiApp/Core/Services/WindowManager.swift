@@ -21,6 +21,9 @@ final class WindowManager: ObservableObject, SuperLog {
     /// 当前活跃窗口 ID
     @Published private(set) var activeWindowId: UUID?
 
+    /// 启动时保存的窗口状态是否已完成恢复
+    @Published private(set) var hasCompletedInitialStateRestoration: Bool = false
+
     /// 窗口计数（用于菜单显示）
     var windowCount: Int { windowScopes.count }
 
@@ -259,7 +262,10 @@ final class WindowManager: ObservableObject, SuperLog {
     /// 只有多余的状态才需要再打开新窗口。
     func restoreSavedWindowStates(openAdditionalWindow: (LumiWindowRoute) -> Void) {
         let routes = loadSavedWindowStates()
-        guard !routes.isEmpty else { return }
+        guard !routes.isEmpty else {
+            markInitialStateRestorationComplete()
+            return
+        }
 
         var remainingRoutes = routes
         if let firstScope = windowScopes.first {
@@ -274,6 +280,14 @@ final class WindowManager: ObservableObject, SuperLog {
         if Self.verbose {
             AppLogger.core.info("\(Self.t)📂 已恢复 \(routes.count) 个窗口状态，额外打开 \(remainingRoutes.count) 个窗口")
         }
+
+        markInitialStateRestorationComplete()
+    }
+
+    func markInitialStateRestorationComplete() {
+        guard !hasCompletedInitialStateRestoration else { return }
+        hasCompletedInitialStateRestoration = true
+        NotificationCenter.postInitialWindowStateRestorationDidFinish()
     }
 
     deinit {
