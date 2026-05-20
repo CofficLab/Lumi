@@ -41,7 +41,7 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let conversationId = arguments["conversation_id"]?.value as? String else {
-            return "Error: conversation_id is required"
+            return String(localized: "Error: conversation_id is required", table: "AutoTask")
         }
 
         let manager = TaskStateManager.shared
@@ -49,10 +49,11 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
         let summary = await manager.getProgressSummary(conversationId: conversationId)
 
         if summary.isEmpty {
-            return "No tasks found for this conversation. Use create_task to plan your work."
+            return String(localized: "No tasks found for this conversation. Use create_task to plan your work.", table: "AutoTask")
         }
 
-        var result = "## Task Progress: \(summary.completed + summary.skipped)/\(summary.total) (\(summary.completionPercent)%)\n\n"
+        let doneCount = summary.completed + summary.skipped
+        var result = "## \(String(localized: "Task Progress: %1$@/%2$@ (%3$@%%)", table: "AutoTask", arguments: [String(doneCount), String(summary.total), String(summary.completionPercent)]))\n\n"
 
         let statusIcons: [TaskItem.TaskStatus: String] = [
             .pending: "⬜",
@@ -71,20 +72,20 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
         }
 
         if summary.isAllDone {
-            result += "\n🎉 **All tasks completed!**"
+            result += "\n🎉 **\(String(localized: "All tasks completed!", table: "AutoTask"))**"
         } else if summary.inProgress > 0 {
             let current = tasks.first { $0.status == .inProgress }
             if let current {
-                result += "\n📌 **Current focus:** \(current.title)"
+                result += "\n📌 **\(String(localized: "Current focus: %@", table: "AutoTask", arguments: current.title))**"
             }
             let nextTask = tasks.first { $0.status == .pending }
             if let next = nextTask {
-                result += "\n⏭️ **Next up:** \(next.title)"
+                result += "\n⏭️ **\(String(localized: "Next up: %@", table: "AutoTask", arguments: next.title))**"
             }
         } else if summary.pending > 0 {
             let nextTask = tasks.first { $0.status == .pending }
             if let next = nextTask {
-                result += "\n⏭️ **Next task:** \(next.title) — start by calling update_task with status 'in_progress'"
+                result += "\n⏭️ **\(String(localized: "Next task: %1$@ — start by calling update_task with status 'in_progress'", table: "AutoTask", arguments: next.title))**"
             }
         }
 
