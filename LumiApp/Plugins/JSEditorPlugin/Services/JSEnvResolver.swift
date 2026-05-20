@@ -61,7 +61,7 @@ struct JSEnvResolver: SuperLog {
 
     // MARK: - Private
 
-    private static func findCommand(_ command: String) -> String? {
+    static func findCommand(_ command: String) -> String? {
         Shell.findCommandSync(command)
     }
 

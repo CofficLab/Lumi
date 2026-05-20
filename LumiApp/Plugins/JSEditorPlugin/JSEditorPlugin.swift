@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import MagicKit
+import os
 
 /// JavaScript / TypeScript 编辑器插件
 ///
@@ -15,6 +16,11 @@ import MagicKit
 actor JSEditorPlugin: SuperPlugin, SuperLog {
     static let shared = JSEditorPlugin()
     nonisolated static let emoji = "🟨"
+    nonisolated static let verbose: Bool = false
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.js-editor"
+    )
 
     static let id = "JSEditor"
     static let displayName = String(localized: "JS/TS Editor", table: "JSEditor")
@@ -24,5 +30,14 @@ actor JSEditorPlugin: SuperPlugin, SuperLog {
     static let enable = true
     static var isConfigurable: Bool { false }
 
-    nonisolated var providesEditorExtensions: Bool { false }
+    nonisolated var providesEditorExtensions: Bool { true }
+
+    @MainActor func registerEditorExtensions(into registry: EditorExtensionRegistry) {
+        let taskManager = JSTaskManager()
+        registry.registerLanguageIntegrationCapability(JSLanguageIntegrationCapability())
+        registry.registerCommandContributor(JSCommandContributor(taskManager: taskManager))
+        registry.registerPanelContributor(JSPanelContributor(taskManager: taskManager))
+        registry.registerStatusItemContributor(JSStatusItemContributor(taskManager: taskManager))
+        registry.registerGutterDecorationContributor(JSTestGutterContributor())
+    }
 }
