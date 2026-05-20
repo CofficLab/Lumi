@@ -53,7 +53,8 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
         }
 
         let doneCount = summary.completed + summary.skipped
-        var result = "## \(String(localized: "Task Progress: %1$@/%2$@ (%3$@%%)", table: "AutoTask", arguments: [String(doneCount), String(summary.total), String(summary.completionPercent)]))\n\n"
+        let progressLabel = String(localized: "Task Progress", table: "AutoTask")
+        var result = "## \(progressLabel): \(doneCount)/\(summary.total) (\(summary.completionPercent)%)\n\n"
 
         let statusIcons: [TaskItem.TaskStatus: String] = [
             .pending: "⬜",
@@ -76,16 +77,19 @@ struct CheckProgressTool: SuperAgentTool, SuperLog {
         } else if summary.inProgress > 0 {
             let current = tasks.first { $0.status == .inProgress }
             if let current {
-                result += "\n📌 **\(String(localized: "Current focus: %@", table: "AutoTask", arguments: current.title))**"
+                let focusLabel = String(localized: "Current focus", table: "AutoTask")
+                result += "\n📌 **\(focusLabel): \(current.title)**"
             }
             let nextTask = tasks.first { $0.status == .pending }
             if let next = nextTask {
-                result += "\n⏭️ **\(String(localized: "Next up: %@", table: "AutoTask", arguments: next.title))**"
+                let nextUpLabel = String(localized: "Next up", table: "AutoTask")
+                result += "\n⏭️ **\(nextUpLabel): \(next.title)**"
             }
         } else if summary.pending > 0 {
             let nextTask = tasks.first { $0.status == .pending }
             if let next = nextTask {
-                result += "\n⏭️ **\(String(localized: "Next task: %1$@ — start by calling update_task with status 'in_progress'", table: "AutoTask", arguments: next.title))**"
+                let nextTaskLabel = String(localized: "Next task — start by calling update_task with status 'in_progress'", table: "AutoTask")
+                result += "\n⏭️ **\(nextTaskLabel): \(next.title)**"
             }
         }
 

@@ -98,7 +98,7 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
 
         let summary = await manager.getProgressSummary(conversationId: conversationId)
 
-        var result = "✅ \(String(localized: "Created %lld tasks:", table: "AutoTask", arguments: items.count))\n\n"
+        var result = "✅ \(String(localized: "Created", table: "AutoTask")) \(items.count) \(String(localized: "tasks:", table: "AutoTask"))\n\n"
         for (index, item) in items.enumerated() {
             result += "\(index + 1). **\(item.title)**"
             if let detail = item.detail {
@@ -106,7 +106,8 @@ struct CreateTaskTool: SuperAgentTool, SuperLog {
             }
             result += "\n"
         }
-        result += "\n\(String(localized: "Now start working on task #1: %@", table: "AutoTask", arguments: items[0].title))"
+        let startLabel = String(localized: "Now start working on task #1", table: "AutoTask")
+        result += "\n\(startLabel): \(items[0].title)"
 
         if Self.verbose {
             if AutoTaskPlugin.verbose {

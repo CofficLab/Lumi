@@ -61,7 +61,8 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
         let success = await manager.updateTaskStatus(id: taskId, status: status)
 
         guard success else {
-            return String(localized: "Error: task not found (id: %@)", table: "AutoTask", arguments: taskId)
+            let notFoundLabel = String(localized: "Error: task not found", table: "AutoTask")
+            return "\(notFoundLabel) (id: \(taskId))"
         }
 
         let updatedTask = await manager.fetchTask(id: taskId)
@@ -83,7 +84,7 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
         case .pending: statusEmoji = "📋"
         }
 
-        var result = "\(statusEmoji) \(String(localized: "Task status updated to **%@**.", table: "AutoTask", arguments: status.rawValue))"
+        var result = "\(statusEmoji) \(String(localized: "Task status updated", table: "AutoTask")): **\(status.rawValue)**"
 
         // 自动推进：完成任务后，将下一个 pending 任务标记为 inProgress
         if (status == .completed || status == .skipped), let updatedTask {
@@ -98,7 +99,8 @@ struct UpdateTaskTool: SuperAgentTool, SuperLog {
                     userInfo: ["conversationId": updatedTask.conversationId]
                 )
 
-                result += "\n\n📌 **\(String(localized: "Next task auto-started: %1$@ (id: %2$@)", table: "AutoTask", arguments: [nextTask.title, nextTask.id]))**"
+                let autoStartedLabel = String(localized: "Next task auto-started", table: "AutoTask")
+                result += "\n\n📌 **\(autoStartedLabel): \(nextTask.title) (id: \(nextTask.id))**"
                 result += "\n\(String(localized: "Continue working on this task now.", table: "AutoTask"))"
 
                 if Self.verbose {
