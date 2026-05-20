@@ -192,6 +192,8 @@
 		F567FE922FAF42620054AB4B /* Test.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Test.xcodeproj; sourceTree = "<group>"; };
 		F5A640652F3ED1910039A761 /* com.coffic.lumi.NettoExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.coffic.lumi.NettoExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A640662F3ED1910039A761 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
+		F5AB1BAE2FBDB32800C953CA /* Atomics.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Atomics.xcodeproj; sourceTree = "<group>"; };
+		F5AB1EEB2FBDB32800C953CA /* Collections.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Collections.xcodeproj; sourceTree = "<group>"; };
 		F5AE87E22FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5AE9ACF2FAD6E0900F014F8 /* SnapshotTesting.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SnapshotTesting.xcodeproj; sourceTree = "<group>"; };
 		F5AE9C862FAD6F1E00F014F8 /* CodeEditSourceEditorExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = CodeEditSourceEditorExample.xcodeproj; sourceTree = "<group>"; };
@@ -728,6 +730,20 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		F5AB36082FBDB32800C953CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F5AB360A2FBDB32800C953CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		F5AE9B752FAD6E0900F014F8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -1047,6 +1063,10 @@
 					ProjectRef = F5679E422FAF405D0054AB4B /* AppWithExtensions.xcodeproj */;
 				},
 				{
+					ProductGroup = F5AB36082FBDB32800C953CA /* Products */;
+					ProjectRef = F5AB1BAE2FBDB32800C953CA /* Atomics.xcodeproj */;
+				},
+				{
 					ProductGroup = F56701292FAF42620054AB4B /* Products */;
 					ProjectRef = F567FE662FAF42620054AB4B /* BuildSettings.xcodeproj */;
 				},
@@ -1077,6 +1097,10 @@
 				{
 					ProductGroup = F5370B2F2FB1E52500AF4705 /* Products */;
 					ProjectRef = F5370B292FB1E52500AF4705 /* Collections.xcodeproj */;
+				},
+				{
+					ProductGroup = F5AB360A2FBDB32800C953CA /* Products */;
+					ProjectRef = F5AB1EEB2FBDB32800C953CA /* Collections.xcodeproj */;
 				},
 				{
 					ProductGroup = F5679F892FAF405D0054AB4B /* Products */;

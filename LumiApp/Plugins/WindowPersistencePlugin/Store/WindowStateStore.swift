@@ -10,19 +10,6 @@ final class WindowStateStore: @unchecked Sendable {
     private static let statesFileName = "window_states.json"
     private static let tmpFileName = "window_states.tmp"
 
-    // MARK: - Window Persistence Record
-
-    /// 插件内部持久化格式，内核不感知此结构体
-    struct WindowPersistenceRecord: Codable {
-        let windowId: UUID
-        let conversationId: UUID?
-        let projectPath: String?
-        let activePanel: String?
-        let editorState: WindowEditorState?
-        let sidebarVisibility: Bool?
-        let createdAt: Date?
-    }
-
     // MARK: - Public API
 
     /// 从 WindowScope 列表保存窗口状态（异步）
