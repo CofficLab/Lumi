@@ -48,6 +48,16 @@ final class EditorFileTreeStore: @unchecked Sendable {
         store.removeExpandedPath(relativePath, for: projectRoot)
     }
 
+    // MARK: - Package Dependencies
+
+    func isPackageDependencySectionExpanded(for projectRoot: String) -> Bool {
+        UserDefaults.standard.object(forKey: packageSectionExpandedKey(projectRoot)) as? Bool ?? true
+    }
+
+    func setPackageDependencySectionExpanded(_ isExpanded: Bool, for projectRoot: String) {
+        UserDefaults.standard.set(isExpanded, forKey: packageSectionExpandedKey(projectRoot))
+    }
+
     /// 记录上次打开的项目路径
     func setLastProjectPath(_ path: String) {
         store.setLastProjectPath(path)
@@ -56,5 +66,9 @@ final class EditorFileTreeStore: @unchecked Sendable {
     /// 获取上次打开的项目路径
     func lastProjectPath() -> String? {
         store.lastProjectPath()
+    }
+
+    private func packageSectionExpandedKey(_ projectRoot: String) -> String {
+        "EditorRailFileTree.packageDependencies.expanded.\(projectRoot)"
     }
 }

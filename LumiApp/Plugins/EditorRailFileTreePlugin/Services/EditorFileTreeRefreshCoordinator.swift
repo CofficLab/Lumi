@@ -193,6 +193,14 @@ final class EditorFileTreeRefreshCoordinator: ObservableObject, @unchecked Senda
             }
         }
 
+        for manifestURL in EditorPackageDependencyResolver.watchedManifestURLs(projectRootURL: rootURL) {
+            let directoryURL = manifestURL.deletingLastPathComponent().standardizedFileURL
+            var isDir: ObjCBool = false
+            if FileManager.default.fileExists(atPath: directoryURL.path, isDirectory: &isDir), isDir.boolValue {
+                directoryURLs.insert(directoryURL)
+            }
+        }
+
         watcher.updateWatchedDirectories(directoryURLs)
 
         if Self.verbose {
