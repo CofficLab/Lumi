@@ -3,9 +3,11 @@ import SwiftUI
 import os
 import MagicKit
 
-/// 窗口持久化插件：负责保存和恢复窗口状态
+/// 窗口持久化插件：负责保存和恢复窗口状态（会话、面板、编辑器、侧边栏）
 /// 监听窗口关闭事件，自动保存窗口快照到磁盘。
 /// 启动时从磁盘恢复窗口状态。
+///
+/// 注意：窗口级项目路径（projectPath）由 `RecentProjectsPlugin` 负责持久化。
 actor WindowPersistencePlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.window-persistence")
 

@@ -87,7 +87,6 @@ final class WindowStateStore: @unchecked Sendable {
             WindowPersistenceRecord(
                 windowId: scope.id,
                 conversationId: scope.selectedConversationId,
-                projectPath: scope.projectPath,
                 activePanel: scope.activePanel.rawValue,
                 editorState: scope.editorState,
                 sidebarVisibility: scope.sidebarVisibility,

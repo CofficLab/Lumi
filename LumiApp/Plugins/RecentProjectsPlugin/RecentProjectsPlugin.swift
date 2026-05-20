@@ -7,6 +7,8 @@ import MagicKit
 ///
 /// 管理最近项目列表、当前项目/文件状态持久化，
 /// 以及项目管理相关的 Agent 工具。
+///
+/// 窗口级项目路径（projectPath）的持久化由此插件负责。
 actor RecentProjectsPlugin: SuperPlugin, SuperLog {
     /// 插件专用 Logger
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.recent-projects")

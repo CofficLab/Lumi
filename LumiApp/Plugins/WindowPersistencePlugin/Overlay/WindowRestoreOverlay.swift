@@ -3,7 +3,8 @@ import MagicKit
 import SwiftUI
 
 /// 窗口状态恢复覆盖层
-/// 在 App 启动时从磁盘恢复保存的窗口状态。
+/// 在 App 启动时从磁盘恢复保存的窗口状态（会话、面板、编辑器、侧边栏）。
+/// 窗口级项目路径的恢复由 `RecentProjectsPlugin` 负责。
 struct WindowRestoreOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "🪟" }
@@ -133,10 +134,10 @@ private final class WindowPersistenceCoordinator {
     }
 
     private func route(for record: WindowPersistenceRecord) -> LumiWindowRoute {
+        // projectPath 由 RecentProjectsPlugin 负责恢复，此处不再传递
         LumiWindowRoute(
             id: record.windowId,
-            conversationId: record.conversationId,
-            projectPath: record.projectPath
+            conversationId: record.conversationId
         )
     }
 

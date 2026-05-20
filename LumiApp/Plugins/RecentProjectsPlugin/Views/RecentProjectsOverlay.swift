@@ -2,11 +2,11 @@ import MagicKit
 import SwiftUI
 
 /// 最近项目覆盖层
-/// 在 RootView 出现时恢复最近项目列表，监听项目切换保存，
+/// 在 RootView 出现时恢复最近项目列表和窗口级项目路径，监听项目切换保存，
 /// 并在项目切换时自动联动切换到关联的对话。
 ///
 /// 当前文件（Editor active tab）的持久化由 EditorTabStripPlugin 负责。
-/// 窗口级项目状态（当前项目）的持久化由 WindowPersistencePlugin 负责。
+/// 窗口级项目状态的持久化由此插件（RecentProjectsPlugin）负责。
 struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     nonisolated static var verbose: Bool { true }
     nonisolated static var emoji: String { "📋" }
@@ -15,6 +15,9 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     @EnvironmentObject private var conversationVM: WindowConversationVM
     @EnvironmentObject private var conversationCreationVM: WindowConversationCreationVM
     @EnvironmentObject private var recentProjectsVM: AppProjectsVM
+    @EnvironmentObject private var windowManagerVM: WindowManagerVM
+
+    @Environment(\.windowScope) private var windowScope
 
     let content: Content
 
@@ -68,16 +71,46 @@ extension RecentProjectsOverlay {
     private func restoreIfNeeded() {
         guard !restored, restoreTask == nil else { return }
 
-        // 窗口级项目状态由 WindowPersistencePlugin 负责恢复，
-        // 这里只恢复全局最近项目列表
-        restoreTask = Task { @MainActor [store] in
-            let projects = await Task.detached(priority: .utility) {
+        restoreTask = Task { @MainActor [store, windowScope] in
+            // 并行加载最近项目列表和窗口-项目关联
+            async let projectsTask = Task.detached(priority: .utility) {
                 store.loadProjects()
             }.value
+            async let windowProjectsTask = Task.detached(priority: .utility) {
+                store.loadWindowProjects()
+            }.value
+
+            let projects = await projectsTask
+            let windowProjects = await windowProjectsTask
 
             guard !Task.isCancelled else { return }
 
             recentProjectsVM.setRecentProjects(projects)
+
+            // 将保存的窗口-项目关联应用到当前窗口
+            if let scope = windowScope,
+               let record = windowProjects.first(where: { $0.windowId == scope.id }),
+               let projectPath = record.projectPath,
+               !projectPath.isEmpty {
+                let matchedProject = projects.first(where: { $0.path == projectPath })
+                let project = matchedProject ?? Project(
+                    name: URL(fileURLWithPath: projectPath).lastPathComponent,
+                    path: projectPath,
+                    lastUsed: Date()
+                )
+                scope.switchToProject(projectPath)
+                // 同步到 projectVM（如果还没设置的话）
+                if !projectVM.isProjectSelected {
+                    projectVM.switchProject(to: project)
+                }
+            }
+
+            // 附加协调器，监听窗口关闭和应用终止事件
+            let coordinator = WindowProjectCoordinator.shared
+            coordinator.attach(
+                windowManagerVM: windowManagerVM,
+                store: store
+            )
 
             setRestored(true)
             restoreTask = nil
@@ -107,6 +140,9 @@ extension RecentProjectsOverlay {
         guard !newPath.isEmpty else { return }
         let name = projectVM.currentProjectName
         store.addProject(name: name, path: newPath)
+
+        // 保存窗口-项目关联
+        WindowProjectCoordinator.shared.saveCurrentStates()
 
         // 项目切换 → 联动切换对话
         // 仅在真正切换时触发（oldPath != newPath），跳过首次恢复
@@ -177,6 +213,57 @@ extension RecentProjectsOverlay {
         Task {
             await conversationCreationVM.createNewConversation()
         }
+    }
+}
+
+// MARK: - Coordinator
+
+/// 窗口-项目关联协调器
+/// 监听窗口关闭和应用终止事件，自动保存窗口-项目关联。
+@MainActor
+private final class WindowProjectCoordinator {
+    static let shared = WindowProjectCoordinator()
+
+    private weak var windowManagerVM: WindowManagerVM?
+    private var store: RecentProjectsStore?
+    private var observers: [NSObjectProtocol] = []
+
+    func attach(windowManagerVM: WindowManagerVM, store: RecentProjectsStore) {
+        self.windowManagerVM = windowManagerVM
+        self.store = store
+        guard observers.isEmpty else { return }
+
+        let windowClosedObserver = NotificationCenter.default.addObserver(
+            forName: .windowClosed,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.saveCurrentStates()
+            }
+        }
+
+        let willTerminateObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.saveCurrentStatesSynchronously()
+            }
+        }
+
+        observers = [windowClosedObserver, willTerminateObserver]
+    }
+
+    func saveCurrentStates() {
+        guard let scopes = windowManagerVM?.windowScopes, let store else { return }
+        store.saveWindowProjects(from: scopes)
+    }
+
+    private func saveCurrentStatesSynchronously() {
+        guard let scopes = windowManagerVM?.windowScopes, let store else { return }
+        store.saveWindowProjectsSynchronously(from: scopes)
     }
 }
 
