@@ -174,15 +174,15 @@ struct ProjectIssueScannerPopover: View {
         if viewModel.state == .scanning {
             AppEmptyState(
                 icon: "arrow.triangle.2.circlepath",
-                title: String(localized: "Scanning project issues...", table: "ProjectIssueScanner", bundle: .main)
+                title: LocalizedStringKey(String(localized: "Scanning project issues...", table: "ProjectIssueScanner", bundle: .main))
             )
             .frame(maxWidth: .infinity, minHeight: 200)
         } else {
             AppEmptyState(
                 icon: "checkmark.circle",
-                title: String(localized: "No issues found", table: "ProjectIssueScanner", bundle: .main),
-                description: String(localized: "Click Scan Now to check for potential issues.", table: "ProjectIssueScanner", bundle: .main),
-                actionTitle: String(localized: "Scan Now", table: "ProjectIssueScanner", bundle: .main)
+                title: LocalizedStringKey(String(localized: "No issues found", table: "ProjectIssueScanner", bundle: .main)),
+                description: LocalizedStringKey(String(localized: "Click Scan Now to check for potential issues.", table: "ProjectIssueScanner", bundle: .main)),
+                actionTitle: LocalizedStringKey(String(localized: "Scan Now", table: "ProjectIssueScanner", bundle: .main))
             ) {
                 viewModel.scan(projectPath: projectPath)
             }
