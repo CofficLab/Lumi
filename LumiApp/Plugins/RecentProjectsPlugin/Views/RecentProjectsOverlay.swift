@@ -21,7 +21,6 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
     @State private var restored = false
     @State private var isFileImporterPresented = false
     @State private var restoreTask: Task<Void, Never>?
-    @State private var initialWindowStateRestored = false
 
     private let store = RecentProjectsStore()
 
@@ -30,7 +29,7 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
             content
 
             // 未选择项目时显示引导遮罩
-            if restored && initialWindowStateRestored && !projectVM.isProjectSelected {
+            if !projectVM.isProjectSelected {
                 NoProjectOverlay(
                     recentProjects: recentProjectsVM.recentProjects,
                     isFileImporterPresented: $isFileImporterPresented,
@@ -52,9 +51,6 @@ struct RecentProjectsOverlay<Content: View>: View, SuperLog {
         }
         .onChange(of: projectVM.currentProjectPath) { oldPath, newPath in
             handleProjectPathChange(oldPath: oldPath, newPath: newPath)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .initialWindowStateRestorationDidFinish)) { _ in
-            initialWindowStateRestored = true
         }
         .onCurrentProjectDidChange { name, path in
             handleCurrentProjectDidChange(name: name, path: path)
@@ -103,9 +99,6 @@ extension RecentProjectsOverlay {
 extension RecentProjectsOverlay {
     @MainActor
     private func handleOnAppear() {
-        if RootContainer.shared.windowManagerVM.hasCompletedInitialStateRestoration {
-            initialWindowStateRestored = true
-        }
         restoreIfNeeded()
     }
 
