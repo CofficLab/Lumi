@@ -55,37 +55,17 @@ struct RailView: View {
 
     private func railTabBar(tabs: [RailTab]) -> some View {
         HStack(spacing: 6) {
-            ForEach(tabs) { tab in
-                Button {
-                    selectedTabId = tab.id
-                    persistSelection(tab.id)
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: tab.systemImage)
-                            .font(.system(size: 12, weight: .semibold))
-                            .frame(height: 16)
-                        Rectangle()
-                            .fill(
-                                selectedTabId == tab.id
-                                    ? Color(hex: "7C6FFF").opacity(0.9)
-                                    : Color.clear
-                            )
-                            .frame(height: 2)
+            AppTabBar(
+                tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+                selectedTab: Binding(
+                    get: { selectedTabId ?? tabs.first?.id ?? "" },
+                    set: { newValue in
+                        selectedTabId = newValue
+                        persistSelection(newValue)
                     }
-                    .foregroundColor(
-                        selectedTabId == tab.id
-                            ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-                            : Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
-                    )
-                    .padding(.horizontal, 6)
-                    .padding(.top, 2)
-                    .contentShape(RoundedRectangle(cornerRadius: 6))
-                }
-                .buttonStyle(.plain)
-                .help(tab.title)
-                // Tab 选中状态变化时平滑过渡
-                .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: selectedTabId == tab.id)
-            }
+                ),
+                showText: false
+            )
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 8)

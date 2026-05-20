@@ -60,15 +60,17 @@ struct ThinkingProcessView: View {
                     }
                 }
 
-                // 思考内容（展开时显示）
-                if isExpanded && !thinkingText.isEmpty {
-                    Divider()
-                        .opacity(0.2)
-                    Text(thinkingText)
-                        .font(.system(size: 13, weight: .regular, design: .monospaced))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                Group {
+                    // 思考内容（展开时显示）
+                    if isExpanded && !thinkingText.isEmpty {
+                        Divider()
+                            .opacity(0.2)
+                        Text(thinkingText)
+                            .font(.system(size: 13, weight: .regular, design: .monospaced))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
                 .appDisclosureContentTransition(preference: motionPreference)
             }

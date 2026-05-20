@@ -78,53 +78,21 @@ struct ActivityBarButton: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @LumiMotionPreferenceReader private var motionPreference
     @EnvironmentObject private var themeVM: AppThemeVM
-    @State private var isHovered = false
 
     var body: some View {
         let theme = themeVM.activeAppTheme
 
-        Button(action: action) {
-            ZStack(alignment: .leading) {
-                // 选中指示条：添加过渡动画
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(theme.accentColors().primary)
-                        .frame(width: 2.5, height: 20)
-                        .transition(.opacity.combined(with: .scale(scale: 0.8, anchor: .leading)))
-                }
-
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(iconColor(theme: theme))
-                    .frame(maxWidth: .infinity, minHeight: 40)
-                    .contentShape(Rectangle())
-                    .scaleEffect(isHovered && !isSelected && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1.0)
-            }
-        }
-        .buttonStyle(.plain)
-        .help(title)
-        // 选中状态变化时平滑过渡
-        .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: isSelected)
-        .onHover { hovering in
-            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
-                isHovered = hovering
-            }
-        }
-    }
-
-    // MARK: - Private
-
-    /// 根据主题计算图标颜色
-    private func iconColor(theme: any SuperTheme) -> Color {
-        if isSelected {
-            return theme.workspaceTextColor()
-        }
-        if isHovered {
-            return theme.workspaceTextColor().opacity(0.8)
-        }
-        return theme.workspaceSecondaryTextColor()
+        AppActivityIconButton(
+            systemImage: icon,
+            label: title,
+            isActive: isSelected,
+            activeTint: theme.workspaceTextColor(),
+            inactiveTint: theme.workspaceSecondaryTextColor(),
+            hoverTint: theme.workspaceTextColor().opacity(0.8),
+            indicatorTint: theme.accentColors().primary,
+            action: action
+        )
     }
 }
 

@@ -69,86 +69,17 @@ struct BottomPanelBarView: View {
 
     private func tabBar(tabs: [BottomPanelTab]) -> some View {
         HStack(spacing: 8) {
-            ForEach(tabs) { tab in
-                BottomPanelTabButton(
-                    tab: tab,
-                    isActive: activeTabId == tab.id,
-                    action: { activeTabId = tab.id }
+            AppTabBar(
+                tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+                selectedTab: Binding(
+                    get: { activeTabId ?? tabs.first?.id ?? "" },
+                    set: { activeTabId = $0 }
                 )
-            }
-
+            )
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(themeVM.activeAppTheme.workspaceTertiaryTextColor().opacity(0.05))
-    }
-}
-
-// MARK: - Tab Button with Hover
-
-/// 底部面板的单个标签按钮，支持 hover 高亮效果
-private struct BottomPanelTabButton: View {
-    @LumiMotionPreferenceReader private var motionPreference
-    @EnvironmentObject private var themeVM: AppThemeVM
-
-    let tab: BottomPanelTab
-    let isActive: Bool
-    let action: () -> Void
-
-    /// 当前是否处于 hover 状态
-    @State private var isHovering = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: tab.systemImage)
-                    .font(.system(size: 10, weight: .semibold))
-                Text(tab.title)
-                    .font(.system(size: 11, weight: isActive ? .semibold : .medium))
-            }
-            .foregroundColor(textColor)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 7)
-                    .fill(backgroundColor)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 7))
-            .scaleEffect(isHovering && !isActive && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1.0)
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
-                isHovering = hovering
-            }
-        }
-        // hover / 选中状态变化时平滑过渡
-        .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: isActive)
-        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHovering)
-    }
-
-    // MARK: - Computed Colors
-
-    /// 文字颜色：选中态 > hover 态 > 默认态
-    private var textColor: Color {
-        if isActive {
-            return themeVM.activeAppTheme.workspaceTextColor()
-        } else if isHovering {
-            return themeVM.activeAppTheme.workspaceTextColor().opacity(0.85)
-        } else {
-            return themeVM.activeAppTheme.workspaceSecondaryTextColor()
-        }
-    }
-
-    /// 背景颜色：选中态 > hover 态 > 默认透明
-    private var backgroundColor: Color {
-        if isActive {
-            return themeVM.activeAppTheme.workspaceTextColor().opacity(0.08)
-        } else if isHovering {
-            return themeVM.activeAppTheme.workspaceTextColor().opacity(0.05)
-        } else {
-            return Color.clear
-        }
     }
 }
