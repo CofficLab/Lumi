@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// 编辑器 Tab 栏插件
 ///

@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// App 插件状态栏数据模型与业务逻辑

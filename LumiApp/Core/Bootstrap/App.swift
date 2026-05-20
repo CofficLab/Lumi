@@ -1,6 +1,5 @@
 import AppKit
 import EditorService
-import MagicKit
 import Sparkle
 import SwiftUI
 

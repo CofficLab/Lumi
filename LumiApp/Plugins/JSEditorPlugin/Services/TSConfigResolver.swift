@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 解析 tsconfig.json / jsconfig.json，提取路径映射和编译选项
 struct TSConfigResolver: SuperLog {

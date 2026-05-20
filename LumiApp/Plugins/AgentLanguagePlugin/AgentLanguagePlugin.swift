@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 语言切换插件

@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 enum AvailabilityDetailMode: Equatable {
     case popover

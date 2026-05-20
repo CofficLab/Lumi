@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// 列出可用 LLM 模型工具

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// 切换当前 LLM 供应商和模型的工具

@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 
 @MainActor
 class NetworkManagerViewModel: ObservableObject, SuperLog {

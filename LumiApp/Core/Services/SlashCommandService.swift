@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 /// 斜杠命令信息
 struct SlashCommandInfo {
     let name: String

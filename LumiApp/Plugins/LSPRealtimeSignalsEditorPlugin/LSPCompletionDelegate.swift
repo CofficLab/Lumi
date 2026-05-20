@@ -3,7 +3,6 @@ import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
-import MagicKit
 
 private protocol ApplicableCompletionEntry: CodeEditSourceEditor.CodeSuggestionEntry {
     var replacementText: String { get }

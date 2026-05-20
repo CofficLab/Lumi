@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器工作区符号 Rail 插件：提供 Symbols 标签页
 actor EditorRailWorkspaceSymbolsPlugin: SuperPlugin, SuperLog {

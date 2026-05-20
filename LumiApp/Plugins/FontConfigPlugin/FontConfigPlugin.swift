@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 字体配置插件：在状态栏提供编辑器字体快速切换入口

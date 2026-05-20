@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ScriptTaskRunner: SuperLog {
     nonisolated static let emoji = "▶️"

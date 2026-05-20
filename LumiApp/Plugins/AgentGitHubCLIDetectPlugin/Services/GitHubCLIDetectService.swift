@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import ShellKit
 
 /// GitHub CLI 检测服务

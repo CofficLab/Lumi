@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// Git 状态工具
 struct GitStatusTool: SuperAgentTool, SuperLog {

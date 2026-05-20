@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import MagicKit
 
 @MainActor
 final class SampleInsightsStatusItemContributor: SuperEditorStatusItemContributor {

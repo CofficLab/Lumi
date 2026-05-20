@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// 请求日志详情视图 - 展示数据库原始数据
 struct RequestLogDetailView: View {

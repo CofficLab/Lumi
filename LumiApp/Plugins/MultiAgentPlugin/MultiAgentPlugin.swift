@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// 多智能体插件

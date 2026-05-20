@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 新会话按钮视图组件

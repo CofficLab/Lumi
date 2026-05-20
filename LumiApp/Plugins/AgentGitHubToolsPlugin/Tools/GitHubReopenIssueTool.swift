@@ -1,6 +1,5 @@
 import Foundation
 import GitHubKit
-import MagicKit
 
 /// GitHub 重新打开 Issue 工具
 struct GitHubReopenIssueTool: SuperAgentTool, SuperLog {

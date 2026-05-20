@@ -1,7 +1,6 @@
 import SwiftUI
 import LumiUI
 import XcodeKit
-import MagicKit
 
 /// Xcode 项目状态栏视图
 struct XcodeProjectStatusBar: View, SuperLog {

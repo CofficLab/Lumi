@@ -2,7 +2,6 @@ import AppKit
 import ApplicationServices
 import Combine
 import SwiftUI
-import MagicKit
 
 /// 菜单栏管理服务
 /// 负责获取和管理菜单栏图标

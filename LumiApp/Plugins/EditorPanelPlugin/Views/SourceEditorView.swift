@@ -2,7 +2,6 @@ import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
-import MagicKit
 import EditorOverlayKit
 
 /// 代码编辑器主视图。

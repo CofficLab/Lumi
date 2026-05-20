@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 查询防休眠状态工具
 ///

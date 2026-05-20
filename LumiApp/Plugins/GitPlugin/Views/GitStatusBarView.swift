@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import MagicKit
 
 /// Git 分支状态栏视图
 ///

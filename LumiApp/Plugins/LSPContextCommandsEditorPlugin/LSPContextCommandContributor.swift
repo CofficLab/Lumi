@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import CodeEditTextView
 import os
 

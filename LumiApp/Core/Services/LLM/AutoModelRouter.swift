@@ -1,6 +1,5 @@
 import Foundation
 import LLMKit
-import MagicKit
 
 struct AutoRouteSignal: Sendable {
     let hasImages: Bool

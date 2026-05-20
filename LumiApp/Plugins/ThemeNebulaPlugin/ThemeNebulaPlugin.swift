@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeNebulaPlugin: SuperPlugin {
     static let shared = ThemeNebulaPlugin()

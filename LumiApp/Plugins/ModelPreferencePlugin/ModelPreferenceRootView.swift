@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import os
 
 /// 模型偏好根视图包裹器

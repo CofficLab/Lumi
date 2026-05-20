@@ -1,6 +1,5 @@
 import Foundation
 import GitHubKit
-import MagicKit
 
 /// GitHub 创建 Issue 工具
 struct GitHubCreateIssueTool: SuperAgentTool, SuperLog {

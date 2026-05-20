@@ -1,7 +1,6 @@
 import Combine
 import SwiftUI
 import XcodeKit
-import MagicKit
 import os
 
 // MARK: - XcodeProjectStatusBarViewModel

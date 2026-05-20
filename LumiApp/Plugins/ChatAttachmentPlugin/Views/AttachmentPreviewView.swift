@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import MagicKit
 
 /// 附件预览视图 - 显示待发送的图片缩略图
 struct AttachmentPreviewView: View {

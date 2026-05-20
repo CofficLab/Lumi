@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeGithubPlugin: SuperPlugin {
     static let shared = ThemeGithubPlugin()

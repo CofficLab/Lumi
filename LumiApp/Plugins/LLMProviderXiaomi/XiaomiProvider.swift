@@ -1,6 +1,5 @@
 import Foundation
 import LLMProviderKit
-import MagicKit
 
 /// Xiaomi AI 供应商实现
 ///

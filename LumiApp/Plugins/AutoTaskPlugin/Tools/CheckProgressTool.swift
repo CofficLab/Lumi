@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 查询任务进度工具
 ///

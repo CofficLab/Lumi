@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import LLMKit
 import HttpKit
 

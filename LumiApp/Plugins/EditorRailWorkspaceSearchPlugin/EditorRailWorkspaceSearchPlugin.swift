@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器工作区搜索 Rail 插件：提供 Search 标签页
 actor EditorRailWorkspaceSearchPlugin: SuperPlugin, SuperLog {

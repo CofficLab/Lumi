@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 最近项目管理插件：在工具栏显示当前项目名称并支持切换
 ///

@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 布局 ViewModel - 负责管理界面布局相关的状态（纯内存状态）
 ///

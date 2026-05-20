@@ -2,7 +2,6 @@ import AppKit
 import SwiftUI
 import ChatInputEditorKit
 import MagicAlert
-import MagicKit
 
 /// Agent 输入包装视图 - 管理输入区域所需的状态
 ///

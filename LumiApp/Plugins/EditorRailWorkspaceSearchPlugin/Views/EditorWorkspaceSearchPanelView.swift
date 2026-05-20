@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 struct EditorWorkspaceSearchPanelView: View {
     @EnvironmentObject private var themeVM: AppThemeVM

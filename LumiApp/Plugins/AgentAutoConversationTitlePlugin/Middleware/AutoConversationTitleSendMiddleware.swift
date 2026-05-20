@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 在管线继续后异步生成标题，避免阻塞后续 `send`。
 @MainActor

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 剪贴板存储
 ///

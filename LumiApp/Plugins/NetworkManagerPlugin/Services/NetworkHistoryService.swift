@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 
 struct NetworkDataPoint: Identifiable, Codable {
     var id: TimeInterval { timestamp }

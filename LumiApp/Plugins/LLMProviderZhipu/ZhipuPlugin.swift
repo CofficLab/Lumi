@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 智谱 LLM 供应商插件
 actor ZhipuPlugin: SuperPlugin, SuperLog {

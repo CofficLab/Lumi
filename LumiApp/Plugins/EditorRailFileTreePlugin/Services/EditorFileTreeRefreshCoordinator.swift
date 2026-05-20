@@ -1,6 +1,5 @@
 import Foundation
 import os
-import MagicKit
 import FileTreeKit
 import LibGit2Swift
 

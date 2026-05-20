@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 import SwiftUI
 
 /// 应用管理器视图模型

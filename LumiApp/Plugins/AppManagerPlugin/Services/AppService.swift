@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import MagicKit
 import SwiftUI
 
 /// 应用服务

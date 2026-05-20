@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 import AppKit
 import Combine

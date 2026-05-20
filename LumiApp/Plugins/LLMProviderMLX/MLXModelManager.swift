@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import MagicKit
 import os
 
 // Forward reference to MLXModels from MLXModels.swift

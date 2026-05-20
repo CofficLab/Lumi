@@ -1,6 +1,5 @@
 import Foundation
 import GitHubKit
-import MagicKit
 import os
 import SwiftUI
 

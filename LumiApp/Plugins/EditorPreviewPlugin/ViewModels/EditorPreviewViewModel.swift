@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import LumiPreviewKit
-import MagicKit
 import os
 import SwiftUI
 import StringCatalogKit

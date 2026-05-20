@@ -2,7 +2,6 @@ import Foundation
 import HttpKit
 import SystemConfiguration
 import Darwin
-import MagicKit
 import Combine
 import ShellKit
 

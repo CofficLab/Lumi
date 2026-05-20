@@ -1,6 +1,5 @@
 import Foundation
 import GoEditorCore
-import MagicKit
 import os
 
 /// Go 命令执行器

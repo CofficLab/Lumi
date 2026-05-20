@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 import os
 
 /// Agent 规则管理插件

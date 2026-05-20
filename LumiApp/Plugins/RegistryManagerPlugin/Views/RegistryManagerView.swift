@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 struct RegistryManagerView: View {

@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import MagicKit
 import XcodeKit
 
 /// Xcode 项目状态栏尾部视图

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 收集子智能体结果工具
 ///

@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 窗口持久化插件：负责保存和恢复窗口状态（会话、面板、编辑器、侧边栏）
 /// 监听窗口关闭事件，自动保存窗口快照到磁盘。

@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// 编辑器问题面板 Rail 插件：提供 Problems 标签页
 actor EditorRailProblemsPlugin: SuperPlugin, SuperLog {

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// Shell 命令执行工具
 ///

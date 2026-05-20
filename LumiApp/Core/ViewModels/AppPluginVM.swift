@@ -1,5 +1,4 @@
 import AppKit
-import MagicKit
 import Foundation
 import SwiftUI
 import ObjectiveC.runtime

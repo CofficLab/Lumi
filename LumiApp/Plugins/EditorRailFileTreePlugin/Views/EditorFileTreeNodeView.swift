@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 文件树节点视图，负责单个文件或目录行的展示和交互

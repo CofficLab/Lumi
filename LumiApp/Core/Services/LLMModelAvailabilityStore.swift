@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import LLMKit
-import MagicKit
 
 /// 全局模型可用性存储。
 ///

@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import MagicKit
 import SwiftUI
 
 // MARK: - Window Active Panel

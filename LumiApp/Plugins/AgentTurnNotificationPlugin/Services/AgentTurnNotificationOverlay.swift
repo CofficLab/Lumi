@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 import UserNotifications
-import MagicKit
 
 /// 监听 `AgentTurnService` turn 结束事件并发出系统通知的 Overlay 视图
 struct AgentTurnNotificationOverlay<Content: View>: View, SuperLog {

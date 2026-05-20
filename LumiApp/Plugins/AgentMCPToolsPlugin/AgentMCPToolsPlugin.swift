@@ -1,5 +1,4 @@
 import MCPKit
-import MagicKit
 import SwiftUI
 import os
 

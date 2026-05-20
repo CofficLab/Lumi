@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// LLM 可用性检测覆盖层

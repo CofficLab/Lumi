@@ -1,6 +1,5 @@
 import CryptoKit
 import Foundation
-import MagicKit
 import os
 
 /// 编辑器标签页持久化存储

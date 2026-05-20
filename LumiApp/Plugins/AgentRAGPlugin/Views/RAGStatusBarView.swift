@@ -1,5 +1,4 @@
 import LumiUI
-import MagicKit
 import RAGKit
 import os
 import SwiftUI

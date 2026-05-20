@@ -1,5 +1,4 @@
 import Combine
-import MagicKit
 import SwiftUI
 
 /// 对话列表视图

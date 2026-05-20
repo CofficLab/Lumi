@@ -1,5 +1,4 @@
 import AppKit
-import MagicKit
 import SwiftUI
 
 /// 菜单栏控制器

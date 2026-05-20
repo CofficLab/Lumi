@@ -1,7 +1,6 @@
 import AppKit
 import Combine
 import LumiUI
-import MagicKit
 import SwiftUI
 
 /// 主内容视图，管理应用的整体布局和导航结构

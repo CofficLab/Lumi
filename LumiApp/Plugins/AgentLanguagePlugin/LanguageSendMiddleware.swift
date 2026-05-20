@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import os
 
 /// 语言偏好注入中间件

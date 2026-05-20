@@ -1,7 +1,6 @@
 import CodeEditTextView
 import EditorService
 import Foundation
-import MagicKit
 import SwiftData
 import os
 

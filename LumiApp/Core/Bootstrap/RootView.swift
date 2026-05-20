@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import MagicAlert
-import MagicKit
 import SwiftData
 import SwiftUI
 

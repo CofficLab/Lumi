@@ -1,6 +1,5 @@
 import Foundation
 import GoEditorCore
-import MagicKit
 
 @MainActor
 final class GoTestGutterContributor: SuperEditorGutterDecorationContributor {

@@ -2,7 +2,6 @@ import os
 import LLMKit
 import SwiftUI
 import LumiUI
-import MagicKit
 
 /// 云端大模型设置视图（仅展示远程/API 供应商）
 struct RemoteProviderSettingsView: View, SuperLog {

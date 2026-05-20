@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import Network
 import SwiftUI
 import os

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 
 /// Git 数据 ViewModel

@@ -6,7 +6,6 @@ import CodeEditLanguages
 import LanguageServerProtocol
 import Combine
 import os
-import MagicKit
 
 /// 编辑器 LSP 协调器
 /// 负责将 LSP 服务与 CodeEditSourceEditor 集成

@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 actor TerminalPlugin: SuperPlugin, SuperLog {

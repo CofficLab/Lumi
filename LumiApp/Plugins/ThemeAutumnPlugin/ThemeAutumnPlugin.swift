@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 actor ThemeAutumnPlugin: SuperPlugin {
     static let shared = ThemeAutumnPlugin()

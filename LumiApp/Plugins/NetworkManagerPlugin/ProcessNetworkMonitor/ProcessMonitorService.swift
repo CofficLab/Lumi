@@ -1,7 +1,6 @@
 import Foundation
 import AppKit
 import Combine
-import MagicKit
 
 @MainActor
 class ProcessMonitorService: ObservableObject, SuperLog {

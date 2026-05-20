@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 用于时间线展示的轻量数据结构，从 `ChatMessage` 映射而来
 struct MessageTimelineItem: Identifiable {

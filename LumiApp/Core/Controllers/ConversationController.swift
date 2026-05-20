@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 会话控制器
 ///

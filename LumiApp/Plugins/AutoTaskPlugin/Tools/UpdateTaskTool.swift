@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 更新任务状态工具
 ///

@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 关闭防休眠工具
 ///

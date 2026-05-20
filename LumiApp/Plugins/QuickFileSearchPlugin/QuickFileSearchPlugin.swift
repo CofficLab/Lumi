@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import os
-import MagicKit
 
 /// Quick File Search Plugin: 快速文件搜索插件
 ///

@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import MagicKit
 import UniformTypeIdentifiers
 
 /// 单个标签页的完整交互项

@@ -1,6 +1,5 @@
 import Foundation
 import IOKit.pwr_mgt
-import MagicKit
 import Observation
 
 /// Caffeinate Manager: Responsible for managing system power state

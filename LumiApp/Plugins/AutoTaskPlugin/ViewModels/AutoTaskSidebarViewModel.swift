@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 import SwiftUI
 
 /// AutoTask 右侧栏视图模型

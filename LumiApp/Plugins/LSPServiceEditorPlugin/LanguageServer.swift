@@ -3,7 +3,6 @@ import JSONRPC
 import LanguageClient
 import LanguageServerProtocol
 import os
-import MagicKit
 
 /// 语言服务器包装器
 /// 注意：不使用 @MainActor，让调用方自行处理并发

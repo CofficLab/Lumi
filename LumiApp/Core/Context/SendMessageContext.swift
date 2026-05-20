@@ -1,5 +1,4 @@
 import Foundation
-import MagicKit
 
 /// 消息发送上下文
 ///

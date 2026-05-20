@@ -1,6 +1,5 @@
 import SwiftUI
 import GoEditorCore
-import MagicKit
 
 /// Go 测试结果面板视图
 ///

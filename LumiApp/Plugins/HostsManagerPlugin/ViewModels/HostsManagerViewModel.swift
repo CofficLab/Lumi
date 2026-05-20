@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import Combine
-import MagicKit
 
 @MainActor
 class HostsManagerViewModel: ObservableObject, SuperLog {

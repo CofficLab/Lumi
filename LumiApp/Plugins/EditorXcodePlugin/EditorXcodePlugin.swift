@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import XcodeKit
-import MagicKit
 import os
 
 /// Xcode 插件日志辅助（插件内共享）

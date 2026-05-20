@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import MagicKit
 import SwiftUI
 
 /// 项目列表（全局共享，所有窗口共用一份）

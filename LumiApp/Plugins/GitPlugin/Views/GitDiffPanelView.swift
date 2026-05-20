@@ -1,6 +1,5 @@
 import MagicDiffView
 import SwiftUI
-import MagicKit
 
 /// Shared diff panel for Git changed files.
 struct GitDiffPanelView: View {

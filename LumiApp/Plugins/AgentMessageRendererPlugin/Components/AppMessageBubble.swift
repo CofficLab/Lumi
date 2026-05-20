@@ -1,5 +1,4 @@
 import LumiUI
-import MagicKit
 import SwiftUI
 
 typealias AppMessageBubbleStyle = LumiUI.AppMessageBubbleStyle

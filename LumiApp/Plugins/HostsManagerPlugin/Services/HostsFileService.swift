@@ -1,6 +1,5 @@
 import Foundation
 import AppKit
-import MagicKit
 
 @MainActor
 class HostsFileService: SuperLog {

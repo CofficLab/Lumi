@@ -1,7 +1,6 @@
 import Foundation
 import GoEditorCore
 import SwiftUI
-import MagicKit
 
 /// Go 面板贡献者
 ///

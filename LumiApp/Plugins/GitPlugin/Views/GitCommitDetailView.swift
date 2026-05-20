@@ -1,5 +1,4 @@
 import SwiftUI
-import MagicKit
 
 /// Git Commit 详情视图
 ///

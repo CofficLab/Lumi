@@ -1,6 +1,5 @@
 import Foundation
 import GitHubKit
-import MagicKit
 
 /// GitHub 趋势项目工具
 struct GitHubTrendingTool: SuperAgentTool, SuperLog {

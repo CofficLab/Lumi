@@ -1,4 +1,3 @@
-import MagicKit
 import SwiftUI
 
 /// 命令建议视图

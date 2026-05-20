@@ -1,7 +1,6 @@
 import Foundation
 import GoEditorCore
 import SwiftUI
-import MagicKit
 import CodeEditTextView
 
 /// Go 命令贡献者
