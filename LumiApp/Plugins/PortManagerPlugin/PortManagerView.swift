@@ -22,18 +22,20 @@ struct PortManagerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Toolbar / Header
             HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                GlassTextField(
-                    title: LocalizedStringKey(String(localized: "Search port, PID, or process name", table: "PortManager")),
-                    text: $searchText
+                AppSearchBar(
+                    text: $searchText,
+                    placeholder: LocalizedStringKey(String(localized: "Search port, PID, or process name", table: "PortManager"))
                 )
 
                 Spacer()
 
-                GlassButton(title: LocalizedStringKey(String(localized: "Refresh", table: "PortManager")), style: .secondary) {
+                AppButton(
+                    LocalizedStringKey(String(localized: "Refresh", table: "PortManager")),
+                    systemImage: "arrow.clockwise",
+                    style: .secondary,
+                    size: .small
+                ) {
                     Task { await refresh() }
                 }
                 .disabled(isLoading)
@@ -43,28 +45,17 @@ struct PortManagerView: View {
 
             GlassDivider()
 
-            // Content
             if isLoading && ports.isEmpty {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                AppLoadingOverlay(
+                    message: LocalizedStringKey(String(localized: "Loading Ports", table: "PortManager")),
+                    size: .medium
+                )
             } else if ports.isEmpty {
-                if #available(macOS 14.0, *) {
-                    ContentUnavailableView(
-                        LocalizedStringKey(String(localized: "No Listening Ports")),
-                        systemImage: "network.slash",
-                        description: Text(String(localized: "No listening ports found.", table: "PortManager"))
-                    )
-                } else {
-                    VStack {
-                        Image(systemName: "network.slash")
-                            .font(.largeTitle)
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        Text(String(localized: "No Listening Ports", table: "PortManager"))
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+                AppEmptyState(
+                    icon: "network.slash",
+                    title: LocalizedStringKey(String(localized: "No Listening Ports", table: "PortManager")),
+                    description: LocalizedStringKey(String(localized: "No listening ports found.", table: "PortManager"))
+                )
             } else {
                 List {
                     ForEach(filteredPorts) { port in
@@ -117,60 +108,62 @@ struct PortRowView: View {
     @State private var showConfirm = false
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(port.port)
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(Color(hex: "0A84FF"))
-                        .frame(minWidth: 50, alignment: .leading)
+        AppCard(
+            style: .subtle,
+            cornerRadius: 8,
+            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12),
+            showShadow: false
+        ) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(port.port)
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(hex: "0A84FF"))
+                            .frame(minWidth: 50, alignment: .leading)
 
-                    Text(port.command)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        Text(port.command)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                    Spacer()
+                        Spacer()
+                    }
+
+                    HStack {
+                        Image(systemName: "network")
+                            .font(.caption)
+                        Text(port.address)
+                            .font(.caption)
+                            .monospaced()
+
+                        Text("•")
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+
+                        Text("PID: \(port.pid)")
+                            .font(.caption)
+                            .monospacedDigit()
+                            .padding(.horizontal, 4)
+                            .background(Color(hex: "98989E").opacity(0.2))
+                            .cornerRadius(4)
+
+                        Text("•")
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+
+                        Text(port.user)
+                            .font(.caption)
+                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    }
+                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
 
-                HStack {
-                    Image(systemName: "network")
-                        .font(.caption)
-                    Text(port.address)
-                        .font(.caption)
-                        .monospaced()
+                Spacer()
 
-                    Text("•")
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-
-                    Text("PID: \(port.pid)")
-                        .font(.caption)
-                        .monospacedDigit()
-                        .padding(.horizontal, 4)
-                        .background(Color(hex: "98989E").opacity(0.2))
-                        .cornerRadius(4)
-
-                    Text("•")
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-
-                    Text(port.user)
-                        .font(.caption)
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                AppIconButton(systemImage: "xmark.circle.fill", tint: Color(hex: "FF453A").opacity(0.8), size: .regular) {
+                    showConfirm = true
                 }
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .help(String(localized: "Kill Process", table: "PortManager"))
             }
-
-            Spacer()
-
-            Button(role: .destructive, action: {
-                showConfirm = true
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(Color(hex: "FF453A").opacity(0.8))
-                    .font(.title2)
-            }
-            .buttonStyle(.borderless)
-            .help(String(localized: "Kill Process", table: "PortManager"))
             .confirmationDialog(
                 Text("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?"),
                 isPresented: $showConfirm
@@ -188,7 +181,7 @@ struct PortRowView: View {
                 Text("This action will force terminate the process, which may lead to data loss.")
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
         .navigationTitle(PortManagerPlugin.displayName)
     }
 }
