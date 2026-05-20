@@ -12,6 +12,8 @@ final class HTMLCompletionContributor: SuperEditorCompletionContributor {
 
         let prefix = context.prefix.trimmingCharacters(in: .whitespacesAndNewlines)
         return HTMLKnowledgeBase.tagSuggestions(prefix: prefix) +
-            HTMLKnowledgeBase.attributeSuggestions(prefix: prefix)
+            HTMLKnowledgeBase.attributeSuggestions(prefix: prefix) +
+            ARIAAttributeDatabase.ariaSuggestions(prefix: prefix) +
+            ARIAAttributeDatabase.roleSuggestions(prefix: prefix)
     }
 }

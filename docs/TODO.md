@@ -578,32 +578,6 @@ LLMAvailabilityPlugin（数据生产者）
 
 ---
 
-## 15. HTMLEditorPlugin
-
-> 目标：对 HTML 提供开箱即用、高效编辑、多语言无缝衔接的开发体验。
-
-### Phase 1: 基础结构与 Emmet
-
-- [ ] HTMLServiceManager、EmmetEngine、EmmetExpansionHandler
-- [ ] AutoclosingController、HTMLTreeSitterRegistration
-
-### Phase 2: 结构化编辑增强
-
-- [ ] TagHighlighter、TagRenamer、HTMLPathCompletion
-- [ ] HTMLDiagnosticAggregator
-
-### Phase 3: 内嵌语言支持
-
-- [ ] LanguageShunter、OffsetMapper
-- [ ] EmbeddedCSSService、EmbeddedJSService
-
-### Phase 4: 高级体验
-
-- [ ] ColorPreviewView、ColorPickerInlineView
-- [ ] ARIAAttributeDatabase、CSS 类名联动
-
----
-
 ## 16. JSEditorPlugin
 
 > 目标：对 JS/TS 项目提供开箱即用、生态自适应的开发体验。

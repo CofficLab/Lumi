@@ -5,6 +5,29 @@ import Foundation
 /// 基于栈扫描算法，定位匹配的开/闭标签。
 /// 用于标签高亮和联动重命名。
 enum TagMatcher {
+    struct MatchResult: Equatable, Sendable {
+        let current: TagLocation
+        let matching: TagLocation?
+    }
+
+    /// 在指定行附近查找当前标签及其匹配标签位置。
+    static func findTagPair(lines: [String], line: Int, character: Int) -> MatchResult? {
+        guard let currentTag = extractTagName(at: line, character: character, lines: lines) else {
+            return nil
+        }
+
+        let matchingTag: TagLocation?
+        if currentTag.isClosing {
+            matchingTag = findOpeningTag(for: currentTag.name, from: line, lines: lines)
+        } else if HTMLKnowledgeBase.voidElements.contains(currentTag.name) {
+            matchingTag = nil
+        } else {
+            matchingTag = findClosingTag(for: currentTag.name, from: line, lines: lines)
+        }
+
+        return MatchResult(current: currentTag, matching: matchingTag)
+    }
+
     /// 在指定行附近查找匹配的标签位置
     ///
     /// - Parameters:
@@ -13,19 +36,7 @@ enum TagMatcher {
     ///   - character: 当前光标所在列（0-based）
     /// - Returns: 匹配标签的位置，如果未找到则返回 nil
     static func findMatchingTag(lines: [String], line: Int, character: Int) -> TagLocation? {
-        // 1. 在当前位置找到光标所在的标签名
-        guard let currentTag = extractTagName(at: line, character: character, lines: lines) else {
-            return nil
-        }
-
-        // 2. 判断是开标签还是闭标签
-        if currentTag.isClosing {
-            // 闭标签 → 向前搜索对应的开标签
-            return findOpeningTag(for: currentTag.name, from: line, lines: lines)
-        } else {
-            // 开标签 → 向后搜索对应的闭标签
-            return findClosingTag(for: currentTag.name, from: line, lines: lines)
-        }
+        findTagPair(lines: lines, line: line, character: character)?.matching
     }
 
     // MARK: - 私有方法
