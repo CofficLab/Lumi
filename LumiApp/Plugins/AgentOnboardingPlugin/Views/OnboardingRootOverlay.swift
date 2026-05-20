@@ -588,7 +588,7 @@ private struct OnboardingSheetView: View {
     private func pluginSelectionRow(_ plugin: OnboardingPluginOption) -> some View {
         let isSelected = selectedPluginIDs.contains(plugin.id)
 
-        Button {
+        return Button {
             togglePluginSelection(plugin.id)
         } label: {
             HStack(spacing: 14) {
